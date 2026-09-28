@@ -8,6 +8,11 @@ import works.lysenko.util.data.records.RangedMargin;
  */
 public record Limits(Fraction border, RangedMargin margin) {
 
+    public Fraction cutoff() {
+
+        return border;
+    }
+
     /**
      * Creates a new Margins object with the specified border and allowed deviation.
      *

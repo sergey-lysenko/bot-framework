@@ -122,6 +122,11 @@ public class ColoursQuotas extends AbstractQuotas implements _ColoursQuotas {
         return border;
     }
 
+    public final Fraction cutoff() {
+
+        return border;
+    }
+
     @Override
     public final boolean ignore(final ColoursIgnore what) {
 

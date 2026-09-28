@@ -76,4 +76,5 @@ public record C() {
     public static final String CUMULATIVE = s(CU, MU, LA, TIVE);
     public static final String CURRENT = s(CU, RR, ENT);
     public static final String CORRECT = s(CORR, E, CT);
+    public static final String CUTOFF = s(CU, T, OFF);
 }

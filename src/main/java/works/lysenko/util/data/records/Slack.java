@@ -10,6 +10,7 @@ import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Vars.a;
 import static works.lysenko.util.func.type.fractions.Render.ts;
 import static works.lysenko.util.lang.word.B.BORDER;
+import static works.lysenko.util.lang.word.C.CUTOFF;
 import static works.lysenko.util.lang.word.M.MARGIN;
 import static works.lysenko.util.prop.data.Delimeters.L0;
 import static works.lysenko.util.spec.Numbers.ZERO;
@@ -66,7 +67,7 @@ public record Slack(RangedMargin margin, Fraction border) {
 
         return a(List.of(
                         kv(MARGIN, margin.render()),
-                        kv(BORDER, s(ts(border), L0, border.doubleValue()))),
+                        kv(CUTOFF, s(ts(border), L0, border.doubleValue()))),
                 _SPACE_);
     }
 }

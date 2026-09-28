@@ -5,7 +5,7 @@
 
   <groupId>works.lysenko</groupId>
   <artifactId>framework</artifactId>
-  <version>0.26.40</version>
+  <version>0.26.41</version>
   <packaging>jar</packaging>
 
   <name>bot-framework</name>

@@ -5,6 +5,7 @@ import static works.lysenko.util.lang.word.A.AMOUNT;
 import static works.lysenko.util.lang.word.B.BORDER;
 import static works.lysenko.util.lang.word.B.BRIGHTNESS;
 import static works.lysenko.util.lang.word.C.COLOURS;
+import static works.lysenko.util.lang.word.C.CUTOFF;
 import static works.lysenko.util.lang.word.F.FENCES;
 import static works.lysenko.util.lang.word.H.HUE;
 import static works.lysenko.util.lang.word.I.IGNORE;
@@ -26,6 +27,7 @@ public record Fields() {
     public static final String BDT = s(BRIGHTNESS, _DOT_, THRESHOLD);
     public static final String CDA = s(CD, AMOUNT);
     public static final String CDB = s(CD, BORDER);
+    public static final String CDC = s(CD, CUTOFF);
     public static final String CDD = s(CD, MARGIN);
     public static final String CDIB = s(CDID, BRIGHTNESS);
     public static final String CDIH = s(CDID, HUE);

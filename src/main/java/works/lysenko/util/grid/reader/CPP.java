@@ -57,7 +57,7 @@ public record CPP() {
                 ? predefined.colours() : null)) ? (isNull(coloursProperty)) ? null :
                 new ColoursQuotas(origin, coloursProperty,
                         Limits.of(
-                                getV(grid, CDB, Validation.defaultColoursBorder),
+                                getCutoff(grid),
                                 getRV(grid, CDD, Allowed.defaultRangedMargin)),
                         ColoursIgnore.set(coloursIgnore),
                         IgnoreHSB.of(getI(grid, CDIH), getI(grid, CDIS), getI(grid, CDIB)),
@@ -136,6 +136,12 @@ public record CPP() {
      * @return the value associated with the key, or the default value if not found
      */
     @SuppressWarnings("SameParameterValue")
+    private static Fraction getCutoff(final _GridProperties grid) {
+
+        final String cutoff = grid.getKV(CDC, true).v();
+        return isNotNull(cutoff) ? fr(cutoff) : getV(grid, CDB, Validation.defaultColoursBorder);
+    }
+
     private static Fraction getV(final _GridProperties grid, final String key, final String def) {
 
         return fr(grid.getKV(key, def).v());

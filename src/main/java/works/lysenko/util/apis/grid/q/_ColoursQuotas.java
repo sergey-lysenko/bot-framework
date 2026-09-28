@@ -29,6 +29,16 @@ public interface _ColoursQuotas {
     Fraction border();
 
     /**
+     * Retrieves the cutoff fraction value (alias for border).
+     *
+     * @return the cutoff fraction value
+     */
+    default Fraction cutoff() {
+
+        return border();
+    }
+
+    /**
      * Retrieves a list of quotas of unspecified type.
      *
      * @return a list of _Quota objects, or null if not implemented

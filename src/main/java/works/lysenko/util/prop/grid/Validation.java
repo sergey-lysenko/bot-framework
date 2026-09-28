@@ -31,6 +31,7 @@ public record Validation() {
     public static final double scaleEpsilon = _GRID_VALIDATION_SCALE_EPSILON.get();
     public static final String fences = _GRID_VALIDATION_FENCES.get(); // "9"
     public static final String defaultColoursBorder = _GRID_VALIDATION_DEFAULT_BORDER.get(); // "1/999"
+    public static final String defaultColoursCutoff = defaultColoursBorder;
     public static final String hsbThreshold = _GRID_VALIDATION_HSB_THRESHOLD.get(); // "1/99";
 
 }
