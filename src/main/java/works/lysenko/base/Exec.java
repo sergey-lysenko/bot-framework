@@ -202,6 +202,14 @@ public final class Exec extends Root implements _TestData, _Executes {
      *
      * @return The current WebDriver instance if it is accessible; otherwise, null.
      */
+    public WebDriver getWebDriver() {
+        return wd();
+    }
+
+    public WebDriverWait getWebDriverWait() {
+        return wdw();
+    }
+
     public WebDriver wd() {
 
         try {

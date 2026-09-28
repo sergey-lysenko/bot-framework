@@ -14,6 +14,8 @@ public record O() {
     public static final String OCCURED = s(OC, CU, RED);
     public static final String OCCURRENCE = s(OC, CU, RE, N, CE);
     public static final String OFFSET = s(OF, FS, ET);
+    public static final String OPENED = s(OPEN, ED);
+    public static final String OUTER = s(OU, T, ER);
     public static final String OPENING = s(OPEN, ING);
     public static final String OPENQA = s(OPEN, Q, A);
     public static final String OPERATION = s(OP, ER, A, TION);

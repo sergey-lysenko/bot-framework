@@ -15,6 +15,9 @@ public record N() {
 
     public static final String NAMED = s(NA, M, ED);
     public static final String NATIVE = s(NA, TIVE);
+    public static final String NAVBAR = s(NAV, BAR);
+    public static final String NEVER = s(NE, VER);
+    public static final String NUMBER = s(NU, MB, ER);
     public static final String NEGATIVE = s(NEGA, TIVE);
     public static final String NEITHER = s(NE, IT, HER);
     public static final String NESTED = s(NE, ST, ED);

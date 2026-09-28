@@ -18,4 +18,5 @@ public record H() {
     public static final String HISTORY = s(HI, S, TO, RY);
     public static final String HORIZONTAL = s(HO, RI, ZO, NT, AL);
     public static final String HUE = s(H, UE);
+    public static final String HEIGHTS = s(HE, IG, H, TS);
 }

@@ -9,9 +9,9 @@ import static works.lysenko.util.spec.Symbols.*;
 @SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "unused"})
 public record S() {
 
-    private static final String SECOND = s(SE, COND);
-    private static final String SUCCESSFUL = s(SU, CC, ES, SF, UL);
-    private static final String SUPPORT = s(SU, PP, ORT);
+    public static final String SECOND = s(SE, COND);
+    public static final String SUCCESSFUL = s(SU, CC, ES, SF, UL);
+    public static final String SUPPORT = s(SU, PP, ORT);
     public static final String SAFEGUARD = s(SA, FE, G, U, AR, D);
     public static final String SAMPLED = s(SA, MP, L, ED);
     public static final String SAMPLES = s(SA, MP, L, ES);

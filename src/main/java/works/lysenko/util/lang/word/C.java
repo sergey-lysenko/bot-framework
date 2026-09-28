@@ -11,7 +11,7 @@ import static works.lysenko.util.spec.Symbols.*;
 public record C() {
 
     private static final String CONFIG = s(CONF, IG);
-    private static final String CONFIRM = s(CONF, IR, M);
+    public static final String CONFIRM = s(CONF, IR, M);
     public static final String CALCULATED = s(CA, LC, ULAT, ED);
     public static final String CALCULATING = s(CALC, ULAT, ING);
     public static final String CALLABLE = s(CALL, ABLE);
@@ -75,5 +75,5 @@ public record C() {
     public static final String CROPPING = s(CR, OPP, ING);
     public static final String CUMULATIVE = s(CU, MU, LA, TIVE);
     public static final String CURRENT = s(CU, RR, ENT);
-    static final String CORRECT = s(CORR, E, CT);
+    public static final String CORRECT = s(CORR, E, CT);
 }

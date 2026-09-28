@@ -26,6 +26,7 @@ public record D() {
     public static final String DESCRIBING = s(DESC, RI, B, ING);
     public static final String DESCRIPTION = s(DESC, RIPT, ION);
     public static final String DESCRIPTOR = s(DESC, RIPT, OR);
+    public static final String DESCRIPTORS = s(DESCRIPTOR, S);
     public static final String DETERMINE = s(DE, TERM, I, NE);
     public static final String DIALOGUE = s(DI, AL, OG, UE);
     public static final String DID = s(DI, D);

@@ -3,6 +3,8 @@ package works.lysenko.util.lang.word;
 import static works.lysenko.util.chrs.__.*;
 import static works.lysenko.util.chrs.___.ING;
 import static works.lysenko.util.chrs.____.*;
+import static works.lysenko.util.data.strs.Bind.b;
+import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.spec.Symbols.S;
 
@@ -22,4 +24,6 @@ public record B() {
     public static final String BUILDING = s(BU, IL, DI, NG);
     public static final String BUNDLE = s(BU, ND, LE);
     public static final String BUTTON = s(BU, TT, ON);
+    public static final String BUTTONS = s(BUTTON, S);
+    public static final String BUTTON_WITH_TEXT = b(c(BUTTON), WITH, c(TEXT));
 }

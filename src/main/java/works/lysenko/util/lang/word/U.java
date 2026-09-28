@@ -4,6 +4,7 @@ import static works.lysenko.util.chrs.__.*;
 import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.____.*;
 import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.lang.word.C.CENTERED;
 import static works.lysenko.util.lang.word.D.DEFINED;
 import static works.lysenko.util.lang.word.E.EXPECTED;
 import static works.lysenko.util.lang.word.K.KNOWN;
@@ -17,6 +18,7 @@ public record U() {
     public static final String ULTIMATE = s(UL, TI, MA, TE);
     public static final String UNABLE = s(UN, ABLE);
     public static final String UNCAUGHT = s(UN, CA, UGHT);
+    public static final String UNCENTERED = s(UN, CENTERED);
     public static final String UNCHANGED = s(UN, CHAN, GED);
     public static final String UNDEFINED = s(UN, DEFINED);
     public static final String UNEXPECTED = s(UN, EXPECTED);
