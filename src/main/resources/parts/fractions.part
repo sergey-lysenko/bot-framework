@@ -1,0 +1,9 @@
+# -------------------------------------------------------------------------------------------------
+# Number of decimal places to consider when converting decimal values to fractions.
+# Controls the precision of the fraction translation.
+.fractions.accuracy=7
+
+# -------------------------------------------------------------------------------------------------
+# Enable or disable output of fractions in the result.
+# (true = fractions will be included in the output, false = no fractions output)
+.fractions.output=true

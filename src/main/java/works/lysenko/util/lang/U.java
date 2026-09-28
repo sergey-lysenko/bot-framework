@@ -1,0 +1,88 @@
+package works.lysenko.util.lang;
+
+import org.apache.commons.lang3.StringUtils;
+
+import static works.lysenko.util.chrs.__.*;
+import static works.lysenko.util.chrs.___.*;
+import static works.lysenko.util.chrs.____.*;
+import static works.lysenko.util.chrs._____.VALUE;
+import static works.lysenko.util.data.strs.Bind.b;
+import static works.lysenko.util.data.strs.Bind.d;
+import static works.lysenko.util.data.strs.Case.c;
+import static works.lysenko.util.data.strs.Case.u;
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.lang.C.COLOURS_RESULT;
+import static works.lysenko.util.lang.D.DUE_TO;
+import static works.lysenko.util.lang.R.RANGER_RESULT;
+import static works.lysenko.util.lang.W.WEB_DRIVER;
+import static works.lysenko.util.lang.word.A.AMONG;
+import static works.lysenko.util.lang.word.A.AUTOMATOR;
+import static works.lysenko.util.lang.word.B.BROWSER;
+import static works.lysenko.util.lang.word.B.BUNDLE;
+import static works.lysenko.util.lang.word.C.CANDIDATES;
+import static works.lysenko.util.lang.word.C.CLIPBOARD;
+import static works.lysenko.util.lang.word.C.CONFIGURED;
+import static works.lysenko.util.lang.word.D.DEFINE;
+import static works.lysenko.util.lang.word.D.DURING;
+import static works.lysenko.util.lang.word.E.*;
+import static works.lysenko.util.lang.word.F.FAILED;
+import static works.lysenko.util.lang.word.I.IMAGE;
+import static works.lysenko.util.lang.word.I.INCORRECTLY;
+import static works.lysenko.util.lang.word.I.INSTANCE;
+import static works.lysenko.util.lang.word.L.LINES;
+import static works.lysenko.util.lang.word.M.MARGIN;
+import static works.lysenko.util.lang.word.N.NEITHER;
+import static works.lysenko.util.lang.word.P.PARSE;
+import static works.lysenko.util.lang.word.P.PROCEED;
+import static works.lysenko.util.lang.word.P.PROCESS;
+import static works.lysenko.util.lang.word.R.RANDOM;
+import static works.lysenko.util.lang.word.R.RANGED;
+import static works.lysenko.util.lang.word.R.RESULT;
+import static works.lysenko.util.lang.word.S.*;
+import static works.lysenko.util.lang.word.T.TESTS;
+import static works.lysenko.util.lang.word.T.TRANSFORM;
+import static works.lysenko.util.lang.word.T.TYPES;
+import static works.lysenko.util.lang.word.U.*;
+import static works.lysenko.util.lang.word.V.VALID;
+import static works.lysenko.util.lang.word.V.VALIDATE;
+import static works.lysenko.util.lang.word.V.VERIFICATION;
+import static works.lysenko.util.lang.word.W.WITHOUT;
+import static works.lysenko.util.lang.word.W.WRITE;
+import static works.lysenko.util.spec.Symbols.*;
+
+@SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "AutoBoxing"})
+public record U() {
+
+    private static final String UI_VERIFICATION_FAILED = b(u(UI), VERIFICATION, FAILED);
+    public static final String UI_AUTOMATOR_2 = s(c(UI), AUTOMATOR, _2_);
+    public static final String UI_VERIFICATION_FAILED_IN = b(UI_VERIFICATION_FAILED, IN);
+    public static final String UNABLE_TO = b(c(UNABLE), TO);
+    public static final String UNABLE_TO_ADD_OK___ = b(UNABLE_TO, ADD, u(OK), TO, d(NON, EMPTY), RESULT);
+    public static final String UNABLE_TO_DEFINE___ = b(UNABLE_TO, DEFINE, SCALE, DUE_TO, NULL, IMAGE);
+    public static final String UNABLE_TO_GET_EXTERNAL___ = b(c(UNABLE), TO, GET, EXTERNAL, EVENT, TYPES);
+    public static final String UNABLE_TO_LOAD = b(UNABLE_TO, LOAD);
+    public static final String UNABLE_TO_OPEN = b(UNABLE_TO, OPEN);
+    public static final String UNABLE_TO_PARCE_RANGEDMARGIN___ = b(UNABLE_TO, PARSE, s(c(RANGED), c(MARGIN)), FROM);
+    public static final String UNABLE_TO_PROCEED = b(UNABLE_TO, PROCEED, DUE_TO, UNKNOWN);
+    public static final String UNABLE_TO_PROCESS_EMPTY___ = b(UNABLE_TO, PROCESS, EMPTY, RESULT);
+    public static final String UNABLE_TO_PROCESS_NULL___ = b(UNABLE_TO, PROCESS, NULL, RESULT);
+    public static final String UNABLE_TO_READ_CLIPBOARD = b(UNABLE_TO, READ, CLIPBOARD);
+    public static final String UNABLE_TO_READ_LINES_FROM = b(UNABLE_TO, READ, LINES, FROM);
+    public static final String UNABLE_TO_READ_SCREENSHOT___ = b(UNABLE_TO, READ, SCREENSHOT, DUE_TO);
+    public static final String UNABLE_TO_READ___ = b(UNABLE_TO, READ, SCREENSHOT, WITHOUT, VALID, WEB_DRIVER, INSTANCE);
+    public static final String UNABLE_TO_SELECT_A_RANDOM_ELEMENT_OF_AN_EMPTY_SET = b(UNABLE_TO, SELECT, s(A), RANDOM, ELEMENT, OF, AN, EMPTY, SET);
+    public static final String UNABLE_TO_SELECT_A_SCENARIO___ = b(UNABLE_TO, SELECT, s(A), SCENARIO, AMONG, CANDIDATES);
+    public static final String UNABLE_TO_START_TEST___ = b(UNABLE_TO, START, TEST, WITHOUT, NEITHER, APP, FILE, NOR, BUNDLE, ID);
+    public static final String UNABLE_TO_TRANSFORM___ = b(UNABLE_TO, TRANSFORM, RANGER_RESULT, INTO, COLOURS_RESULT);
+    public static final String UNABLE_TO_VALIDATE_INCORRECTLY_CONFIGURED = b(UNABLE_TO, VALIDATE, INCORRECTLY, CONFIGURED);
+    public static final String UNABLE_TO_WRITE = b(UNABLE_TO, WRITE);
+    public static final String UNABLE_TO_WRITE_CODE___ = b(UNABLE_TO_WRITE, CODE, SNAPSHOT, TO);
+    public static final String UNABLE_TO_WRITE_DATA_TO = b(UNABLE_TO_WRITE, DATA, TO);
+    public static final String UNABLE_TO_WRITE_INTO_FILE = b(UNABLE_TO, WRITE, INTO, FILE);
+    public static final String UNABLE_TO_WRITE_SCREENSHOT = b(UNABLE_TO_WRITE, SCREENSHOT);
+    public static final String UNCAUGHT_EXCEPTION = b(c(UNCAUGHT), EXCEPTION, DURING, TESTS, s(EXECUTION, _COLON_));
+    public static final String UNEXPECTED_NULL_VALUE_AMONG_ = b(c(UNEXPECTED), NULL, VALUE, AMONG, StringUtils.EMPTY);
+    public static final String UNRESOLVED___ = b(c(UNRESOLVED), EXCEPTIONAL, STATE);
+    public static final String USER_DIR = s(USER, _DOT_, s(DI, R));
+    public static final String U_B_EXCEPTION = s(c(UNREACHABLE), c(BROWSER), c(EXCEPTION));
+}

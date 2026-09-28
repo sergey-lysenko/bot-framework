@@ -1,0 +1,47 @@
+# ==============================================================================
+# Scenario Configuration
+# ==============================================================================
+
+# Maximum number (or depth) of scenarios within a single case.
+.scenario.depth.safeguard=64
+
+# ------------------------------------------------------------------------------
+# Maximum number (or depth) of scenario history entries in a single case.
+.scenario.history.depth.safeguard=64
+
+# ------------------------------------------------------------------------------
+# Number of attempts to fit a scenario before marking it as failed.
+# .default.scenario.fitting.attempts=5
+
+# ------------------------------------------------------------------------------
+# Weight coefficient assigned to scenarios that are omitted.
+# .default.weight=0.0
+
+# ------------------------------------------------------------------------------
+# Whether to continue execution even if a scenario selection fails.
+# .ignore.failed.scenario.selection=false
+
+# ==============================================================================
+# Test Node Configuration
+# ==============================================================================
+
+# Weight propagation for test nodes.
+.include.downstream=true
+.include.upstream=true
+
+# ==============================================================================
+# Notices and Warnings
+# ==============================================================================
+
+# Display a notice if a scenario cannot be executed.
+.scenario.not.executable.notice=false
+
+# ------------------------------------------------------------------------------
+
+# Display a notice if a scenario fails to fit.
+.scenario.does.not.fit.notice=false
+
+# ------------------------------------------------------------------------------
+
+# Notify if there are empty scenario packages.
+.notify.about.empty.scenario.packages=false

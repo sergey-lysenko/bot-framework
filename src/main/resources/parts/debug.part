@@ -1,0 +1,13 @@
+# -------------------------------------------------------------------------------------------------
+# Enable or disable Appium debug output in the log.
+# (true = include detailed Appium debug information, false = Appium debug disabled)
+# .adebug=false
+
+# -------------------------------------------------------------------------------------------------
+# Enable or disable additional debugging output in the log to assist with debugging and test analysis.
+# (true = additional debug logs will be generated, false = minimal logs)
+.debug=true
+
+# -------------------------------------------------------------------------------------------------
+# Enable or disable tracing of additional mathod names and variable values.
+# .trace=true

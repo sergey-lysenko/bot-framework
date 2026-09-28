@@ -1,0 +1,20 @@
+# ==============================================================================
+# General Configuration
+# ==============================================================================
+
+# Time interval (in milliseconds) between checking the state of a manual pause.
+# .pause.length=5000
+
+# ------------------------------------------------------------------------------
+# Screen index to spawn the UI interface (dashboard).
+# .screen.to.spawn.dashboard=0
+
+# ------------------------------------------------------------------------------
+# Default native resolution (e.g., corresponds to Google Pixel 4).
+# .native.x.resolution=1080
+# .native.y.resolution=2280
+
+# ------------------------------------------------------------------------------
+# Number of retries allowed for various actions.
+# .action.retries=3
+.default.scenario.sufficiency.attempts = 11

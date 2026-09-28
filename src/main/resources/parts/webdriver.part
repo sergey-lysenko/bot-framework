@@ -1,0 +1,19 @@
+# ==============================================================================
+# WebDriver Configuration
+# ==============================================================================
+
+# Explicit wait time in seconds (used for waiting conditions like visibility or
+# clickability of elements).
+# .ewait=30
+
+# ------------------------------------------------------------------------------
+# Implicit wait time in milliseconds (default wait for finding elements).
+# .iwait=500
+
+# ------------------------------------------------------------------------------
+# Target platform to enforce during execution (e.g., Android, iOS).
+# .forced.platform=
+
+# ------------------------------------------------------------------------------
+# Whether to recreate the driver instance after encountering an exception.
+# .recreate.driver.after.exception=true

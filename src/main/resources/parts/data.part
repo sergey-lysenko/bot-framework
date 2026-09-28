@@ -1,0 +1,9 @@
+# -------------------------------------------------------------------------------------------------
+# Enable or disable persistence of test data between test runs.
+# (true = test data will be saved across runs)
+.persist=true
+
+# -------------------------------------------------------------------------------------------------
+# Allow creating a snapshot of the current test data contents after each modification.
+# (true = snapshots allowed for storage modifications)
+.data.snapshots.allowed=true

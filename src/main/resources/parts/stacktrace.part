@@ -1,0 +1,18 @@
+# ==============================================================================
+# Stack Trace Configuration
+# ==============================================================================
+
+# Classes that will be excluded from the short stack trace (comma-separated list).
+.ignored.in.stacktrace=Ctrl,Core,Test,Exec,Base,Leaf,Logs,Node,Root,Selector,Repeater,Routines,Screenshot,Assertions,TestProperties,BotRunner,BufferedImages
+
+# ------------------------------------------------------------------------------
+# Display line numbers in the shortened stack trace.
+.line.number.in.short.stacktrace=true
+
+# ------------------------------------------------------------------------------
+# Replace repeated stack traces with references to reduce size of log files.
+.stack.trace.references=true
+
+# ------------------------------------------------------------------------------
+# Whether to ignore the `.ignored.in.stacktrace` list and show the full stack trace.
+# .full.stacktrace=true

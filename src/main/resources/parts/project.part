@@ -1,0 +1,33 @@
+# ==============================================================================
+# Project-Specific Values
+# ==============================================================================
+
+# Root package of the scenarios tree.
+# TODO: Add handling for invalid package entries.
+.root=bot.scenario
+
+# ------------------------------------------------------------------------------
+# Path to the APK file for the application under test.
+# .app=
+
+# ------------------------------------------------------------------------------
+# Application bundle ID used for restart operations.
+# .bundle.id=
+
+# ------------------------------------------------------------------------------
+# Dimensions for generated vector graphic sample representations.
+.svg.width=3840
+.svg.height=2160
+
+# ==============================================================================
+# Log Line Similarity Exceptions
+# ==============================================================================
+
+# Permanent exceptions (meant to last):
+# This project-specific list of similarity exceptions should be as short as
+# possible, with every entry being specific and individualised.
+# .log.lines.similarity.exceptions.permanent=
+
+# ------------------------------------------------------------------------------
+# Temporary exceptions (to be revisited for code optimisations, improvements, etc.):
+# .log.lines.similarity.exceptions.temporary=
