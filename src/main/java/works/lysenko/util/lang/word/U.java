@@ -35,4 +35,5 @@ public record U() {
     public static final String USERS = s(USER, S);
     public static final String USING = s(US, ING);
     public static final String UPDATING = s(UPDA, TING);
+    public static final String UNIVERSITY = s(UN, IV, ER, SI, TY);
 }
