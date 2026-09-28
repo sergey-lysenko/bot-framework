@@ -5,7 +5,7 @@
 
   <groupId>works.lysenko</groupId>
   <artifactId>framework</artifactId>
-  <version>0.27.0</version>
+  <version>0.26.40</version>
   <packaging>jar</packaging>
 
   <name>bot-framework</name>
@@ -24,11 +24,14 @@
     <aspectj.version>1.9.21.2</aspectj.version>
     <commons-lang3.version>3.18.0</commons-lang3.version>
     <reflections.version>0.10.2</reflections.version>
-    <bcprov-jdk18on.version>1.78.1</bcprov-jdk18on.version>
+    <bcprov-jdk18on.version>1.80</bcprov-jdk18on.version>
     <netty-codec.version>4.1.125.Final</netty-codec.version>
-    <jackson-databind.version>2.17.0</jackson-databind.version>
-    <snakeyaml.version>2.2</snakeyaml.version>
+    <jackson-databind.version>2.18.2</jackson-databind.version>
+    <snakeyaml.version>2.3</snakeyaml.version>
     <graphviz-java.version>0.18.1</graphviz-java.version>
+    <commons-exec.version>1.4.0</commons-exec.version>
+    <okhttp.version>4.12.0</okhttp.version>
+    <junit-jupiter.version>5.11.4</junit-jupiter.version>
 
     <!-- Utilities versions -->
     <commons-math3.version>3.6.1</commons-math3.version>
@@ -82,6 +85,12 @@
       <groupId>com.github.javafaker</groupId>
       <artifactId>javafaker</artifactId>
       <version>${javafaker.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.yaml</groupId>
+          <artifactId>snakeyaml</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.jfree</groupId>
@@ -122,11 +131,33 @@
       <groupId>guru.nidi</groupId>
       <artifactId>graphviz-java</artifactId>
       <version>${graphviz-java.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-exec</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-exec</artifactId>
+      <version>${commons-exec.version}</version>
     </dependency>
     <dependency>
       <groupId>org.jgrapht</groupId>
       <artifactId>jgrapht-core</artifactId>
       <version>${jgrapht.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+      <version>${okhttp.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit-jupiter.version}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
