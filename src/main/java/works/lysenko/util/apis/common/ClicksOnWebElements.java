@@ -87,6 +87,13 @@ public interface ClicksOnWebElements {
     void clickOn(boolean thenWaitForInvisibilityOf, WebElement element);
 
     /**
+     * Click on a button identified by its visible text
+     *
+     * @param text the visible text of the button to click on
+     */
+    void clickOnButton(String text);
+
+    /**
      * Click on a Text and then wait for certain milliseconds
      *
      * @param text      to click on

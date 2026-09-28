@@ -107,6 +107,13 @@ public interface WaitsForWebElements {
     void waitForInvisibilityOfText(String text, Duration iwait);
 
     /**
+     * Wait for the appearance of the button with the defined text
+     *
+     * @param text the visible text of the button to wait for
+     */
+    void waitForButton(String text);
+
+    /**
      * Wait for the appearance of the defined text
      *
      * @param text to be waited for
@@ -166,6 +173,13 @@ public interface WaitsForWebElements {
     void waitForVisibilityOfText(String text);
 
     /**
+     * Wait for the visibility of the button with the defined text
+     *
+     * @param text the visible text of the button to wait for
+     */
+    void waitForVisibilityOfButton(String text);
+
+    /**
      * Waits until the edit field containing the specified text becomes visible.
      *
      * @param text the text expected to be present in the edit field to wait for its visibility
@@ -209,6 +223,13 @@ public interface WaitsForWebElements {
      * @param locator                   string locator of an element to be waited for
      */
     void waitThenClickOn(boolean thenWaitForInvisibilityOf, String locator);
+
+    /**
+     * Wait for the appearance of the defined button with text and then click on it
+     *
+     * @param text the visible text of the button to be waited for and clicked
+     */
+    void waitThenClickOnButton(String text);
 
     /**
      * Wait for the appearance of the defined text and the click on it

@@ -334,6 +334,17 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         if (thenWaitForInvisibilityOf) waitForInvisibilityOf(element);
     }
 
+    /**
+     * Click on a button identified by its visible text
+     *
+     * @param text the visible text of the button to click on
+     */
+    @Override
+    public final void clickOnButton(final String text) {
+
+        clickOn(false, button(text));
+    }
+
     public final void clickOnText(final String text) {
 
         clickOn(false, text(text));
@@ -1168,6 +1179,17 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         for (final String text : texts) waitForText(text);
     }
 
+    /**
+     * Wait for the appearance of the button with the defined text
+     *
+     * @param text the visible text of the button to wait for
+     */
+    @Override
+    public final void waitForButton(final String text) {
+
+        waitForVisibilityOfButton(text);
+    }
+
     public final void waitForText(final String text) {
 
         waitForVisibilityOfText(text);
@@ -1194,6 +1216,18 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
 
         log(b(WAITING_FOR_VISIBILITY_OF, q(bb(Arrays.toString(locators)))));
         exec.wdw().until(visibilityOfElementLocated(by(locators)));
+    }
+
+    /**
+     * Wait for the visibility of the button with the defined text
+     *
+     * @param text the visible text of the button to wait for
+     */
+    @Override
+    public final void waitForVisibilityOfButton(final String text) {
+
+        log(b(WAITING_FOR_VISIBILITY_OF, q(bb(button(text)))));
+        exec.wdw().until(visibilityOfElementLocated(by(button(text))));
     }
 
     public final void waitForVisibilityOfText(final String text) {
@@ -1236,6 +1270,18 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
 
         wait(locator);
         clickOn(thenWaitForInvisibilityOf, locator);
+    }
+
+    /**
+     * Wait for the appearance of the defined button with text and then click on it
+     *
+     * @param text the visible text of the button to be waited for and clicked
+     */
+    @Override
+    public final void waitThenClickOnButton(final String text) {
+
+        waitForButton(text);
+        clickOnButton(text);
     }
 
     public final void waitThenClickOnText(final String text) {
