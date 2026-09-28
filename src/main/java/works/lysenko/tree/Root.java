@@ -1226,26 +1226,22 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     @Override
     public final void waitForVisibilityOfButton(final String text) {
 
-        log(b(WAITING_FOR_VISIBILITY_OF, q(bb(button(text)))));
-        exec.wdw().until(visibilityOfElementLocated(by(button(text))));
+        waitForVisibilityOf(button(text));
     }
 
     public final void waitForVisibilityOfText(final String text) {
 
-        log(b(WAITING_FOR_VISIBILITY_OF, q(bb(text(text)))));
-        exec.wdw().until(visibilityOfElementLocated(by(text(text))));
+        waitForVisibilityOf(text(text));
     }
 
     public final void waitForVisibilityOfEdit(final String text) {
 
-        log(b(WAITING_FOR_VISIBILITY_OF, q(bb(edit(text)))));
-        exec.wdw().until(visibilityOfElementLocated(by(edit(text))));
+        waitForVisibilityOf(edit(text));
     }
 
     public final void waitForVisibilityOfDesc(final String text) {
 
-        log(b(WAITING_FOR_VISIBILITY_OF, q(bb(desc(text)))));
-        exec.wdw().until(visibilityOfElementLocated(by(desc(text))));
+        waitForVisibilityOf(desc(text));
     }
 
     public final void waitSelected(final String locator) {
@@ -1280,14 +1276,16 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     @Override
     public final void waitThenClickOnButton(final String text) {
 
-        waitForButton(text);
-        clickOnButton(text);
+        final String locator = button(text);
+        waitForVisibilityOf(locator);
+        clickOn(false, locator);
     }
 
     public final void waitThenClickOnText(final String text) {
 
-        waitForText(text);
-        clickOnText(text);
+        final String locator = text(text);
+        waitForVisibilityOf(locator);
+        clickOn(false, locator);
     }
 
     public final WebElement waitThenFind(final String locator) {
