@@ -16,5 +16,4 @@ public record G() {
     public static final String GRIDS = s(GR, I, DS);
     public static final String GROUND = s(GR, OU, ND);
     public static final String GROUP = s(GR, O, UP);
-    public static final String GROUPS = s(GROUP, S);
 }

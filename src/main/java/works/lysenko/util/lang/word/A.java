@@ -10,13 +10,6 @@ import static works.lysenko.util.spec.Symbols.*;
 @SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "WeakerAccess"})
 public record A() {
 
-    public static final String ABOUT = s(AB, OUT);
-    public static final String ABSENCE = s(ABSE, N, CE);
-    public static final String ACCORDINGLY = s(ACCO, RD, ING, LY);
-    public static final String ADDING = s(ADD, ING);
-    public static final String ASSUME = s(AS, SU, ME);
-    public static final String ASSUMED = s(ASSUME, D);
-
     public static final String ABOVE = s(AB, O, VE);
     public static final String ACTIVITY = s(AC, TI, VI, TY);
     public static final String ABSENT = s(ABSE, NT);

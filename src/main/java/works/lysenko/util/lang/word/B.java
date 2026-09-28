@@ -24,6 +24,4 @@ public record B() {
     public static final String BUILDING = s(BU, IL, DI, NG);
     public static final String BUNDLE = s(BU, ND, LE);
     public static final String BUTTON = s(BU, TT, ON);
-    public static final String BUTTONS = s(BUTTON, S);
-    public static final String BUTTON_WITH_TEXT = b(c(BUTTON), WITH, c(TEXT));
 }

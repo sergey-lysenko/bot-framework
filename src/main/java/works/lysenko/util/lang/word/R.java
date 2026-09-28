@@ -19,11 +19,6 @@ public record R() {
     public static final String RATIO = s(RA, T, IO);
     public static final String REACHABLE = s(RE, ACH, A, BLE);
     public static final String REACHED = s(RE, ACH, ED);
-    public static final String READER = s(RE, AD, ER);
-    public static final String REDEEMING = s(REDE, EM, ING);
-    public static final String REFRESH = s(RE, FR, E, SH);
-    public static final String REMOVAL = s(REMO, VAL);
-    public static final String RULES = s(RULE, S);
     public static final String READING = s(READ, ING);
     public static final String REARRANGING = s(RE, ARRA, NG, ING);
     public static final String RECALCULATE = s(RE, CA, LC, UL, AT, E);

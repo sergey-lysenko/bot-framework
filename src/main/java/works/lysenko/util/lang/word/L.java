@@ -11,8 +11,6 @@ public record L() {
 
     public static final String LAUNCHER = s(LA, UN, CHER);
     public static final String LAYOUT = s(LAY, OUT);
-    public static final String LAYOUTS = s(LAYOUT, S);
-    public static final String LENGTH = s(LE, NG, TH);
     public static final String LEVEL = s(LE, V, EL);
     public static final String LINEAR = s(LI, NE, AR);
     public static final String LINES = s(LINE, S);

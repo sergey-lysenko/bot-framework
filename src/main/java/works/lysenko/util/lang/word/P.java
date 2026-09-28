@@ -18,7 +18,6 @@ public record P() {
     public static final String PARSE = s(PA, R, SE);
     public static final String PARSER = s(PARSE, R);
     public static final String PARTIAL = s(PART, IAL);
-    public static final String PARTS = s(PART, S);
     public static final String PASSED = s(PASS, ED);
     public static final String PATHS = s(PATH, S);
     public static final String PAUSE = s(PA, U, SE);

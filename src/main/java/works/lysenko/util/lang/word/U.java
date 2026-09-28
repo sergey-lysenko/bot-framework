@@ -18,7 +18,6 @@ public record U() {
     public static final String ULTIMATE = s(UL, TI, MA, TE);
     public static final String UNABLE = s(UN, ABLE);
     public static final String UNCAUGHT = s(UN, CA, UGHT);
-    public static final String UNCENTERED = s(UN, CENTERED);
     public static final String UNCHANGED = s(UN, CHAN, GED);
     public static final String UNDEFINED = s(UN, DEFINED);
     public static final String UNEXPECTED = s(UN, EXPECTED);
@@ -35,5 +34,4 @@ public record U() {
     public static final String USERS = s(USER, S);
     public static final String USING = s(US, ING);
     public static final String UPDATING = s(UPDA, TING);
-    public static final String UNIVERSITY = s(UN, IV, ER, SI, TY);
 }
