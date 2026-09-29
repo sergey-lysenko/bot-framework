@@ -19,6 +19,8 @@ import works.lysenko.util.spec.Level;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 import static java.util.Objects.isNull;
 import static works.lysenko.Base.log;
@@ -145,17 +147,72 @@ public class Driver implements _Driver {
      * Creates a service for executing automation.
      * This method initialises the AppiumDriverLocalService with necessary configurations.
      */
+    private static final String ANDROID_HOME = "ANDROID_HOME";
+    private static final String ANDROID_SDK_ROOT = "ANDROID_SDK_ROOT";
+
     private void createService() {
 
         log(Level.none, b(c(CREATING), c(APPIUM), c(SERVICE), DOTS), true);
-        // Configures service with verbose or warning logging
-        if (Debug.adebug)
-            service =
-                    new AppiumServiceBuilder().withArgument(() -> __BASE_PATH, WD_HUB).withLogFile(new File(APPIUM_LOG)).build();
-        else
-            service = new AppiumServiceBuilder().withArgument(() -> __BASE_PATH, WD_HUB).withArgument(() -> s(_DASH_, _DASH_
-                    , LOG, _DASH_, LEVEL), WARN).withLogFile(new File(APPIUM_LOG)).build();
+        final AppiumServiceBuilder builder = new AppiumServiceBuilder()
+                .withArgument(() -> __BASE_PATH, WD_HUB)
+                .withLogFile(new File(APPIUM_LOG));
+        if (!Debug.adebug) {
+            builder.withArgument(() -> s(_DASH_, _DASH_, LOG, _DASH_, LEVEL), WARN);
+        }
+        configureAndroidSdk(builder);
+        service = builder.build();
+    }
 
+    /**
+     * Ensures that valid ANDROID_HOME and ANDROID_SDK_ROOT environment variables are supplied to the
+     * Appium service builder if the current system environment is missing or pointing to a non-existent path.
+     *
+     * @param builder the Appium service builder to configure
+     */
+    private static void configureAndroidSdk(final AppiumServiceBuilder builder) {
+
+        final String envHome = System.getenv(ANDROID_HOME);
+        final String envRoot = System.getenv(ANDROID_SDK_ROOT);
+        final boolean homeValid = isValidSdkDir(envHome);
+        final boolean rootValid = isValidSdkDir(envRoot);
+
+        if (homeValid && rootValid) return;
+
+        final String validSdk = resolveValidAndroidSdk(envHome, envRoot);
+        if (isNotNull(validSdk)) {
+            final Map<String, String> env = new HashMap<>(2);
+            env.put(ANDROID_HOME, validSdk);
+            env.put(ANDROID_SDK_ROOT, validSdk);
+            builder.withEnvironment(env);
+        }
+    }
+
+    private static String resolveValidAndroidSdk(final String envHome, final String envRoot) {
+
+        if (isValidSdkDir(envHome)) return envHome;
+        if (isValidSdkDir(envRoot)) return envRoot;
+
+        final String userHome = System.getProperty("user.home");
+        final String localAppData = System.getenv("LOCALAPPDATA");
+        final String[] candidates = {
+                (isNotNull(userHome)) ? userHome + "/Library/Android/sdk" : null,
+                (isNotNull(userHome)) ? userHome + "/Android/Sdk" : null,
+                (isNotNull(userHome)) ? userHome + "/sdk" : null,
+                (isNotNull(localAppData)) ? localAppData + "\\Android\\Sdk" : null,
+                "/opt/android-sdk",
+                "/usr/local/share/android-sdk"
+        };
+        for (final String candidate : candidates) {
+            if (isValidSdkDir(candidate)) return candidate;
+        }
+        return null;
+    }
+
+    private static boolean isValidSdkDir(final String path) {
+
+        if (isNull(path) || path.isBlank()) return false;
+        final File dir = new File(path);
+        return dir.isDirectory() && (new File(dir, "platform-tools").isDirectory() || new File(dir, "platforms").isDirectory());
     }
 
     /**
