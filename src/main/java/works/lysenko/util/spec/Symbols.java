@@ -116,5 +116,8 @@ public record Symbols() {
     public static final char FOR_ALL = booleansToChar(false, false, false, false, false, false, false, false, false, true,
             false, false, false, true, false, false); // '∀'
 
+    public static final char SPARKLES = booleansToChar(false, false, false, true, false, true, false, false, true, true,
+            true, false, false, true, false, false); // '✨'
+
     public static final char DATA_POINT = FAT_BUL;
 }
