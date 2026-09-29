@@ -165,7 +165,7 @@ public record Collector() {
      * @param a array of objects
      * @return a random element from an array of objects
      */
-    public static Object selectOneOf(final Object[] a) {
+    public static <T> T selectOneOf(final T[] a) {
 
         return a[new SecureRandom().nextInt(Array.getLength(a))];
     }
@@ -177,9 +177,10 @@ public record Collector() {
      * @param collection of objects
      * @return a random object from a set of objects
      */
-    public static <T> Object selectOneOf(final Collection<T> collection) {
+    @SuppressWarnings("unchecked")
+    public static <T> T selectOneOf(final Collection<T> collection) {
 
-        return collection.toArray()[new SecureRandom().nextInt(collection.size())];
+        return (T) collection.toArray()[new SecureRandom().nextInt(collection.size())];
     }
 
     /**
