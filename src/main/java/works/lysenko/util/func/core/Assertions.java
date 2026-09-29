@@ -335,6 +335,16 @@ public record Assertions() {
     }
 
     /**
+     * @param errorMessage reason of failure
+     * @param problem      specific problem or diagnosis
+     */
+    public static void fail(final String errorMessage, final String problem) {
+
+        assertLog(b(c(FAILING), DUE_TO, q(errorMessage)));
+        failAssertion(errorMessage, problem);
+    }
+
+    /**
      * Fails an assertion by constructing and logging a message based on the provided parameters.
      * If assertions are enabled, throws an AssertionError with the constructed message.
      *

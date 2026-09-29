@@ -20,6 +20,9 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.HashMap;
+import java.net.ServerSocket;
+import java.nio.file.Files;
+import java.util.List;
 import java.util.Map;
 
 import static java.util.Objects.isNull;
@@ -149,6 +152,7 @@ public class Driver implements _Driver {
      */
     private static final String ANDROID_HOME = "ANDROID_HOME";
     private static final String ANDROID_SDK_ROOT = "ANDROID_SDK_ROOT";
+    private static final int DEFAULT_APPIUM_PORT = 4723;
 
     private void createService() {
 
@@ -159,8 +163,22 @@ public class Driver implements _Driver {
         if (!Debug.adebug) {
             builder.withArgument(() -> s(_DASH_, _DASH_, LOG, _DASH_, LEVEL), WARN);
         }
+        if (!isPortAvailable(DEFAULT_APPIUM_PORT)) {
+            log(Level.none, "Default Appium port 4723 is already in use; selecting an available free port ...", true);
+            builder.usingAnyFreePort();
+        }
         configureAndroidSdk(builder);
         service = builder.build();
+    }
+
+    private static boolean isPortAvailable(final int port) {
+
+        try (final ServerSocket socket = new ServerSocket(port)) {
+            socket.setReuseAddress(true);
+            return true;
+        } catch (final IOException ignored) {
+            return false;
+        }
     }
 
     /**
@@ -239,10 +257,64 @@ public class Driver implements _Driver {
         // Instantiates Android driver; fails on session creation error
         try {
             wd = new AndroidDriver(service().getUrl(), capabilities);
-        } catch (final SessionNotCreatedException e) {
+        } catch (final Exception e) {
             e.printStackTrace();
-            fail(b(UNABLE_TO, INSTANTIATE, c(APPIUM), c(DRIVER)));
+            final String diagnosis = diagnoseAppiumFailure(e);
+            fail(b(UNABLE_TO, INSTANTIATE, c(APPIUM), c(DRIVER)), diagnosis);
         }
+    }
+
+    /**
+     * Inspects the exception and the Appium server log to provide meaningful diagnostic feedback.
+     *
+     * @param e the exception thrown during driver creation
+     * @return a diagnostic message explaining the root cause
+     */
+    private static String diagnoseAppiumFailure(final Exception e) {
+
+        final File logFile = new File(APPIUM_LOG);
+        if (logFile.exists() && logFile.length() > 0) {
+            try {
+                final List<String> lines = Files.readAllLines(logFile.toPath());
+                for (int i = lines.size() - 1; i >= 0; i--) {
+                    final String line = lines.get(i).trim();
+                    if (line.contains("EADDRINUSE") || line.contains("address already in use")) {
+                        final int idx = line.indexOf("listen EADDRINUSE");
+                        return (idx >= 0) ? line.substring(idx) : "Port conflict: port 4723 is already in use (EADDRINUSE)";
+                    }
+                    if (line.contains("The Android SDK root folder") && line.contains("does not exist")) {
+                        return "Android SDK root folder does not exist: check ANDROID_HOME / ANDROID_SDK_ROOT";
+                    }
+                    if (line.contains("Could not find a connected Android device")) {
+                        return "No connected Android device/emulator found. Ensure the emulator is running ('adb devices')";
+                    }
+                    if (line.contains("Original error:")) {
+                        return line.substring(line.indexOf("Original error:"));
+                    }
+                }
+            } catch (final Exception ignored) {
+                // fallback to exception analysis
+            }
+        }
+
+        Throwable cause = e;
+        while (isNotNull(cause)) {
+            final String msg = cause.getMessage();
+            if (isNotNull(msg)) {
+                if (msg.contains("EADDRINUSE") || msg.contains("address already in use")) {
+                    return "Port conflict (EADDRINUSE): another Appium instance or process is using this port";
+                }
+                if (msg.contains("The Android SDK root folder") && msg.contains("does not exist")) {
+                    return "Android SDK folder does not exist: check ANDROID_HOME / ANDROID_SDK_ROOT";
+                }
+                if (msg.contains("HTTP/1.1 header parser received no bytes")) {
+                    return "Appium server closed the connection unexpectedly (see " + APPIUM_LOG + ")";
+                }
+            }
+            cause = cause.getCause();
+        }
+
+        return (isNotNull(e.getMessage())) ? e.getMessage() : "Unknown driver instantiation error";
     }
 
     /**
