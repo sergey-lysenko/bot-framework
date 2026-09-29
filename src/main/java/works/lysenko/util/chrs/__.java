@@ -90,6 +90,7 @@ public record __() {
     public static final String GR = "gr"; //NON-NLS
     public static final String GS = "gs"; //NON-NLS
     public static final String GU = "gu"; //NON-NLS
+    public static final String GY = "gy"; //NON-NLS
     public static final String HA = "ha"; //NON-NLS
     public static final String HE = "he"; //NON-NLS
     public static final String HI = "hi"; //NON-NLS
