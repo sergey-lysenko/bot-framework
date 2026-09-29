@@ -9,6 +9,7 @@ import org.openqa.selenium.interactions.Actions;
 import works.lysenko.Base;
 import works.lysenko.util.Constants;
 import works.lysenko.util.apis.common.*;
+import works.lysenko.util.apis.data._DataStorage;
 import works.lysenko.util.apis.exception.unchecked.BotRuntimeException;
 import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.data.records.KeyValue;
@@ -133,11 +134,18 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         WaitsForWebElements, WritesLog, Runs {
 
     /**
-     * An instance of the DataStorage class.
-     * Represents a data object that can be used to store, manipulate, or interact with specific
+     * An instance of the Data class.
+     * Represents a persistent test data object that can be used to store, manipulate, or interact with specific
      * types of information required by the application.
      */
     public Data data = new Data();
+
+    /**
+     * An instance of the Session class.
+     * Represents a session-scoped (transient) test data object that can be used to store, manipulate,
+     * or interact with information for the current test run without persisting it across runs.
+     */
+    public Session session = new Session();
 
     /**
      * Generates a UUID (Universally Unique Identifier) as a string.
@@ -1383,8 +1391,18 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
      * It also provides additional utility methods to validate the presence of keys
      * and search for keys or values within the data storage.
      */
+    /**
+     * Abstract base class for test data storage accessors (both persistent and session-scoped).
+     * Provides typed querying, updating, and manipulating methods.
+     */
     @SuppressWarnings("PublicInnerClass")
-    public final class Data implements OperatesOnTestData {
+    public abstract class Storage implements OperatesOnTestData {
+
+        protected abstract _DataStorage storage();
+
+        protected abstract String prefix();
+
+        protected abstract boolean takeSnapshots();
 
         public boolean containsKey(final Object field) {
 
@@ -1393,9 +1411,9 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
 
         public boolean containsKey(final Object field, final boolean silent) {
 
-            final boolean containsKey = exec.dataContainsKey(field);
+            final boolean containsKey = storage().containsKey(field);
             if (!silent)
-                logDebug(b(s(c(D), _DOT_, CONTAINS, c(KEY), e(ROUND, bb(field)), e(s(RGT_DAR)), yb(containsKey))), true);
+                logDebug(b(s(prefix(), _DOT_, CONTAINS, c(KEY), e(ROUND, bb(field)), e(s(RGT_DAR)), yb(containsKey))), true);
             return containsKey;
         }
 
@@ -1403,28 +1421,28 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
 
             boolean containsKeys = true;
             for (final Object o : fields)
-                if (!exec.dataContainsKey(o)) containsKeys = false;
-            logDebug(b(s(CONTAINS, c(KEYS), e(ROUND, bb(Arrays.toString(fields))), e(s(RGT_DAR)), yb(containsKeys)),
+                if (!storage().containsKey(o)) containsKeys = false;
+            logDebug(b(s(prefix(), _DOT_, CONTAINS, c(KEYS), e(ROUND, bb(Arrays.toString(fields))), e(s(RGT_DAR)), yb(containsKeys)),
                     gray(Stacktrace.getShort(Thread.currentThread().getStackTrace()))));
             return containsKeys;
         }
 
         public Set<Object> filterKeys(final Set<Object> keys, final Object value) {
 
-            return exec.getDataStorage().filterKeys(keys, value);
+            return storage().filterKeys(keys, value);
         }
 
         public Object get(final Object field) {
 
             verifyPresence(field);
-            final Object o = exec.dataGet(field);
+            final Object o = storage().get(field);
             if (isDebug()) getLog(field, o);
             return o;
         }
 
         public Object get(final Object field, final Object def) {
 
-            final Object o = exec.dataGetOrDefault(field, def);
+            final Object o = storage().getOrDefault(field, def);
             if (isDebug()) getLog(field, o);
             return o;
         }
@@ -1437,7 +1455,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         public Boolean getBoolean(final Object field) {
 
             verifyPresence(field);
-            final Boolean o = Boolean.valueOf((String) exec.dataGet(field));
+            final Boolean o = Boolean.valueOf((String) storage().get(field));
             if (isDebug()) getLog(field, o);
             return o;
         }
@@ -1455,7 +1473,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         public int getInteger(final Object field, final boolean silent) {
 
             verifyPresence(field);
-            final int o = Integer.parseInt((String) exec.dataGet(field));
+            final int o = Integer.parseInt((String) storage().get(field));
             if (isDebug() && !silent) getLog(field, o);
             return o;
         }
@@ -1473,7 +1491,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         public long getLong(final Object field, final boolean silent) {
 
             verifyPresence(field);
-            final long o = Long.parseLong((String) exec.dataGet(field));
+            final long o = Long.parseLong((String) storage().get(field));
             if (isDebug() && !silent) getLog(field, o);
             return o;
         }
@@ -1483,11 +1501,10 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return getString(field, false);
         }
 
-        @Override
         public String getString(final Object field, final boolean silent) {
 
             verifyPresence(field);
-            final String o = (String) exec.dataGet(field);
+            final String o = (String) storage().get(field);
             if (isDebug() && !silent) getLog(field, o);
             return o;
         }
@@ -1499,7 +1516,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
 
         public String getString(final Object field, final String def, final boolean silent) {
 
-            final String o = (String) exec.dataGetOrDefault(field, def);
+            final String o = (String) storage().getOrDefault(field, def);
             if (isDebug() && !silent) getLog(field, o);
             return o;
         }
@@ -1507,12 +1524,13 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         @SuppressWarnings("CallToSuspiciousStringMethod")
         public void put(final Object field, final Object value) {
 
-            final Object o = exec.dataPut(field, value);
+            final Object o = storage().put(field, value);
             if (isDebug()) {
                 final String info = ((null == o) || (null == value) || !o.toString().equals(value.toString())) ? s(gb(value)
                         , RHT_ARR, rc(o)) : yb(o);
-                log(Level.debug, b(sn(c(D), _DOT_, PUT, e(ROUND, bb(field)), e(s(RGT_DAR)), e(SQUARE, info))), true);
-                writeDataSnapshot(PUT, Stacktrace.getShort(Thread.currentThread().getStackTrace()), field, value);
+                log(Level.debug, b(sn(prefix(), _DOT_, PUT, e(ROUND, bb(field)), e(s(RGT_DAR)), e(SQUARE, info))), true);
+                if (takeSnapshots())
+                    writeDataSnapshot(PUT, Stacktrace.getShort(Thread.currentThread().getStackTrace()), field, value);
             }
         }
 
@@ -1524,34 +1542,43 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         public void remove(final Object field, final boolean nonOptional) {
 
             if (nonOptional) verifyPresence(field);
-            logDebug(b(s(REMOVE, e(ROUND, rc(field)))), true);
-            if (exec.dataRemove(field))
+            logDebug(b(s(prefix(), _DOT_, REMOVE, e(ROUND, rc(field)))), true);
+            final Object before = storage().remove(field);
+            if (takeSnapshots() && isNotNull(before) && null == storage().get(field))
                 writeDataSnapshot(REMOVE, Stacktrace.getShort(Thread.currentThread().getStackTrace()), field);
         }
 
         public boolean removeValue(final Object value) {
 
-            final boolean result;
-            result = exec.dataRemoveValue(value);
-            if (result) logDebug(b(s(REMOVE, c(VALUE), e(ROUND, rc(value)))), true);
+            final Object keyToDelete;
+            boolean result = false;
+            for (final Map.Entry<Object, Object> entry : storage().entrySet())
+                if (entry.getValue().equals(value)) {
+                    keyToDelete = entry.getKey();
+                    storage().remove(keyToDelete);
+                    result = true;
+                    break;
+                }
+            if (result) logDebug(b(s(prefix(), _DOT_, REMOVE, c(VALUE), e(ROUND, rc(value)))), true);
             else logDebug(b(VALUE, q(s(value)), WAS, NOT, REMOVED));
-            writeDataSnapshot(s(REMOVE, c(VALUE)), Stacktrace.getShort(Thread.currentThread().getStackTrace()), s(value));
+            if (takeSnapshots())
+                writeDataSnapshot(s(REMOVE, c(VALUE)), Stacktrace.getShort(Thread.currentThread().getStackTrace()), s(value));
             return result;
         }
 
         public String searchKeyByValue(final String value) {
 
-            return exec.getDataStorage().searchKeyByValue(value);
+            return storage().searchKeyByValue(value);
         }
 
         public Set<String> searchKeys(final String... substrings) {
 
-            return exec.getDataStorage().searchKeys(substrings);
+            return storage().searchKeys(substrings);
         }
 
         public Set<String> searchKeysByValue(final String value) {
 
-            return exec.getDataStorage().searchKeysByValue(value);
+            return storage().searchKeysByValue(value);
         }
 
         public void tick(final String user, final String name) {
@@ -1560,25 +1587,64 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             tick(d(user, name));
         }
 
-        /**
-         * Increments the integer value associated with a specific key in the data storage by 1.
-         * If the key does not exist, initialise it with a value of 0 before incrementing.
-         *
-         * @param name the name of the key to be incremented
-         */
         private void tick(final String name) {
 
             put(s(_DASH_, name), getInteger(s(_DASH_, name), 0) + 1);
         }
 
-        /**
-         * Verifies the presence of a given field in the data storage and fails execution in case of its absence.
-         *
-         * @param field the field to verify the presence of
-         */
         private void verifyPresence(final Object field) {
 
             if (!containsKey(field, true)) fail(b(d(c(s(N, ON)), OPTIONAL), KEY, q(s(field)), VALUE, NOT, FOUND));
+        }
+    }
+
+    /**
+     * The Data class provides methods to interact with the persistent test data storage.
+     */
+    @SuppressWarnings("PublicInnerClass")
+    public final class Data extends Storage {
+
+        @Override
+        protected _DataStorage storage() {
+
+            return exec.getDataStorage();
+        }
+
+        @Override
+        protected String prefix() {
+
+            return c(D);
+        }
+
+        @Override
+        protected boolean takeSnapshots() {
+
+            return true;
+        }
+    }
+
+    /**
+     * The Session class provides methods to interact with the session-scoped (transient) test data storage.
+     */
+    @SuppressWarnings("PublicInnerClass")
+    public final class Session extends Storage {
+
+        @Override
+        protected _DataStorage storage() {
+
+            return exec.getSessionStorage();
+        }
+
+        @Override
+        protected String prefix() {
+
+            return c(S);
+        }
+
+        @Override
+        protected boolean takeSnapshots() {
+
+            return false;
         }
     }
 }

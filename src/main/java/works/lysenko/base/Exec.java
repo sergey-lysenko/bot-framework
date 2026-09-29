@@ -23,6 +23,7 @@ import static java.util.Objects.isNull;
 import static works.lysenko.Base.core;
 import static works.lysenko.util.chrs.__.UI;
 import static works.lysenko.util.chrs.___.DOTS;
+import static works.lysenko.util.lang.word.S.SESSION;
 import static works.lysenko.util.chrs.___.JAR;
 import static works.lysenko.util.chrs.____.*;
 import static works.lysenko.util.data.enums.Ansi.MAGENTA_BOLD_BRIGHT;
@@ -60,6 +61,7 @@ public final class Exec extends Root implements _TestData, _Executes {
     private Boolean isDebug = null;
 
     private _DataStorage dataStorage = null;
+    private _DataStorage sessionStorage = null;
     private _Scaler scaler = null;
     private _Driver driver = null;
     private _Issues issues = null;
@@ -179,6 +181,11 @@ public final class Exec extends Root implements _TestData, _Executes {
         return dataStorage;
     }
 
+    public _DataStorage getSessionStorage() {
+
+        return sessionStorage;
+    }
+
     /**
      * Retrieves the Scaler instance.
      *
@@ -275,6 +282,9 @@ public final class Exec extends Root implements _TestData, _Executes {
 
         log(Level.none, b(c(CREATING), c(TEST), c(DATA), c(STORAGE), DOTS), true);
         dataStorage = new DataStorage();
+
+        log(Level.none, b(c(CREATING), c(SESSION), c(DATA), c(STORAGE), DOTS), true);
+        sessionStorage = new DataStorage(false);
 
         log(Level.none, b(c(CREATING), c(TEST), c(SCENARIOS), c(STORAGE), DOTS), true);
         scenarios = new Scenarios();

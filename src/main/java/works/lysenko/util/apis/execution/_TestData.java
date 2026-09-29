@@ -64,6 +64,13 @@ public interface _TestData {
     _DataStorage getDataStorage();
 
     /**
+     * Retrieves the session data storage object.
+     *
+     * @return the session data storage object
+     */
+    _DataStorage getSessionStorage();
+
+    /**
      * @param comments to describe data
      * @return string representation of the data
      */

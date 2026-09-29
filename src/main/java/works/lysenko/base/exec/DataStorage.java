@@ -64,14 +64,23 @@ public final class DataStorage extends Properties implements _DataStorage {
     @SuppressWarnings({"OverlyBroadCatchBlock", "ThrowInsideCatchBlockWhichIgnoresCaughtException"})
     public DataStorage() {
 
-        path = s(VAR_, parameters.getPool(), _DATA_PROPERTIES);
-        if (Persist.data && new File(path).exists())
-            try (final FileInputStream stream = new FileInputStream(path); final InputStreamReader reader =
-                    new InputStreamReader(stream, StandardCharsets.UTF_8)) {
-                load(reader); // Load properties using InputStreamReader with UTF-8
-            } catch (final IOException e) {
-                throw new IllegalArgumentException(s(b(UNABLE_TO_LOAD, DATA, FROM), q(path)));
-            }
+        this(true);
+    }
+
+    public DataStorage(final boolean persist) {
+
+        if (persist) {
+            path = s(VAR_, parameters.getPool(), _DATA_PROPERTIES);
+            if (Persist.data && new File(path).exists())
+                try (final FileInputStream stream = new FileInputStream(path); final InputStreamReader reader =
+                        new InputStreamReader(stream, StandardCharsets.UTF_8)) {
+                    load(reader); // Load properties using InputStreamReader with UTF-8
+                } catch (final IOException e) {
+                    throw new IllegalArgumentException(s(b(UNABLE_TO_LOAD, DATA, FROM), q(path)));
+                }
+        } else {
+            path = null;
+        }
     }
 
     private static String getChangeDescriptor(final String name, final String comments, final Object... values) {
@@ -208,7 +217,7 @@ public final class DataStorage extends Properties implements _DataStorage {
             "ResultOfMethodCallIgnored"})
     private void store() {
 
-        if (isNotNull(exec)) {
+        if (isNotNull(exec) && isNotNull(path)) {
             if (Persist.data) {
                 new File(path).getParentFile().mkdirs(); // Create parent directory
                 try (final FileOutputStream stream = new FileOutputStream(path)) {
