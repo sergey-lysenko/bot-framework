@@ -84,7 +84,7 @@ public class ScaledProperties implements _ScaledProperties {
      */
     private static Fraction getAspect() {
 
-        return exec.getScaler().getCurrent();
+        return isNull(exec) ? Fraction.ONE : exec.getScaler().getCurrent();
     }
 
     /**
@@ -94,7 +94,7 @@ public class ScaledProperties implements _ScaledProperties {
      */
     private static Fraction getCompensation() {
 
-        return exec.getScaler().getCompensation();
+        return isNull(exec) ? Fraction.ONE : exec.getScaler().getCompensation();
     }
 
     @SuppressWarnings({"CallToSuspiciousStringMethod", "MethodWithMultipleReturnPoints"})
@@ -171,7 +171,7 @@ public class ScaledProperties implements _ScaledProperties {
 
     public final String getAspectString() {
 
-        return ts(getAspect(), false);
+        return isNull(exec) ? EMPTY : ts(getAspect(), false);
     }
 
     @Override

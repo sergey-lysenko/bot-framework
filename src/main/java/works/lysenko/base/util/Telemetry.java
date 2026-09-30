@@ -108,7 +108,8 @@ public record Telemetry(Data data, String rendered) {
         final long max = env.maxMemory();
         final long totalM = env.totalMemory();
         final long our = Routines.msSinceStart();
-        final double spent = ((getSpentTime() / 10.0) / our);
+        final double rawSpent = (0 < our) ? ((getSpentTime() / 10.0) / our) : 0.0;
+        final double spent = (our < 1000 || rawSpent > (cores * 100.0)) ? 0.0 : rawSpent;
         final int timeShift = (int) (our - time);
         final long runTime = System.nanoTime() - start;
         return new Data(time, cores, threads, spent, load, unload, totalC, free, totalM, max, timeShift, runTime, comment);

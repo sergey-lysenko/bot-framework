@@ -205,7 +205,7 @@ public class Test implements _Test {
 
         if (!core.getResults().areFailingEvents()) {
             try {
-                while (!core.getStopFlag() && isNotExhausted() && !wasStopRequestedAndPerformed())
+                while (!core.getStopFlag() && !core.getResults().areFailingEvents() && isNotExhausted() && !wasStopRequestedAndPerformed())
                     repeater.run();
             } catch (final Error e) { // Failed assertions, no rethrow
                 _Test.printThrowable(e);

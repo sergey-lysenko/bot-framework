@@ -2,6 +2,12 @@ package works.lysenko.base;
 
 import org.openqa.selenium.WebDriver;
 import works.lysenko.base.core.Routines;
+import works.lysenko.base.output.PostProcessor;
+import java.awt.GraphicsEnvironment;
+import java.io.File;
+import static works.lysenko.util.spec.Layout.Files.name;
+import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_;
+import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_HTML_;
 import works.lysenko.base.ui.Directory;
 import works.lysenko.base.ui.UserInterface;
 import works.lysenko.tree.Root;
@@ -248,6 +254,10 @@ public final class Core extends Root implements _Core, _Tests {
         log(Level.none, b(c(CLOSING), LOG, AND, TELEMETRY, s(WRITER, S)), false);
         Routines.closeQuietly(logger.getLogWriter(), "Unable to close log writer"); //NON-NLS
         Routines.closeQuietly(logger.getTelemetryWriter(), "Unable to close telemetry writer"); //NON-NLS
+        final boolean shouldOpenBrowser = !GraphicsEnvironment.isHeadless() && !Routines.isInsideCI() && !Routines.isInsideDocker();
+        final File logFile = new File(name(RUN_LOG_));
+        final File htmlFile = new File(name(RUN_LOG_HTML_));
+        PostProcessor.launchDetached(logFile, htmlFile, shouldOpenBrowser);
         processCode(results.getFailures().isEmpty() ? SUCCESS : EXECUTION_FAILURE);
     }
 

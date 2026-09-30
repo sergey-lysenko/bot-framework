@@ -718,6 +718,18 @@ public record Base() {
     }
 
     /**
+     * Puts a value into a specified field in the execution map with optional suppression of log output.
+     *
+     * @param field  The field where the value will be stored.
+     * @param value  The value to be stored in the field.
+     * @param silent true if the operation should be silent, false otherwise
+     */
+    public static void put(final Object field, final Object value, final boolean silent) {
+
+        exec.data.put(field, value, silent);
+    }
+
+    /**
      * Reads the value from a specified locator.
      *
      * @param locator the locator to read the value from

@@ -10,6 +10,7 @@ import works.lysenko.util.apis.test._Exec;
 import works.lysenko.util.apis.test._Repeater;
 import works.lysenko.util.apis.test._Stat;
 import works.lysenko.util.data.enums.Ansi;
+import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.prop.core.Test;
 import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.spec.Level;
@@ -29,6 +30,7 @@ import static works.lysenko.util.chrs.___.TOO;
 import static works.lysenko.util.chrs.____.*;
 import static works.lysenko.util.data.enums.Ansi.bb;
 import static works.lysenko.util.data.enums.Ansi.gray;
+import static works.lysenko.util.data.enums.Ansi.rb;
 import static works.lysenko.util.data.enums.Ansi.yb;
 import static works.lysenko.util.data.enums.Severity.S0;
 import static works.lysenko.util.data.strs.Bind.b;
@@ -42,7 +44,9 @@ import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.func.data.Percents.percentString;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.lang.word.C.CLOSING;
+import static works.lysenko.util.lang.D.DUE_TO;
 import static works.lysenko.util.lang.word.E.ELEMENT;
+import static works.lysenko.util.lang.word.E.EVENT;
 import static works.lysenko.util.lang.word.E.EXECUTION;
 import static works.lysenko.util.lang.word.H.HISTORY;
 import static works.lysenko.util.lang.word.I.INDEX;
@@ -132,6 +136,7 @@ public class Repeater implements _Repeater {
         time();
         history();
         timeSafeguard();
+        stopIfFailingEvents();
         done = core.getStopFlag();
     }
 
@@ -333,5 +338,18 @@ public class Repeater implements _Repeater {
         final int depth = historyDepth;
         if (size > depth)
             throw new SafeguardException(b(c(SCENARIOS), EXECUTION, HISTORY, TOO, LONG), b(s(size), IS, MORE, THAN, s(depth)));
+    }
+
+    /**
+     * Checks if there are any failing events recorded, and if so, performs stopping of test session during Limbo.
+     */
+    private void stopIfFailingEvents() {
+
+        if (!core.getStopFlag() && core.getResults().areFailingEvents()) {
+            final Severity severity = core.getResults().getGreatestSeverity();
+            final String explanation = (null == severity) ? DOTS : b(DUE_TO, severity.type().getString(), EVENT);
+            log(rb(b(c(STOPPING), explanation)));
+            exec.stopTests();
+        }
     }
 }

@@ -7,6 +7,7 @@ import javax.swing.JPanel;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.Point;
 
 import static java.util.Objects.isNull;
 
@@ -46,7 +47,6 @@ public final class ImagePanel extends JPanel implements _ImagePanel {
         setLayout(null);
     }
 
-
     /**
      * Represents an ImagePanel that extends JPanel and implements _ImagePanel.
      */
@@ -77,6 +77,27 @@ public final class ImagePanel extends JPanel implements _ImagePanel {
         updatePreferredSize();
     }
 
+    public Image getImage() {
+
+        return img;
+    }
+
+    public float getScale() {
+
+        return scale;
+    }
+
+    public Point toImageCoordinates(final int panelX, final int panelY) {
+
+        if (isNull(img) || scale <= 0) return null;
+        final int x = (int) (panelX / scale);
+        final int y = (int) (panelY / scale);
+        if (x >= 0 && x < img.getWidth(null) && y >= 0 && y < img.getHeight(null)) {
+            return new Point(x, y);
+        }
+        return null;
+    }
+
     @SuppressWarnings("NumericCastThatLosesPrecision")
     private void updatePreferredSize() {
 
@@ -86,6 +107,4 @@ public final class ImagePanel extends JPanel implements _ImagePanel {
             setPreferredSize(new Dimension(width, height));
         }
     }
-
-
 }

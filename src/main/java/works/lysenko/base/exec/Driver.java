@@ -87,6 +87,11 @@ public class Driver implements _Driver {
         return wdw;
     }
 
+    public final WebDriverWait wdw(final Duration timeout) {
+
+        return isNotNull(wd) ? new WebDriverWait(wd, timeout) : null;
+    }
+
     public final void service(final AppiumDriverLocalService service) {
 
         this.service = service;

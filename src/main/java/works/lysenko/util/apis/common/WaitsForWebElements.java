@@ -155,6 +155,55 @@ public interface WaitsForWebElements {
      *
      * @param locator string locator of an element to wait for
      */
+    /**
+     * Wait for an element to be not visible, with a specific explicit wait timeout
+     *
+     * @param locator string locator of an element expected to be invisible
+     * @param timeout explicit wait duration
+     * @param ignored dummy parameter to disambiguate from (locator, iwait) overload
+     */
+    void waitForInvisibilityOf(String locator, Duration timeout, boolean ignored);
+
+    /**
+     * Wait for the appearance of the defined element with a custom explicit wait timeout
+     *
+     * @param locator string locator of an element to wait for
+     * @param timeout explicit wait duration
+     */
+    void waitForVisibilityOf(String locator, Duration timeout);
+
+    /**
+     * Wait for the appearance of the defined text with a custom explicit wait timeout
+     *
+     * @param text    text to wait for
+     * @param timeout explicit wait duration
+     */
+    void waitForVisibilityOfText(String text, Duration timeout);
+
+    /**
+     * Wait for the visibility of the button with the defined text with a custom explicit wait timeout
+     *
+     * @param text    the visible text of the button to wait for
+     * @param timeout explicit wait duration
+     */
+    void waitForVisibilityOfButton(String text, Duration timeout);
+
+    /**
+     * Wait for the appearance of the defined text with a custom explicit wait timeout
+     *
+     * @param text    the text to wait for
+     * @param timeout explicit wait duration
+     */
+    void waitForText(String text, Duration timeout);
+
+    /**
+     * Wait for the appearance of the button with the defined text with a custom explicit wait timeout
+     *
+     * @param text    the visible text of the button to wait for
+     * @param timeout explicit wait duration
+     */
+    void waitForButton(String text, Duration timeout);
+
     void waitForVisibilityOf(String locator);
 
     /**

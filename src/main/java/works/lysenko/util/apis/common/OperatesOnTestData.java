@@ -57,6 +57,91 @@ public interface OperatesOnTestData {
      * @param field of test data to be retrieved
      * @return copy of test data
      */
+    /**
+     * Retrieves an object from the common test data container and removes it.
+     *
+     * @param field of test data to retrieve and remove
+     * @return copy of test data
+     */
+    Object extract(Object field);
+
+    /**
+     * Retrieves an object from the common test data container with default value and removes it.
+     *
+     * @param field of test data to retrieve and remove
+     * @param def   default value
+     * @return copy of test data
+     */
+    Object extract(Object field, Object def);
+
+    /**
+     * Retrieves a Boolean from the common test data container and removes it.
+     *
+     * @param field of test data to retrieve and remove
+     * @return Boolean value
+     */
+    Boolean extractBoolean(Object field);
+
+    /**
+     * Retrieves a Boolean from the common test data container with default and removes it.
+     *
+     * @param field of test data to retrieve and remove
+     * @param def   default value
+     * @return Boolean value
+     */
+    Boolean extractBoolean(Object field, Boolean def);
+
+    /**
+     * Retrieves an int from the common test data container and removes it.
+     *
+     * @param field of test data to retrieve and remove
+     * @return int value
+     */
+    int extractInteger(Object field);
+
+    /**
+     * Retrieves an int from the common test data container with default and removes it.
+     *
+     * @param field of test data to retrieve and remove
+     * @param def   default value
+     * @return int value
+     */
+    int extractInteger(Object field, int def);
+
+    /**
+     * Retrieves a long from the common test data container and removes it.
+     *
+     * @param field the field of test data to be retrieved and removed
+     * @return the long value
+     */
+    long extractLong(Object field);
+
+    /**
+     * Retrieves a long from the common test data container with default and removes it.
+     *
+     * @param field the field of test data to be retrieved and removed
+     * @param def   default value
+     * @return the long value
+     */
+    long extractLong(Object field, long def);
+
+    /**
+     * Retrieves a String from the common test data container and removes it.
+     *
+     * @param field the field of test data to be retrieved and removed
+     * @return the String value
+     */
+    String extractString(Object field);
+
+    /**
+     * Retrieves a String from the common test data container with default and removes it.
+     *
+     * @param field the field of test data to be retrieved and removed
+     * @param def   default value
+     * @return the String value
+     */
+    String extractString(Object field, String def);
+
     Object get(Object field);
 
     /**
@@ -188,6 +273,15 @@ public interface OperatesOnTestData {
      * @param value of this field
      */
     void put(Object field, Object value);
+
+    /**
+     * Shortcut for putting a data into the common test data container with optional suppression of log output
+     *
+     * @param field  of test data to be updated
+     * @param value  of this field
+     * @param silent suppress log messages
+     */
+    void put(Object field, Object value, boolean silent);
 
     /**
      * Shortcut for removing a data from the common test data container

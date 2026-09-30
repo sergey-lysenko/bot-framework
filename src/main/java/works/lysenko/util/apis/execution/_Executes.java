@@ -53,6 +53,14 @@ public interface _Executes {
     WebDriverWait wdw();
 
     /**
+     * Retrieves an instance of WebDriverWait with the specified custom timeout.
+     *
+     * @param timeout the explicit wait timeout duration
+     * @return a WebDriverWait instance configured with the specified timeout
+     */
+    WebDriverWait wdw(java.time.Duration timeout);
+
+    /**
      * @return {@code true} if the application is in debug mode, {@code false} otherwise.
      */
     boolean isDebug();

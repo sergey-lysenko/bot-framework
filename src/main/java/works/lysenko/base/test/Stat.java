@@ -11,10 +11,11 @@ import java.util.List;
 
 import static works.lysenko.Base.section;
 import static works.lysenko.base.output.Json.jsonStats;
-import static works.lysenko.base.output.Svg.svgStats;
+import static works.lysenko.base.output.TreeHtml.treeStats;
+import works.lysenko.base.output.LogHtml;
 import static works.lysenko.util.chrs.__.IN;
-import static works.lysenko.util.chrs.___.SVG;
 import static works.lysenko.util.chrs.____.JSON;
+import static works.lysenko.util.lang.word.T.TREE;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.s;
@@ -45,8 +46,9 @@ public class Stat implements _Stat {
         reports.run();
         section(JSON);
         jsonStats();
-        section(SVG);
-        svgStats();
+        section(TREE);
+        treeStats();
+        LogHtml.logStats();
     }
 
     public final List<List<String>> history() {

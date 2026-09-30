@@ -103,8 +103,22 @@ public final class DataStorage extends Properties implements _DataStorage {
      * @param fields   the data fields to include in the snapshot
      * @throws IllegalArgumentException if unable to write the snapshot to file
      */
-    @SuppressWarnings("ThrowInsideCatchBlockWhichIgnoresCaughtException")
     public static void writeDataSnapshot(final String name, final String comments, final Object... fields) {
+
+        writeDataSnapshot(false, name, comments, fields);
+    }
+
+    /**
+     * Writes a data snapshot to a file with optional suppression of log output.
+     *
+     * @param silent   suppress log output if true
+     * @param name     the name of the snapshot (can be null)
+     * @param comments any comments to include in the snapshot
+     * @param fields   the data fields to include in the snapshot
+     * @throws IllegalArgumentException if unable to write the snapshot to file
+     */
+    @SuppressWarnings("ThrowInsideCatchBlockWhichIgnoresCaughtException")
+    public static void writeDataSnapshot(final boolean silent, final String name, final String comments, final Object... fields) {
 
         if (Snapshot.allowed) {
             final String descriptor = getChangeDescriptor(name, comments, fields);
@@ -113,12 +127,27 @@ public final class DataStorage extends Properties implements _DataStorage {
             final Path path = Path.of(getSnapshotPath(DATA_SNAPSHOT_, false, finalName, PROPERTIES));
             try {
                 Files.writeString(path, contents);
-                log(Level.none, gray(b(s(_UP_ARR), c(MADE), q(n(UNNAMED, name)), SNAPSHOT, OF, TEST, DATA, s(_BULLT_),
-                        descriptor)), true);
+                if (!silent)
+                    log(Level.none, gray(b(s(_UP_ARR), c(MADE), q(n(UNNAMED, name)), SNAPSHOT, OF, TEST, DATA, s(_BULLT_),
+                            descriptor)), true);
             } catch (final IOException e) {
                 throw new IllegalArgumentException(b(UNABLE_TO_WRITE, TEST, DATA, SNAPSHOT, TO, q(name)));
             }
         }
+    }
+
+    /**
+     * Writes a data snapshot to a file with optional suppression of log output.
+     *
+     * @param name     the name of the snapshot (can be null)
+     * @param comments any comments to include in the snapshot
+     * @param silent   suppress log output if true
+     * @param fields   the data fields to include in the snapshot
+     * @throws IllegalArgumentException if unable to write the snapshot to file
+     */
+    public static void writeDataSnapshot(final String name, final String comments, final boolean silent, final Object... fields) {
+
+        writeDataSnapshot(silent, name, comments, fields);
     }
 
     @SuppressWarnings("NullableProblems")

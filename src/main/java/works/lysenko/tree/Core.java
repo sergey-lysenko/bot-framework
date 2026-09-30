@@ -230,7 +230,7 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     @SuppressWarnings("WeakerAccess")
     protected boolean areFailingEvents() {
 
-        if (core.getResults().areFailingEvents()) stopTest(core.getResults().getGreatestSeverity());
+        if (!core.getStopFlag() && core.getResults().areFailingEvents()) stopTest(core.getResults().getGreatestSeverity());
         return core.getResults().areFailingEvents();
     }
 

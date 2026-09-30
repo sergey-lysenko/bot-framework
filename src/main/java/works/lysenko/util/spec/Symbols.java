@@ -117,6 +117,11 @@ public record Symbols() {
             false, false, false, true, false, false); // '∀'
     public static final char SPARKLES = booleansToChar(false, false, false, true, false, true, false, false, true, true,
             true, false, false, true, false, false); // '✨'
+    public static final char ELLIPSIS = booleansToChar(false, true, true, false, false, true, false, false, false, false,
+            false, false, false, true); // '…'
+    public static final char CHECKED_BALLOT = booleansToChar(true, false, false, false, true, false, false, false, false, true,
+            true, false, false, true); // '☑'
+
 
 
     public static final char DATA_POINT = FAT_BUL;

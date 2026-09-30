@@ -33,6 +33,14 @@ public interface _Driver {
     WebDriverWait wdw();
 
     /**
+     * Retrieves an instance of WebDriverWait with the specified custom timeout.
+     *
+     * @param timeout the explicit wait timeout duration
+     * @return a WebDriverWait instance configured with the specified timeout
+     */
+    WebDriverWait wdw(java.time.Duration timeout);
+
+    /**
      * Sets the provided AppiumDriverLocalService instance for the implementing class.
      *
      * @param service the AppiumDriverLocalService instance to be set

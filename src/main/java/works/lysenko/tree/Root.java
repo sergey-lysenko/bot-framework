@@ -1213,6 +1213,40 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         waitForVisibilityOfDesc(contentDesc);
     }
 
+    public final void waitForInvisibilityOf(final String locator, final Duration timeout, final boolean ignored) {
+
+        log(b(WAITING_FOR_INVISIBILITY_OF, q(locator), WITH, TIMEOUT, q(s(timeout.toSeconds(), s(S)))));
+        exec.wdw(timeout).until(invisibilityOfElementLocated(by(locator)));
+    }
+
+    public final void waitForVisibilityOf(final String locator, final Duration timeout) {
+
+        log(b(WAITING_FOR_VISIBILITY_OF, q(bb(locator)), WITH, TIMEOUT, q(s(timeout.toSeconds(), s(S)))));
+        exec.wdw(timeout).until(visibilityOfElementLocated(by(locator)));
+    }
+
+    public final void waitForVisibilityOfText(final String text, final Duration timeout) {
+
+        waitForVisibilityOf(text(text), timeout);
+    }
+
+    @Override
+    public final void waitForVisibilityOfButton(final String text, final Duration timeout) {
+
+        waitForVisibilityOf(button(text), timeout);
+    }
+
+    @Override
+    public final void waitForButton(final String text, final Duration timeout) {
+
+        waitForVisibilityOfButton(text, timeout);
+    }
+
+    public final void waitForText(final String text, final Duration timeout) {
+
+        waitForVisibilityOfText(text, timeout);
+    }
+
     public final void waitForVisibilityOf(final String locator) {
 
         log(b(WAITING_FOR_VISIBILITY_OF, q(bb(locator))));
@@ -1432,6 +1466,76 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return storage().filterKeys(keys, value);
         }
 
+        public Object extract(final Object field) {
+
+            final Object o = get(field);
+            remove(field);
+            return o;
+        }
+
+        public Object extract(final Object field, final Object def) {
+
+            final Object o = get(field, def);
+            remove(field);
+            return o;
+        }
+
+        public Boolean extractBoolean(final Object field) {
+
+            final Boolean o = getBoolean(field);
+            remove(field);
+            return o;
+        }
+
+        public Boolean extractBoolean(final Object field, final Boolean def) {
+
+            final Boolean o = getBoolean(field, def);
+            remove(field);
+            return o;
+        }
+
+        public int extractInteger(final Object field) {
+
+            final int o = getInteger(field);
+            remove(field);
+            return o;
+        }
+
+        public int extractInteger(final Object field, final int def) {
+
+            final int o = getInteger(field, def);
+            remove(field);
+            return o;
+        }
+
+        public long extractLong(final Object field) {
+
+            final long o = getLong(field);
+            remove(field);
+            return o;
+        }
+
+        public long extractLong(final Object field, final long def) {
+
+            final long o = getLong(field, def);
+            remove(field);
+            return o;
+        }
+
+        public String extractString(final Object field) {
+
+            final String o = getString(field);
+            remove(field);
+            return o;
+        }
+
+        public String extractString(final Object field, final String def) {
+
+            final String o = getString(field, def);
+            remove(field);
+            return o;
+        }
+
         public Object get(final Object field) {
 
             verifyPresence(field);
@@ -1521,16 +1625,23 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
-        @SuppressWarnings("CallToSuspiciousStringMethod")
         public void put(final Object field, final Object value) {
+
+            put(field, value, false);
+        }
+
+        @SuppressWarnings("CallToSuspiciousStringMethod")
+        public void put(final Object field, final Object value, final boolean silent) {
 
             final Object o = storage().put(field, value);
             if (isDebug()) {
-                final String info = ((null == o) || (null == value) || !o.toString().equals(value.toString())) ? s(gb(value)
-                        , RHT_ARR, rc(o)) : yb(o);
-                log(Level.debug, b(sn(prefix(), _DOT_, PUT, e(ROUND, bb(field)), e(s(RGT_DAR)), e(SQUARE, info))), true);
+                if (!silent) {
+                    final String info = ((null == o) || (null == value) || !o.toString().equals(value.toString())) ? s(gb(value)
+                            , RHT_ARR, rc(o)) : yb(o);
+                    log(Level.debug, b(sn(prefix(), _DOT_, PUT, e(ROUND, bb(field)), e(s(RGT_DAR)), e(SQUARE, info))), true);
+                }
                 if (takeSnapshots())
-                    writeDataSnapshot(PUT, Stacktrace.getShort(Thread.currentThread().getStackTrace()), field, value);
+                    writeDataSnapshot(silent, PUT, Stacktrace.getShort(Thread.currentThread().getStackTrace()), field, value);
             }
         }
 

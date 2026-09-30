@@ -241,6 +241,11 @@ public final class Exec extends Root implements _TestData, _Executes {
         return isNotNull(driver) ? driver.wdw() : null;
     }
 
+    public WebDriverWait wdw(final java.time.Duration timeout) {
+
+        return isNotNull(driver) ? driver.wdw(timeout) : null;
+    }
+
     /**
      * @return debug state
      */
