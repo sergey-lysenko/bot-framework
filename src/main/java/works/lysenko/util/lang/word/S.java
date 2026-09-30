@@ -22,7 +22,6 @@ public record S() {
     public static final String SCALING = s(SC, AL, ING);
     public static final String SCENARIO = s(SC, EN, AR, IO);
     public static final String SCENARIOS = s(SCENARIO, S);
-    public static final String SCHEDULE = s(SC, HE, DU, LE);
     public static final String SCREEN = s(SC, RE, EN);
     public static final String SCREENSHOT = s(SCREEN, SHOT);
     public static final String SCREENSHOTS = s(SCREENSHOT, S);

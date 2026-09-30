@@ -16,7 +16,6 @@ import java.util.Map;
 
 import static java.util.Objects.isNull;
 import static works.lysenko.Base.*;
-import static works.lysenko.base.output.File.fileScenariosStatistics;
 import static works.lysenko.util.chrs.__.NO;
 import static works.lysenko.util.chrs.__.OF;
 import static works.lysenko.util.chrs.___.HAD;
@@ -184,7 +183,6 @@ record Scenarios() {
         final Map<_Scenario, _Result> scenarioResults = core.getResults().getSorted();
         final Map<String, _Result> aggregatedResults = aggregateResult(scenarioResults);
         consoleScenariosStatistics(total, active, percentage, aggregatedResults);
-        fileScenariosStatistics(total, active, percentage, aggregatedResults);
     }
 
     private static void updateAggregatedResult(final Map<? super String, _Result> aggResults, final _Scenario thisScenario,

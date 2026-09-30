@@ -7,7 +7,6 @@ import java.util.List;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static works.lysenko.Base.*;
-import static works.lysenko.base.output.File.fileNewIssues;
 import static works.lysenko.util.chrs.__.NO;
 import static works.lysenko.util.chrs.___.AND;
 import static works.lysenko.util.chrs.___.NEW;
@@ -51,6 +50,5 @@ record NewIssues() {
 
         final List<_LogRecord> newIssues = exec.issues().latestCopy();
         consoleNewIssues();
-        fileNewIssues(newIssues);
     }
 }

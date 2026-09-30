@@ -170,7 +170,7 @@ public record Routines() {
      */
     @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void starting() {
-
+        BootCapture.start();
         System.out.println(b(c(STARTING), c(BOT), CORE, ___.DOTS));
     }
 }

@@ -138,8 +138,6 @@ public enum PropEnum implements _PropEnum {
     _STAMPS_COMPRESS(Boolean.class, TRUE),
     _STAMPS_DISPLAY(Boolean.class, TRUE),
     _STAMPS_PROCESS(Boolean.class, TRUE),
-    _SVG_HEIGHT(Integer.class, _7_, _6_, _8_),
-    _SVG_WIDTH(Integer.class, _1_, _0_, _2_, _4_),
     _SWIPE_LINE_MARKER_COLOUR(Color.class, b(_COMMA_, _0_, _0_, _0_, _128)),
     _SWIPE_START_MARKER_COLOUR(Color.class, b(_COMMA_, _0_, _255, _0_, _128)),
     _SWIPE_STOP_MARKER_COLOUR(Color.class, b(_COMMA_, _255, _0_, _0_, _128)),

@@ -32,6 +32,7 @@ public class Writer implements _LogsWriter {
 
         logWriter = createFileWriter(RUN_LOG_);
         telemetryWriter = createFileWriter(TELEMETRY_);
+        works.lysenko.base.core.BootCapture.flushTo(logWriter);
     }
 
     private static BufferedWriter createFileWriter(final String fileName) {

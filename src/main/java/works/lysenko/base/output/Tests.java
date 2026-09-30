@@ -15,7 +15,6 @@ import static org.apache.commons.math3.util.FastMath.max;
 import static works.lysenko.Base.core;
 import static works.lysenko.Base.log;
 import static works.lysenko.Base.section;
-import static works.lysenko.base.output.File.fileTestsSummary;
 import static works.lysenko.util.chrs.__.NO;
 import static works.lysenko.util.chrs.____.PATH;
 import static works.lysenko.util.chrs.____.TEST;
@@ -188,7 +187,6 @@ record Tests() {
 
         list = core.getTestsSummary();
         consoleTestsSummary();
-        fileTestsSummary(list);
     }
 
     /**

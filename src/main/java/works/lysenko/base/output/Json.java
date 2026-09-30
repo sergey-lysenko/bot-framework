@@ -1,135 +1,136 @@
 package works.lysenko.base.output;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import works.lysenko.base.core.Routines;
 import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Scenario;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static works.lysenko.Base.core;
 import static works.lysenko.Base.exec;
-import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.spec.Layout.Files.name;
 import static works.lysenko.util.spec.Layout.Templates.RUN_JSON_;
 
 /**
- * Various JSON-related code
+ * Standard-compliant JSON report serialization for test runs.
  */
-@SuppressWarnings({"UtilityClass", "UtilityClassCanBeEnum", "FinalClass", "ClassWithTooManyTransitiveDependents",
-        "ClassWithTooManyTransitiveDependencies", "ClassWithoutLogger", "PublicMethodWithoutLogging",
-        "ClassUnconnectedToPackage",
-        "ImplicitCallToSuper", "CyclicClassDependency", "ClassWithTooManyDependencies"})
+@SuppressWarnings({"ClassWithoutLogger", "PublicMethodWithoutLogging", "LawOfDemeter", "ForeachStatement", "FeatureEnvy"})
 public final class Json {
 
-    private Json() {
+    private static final Pattern ANSI_PATTERN = Pattern.compile("\\x1b\\[[0-9;]*m");
+    private static final ObjectMapper MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
+    private Json() {
     }
 
     /**
-     * This routine writes test execution in JSON format. Potentially will be
-     * replaced by some JSON libraries if the amount of data to write is more
-     * than manageable. File location defined by DEFAULT_RUNS_LOCATION, file name
-     * template defined by RUN_JSON_FILENAME
+     * Serializes test execution statistics and issues into standard-compliant indented JSON.
      */
-    @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "HardcodedLineSeparator", "HardcodedFileSeparator",
-            "DynamicRegexReplaceableByCompiledPattern", "AutoBoxing", "OverlyLongMethod", "OverlyComplexMethod",
-            "MagicCharacter",
-            "ProhibitedExceptionThrown", "ThrowInsideCatchBlockWhichIgnoresCaughtException", "LawOfDemeter",
-            "FeatureEnvy", "ChainedMethodCall", "LocalCanBeFinal", "NestedMethodCall", "UnqualifiedStaticUsage",
-            "MethodWithMultipleLoops",
-            "ForeachStatement", "RegExpRedundantEscape"})
     public static void jsonStats() {
+        final Map<String, Object> root = new LinkedHashMap<>();
+        root.put("startAt", Routines.startedAt());
 
-        Map<_Scenario, _Result> sorted = core.getResults().getSorted();
-        try (BufferedWriter w = new BufferedWriter(new FileWriter(name(RUN_JSON_), StandardCharsets.UTF_8))) {
-            int i;
-            w.write(s("{\"startAt\":", Routines.startedAt(), ",\"issues\":{")); //NON-NLS
-            w.write("\"newIssues\":["); //NON-NLS
+        // Issues block
+        final Map<String, Object> issues = new LinkedHashMap<>();
+        final List<String> newIssues = new ArrayList<>();
+        for (final _LogRecord lr : exec.issues().latestCopy()) {
+            final String rendered = lr.render(core.getTotalTests(), core.getLogger().getSpanLength(), null);
+            newIssues.add(stripAnsi(rendered).replace("\n", " ").trim());
+        }
+        issues.put("newIssues", newIssues);
 
-            List<_LogRecord> newIssues = exec.issues().latestCopy();
-            i = newIssues.size();
-            for (_LogRecord lr : newIssues) {
-                w.write(s('"', lr.render(core.getTotalTests(), core.getLogger().getSpanLength(), null).replaceAll("\n",
-                        " ").replace("\"", "\\\""), '"'));
-                if (1 < i--) w.write(",");
+        final List<String> knownIssues = new ArrayList<>();
+        for (final String str : exec.issues().known()) {
+            knownIssues.add(stripAnsi(str).replace("\n", " ").trim());
+        }
+        issues.put("knownIssues", knownIssues);
+
+        if (isNotNull(exec.issues().notReproduced())) {
+            final List<String> notRep = new ArrayList<>();
+            for (final String str : exec.issues().notReproduced()) {
+                notRep.add(stripAnsi(str).replace("\n", " ").trim());
             }
+            issues.put("notReproduced", notRep);
+        }
+        root.put("issues", issues);
 
-            i = exec.issues().known().size();
-            w.write("],\"knownIssues\":["); //NON-NLS
-            for (String str : exec.issues().known()) {
-                w.write(s("\"", str.replaceAll("\n", " ").replace("\"",
-                        "\\\""), "\""));
-                if (1 < i--) w.write(",");
-            }
+        // Run / scenarios block
+        final Map<_Scenario, _Result> sorted = core.getResults().getSorted();
+        final List<Map<String, Object>> runList = new ArrayList<>(sorted.size());
 
-            if (isNotNull(exec.issues().notReproduced())) {
-                i = exec.issues().notReproduced().size();
-                w.write("],\"notReproduced\":["); //NON-NLS
-                for (String str : exec.issues().notReproduced()) {
-                    w.write(s("\"", str.replaceAll("\n", " ").replace("\"",
-                            "\\\""), "\""));
-                    if (1 < i--) w.write(",");
-                }
-            }
+        for (final Map.Entry<_Scenario, _Result> entry : sorted.entrySet()) {
+            final Map<String, Object> scenMap = new LinkedHashMap<>();
+            scenMap.put("scenario", String.valueOf(entry.getKey()));
+            scenMap.put("cWeight", jsonify(entry.getValue().getConfiguredWeight().doubleValue()));
+            scenMap.put("dWeight", jsonify(entry.getValue().getDownstreamWeight().doubleValue()));
+            scenMap.put("uWeight", jsonify(entry.getValue().getUpstreamWeight().doubleValue()));
+            scenMap.put("executions", entry.getValue().getExecutions());
 
-            w.write("]},\"run\":["); //NON-NLS
-            i = sorted.size();
-            for (Map.Entry<_Scenario, _Result> entry : sorted.entrySet()) {
-                w.write(s("{\"scenario\":\"", entry.getKey(), "\"", ",\"cWeight\": ", //NON-NLS
-                        jsonify(entry.getValue().getConfiguredWeight().doubleValue()), ",\"dWeight\": ",//NON-NLS
-                        jsonify(entry.getValue().getDownstreamWeight().doubleValue()), ",\"uWeight\": ",//NON-NLS
-                        jsonify(entry.getValue().getUpstreamWeight().doubleValue()), ",\"executions\":",//NON-NLS
-                        entry.getValue().getExecutions())); //NON-NLS
-                if (!entry.getValue().getEvents().isEmpty()) {
-                    w.write(",\"events\":["); //NON-NLS
-                    int j = entry.getValue().getEvents().size();
-                    for (_LogRecord logRecord : entry.getValue().getEvents()) {
-                        String shift;
-                        String type;
-                        String text;
-                        String p0 = logRecord.text().split(" ")[0];
-                        String p1 = logRecord.text().split(" ")[1];
-                        if (p0.matches("\\[[\\d]+\\]")) {
-                            shift = p0.substring(1, p0.length() - 1);
-                            type = p1;
-                        } else {
-                            shift = EMPTY;
-                            type = p0;
-                        }
-                        w.write(s("{\"timestamp\":", logRecord.time(), ",")); //NON-NLS
-                        if (shift.isEmpty()) text = logRecord.text().substring(type.length() + 1);
-                        else {
-                            text = logRecord.text().substring(shift.length() + type.length() + 4);
-                            w.write(s("\"shift\":", shift, ",")); //NON-NLS
-                        }
-                        w.write(s("\"type\":\"", type, "\",")); //NON-NLS
-                        w.write("\"text\":\""); //NON-NLS
-                        w.write(text.replaceAll("\n", " ").replace("\"", "\\\""));
-                        w.write("\"}");
-                        if (1 < j--) w.write(",");
+            if (!entry.getValue().getEvents().isEmpty()) {
+                final List<Map<String, Object>> eventList = new ArrayList<>(entry.getValue().getEvents().size());
+                for (final _LogRecord logRecord : entry.getValue().getEvents()) {
+                    final Map<String, Object> eventMap = new LinkedHashMap<>();
+                    final String rawText = stripAnsi(logRecord.text()).replace("\n", " ").trim();
+                    final String[] parts = rawText.split(" ", 2);
+                    String p0 = parts.length > 0 ? parts[0] : "";
+                    String rest = parts.length > 1 ? parts[1] : "";
+
+                    String shift = EMPTY;
+                    String type;
+                    String text;
+
+                    if (p0.matches("\\[\\d+\\]")) {
+                        shift = p0.substring(1, p0.length() - 1);
+                        final String[] pSub = rest.split(" ", 2);
+                        type = pSub.length > 0 ? pSub[0] : "";
+                        text = pSub.length > 1 ? pSub[1] : "";
+                    } else {
+                        type = p0;
+                        text = rest;
                     }
-                    w.write("]");
+
+                    eventMap.put("timestamp", logRecord.time());
+                    if (!shift.isEmpty()) {
+                        try {
+                            eventMap.put("shift", Long.parseLong(shift));
+                        } catch (final NumberFormatException e) {
+                            eventMap.put("shift", shift);
+                        }
+                    }
+                    eventMap.put("type", type);
+                    eventMap.put("text", text);
+                    eventList.add(eventMap);
                 }
-                w.write("}");
-                if (1 < i--) w.write(",");
+                scenMap.put("events", eventList);
             }
-            w.write("]}");
-        } catch (IOException e) {
-            throw new RuntimeException("JSON stats writing issue");
+            runList.add(scenMap);
+        }
+        root.put("run", runList);
+
+        try {
+            MAPPER.writeValue(new File(name(RUN_JSON_)), root);
+        } catch (final IOException e) {
+            throw new RuntimeException("JSON stats writing issue: " + e.getMessage(), e);
         }
     }
 
-    @SuppressWarnings({"AutoUnboxing", "LocalCanBeFinal"})
-    private static double jsonify(Double d) {
+    private static String stripAnsi(final String text) {
+        if (null == text) return "";
+        return ANSI_PATTERN.matcher(text).replaceAll("");
+    }
 
+    private static double jsonify(final Double d) {
         return Double.POSITIVE_INFINITY == d ? Double.MAX_VALUE : d;
     }
 }
