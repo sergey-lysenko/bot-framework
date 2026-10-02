@@ -217,17 +217,27 @@ public final class Exec extends Root implements _TestData, _Executes {
         return wdw();
     }
 
+    public void clearDriver() {
+
+        if (isNotNull(driver)) {
+            driver.wd(null);
+            driver.wdw((WebDriverWait) null);
+        }
+    }
+
     public WebDriver wd() {
 
         try {
             if (isNotNull(driver))
                 if (isNotNull(driver.wd())) {
                     driver.wd().manage().logs().getAvailableLogTypes();
+                    return driver.wd();
                 }
         } catch (final WebDriverException e) {
             еггог(b(WEB_DRIVER, INACCESSIBLE, DUE_TO, q(e.getMessage())));
+            clearDriver();
         }
-        return isNotNull(driver) ? driver.wd() : null;
+        return null;
     }
 
     /**

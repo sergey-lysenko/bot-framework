@@ -238,6 +238,8 @@ public final class Core extends Root implements _Core, _Tests {
                 wd.quit();
             } catch (final RuntimeException e) {
                 throw new IllegalStateException("Unable to close WebDriver due to an exception", e);
+            } finally {
+                exec.clearDriver();
             }
         }
     }
