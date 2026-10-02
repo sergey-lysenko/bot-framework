@@ -210,9 +210,10 @@ public final class LogHtml {
         }
         if (!currentSec.lines.isEmpty()) sections.add(currentSec);
 
+        TelemetryItem configItem = null;
         final List<TelemetryItem> testData = new ArrayList<>();
         final List<TelemetryItem> limboData = new ArrayList<>();
-        final List<TelemetryItem> timelineData = new ArrayList<>();
+        final Map<Integer, TelemetryItem> limboByPrevTest = new LinkedHashMap<>();
 
         for (int i = 0; i < sections.size(); i++) {
             final LogSection sec = sections.get(i);
@@ -232,18 +233,17 @@ public final class LogHtml {
                 final double delta = Math.max(0.001, t1 - t0);
                 sec.durationSec = delta;
                 sec.durationStr = formatDeltaTime(delta);
-                final TelemetryItem item = new TelemetryItem(chartLabel, sec.title, delta, delta * 1000.0, sec.status, true);
+                final TelemetryItem item = new TelemetryItem(chartLabel, sec.title, delta, delta * 1000.0, sec.status, true, sec.prevTestNum);
                 limboData.add(item);
-                timelineData.add(item);
+                limboByPrevTest.put(sec.prevTestNum, item);
             } else if ("test".equals(sec.type)) {
                 final double t0 = toSeconds(sec.startTime);
                 final double t1 = toSeconds(sec.endTime);
                 final double delta = Math.max(0.001, t1 - t0);
                 sec.durationSec = delta;
                 sec.durationStr = formatDeltaTime(delta);
-                final TelemetryItem item = new TelemetryItem("#" + sec.testNum, sec.title, delta, delta * 1000.0, sec.status, false);
+                final TelemetryItem item = new TelemetryItem("#" + sec.testNum, sec.title, delta, delta * 1000.0, sec.status, false, sec.testNum);
                 testData.add(item);
-                timelineData.add(item);
             } else if ("booting".equals(sec.type)) {
                 final double bootSec = calculateBootSpentSeconds(sec.lines);
                 sec.durationSec = bootSec;
@@ -252,9 +252,8 @@ public final class LogHtml {
                 final double confSec = calculateBootSpentSeconds(sec.lines);
                 sec.durationSec = confSec;
                 sec.durationStr = formatDeltaTime(confSec);
-                final TelemetryItem item = new TelemetryItem("Config", "Configuring", confSec, confSec * 1000.0, "neutral", true);
-                limboData.add(item);
-                timelineData.add(item);
+                configItem = new TelemetryItem("Config", "Configuring", confSec, confSec * 1000.0, "neutral", true, 0);
+                limboData.add(configItem);
             } else {
                 final double t0 = toSeconds(sec.startTime);
                 final double t1 = toSeconds(sec.endTime);
@@ -313,23 +312,29 @@ public final class LogHtml {
         sb.append(".chart-scroll-wrap::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); border-radius: 3px; }\n");
         sb.append(".chart-scroll-wrap::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }\n");
         sb.append(".chart-scroll-wrap::-webkit-scrollbar-thumb:hover { background: #475569; }\n");
-        sb.append(".bars-flex { display: flex; align-items: flex-end; gap: 8px; height: 90px; padding: 0 4px; width: max-content; min-width: 100%; }\n");
-        sb.append(".bar-col { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; height: 100%; cursor: pointer; user-select: none; }\n");
-        sb.append(".bar-col.test { min-width: 44px; }\n");
-        sb.append(".bar-col.limbo { min-width: 44px; }\n");
+        sb.append(".bars-flex { display: flex; align-items: stretch; gap: 8px; padding: 0 4px; width: max-content; min-width: 100%; }\n");
+        sb.append(".bar-col.config { display: flex; flex-direction: column; align-items: center; min-width: 44px; cursor: pointer; user-select: none; }\n");
+        sb.append(".bar-col.config .bar-val { font-size: 11px; color: #94a3b8; font-family: ui-monospace, monospace; margin-bottom: 4px; white-space: nowrap; }\n");
+        sb.append(".bar-col.config .bar-track { flex: 1; width: 100%; max-width: 22px; display: flex; align-items: flex-end; background: rgba(30, 41, 59, 0.25); border-radius: 4px; overflow: hidden; }\n");
+        sb.append(".bar-col.config .bar-fill { width: 100%; background: #64748b; border-radius: 4px 4px 0 0; transition: height 0.2s; }\n");
+        sb.append(".bar-col.config .bar-lbl { font-size: 10px; color: #64748b; font-family: ui-monospace, monospace; margin-top: 5px; white-space: nowrap; }\n");
+        sb.append(".bar-pair { display: flex; flex-direction: column; align-items: center; justify-content: space-between; min-width: 44px; gap: 8px; }\n");
+        sb.append(".bar-col.test { display: flex; flex-direction: column; align-items: center; width: 100%; height: 85px; cursor: pointer; user-select: none; }\n");
+        sb.append(".bar-col.test .bar-val { font-size: 11px; color: #cbd5e1; font-family: ui-monospace, monospace; margin-bottom: 4px; white-space: nowrap; }\n");
+        sb.append(".bar-col.test .bar-track { flex: 1; width: 100%; max-width: 34px; display: flex; align-items: flex-end; background: rgba(30, 41, 59, 0.35); border-radius: 4px; overflow: hidden; }\n");
+        sb.append(".bar-col.test .bar-fill { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.2s; }\n");
+        sb.append(".bar-col.test .bar-lbl { font-size: 11px; color: #94a3b8; font-family: ui-monospace, monospace; font-weight: 600; margin-top: 5px; white-space: nowrap; }\n");
+        sb.append(".bar-col.limbo { display: flex; flex-direction: column; align-items: center; width: 100%; height: 52px; cursor: pointer; user-select: none; }\n");
+        sb.append(".bar-col.limbo .bar-val { font-size: 10px; color: #94a3b8; font-family: ui-monospace, monospace; margin-bottom: 3px; white-space: nowrap; }\n");
+        sb.append(".bar-col.limbo .bar-track { flex: 1; width: 100%; max-width: 20px; display: flex; align-items: flex-end; background: rgba(30, 41, 59, 0.2); border-radius: 3px; overflow: hidden; }\n");
+        sb.append(".bar-col.limbo .bar-fill { width: 100%; border-radius: 3px 3px 0 0; transition: height 0.2s; }\n");
+        sb.append(".bar-col.limbo .bar-lbl { font-size: 10px; color: #64748b; font-family: ui-monospace, monospace; margin-top: 4px; white-space: nowrap; }\n");
         sb.append(".bar-col:hover .bar-fill { filter: brightness(1.25); }\n");
         sb.append(".bar-col:hover .bar-val { color: #38bdf8; }\n");
         sb.append(".bar-col:hover .bar-lbl { color: #f8fafc; }\n");
-        sb.append(".bar-val { font-size: 11px; color: #cbd5e1; font-family: ui-monospace, monospace; margin-bottom: 4px; white-space: nowrap; }\n");
-        sb.append(".bar-col.limbo .bar-val { font-size: 10px; color: #94a3b8; }\n");
-        sb.append(".bar-track { flex: 1; width: 100%; max-width: 34px; display: flex; align-items: flex-end; background: rgba(30, 41, 59, 0.35); border-radius: 4px; overflow: hidden; }\n");
-        sb.append(".bar-col.limbo .bar-track { max-width: 20px; background: rgba(30, 41, 59, 0.2); border-radius: 3px; }\n");
-        sb.append(".bar-fill { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.2s; }\n");
-        sb.append(".bar-col.limbo .bar-fill { border-radius: 3px 3px 0 0; }\n");
-        sb.append(".bar-lbl { font-size: 11px; color: #94a3b8; font-family: ui-monospace, monospace; margin-top: 6px; white-space: nowrap; }\n");
-        sb.append(".bar-col.test .bar-lbl { font-weight: 600; }\n");
-        sb.append(".bar-col.limbo .bar-lbl { font-size: 10px; color: #64748b; }\n");
         sb.append("body.hide-limbo .bar-col.limbo { display: none !important; }\n");
+        sb.append("body.hide-limbo .bar-pair { gap: 0; }\n");
+        sb.append("body.hide-limbo .bar-col.config { height: 85px; }\n");
         sb.append("body.hide-limbo .stat-group-limbo, body.hide-limbo .stat-divider { display: none !important; }\n");
         sb.append(".path-row { display: flex; align-items: center; gap: 14px; padding: 7px 10px; border-radius: 6px; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }\n");
         sb.append(".path-row:hover { background: rgba(56, 189, 248, 0.08); }\n");
@@ -467,7 +472,7 @@ public final class LogHtml {
         }
         sb.append("    </div>\n");
         sb.append("    <div class=\"chart-scroll-wrap\">\n");
-        sb.append("      <div class=\"bars-flex\">").append(renderTimelineBars(timelineData, tMax, lMax)).append("</div>\n");
+        sb.append("      <div class=\"bars-flex\">").append(renderTimeline(configItem, testData, limboByPrevTest, tMax, lMax)).append("</div>\n");
         sb.append("    </div>\n");
         sb.append("  </div>\n</div>\n");
 
@@ -714,21 +719,43 @@ public final class LogHtml {
         return sb.toString();
     }
 
-    private static String renderTimelineBars(final List<TelemetryItem> items, final double tMax, final double lMax) {
+    private static String renderTimeline(final TelemetryItem configItem, final List<TelemetryItem> testData, final Map<Integer, TelemetryItem> limboByPrevTest, final double tMax, final double lMax) {
         final StringBuilder sb = new StringBuilder();
-        for (final TelemetryItem item : items) {
-            final boolean isLimbo = item.isLimbo;
-            final double val = isLimbo ? item.ms : item.sec;
-            final double maxVal = isLimbo ? lMax : tMax;
-            final int pct = maxVal > 0 ? Math.max(6, (int) Math.round((val / maxVal) * 100)) : 6;
-            final String valStr = isLimbo ? Math.round(val) + "ms" : String.format(Locale.ROOT, "%.2fs", val);
-            final String colClass = isLimbo ? "bar-col limbo" : "bar-col test";
-            final String barColor = isLimbo ? "#64748b" : ("passed".equals(item.status) ? "#22c55e" : "warning".equals(item.status) ? "#f59e0b" : "#ef4444");
-            sb.append("<div class=\"").append(colClass).append("\" onclick=\"focusSection('").append(item.title).append("')\" title=\"").append(item.title).append(": ").append(valStr).append("\">");
+
+        if (null != configItem) {
+            final int pct = lMax > 0 ? Math.max(6, (int) Math.round((configItem.ms / lMax) * 100)) : 6;
+            final String valStr = Math.round(configItem.ms) + "ms";
+            sb.append("<div class=\"bar-col config\" onclick=\"focusSection('").append(configItem.title).append("')\" title=\"").append(configItem.title).append(": ").append(valStr).append("\">");
             sb.append("<div class=\"bar-val\">").append(valStr).append("</div>");
-            sb.append("<div class=\"bar-track\"><div class=\"bar-fill\" style=\"height: ").append(pct).append("%; background: ").append(barColor).append(";\"></div></div>");
-            sb.append("<div class=\"bar-lbl\">").append(item.label).append("</div></div>");
+            sb.append("<div class=\"bar-track\"><div class=\"bar-fill\" style=\"height: ").append(pct).append("%; background: #64748b;\"></div></div>");
+            sb.append("<div class=\"bar-lbl\">").append(configItem.label).append("</div></div>\n");
         }
+
+        for (final TelemetryItem test : testData) {
+            sb.append("<div class=\"bar-pair\">\n");
+
+            final int tPct = tMax > 0 ? Math.max(6, (int) Math.round((test.sec / tMax) * 100)) : 6;
+            final String tValStr = String.format(Locale.ROOT, "%.2fs", test.sec);
+            final String tColor = "passed".equals(test.status) ? "#22c55e" : "warning".equals(test.status) ? "#f59e0b" : "#ef4444";
+            sb.append("  <div class=\"bar-col test\" onclick=\"focusSection('").append(test.title).append("')\" title=\"").append(test.title).append(": ").append(tValStr).append("\">");
+            sb.append("<div class=\"bar-val\">").append(tValStr).append("</div>");
+            sb.append("<div class=\"bar-track\"><div class=\"bar-fill\" style=\"height: ").append(tPct).append("%; background: ").append(tColor).append(";\"></div></div>");
+            sb.append("<div class=\"bar-lbl\">").append(test.label).append("</div></div>\n");
+
+            final TelemetryItem limbo = limboByPrevTest.get(test.testNum);
+            if (null != limbo) {
+                final int lPct = lMax > 0 ? Math.max(6, (int) Math.round((limbo.ms / lMax) * 100)) : 6;
+                final String lValStr = Math.round(limbo.ms) + "ms";
+                final String lColor = ("passed".equals(limbo.status) || "neutral".equals(limbo.status)) ? "#64748b" : ("warning".equals(limbo.status) ? "#f59e0b" : "#ef4444");
+                sb.append("  <div class=\"bar-col limbo\" onclick=\"focusSection('").append(limbo.title).append("')\" title=\"").append(limbo.title).append(": ").append(lValStr).append("\">");
+                sb.append("<div class=\"bar-val\">").append(lValStr).append("</div>");
+                sb.append("<div class=\"bar-track\"><div class=\"bar-fill\" style=\"height: ").append(lPct).append("%; background: ").append(lColor).append(";\"></div></div>");
+                sb.append("<div class=\"bar-lbl\">").append(limbo.label).append("</div></div>\n");
+            }
+
+            sb.append("</div>\n");
+        }
+
         return sb.toString();
     }
 
@@ -1027,14 +1054,16 @@ public final class LogHtml {
         final double ms;
         final String status;
         final boolean isLimbo;
+        final int testNum;
 
-        TelemetryItem(final String label, final String title, final double sec, final double ms, final String status, final boolean isLimbo) {
+        TelemetryItem(final String label, final String title, final double sec, final double ms, final String status, final boolean isLimbo, final int testNum) {
             this.label = label;
             this.title = title;
             this.sec = sec;
             this.ms = ms;
             this.status = status;
             this.isLimbo = isLimbo;
+            this.testNum = testNum;
         }
     }
 
