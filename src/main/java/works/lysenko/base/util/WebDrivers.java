@@ -110,15 +110,15 @@ public final class WebDrivers {
         if (headless) {
             options.addArguments("--headless=new"); //NON-NLS
         }
-        options.addArguments("window-size=1920,1080"); //NON-NLS
-        options.addArguments("lang=en-GB"); //NON-NLS
-        options.addArguments("disable-gpu"); //NON-NLS
-        options.addArguments("no-sandbox"); //NON-NLS
-        options.addArguments("disable-dev-shm-usage"); //NON-NLS
-        options.addArguments("disable-setuid-sandbox"); //NON-NLS
-        options.addArguments("disable-infobars"); //NON-NLS
-        options.addArguments("enable-logging");  // NON-NLS
-        options.addArguments("v=1"); //NON-NLS
+        options.addArguments("--window-size=1920,1080"); //NON-NLS
+        options.addArguments("--lang=en-GB"); //NON-NLS
+        options.addArguments("--disable-gpu"); //NON-NLS
+        options.addArguments("--no-sandbox"); //NON-NLS
+        options.addArguments("--disable-dev-shm-usage"); //NON-NLS
+        options.addArguments("--disable-setuid-sandbox"); //NON-NLS
+        options.addArguments("--disable-infobars"); //NON-NLS
+        options.addArguments("--enable-logging");  // NON-NLS
+        options.addArguments("--v=1"); //NON-NLS
         return options;
     }
 
@@ -133,7 +133,7 @@ public final class WebDrivers {
         EdgeOptions options = new EdgeOptions();
         if (headless) {
             options.addArguments("--headless=new"); //NON-NLS
-            options.addArguments("window-size=1920,1080"); //NON-NLS
+            options.addArguments("--window-size=1920,1080"); //NON-NLS
         }
         return options;
     }

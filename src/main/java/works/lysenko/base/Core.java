@@ -232,7 +232,8 @@ public final class Core extends Root implements _Core, _Tests {
 
         final WebDriver wd = exec.wd();
         if (isNull(wd)) return;
-        if (isInJar() && (Routines.isInsideDocker() || Routines.isInsideCI())) {
+        final boolean isHeadless = isNotNull(parameters) && parameters.isHeadless();
+        if (isHeadless || (isInJar() && (Routines.isInsideDocker() || Routines.isInsideCI()))) {
             try {
                 wd.quit();
             } catch (final RuntimeException e) {
@@ -254,7 +255,8 @@ public final class Core extends Root implements _Core, _Tests {
         log(Level.none, b(c(CLOSING), LOG, AND, TELEMETRY, s(WRITER, S)), false);
         Routines.closeQuietly(logger.getLogWriter(), "Unable to close log writer"); //NON-NLS
         Routines.closeQuietly(logger.getTelemetryWriter(), "Unable to close telemetry writer"); //NON-NLS
-        final boolean shouldOpenBrowser = !GraphicsEnvironment.isHeadless() && !Routines.isInsideCI() && !Routines.isInsideDocker();
+        final boolean isHeadless = (isNotNull(parameters) && parameters.isHeadless()) || GraphicsEnvironment.isHeadless();
+        final boolean shouldOpenBrowser = !isHeadless && !Routines.isInsideCI() && !Routines.isInsideDocker();
         final File logFile = new File(name(RUN_LOG_));
         final File htmlFile = new File(name(RUN_LOG_HTML_));
         PostProcessor.launchDetached(logFile, htmlFile, shouldOpenBrowser);

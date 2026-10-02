@@ -226,6 +226,9 @@ public class TestProperties implements _TestProperties {
         result = readTestPropertiesFromFile(new TestPropertiesDescriptor(_TESTS_, parameters.getTest(),
                 TEST_PROPERTIES_EXTENSION));
         the.putAll(result.properties());
+        if (isNotNull(parameters) && parameters.isHeadless()) {
+            the.setProperty(PropEnum._HEADLESS.getPropertyName(), String.valueOf(true));
+        }
         logTestConfiguration(common, result.debug());
     }
 
