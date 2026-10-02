@@ -87,6 +87,7 @@ public final class LogHtml {
         final List<PathEntry> testPaths = new ArrayList<>();
         final List<ScenEntry> scenStats = new ArrayList<>();
         String pathsChanceStr = "";
+        final List<String> commonPathSteps = new ArrayList<>();
 
         for (final String line : lines) {
             final String clean = ANSI_PATTERN.matcher(line).replaceAll("").trim();
@@ -120,6 +121,17 @@ public final class LogHtml {
 
             if (clean.contains("had a chance to be executed")) {
                 pathsChanceStr = clean.contains("]") ? clean.substring(clean.lastIndexOf(']') + 1).trim() : clean;
+            }
+
+            if (clean.contains("Common path:")) {
+                final String raw = clean.substring(clean.indexOf("Common path:") + "Common path:".length()).trim();
+                commonPathSteps.clear();
+                for (final String s : raw.split("→")) {
+                    final String stepTrim = s.trim();
+                    if (!stepTrim.isEmpty()) {
+                        commonPathSteps.add(stepTrim);
+                    }
+                }
             }
 
             if (clean.contains("# Applied test configuration") && "booting".equals(currentSec.type)) {
@@ -383,6 +395,10 @@ public final class LogHtml {
         sb.append(".log-line-entry.step-highlight-flash { animation: stepAreaFlash 3s cubic-bezier(0.16, 1, 0.3, 1); }\n");
         sb.append("@keyframes stepAreaFlash { 0% { background: rgba(56, 189, 248, 0.65) !important; box-shadow: inset 0 0 16px rgba(56, 189, 248, 0.5); } 30% { background: rgba(56, 189, 248, 0.35); } 100% { background: rgba(56, 189, 248, 0.14); } }\n");
         sb.append(".step-arrow { color: #64748b; font-size: 11px; }\n");
+        sb.append(".common-path-box { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 12px; margin-bottom: 12px; background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; font-family: ui-monospace, monospace; }\n");
+        sb.append(".common-path-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; white-space: nowrap; }\n");
+        sb.append(".path-step.common { background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35); color: #38bdf8; font-weight: 500; }\n");
+        sb.append(".path-step.common:hover { background: rgba(56, 189, 248, 0.25); border-color: #38bdf8; color: #f8fafc; }\n");
         sb.append(".scen-table { width: 100%; border-collapse: collapse; font-size: 12px; }\n");
         sb.append(".scen-table th { text-align: left; padding: 6px 8px; color: #64748b; font-weight: 500; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; }\n");
         sb.append(".scen-table td { padding: 6px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }\n");
@@ -503,7 +519,16 @@ public final class LogHtml {
         sb.append("  </div>\n</div>\n");
 
         sb.append("<div id=\"summary-cards-container\">\n");
-        sb.append("  <div class=\"summary-card\">\n    <div class=\"card-title\">Execution Paths <span class=\"card-subtitle\">").append(testPaths.size()).append(" Tests Executed</span></div>\n    <div>");
+        sb.append("  <div class=\"summary-card\">\n    <div class=\"card-title\">Execution Paths <span class=\"card-subtitle\">").append(testPaths.size()).append(" Tests Executed</span></div>\n");
+        if (!commonPathSteps.isEmpty()) {
+            sb.append("    <div class=\"common-path-box\"><span class=\"common-path-label\">Common path:</span><div class=\"path-chain\">");
+            for (int cIdx = 0; cIdx < commonPathSteps.size(); cIdx++) {
+                sb.append(" <span class=\"step-arrow\">→</span> ");
+                sb.append("<span class=\"path-step common\">").append(escapeHtml(commonPathSteps.get(cIdx))).append("</span>");
+            }
+            sb.append("</div></div>\n");
+        }
+        sb.append("    <div>");
         for (final PathEntry p : testPaths) {
             sb.append("<div class=\"path-row\" onclick=\"focusSection('Test #").append(p.num).append("')\"><div class=\"path-meta\"><span class=\"path-num\">Test #").append(p.num).append("</span><span class=\"path-dur\">⏱ ").append(p.durStr).append("</span></div><div class=\"path-chain\">");
             for (int sIdx = 0; sIdx < p.steps.size(); sIdx++) {
