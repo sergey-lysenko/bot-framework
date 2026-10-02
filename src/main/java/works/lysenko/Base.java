@@ -730,6 +730,42 @@ public record Base() {
     }
 
     /**
+     * Negates a boolean value in the execution data.
+     *
+     * @param field the field of test data to be negated
+     * @param def   the default boolean value to negate if the field is absent
+     * @return the negated boolean value
+     */
+    public static boolean negate(final Object field, final Boolean def) {
+
+        return exec.data.negate(field, def);
+    }
+
+    /**
+     * Negates a boolean value in the execution data using false as default.
+     *
+     * @param field the field of test data to be negated
+     * @return the negated boolean value
+     */
+    public static boolean negate(final Object field) {
+
+        return exec.data.negate(field);
+    }
+
+    /**
+     * Negates a boolean value in the execution data with optional suppression of log output.
+     *
+     * @param field  the field of test data to be negated
+     * @param def    the default boolean value to negate if the field is absent
+     * @param silent suppress log messages
+     * @return the negated boolean value
+     */
+    public static boolean negate(final Object field, final Boolean def, final boolean silent) {
+
+        return exec.data.negate(field, def, silent);
+    }
+
+    /**
      * Reads the value from a specified locator.
      *
      * @param locator the locator to read the value from

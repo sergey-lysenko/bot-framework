@@ -1625,6 +1625,23 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        public boolean negate(final Object field, final Boolean def, final boolean silent) {
+
+            final boolean value = !getBoolean(field, def);
+            put(field, value, silent);
+            return value;
+        }
+
+        public boolean negate(final Object field, final Boolean def) {
+
+            return negate(field, def, false);
+        }
+
+        public boolean negate(final Object field) {
+
+            return negate(field, false, false);
+        }
+
         public void put(final Object field, final Object value) {
 
             put(field, value, false);

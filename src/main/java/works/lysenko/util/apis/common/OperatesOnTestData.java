@@ -284,6 +284,33 @@ public interface OperatesOnTestData {
     void put(Object field, Object value, boolean silent);
 
     /**
+     * Negates a boolean value in the test data container.
+     *
+     * @param field the field of test data to be negated
+     * @param def   the default boolean value to negate if the field is absent
+     * @return the negated boolean value
+     */
+    boolean negate(Object field, Boolean def);
+
+    /**
+     * Negates a boolean value in the test data container using false as default.
+     *
+     * @param field the field of test data to be negated
+     * @return the negated boolean value
+     */
+    boolean negate(Object field);
+
+    /**
+     * Negates a boolean value in the test data container with optional suppression of log output.
+     *
+     * @param field  the field of test data to be negated
+     * @param def    the default boolean value to negate if the field is absent
+     * @param silent suppress log messages
+     * @return the negated boolean value
+     */
+    boolean negate(Object field, Boolean def, boolean silent);
+
+    /**
      * Shortcut for removing a data from the common test data container
      *
      * @param field of test data to be updated
