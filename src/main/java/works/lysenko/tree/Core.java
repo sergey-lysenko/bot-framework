@@ -126,6 +126,7 @@ public abstract class Core extends Root implements _Scenario, Verifies {
 
         final String defaultWeight = Scenario.defaultWeight;
         if (isNotNull(codeWeight)) return codeWeight;
+        if (isNull(properties)) return fr(defaultWeight);
         final String weightText = (String) properties.getProperty(removeStart(getClass().getName(),
                 s(root, _DOT_)), defaultWeight);
         if (s(_DASH_).equals(weightText)) return null;

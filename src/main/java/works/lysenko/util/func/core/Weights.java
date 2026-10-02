@@ -14,6 +14,7 @@ import static java.lang.Double.POSITIVE_INFINITY;
 import static works.lysenko.Base.properties;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Objects.isNotNull;
+import static java.util.Objects.isNull;
 import static works.lysenko.util.func.type.fractions.Factory.fr;
 import static works.lysenko.util.spec.Symbols.UND_SCR;
 import static works.lysenko.util.spec.Symbols._DASH_;
@@ -35,6 +36,7 @@ public record Weights() {
     public static Fraction downstreamWeight(final _Scenario scenario) {
 
         Fraction weight = Fraction.ZERO;
+        if (isNull(properties)) return weight;
         for (final Map.Entry<Object, Object> entry : properties.getPropertiesEntrySet()) {
             final String key = (String) entry.getKey();
             if (!key.startsWith(s(UND_SCR))) // scenario record
@@ -101,7 +103,7 @@ public record Weights() {
      */
     private static String getRawScenarioWeight(final String key) {
 
-        return (String) properties.getProperty(key, Scenario.defaultWeight);
+        return isNull(properties) ? Scenario.defaultWeight : (String) properties.getProperty(key, Scenario.defaultWeight);
     }
 
     /**

@@ -27,9 +27,9 @@ import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_HTML_;
 public final class LogHtml {
 
     private static final Pattern ANSI_PATTERN = Pattern.compile("\\x1b\\[[0-9;]*m");
-    private static final Pattern LINE_WITH_TEST_RE = Pattern.compile("^\\[\\s*(\\d+)\\]\\[\\s*(\\d+)\\]\\[([^\\]]+)\\](?:\\[([^\\]]*)\\])?(.*)$");
-    private static final Pattern LINE_NO_TEST_RE = Pattern.compile("^\\[\\s*(\\d+)\\]\\[([^\\]]+)\\](?:\\[([^\\]]*)\\])?(.*)$");
-    private static final Pattern PATH_LINE_RE = Pattern.compile("\\[(\\d+)\\]\\s*\\[\\s*([\\d,]+)\\s*\\]\\s*→\\s*(.*)");
+    private static final Pattern LINE_WITH_TEST_RE = Pattern.compile("^\\[\\s*(\\d+)\\s*\\]\\[\\s*(\\d+)\\s*\\]\\[([^\\]]+)\\](?:\\[([^\\]]*)\\])?(.*)$");
+    private static final Pattern LINE_NO_TEST_RE = Pattern.compile("^(?:\\[\\s*\\])?\\[\\s*(\\d+)\\s*\\]\\[([^\\]]+)\\](?:\\[([^\\]]*)\\])?(.*)$");
+    private static final Pattern PATH_LINE_RE = Pattern.compile("\\[\\s*(\\d+)\\s*\\]\\s*\\[\\s*([\\d,]+)\\s*\\]\\s*→\\s*(.*)");
     private static final Pattern SCEN_LINE_RE = Pattern.compile("([▷◼◆●])\\s*([a-zA-Z0-9_]+(?:\\.[a-zA-Z0-9_]+)*)[.\\s]+(\\[[^\\]]+\\]|\\([^)]+\\)\\s*→\\s*\\[[^\\]]+\\])\\s*(\\d+(?::\\d+)?)(?:\\s*\\(([^)]+)\\))?");
     private static final Pattern TEST_TIME_RE = Pattern.compile("Test time (.*)");
     private static final Pattern TEST_RUN_SUMMARY_RE = Pattern.compile(".*\\b\\d+\\s+tests?\\s+of\\s+.+\\s+done\\s+in\\s+.*");
@@ -86,6 +86,7 @@ public final class LogHtml {
 
         final List<PathEntry> testPaths = new ArrayList<>();
         final List<ScenEntry> scenStats = new ArrayList<>();
+        String pathsPossibleStr = "";
         String pathsChanceStr = "";
         final List<String> commonPathSteps = new ArrayList<>();
 
@@ -117,6 +118,10 @@ public final class LogHtml {
                 final String count = mScen.group(4);
                 final String events = mScen.group(5) != null ? mScen.group(5).trim() : "";
                 scenStats.add(new ScenEntry(sym, name, weight, count, events));
+            }
+
+            if (clean.contains("possible with current set of Scenarios") || clean.contains("possible with current set of scenarios")) {
+                pathsPossibleStr = clean.contains("]") ? clean.substring(clean.lastIndexOf(']') + 1).trim() : clean;
             }
 
             if (clean.contains("had a chance to be executed")) {
@@ -336,8 +341,8 @@ public final class LogHtml {
         sb.append("#summary-cards-container { display: flex; gap: 20px; margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }\n");
         sb.append(".chart-card { flex: 1; min-width: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; }\n");
         sb.append(".summary-card { flex: 1; min-width: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; }\n");
-        sb.append(".card-title { font-size: 14px; font-weight: 600; color: #f8fafc; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }\n");
-        sb.append(".card-subtitle { font-size: 12px; color: #94a3b8; font-weight: normal; }\n");
+        sb.append(".card-title { font-size: 14px; font-weight: 600; color: #f8fafc; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }\n");
+        sb.append(".card-subtitle { font-size: 12px; color: #94a3b8; font-weight: normal; text-align: right; line-height: 1.4; }\n");
         sb.append(".stats-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-family: ui-monospace, monospace; font-size: 11px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }\n");
         sb.append(".stat-group { display: flex; align-items: center; gap: 12px; }\n");
         sb.append(".stat-group-label { color: #94a3b8; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }\n");
@@ -539,7 +544,16 @@ public final class LogHtml {
         }
         sb.append("</div>\n  </div>\n");
 
-        sb.append("  <div class=\"summary-card\">\n    <div class=\"card-title\">Scenario Statistics <span class=\"card-subtitle\">").append(escapeHtml(pathsChanceStr)).append("</span></div>\n");
+        final String scenSubtitle;
+        if (!pathsPossibleStr.isEmpty() && !pathsChanceStr.isEmpty()) {
+            scenSubtitle = escapeHtml(pathsPossibleStr) + "<br>" + escapeHtml(pathsChanceStr);
+        } else if (!pathsPossibleStr.isEmpty()) {
+            scenSubtitle = escapeHtml(pathsPossibleStr);
+        } else {
+            scenSubtitle = escapeHtml(pathsChanceStr);
+        }
+
+        sb.append("  <div class=\"summary-card\">\n    <div class=\"card-title\">Scenario Statistics <span class=\"card-subtitle\">").append(scenSubtitle).append("</span></div>\n");
         sb.append("    <table class=\"scen-table\"><thead><tr><th>Scenario</th><th>Weight Flow</th><th class=\"text-right\">Hits</th></tr></thead><tbody>");
         for (final ScenEntry sc : scenStats) {
             final String symClass = "▷".equals(sc.sym) ? "sym-node" : "◼".equals(sc.sym) ? "sym-leaf" : "◆".equals(sc.sym) ? "sym-fork" : "sym-other";
@@ -1012,27 +1026,6 @@ public final class LogHtml {
         } catch (final IOException ignored) {
         }
         return cpuLoads;
-    }
-
-    private static int extractLineSpan(final String line, final Pattern pTest, final Pattern pNoTest) {
-        final String clean = ANSI_PATTERN.matcher(line).replaceAll("").trim();
-        final Matcher m1 = pTest.matcher(clean);
-        if (m1.matches()) {
-            final String s = (null != m1.group(4)) ? m1.group(4).trim() : "";
-            if (!s.isEmpty() && s.chars().allMatch(Character::isDigit)) {
-                return Integer.parseInt(s);
-            }
-            return 0;
-        }
-        final Matcher m2 = pNoTest.matcher(clean);
-        if (m2.matches()) {
-            final String s = (null != m2.group(3)) ? m2.group(3).trim() : "";
-            if (!s.isEmpty() && s.chars().allMatch(Character::isDigit)) {
-                return Integer.parseInt(s);
-            }
-            return 0;
-        }
-        return 0;
     }
 
     private static double calculateBootSpentSeconds(final List<String> lines) {

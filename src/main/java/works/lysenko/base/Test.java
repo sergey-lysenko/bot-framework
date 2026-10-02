@@ -160,6 +160,9 @@ public class Test implements _Test {
      */
     private boolean isNotExhausted() {
 
+        if (isNotNull(parameters) && parameters.isAllLeafs()) {
+            return !core.areAllLeafsExecuted();
+        }
         return null == core.getTotalTests() || repeater.getHistory().size() < core.getTotalTests();
     }
 
@@ -183,9 +186,15 @@ public class Test implements _Test {
     /**
      * Creates executor for root scenarios.
      */
-    private void prepareRoot() {
+    @Override
+    public final void prepareRoot() {
 
-        executor.ctrl(new Ctrl(null, ClassLoader.readFrom(root, false)));
+        if (null == executor.ctrl()) {
+            final String pack = (null != root && !root.isEmpty()) ? root : Scenario.root;
+            if (null != pack && !pack.isEmpty()) {
+                executor.ctrl(new Ctrl(null, ClassLoader.readFrom(pack, false)));
+            }
+        }
     }
 
     /**

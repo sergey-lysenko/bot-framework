@@ -203,4 +203,9 @@ public interface _Test {
      * Stop tests
      */
     void stop();
+
+    /**
+     * Creates executor for root scenarios.
+     */
+    void prepareRoot();
 }

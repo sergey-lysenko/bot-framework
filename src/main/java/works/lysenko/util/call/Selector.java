@@ -126,7 +126,7 @@ public final class Selector implements Callable<_Scenario> {
      * @return A1 list of pairs containing the selected scenarios and their adjusted weights.
      */
     @SuppressWarnings("ObjectAllocationInLoop")
-    private List<KeyValue<_Scenario, Fraction>> getExecutionCandidates() {
+    List<KeyValue<_Scenario, Fraction>> getExecutionCandidates() {
 
         final List<KeyValue<_Scenario, Fraction>> candidates = new LinkedList<>();
         for (final KeyValue<_Scenario, Fraction> pair : ctrl.getWeightedList()) {
@@ -135,6 +135,11 @@ public final class Selector implements Callable<_Scenario> {
             if (scenario.isExecutable()) {
                 if (Include.upstream) weight = fr(weight.doubleValue() + scenario.weightUpstream().doubleValue());
                 if (Include.downstream) weight = fr(weight.doubleValue() + downstreamWeight(scenario).doubleValue());
+                if (isNotNull(weight) && 0.0 < weight.doubleValue()
+                        && isNotNull(core) && isNotNull(core.getResults())
+                        && 0 == core.getResults().getExecutions(scenario)
+                        && isNotNull(Scenario.completionWeight))
+                    weight = weight.add(Scenario.completionWeight);
                 final KeyValue<_Scenario, Fraction> newPair = kv(scenario, weight);
                 candidates.add(newPair);
             } else Utils.logScenarioNotExecutable(scenario);

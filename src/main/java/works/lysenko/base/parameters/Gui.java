@@ -51,6 +51,7 @@ public class Gui implements _GUI {
     private final Parameters parameters;
     private JTextField domain = null;
     private JCheckBox headless = null;
+    private JCheckBox allLeafs = null;
     private JComboBox<Object> platform = null;
     private JComboBox<Object> test = null;
     private JComboBox<Object> pool = null;
@@ -76,7 +77,16 @@ public class Gui implements _GUI {
      */
     private static void add(final String label, final Component comp, final Container container) {
 
-        container.add(new JLabel(label));
+        final JLabel l = new JLabel(label);
+        if (comp instanceof JCheckBox cb) {
+            l.addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override
+                public void mouseClicked(final java.awt.event.MouseEvent e) {
+                    cb.setSelected(!cb.isSelected());
+                }
+            });
+        }
+        container.add(l);
         container.add(comp);
     }
 
@@ -214,6 +224,8 @@ public class Gui implements _GUI {
             headless = new JCheckBox();
             headless.setSelected(Boolean.parseBoolean(parameters.getProperty(HEADLESS.name())));
         }
+        allLeafs = new JCheckBox();
+        allLeafs.setSelected(Boolean.parseBoolean(parameters.getProperty(ALL_LEAFS.name())));
     }
 
     /**
@@ -240,6 +252,7 @@ public class Gui implements _GUI {
             add(DOMAIN.name(), domain, panel);
             add(HEADLESS.name(), headless, panel);
         }
+        add(ALL_LEAFS.name(), allLeafs, panel);
 
         // Additional parameters
         if (isNotNull(aParams)) {
@@ -273,6 +286,9 @@ public class Gui implements _GUI {
             if (isNotNull(headless)) {
                 parameters.setProperty(HEADLESS.name(), String.valueOf(headless.isSelected()));
             }
+        }
+        if (isNotNull(allLeafs)) {
+            parameters.setProperty(ALL_LEAFS.name(), String.valueOf(allLeafs.isSelected()));
         }
 
         // Additional parameters

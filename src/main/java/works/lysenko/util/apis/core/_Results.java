@@ -36,6 +36,14 @@ public interface _Results {
     Result count(_Scenario scenario);
 
     /**
+     * Retrieves the number of executions of a given scenario.
+     *
+     * @param scenario the scenario to retrieve the execution count for
+     * @return the execution count of the scenario
+     */
+    int getExecutions(_Scenario scenario);
+
+    /**
      * Retrieves a list of failure causing events.
      *
      * @return a list of Strings representing failure details.

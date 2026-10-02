@@ -5,6 +5,7 @@ import works.lysenko.util.apis.exception.checked.SafeguardException;
 import works.lysenko.util.data.records.KeyValue;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * This interface represents a controller that manages a set of scenarios.
@@ -77,4 +78,9 @@ public interface _Ctrl {
      * @return The list of scenarios along with their weights.
      */
     List<KeyValue<_Scenario, Fraction>> getWeightedList();
+
+    /**
+     * @return set of all presently accessible leaf scenarios
+     */
+    Set<_Scenario> getAccessibleLeafs();
 }

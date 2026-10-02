@@ -35,6 +35,13 @@ public interface _TestParameters {
     String getDomain();
 
     /**
+     * Checks if all leafs execution mode is enabled.
+     *
+     * @return true if running until all leafs are executed, false otherwise
+     */
+    boolean isAllLeafs();
+
+    /**
      * Checks if headless mode is enabled.
      *
      * @return true if headless, false otherwise

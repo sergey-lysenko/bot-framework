@@ -40,6 +40,8 @@ import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Swap.s1;
 import static works.lysenko.util.data.strs.Time.t;
 import static works.lysenko.util.data.strs.Vars.a;
+import static works.lysenko.util.data.enums.Brackets.ROUND;
+import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.func.data.Percents.percentString;
 import static works.lysenko.util.func.type.Objects.isNotNull;
@@ -80,6 +82,7 @@ public class Repeater implements _Repeater {
     private Long startedAt = null;
     private boolean done = false;
     private CircularFifoQueue<Long> safeguard;
+    private volatile int testsCount = 0;
 
     /**
      * Creates a new instance of the Repeater class.
@@ -146,7 +149,7 @@ public class Repeater implements _Repeater {
         if (isNull(startedAt)) return null;
         if (isNull(exec) || done) return null;
         final int current = statistics.history().size() + 1;
-        if (isNull(getTotalTests())) return current;
+        if ((isNotNull(parameters) && parameters.isAllLeafs()) || isNull(getTotalTests())) return current;
         return (current > getTotalTests()) ? null : current;
     }
 
@@ -162,6 +165,13 @@ public class Repeater implements _Repeater {
     }
 
     @Override
+    public final int getTestsCount() {
+
+        final int historySize = (null != statistics && null != statistics.history()) ? statistics.history().size() : 0;
+        return Math.max(testsCount, historySize);
+    }
+
+    @Override
     public final Integer getTotalTests() {
 
         return _TESTS.get();
@@ -170,6 +180,7 @@ public class Repeater implements _Repeater {
     public final void run() throws SafeguardException {
 
         startedAt = Routines.msSinceStart();
+        testsCount = statistics.history().size() + 1;
         title();
         try {
             executor.exec();
@@ -239,6 +250,15 @@ public class Repeater implements _Repeater {
      */
     @SuppressWarnings("NestedConditionalExpression")
     private String getTitle() {
+
+        if (isNotNull(parameters) && parameters.isAllLeafs()) {
+            final int executed = core.getExecutedLeafsCount();
+            final int total = core.getAccessibleLeafs().size();
+            final String progress = (0 == total) ? StringUtils.EMPTY :
+                    b(s(executed, _SLASH_, total), percentString(executed, total));
+            return b(q(parameters.getTest()), null == getCurrent() ? StringUtils.EMPTY :
+                    b(s(_BULLT_), b(c(TEST), s(getCurrent()), e(ROUND, progress))));
+        }
 
         return b(q(parameters.getTest()), null == getCurrent() ? StringUtils.EMPTY : b(s(_BULLT_), b(c(TEST), s(getCurrent(),
                 null == core.getTotalTests() ? StringUtils.EMPTY : b(s(_SLASH_, core.getTotalTests()),

@@ -11,7 +11,10 @@ import works.lysenko.util.prop.core.Time;
 import works.lysenko.util.prop.tree.Include;
 import works.lysenko.util.prop.tree.Scenario;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import works.lysenko.util.apis.scenario._Node;
 
 import static java.util.Objects.isNull;
 import static works.lysenko.Base.core;
@@ -144,6 +147,29 @@ public class Ctrl extends Root implements _Ctrl {
     public final List<KeyValue<_Scenario, Fraction>> getWeightedList() {
 
         return pool.getPairList();
+    }
+
+    @Override
+    public final Set<_Scenario> getAccessibleLeafs() {
+
+        final Set<_Scenario> leafs = new HashSet<>();
+        collectAccessibleLeafs(getWeightedList(), leafs);
+        return leafs;
+    }
+
+    private static void collectAccessibleLeafs(final Iterable<KeyValue<_Scenario, Fraction>> pairs, final Set<_Scenario> leafs) {
+
+        if (isNull(pairs)) return;
+        for (final KeyValue<_Scenario, Fraction> pair : pairs) {
+            final _Scenario s = pair.k();
+            if (s.isExecutable() && s.calculateCombinations(true) > 0) {
+                if (s instanceof _Node node) {
+                    collectAccessibleLeafs(node.getPool().getPairList(), leafs);
+                } else {
+                    leafs.add(s);
+                }
+            }
+        }
     }
 
     /**

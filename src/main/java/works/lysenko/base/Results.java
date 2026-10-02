@@ -88,6 +88,13 @@ public class Results implements _Results {
         return r;
     }
 
+    @Override
+    public int getExecutions(final _Scenario scenario) {
+
+        final Result r = results.get(scenario);
+        return isNotNull(r) ? r.getExecutions() : 0;
+    }
+
     public List<String> getFailures() {
 
         final List<String> list = new ArrayList<>(0);

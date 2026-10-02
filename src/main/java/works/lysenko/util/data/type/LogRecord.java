@@ -7,7 +7,9 @@ import works.lysenko.util.data.type.logr.AbstractLogData;
 import java.text.DecimalFormat;
 import java.util.function.Function;
 
+import static java.lang.Math.max;
 import static java.util.Objects.isNull;
+import static works.lysenko.Base.core;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.SPACE;
 import static works.lysenko.Base.logEvent;
@@ -61,7 +63,7 @@ public class LogRecord implements _LogRecord {
 
         final String message = data.render();
         final String test = renderTest(totalTests);
-        final boolean gray = EMPTY.equals(test) || EMPTY.equals(message);
+        final boolean gray = isNull(this.test) || EMPTY.equals(message);
         final boolean yellow = isNotNull(previousId) && previousId + 1 != data.id();
         final String stamp = gray(gray, s(test, yb(yellow, renderId()), renderTime(spanLength)));
         return b(stamp, message);
@@ -70,10 +72,23 @@ public class LogRecord implements _LogRecord {
     @SuppressWarnings("MethodWithMultipleReturnPoints")
     public final String renderTest(final Integer totalTests) {
 
-        if (isNull(test)) return EMPTY;
-        final int width = (null == totalTests) ? s(test).length() : s(totalTests).length();
-        final String testN = sn(EMPTY, test);
-        final String prefix = SPACE.repeat(width - testN.length());
+        final int currentTests = isNotNull(core) ? core.getTestsCount() : 0;
+        final int currentWidth = (0 == currentTests) ? 0 : s(currentTests).length();
+        final int totalWidth = (null == totalTests) ? 0 : s(totalTests).length();
+        final int testWidth = (null == test) ? 0 : s(test).length();
+        int width = max(max(totalWidth, currentWidth), testWidth);
+        if (0 == width && isNotNull(core)) {
+            final int paths = core.getActiveScenarioPaths();
+            if (0 < paths) {
+                width = s(paths).length();
+            }
+        }
+        if (0 == width) {
+            width = 2;
+        }
+        if (isNull(test)) return e(SQUARE, SPACE.repeat(width));
+        final String testN = s(test);
+        final String prefix = SPACE.repeat(max(0, width - testN.length()));
         return e(SQUARE, s(prefix, testN));
     }
 

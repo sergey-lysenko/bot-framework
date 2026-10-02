@@ -5,7 +5,12 @@ import works.lysenko.util.apis.exception.checked.SafeguardException;
 import works.lysenko.util.apis.exception.unchecked.ScenarioRuntimeException;
 import works.lysenko.util.apis.test._Test;
 import works.lysenko.util.data.records.test.Workflow;
+import org.apache.commons.lang3.StringUtils;
 import works.lysenko.util.spec.Level;
+
+import static works.lysenko.util.data.enums.Brackets.ROUND;
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Wrap.e;
 
 import static works.lysenko.Base.*;
 import static works.lysenko.util.chrs.__.OF;
@@ -46,9 +51,15 @@ public record Routines() {
             logEvent(S2, NO_TESTS_WERE_PERFORMED);
             return;
         }
+        final int recommended = isNotNull(core) ? core.getActiveScenarioPaths() : 0;
+        final String recommendedMsg = (0 < recommended) ?
+                e(ROUND, b("recommended:", s1(recommended, "cycle"), "to cover all", s1(recommended, "leaf"))) : StringUtils.EMPTY;
+
         final String numberOfRepetitions = yb((null == total) ? TESTS : s1(total, TEST));
         final String testDescription = parameters.testDescription();
-        log(Level.none, b(c(EXECUTING), numberOfRepetitions, OF, testDescription), true);
+        final String allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs()) ? "in ALL_LEAFS mode" : StringUtils.EMPTY;
+
+        log(Level.none, b(false, c(EXECUTING), numberOfRepetitions, OF, testDescription, allLeafsMode, recommendedMsg), true);
     }
 
     /**

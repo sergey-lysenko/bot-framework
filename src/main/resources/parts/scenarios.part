@@ -14,6 +14,14 @@
 # .default.scenario.fitting.attempts=5
 
 # ------------------------------------------------------------------------------
+# Weight coefficient added to unexecuted scenarios.
+# .completion.weight=4.5
+
+# ------------------------------------------------------------------------------
+# Execute tests dynamically until all accessible leafs are covered.
+# .all.leafs=false
+
+# ------------------------------------------------------------------------------
 # Weight coefficient assigned to scenarios that are omitted.
 # .default.weight=0.0
 

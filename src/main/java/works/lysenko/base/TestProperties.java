@@ -226,8 +226,17 @@ public class TestProperties implements _TestProperties {
         result = readTestPropertiesFromFile(new TestPropertiesDescriptor(_TESTS_, parameters.getTest(),
                 TEST_PROPERTIES_EXTENSION));
         the.putAll(result.properties());
-        if (isNotNull(parameters) && parameters.isHeadless()) {
-            the.setProperty(PropEnum._HEADLESS.getPropertyName(), String.valueOf(true));
+        if (isNotNull(parameters)) {
+            if (parameters.isHeadless()) {
+                the.setProperty(PropEnum._HEADLESS.getPropertyName(), String.valueOf(true));
+            } else {
+                the.remove(PropEnum._HEADLESS.getPropertyName());
+            }
+            if (parameters.isAllLeafs()) {
+                the.setProperty(PropEnum._ALL_LEAFS.getPropertyName(), String.valueOf(true));
+            } else {
+                the.remove(PropEnum._ALL_LEAFS.getPropertyName());
+            }
         }
         logTestConfiguration(common, result.debug());
     }

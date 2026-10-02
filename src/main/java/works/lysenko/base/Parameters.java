@@ -52,6 +52,13 @@ public final class Parameters extends Properties implements _ExecutionParameterV
      *
      * @param list the list of parameters, formatted as "params:types". If null, no parameters are loaded.
      */
+    Parameters(final Properties properties) {
+
+        if (isNotNull(properties)) {
+            putAll(properties);
+        }
+    }
+
     Parameters(final String list) {
 
         loadFromFile();
@@ -60,6 +67,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         read(PLATFORM);
         readDeviceOrDomain();
         read(HEADLESS);
+        read(ALL_LEAFS);
         readAdditionalParameters(list);
         showOptionalGui();
     }
@@ -96,9 +104,23 @@ public final class Parameters extends Properties implements _ExecutionParameterV
     }
 
     @Override
+    public boolean isAllLeafs() {
+
+        final String val = getValue(ALL_LEAFS);
+        if (isNotNull(val) && !val.isEmpty()) {
+            return Boolean.parseBoolean(val);
+        }
+        return Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._ALL_LEAFS.get());
+    }
+
+    @Override
     public boolean isHeadless() {
 
-        return Boolean.parseBoolean(getValue(HEADLESS)) || Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._HEADLESS.get());
+        final String val = getValue(HEADLESS);
+        if (isNotNull(val) && !val.isEmpty()) {
+            return Boolean.parseBoolean(val);
+        }
+        return Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._HEADLESS.get());
     }
 
     /**

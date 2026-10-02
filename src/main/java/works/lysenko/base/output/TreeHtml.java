@@ -123,6 +123,8 @@ public final class TreeHtml {
     }
 
     static void optimizeLayout(final List<NodeData> nodes) {
+        if (nodes.isEmpty()) return;
+
         final Map<Integer, List<NodeData>> colMap = new HashMap<>();
         int maxCol = 0;
         for (final NodeData n : nodes) {
@@ -130,77 +132,160 @@ public final class TreeHtml {
             if (n.col() > maxCol) maxCol = n.col();
         }
 
-        for (int iter = 0; iter < 2; iter++) {
-            // Backward pass: center parents vertically with respect to their children
-            for (int c = maxCol - 1; c >= 0; c--) {
-                final List<NodeData> colNodes = colMap.get(c);
-                if (null == colNodes) continue;
-                double prevRow = 0.0;
-                for (final NodeData n : colNodes) {
-                    if (!n.children().isEmpty()) {
-                        double sum = 0.0;
-                        for (final NodeData child : n.children()) {
-                            sum += child.row();
-                        }
-                        final double ideal = sum / n.children().size();
-                        n.setRow(Math.max(ideal, prevRow + 1.0));
-                    } else {
-                        n.setRow(Math.max(n.row(), prevRow + 1.0));
-                    }
-                    prevRow = n.row();
-                }
+        // Initialize rows sequentially in each column
+        for (final List<NodeData> colNodes : colMap.values()) {
+            for (int i = 0; i < colNodes.size(); i++) {
+                colNodes.get(i).setRow(i + 1.0);
             }
+        }
 
-            // Forward pass: each next level follows the rule of "as short connections as possible",
-            // moving plaques lower to be closer to their parents
-            for (int c = 1; c <= maxCol; c++) {
+        // Iterative barycentric relaxation with isotonic regression (PAVA)
+        // Minimizes total edge distance while strictly enforcing the non-overlapping constraint (row[i+1] >= row[i] + 1.0)
+        final int iterations = 24;
+        for (int iter = 0; iter < iterations; iter++) {
+            final boolean backward = (0 == iter % 2);
+            final int startCol = backward ? maxCol : 0;
+            final int endCol = backward ? 0 : maxCol;
+            final int step = backward ? -1 : 1;
+
+            for (int c = startCol; backward ? c >= endCol : c <= endCol; c += step) {
                 final List<NodeData> colNodes = colMap.get(c);
                 if (null == colNodes || colNodes.isEmpty()) continue;
-                double prevRow = 0.0;
-                int idx = 0;
-                while (idx < colNodes.size()) {
-                    final NodeData first = colNodes.get(idx);
-                    final NodeData parent = first.parent();
-                    int endIdx = idx + 1;
-                    while (endIdx < colNodes.size() && colNodes.get(endIdx).parent() == parent) {
-                        endIdx++;
+
+                final double[] targets = new double[colNodes.size()];
+                for (int i = 0; i < colNodes.size(); i++) {
+                    final NodeData n = colNodes.get(i);
+                    double sum = 0.0;
+                    int count = 0;
+                    if (null != n.parent()) {
+                        sum += n.parent().row();
+                        count++;
                     }
-                    final int k = endIdx - idx;
-                    final double idealStart = (null != parent)
-                            ? parent.row() - (k - 1.0) / 2.0
-                            : first.row();
-                    final double startRow = Math.max(prevRow + 1.0, idealStart);
-                    for (int i = 0; i < k; i++) {
-                        final NodeData child = colNodes.get(idx + i);
-                        final double targetRow = startRow + i;
-                        child.setRow(Math.max(prevRow + 1.0, Math.max(child.row(), targetRow)));
-                        prevRow = child.row();
+                    for (final NodeData child : n.children()) {
+                        sum += child.row();
+                        count++;
                     }
-                    idx = endIdx;
+                    targets[i] = (0 < count) ? (sum / count) : n.row();
                 }
+
+                final double[] resolved = solveColumn1D(targets);
+                for (int i = 0; i < colNodes.size(); i++) {
+                    colNodes.get(i).setRow(resolved[i]);
+                }
+            }
+        }
+
+        // Normalize vertical offset so top node starts at row 1.0
+        double minRow = Double.MAX_VALUE;
+        for (final NodeData n : nodes) {
+            if (n.row() < minRow) minRow = n.row();
+        }
+        if (minRow < Double.MAX_VALUE && minRow > 1.0) {
+            final double shift = minRow - 1.0;
+            for (final NodeData n : nodes) {
+                n.setRow(n.row() - shift);
             }
         }
     }
 
-    private static String renderHtml(final List<NodeData> nodes, final List<Edge> edges) {
+    /**
+     * Solves the 1D non-overlapping layout problem minimizing squared distance to targets
+     * subject to y[i+1] >= y[i] + 1.0 and y[0] >= 1.0 using the Pool Adjacent Violators Algorithm (PAVA).
+     */
+    static double[] solveColumn1D(final double[] targets) {
+        final int m = targets.length;
+        if (0 == m) return new double[0];
+
+        final class Block {
+            double sum;
+            int count;
+            Block(final double sum, final int count) {
+                this.sum = sum;
+                this.count = count;
+            }
+            double avg() {
+                return sum / count;
+            }
+        }
+
+        final List<Block> blocks = new ArrayList<>(m);
+        for (int i = 0; i < m; i++) {
+            final double z = targets[i] - i;
+            blocks.add(new Block(z, 1));
+            while (blocks.size() > 1) {
+                final Block b2 = blocks.get(blocks.size() - 1);
+                final Block b1 = blocks.get(blocks.size() - 2);
+                if (b1.avg() > b2.avg()) {
+                    b1.sum += b2.sum;
+                    b1.count += b2.count;
+                    blocks.remove(blocks.size() - 1);
+                } else {
+                    break;
+                }
+            }
+        }
+
+        final double[] w = new double[m];
+        int idx = 0;
+        for (final Block b : blocks) {
+            final double avg = b.avg();
+            for (int i = 0; i < b.count; i++) {
+                w[idx++] = avg;
+            }
+        }
+
+        if (w[0] < 1.0) {
+            final double shift = 1.0 - w[0];
+            for (int i = 0; i < m; i++) {
+                w[i] += shift;
+            }
+        }
+
+        final double[] y = new double[m];
+        for (int i = 0; i < m; i++) {
+            y[i] = w[i] + i;
+        }
+        return y;
+    }
+
+    static String renderHtml(final List<NodeData> nodes, final List<Edge> edges) {
         final StringBuilder svgContent = new StringBuilder();
 
+        // Sort edges so visited/active paths are rendered on top of unvisited paths
+        final List<Edge> sortedEdges = new ArrayList<>(edges);
+        sortedEdges.sort(Comparator.comparingInt(e -> {
+            final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
+            final int fromExecs = (null != e.from().result()) ? e.from().result().getExecutions() : 0;
+            return (toExecs > 0 && fromExecs > 0) ? 1 : 0;
+        }));
+
         // Render Edges (smooth cubic Béziers)
-        for (final Edge e : edges) {
+        for (final Edge e : sortedEdges) {
             final int startX = e.from().col() * COL_WIDTH + CARD_WIDTH + 40;
             final int startY = (int) Math.round(e.from().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + 20);
             final int endX = e.to().col() * COL_WIDTH + 40;
             final int endY = (int) Math.round(e.to().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + 20);
             final int cX = (startX + endX) / 2;
 
+            final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
+            final int fromExecs = (null != e.from().result()) ? e.from().result().getExecutions() : 0;
+            final int toEvents = (null != e.to().result() && null != e.to().result().getEvents()) ? e.to().result().getEvents().size() : 0;
+
+            final String edgeClass;
+            if (toExecs > 0 && fromExecs > 0) {
+                edgeClass = (toEvents > 0) ? "connector warning" : "connector visited";
+            } else {
+                edgeClass = "connector";
+            }
+
             svgContent.append(String.format(
                     Locale.US,
-                    "<path class=\"connector\" data-from=\"%s\" data-to=\"%s\" d=\"M %d %d C %d %d, %d %d, %d %d\" />\n",
-                    e.from().id(), e.to().id(), startX, startY, cX, startY, cX, endY, endX, endY
+                    "<path class=\"%s\" data-from=\"%s\" data-to=\"%s\" d=\"M %d %d C %d %d, %d %d, %d %d\" />\n",
+                    edgeClass, e.from().id(), e.to().id(), startX, startY, cX, startY, cX, endY, endX, endY
             ));
         }
 
-        // Render Nodes
+                // Render Nodes
         for (final NodeData n : nodes) {
             final int x = n.col() * COL_WIDTH + 40;
             final int y = (int) Math.round(n.row() * ROW_HEIGHT + 20);
@@ -265,7 +350,9 @@ public final class TreeHtml {
                 "  .node-card.unvisited rect { fill: #1e293b; stroke: #475569; }\n" +
                 "  .node-card text { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; fill: #f8fafc; }\n" +
                 "  .connector { fill: none; stroke: #475569; stroke-width: 2; transition: stroke 0.2s, stroke-width 0.2s; }\n" +
-                "  .connector.active { stroke: var(--accent); stroke-width: 3; }\n" +
+                "  .connector.visited { stroke: #22c55e; stroke-width: 2.5; }\n" +
+                "  .connector.warning { stroke: #f59e0b; stroke-width: 2.5; }\n" +
+                "  .connector.active { stroke: var(--accent); stroke-width: 3.5; }\n" +
                 "  #details-panel { position: absolute; right: 20px; bottom: 20px; width: 360px; max-height: 400px; overflow-y: auto; background: rgba(30, 41, 59, 0.95); border: 1px solid var(--border); backdrop-filter: blur(8px); border-radius: 8px; padding: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); display: none; z-index: 20; }\n" +
                 "  #details-panel h3 { font-size: 14px; margin-bottom: 8px; color: var(--accent); word-break: break-all; }\n" +
                 "  #details-panel p { font-size: 12px; line-height: 1.6; color: var(--text-muted); }\n" +
@@ -305,6 +392,15 @@ public final class TreeHtml {
                 "  function zoomIn() { scale = Math.min(scale * 1.2, 4); updateTransform(); }\n" +
                 "  function zoomOut() { scale = Math.max(scale / 1.2, 0.2); updateTransform(); }\n" +
                 "  function resetZoom() { scale = 1; panX = 40; panY = 40; updateTransform(); }\n" +
+                "  document.querySelectorAll('.node-card').forEach(card => {\n" +
+                "    card.addEventListener('mouseenter', () => {\n" +
+                "      const id = card.id;\n" +
+                "      document.querySelectorAll('.connector[data-from=\"' + id + '\"], .connector[data-to=\"' + id + '\"]').forEach(c => c.classList.add('active'));\n" +
+                "    });\n" +
+                "    card.addEventListener('mouseleave', () => {\n" +
+                "      document.querySelectorAll('.connector.active').forEach(c => c.classList.remove('active'));\n" +
+                "    });\n" +
+                "  });\n" +
                 "  function showDetails(name, group, exec, events, details) {\n" +
                 "    const p = document.getElementById('details-panel');\n" +
                 "    p.style.display = 'block';\n" +

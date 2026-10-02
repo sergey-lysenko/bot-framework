@@ -58,6 +58,11 @@ public interface _Repeater {
     List<List<String>> getHistory();
 
     /**
+     * @return current number of tests
+     */
+    int getTestsCount();
+
+    /**
      * @return tests summary
      */
     List<List<String>> getSummary();

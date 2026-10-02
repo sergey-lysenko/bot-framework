@@ -6,9 +6,36 @@ import works.lysenko.base.output.TreeHtml.NodeData;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import works.lysenko.base.output.TreeHtml.Edge;
+import works.lysenko.util.apis.data._Result;
+import works.lysenko.util.apis.log._LogRecord;
+import works.lysenko.util.data.enums.ScenarioType;
+import org.apache.commons.math3.fraction.Fraction;
+import works.lysenko.util.data.type.Result;
+
 
 class TreeHtmlTest {
+
+    @Test
+    void testSolveColumn1DGuaranteesNonOverlapAndMinimization() {
+        // Test targets that violate ordering (e.g. 10.0, 2.0, 5.0)
+        final double[] targets = {10.0, 2.0, 5.0};
+        final double[] resolved = TreeHtml.solveColumn1D(targets);
+
+        assertEquals(3, resolved.length);
+        assertTrue(resolved[0] >= 1.0);
+        assertTrue(resolved[1] >= resolved[0] + 1.0 - 1e-6);
+        assertTrue(resolved[2] >= resolved[1] + 1.0 - 1e-6);
+
+        // Verify PAVA merges violators into optimal monotonic average
+        // (10 - 0) = 10, (2 - 1) = 1, (5 - 2) = 3 -> mean of z is (10+1+3)/3 = 14/3 = 4.667
+        // w = [4.667, 4.667, 4.667] -> y = [4.667, 5.667, 6.667]
+        assertEquals(14.0 / 3.0, resolved[0], 1e-6);
+        assertEquals(14.0 / 3.0 + 1.0, resolved[1], 1e-6);
+        assertEquals(14.0 / 3.0 + 2.0, resolved[2], 1e-6);
+    }
 
     @Test
     void testOptimizeLayoutBringsChildrenCloserToParents() {
@@ -81,4 +108,34 @@ class TreeHtmlTest {
         assertTrue(settingsConfigureProducts.row() >= 10.0,
                 "SettingsConfigureProducts should be near ConfigureProducts (>= 10.0) but was " + settingsConfigureProducts.row());
     }
+
+    @Test
+    void testVisitedAndUnvisitedEdgesRendering() {
+        final List<NodeData> nodes = new ArrayList<>();
+        final List<Edge> edges = new ArrayList<>();
+
+        final _Result visitedResult = new Result(ScenarioType.NODE, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 1, 1);
+        final _Result unvisitedResult = new Result(ScenarioType.LEAF, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 0, 1);
+
+        final NodeData root = new NodeData("col_0_0", "SignIn", "Root", 0, 1.0, visitedResult);
+        final NodeData childVisited = new NodeData("col_1_0", "CorrectLogin", "Login", 1, 1.0, visitedResult);
+        final NodeData childUnvisited = new NodeData("col_1_1", "WrongLogin", "Login", 1, 2.0, unvisitedResult);
+
+        nodes.add(root);
+        nodes.add(childVisited);
+        nodes.add(childUnvisited);
+
+        edges.add(new Edge(root, childVisited));
+        edges.add(new Edge(root, childUnvisited));
+
+        final String html = TreeHtml.renderHtml(nodes, edges);
+
+        // Edge to childVisited should have class "connector visited"
+        assertTrue(html.contains("class=\"connector visited\" data-from=\"col_0_0\" data-to=\"col_1_0\""));
+        // Edge to childUnvisited should have class "connector"
+        assertTrue(html.contains("class=\"connector\" data-from=\"col_0_0\" data-to=\"col_1_1\""));
+        // CSS must contain the green visited connector styling
+        assertTrue(html.contains(".connector.visited { stroke: #22c55e; stroke-width: 2.5; }"));
+    }
+
 }

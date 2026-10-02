@@ -18,9 +18,29 @@ public interface _Tests {
     int getActiveScenarioPaths();
 
     /**
+     * @return set of all presently accessible leaf scenarios
+     */
+    Set<_Scenario> getAccessibleLeafs();
+
+    /**
+     * @return true if all presently accessible leaf scenarios have been executed at least once
+     */
+    boolean areAllLeafsExecuted();
+
+    /**
+     * @return number of executed accessible leaf scenarios
+     */
+    int getExecutedLeafsCount();
+
+    /**
      * @return currently executed test
      */
     Integer getCurrentTestNumber();
+
+    /**
+     * @return current number of tests
+     */
+    int getTestsCount();
 
     /**
      * @return exception object reference

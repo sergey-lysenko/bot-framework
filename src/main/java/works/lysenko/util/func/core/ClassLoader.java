@@ -178,6 +178,7 @@ public record ClassLoader() {
      */
     private static InputStream getInputStreamFromPack(final String pack) {
 
+        if (isNull(pack)) return null;
         final String s0 = s(pack.replaceAll(e(SQUARE, s(_DOT_)), s(_SLASH_)), _SLASH_);
         final Class<ClassLoader> clazz = ClassLoader.class;
         final java.lang.ClassLoader classLoader = clazz.getClassLoader();
@@ -312,6 +313,7 @@ public record ClassLoader() {
      */
     public static Set<_Scenario> readFrom(final String packageName, final boolean silent) {
 
+        if (isNull(packageName) || packageName.isEmpty()) return Set.of();
         return instantiateScenarios(findAll(packageName, silent), silent);
     }
 

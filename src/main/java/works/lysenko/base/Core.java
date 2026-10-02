@@ -17,6 +17,7 @@ import works.lysenko.util.apis.core._Results;
 import works.lysenko.util.apis.core._Tests;
 import works.lysenko.util.apis.log._Logs;
 import works.lysenko.util.apis.scenario._Scenario;
+import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.apis.test._Test;
 import works.lysenko.util.apis.util._Dashboard;
 import works.lysenko.util.prop.core.Is;
@@ -121,17 +122,58 @@ public final class Core extends Root implements _Core, _Tests {
 
     public int getActiveScenarioPaths() {
 
-        if (isNotNull(test))
-            if (isNotNull(test.executor()))
-                if (isNotNull(test.executor().ctrl()))
-                    return test.executor().ctrl().getPathsCount(true);
+        if (isNotNull(test) && isNotNull(test.executor())) {
+            if (isNotNull(test.executor().ctrl()))
+                return test.executor().ctrl().getPathsCount(true);
+        }
         return ZERO;
+    }
+
+    @Override
+    public Set<_Scenario> getAccessibleLeafs() {
+
+        if (isNotNull(test) && isNotNull(test.executor())) {
+            if (isNotNull(test.executor().ctrl()))
+                return test.executor().ctrl().getAccessibleLeafs();
+        }
+        return Set.of();
+    }
+
+    @Override
+    public boolean areAllLeafsExecuted() {
+
+        final Set<_Scenario> leafs = getAccessibleLeafs();
+        if (leafs.isEmpty()) return true;
+        for (final _Scenario leaf : leafs) {
+            if (0 == getResults().getExecutions(leaf))
+                return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int getExecutedLeafsCount() {
+
+        final Set<_Scenario> leafs = getAccessibleLeafs();
+        int count = 0;
+        for (final _Scenario leaf : leafs) {
+            if (0 < getResults().getExecutions(leaf))
+                count++;
+        }
+        return count;
     }
 
     public Integer getCurrentTestNumber() {
 
         if (isNull(test)) return null;
         return test.repeater().getCurrent();
+    }
+
+    @Override
+    public int getTestsCount() {
+
+        if (isNull(test) || isNull(test.repeater())) return ZERO;
+        return test.repeater().getTestsCount();
     }
 
     public _Dashboard getDashboard() {

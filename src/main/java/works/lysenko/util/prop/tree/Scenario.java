@@ -1,5 +1,6 @@
 package works.lysenko.util.prop.tree;
 
+import org.apache.commons.math3.fraction.Fraction;
 import static works.lysenko.util.func.data.Regexes.l1;
 import static works.lysenko.util.spec.PropEnum.*;
 
@@ -13,6 +14,10 @@ public record Scenario() {
      * Represents a list of ignored items.
      */
     public static final String ignoredList = getIgnoredList();
+    /**
+     * Represents the completion weight for a scenario.
+     */
+    public static final Fraction completionWeight = _COMPLETION_WEIGHT.get();
     /**
      * Represents the default weight for a scenario.
      */
