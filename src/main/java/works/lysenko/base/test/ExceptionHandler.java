@@ -93,7 +93,7 @@ public class ExceptionHandler implements _ExceptionsHandler {
         try {
             ((_ExceptionalExecution) exceptional).isOk(exception, triplet);
         } catch (final RuntimeException e) {
-            logEvent(S0, b(message(e, exceptional.getName()), NOTHING_TO_DO_NOW));
+            logEvent(S0, b(message(exception, scenarioTitle), s(_LFD_), message(e, exceptional.getName()), NOTHING_TO_DO_NOW));
         }
     }
 

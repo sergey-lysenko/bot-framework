@@ -13,6 +13,9 @@ import static org.apache.commons.lang3.StringUtils.removeEnd;
 import static org.apache.commons.lang3.StringUtils.removeStart;
 import static works.lysenko.Base.core;
 import static works.lysenko.Base.exec;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static works.lysenko.base.core.Routines.in;
+import static works.lysenko.util.data.enums.Platform.ANDROID;
 import static works.lysenko.util.Constants._ANDROID_WIDGET_TEXTVIEW;
 import static works.lysenko.util.chrs.__.TO;
 import static works.lysenko.util.data.enums.Ansi.bb;
@@ -159,7 +162,10 @@ public abstract class Exceptional extends Core {
      */
     private void notResolved() {
 
-        logEvent(S0, UNRESOLVED___);
+        final String detail = isNotNull(triplet()) && isNotNull(triplet().ultimate())
+                ? triplet().ultimate().getMessage()
+                : (isNotNull(exception()) ? exception().getMessage() : UNRESOLVED___);
+        logEvent(S0, detail);
         stopTests();
     }
 
@@ -189,16 +195,14 @@ public abstract class Exceptional extends Core {
 
     private void handleExpectedCondition(final String line) {
 
-        {
-            logEvent(S1, b(PROVIDED_LOCATOR, q(removeStart(removeEnd(line, TRIED_FOR_30_SECONDS___),
-                    EXPECTED_CONDITION_FAILED___)), WAS_NOT_REACHABLE));
-            if (line.contains(TEXT_VIEW_TEXT)) {
-                final List<WebElement> allText = findAll(_ANDROID_WIDGET_TEXTVIEW);
-                log(AVAILABLE_TEXTS_OF_TEXT_VIEW_ELEMENTS);
-                for (final WebElement text : allText) log(0, b(FAT_BUL, q(text.getText())), false);
-            }
+        final String unreachable = b(PROVIDED_LOCATOR, q(removeStart(removeEnd(line, TRIED_FOR_30_SECONDS___),
+                EXPECTED_CONDITION_FAILED___)), WAS_NOT_REACHABLE);
+        if (in(ANDROID) && line.contains(TEXT_VIEW_TEXT)) {
+            final List<WebElement> allText = findAll(_ANDROID_WIDGET_TEXTVIEW);
+            log(AVAILABLE_TEXTS_OF_TEXT_VIEW_ELEMENTS);
+            for (final WebElement text : allText) log(0, b(FAT_BUL, q(text.getText())), false);
         }
-        failBecauseTimeout();
+        failBecauseTimeout(unreachable);
     }
 
     private void resolveStale() {
@@ -212,7 +216,7 @@ public abstract class Exceptional extends Core {
      */
     private void resolveTimeout(final Throwable cause) {
 
-        if (isPresent(ANDROID_LAUNCHER)) restartOrStop();
+        if (in(ANDROID) && isPresent(ANDROID_LAUNCHER)) restartOrStop();
         else {
             determineTimeoutResolvingAction(cause.getMessage());
             stopTests();
@@ -225,9 +229,15 @@ public abstract class Exceptional extends Core {
      * It logs an event with severity S1 and a specific message using the logEvent(Severity, String) method.
      * This method is called internally in the {@link #resolveTimeout(Throwable)} method of the {@code CoreExceptional} class.
      */
+    private void failBecauseTimeout(final String detail) {
+
+        logEvent(S0, b(c(TIMEOUT_EXCEPTION), s(_COLON_), detail));
+    }
+
     private void failBecauseTimeout() {
 
-        logEvent(S0, b(TIMEOUT_EXCEPTION));
+        final String msg = isNull(triplet().ultimate()) ? EMPTY : triplet().ultimate().getMessage();
+        failBecauseTimeout(msg);
     }
 
     /**

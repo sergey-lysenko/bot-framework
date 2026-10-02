@@ -11,7 +11,6 @@ import static works.lysenko.util.chrs.__.NO;
 import static works.lysenko.util.chrs.____.EXIT;
 import static works.lysenko.util.chrs.____.TEST;
 import static works.lysenko.util.data.enums.Ansi.*;
-import static works.lysenko.util.data.enums.Brackets.SQUARE;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Case.u;
@@ -91,7 +90,7 @@ record ResultMarker() {
             resultMessage = generateFailureMessage();
             foreground = WHITE_BOLD_BRIGHT;
             background = RED_BACKGROUND;
-            makeScreenAndCodeSnapshot(true, e(UND_SCR, e(SQUARE, u(EXIT))));
+            makeScreenAndCodeSnapshot(true, e(UND_SCR, u(EXIT)));
         }
         plaque(sn(resultMessage), foreground, background);
     }
