@@ -216,6 +216,8 @@ public final class LogHtml {
         if (!currentSec.lines.isEmpty()) sections.add(currentSec);
 
         TelemetryItem configItem = null;
+        TelemetryItem preflightItem = null;
+        TelemetryItem postflightItem = null;
         final List<TelemetryItem> testData = new ArrayList<>();
         final List<TelemetryItem> limboData = new ArrayList<>();
         final Map<Integer, TelemetryItem> limboByPrevTest = new LinkedHashMap<>();
@@ -257,8 +259,21 @@ public final class LogHtml {
                 final double confSec = calculateBootSpentSeconds(sec.lines);
                 sec.durationSec = confSec;
                 sec.durationStr = formatDeltaTime(confSec);
-                configItem = new TelemetryItem("Config", "Configuring", confSec, confSec * 1000.0, "neutral", true, 0);
-                limboData.add(configItem);
+                configItem = new TelemetryItem("Config", "Configuring", confSec, confSec * 1000.0, sec.status, true, 0);
+            } else if ("preflight".equals(sec.type)) {
+                final double t0 = toSeconds(sec.startTime);
+                final double t1 = toSeconds(sec.endTime);
+                final double delta = Math.max(0.001, t1 - t0);
+                sec.durationSec = delta;
+                sec.durationStr = formatDeltaTime(delta);
+                preflightItem = new TelemetryItem("Preflight", "Preflight", delta, delta * 1000.0, sec.status, true, 0);
+            } else if ("postflight".equals(sec.type)) {
+                final double t0 = toSeconds(sec.startTime);
+                final double t1 = toSeconds(sec.endTime);
+                final double delta = Math.max(0.001, t1 - t0);
+                sec.durationSec = delta;
+                sec.durationStr = formatDeltaTime(delta);
+                postflightItem = new TelemetryItem("Postflight", "Postflight", delta, delta * 1000.0, sec.status, true, 0);
             } else {
                 final double t0 = toSeconds(sec.startTime);
                 final double t1 = toSeconds(sec.endTime);
@@ -285,6 +300,12 @@ public final class LogHtml {
         }
         if (limboData.isEmpty()) lMin = 0;
         final double lAvg = limboData.isEmpty() ? 0 : lTotal / limboData.size();
+
+        double maxSec = tMax;
+        if (null != configItem && configItem.sec > maxSec) maxSec = configItem.sec;
+        if (null != preflightItem && preflightItem.sec > maxSec) maxSec = preflightItem.sec;
+        if (null != postflightItem && postflightItem.sec > maxSec) maxSec = postflightItem.sec;
+        if (maxSec <= 0.0) maxSec = 1.0;
 
         final StringBuilder sb = new StringBuilder();
         sb.append("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Execution Timeline & Telemetry</title>\n<style>\n");
@@ -318,11 +339,11 @@ public final class LogHtml {
         sb.append(".chart-scroll-wrap::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }\n");
         sb.append(".chart-scroll-wrap::-webkit-scrollbar-thumb:hover { background: #475569; }\n");
         sb.append(".bars-flex { display: flex; align-items: stretch; gap: 8px; padding: 0 4px; width: max-content; min-width: 100%; }\n");
-        sb.append(".bar-col.config { display: flex; flex-direction: column; align-items: center; min-width: 44px; cursor: pointer; user-select: none; }\n");
-        sb.append(".bar-col.config .bar-val { font-size: 11px; color: #94a3b8; font-family: ui-monospace, monospace; margin-bottom: 4px; white-space: nowrap; }\n");
-        sb.append(".bar-col.config .bar-track { flex: 1; width: 100%; max-width: 34px; display: flex; align-items: flex-end; background: rgba(30, 41, 59, 0.25); border-radius: 4px; overflow: hidden; }\n");
-        sb.append(".bar-col.config .bar-fill { width: 100%; background: #64748b; border-radius: 4px 4px 0 0; transition: height 0.2s; }\n");
-        sb.append(".bar-col.config .bar-lbl { font-size: 10px; color: #64748b; font-family: ui-monospace, monospace; margin-top: 5px; white-space: nowrap; }\n");
+        sb.append(".bar-col.phase, .bar-col.config { display: flex; flex-direction: column; align-items: center; min-width: 44px; cursor: pointer; user-select: none; }\n");
+        sb.append(".bar-col.phase .bar-val, .bar-col.config .bar-val { font-size: 11px; color: #94a3b8; font-family: ui-monospace, monospace; margin-bottom: 4px; white-space: nowrap; }\n");
+        sb.append(".bar-col.phase .bar-track, .bar-col.config .bar-track { flex: 1; width: 100%; max-width: 34px; display: flex; align-items: flex-end; background: rgba(30, 41, 59, 0.25); border-radius: 4px; overflow: hidden; }\n");
+        sb.append(".bar-col.phase .bar-fill, .bar-col.config .bar-fill { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.2s; }\n");
+        sb.append(".bar-col.phase .bar-lbl, .bar-col.config .bar-lbl { font-size: 10px; color: #64748b; font-family: ui-monospace, monospace; margin-top: 5px; white-space: nowrap; }\n");
         sb.append(".bar-pair { display: flex; flex-direction: column; align-items: center; justify-content: space-between; min-width: 44px; gap: 8px; }\n");
         sb.append(".bar-col.test { display: flex; flex-direction: column; align-items: center; width: 100%; height: 85px; cursor: pointer; user-select: none; }\n");
         sb.append(".bar-col.test .bar-val { font-size: 11px; color: #cbd5e1; font-family: ui-monospace, monospace; margin-bottom: 4px; white-space: nowrap; }\n");
@@ -339,7 +360,7 @@ public final class LogHtml {
         sb.append(".bar-col:hover .bar-lbl { color: #f8fafc; }\n");
         sb.append("body.hide-limbo .bar-col.limbo { display: none !important; }\n");
         sb.append("body.hide-limbo .bar-pair { gap: 0; }\n");
-        sb.append("body.hide-limbo .bar-col.config { height: 85px; }\n");
+        sb.append("body.hide-limbo .bar-col.phase, body.hide-limbo .bar-col.config { height: 85px; }\n");
         sb.append("body.hide-limbo .stat-group-limbo, body.hide-limbo .stat-divider { display: none !important; }\n");
         sb.append(".path-row { display: flex; align-items: center; gap: 14px; padding: 7px 10px; border-radius: 6px; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }\n");
         sb.append(".path-row:hover { background: rgba(56, 189, 248, 0.08); }\n");
@@ -477,7 +498,7 @@ public final class LogHtml {
         }
         sb.append("    </div>\n");
         sb.append("    <div class=\"chart-scroll-wrap\">\n");
-        sb.append("      <div class=\"bars-flex\">").append(renderTimeline(configItem, testData, limboByPrevTest, tMax, lMax)).append("</div>\n");
+        sb.append("      <div class=\"bars-flex\">").append(renderTimeline(configItem, preflightItem, testData, limboByPrevTest, postflightItem, tMax, lMax, maxSec)).append("</div>\n");
         sb.append("    </div>\n");
         sb.append("  </div>\n</div>\n");
 
@@ -506,8 +527,15 @@ public final class LogHtml {
         for (final LogSection sec : sections) {
             final boolean isTest = "test".equals(sec.type);
             final boolean isLimbo = "limbo".equals(sec.type) || "configuring".equals(sec.type);
-            final String badgeClass = isTest ? sec.status : isLimbo ? "limbo" : "neutral";
-            final String badgeText = isTest ? sec.status : "limbo".equals(sec.type) ? "limbo" : "config";
+            final String badgeClass = ("warning".equals(sec.status) || "failed".equals(sec.status)) ? sec.status
+                    : isTest ? sec.status : isLimbo ? "limbo" : "neutral";
+            final String badgeText = isTest ? sec.status
+                    : "limbo".equals(sec.type) ? "limbo"
+                    : "configuring".equals(sec.type) ? "config"
+                    : "preflight".equals(sec.type) ? "preflight"
+                    : "postflight".equals(sec.type) ? "postflight"
+                    : "booting".equals(sec.type) ? "boot"
+                    : sec.type;
             final String opRange = sec.startOp != null ? "[" + sec.startOp + ".." + sec.endOp + "]" : "";
             final String timeRange = (sec.startTime != null && sec.endTime != null) ? sec.startTime + "s ➔ " + sec.endTime + "s" : "";
             final String secId = "sec_" + sec.title.replace(" ", "_").replace("#", "").replace("➔", "to");
@@ -724,17 +752,11 @@ public final class LogHtml {
         return sb.toString();
     }
 
-    private static String renderTimeline(final TelemetryItem configItem, final List<TelemetryItem> testData, final Map<Integer, TelemetryItem> limboByPrevTest, final double tMax, final double lMax) {
+    private static String renderTimeline(final TelemetryItem configItem, final TelemetryItem preflightItem, final List<TelemetryItem> testData, final Map<Integer, TelemetryItem> limboByPrevTest, final TelemetryItem postflightItem, final double tMax, final double lMax, final double maxSec) {
         final StringBuilder sb = new StringBuilder();
 
-        if (null != configItem) {
-            final int pct = lMax > 0 ? Math.max(6, (int) Math.round((configItem.ms / lMax) * 100)) : 6;
-            final String valStr = Math.round(configItem.ms) + "ms";
-            sb.append("<div class=\"bar-col config\" onclick=\"focusSection('").append(configItem.title).append("')\" title=\"").append(configItem.title).append(": ").append(valStr).append("\">");
-            sb.append("<div class=\"bar-val\">").append(valStr).append("</div>");
-            sb.append("<div class=\"bar-track\"><div class=\"bar-fill\" style=\"height: ").append(pct).append("%; background: #64748b;\"></div></div>");
-            sb.append("<div class=\"bar-lbl\">").append(configItem.label).append("</div></div>\n");
-        }
+        sb.append(renderPhaseBar(configItem, "config", maxSec));
+        sb.append(renderPhaseBar(preflightItem, "preflight", maxSec));
 
         for (final TelemetryItem test : testData) {
             sb.append("<div class=\"bar-pair\">\n");
@@ -761,6 +783,29 @@ public final class LogHtml {
             sb.append("</div>\n");
         }
 
+        sb.append(renderPhaseBar(postflightItem, "postflight", maxSec));
+
+        return sb.toString();
+    }
+
+    private static String renderPhaseBar(final TelemetryItem item, final String extraClass, final double maxSec) {
+        if (null == item) return "";
+        final int pct = maxSec > 0 ? Math.max(6, Math.min(100, (int) Math.round((item.sec / maxSec) * 100))) : 6;
+        final String valStr = (item.sec >= 1.0)
+                ? String.format(Locale.ROOT, "%.2fs", item.sec)
+                : Math.round(item.ms) + "ms";
+        final String color = "failed".equals(item.status) ? "#ef4444"
+                : "warning".equals(item.status) ? "#f59e0b"
+                : "passed".equals(item.status) ? "#22c55e"
+                : "config".equals(extraClass) ? "#64748b"
+                : "#38bdf8";
+        final StringBuilder sb = new StringBuilder();
+        sb.append("<div class=\"bar-col phase ").append(extraClass)
+                .append("\" onclick=\"focusSection('").append(item.title).append("')\" title=\"")
+                .append(item.title).append(": ").append(valStr).append("\">");
+        sb.append("<div class=\"bar-val\">").append(valStr).append("</div>");
+        sb.append("<div class=\"bar-track\"><div class=\"bar-fill\" style=\"height: ").append(pct).append("%; background: ").append(color).append(";\"></div></div>");
+        sb.append("<div class=\"bar-lbl\">").append(item.label).append("</div></div>\n");
         return sb.toString();
     }
 
