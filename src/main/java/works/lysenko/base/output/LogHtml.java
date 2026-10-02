@@ -212,6 +212,7 @@ public final class LogHtml {
 
         final List<TelemetryItem> testData = new ArrayList<>();
         final List<TelemetryItem> limboData = new ArrayList<>();
+        final List<TelemetryItem> timelineData = new ArrayList<>();
 
         for (int i = 0; i < sections.size(); i++) {
             final LogSection sec = sections.get(i);
@@ -231,14 +232,18 @@ public final class LogHtml {
                 final double delta = Math.max(0.001, t1 - t0);
                 sec.durationSec = delta;
                 sec.durationStr = formatDeltaTime(delta);
-                limboData.add(new TelemetryItem(chartLabel, sec.title, delta, delta * 1000.0, sec.status));
+                final TelemetryItem item = new TelemetryItem(chartLabel, sec.title, delta, delta * 1000.0, sec.status, true);
+                limboData.add(item);
+                timelineData.add(item);
             } else if ("test".equals(sec.type)) {
                 final double t0 = toSeconds(sec.startTime);
                 final double t1 = toSeconds(sec.endTime);
                 final double delta = Math.max(0.001, t1 - t0);
                 sec.durationSec = delta;
                 sec.durationStr = formatDeltaTime(delta);
-                testData.add(new TelemetryItem("#" + sec.testNum, sec.title, delta, delta * 1000.0, sec.status));
+                final TelemetryItem item = new TelemetryItem("#" + sec.testNum, sec.title, delta, delta * 1000.0, sec.status, false);
+                testData.add(item);
+                timelineData.add(item);
             } else if ("booting".equals(sec.type)) {
                 final double bootSec = calculateBootSpentSeconds(sec.lines);
                 sec.durationSec = bootSec;
@@ -247,7 +252,9 @@ public final class LogHtml {
                 final double confSec = calculateBootSpentSeconds(sec.lines);
                 sec.durationSec = confSec;
                 sec.durationStr = formatDeltaTime(confSec);
-                limboData.add(0, new TelemetryItem("Config", "Configuring", confSec, confSec * 1000.0, "neutral"));
+                final TelemetryItem item = new TelemetryItem("Config", "Configuring", confSec, confSec * 1000.0, "neutral", true);
+                limboData.add(item);
+                timelineData.add(item);
             } else {
                 final double t0 = toSeconds(sec.startTime);
                 final double t1 = toSeconds(sec.endTime);
@@ -288,20 +295,42 @@ public final class LogHtml {
         sb.append("button.active { background: #0284c7; border-color: #38bdf8; }\n");
         sb.append("input[type=\"text\"] { background: #1e293b; color: #f8fafc; border: 1px solid #334155; padding: 6px 12px; border-radius: 6px; font-size: 13px; outline: none; width: 220px; }\n");
         sb.append("input[type=\"text\"]:focus { border-color: var(--accent); }\n");
-        sb.append("#charts-container, #summary-cards-container { display: flex; gap: 20px; margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }\n");
-        sb.append(".chart-card, .summary-card { flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; }\n");
+        sb.append("#charts-container { display: flex; margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }\n");
+        sb.append("#summary-cards-container { display: flex; gap: 20px; margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }\n");
+        sb.append(".chart-card { flex: 1; min-width: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; }\n");
+        sb.append(".summary-card { flex: 1; min-width: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; }\n");
         sb.append(".card-title { font-size: 14px; font-weight: 600; color: #f8fafc; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }\n");
         sb.append(".card-subtitle { font-size: 12px; color: #94a3b8; font-weight: normal; }\n");
-        sb.append(".stats-strip { display: flex; gap: 14px; font-family: ui-monospace, monospace; font-size: 11px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }\n");
+        sb.append(".stats-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-family: ui-monospace, monospace; font-size: 11px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }\n");
+        sb.append(".stat-group { display: flex; align-items: center; gap: 12px; }\n");
+        sb.append(".stat-group-label { color: #94a3b8; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }\n");
+        sb.append(".stat-divider { width: 1px; height: 14px; background: var(--border); }\n");
         sb.append(".stat-item { color: #64748b; }\n");
         sb.append(".stat-item b { color: #38bdf8; font-weight: 600; }\n");
-        sb.append(".bars-flex { display: flex; align-items: flex-end; gap: 10px; height: 90px; padding: 0 4px; }\n");
-        sb.append(".bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; cursor: pointer; }\n");
+        sb.append(".stat-group-limbo .stat-item b { color: #94a3b8; }\n");
+        sb.append(".chart-scroll-wrap { overflow-x: auto; overflow-y: hidden; padding-bottom: 6px; }\n");
+        sb.append(".chart-scroll-wrap::-webkit-scrollbar { height: 6px; }\n");
+        sb.append(".chart-scroll-wrap::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); border-radius: 3px; }\n");
+        sb.append(".chart-scroll-wrap::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }\n");
+        sb.append(".chart-scroll-wrap::-webkit-scrollbar-thumb:hover { background: #475569; }\n");
+        sb.append(".bars-flex { display: flex; align-items: flex-end; gap: 8px; height: 90px; padding: 0 4px; width: max-content; min-width: 100%; }\n");
+        sb.append(".bar-col { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; height: 100%; cursor: pointer; user-select: none; }\n");
+        sb.append(".bar-col.test { min-width: 44px; }\n");
+        sb.append(".bar-col.limbo { min-width: 44px; }\n");
         sb.append(".bar-col:hover .bar-fill { filter: brightness(1.25); }\n");
-        sb.append(".bar-val { font-size: 11px; color: #cbd5e1; font-family: ui-monospace, monospace; margin-bottom: 4px; }\n");
-        sb.append(".bar-track { flex: 1; width: 100%; max-width: 38px; display: flex; align-items: flex-end; background: rgba(30, 41, 59, 0.3); border-radius: 4px; overflow: hidden; }\n");
+        sb.append(".bar-col:hover .bar-val { color: #38bdf8; }\n");
+        sb.append(".bar-col:hover .bar-lbl { color: #f8fafc; }\n");
+        sb.append(".bar-val { font-size: 11px; color: #cbd5e1; font-family: ui-monospace, monospace; margin-bottom: 4px; white-space: nowrap; }\n");
+        sb.append(".bar-col.limbo .bar-val { font-size: 10px; color: #94a3b8; }\n");
+        sb.append(".bar-track { flex: 1; width: 100%; max-width: 34px; display: flex; align-items: flex-end; background: rgba(30, 41, 59, 0.35); border-radius: 4px; overflow: hidden; }\n");
+        sb.append(".bar-col.limbo .bar-track { max-width: 20px; background: rgba(30, 41, 59, 0.2); border-radius: 3px; }\n");
         sb.append(".bar-fill { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.2s; }\n");
-        sb.append(".bar-lbl { font-size: 11px; color: #94a3b8; font-family: ui-monospace, monospace; margin-top: 6px; }\n");
+        sb.append(".bar-col.limbo .bar-fill { border-radius: 3px 3px 0 0; }\n");
+        sb.append(".bar-lbl { font-size: 11px; color: #94a3b8; font-family: ui-monospace, monospace; margin-top: 6px; white-space: nowrap; }\n");
+        sb.append(".bar-col.test .bar-lbl { font-weight: 600; }\n");
+        sb.append(".bar-col.limbo .bar-lbl { font-size: 10px; color: #64748b; }\n");
+        sb.append("body.hide-limbo .bar-col.limbo { display: none !important; }\n");
+        sb.append("body.hide-limbo .stat-group-limbo, body.hide-limbo .stat-divider { display: none !important; }\n");
         sb.append(".path-row { display: flex; align-items: center; gap: 14px; padding: 7px 10px; border-radius: 6px; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }\n");
         sb.append(".path-row:hover { background: rgba(56, 189, 248, 0.08); }\n");
         sb.append(".path-meta { display: flex; align-items: center; gap: 8px; min-width: 140px; }\n");
@@ -425,12 +454,22 @@ public final class LogHtml {
         sb.append("  </div>\n</header>\n");
 
         sb.append("<div id=\"charts-container\">\n");
-        sb.append("  <div class=\"chart-card\">\n    <div class=\"card-title\">Test Executions Duration</div>\n");
-        sb.append(String.format(Locale.ROOT, "    <div class=\"stats-strip\"><div class=\"stat-item\">min: <b>%.2fs</b></div><div class=\"stat-item\">avg: <b>%.2fs</b></div><div class=\"stat-item\">max: <b>%.2fs</b></div><div class=\"stat-item\">total: <b>%.2fs</b></div></div>\n", tMin, tAvg, tMax, tTotal));
-        sb.append("    <div class=\"bars-flex\">").append(renderBars(testData, tMax, "s", false)).append("</div>\n  </div>\n");
-        sb.append("  <div class=\"chart-card\">\n    <div class=\"card-title\">Inter-test Limbo Latency</div>\n");
-        sb.append(String.format(Locale.ROOT, "    <div class=\"stats-strip\"><div class=\"stat-item\">min: <b>%dms</b></div><div class=\"stat-item\">avg: <b>%dms</b></div><div class=\"stat-item\">max: <b>%dms</b></div><div class=\"stat-item\">total: <b>%dms</b></div></div>\n", Math.round(lMin), Math.round(lAvg), Math.round(lMax), Math.round(lTotal)));
-        sb.append("    <div class=\"bars-flex\">").append(renderBars(limboData, lMax, "ms", true)).append("</div>\n  </div>\n</div>\n");
+        sb.append("  <div class=\"chart-card\">\n    <div class=\"card-title\">Test Executions &amp; Limbo Durations</div>\n");
+        sb.append("    <div class=\"stats-strip\">\n");
+        if (!testData.isEmpty()) {
+            sb.append(String.format(Locale.ROOT, "      <div class=\"stat-group\"><span class=\"stat-group-label\">Tests:</span> <div class=\"stat-item\">min: <b>%.2fs</b></div><div class=\"stat-item\">avg: <b>%.2fs</b></div><div class=\"stat-item\">max: <b>%.2fs</b></div><div class=\"stat-item\">total: <b>%.2fs</b></div></div>\n", tMin, tAvg, tMax, tTotal));
+        }
+        if (!limboData.isEmpty()) {
+            if (!testData.isEmpty()) {
+                sb.append("      <div class=\"stat-divider\"></div>\n");
+            }
+            sb.append(String.format(Locale.ROOT, "      <div class=\"stat-group stat-group-limbo\"><span class=\"stat-group-label\">Limbo:</span> <div class=\"stat-item\">min: <b>%dms</b></div><div class=\"stat-item\">avg: <b>%dms</b></div><div class=\"stat-item\">max: <b>%dms</b></div><div class=\"stat-item\">total: <b>%dms</b></div></div>\n", Math.round(lMin), Math.round(lAvg), Math.round(lMax), Math.round(lTotal)));
+        }
+        sb.append("    </div>\n");
+        sb.append("    <div class=\"chart-scroll-wrap\">\n");
+        sb.append("      <div class=\"bars-flex\">").append(renderTimelineBars(timelineData, tMax, lMax)).append("</div>\n");
+        sb.append("    </div>\n");
+        sb.append("  </div>\n</div>\n");
 
         sb.append("<div id=\"summary-cards-container\">\n");
         sb.append("  <div class=\"summary-card\">\n    <div class=\"card-title\">Execution Paths <span class=\"card-subtitle\">").append(testPaths.size()).append(" Tests Executed</span></div>\n    <div>");
@@ -665,7 +704,7 @@ public final class LogHtml {
         sb.append("  function expandAll() { document.querySelectorAll('details.log-section').forEach(d => d.open = true); }\n");
         sb.append("  function collapseAll() { document.querySelectorAll('details.log-section').forEach(d => d.open = false); }\n");
         sb.append("  let hideLimbo = false;\n");
-        sb.append("  function toggleLimbo() {\n    hideLimbo = !hideLimbo;\n    document.getElementById('limboBtn').classList.toggle('active', hideLimbo);\n    document.querySelectorAll('details.log-section.limbo').forEach(d => d.classList.toggle('hidden', hideLimbo));\n  }\n");
+        sb.append("  function toggleLimbo() {\n    hideLimbo = !hideLimbo;\n    document.body.classList.toggle('hide-limbo', hideLimbo);\n    document.getElementById('limboBtn').classList.toggle('active', hideLimbo);\n    document.querySelectorAll('details.log-section.limbo').forEach(d => d.classList.toggle('hidden', hideLimbo));\n  }\n");
         sb.append("  let onlyIssues = false;\n");
         sb.append("  function toggleOnlyIssues() {\n    onlyIssues = !onlyIssues;\n    document.getElementById('issuesBtn').classList.toggle('active', onlyIssues);\n    document.querySelectorAll('details.log-section').forEach(d => {\n      if (onlyIssues) {\n        if (d.classList.contains('failed') || d.classList.contains('warning')) { d.classList.remove('hidden'); d.open = true; } else { d.classList.add('hidden'); }\n      } else { if (!hideLimbo || !d.classList.contains('limbo')) d.classList.remove('hidden'); }\n    });\n  }\n");
         sb.append("  function filterLogs() {\n    const q = document.getElementById('filterInput').value.toLowerCase();\n    document.querySelectorAll('details.log-section').forEach(d => {\n      const content = d.querySelector('.log-content').innerText.toLowerCase();\n      const title = d.querySelector('summary').innerText.toLowerCase();\n      if (!q || content.includes(q) || title.includes(q)) { d.classList.remove('hidden'); if (q) d.open = true; } else { d.classList.add('hidden'); }\n    });\n  }\n");
@@ -675,14 +714,17 @@ public final class LogHtml {
         return sb.toString();
     }
 
-    private static String renderBars(final List<TelemetryItem> items, final double maxVal, final String suffix, final boolean isLimbo) {
+    private static String renderTimelineBars(final List<TelemetryItem> items, final double tMax, final double lMax) {
         final StringBuilder sb = new StringBuilder();
         for (final TelemetryItem item : items) {
+            final boolean isLimbo = item.isLimbo;
             final double val = isLimbo ? item.ms : item.sec;
+            final double maxVal = isLimbo ? lMax : tMax;
             final int pct = maxVal > 0 ? Math.max(6, (int) Math.round((val / maxVal) * 100)) : 6;
-            final String valStr = isLimbo ? Math.round(val) + suffix : String.format(Locale.ROOT, "%.2f%s", val, suffix);
+            final String valStr = isLimbo ? Math.round(val) + "ms" : String.format(Locale.ROOT, "%.2fs", val);
+            final String colClass = isLimbo ? "bar-col limbo" : "bar-col test";
             final String barColor = isLimbo ? "#64748b" : ("passed".equals(item.status) ? "#22c55e" : "warning".equals(item.status) ? "#f59e0b" : "#ef4444");
-            sb.append("<div class=\"bar-col\" onclick=\"focusSection('").append(item.title).append("')\" title=\"").append(item.title).append(": ").append(valStr).append("\">");
+            sb.append("<div class=\"").append(colClass).append("\" onclick=\"focusSection('").append(item.title).append("')\" title=\"").append(item.title).append(": ").append(valStr).append("\">");
             sb.append("<div class=\"bar-val\">").append(valStr).append("</div>");
             sb.append("<div class=\"bar-track\"><div class=\"bar-fill\" style=\"height: ").append(pct).append("%; background: ").append(barColor).append(";\"></div></div>");
             sb.append("<div class=\"bar-lbl\">").append(item.label).append("</div></div>");
@@ -984,13 +1026,15 @@ public final class LogHtml {
         final double sec;
         final double ms;
         final String status;
+        final boolean isLimbo;
 
-        TelemetryItem(final String label, final String title, final double sec, final double ms, final String status) {
+        TelemetryItem(final String label, final String title, final double sec, final double ms, final String status, final boolean isLimbo) {
             this.label = label;
             this.title = title;
             this.sec = sec;
             this.ms = ms;
             this.status = status;
+            this.isLimbo = isLimbo;
         }
     }
 
@@ -1023,4 +1067,15 @@ public final class LogHtml {
         }
     }
 
+    public static void main(final String[] args) {
+        if (args.length >= 2) {
+            generateReport(new File(args[0]), new File(args[1]));
+        } else if (args.length == 1) {
+            final File logFile = new File(args[0]);
+            final String outName = logFile.getAbsolutePath().endsWith(".log")
+                    ? logFile.getAbsolutePath() + ".html"
+                    : logFile.getAbsolutePath() + ".run.log.html";
+            generateReport(logFile, new File(outName));
+        }
+    }
 }
