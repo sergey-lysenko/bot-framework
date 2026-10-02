@@ -32,6 +32,7 @@ public final class LogHtml {
     private static final Pattern PATH_LINE_RE = Pattern.compile("\\[(\\d+)\\]\\s*\\[\\s*([\\d,]+)\\s*\\]\\s*→\\s*(.*)");
     private static final Pattern SCEN_LINE_RE = Pattern.compile("([▷◼◆●])\\s*([a-zA-Z0-9_]+(?:\\.[a-zA-Z0-9_]+)*)[.\\s]+(\\[[^\\]]+\\]|\\([^)]+\\)\\s*→\\s*\\[[^\\]]+\\])\\s*(\\d+(?::\\d+)?)(?:\\s*\\(([^)]+)\\))?");
     private static final Pattern TEST_TIME_RE = Pattern.compile("Test time (.*)");
+    private static final Pattern TEST_RUN_SUMMARY_RE = Pattern.compile(".*\\b\\d+\\s+tests?\\s+of\\s+.+\\s+done\\s+in\\s+.*");
     private static final Pattern SPAN_BRACKET_RE = Pattern.compile("(\\[[0-9.]+\\](?:<[^>]+>)*)(\\[\\s*\\d+\\s*\\])");
 
     private LogHtml() {
@@ -126,12 +127,10 @@ public final class LogHtml {
                 currentSec = new LogSection("configuring", "Configuring", "neutral");
             }
 
-            if (clean.contains("Closing test service") || clean.contains("Events summary") || clean.contains("Postflight") || clean.contains("Test session completed")) {
-                if (!inPostflight) {
-                    inPostflight = true;
-                    sections.add(currentSec);
-                    currentSec = new LogSection("postflight", "Postflight", "neutral");
-                }
+            if (!inPostflight && (clean.contains("Closing test service") || clean.contains("Event summary") || clean.contains("Events summary") || clean.contains("Postflight") || clean.contains("Test session completed"))) {
+                inPostflight = true;
+                if (!currentSec.lines.isEmpty()) sections.add(currentSec);
+                currentSec = new LogSection("postflight", "Postflight", "neutral");
             }
 
             final Matcher mTest = LINE_WITH_TEST_RE.matcher(clean);
@@ -207,6 +206,12 @@ public final class LogHtml {
             }
 
             currentSec.lines.add(line);
+
+            if (!inPostflight && TEST_RUN_SUMMARY_RE.matcher(clean).matches()) {
+                inPostflight = true;
+                if (!currentSec.lines.isEmpty()) sections.add(currentSec);
+                currentSec = new LogSection("postflight", "Postflight", "neutral");
+            }
         }
         if (!currentSec.lines.isEmpty()) sections.add(currentSec);
 
