@@ -81,6 +81,7 @@ public enum PropEnum implements _PropEnum {
     _GRID_VALIDATION_FENCES(String.class, _9_),
     _GRID_VALIDATION_HSB_THRESHOLD(String.class, _1_, _SLASH_, _9_, _9_),
     _GRID_VALIDATION_SCALE_EPSILON(Double.class, _0_, _DOT_, _0_, _0_, _0_, _1_),
+    _HEADLESS(Boolean.class, FALSE),
     _IGNORED_IN_STACKTRACE(String.class, EMPTY),
     _IGNORE_FAILED_SCENARIO_SELECTION(Boolean.class, FALSE),
     _INCLUDE_DOWNSTREAM(Boolean.class, FALSE),

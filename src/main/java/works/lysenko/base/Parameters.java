@@ -59,6 +59,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         read(POOL);
         read(PLATFORM);
         readDeviceOrDomain();
+        read(HEADLESS);
         readAdditionalParameters(list);
         showOptionalGui();
     }
@@ -92,6 +93,12 @@ public final class Parameters extends Properties implements _ExecutionParameterV
     public String getDomain() {
 
         return getValue(DOMAIN);
+    }
+
+    @Override
+    public boolean isHeadless() {
+
+        return Boolean.parseBoolean(getValue(HEADLESS)) || Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._HEADLESS.get());
     }
 
     /**
@@ -147,6 +154,8 @@ public final class Parameters extends Properties implements _ExecutionParameterV
     private void read(final String name, final String def) {
 
         if (isNotNull(System.getenv(name))) put(name, System.getenv(name)); // prio0: Environment variable
+        else if (isNotNull(System.getProperty(name))) put(name, System.getProperty(name)); // prio0.5: System property
+        else if (isNotNull(System.getProperty(name.toLowerCase(java.util.Locale.ROOT)))) put(name, System.getProperty(name.toLowerCase(java.util.Locale.ROOT)));
         else if (!containsKey(name)) put(name, def); // prio2: Default value
         // NOP: prio1: Value from cache already loaded
     }

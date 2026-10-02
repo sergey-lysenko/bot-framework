@@ -27,6 +27,7 @@ import java.util.Map;
 
 import static java.util.Objects.isNull;
 import static works.lysenko.Base.log;
+import static works.lysenko.Base.parameters;
 import static works.lysenko.base.util.Platforms.__BASE_PATH;
 import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.____.FROM;
@@ -133,9 +134,11 @@ public class Driver implements _Driver {
         log(Level.none, b(c(CREATING), s(c(WEB), c(DRIVER)), DOTS), true);
         wd = WebDrivers.get(Platform.get(Routines.get_Platform()), false);
 
-        log(Level.none, b(c(REARRANGING), BROWSER, WINDOW, DOTS), false);
-        wd.manage().window().setPosition(new Point(0, 0));
-        wd.manage().window().maximize();
+        if (null == parameters || !parameters.isHeadless()) {
+            log(Level.none, b(c(REARRANGING), BROWSER, WINDOW, DOTS), false);
+            wd.manage().window().setPosition(new Point(0, 0));
+            wd.manage().window().maximize();
+        }
     }
 
     /**

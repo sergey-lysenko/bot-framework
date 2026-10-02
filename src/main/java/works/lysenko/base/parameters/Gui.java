@@ -50,6 +50,7 @@ public class Gui implements _GUI {
 
     private final Parameters parameters;
     private JTextField domain = null;
+    private JCheckBox headless = null;
     private JComboBox<Object> platform = null;
     private JComboBox<Object> test = null;
     private JComboBox<Object> pool = null;
@@ -210,6 +211,8 @@ public class Gui implements _GUI {
             device.setSelectedItem(get("DEVICE")); */
         } else {
             domain = new JTextField(parameters.getProperty(DOMAIN.name()), WIDTH);
+            headless = new JCheckBox();
+            headless.setSelected(Boolean.parseBoolean(parameters.getProperty(HEADLESS.name())));
         }
     }
 
@@ -225,7 +228,7 @@ public class Gui implements _GUI {
         // Building dialogue box
         final JPanel panel = new JPanel();
 
-        panel.setLayout(new GridLayout(parameters.size() + 1, 2, 5, 5));
+        panel.setLayout(new GridLayout(0, 2, 5, 5));
         add(TEST.name(), test, panel);
         add(POOL.name(), pool, panel);
         add(PLATFORM.name(), platform, panel);
@@ -235,6 +238,7 @@ public class Gui implements _GUI {
             // add("DEVICE", device.template, p);
         } else {
             add(DOMAIN.name(), domain, panel);
+            add(HEADLESS.name(), headless, panel);
         }
 
         // Additional parameters
@@ -264,7 +268,12 @@ public class Gui implements _GUI {
         if (parameters.getProperty(PLATFORM.name()).equals(Platform.ANDROID.getString())) {
             /* Devices selection is commented out until implementation of automatic devices management
             put("DEVICE", device.getSelectedItem() == null ? StringUtils.EMPTY : device.getSelectedItem().toString()); */
-        } else parameters.setProperty(DOMAIN.name(), domain.getText());
+        } else {
+            parameters.setProperty(DOMAIN.name(), domain.getText());
+            if (isNotNull(headless)) {
+                parameters.setProperty(HEADLESS.name(), String.valueOf(headless.isSelected()));
+            }
+        }
 
         // Additional parameters
         if (isNotNull(aParams)) {
