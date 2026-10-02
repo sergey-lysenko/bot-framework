@@ -1,11 +1,11 @@
 package link.lang.word;
 
 import static works.lysenko.util.chrs.__.*;
-import static works.lysenko.util.data.strs.Swap.*;
-import static works.lysenko.util.spec.Symbols.*;
+import static works.lysenko.util.chrs.___.*;
+import static works.lysenko.util.data.strs.Swap.s;
 
 @SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "WeakerAccess"})
-public record N() {
+public record U() {
 
-    public static final String NEW = s(NE, W);
+    public static final String USAGE = s(US, AGE);
 }

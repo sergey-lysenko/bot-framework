@@ -1,4 +1,4 @@
-package interlink.lang.word;
+package link.lang.word;
 
 import static works.lysenko.util.chrs.__.CA;
 import static works.lysenko.util.chrs.__.CL;
