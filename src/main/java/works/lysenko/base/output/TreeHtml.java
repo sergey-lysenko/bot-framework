@@ -32,7 +32,7 @@ public final class TreeHtml {
 
     private TreeHtml() {}
 
-    private static final class NodeData {
+    static final class NodeData {
         private final String id;
         private final String label;
         private final String group;
@@ -40,8 +40,9 @@ public final class TreeHtml {
         private double row;
         private final _Result result;
         private final List<NodeData> children = new ArrayList<>();
+        private NodeData parent;
 
-        private NodeData(final String id, final String label, final String group, final int col, final double row, final _Result result) {
+        NodeData(final String id, final String label, final String group, final int col, final double row, final _Result result) {
             this.id = id;
             this.label = label;
             this.group = group;
@@ -55,11 +56,14 @@ public final class TreeHtml {
         public String group() { return group; }
         public int col() { return col; }
         public double row() { return row; }
+        public void setRow(final double row) { this.row = row; }
         public _Result result() { return result; }
         public List<NodeData> children() { return children; }
+        public NodeData parent() { return parent; }
+        public void setParent(final NodeData parent) { this.parent = parent; }
     }
 
-    private record Edge(NodeData from, NodeData to) {}
+    record Edge(NodeData from, NodeData to) {}
 
     public static void treeStats() {
         try {
@@ -75,6 +79,7 @@ public final class TreeHtml {
             }
 
             // Harmonic centering: align parents vertically to the center of their children
+            // and position each next level so plaques move lower to be closer to their parents
             optimizeLayout(nodes);
 
             final String html = renderHtml(nodes, edges);
@@ -102,6 +107,7 @@ public final class TreeHtml {
             myNodes.put(shortKey.toLowerCase(), nd);
 
             if (null != parentNode) {
+                nd.setParent(parentNode);
                 edges.add(new Edge(parentNode, nd));
                 parentNode.children().add(nd);
             }
@@ -116,7 +122,7 @@ public final class TreeHtml {
         }
     }
 
-    private static void optimizeLayout(final List<NodeData> nodes) {
+    static void optimizeLayout(final List<NodeData> nodes) {
         final Map<Integer, List<NodeData>> colMap = new HashMap<>();
         int maxCol = 0;
         for (final NodeData n : nodes) {
@@ -124,23 +130,54 @@ public final class TreeHtml {
             if (n.col() > maxCol) maxCol = n.col();
         }
 
-        // Backward pass: center parents vertically with respect to their children
-        for (int c = maxCol - 1; c >= 0; c--) {
-            final List<NodeData> colNodes = colMap.get(c);
-            if (null == colNodes) continue;
-            double prevRow = 0.0;
-            for (final NodeData n : colNodes) {
-                if (!n.children().isEmpty()) {
-                    double sum = 0.0;
-                    for (final NodeData child : n.children()) {
-                        sum += child.row();
+        for (int iter = 0; iter < 2; iter++) {
+            // Backward pass: center parents vertically with respect to their children
+            for (int c = maxCol - 1; c >= 0; c--) {
+                final List<NodeData> colNodes = colMap.get(c);
+                if (null == colNodes) continue;
+                double prevRow = 0.0;
+                for (final NodeData n : colNodes) {
+                    if (!n.children().isEmpty()) {
+                        double sum = 0.0;
+                        for (final NodeData child : n.children()) {
+                            sum += child.row();
+                        }
+                        final double ideal = sum / n.children().size();
+                        n.setRow(Math.max(ideal, prevRow + 1.0));
+                    } else {
+                        n.setRow(Math.max(n.row(), prevRow + 1.0));
                     }
-                    final double ideal = sum / n.children().size();
-                    n.row = Math.max(ideal, prevRow + 1.0);
-                } else {
-                    n.row = prevRow + 1.0;
+                    prevRow = n.row();
                 }
-                prevRow = n.row;
+            }
+
+            // Forward pass: each next level follows the rule of "as short connections as possible",
+            // moving plaques lower to be closer to their parents
+            for (int c = 1; c <= maxCol; c++) {
+                final List<NodeData> colNodes = colMap.get(c);
+                if (null == colNodes || colNodes.isEmpty()) continue;
+                double prevRow = 0.0;
+                int idx = 0;
+                while (idx < colNodes.size()) {
+                    final NodeData first = colNodes.get(idx);
+                    final NodeData parent = first.parent();
+                    int endIdx = idx + 1;
+                    while (endIdx < colNodes.size() && colNodes.get(endIdx).parent() == parent) {
+                        endIdx++;
+                    }
+                    final int k = endIdx - idx;
+                    final double idealStart = (null != parent)
+                            ? parent.row() - (k - 1.0) / 2.0
+                            : first.row();
+                    final double startRow = Math.max(prevRow + 1.0, idealStart);
+                    for (int i = 0; i < k; i++) {
+                        final NodeData child = colNodes.get(idx + i);
+                        final double targetRow = startRow + i;
+                        child.setRow(Math.max(prevRow + 1.0, Math.max(child.row(), targetRow)));
+                        prevRow = child.row();
+                    }
+                    idx = endIdx;
+                }
             }
         }
     }
