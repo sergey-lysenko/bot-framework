@@ -315,7 +315,7 @@ public final class LogHtml {
         sb.append(".bars-flex { display: flex; align-items: stretch; gap: 8px; padding: 0 4px; width: max-content; min-width: 100%; }\n");
         sb.append(".bar-col.config { display: flex; flex-direction: column; align-items: center; min-width: 44px; cursor: pointer; user-select: none; }\n");
         sb.append(".bar-col.config .bar-val { font-size: 11px; color: #94a3b8; font-family: ui-monospace, monospace; margin-bottom: 4px; white-space: nowrap; }\n");
-        sb.append(".bar-col.config .bar-track { flex: 1; width: 100%; max-width: 22px; display: flex; align-items: flex-end; background: rgba(30, 41, 59, 0.25); border-radius: 4px; overflow: hidden; }\n");
+        sb.append(".bar-col.config .bar-track { flex: 1; width: 100%; max-width: 34px; display: flex; align-items: flex-end; background: rgba(30, 41, 59, 0.25); border-radius: 4px; overflow: hidden; }\n");
         sb.append(".bar-col.config .bar-fill { width: 100%; background: #64748b; border-radius: 4px 4px 0 0; transition: height 0.2s; }\n");
         sb.append(".bar-col.config .bar-lbl { font-size: 10px; color: #64748b; font-family: ui-monospace, monospace; margin-top: 5px; white-space: nowrap; }\n");
         sb.append(".bar-pair { display: flex; flex-direction: column; align-items: center; justify-content: space-between; min-width: 44px; gap: 8px; }\n");
@@ -326,8 +326,8 @@ public final class LogHtml {
         sb.append(".bar-col.test .bar-lbl { font-size: 11px; color: #94a3b8; font-family: ui-monospace, monospace; font-weight: 600; margin-top: 5px; white-space: nowrap; }\n");
         sb.append(".bar-col.limbo { display: flex; flex-direction: column; align-items: center; width: 100%; height: 52px; cursor: pointer; user-select: none; }\n");
         sb.append(".bar-col.limbo .bar-val { font-size: 10px; color: #94a3b8; font-family: ui-monospace, monospace; margin-bottom: 3px; white-space: nowrap; }\n");
-        sb.append(".bar-col.limbo .bar-track { flex: 1; width: 100%; max-width: 20px; display: flex; align-items: flex-end; background: rgba(30, 41, 59, 0.2); border-radius: 3px; overflow: hidden; }\n");
-        sb.append(".bar-col.limbo .bar-fill { width: 100%; border-radius: 3px 3px 0 0; transition: height 0.2s; }\n");
+        sb.append(".bar-col.limbo .bar-track { flex: 1; width: 100%; max-width: 34px; display: flex; align-items: flex-end; background: rgba(30, 41, 59, 0.2); border-radius: 4px; overflow: hidden; }\n");
+        sb.append(".bar-col.limbo .bar-fill { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.2s; }\n");
         sb.append(".bar-col.limbo .bar-lbl { font-size: 10px; color: #64748b; font-family: ui-monospace, monospace; margin-top: 4px; white-space: nowrap; }\n");
         sb.append(".bar-col:hover .bar-fill { filter: brightness(1.25); }\n");
         sb.append(".bar-col:hover .bar-val { color: #38bdf8; }\n");
