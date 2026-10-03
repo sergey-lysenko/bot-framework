@@ -392,10 +392,18 @@ public final class LogHtml {
         final String progressionLink = (null != gifFile && gifFile.exists())
                 ? String.format("<a class=\"btn-link\" href=\"%s\" target=\"_blank\" title=\"Scenario Coverage Progression Animation (10 fps)\"><button type=\"button\" style=\"border-color: #38bdf8; color: #38bdf8;\">Progression</button></a>", escapeHtml(gifFile.getName()))
                 : "";
+        final File webpFile = (null != logFile.getParentFile()) ? new File(logFile.getParentFile(), basePrefix + ".progression.webp") : null;
+        final String progressionWebpLink = (null != webpFile && webpFile.exists())
+                ? String.format("<a class=\"btn-link\" href=\"%s\" target=\"_blank\" title=\"Scenario Coverage Progression Animation (WebP)\"><button type=\"button\" style=\"border-color: #38bdf8; color: #38bdf8;\">Progression WebP</button></a>", escapeHtml(webpFile.getName()))
+                : "";
 
         final File treeGifFile = (null != logFile.getParentFile()) ? new File(logFile.getParentFile(), basePrefix + ".tree.progression.gif") : null;
         final String treeProgressionLink = (null != treeGifFile && treeGifFile.exists())
                 ? String.format("<a class=\"btn-link\" href=\"%s\" target=\"_blank\" title=\"Scenario Tree Progression Animation (10 fps)\"><button type=\"button\" style=\"border-color: #34d399; color: #34d399;\">Tree Progression</button></a>", escapeHtml(treeGifFile.getName()))
+                : "";
+        final File treeWebpFile = (null != logFile.getParentFile()) ? new File(logFile.getParentFile(), basePrefix + ".tree.progression.webp") : null;
+        final String treeProgressionWebpLink = (null != treeWebpFile && treeWebpFile.exists())
+                ? String.format("<a class=\"btn-link\" href=\"%s\" target=\"_blank\" title=\"Scenario Tree Progression Animation (WebP)\"><button type=\"button\" style=\"border-color: #34d399; color: #34d399;\">Tree WebP</button></a>", escapeHtml(treeWebpFile.getName()))
                 : "";
 
         String timeStr = "";
@@ -457,7 +465,9 @@ public final class LogHtml {
                 .replace("{{TIMESTAMP_BLOCK}}", timestampBlock)
                 .replace("{{RESULT_PLAQUE}}", resultPlaque)
                 .replace("{{PROGRESSION_LINK}}", progressionLink)
+                .replace("{{PROGRESSION_WEBP_LINK}}", progressionWebpLink)
                 .replace("{{TREE_PROGRESSION_LINK}}", treeProgressionLink)
+                .replace("{{TREE_PROGRESSION_WEBP_LINK}}", treeProgressionWebpLink)
                 .replace("{{TREE_LINK}}", escapeHtml(basePrefix + ".tree.html"))
                 .replace("{{JSON_LINK}}", escapeHtml(basePrefix + ".run.json"))
                 .replace("{{RAW_LINK}}", escapeHtml(basePrefix + ".run.log"))

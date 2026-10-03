@@ -30,9 +30,7 @@ import java.util.List;
 import java.util.Set;
 
 import static java.util.Objects.isNull;
-import static works.lysenko.Base.core;
-import static works.lysenko.Base.parameters;
-import static works.lysenko.Base.timer;
+import static works.lysenko.Base.*;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.spec.Layout.Files.name;
 import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_;
@@ -139,7 +137,7 @@ public final class ProgressionTracker {
     }
 
     /**
-     * Hook called upon test completion to compile collected frames into animated GIF.
+     * Hook called upon test completion to compile collected frames into animated GIF and WebP.
      */
     public static void onComplete() {
         final File runDir = resolveRunDirectory();
@@ -164,19 +162,31 @@ public final class ProgressionTracker {
 
         final String prefix = (isNotNull(timer)) ? String.valueOf(timer.startedAt()) : "run";
         final File gifFile = new File(runDir, prefix + ".progression.gif");
+        final File webpFile = new File(runDir, prefix + ".progression.webp");
+        final List<BufferedImage> images = new ArrayList<>(framesToProcess.size());
 
         try {
-            final List<BufferedImage> images = new ArrayList<>(framesToProcess.size());
             for (final File f : framesToProcess) {
                 final BufferedImage img = ImageIO.read(f);
                 if (isNotNull(img)) images.add(img);
             }
-            if (!images.isEmpty()) {
-                writeAnimatedGif(images, gifFile, DELAY_CENTISECONDS, FINAL_FRAME_DELAY_CENTISECONDS);
-                System.out.println("Progression animation generated: " + gifFile.getAbsolutePath());
-            }
+        } catch (final Exception e) {
+            System.err.println("Failed to load progression frames: " + e.getMessage());
+            return;
+        }
+
+        if (images.isEmpty()) return;
+        try {
+            writeAnimatedGif(images, gifFile, DELAY_CENTISECONDS, FINAL_FRAME_DELAY_CENTISECONDS);
+            log("Progression GIF generated: " + gifFile.getAbsolutePath());
         } catch (final Exception e) {
             System.err.println("Failed to create progression GIF: " + e.getMessage());
+        }
+        try {
+            AnimatedWebP.write(images, webpFile, DELAY_CENTISECONDS * 10, FINAL_FRAME_DELAY_CENTISECONDS * 10);
+            log("Progression WebP generated: " + webpFile.getAbsolutePath());
+        } catch (final Exception e) {
+            System.err.println("Failed to create progression WebP: " + e.getMessage());
         }
     }
 
@@ -232,6 +242,12 @@ public final class ProgressionTracker {
         // Header Badges
         final int badgeY = cardY + 22;
         int badgeX = cardX + cardW - 24;
+
+        final long elapsedMillis = (isNotNull(timer))
+                ? Math.max(0L, System.currentTimeMillis() - timer.startedAt()) : 0L;
+        final String elapsedStr = (isNotNull(timer))
+                ? "ELAPSED: " + formatElapsedTime(elapsedMillis) : "ELAPSED: --:--:--";
+        badgeX -= drawBadge(g, elapsedStr, badgeX, badgeY, CARD_BORDER, TEXT_MUTED) + 8;
 
         // Badge 3: Target count
         final String targetStr = String.format("TARGET: %d", target);
@@ -371,6 +387,16 @@ public final class ProgressionTracker {
 
         g.dispose();
         return img;
+    }
+
+    static String formatElapsedTime(final long elapsedMillis) {
+        final long totalSeconds = Math.max(0L, elapsedMillis) / 1000;
+        return String.format(
+                java.util.Locale.ROOT,
+                "%02d:%02d:%02d",
+                totalSeconds / 3600,
+                (totalSeconds / 60) % 60,
+                totalSeconds % 60);
     }
 
     private static int drawBadge(

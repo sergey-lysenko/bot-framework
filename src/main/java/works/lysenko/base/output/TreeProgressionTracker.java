@@ -4,6 +4,7 @@ import works.lysenko.base.output.TreeHtml.Edge;
 import works.lysenko.base.output.TreeHtml.NodeData;
 import works.lysenko.base.output.TreeHtml.TreeLayout;
 import works.lysenko.util.apis.data._Result;
+import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.type.Result;
 import works.lysenko.util.spec.PropEnum;
 
@@ -26,9 +27,7 @@ import java.util.Locale;
 import java.util.TreeMap;
 
 import static java.util.Objects.isNull;
-import static works.lysenko.Base.core;
-import static works.lysenko.Base.parameters;
-import static works.lysenko.Base.timer;
+import static works.lysenko.Base.*;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.spec.Layout.Files.name;
 import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_;
@@ -67,6 +66,7 @@ public final class TreeProgressionTracker {
     private static final Color UNVISITED_EDGE = new Color(0x33, 0x41, 0x55, 140);
     private static final Color WARNING_AMBER = new Color(0xF5, 0x9E, 0x0B);
     private static final Color GREEN_DONE = new Color(0x22, 0xC5, 0x5E);
+    private static final Color TEXT_DARK = new Color(0x0F, 0x17, 0x2A);
 
     private static final List<File> capturedFrames = new ArrayList<>();
     private static File customOutputDir = null;
@@ -128,6 +128,45 @@ public final class TreeProgressionTracker {
         return Color.getHSBColor(hue, sat, bri);
     }
 
+    static int getTargetExecutions(final NodeData node, final int leafTarget) {
+        return switch (getScenarioType(node)) {
+            case MONO -> 1;
+            case LEAF -> Math.max(1, leafTarget);
+            default -> 0;
+        };
+    }
+
+    static int getOverExecutionPercent(final int execs, final int target) {
+        final int safeTarget = Math.max(1, target);
+        return (execs > safeTarget) ? (int) Math.ceil((execs - safeTarget) * 100.0 / safeTarget) : 0;
+    }
+
+    static Color getOverExecutionColor(final double overRatio, final double maxOverRatio) {
+        if (overRatio <= 0.0 || maxOverRatio <= 0.0) return GREEN_DONE;
+
+        final double progress = Math.min(1.0, overRatio / maxOverRatio);
+        return new Color(
+                interpolate(GREEN_DONE.getRed(), TEXT_WHITE.getRed(), progress),
+                interpolate(GREEN_DONE.getGreen(), TEXT_WHITE.getGreen(), progress),
+                interpolate(GREEN_DONE.getBlue(), TEXT_WHITE.getBlue(), progress));
+    }
+
+    static String getExecutionBadgeText(final NodeData node, final int execs, final int leafTarget) {
+        final ScenarioType type = getScenarioType(node);
+        if (ScenarioType.NODE == type || ScenarioType.CORE == type) {
+            return execs + ((1 == execs) ? " exec" : " execs");
+        }
+
+        final int target = getTargetExecutions(node, leafTarget);
+        if (execs > target && ScenarioType.LEAF == type) {
+            return execs + "/" + target + " +" + getOverExecutionPercent(execs, target) + "%";
+        }
+        if (execs >= target && 0 < execs) {
+            return "\u2713 " + execs + "/" + target;
+        }
+        return execs + "/" + target;
+    }
+
     /**
      * Hook called during limbo period between test cycles.
      *
@@ -167,7 +206,7 @@ public final class TreeProgressionTracker {
     }
 
     /**
-     * Hook called upon test completion to compile collected frames into animated GIF.
+     * Hook called upon test completion to compile collected frames into animated GIF and WebP.
      */
     public static void onComplete() {
         final File runDir = resolveRunDirectory();
@@ -192,19 +231,31 @@ public final class TreeProgressionTracker {
 
         final String prefix = (isNotNull(timer)) ? String.valueOf(timer.startedAt()) : "run";
         final File gifFile = new File(runDir, prefix + ".tree.progression.gif");
+        final File webpFile = new File(runDir, prefix + ".tree.progression.webp");
+        final List<BufferedImage> images = new ArrayList<>(framesToProcess.size());
 
         try {
-            final List<BufferedImage> images = new ArrayList<>(framesToProcess.size());
             for (final File f : framesToProcess) {
                 final BufferedImage img = ImageIO.read(f);
                 if (isNotNull(img)) images.add(img);
             }
-            if (!images.isEmpty()) {
-                ProgressionTracker.writeAnimatedGif(images, gifFile, DELAY_CENTISECONDS, FINAL_FRAME_DELAY_CENTISECONDS);
-                System.out.println("Tree progression animation generated: " + gifFile.getAbsolutePath());
-            }
+        } catch (final Exception e) {
+            System.err.println("Failed to load tree progression frames: " + e.getMessage());
+            return;
+        }
+
+        if (images.isEmpty()) return;
+        try {
+            ProgressionTracker.writeAnimatedGif(images, gifFile, DELAY_CENTISECONDS, FINAL_FRAME_DELAY_CENTISECONDS);
+            log("Tree progression GIF generated: " + gifFile.getAbsolutePath());
         } catch (final Exception e) {
             System.err.println("Failed to create tree progression GIF: " + e.getMessage());
+        }
+        try {
+            AnimatedWebP.write(images, webpFile, DELAY_CENTISECONDS * 10, FINAL_FRAME_DELAY_CENTISECONDS * 10);
+            log("Tree progression WebP generated: " + webpFile.getAbsolutePath());
+        } catch (final Exception e) {
+            System.err.println("Failed to create tree progression WebP: " + e.getMessage());
         }
     }
 
@@ -226,15 +277,19 @@ public final class TreeProgressionTracker {
         int totalLeafs = 0;
         int coveredLeafs = 0;
         int totalExecs = 0;
+        double maxLeafOverRatio = 0.0;
 
         for (final NodeData n : layout.nodes()) {
             if (n.col() > maxCol) maxCol = n.col();
             if (n.row() > maxRow) maxRow = n.row();
             final int execs = (null != n.result()) ? n.result().getExecutions() : 0;
             totalExecs += execs;
-            if (n.children().isEmpty()) {
+            if (ScenarioType.LEAF == getScenarioType(n)) {
+                maxLeafOverRatio = Math.max(maxLeafOverRatio, getLeafOverExecutionRatio(n, target));
+            }
+            if (n.children().isEmpty() && isTerminalScenario(n)) {
                 totalLeafs++;
-                if (execs >= target) coveredLeafs++;
+                if (execs >= getTargetExecutions(n, target)) coveredLeafs++;
             }
         }
 
@@ -260,13 +315,13 @@ public final class TreeProgressionTracker {
         }
 
         // Draw edges
-        drawEdges(g, layout.edges(), target);
+        drawEdges(g, layout.edges(), target, maxLeafOverRatio);
 
         // Draw nodes
         final Font fontLabel = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
         final Font fontBadge = new Font(Font.MONOSPACED, Font.BOLD, 10);
         for (final NodeData n : layout.nodes()) {
-            drawNode(g, n, target, fontLabel, fontBadge);
+            drawNode(g, n, target, maxLeafOverRatio, fontLabel, fontBadge);
         }
 
         // Draw header
@@ -279,7 +334,8 @@ public final class TreeProgressionTracker {
     private static void drawEdges(
             final Graphics2D g,
             final List<Edge> edges,
-            final int target) {
+            final int target,
+            final double maxLeafOverRatio) {
 
         final List<Edge> sortedEdges = new ArrayList<>(edges);
         sortedEdges.sort(Comparator.comparingInt(e -> {
@@ -307,7 +363,7 @@ public final class TreeProgressionTracker {
                 if (toEvents > 0) {
                     g.setColor(WARNING_AMBER);
                 } else {
-                    g.setColor(getProgressColor(toExecs, target));
+                    g.setColor(getScenarioProgressColor(e.to(), target, maxLeafOverRatio));
                 }
                 g.setStroke(new BasicStroke(2.2f));
             } else {
@@ -322,6 +378,7 @@ public final class TreeProgressionTracker {
             final Graphics2D g,
             final NodeData n,
             final int target,
+            final double maxLeafOverRatio,
             final Font fontLabel,
             final Font fontBadge) {
 
@@ -330,9 +387,12 @@ public final class TreeProgressionTracker {
         final _Result res = n.result();
         final int execs = (null != res) ? res.getExecutions() : 0;
         final int eventCount = (null != res && null != res.getEvents()) ? res.getEvents().size() : 0;
-        final int safeTarget = Math.max(1, target);
+        final int scenarioTarget = getTargetExecutions(n, target);
+        final int safeTarget = Math.max(1, scenarioTarget);
+        final double overRatio = (ScenarioType.LEAF == getScenarioType(n))
+                ? getLeafOverExecutionRatio(n, target) : 0.0;
 
-        final Color progressColor = getProgressColor(execs, safeTarget);
+        final Color progressColor = getScenarioProgressColor(n, target, maxLeafOverRatio);
         final Color cardFill;
         final Color borderColor;
         final float strokeW;
@@ -341,6 +401,10 @@ public final class TreeProgressionTracker {
             cardFill = UNVISITED_CARD;
             borderColor = UNVISITED_BORDER;
             strokeW = 1.2f;
+        } else if (overRatio > 0.0) {
+            cardFill = progressColor;
+            borderColor = (eventCount > 0) ? WARNING_AMBER : progressColor;
+            strokeW = 1.8f;
         } else {
             final int r = (int) (UNVISITED_CARD.getRed() * 0.7 + progressColor.getRed() * 0.3);
             final int gr = (int) (UNVISITED_CARD.getGreen() * 0.7 + progressColor.getGreen() * 0.3);
@@ -372,7 +436,8 @@ public final class TreeProgressionTracker {
             g.fillRoundRect(barX, barY, barW, barH, 2, 2);
 
             // Fill
-            final double fillRatio = Math.min(1.0, (double) execs / (double) safeTarget);
+            final double fillRatio = (0 == scenarioTarget)
+                    ? 1.0 : Math.min(1.0, (double) execs / (double) safeTarget);
             final int filledW = Math.max(4, (int) Math.round(barW * fillRatio));
             g.setColor(progressColor);
             g.fillRoundRect(barX, barY, filledW, barH, 2, 2);
@@ -381,18 +446,8 @@ public final class TreeProgressionTracker {
         // Right pill badge: e.g. "0/5", "3/5", "✓ 5/5"
         g.setFont(fontBadge);
         final FontMetrics fmBadge = g.getFontMetrics();
-        final String badgeText;
-        final Color badgeFg;
-        if (execs == 0) {
-            badgeText = "0/" + safeTarget;
-            badgeFg = TEXT_MUTED;
-        } else if (execs >= safeTarget) {
-            badgeText = "\u2713 " + execs + "/" + safeTarget;
-            badgeFg = GREEN_DONE;
-        } else {
-            badgeText = execs + "/" + safeTarget;
-            badgeFg = progressColor;
-        }
+        final String badgeText = getExecutionBadgeText(n, execs, target);
+        final Color badgeFg = (execs == 0) ? TEXT_MUTED : progressColor;
 
         final int badgeTextW = fmBadge.stringWidth(badgeText);
         final int pillW = badgeTextW + 12;
@@ -428,8 +483,55 @@ public final class TreeProgressionTracker {
             }
             label = label + "...";
         }
-        g.setColor((execs > 0) ? TEXT_WHITE : TEXT_MUTED);
+        g.setColor((overRatio > 0.0) ? TEXT_DARK : (execs > 0) ? TEXT_WHITE : TEXT_MUTED);
         g.drawString(label, x + 12, y + 24);
+    }
+
+    private static ScenarioType getScenarioType(final NodeData node) {
+        if (null != node.result() && null != node.result().getScenarioType()) {
+            return node.result().getScenarioType();
+        }
+        return node.children().isEmpty() ? ScenarioType.LEAF : ScenarioType.NODE;
+    }
+
+    private static boolean isTerminalScenario(final NodeData node) {
+        final ScenarioType type = getScenarioType(node);
+        return ScenarioType.LEAF == type || ScenarioType.MONO == type;
+    }
+
+    private static double getLeafOverExecutionRatio(final NodeData node, final int target) {
+        final int safeTarget = Math.max(1, target);
+        final int execs = (null != node.result()) ? node.result().getExecutions() : 0;
+        return (execs > safeTarget) ? (double) (execs - safeTarget) / safeTarget : 0.0;
+    }
+
+    private static Color getScenarioProgressColor(
+            final NodeData node,
+            final int target,
+            final double maxLeafOverRatio) {
+        final int execs = (null != node.result()) ? node.result().getExecutions() : 0;
+        final ScenarioType type = getScenarioType(node);
+        if (ScenarioType.LEAF == type) {
+            final double overRatio = getLeafOverExecutionRatio(node, target);
+            return (overRatio > 0.0)
+                    ? getOverExecutionColor(overRatio, maxLeafOverRatio)
+                    : getProgressColor(execs, target);
+        }
+        return getProgressColor(execs, 1);
+    }
+
+    private static int interpolate(final int start, final int end, final double progress) {
+        return (int) Math.round(start + ((end - start) * progress));
+    }
+
+    static String formatElapsedTime(final long elapsedMillis) {
+        final long totalSeconds = Math.max(0L, elapsedMillis) / 1000;
+        return String.format(
+                Locale.ROOT,
+                "%02d:%02d:%02d",
+                totalSeconds / 3600,
+                (totalSeconds / 60) % 60,
+                totalSeconds % 60);
     }
 
     private static void drawHeader(
@@ -455,6 +557,11 @@ public final class TreeProgressionTracker {
 
         int rightX = canvasW - PADDING_X;
         final int topY = (HEADER_HEIGHT - 22) / 2;
+
+        final String elapsedText = (isNotNull(timer))
+                ? "Elapsed: " + formatElapsedTime(Math.max(0L, System.currentTimeMillis() - timer.startedAt()))
+                : "Elapsed: --:--:--";
+        rightX -= drawBadge(g, elapsedText, rightX, topY, new Color(51, 65, 85), TEXT_WHITE) + 10;
 
         rightX -= drawBadge(g, totalExecs + " total execs", rightX, topY, new Color(51, 65, 85), TEXT_WHITE) + 10;
 

@@ -19,6 +19,7 @@ import works.lysenko.tree.base.Leaf;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.test._Exec;
 import works.lysenko.util.apis.test._Test;
+import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.type.Result;
 import works.lysenko.util.spec.PropEnum;
 
@@ -126,6 +127,61 @@ class TreeProgressionTrackerTest {
     }
 
     @Test
+    void testScenarioTargetsAndBadges() {
+        final NodeData mono = new NodeData("mono", "Mono", "Root", 0, 1.0, result(ScenarioType.MONO, 0));
+        final NodeData node = new NodeData("node", "Node", "Root", 0, 1.0, result(ScenarioType.NODE, 0));
+        final NodeData leaf = new NodeData("leaf", "Leaf", "Root", 0, 1.0, result(ScenarioType.LEAF, 0));
+
+        assertEquals(1, TreeProgressionTracker.getTargetExecutions(mono, 5));
+        assertEquals(0, TreeProgressionTracker.getTargetExecutions(node, 5));
+        assertEquals(5, TreeProgressionTracker.getTargetExecutions(leaf, 5));
+        assertEquals("0/1", TreeProgressionTracker.getExecutionBadgeText(mono, 0, 5));
+        assertEquals("\u2713 2/1", TreeProgressionTracker.getExecutionBadgeText(mono, 2, 5));
+        assertEquals("3 execs", TreeProgressionTracker.getExecutionBadgeText(node, 3, 5));
+        assertEquals("\u2713 2/2", TreeProgressionTracker.getExecutionBadgeText(leaf, 2, 2));
+        assertEquals("4/2 +100%", TreeProgressionTracker.getExecutionBadgeText(leaf, 4, 2));
+    }
+
+    @Test
+    void testLeafOverExecutionPercentAndColor() {
+        assertEquals(0, TreeProgressionTracker.getOverExecutionPercent(2, 2));
+        assertEquals(50, TreeProgressionTracker.getOverExecutionPercent(3, 2));
+        assertEquals(100, TreeProgressionTracker.getOverExecutionPercent(4, 2));
+
+        final Color partialOvershoot = TreeProgressionTracker.getOverExecutionColor(0.5, 1.0);
+        assertEquals(new Color(0xF8, 0xFA, 0xFC), TreeProgressionTracker.getOverExecutionColor(1.0, 1.0));
+        assertTrue(partialOvershoot.getRed() > new Color(0x22, 0xC5, 0x5E).getRed());
+        assertTrue(partialOvershoot.getGreen() < Color.WHITE.getGreen());
+        assertTrue(partialOvershoot.getBlue() < Color.WHITE.getBlue());
+    }
+
+    @Test
+    void testFormatElapsedTime() {
+        assertEquals("00:00:00", TreeProgressionTracker.formatElapsedTime(999));
+        assertEquals("01:01:01", TreeProgressionTracker.formatElapsedTime(3_661_999));
+        assertEquals("00:00:00", TreeProgressionTracker.formatElapsedTime(-1));
+    }
+
+    @Test
+    void testRenderHighlightsMostOverExecutedLeaf() {
+        final NodeData root = new NodeData("root", "Root", "Root", 0, 1.0, result(ScenarioType.NODE, 2));
+        final NodeData partialLeaf = new NodeData("partial", "Partial", "Root", 1, 1.0, result(ScenarioType.LEAF, 3));
+        final NodeData mostOverExecutedLeaf = new NodeData("most", "Most", "Root", 1, 2.0, result(ScenarioType.LEAF, 4));
+        root.children().add(partialLeaf);
+        root.children().add(mostOverExecutedLeaf);
+
+        final TreeLayout layout = new TreeLayout(
+                List.of(root, partialLeaf, mostOverExecutedLeaf),
+                List.of(new Edge(root, partialLeaf), new Edge(root, mostOverExecutedLeaf)));
+        final BufferedImage image = TreeProgressionTracker.renderTreeProgression(layout, 2, 1);
+
+        assertEquals(
+                TreeProgressionTracker.getOverExecutionColor(0.5, 1.0),
+                new Color(image.getRGB(400, 155)));
+        assertEquals(new Color(0xF8, 0xFA, 0xFC), new Color(image.getRGB(400, 215)));
+    }
+
+    @Test
     void testRenderTreeProgressionLayout() {
         final List<NodeData> nodes = new ArrayList<>();
         final List<Edge> edges = new ArrayList<>();
@@ -213,6 +269,11 @@ class TreeProgressionTrackerTest {
         assertEquals(1, gifFiles.length);
         assertTrue(gifFiles[0].length() > 0);
 
+        final File[] webpFiles = customRunDir.listFiles((d, name) -> name.endsWith(".tree.progression.webp"));
+        assertNotNull(webpFiles);
+        assertEquals(1, webpFiles.length);
+        assertEquals(3, AnimatedWebPTest.countFrames(webpFiles[0]));
+
         // Verify animated GIF content
         try (final ImageInputStream iis = ImageIO.createImageInputStream(gifFiles[0])) {
             final Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
@@ -293,6 +354,10 @@ class TreeProgressionTrackerTest {
 
         final File treeGifFile = tempDir.resolve("123456789.tree.progression.gif").toFile();
         Files.write(treeGifFile.toPath(), new byte[]{0, 1, 2, 3});
+        final File progressionWebpFile = tempDir.resolve("123456789.progression.webp").toFile();
+        Files.write(progressionWebpFile.toPath(), new byte[]{0, 1, 2, 3});
+        final File treeWebpFile = tempDir.resolve("123456789.tree.progression.webp").toFile();
+        Files.write(treeWebpFile.toPath(), new byte[]{0, 1, 2, 3});
 
         final File htmlFile = tempDir.resolve("123456789.log.html").toFile();
         LogHtml.generateReport(logFile, htmlFile);
@@ -301,6 +366,10 @@ class TreeProgressionTrackerTest {
         final String htmlContent = Files.readString(htmlFile.toPath());
         assertTrue(htmlContent.contains("Tree Progression"), "HTML report must contain 'Tree Progression' button");
         assertTrue(htmlContent.contains("123456789.tree.progression.gif"), "HTML report must link to tree progression GIF");
+        assertTrue(htmlContent.contains("Progression WebP"), "HTML report must contain the coverage WebP link");
+        assertTrue(htmlContent.contains("123456789.progression.webp"), "HTML report must link to the coverage WebP animation");
+        assertTrue(htmlContent.contains("Tree WebP"), "HTML report must contain the tree WebP link");
+        assertTrue(htmlContent.contains("123456789.tree.progression.webp"), "HTML report must link to the tree WebP animation");
     }
 
     private static class TestLeaf extends Leaf {
@@ -320,5 +389,9 @@ class TreeProgressionTrackerTest {
         public String getShortName() {
             return name;
         }
+    }
+
+    private static Result result(final ScenarioType type, final int executions) {
+        return new Result(type, null, null, null, new ArrayList<>(), executions, 0);
     }
 }

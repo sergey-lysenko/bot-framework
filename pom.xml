@@ -5,7 +5,7 @@
 
   <groupId>works.lysenko</groupId>
   <artifactId>framework</artifactId>
-  <version>0.26.40.7</version>
+  <version>0.26.40.10</version>
   <packaging>jar</packaging>
 
   <name>bot-framework</name>
@@ -36,6 +36,7 @@
     <!-- Utilities versions -->
     <commons-math3.version>3.6.1</commons-math3.version>
     <commons-collections4.version>4.4</commons-collections4.version>
+    <webp-imageio.version>0.10.0</webp-imageio.version>
     <javafaker.version>1.0.2</javafaker.version>
     <jgrapht.version>1.5.2</jgrapht.version>
 
@@ -79,6 +80,11 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-collections4</artifactId>
       <version>${commons-collections4.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.usefulness</groupId>
+      <artifactId>webp-imageio</artifactId>
+      <version>${webp-imageio.version}</version>
     </dependency>
     <dependency>
       <groupId>com.github.javafaker</groupId>

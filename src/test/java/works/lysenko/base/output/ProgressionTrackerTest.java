@@ -98,6 +98,13 @@ class ProgressionTrackerTest {
     }
 
     @Test
+    void testFormatElapsedTime() {
+        assertEquals("00:00:00", ProgressionTracker.formatElapsedTime(999));
+        assertEquals("01:01:01", ProgressionTracker.formatElapsedTime(3_661_999));
+        assertEquals("00:00:00", ProgressionTracker.formatElapsedTime(-1));
+    }
+
+    @Test
     void testRenderProgressionGraphWithManyAndLongScenarios() {
         final List<_Scenario> scenarios = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
@@ -199,6 +206,11 @@ class ProgressionTrackerTest {
         assertNotNull(gifFiles);
         assertEquals(1, gifFiles.length);
         assertTrue(gifFiles[0].length() > 0);
+
+        final File[] webpFiles = customRunDir.listFiles((d, name) -> name.endsWith(".progression.webp"));
+        assertNotNull(webpFiles);
+        assertEquals(1, webpFiles.length);
+        assertEquals(3, AnimatedWebPTest.countFrames(webpFiles[0]));
 
         // Verify animated GIF content
         try (final ImageInputStream iis = ImageIO.createImageInputStream(gifFiles[0])) {
