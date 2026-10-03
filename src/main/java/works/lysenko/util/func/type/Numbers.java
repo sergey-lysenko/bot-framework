@@ -146,7 +146,10 @@ public record Numbers() {
         for (final int probability : probabilities) {
             totalSum += probability;
         }
-        final int random = random(0, totalSum);
+        if (0 >= totalSum) {
+            throw new IllegalArgumentException("Sum of probabilities must be positive");
+        }
+        final int random = random(0, totalSum - 1);
         int cumulativeSum = 0;
         for (int i = 0; i < probabilities.length; i++) {
             cumulativeSum += probabilities[i];

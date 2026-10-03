@@ -100,7 +100,25 @@ public final class WebDrivers {
         if (maximize && !headless)
             if (isNotNull(driver))
                 driver.manage().window().maximize();
+        if (isNotNull(driver))
+            registerQuitHook(driver);
         return driver;
+    }
+
+    /**
+     * Ensures the browser and its driver process are terminated when the JVM exits for any reason.
+     *
+     * @param driver driver to quit on JVM shutdown
+     */
+    private static void registerQuitHook(final WebDriver driver) {
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                driver.quit();
+            } catch (final RuntimeException ignored) {
+                // Driver is already closed or unreachable
+            }
+        }, "webdriver-quit-hook"));
     }
 
     @SuppressWarnings("LocalCanBeFinal")
@@ -119,6 +137,7 @@ public final class WebDrivers {
         options.addArguments("--disable-infobars"); //NON-NLS
         options.addArguments("--enable-logging");  // NON-NLS
         options.addArguments("--v=1"); //NON-NLS
+        options.addArguments("--disable-features=MacAppCodeSignClone"); //NON-NLS
         return options;
     }
 

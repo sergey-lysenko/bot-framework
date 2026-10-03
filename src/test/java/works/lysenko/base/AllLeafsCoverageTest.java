@@ -10,8 +10,10 @@ import works.lysenko.tree.Ctrl;
 import works.lysenko.tree.base.Leaf;
 import works.lysenko.tree.base.Mono;
 import works.lysenko.tree.base.Node;
+import works.lysenko.util.apis.log._Logs;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.test._Exec;
+import works.lysenko.util.apis.test._Repeater;
 import works.lysenko.util.apis.test._Test;
 import works.lysenko.util.data.enums.ExecutionParameter;
 import works.lysenko.util.spec.PropEnum;
@@ -30,14 +32,17 @@ class AllLeafsCoverageTest {
     private Core previousCore;
     private Parameters previousParameters;
     private TestProperties previousProperties;
+    private Exec previousExec;
 
     @BeforeEach
     void setUp() throws Exception {
         previousCore = Base.core;
         previousParameters = Base.parameters;
         previousProperties = Base.properties;
+        previousExec = Base.exec;
         Base.parameters = null;
         Base.properties = null;
+        Base.exec = null;
         final Field f = Unsafe.class.getDeclaredField("theUnsafe");
         f.setAccessible(true);
         final Unsafe unsafe = (Unsafe) f.get(null);
@@ -54,21 +59,26 @@ class AllLeafsCoverageTest {
         Base.core = previousCore;
         Base.parameters = previousParameters;
         Base.properties = previousProperties;
+        Base.exec = previousExec;
     }
 
     private static void setTestProperty(final String key, final String value) {
         try {
-            final TestProperties testProperties = new TestProperties();
-            final Field ccField = TestProperties.class.getDeclaredField("commonConfiguration");
-        ccField.setAccessible(true);
-        ccField.set(testProperties, new Properties());
+            if (Base.properties == null) {
+                final TestProperties testProperties = new TestProperties();
+                final Field ccField = TestProperties.class.getDeclaredField("commonConfiguration");
+                ccField.setAccessible(true);
+                ccField.set(testProperties, new Properties());
 
-        final Field theField = TestProperties.class.getDeclaredField("the");
+                final Field theField = TestProperties.class.getDeclaredField("the");
+                theField.setAccessible(true);
+                theField.set(testProperties, new Properties());
+                Base.properties = testProperties;
+            }
+            final Field theField = TestProperties.class.getDeclaredField("the");
             theField.setAccessible(true);
-            final Properties props = new Properties();
+            final Properties props = (Properties) theField.get(Base.properties);
             props.put(key, value);
-            theField.set(testProperties, props);
-            Base.properties = testProperties;
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -188,6 +198,55 @@ class AllLeafsCoverageTest {
         assertFalse(Base.core.areAllLeafsExecuted());
 
         Base.core.getResults().count(leaf2);
+        assertEquals(2, Base.core.getExecutedLeafsCount());
+        assertTrue(Base.core.areAllLeafsExecuted());
+    }
+
+    @Test
+    void testMultiCountLeafExecutionWithMonoInCore() throws Exception {
+        setTestProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), "3");
+        Base.parameters = new Parameters(new Properties());
+
+        final Ctrl rootCtrl = new Ctrl(null);
+        final TestLeaf leaf1 = new TestLeaf(fr(1.0));
+        final TestMono mono = new TestMono(fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(leaf1, fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(mono, fr(1.0));
+
+        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
+        f.setAccessible(true);
+        final Unsafe unsafe = (Unsafe) f.get(null);
+        final _Test mockTest = (_Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
+        final _Exec mockExec = (_Exec) unsafe.allocateInstance(works.lysenko.base.test.Exec.class);
+
+        final Field ctrlField = works.lysenko.base.test.Exec.class.getDeclaredField("ctrl");
+        ctrlField.setAccessible(true);
+        ctrlField.set(mockExec, rootCtrl);
+
+        final Field execField = works.lysenko.base.Test.class.getDeclaredField("executor");
+        execField.setAccessible(true);
+        execField.set(mockTest, mockExec);
+
+        final Field testField = Core.class.getDeclaredField("test");
+        testField.setAccessible(true);
+        testField.set(Base.core, mockTest);
+
+        assertEquals(0, Base.core.getExecutedLeafsCount());
+        assertFalse(Base.core.areAllLeafsExecuted());
+
+        // Mono executed once - reaches its maximum (1)
+        Base.core.getResults().count(mono);
+        assertEquals(1, Base.core.getExecutedLeafsCount());
+        assertFalse(Base.core.areAllLeafsExecuted());
+
+        // Leaf1 executed twice - not yet at target (3)
+        Base.core.getResults().count(leaf1);
+        Base.core.getResults().count(leaf1);
+        assertEquals(1, Base.core.getExecutedLeafsCount());
+        assertFalse(Base.core.areAllLeafsExecuted());
+
+        // Leaf1 executed third time - reaches target (3)
+        Base.core.getResults().count(leaf1);
         assertEquals(2, Base.core.getExecutedLeafsCount());
         assertTrue(Base.core.areAllLeafsExecuted());
     }
@@ -325,6 +384,130 @@ class AllLeafsCoverageTest {
         Base.core.getResults().count(leaf2);
         assertEquals(2, Base.core.getExecutedLeafsCount());
         assertTrue(Base.core.areAllLeafsExecuted());
+    }
+
+    @Test
+    void testIsNotExhaustedWithAllLeafsCount() throws Exception {
+        setTestProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), "2");
+        Base.parameters = new Parameters(new Properties());
+
+        final Ctrl rootCtrl = new Ctrl(null);
+        final TestLeaf leaf1 = new TestLeaf(fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(leaf1, fr(1.0));
+
+        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
+        f.setAccessible(true);
+        final Unsafe unsafe = (Unsafe) f.get(null);
+        final works.lysenko.base.Test testInstance = (works.lysenko.base.Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
+        final _Exec mockExec = (_Exec) unsafe.allocateInstance(works.lysenko.base.test.Exec.class);
+
+        final Field ctrlField = works.lysenko.base.test.Exec.class.getDeclaredField("ctrl");
+        ctrlField.setAccessible(true);
+        ctrlField.set(mockExec, rootCtrl);
+
+        final Field execField = works.lysenko.base.Test.class.getDeclaredField("executor");
+        execField.setAccessible(true);
+        execField.set(testInstance, mockExec);
+
+        final Field testField = Core.class.getDeclaredField("test");
+        testField.setAccessible(true);
+        testField.set(Base.core, testInstance);
+
+        final Method isNotExhaustedMethod = works.lysenko.base.Test.class.getDeclaredMethod("isNotExhausted");
+        isNotExhaustedMethod.setAccessible(true);
+
+        // Before any execution, not exhausted
+        assertTrue((boolean) isNotExhaustedMethod.invoke(testInstance));
+
+        // After 1 execution, still not exhausted because target count is 2!
+        Base.core.getResults().count(leaf1);
+        assertTrue((boolean) isNotExhaustedMethod.invoke(testInstance));
+
+        // After 2 executions, exhausted!
+        Base.core.getResults().count(leaf1);
+        assertFalse((boolean) isNotExhaustedMethod.invoke(testInstance));
+    }
+
+    @Test
+    void testPropertyLoggingCycleProtection() throws Exception {
+        setTestProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), "5");
+        setTestProperty(PropEnum._DEBUG.getPropertyName(), "true");
+
+        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
+        f.setAccessible(true);
+        final Unsafe unsafe = (Unsafe) f.get(null);
+        final Exec mockExec = (Exec) unsafe.allocateInstance(Exec.class);
+        Base.exec = mockExec;
+
+        final _Repeater mockRepeater = new _Repeater() {
+            @Override
+            public void addToHistory(_Scenario scenario) {}
+            @Override
+            public void addToScenarios(_Scenario scenario) {}
+            @Override
+            public void close() {}
+            @Override
+            public Integer getCurrent() {
+                // Mimics Repeater accessing property
+                return PropEnum._ALL_LEAFS_COUNT.get();
+            }
+            @Override
+            public java.util.List<java.util.List<String>> getHistory() { return java.util.List.of(); }
+            @Override
+            public java.util.List<java.util.List<String>> getSummary() { return java.util.List.of(); }
+            @Override
+            public int getTestsCount() { return 1; }
+            @Override
+            public Integer getTotalTests() { return 1; }
+            @Override
+            public void run() {}
+        };
+
+        final _Test mockTest = (_Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
+        final Field repeaterField = works.lysenko.base.Test.class.getDeclaredField("repeater");
+        repeaterField.setAccessible(true);
+        repeaterField.set(mockTest, mockRepeater);
+
+        final Field testField = Core.class.getDeclaredField("test");
+        testField.setAccessible(true);
+        testField.set(Base.core, mockTest);
+
+        final _Logs mockLogger = new _Logs() {
+            @Override
+            public java.io.Closeable getLogWriter() { return null; }
+            @Override
+            public int getSpanLength() { return 0; }
+            @Override
+            public java.io.Closeable getTelemetryWriter() { return null; }
+            @Override
+            public void log(String message) { log(0, message); }
+            @Override
+            public void log(int level, String message) {
+                // Mimics Processor.createLogRecord querying current test number
+                Base.core.getCurrentTestNumber();
+            }
+            @Override
+            public void log(int level, String message, Long redefinedTime) {
+                Base.core.getCurrentTestNumber();
+            }
+            @Override
+            public void logEmptyLine() {}
+            @Override
+            public void logEvent(works.lysenko.util.data.enums.Severity severity, String message, String shortStackTrace) {}
+            @Override
+            public void logKnownIssue(String s) {}
+        };
+
+        final Field loggerField = Core.class.getDeclaredField("logger");
+        loggerField.setAccessible(true);
+        loggerField.set(Base.core, mockLogger);
+
+        // Querying PropEnum._ALL_LEAFS_COUNT.get() when debug is active and exec is not null
+        // must not cause any recursion or StackOverflowError
+        assertDoesNotThrow(() -> {
+            final Integer val = PropEnum._ALL_LEAFS_COUNT.get();
+            assertEquals(5, val);
+        });
     }
 
     private static class TestLeaf extends Leaf {

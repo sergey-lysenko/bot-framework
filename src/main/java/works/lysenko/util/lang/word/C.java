@@ -12,6 +12,7 @@ public record C() {
 
     private static final String CONFIG = s(CONF, IG);
     public static final String CONFIRM = s(CONF, IR, M);
+    public static final String CALCULATE = s(CA, LC, UL, AT, E);
     public static final String CALCULATED = s(CA, LC, ULAT, ED);
     public static final String CALCULATING = s(CALC, ULAT, ING);
     public static final String CALLABLE = s(CALL, ABLE);
@@ -36,6 +37,7 @@ public record C() {
     public static final String CIRCULAR = s(C, I, RC, UL, AR);
     public static final String CLASS = s(CL, A, SS);
     public static final String CLASSES = s(CLASS, ES);
+    public static final String CLEAR = s(CL, EA, R);
     public static final String CLEARING = s(CL, E, AR, ING);
     public static final String CLICK = s(CL, ICK);
     public static final String CLICKABILITY = s(CLICK, ABILITY);
@@ -69,6 +71,7 @@ public record C() {
     public static final String COULD = s(CO, U, LD);
     public static final String COUNT = s(CO, U, NT);
     public static final String COUNTER = s(CO, U, NT, ER);
+    public static final String COVERAGE = s(CO, VER, AGE);
     public static final String CREATED = s(CREA, TED);
     public static final String CREATING = s(CREA, TING);
     public static final String CROPPED = s(CR, OP, PED);
@@ -77,4 +80,6 @@ public record C() {
     public static final String CURRENT = s(CU, RR, ENT);
     public static final String CORRECT = s(CORR, E, CT);
     public static final String CUTOFF = s(CU, T, OFF);
+    public static final String CYCLE = s(CY, CL, E);
+    public static final String CYCLES = s(CYCLE, S);
 }

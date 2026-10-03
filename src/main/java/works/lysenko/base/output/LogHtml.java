@@ -393,6 +393,11 @@ public final class LogHtml {
                 ? String.format("<a class=\"btn-link\" href=\"%s\" target=\"_blank\" title=\"Scenario Coverage Progression Animation (10 fps)\"><button type=\"button\" style=\"border-color: #38bdf8; color: #38bdf8;\">Progression</button></a>", escapeHtml(gifFile.getName()))
                 : "";
 
+        final File treeGifFile = (null != logFile.getParentFile()) ? new File(logFile.getParentFile(), basePrefix + ".tree.progression.gif") : null;
+        final String treeProgressionLink = (null != treeGifFile && treeGifFile.exists())
+                ? String.format("<a class=\"btn-link\" href=\"%s\" target=\"_blank\" title=\"Scenario Tree Progression Animation (10 fps)\"><button type=\"button\" style=\"border-color: #34d399; color: #34d399;\">Tree Progression</button></a>", escapeHtml(treeGifFile.getName()))
+                : "";
+
         String timeStr = "";
         try {
             final long epoch = Long.parseLong(basePrefix);
@@ -452,6 +457,7 @@ public final class LogHtml {
                 .replace("{{TIMESTAMP_BLOCK}}", timestampBlock)
                 .replace("{{RESULT_PLAQUE}}", resultPlaque)
                 .replace("{{PROGRESSION_LINK}}", progressionLink)
+                .replace("{{TREE_PROGRESSION_LINK}}", treeProgressionLink)
                 .replace("{{TREE_LINK}}", escapeHtml(basePrefix + ".tree.html"))
                 .replace("{{JSON_LINK}}", escapeHtml(basePrefix + ".run.json"))
                 .replace("{{RAW_LINK}}", escapeHtml(basePrefix + ".run.log"))

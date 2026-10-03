@@ -65,24 +65,30 @@ public final class TreeHtml {
 
     record Edge(NodeData from, NodeData to) {}
 
+    record TreeLayout(List<NodeData> nodes, List<Edge> edges) {}
+
+    static TreeLayout computeLayout(final TreeMap<String, Result> sorted) {
+        final List<NodeData> nodes = new ArrayList<>();
+        final List<Edge> edges = new ArrayList<>();
+        final int[] dy = new int[100];
+        Arrays.fill(dy, 1);
+
+        final SortedMap<String, TreeMap<String, Result>> t = new Groups(TESTS, sorted);
+        for (final Map.Entry<String, TreeMap<String, Result>> group : t.entrySet()) {
+            processGroup(group, null, 0, dy, nodes, edges);
+        }
+
+        // Harmonic centering: align parents vertically to the center of their children
+        // and position each next level so plaques move lower to be closer to their parents
+        optimizeLayout(nodes);
+        return new TreeLayout(nodes, edges);
+    }
+
     public static void treeStats() {
         try {
             final TreeMap<String, Result> sorted = core.getResults().getSortedStrings(false);
-            final List<NodeData> nodes = new ArrayList<>();
-            final List<Edge> edges = new ArrayList<>();
-            final int[] dy = new int[100];
-            Arrays.fill(dy, 1);
-
-            final SortedMap<String, TreeMap<String, Result>> t = new Groups(TESTS, sorted);
-            for (final Map.Entry<String, TreeMap<String, Result>> group : t.entrySet()) {
-                processGroup(group, null, 0, dy, nodes, edges);
-            }
-
-            // Harmonic centering: align parents vertically to the center of their children
-            // and position each next level so plaques move lower to be closer to their parents
-            optimizeLayout(nodes);
-
-            final String html = renderHtml(nodes, edges);
+            final TreeLayout layout = computeLayout(sorted);
+            final String html = renderHtml(layout.nodes(), layout.edges());
             final String fileName = name(RUN_TREE_HTML_);
             writeToFile(html, fileName);
         } catch (final Throwable t) {

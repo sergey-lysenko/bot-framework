@@ -1,6 +1,5 @@
 package works.lysenko.base.properties;
 
-import works.lysenko.Base;
 import works.lysenko.base.properties.renderer.Routines;
 import works.lysenko.util.data.records.PropertiesMeta;
 
@@ -11,15 +10,7 @@ import static java.lang.Math.max;
 import static works.lysenko.base.properties.renderer.Routines.validate;
 import static works.lysenko.base.properties.renderer.Sections.renderAppliedConfiguration;
 import static works.lysenko.base.properties.renderer.Sections.renderDefaultValues;
-import static works.lysenko.util.data.enums.Ansi.gray;
-import static works.lysenko.util.data.enums.Ansi.yb;
-import static works.lysenko.util.data.strs.Bind.b;
-import static works.lysenko.util.data.strs.Swap.s;
-import static works.lysenko.util.data.strs.Swap.s1;
-import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.spec.Numbers.THREE;
-import static works.lysenko.util.spec.Symbols._DASH_;
-import static works.lysenko.util.spec.Symbols._NUMBR_;
 
 /**
  * The Renderer class is responsible for rendering sorted and default test properties in a formatted manner.
@@ -43,26 +34,6 @@ public record Renderer() {
 
         final List<String> changed = renderAppliedConfiguration(sorted, meta, length);
         renderDefaultValues(meta.defaults(), maxRecordLength, changed, length);
-        renderRecommendedCycles(maxRecordLength);
         validate(meta, changed);
     }
-
-    /**
-     * Renders recommended execution cycles count if root scenario is configured.
-     *
-     * @param maxRecordLength the maximum length of a record, used for formatting the output
-     */
-    @SuppressWarnings("UseOfSystemOutOrSystemErr")
-    private static void renderRecommendedCycles(final int maxRecordLength) {
-
-        if (isNotNull(Base.core)) {
-            final int leafs = Base.core.getActiveScenarioPaths();
-            final int recommended = Base.core.getRecommendedCycles();
-            if (0 < leafs && 0 < recommended) {
-                System.out.println(s(_DASH_).repeat(maxRecordLength));
-                System.out.println(b(gray(_NUMBR_), "Recommended cycles to cover all", s1(leafs, "leaf") + ":", yb(s(recommended))));
-            }
-        }
-    }
-
 }

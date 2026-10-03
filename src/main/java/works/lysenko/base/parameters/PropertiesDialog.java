@@ -1,0 +1,482 @@
+package works.lysenko.base.parameters;
+
+import works.lysenko.Base;
+import works.lysenko.base.TestProperties;
+import works.lysenko.util.apis.properties._TestProperties;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
+import java.awt.*;
+import java.util.*;
+import java.util.List;
+import java.util.regex.Pattern;
+
+import static works.lysenko.util.chrs.____.TEST;
+import static works.lysenko.util.chrs._____.VALUE;
+import static works.lysenko.util.data.enums.Brackets.ROUND;
+import static works.lysenko.util.data.strs.Bind.b;
+import static works.lysenko.util.data.strs.Case.c;
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Wrap.e;
+import static works.lysenko.util.func.type.Objects.isNotNull;
+import static works.lysenko.util.lang.word.C.CLEAR;
+import static works.lysenko.util.lang.word.C.CONFIGURED;
+import static works.lysenko.util.lang.word.D.DEFAULT;
+import static works.lysenko.util.lang.word.M.MODIFIED;
+import static works.lysenko.util.lang.word.P.PROPERTIES;
+import static works.lysenko.util.lang.word.P.PROPERTY;
+import static works.lysenko.util.lang.word.R.RESET;
+import static works.lysenko.util.lang.word.S.SEARCH;
+import static works.lysenko.util.lang.word.S.SELECTED;
+import static works.lysenko.util.lang.word.S.STATUS;
+import static works.lysenko.util.spec.Symbols._COLON_;
+
+/**
+ * Dialog for previewing and modifying test configuration properties before test execution.
+ */
+@SuppressWarnings({"ClassWithTooManyFields", "CallToSuspiciousStringMethod", "MagicNumber"})
+public class PropertiesDialog extends JDialog {
+
+    public static final String STATUS_DEFAULT = c(DEFAULT);
+    public static final String STATUS_CONFIGURED = c(CONFIGURED);
+    public static final String STATUS_MODIFIED = c(MODIFIED);
+    public static final String STATUS_CUSTOM = "Custom";
+    public static final String STATUS_RESET_TO_DEFAULT = "Reset to Default";
+
+    private final _TestProperties testProperties;
+    private final Map<String, String> baseline = new LinkedHashMap<>();
+    private final Map<String, String> overrides = new LinkedHashMap<>();
+    private final DefaultTableModel model;
+    private final JTable table;
+    private final TableRowSorter<DefaultTableModel> sorter;
+    private final JTextField searchField;
+    private final JButton resetSelectedBtn;
+    private final JButton resetAllBtn;
+    private final JButton addPropertyBtn;
+    private final JButton okBtn;
+    private final JButton cancelBtn;
+    private boolean confirmed = false;
+    private boolean isUpdating = false;
+
+    /**
+     * Constructs a new PropertiesDialog using Base.properties.
+     *
+     * @param owner         the parent window
+     * @param testName      the selected test name
+     * @param isHeadless    headless flag
+     * @param isAllLeafs    all-leafs flag
+     * @param allLeafsCount all-leafs count
+     */
+    public PropertiesDialog(final Window owner, final String testName, final boolean isHeadless,
+                            final boolean isAllLeafs, final int allLeafsCount) {
+
+        this(owner, (isNotNull(Base.properties)) ? Base.properties : new TestProperties(), testName, isHeadless, isAllLeafs, allLeafsCount);
+    }
+
+    /**
+     * Constructs a new PropertiesDialog with the given test properties instance.
+     *
+     * @param owner         the parent window
+     * @param testProps     the test properties instance
+     * @param testName      the selected test name
+     * @param isHeadless    headless flag
+     * @param isAllLeafs    all-leafs flag
+     * @param allLeafsCount all-leafs count
+     */
+    public PropertiesDialog(final Window owner, final _TestProperties testProps, final String testName,
+                            final boolean isHeadless, final boolean isAllLeafs, final int allLeafsCount) {
+
+        super(owner, b(c(TEST), c(PROPERTIES), e(ROUND, (null == testName || testName.isBlank()) ? "Default" : testName)),
+                ModalityType.APPLICATION_MODAL);
+        this.testProperties = testProps;
+
+        setSize(850, 520);
+        setLocationRelativeTo(owner);
+        setLayout(new BorderLayout(8, 8));
+
+        // 1. Top Panel (Search/Filter)
+        final JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        topPanel.add(new JLabel(b(c(SEARCH), s(_COLON_))));
+        searchField = new JTextField(25);
+        final JButton clearBtn = new JButton(c(CLEAR));
+        clearBtn.addActionListener(e -> searchField.setText(""));
+        topPanel.add(searchField);
+        topPanel.add(clearBtn);
+        add(topPanel, BorderLayout.NORTH);
+
+        // 2. Table and Model
+        final String[] columns = {c(PROPERTY), c(VALUE), c(DEFAULT), c(STATUS)};
+        model = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(final int r, final int c) {
+                return 1 == c;
+            }
+        };
+
+        populateProperties(testName, isHeadless, isAllLeafs, allLeafsCount);
+
+        table = new JTable(model);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.setRowHeight(22);
+        table.getTableHeader().setReorderingAllowed(false);
+
+        sorter = new TableRowSorter<>(model);
+        table.setRowSorter(sorter);
+
+        setupTableRenderingAndEditing();
+        setupSearchFiltering();
+
+        final JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(new EmptyBorder(0, 8, 0, 8));
+        add(scrollPane, BorderLayout.CENTER);
+
+        // 3. Bottom Panel (Actions)
+        final JPanel bottomPanel = new JPanel(new BorderLayout(8, 8));
+        bottomPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
+
+        final JPanel leftActions = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        resetSelectedBtn = new JButton(b(c(RESET), c(SELECTED)));
+        resetSelectedBtn.addActionListener(e -> onResetSelected());
+        resetAllBtn = new JButton(b(c(RESET), "All"));
+        resetAllBtn.addActionListener(e -> onResetAll());
+        addPropertyBtn = new JButton("+ " + c(PROPERTY));
+        addPropertyBtn.addActionListener(e -> onAddProperty());
+        leftActions.add(resetSelectedBtn);
+        leftActions.add(resetAllBtn);
+        leftActions.add(addPropertyBtn);
+
+        final JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        cancelBtn = new JButton("Cancel");
+        cancelBtn.addActionListener(e -> onCancel());
+        okBtn = new JButton("OK");
+        okBtn.addActionListener(e -> onOk());
+        rightActions.add(cancelBtn);
+        rightActions.add(okBtn);
+
+        bottomPanel.add(leftActions, BorderLayout.WEST);
+        bottomPanel.add(rightActions, BorderLayout.EAST);
+        add(bottomPanel, BorderLayout.SOUTH);
+    }
+
+    /**
+     * Computes the status for a property row with an explicitly known default status.
+     *
+     * @param key            property key
+     * @param value          current property value
+     * @param defaultValue   default value (may be null or empty)
+     * @param isDefaultKnown true if the property is defined in the default properties compendium
+     * @param baseVal        baseline value before user overrides
+     * @return status description string
+     */
+    public static String calculateStatus(final String key, final String value, final String defaultValue,
+                                         final boolean isDefaultKnown, final String baseVal) {
+
+        final String val = (null == value) ? "" : value;
+        final String def = (null == defaultValue) ? "" : defaultValue;
+        final boolean isValDefault = isDefaultKnown && val.equals(def);
+        final boolean isChangedFromBaseline = (null == baseVal) ? !val.isEmpty() : !val.equals(baseVal);
+
+        if (isChangedFromBaseline) {
+            return isValDefault ? STATUS_RESET_TO_DEFAULT : STATUS_MODIFIED;
+        }
+        if (isValDefault) {
+            return STATUS_DEFAULT;
+        }
+        if (isDefaultKnown) {
+            return STATUS_CONFIGURED;
+        }
+        return STATUS_CUSTOM;
+    }
+
+    /**
+     * Computes the status for a property row.
+     *
+     * @param key          property key
+     * @param value        current property value
+     * @param defaultValue default value (may be null or empty)
+     * @param baseVal      baseline value before user overrides
+     * @return status description string
+     */
+    public static String calculateStatus(final String key, final String value, final String defaultValue, final String baseVal) {
+
+        final boolean isDefaultKnown = isNotNull(defaultValue);
+        return calculateStatus(key, value, defaultValue, isDefaultKnown, baseVal);
+    }
+
+    private void populateProperties(final String testName, final boolean isHeadless, final boolean isAllLeafs,
+                                    final int allLeafsCount) {
+
+        if (isNotNull(testProperties)) {
+            final Map<String, String> originalConfig = testProperties.getOriginalConfigProperties(testName);
+            if (isNotNull(originalConfig)) {
+                baseline.putAll(originalConfig);
+            }
+            final Map<String, String> defaults = testProperties.getDefaults();
+
+            final Map<String, String> effective = testProperties.resolveEffectiveProperties(testName, isHeadless, isAllLeafs,
+                    allLeafsCount, true);
+
+            final Set<String> allKeys = new TreeSet<>(Comparator.naturalOrder());
+            if (isNotNull(effective)) allKeys.addAll(effective.keySet());
+            if (isNotNull(defaults)) allKeys.addAll(defaults.keySet());
+            allKeys.addAll(baseline.keySet());
+
+            for (final String key : allKeys) {
+                final boolean isDefaultKnown = isNotNull(defaults) && defaults.containsKey(key);
+                final String val = (isNotNull(effective) && effective.containsKey(key)) ? effective.get(key) : "";
+                final String def = isDefaultKnown ? defaults.get(key) : "";
+                final String safeVal = (null == val) ? "" : val;
+                final String safeDef = (null == def) ? "" : def;
+                final String baseVal = baseline.get(key);
+                final String st = calculateStatus(key, safeVal, safeDef, isDefaultKnown, baseVal);
+                model.addRow(new Object[]{key, safeVal, safeDef, st});
+            }
+        }
+    }
+
+    private void setupTableRenderingAndEditing() {
+
+        final DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(final JTable tbl, final Object val,
+                                                           final boolean isSelected, final boolean hasFocus,
+                                                           final int r, final int c) {
+                final Component comp = super.getTableCellRendererComponent(tbl, val, isSelected, hasFocus, r, c);
+                if (!isSelected) {
+                    final int modelRow = tbl.convertRowIndexToModel(r);
+                    final String st = (String) model.getValueAt(modelRow, 3);
+                    if (STATUS_MODIFIED.equals(st)) {
+                        comp.setFont(comp.getFont().deriveFont(Font.BOLD));
+                        comp.setForeground(new Color(180, 80, 0));
+                    } else if (STATUS_RESET_TO_DEFAULT.equals(st)) {
+                        comp.setFont(comp.getFont().deriveFont(Font.ITALIC | Font.BOLD));
+                        comp.setForeground(new Color(0, 130, 0));
+                    } else if (STATUS_CONFIGURED.equals(st)) {
+                        comp.setFont(comp.getFont().deriveFont(Font.BOLD));
+                        comp.setForeground(new Color(0, 80, 180));
+                    } else if (STATUS_CUSTOM.equals(st)) {
+                        comp.setFont(comp.getFont().deriveFont(Font.BOLD));
+                        comp.setForeground(new Color(120, 0, 120));
+                    } else {
+                        comp.setFont(comp.getFont().deriveFont(Font.PLAIN));
+                        comp.setForeground(tbl.getForeground());
+                    }
+                }
+                return comp;
+            }
+        };
+
+        for (int i = 0; i < table.getColumnCount(); i++) {
+            table.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
+        }
+
+        model.addTableModelListener(e -> {
+            if (isUpdating) return;
+            final int col = e.getColumn();
+            final int row = e.getFirstRow();
+            if (1 == col && row >= 0 && row < model.getRowCount()) {
+                isUpdating = true;
+                try {
+                    final String k = (String) model.getValueAt(row, 0);
+                    final String v = (String) model.getValueAt(row, 1);
+                    final String d = (String) model.getValueAt(row, 2);
+                    final boolean isDefaultKnown = isNotNull(testProperties) && isNotNull(testProperties.getDefaults()) &&
+                            testProperties.getDefaults().containsKey(k);
+                    final String baseVal = baseline.get(k);
+                    final String st = calculateStatus(k, (null == v) ? "" : v, (null == d) ? "" : d,
+                            isDefaultKnown, baseVal);
+                    model.setValueAt(st, row, 3);
+                } finally {
+                    isUpdating = false;
+                }
+            }
+        });
+    }
+
+    private void setupSearchFiltering() {
+
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(final DocumentEvent e) {
+                filter();
+            }
+
+            @Override
+            public void removeUpdate(final DocumentEvent e) {
+                filter();
+            }
+
+            @Override
+            public void changedUpdate(final DocumentEvent e) {
+                filter();
+            }
+
+            private void filter() {
+                final String text = searchField.getText().trim();
+                if (text.isEmpty()) {
+                    sorter.setRowFilter(null);
+                } else {
+                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + Pattern.quote(text)));
+                }
+            }
+        });
+    }
+
+    private void onResetSelected() {
+
+        final int viewRow = table.getSelectedRow();
+        if (viewRow < 0) return;
+        final int modelRow = table.convertRowIndexToModel(viewRow);
+        final String k = (String) model.getValueAt(modelRow, 0);
+        if (baseline.containsKey(k)) {
+            final String base = baseline.get(k);
+            model.setValueAt((null == base) ? "" : base, modelRow, 1);
+        } else if (isNotNull(testProperties) && isNotNull(testProperties.getDefaults()) &&
+                testProperties.getDefaults().containsKey(k)) {
+            final String def = testProperties.getDefaults().get(k);
+            model.setValueAt((null == def) ? "" : def, modelRow, 1);
+        } else {
+            model.setValueAt("", modelRow, 1);
+        }
+    }
+
+    private void onResetAll() {
+
+        for (int r = 0; r < model.getRowCount(); r++) {
+            final String k = (String) model.getValueAt(r, 0);
+            if (baseline.containsKey(k)) {
+                final String base = baseline.get(k);
+                model.setValueAt((null == base) ? "" : base, r, 1);
+            } else if (isNotNull(testProperties) && isNotNull(testProperties.getDefaults()) &&
+                    testProperties.getDefaults().containsKey(k)) {
+                final String def = testProperties.getDefaults().get(k);
+                model.setValueAt((null == def) ? "" : def, r, 1);
+            } else {
+                model.setValueAt("", r, 1);
+            }
+        }
+    }
+
+    private void onAddProperty() {
+
+        final JTextField propNameField = new JTextField(20);
+        final JTextField propValueField = new JTextField(20);
+        final JPanel addPanel = new JPanel(new GridLayout(2, 2, 5, 5));
+        addPanel.add(new JLabel(b(c(PROPERTY), s(_COLON_))));
+        addPanel.add(propNameField);
+        addPanel.add(new JLabel(b(c(VALUE), s(_COLON_))));
+        addPanel.add(propValueField);
+
+        final int res = JOptionPane.showConfirmDialog(this, addPanel, "Add Custom Property",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (JOptionPane.OK_OPTION == res) {
+            final String name = propNameField.getText().trim();
+            final String value = propValueField.getText().trim();
+            if (!name.isEmpty()) {
+                boolean found = false;
+                for (int r = 0; r < model.getRowCount(); r++) {
+                    if (name.equals(model.getValueAt(r, 0))) {
+                        model.setValueAt(value, r, 1);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    model.addRow(new Object[]{name, value, "", STATUS_CUSTOM});
+                }
+            }
+        }
+    }
+
+    private void onOk() {
+
+        if (table.isEditing()) {
+            table.getCellEditor().stopCellEditing();
+        }
+        overrides.clear();
+        for (int r = 0; r < model.getRowCount(); r++) {
+            final String k = (String) model.getValueAt(r, 0);
+            final String v = (String) model.getValueAt(r, 1);
+            final String val = (null == v) ? "" : v;
+            final String baseVal = baseline.get(k);
+            final boolean changed = (null == baseVal) ? !val.isEmpty() : !val.equals(baseVal);
+            if (changed) {
+                overrides.put(k, val);
+            }
+        }
+        if (isNotNull(testProperties)) {
+            testProperties.setUserOverrides(overrides);
+        }
+        confirmed = true;
+        dispose();
+    }
+
+    private void onCancel() {
+
+        if (table.isEditing()) {
+            table.getCellEditor().cancelCellEditing();
+        }
+        confirmed = false;
+        dispose();
+    }
+
+    public boolean isConfirmed() {
+
+        return confirmed;
+    }
+
+    public Map<String, String> getOverrides() {
+
+        return Collections.unmodifiableMap(overrides);
+    }
+
+    public Map<String, String> getBaseline() {
+
+        return Collections.unmodifiableMap(baseline);
+    }
+
+    public Map<String, String> getConfigDefaults() {
+
+        return Collections.unmodifiableMap(baseline);
+    }
+
+    public DefaultTableModel getModel() {
+
+        return model;
+    }
+
+    public JTable getTable() {
+
+        return table;
+    }
+
+    public JTextField getSearchField() {
+
+        return searchField;
+    }
+
+    public JButton getResetSelectedButton() {
+
+        return resetSelectedBtn;
+    }
+
+    public JButton getResetAllButton() {
+
+        return resetAllBtn;
+    }
+
+    public JButton getOkButton() {
+
+        return okBtn;
+    }
+
+    public JButton getCancelButton() {
+
+        return cancelBtn;
+    }
+}

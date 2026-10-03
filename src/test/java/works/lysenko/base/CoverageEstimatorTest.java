@@ -5,12 +5,16 @@ import org.junit.jupiter.api.Test;
 import works.lysenko.tree.Ctrl;
 import works.lysenko.tree.CoverageEstimator;
 import works.lysenko.tree.base.Leaf;
+import works.lysenko.tree.base.Mono;
 import works.lysenko.tree.base.Node;
 import works.lysenko.util.apis.scenario._Scenario;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static works.lysenko.util.func.type.fractions.Factory.fr;
 
@@ -49,6 +53,40 @@ class CoverageEstimatorTest {
         // Theoretical average is ~2.18 cycles. Rounding gives 2.
         final int estimated = CoverageEstimator.estimateAverageCycles(rootCtrl);
         assertEquals(2, estimated);
+    }
+
+    @Test
+    void testProgressConsumer() {
+        final Ctrl rootCtrl = new Ctrl(null);
+        final TestLeaf leaf1 = new TestLeaf(fr(1.0));
+        final TestLeaf leaf2 = new TestLeaf(fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(leaf1, fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(leaf2, fr(1.0));
+
+        final List<Integer> progressUpdates = new ArrayList<>();
+        final int estimated = CoverageEstimator.estimateAverageCycles(rootCtrl, 1, progressUpdates::add);
+        assertEquals(2, estimated);
+        assertFalse(progressUpdates.isEmpty());
+        assertEquals(0, progressUpdates.get(0));
+        assertEquals(100, progressUpdates.get(progressUpdates.size() - 1));
+        for (int i = 1; i < progressUpdates.size(); i++) {
+            assertTrue(progressUpdates.get(i) >= progressUpdates.get(i - 1));
+        }
+    }
+
+    @Test
+    void testMonoLeafWithTargetGreaterThanOneDoesNotHang() {
+        final Ctrl rootCtrl = new Ctrl(null);
+        final TestLeaf leaf1 = new TestLeaf(fr(1.0));
+        final TestMono mono = new TestMono(fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(leaf1, fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(mono, fr(1.0));
+
+        final List<Integer> progressUpdates = new ArrayList<>();
+        final int estimated = CoverageEstimator.estimateAverageCycles(rootCtrl, 3, progressUpdates::add);
+        // Mono requires 1 cycle, leaf1 requires 3 cycles. Total should be ~3-4 cycles.
+        assertTrue(estimated >= 3 && estimated <= 8, "Expected 3-8 cycles, got: " + estimated);
+        assertEquals(100, progressUpdates.get(progressUpdates.size() - 1));
     }
 
     @Test
@@ -136,9 +174,36 @@ class CoverageEstimatorTest {
         assertTrue(estimated >= 60 && estimated <= 100, "Estimated should be near ~79, got: " + estimated);
     }
 
+    @Test
+    void testHighTargetPerformance() {
+        final Ctrl rootCtrl = new Ctrl(null);
+        final TestNode snapshot = new TestNode(fr(1.0), new TestLeaf(fr(1.0)), new TestLeaf(fr(1.0)));
+        final TestNode sms = new TestNode(fr(1.0), new TestLeaf(fr(1.0)), new TestLeaf(fr(1.0)));
+        final TestNode reports = new TestNode(fr(1.0), snapshot, sms);
+        rootCtrl.getPool().appendScenarioWithWeight(reports, fr(1.0));
+
+        final long start = System.currentTimeMillis();
+        final int estimated = CoverageEstimator.estimateAverageCycles(rootCtrl, 10);
+        final long elapsed = System.currentTimeMillis() - start;
+        assertTrue(estimated >= 40 && estimated <= 80, "Estimated should be reasonable, got: " + estimated);
+        assertTrue(elapsed < 200, "100 trials with target 10 should complete within 200ms, took: " + elapsed + " ms");
+    }
+
     private static class TestLeaf extends Leaf {
         TestLeaf(final Fraction weight) {
             super(weight);
+        }
+    }
+
+    private static class TestMono extends Mono {
+        TestMono(final Fraction weight) {
+            try {
+                final Field f = works.lysenko.tree.Core.class.getDeclaredField("codeWeight");
+                f.setAccessible(true);
+                f.set(this, weight);
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

@@ -44,7 +44,7 @@ public class Results implements _Results {
     private Severity max = null;
 
     @SuppressWarnings({"ChainedMethodCall", "LawOfDemeter", "LocalCanBeFinal", "NestedMethodCall"})
-    private static String getTaggedString(_Scenario scenario) {
+    static String getTaggedString(final _Scenario scenario) {
 
         return b(scenario.getShortName(), scenario.type().tag());
     }
@@ -145,9 +145,26 @@ public class Results implements _Results {
                 sortedStrings.put(getTaggedString(r.getKey()), r.getValue());
         }
         // Adding result stubs of non-executed scenarios
-        for (_Scenario scenario : core.getRootScenarios())
-            if (!sortedStrings.containsKey(getTaggedString(scenario)))
-                sortedStrings.put(getTaggedString(scenario), new Result(scenario));
+        if (isNotNull(core)) {
+            final Set<_Scenario> all = core.getAccessibleScenarios();
+            if (isNotNull(all)) {
+                for (final _Scenario scenario : all) {
+                    final String tagged = getTaggedString(scenario);
+                    if (!sortedStrings.containsKey(tagged)) {
+                        sortedStrings.put(tagged, new Result(scenario));
+                    }
+                }
+            }
+            final Set<_Scenario> roots = core.getRootScenarios();
+            if (isNotNull(roots)) {
+                for (final _Scenario scenario : roots) {
+                    final String tagged = getTaggedString(scenario);
+                    if (!sortedStrings.containsKey(tagged)) {
+                        sortedStrings.put(tagged, new Result(scenario));
+                    }
+                }
+            }
+        }
         return sortedStrings;
     }
 

@@ -5,6 +5,7 @@ import org.apache.commons.math3.exception.NotPositiveException;
 import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.tree.Core;
 import works.lysenko.tree.Ctrl;
+import works.lysenko.tree.base.Mono;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.scenario._Node;
@@ -17,6 +18,7 @@ import works.lysenko.util.prop.tree.Include;
 import works.lysenko.util.prop.tree.Notify;
 import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.spec.Numbers;
+import works.lysenko.util.spec.PropEnum;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -134,7 +136,8 @@ public final class Selector implements Callable<_Scenario> {
     List<KeyValue<_Scenario, Fraction>> getExecutionCandidates() {
 
         final int target = (isNotNull(parameters))
-                ? parameters.getAllLeafsCount() : 1;
+                ? parameters.getAllLeafsCount()
+                : (isNotNull(PropEnum._ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._ALL_LEAFS_COUNT.get()) : 1);
         final List<KeyValue<_Scenario, Fraction>> candidates = new LinkedList<>();
         for (final KeyValue<_Scenario, Fraction> pair : ctrl.getWeightedList()) {
             final _Scenario scenario = pair.k();
@@ -169,8 +172,9 @@ public final class Selector implements Callable<_Scenario> {
     static double getUncompletedRatio(final _Scenario scenario, final int target) {
 
         if (isNull(core) || isNull(core.getResults()) || target <= 0) return 0.0;
+        final int scenarioTarget = (scenario instanceof Mono) ? 1 : target;
         final int execs = core.getResults().getExecutions(scenario);
-        double ratio = (execs < target) ? ((double) (target - execs) / target) : 0.0;
+        double ratio = (execs < scenarioTarget) ? ((double) (scenarioTarget - execs) / scenarioTarget) : 0.0;
         if (scenario instanceof _Node node) {
             final double descRatio = getMaxDescendantUncompletedRatio(node, target, new HashSet<>());
             ratio = Math.max(ratio, descRatio);
@@ -187,8 +191,9 @@ public final class Selector implements Callable<_Scenario> {
         for (final KeyValue<_Scenario, Fraction> pair : pairs) {
             final _Scenario child = pair.k();
             if (isNotNull(child) && child.isExecutable() && child.calculateCombinations(true) > 0) {
+                final int childTarget = (child instanceof Mono) ? 1 : target;
                 final int execs = core.getResults().getExecutions(child);
-                double childRatio = (execs < target) ? ((double) (target - execs) / target) : 0.0;
+                double childRatio = (execs < childTarget) ? ((double) (childTarget - execs) / childTarget) : 0.0;
                 if (child instanceof _Node childNode) {
                     final double descRatio = getMaxDescendantUncompletedRatio(childNode, target, visited);
                     childRatio = Math.max(childRatio, descRatio);
@@ -252,7 +257,7 @@ public final class Selector implements Callable<_Scenario> {
     /**
      * Fails the scenario selection process and performs necessary logging.
      *
-     * @param message The error message to log.
+     * @param message The error message to log planning.
      */
     private void selectionFailed(final String message) {
 

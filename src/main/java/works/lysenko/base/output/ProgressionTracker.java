@@ -1,7 +1,9 @@
 package works.lysenko.base.output;
 
 import org.w3c.dom.NodeList;
+import works.lysenko.tree.base.Mono;
 import works.lysenko.util.apis.scenario._Scenario;
+import works.lysenko.util.spec.PropEnum;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -93,14 +95,22 @@ public final class ProgressionTracker {
         return new ArrayList<>(capturedFrames);
     }
 
+    private static boolean isCountAllLeafs() {
+        final Integer count = PropEnum._ALL_LEAFS_COUNT.get();
+        return isNotNull(count) && count > 1;
+    }
+
     /**
      * Hook called during limbo period between test cycles.
      *
      * @param testNumber the test cycle number just completed
      */
     public static void onLimbo(final Integer testNumber) {
-        if (isNull(core) || isNull(parameters)) return;
-        if (!parameters.isAllLeafs()) return;
+        if (isNull(core)) return;
+        final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
+                || Boolean.TRUE.equals(PropEnum._ALL_LEAFS.get())
+                || isCountAllLeafs();
+        if (!allLeafsMode) return;
 
         final Set<_Scenario> leafs = core.getAccessibleLeafs();
         if (leafs.isEmpty()) return;
@@ -108,7 +118,8 @@ public final class ProgressionTracker {
         final List<_Scenario> scenarios = new ArrayList<>(leafs);
         scenarios.sort(Comparator.comparing(_Scenario::getShortName).thenComparing(_Scenario::getName));
 
-        final int target = parameters.getAllLeafsCount();
+        final int target = (isNotNull(parameters)) ? parameters.getAllLeafsCount()
+                : (isNotNull(PropEnum._ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._ALL_LEAFS_COUNT.get()) : 1);
         final int currentCycle = isNotNull(testNumber) ? testNumber : capturedFrames.size() + 1;
 
         final BufferedImage image = renderProgressionGraph(scenarios, target, currentCycle);
@@ -206,9 +217,10 @@ public final class ProgressionTracker {
         final int[] execsArray = new int[scenarios.size()];
         for (int i = 0; i < scenarios.size(); i++) {
             final _Scenario sc = scenarios.get(i);
+            final int scTarget = (sc instanceof Mono) ? 1 : target;
             final int execs = (isNotNull(core) && isNotNull(core.getResults())) ? core.getResults().getExecutions(sc) : 0;
             execsArray[i] = execs;
-            if (execs >= target) completedCount++;
+            if (execs >= scTarget) completedCount++;
             if (execs > maxExecs) maxExecs = execs;
         }
 
@@ -240,7 +252,7 @@ public final class ProgressionTracker {
         final int chartX = cardX + 54;
         final int chartY = cardY + 68;
         final int chartW = cardW - 74;
-        final int chartH = cardH - 220; // leaves 150px for bottom labels
+        final int chartH = cardH - 300; // leaves ~230px for rotated bottom labels
         final int maxY = Math.max(target + 1, maxExecs + 1);
 
         // Horizontal Grid & Y-Ticks
@@ -283,6 +295,9 @@ public final class ProgressionTracker {
         final int count = scenarios.size();
         final double slotW = (double) chartW / count;
         final int barW = Math.max(4, Math.min(26, (int) (slotW * 0.72)));
+        final double labelAngle = -Math.PI / 3.27; // ~ -55 degrees
+        final double cosA = Math.cos(Math.abs(labelAngle));
+        final double sinA = Math.sin(Math.abs(labelAngle));
 
         for (int i = 0; i < count; i++) {
             final _Scenario sc = scenarios.get(i);
@@ -298,7 +313,8 @@ public final class ProgressionTracker {
             if (execs > 0) {
                 final int barH = Math.max(3, (int) Math.round(((double) execs / maxY) * chartH));
                 final int barTop = chartY + chartH - barH;
-                final Color barColor = (execs >= target) ? GREEN_BAR : AMBER_BAR;
+                final int scTarget = (sc instanceof Mono) ? 1 : target;
+                final Color barColor = (execs >= scTarget) ? GREEN_BAR : AMBER_BAR;
                 g.setColor(barColor);
                 g.fillRoundRect(barLeft, barTop, barW, barH, 4, 4);
                 if (barH > 4) {
@@ -311,6 +327,7 @@ public final class ProgressionTracker {
             }
 
             // Value text above bar
+            final int scTarget = (sc instanceof Mono) ? 1 : target;
             g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 10));
             final String valStr = String.valueOf(execs);
             final FontMetrics fmVal = g.getFontMetrics();
@@ -318,21 +335,37 @@ public final class ProgressionTracker {
             final int valY = (execs > 0)
                     ? (chartY + chartH - (int) Math.round(((double) execs / maxY) * chartH) - 4)
                     : (chartY + chartH - 6);
-            final Color valColor = (execs >= target) ? new Color(0x4A, 0xDE, 0x80) :
+            final Color valColor = (execs >= scTarget) ? new Color(0x4A, 0xDE, 0x80) :
                     (execs > 0 ? new Color(0xFB, 0xBF, 0x24) : TEXT_DIM);
             g.setColor(valColor);
             g.drawString(valStr, centerX - valW / 2, Math.max(chartY + 12, valY));
 
             // Rotated Scenario Label below chart
             g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
-            final String name = sc.getShortName();
-            final Color nameColor = (execs >= target) ? TEXT_PRIMARY : (execs > 0 ? TEXT_MUTED : TEXT_DIM);
+            final String rawName = sc.getShortName();
+            final Color nameColor = (execs >= scTarget) ? TEXT_PRIMARY : (execs > 0 ? TEXT_MUTED : TEXT_DIM);
             g.setColor(nameColor);
 
+            final FontMetrics fm = g.getFontMetrics();
+
+            // Calculate max allowed length so label stays within card panel
+            final int maxW_X = (int) Math.floor((centerX - (cardX + 8)) / cosA);
+            final int maxW_Y = (int) Math.floor(((cardY + cardH - 12) - (chartY + chartH + 10)) / sinA);
+            final int maxAllowedW = Math.max(30, Math.min(maxW_X, maxW_Y));
+
+            String displayName = rawName;
+            if (fm.stringWidth(displayName) > maxAllowedW) {
+                while (displayName.length() > 3 && fm.stringWidth("..." + displayName) > maxAllowedW) {
+                    displayName = displayName.substring(1);
+                }
+                displayName = "..." + displayName;
+            }
+
+            final int textW = fm.stringWidth(displayName);
             final AffineTransform orig = g.getTransform();
-            g.translate(centerX, chartY + chartH + 12);
-            g.rotate(-Math.PI / 3.6); // ~ -50 degrees
-            g.drawString(name, 0, 0);
+            g.translate(centerX - 2, chartY + chartH + 10);
+            g.rotate(labelAngle);
+            g.drawString(displayName, -textW, 0);
             g.setTransform(orig);
         }
 

@@ -1,0 +1,504 @@
+package works.lysenko.base.output;
+
+import works.lysenko.base.output.TreeHtml.Edge;
+import works.lysenko.base.output.TreeHtml.NodeData;
+import works.lysenko.base.output.TreeHtml.TreeLayout;
+import works.lysenko.util.apis.data._Result;
+import works.lysenko.util.data.type.Result;
+import works.lysenko.util.spec.PropEnum;
+
+import javax.imageio.ImageIO;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.geom.Path2D;
+import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.TreeMap;
+
+import static java.util.Objects.isNull;
+import static works.lysenko.Base.core;
+import static works.lysenko.Base.parameters;
+import static works.lysenko.Base.timer;
+import static works.lysenko.util.func.type.Objects.isNotNull;
+import static works.lysenko.util.spec.Layout.Files.name;
+import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_;
+
+/**
+ * Tracks scenario tree progression across test cycles during limbo periods,
+ * rendering the scenario hierarchy into PNG frames with visual execution indicators,
+ * and compiling them into an animated GIF upon test completion.
+ */
+@SuppressWarnings({"ClassWithoutLogger", "MagicNumber", "NestedMethodCall", "OverlyComplexMethod", "MethodWithMultipleLoops", "ClassWithTooManyFields"})
+public final class TreeProgressionTracker {
+
+    private static final int COL_WIDTH = 270;
+    private static final int ROW_HEIGHT = 60;
+    private static final int CARD_WIDTH = 220;
+    private static final int CARD_HEIGHT = 46;
+    private static final int HEADER_HEIGHT = 60;
+    private static final int PADDING_X = 40;
+    private static final int PADDING_Y = 24;
+    private static final int BOTTOM_PADDING = 40;
+
+    private static final int FPS = 10;
+    private static final int DELAY_CENTISECONDS = 100 / FPS; // 100ms
+    private static final int FINAL_FRAME_DELAY_CENTISECONDS = 150; // 1.5s on final frame
+
+    // Theme colors matching HTML report and TreeHtml
+    private static final Color BG_COLOR = new Color(0x0F, 0x17, 0x2A);
+    private static final Color HEADER_BG = new Color(0x1E, 0x29, 0x3B);
+    private static final Color HEADER_BORDER = new Color(0x33, 0x41, 0x55);
+    private static final Color GRID_DOT = new Color(0x1E, 0x29, 0x3B, 180);
+    private static final Color TEXT_WHITE = new Color(0xF8, 0xFA, 0xFC);
+    private static final Color TEXT_MUTED = new Color(0x94, 0xA3, 0xB8);
+    private static final Color ACCENT_CYAN = new Color(0x38, 0xBD, 0xF8);
+    private static final Color UNVISITED_CARD = new Color(0x1E, 0x29, 0x3B);
+    private static final Color UNVISITED_BORDER = new Color(0x33, 0x41, 0x55);
+    private static final Color UNVISITED_EDGE = new Color(0x33, 0x41, 0x55, 140);
+    private static final Color WARNING_AMBER = new Color(0xF5, 0x9E, 0x0B);
+    private static final Color GREEN_DONE = new Color(0x22, 0xC5, 0x5E);
+
+    private static final List<File> capturedFrames = new ArrayList<>();
+    private static File customOutputDir = null;
+
+    private TreeProgressionTracker() {
+    }
+
+    /**
+     * Resets internal state for tests.
+     */
+    public static void reset() {
+        capturedFrames.clear();
+        customOutputDir = null;
+    }
+
+    /**
+     * Overrides output directory (for testing).
+     *
+     * @param dir target directory
+     */
+    public static void setCustomOutputDir(final File dir) {
+        customOutputDir = dir;
+    }
+
+    /**
+     * Retrieves the list of captured frame files.
+     *
+     * @return list of captured frame files
+     */
+    public static List<File> getCapturedFrames() {
+        return new ArrayList<>(capturedFrames);
+    }
+
+    private static boolean isCountAllLeafs() {
+        final Integer count = PropEnum._ALL_LEAFS_COUNT.get();
+        return isNotNull(count) && count > 1;
+    }
+
+    /**
+     * Calculates the visual progress color based on executions and target count.
+     * Gradually transitions from Amber (38°) -> Lime (84°) -> Emerald Green (142°).
+     *
+     * @param execs  number of executions
+     * @param target target executions count
+     * @return Color indicating progress
+     */
+    public static Color getProgressColor(final int execs, final int target) {
+        if (execs <= 0) {
+            return UNVISITED_BORDER;
+        }
+        final int safeTarget = Math.max(1, target);
+        if (safeTarget == 1) {
+            return GREEN_DONE;
+        }
+        final double ratio = Math.min(1.0, (double) execs / (double) safeTarget);
+        final float hue = (float) ((38.0 + ratio * (142.0 - 38.0)) / 360.0);
+        final float sat = 0.82f;
+        final float bri = 0.88f;
+        return Color.getHSBColor(hue, sat, bri);
+    }
+
+    /**
+     * Hook called during limbo period between test cycles.
+     *
+     * @param testNumber the test cycle number just completed
+     */
+    public static void onLimbo(final Integer testNumber) {
+        if (isNull(core) || isNull(core.getResults())) return;
+        final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
+                || Boolean.TRUE.equals(PropEnum._ALL_LEAFS.get())
+                || isCountAllLeafs();
+        if (!allLeafsMode) return;
+
+        final TreeMap<String, Result> sorted = core.getResults().getSortedStrings(false);
+        if (sorted.isEmpty()) return;
+
+        final TreeLayout layout = TreeHtml.computeLayout(sorted);
+        if (layout.nodes().isEmpty()) return;
+
+        final int target = (isNotNull(parameters)) ? parameters.getAllLeafsCount()
+                : (isNotNull(PropEnum._ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._ALL_LEAFS_COUNT.get()) : 1);
+        final int currentCycle = isNotNull(testNumber) ? testNumber : capturedFrames.size() + 1;
+
+        final BufferedImage image = renderTreeProgression(layout, target, currentCycle);
+        final File runDir = resolveRunDirectory();
+        if (isNull(runDir)) return;
+
+        final File progressionDir = new File(runDir, "tree_progression");
+        if (!progressionDir.exists() && !progressionDir.mkdirs()) return;
+
+        final File frameFile = new File(progressionDir, String.format(Locale.US, "frame_%04d.png", currentCycle));
+        try {
+            ImageIO.write(image, "png", frameFile);
+            capturedFrames.add(frameFile);
+        } catch (final IOException e) {
+            System.err.println("Failed to save tree progression frame: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Hook called upon test completion to compile collected frames into animated GIF.
+     */
+    public static void onComplete() {
+        final File runDir = resolveRunDirectory();
+        if (isNull(runDir)) return;
+
+        final List<File> framesToProcess = new ArrayList<>();
+        if (!capturedFrames.isEmpty()) {
+            framesToProcess.addAll(capturedFrames);
+        } else {
+            final File progressionDir = new File(runDir, "tree_progression");
+            if (progressionDir.isDirectory()) {
+                final File[] files = progressionDir.listFiles((d, n) -> n.endsWith(".png"));
+                if (isNotNull(files)) {
+                    final List<File> sorted = new ArrayList<>(List.of(files));
+                    sorted.sort(Comparator.comparing(File::getName));
+                    framesToProcess.addAll(sorted);
+                }
+            }
+        }
+
+        if (framesToProcess.isEmpty()) return;
+
+        final String prefix = (isNotNull(timer)) ? String.valueOf(timer.startedAt()) : "run";
+        final File gifFile = new File(runDir, prefix + ".tree.progression.gif");
+
+        try {
+            final List<BufferedImage> images = new ArrayList<>(framesToProcess.size());
+            for (final File f : framesToProcess) {
+                final BufferedImage img = ImageIO.read(f);
+                if (isNotNull(img)) images.add(img);
+            }
+            if (!images.isEmpty()) {
+                ProgressionTracker.writeAnimatedGif(images, gifFile, DELAY_CENTISECONDS, FINAL_FRAME_DELAY_CENTISECONDS);
+                System.out.println("Tree progression animation generated: " + gifFile.getAbsolutePath());
+            }
+        } catch (final Exception e) {
+            System.err.println("Failed to create tree progression GIF: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Renders scenario tree progression layout as a BufferedImage.
+     *
+     * @param layout       computed tree layout
+     * @param target       target executions count
+     * @param currentCycle current cycle index
+     * @return rendered BufferedImage
+     */
+    public static BufferedImage renderTreeProgression(
+            final TreeLayout layout,
+            final int target,
+            final int currentCycle) {
+
+        int maxCol = 0;
+        double maxRow = 0.0;
+        int totalLeafs = 0;
+        int coveredLeafs = 0;
+        int totalExecs = 0;
+
+        for (final NodeData n : layout.nodes()) {
+            if (n.col() > maxCol) maxCol = n.col();
+            if (n.row() > maxRow) maxRow = n.row();
+            final int execs = (null != n.result()) ? n.result().getExecutions() : 0;
+            totalExecs += execs;
+            if (n.children().isEmpty()) {
+                totalLeafs++;
+                if (execs >= target) coveredLeafs++;
+            }
+        }
+
+        final int canvasW = Math.max(1280, (maxCol + 1) * COL_WIDTH + PADDING_X * 2);
+        final int canvasH = Math.max(720, (int) Math.ceil((maxRow + 1) * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y + BOTTOM_PADDING));
+
+        final BufferedImage img = new BufferedImage(canvasW, canvasH, BufferedImage.TYPE_INT_RGB);
+        final Graphics2D g = img.createGraphics();
+
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+        // Fill background
+        g.setColor(BG_COLOR);
+        g.fillRect(0, 0, canvasW, canvasH);
+
+        // Dot grid pattern
+        g.setColor(GRID_DOT);
+        for (int x = 0; x < canvasW; x += 24) {
+            for (int y = HEADER_HEIGHT; y < canvasH; y += 24) {
+                g.fillRect(x, y, 1, 1);
+            }
+        }
+
+        // Draw edges
+        drawEdges(g, layout.edges(), target);
+
+        // Draw nodes
+        final Font fontLabel = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+        final Font fontBadge = new Font(Font.MONOSPACED, Font.BOLD, 10);
+        for (final NodeData n : layout.nodes()) {
+            drawNode(g, n, target, fontLabel, fontBadge);
+        }
+
+        // Draw header
+        drawHeader(g, canvasW, currentCycle, target, coveredLeafs, totalLeafs, totalExecs);
+
+        g.dispose();
+        return img;
+    }
+
+    private static void drawEdges(
+            final Graphics2D g,
+            final List<Edge> edges,
+            final int target) {
+
+        final List<Edge> sortedEdges = new ArrayList<>(edges);
+        sortedEdges.sort(Comparator.comparingInt(e -> {
+            final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
+            final int fromExecs = (null != e.from().result()) ? e.from().result().getExecutions() : 0;
+            return (toExecs > 0 && fromExecs > 0) ? 1 : 0;
+        }));
+
+        for (final Edge e : sortedEdges) {
+            final int startX = e.from().col() * COL_WIDTH + CARD_WIDTH + PADDING_X;
+            final int startY = (int) Math.round(e.from().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + HEADER_HEIGHT + PADDING_Y);
+            final int endX = e.to().col() * COL_WIDTH + PADDING_X;
+            final int endY = (int) Math.round(e.to().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + HEADER_HEIGHT + PADDING_Y);
+            final int cX = (startX + endX) / 2;
+
+            final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
+            final int fromExecs = (null != e.from().result()) ? e.from().result().getExecutions() : 0;
+            final int toEvents = (null != e.to().result() && null != e.to().result().getEvents()) ? e.to().result().getEvents().size() : 0;
+
+            final Path2D.Double path = new Path2D.Double();
+            path.moveTo(startX, startY);
+            path.curveTo(cX, startY, cX, endY, endX, endY);
+
+            if (toExecs > 0 && fromExecs > 0) {
+                if (toEvents > 0) {
+                    g.setColor(WARNING_AMBER);
+                } else {
+                    g.setColor(getProgressColor(toExecs, target));
+                }
+                g.setStroke(new BasicStroke(2.2f));
+            } else {
+                g.setColor(UNVISITED_EDGE);
+                g.setStroke(new BasicStroke(1.2f));
+            }
+            g.draw(path);
+        }
+    }
+
+    private static void drawNode(
+            final Graphics2D g,
+            final NodeData n,
+            final int target,
+            final Font fontLabel,
+            final Font fontBadge) {
+
+        final int x = n.col() * COL_WIDTH + PADDING_X;
+        final int y = (int) Math.round(n.row() * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y);
+        final _Result res = n.result();
+        final int execs = (null != res) ? res.getExecutions() : 0;
+        final int eventCount = (null != res && null != res.getEvents()) ? res.getEvents().size() : 0;
+        final int safeTarget = Math.max(1, target);
+
+        final Color progressColor = getProgressColor(execs, safeTarget);
+        final Color cardFill;
+        final Color borderColor;
+        final float strokeW;
+
+        if (execs == 0) {
+            cardFill = UNVISITED_CARD;
+            borderColor = UNVISITED_BORDER;
+            strokeW = 1.2f;
+        } else {
+            final int r = (int) (UNVISITED_CARD.getRed() * 0.7 + progressColor.getRed() * 0.3);
+            final int gr = (int) (UNVISITED_CARD.getGreen() * 0.7 + progressColor.getGreen() * 0.3);
+            final int b = (int) (UNVISITED_CARD.getBlue() * 0.7 + progressColor.getBlue() * 0.3);
+            cardFill = new Color(r, gr, b);
+            borderColor = (eventCount > 0) ? WARNING_AMBER : progressColor;
+            strokeW = 1.8f;
+        }
+
+        // Draw card background
+        final RoundRectangle2D.Float rect = new RoundRectangle2D.Float(x, y, CARD_WIDTH, CARD_HEIGHT, 10, 10);
+        g.setColor(cardFill);
+        g.fill(rect);
+
+        // Draw card border
+        g.setStroke(new BasicStroke(strokeW));
+        g.setColor(borderColor);
+        g.draw(rect);
+
+        // Progress bar along bottom of card (if visited)
+        if (execs > 0) {
+            final int barX = x + 8;
+            final int barY = y + CARD_HEIGHT - 6;
+            final int barW = CARD_WIDTH - 16;
+            final int barH = 3;
+
+            // Track background
+            g.setColor(new Color(51, 65, 85, 160));
+            g.fillRoundRect(barX, barY, barW, barH, 2, 2);
+
+            // Fill
+            final double fillRatio = Math.min(1.0, (double) execs / (double) safeTarget);
+            final int filledW = Math.max(4, (int) Math.round(barW * fillRatio));
+            g.setColor(progressColor);
+            g.fillRoundRect(barX, barY, filledW, barH, 2, 2);
+        }
+
+        // Right pill badge: e.g. "0/5", "3/5", "✓ 5/5"
+        g.setFont(fontBadge);
+        final FontMetrics fmBadge = g.getFontMetrics();
+        final String badgeText;
+        final Color badgeFg;
+        if (execs == 0) {
+            badgeText = "0/" + safeTarget;
+            badgeFg = TEXT_MUTED;
+        } else if (execs >= safeTarget) {
+            badgeText = "\u2713 " + execs + "/" + safeTarget;
+            badgeFg = GREEN_DONE;
+        } else {
+            badgeText = execs + "/" + safeTarget;
+            badgeFg = progressColor;
+        }
+
+        final int badgeTextW = fmBadge.stringWidth(badgeText);
+        final int pillW = badgeTextW + 12;
+        final int pillH = 18;
+        final int pillX = x + CARD_WIDTH - pillW - 8;
+        final int pillY = y + 10;
+
+        // Pill bg
+        g.setColor(new Color(15, 23, 42, 220));
+        g.fillRoundRect(pillX, pillY, pillW, pillH, 6, 6);
+        g.setStroke(new BasicStroke(1.0f));
+        g.setColor(borderColor);
+        g.drawRoundRect(pillX, pillY, pillW, pillH, 6, 6);
+
+        // Pill text
+        g.setColor(badgeFg);
+        g.drawString(badgeText, pillX + 6, pillY + 13);
+
+        // Warning indicator if events > 0
+        if (eventCount > 0) {
+            g.setColor(WARNING_AMBER);
+            g.fillOval(pillX - 10, y + 15, 6, 6);
+        }
+
+        // Node label
+        g.setFont(fontLabel);
+        final FontMetrics fmLabel = g.getFontMetrics();
+        final int maxLabelW = pillX - x - 18;
+        String label = n.label();
+        if (fmLabel.stringWidth(label) > maxLabelW) {
+            while (label.length() > 3 && fmLabel.stringWidth(label + "...") > maxLabelW) {
+                label = label.substring(0, label.length() - 1);
+            }
+            label = label + "...";
+        }
+        g.setColor((execs > 0) ? TEXT_WHITE : TEXT_MUTED);
+        g.drawString(label, x + 12, y + 24);
+    }
+
+    private static void drawHeader(
+            final Graphics2D g,
+            final int canvasW,
+            final int currentCycle,
+            final int target,
+            final int coveredLeafs,
+            final int totalLeafs,
+            final int totalExecs) {
+
+        g.setColor(HEADER_BG);
+        g.fillRect(0, 0, canvasW, HEADER_HEIGHT);
+        g.setColor(HEADER_BORDER);
+        g.drawLine(0, HEADER_HEIGHT, canvasW, HEADER_HEIGHT);
+
+        g.setColor(ACCENT_CYAN);
+        g.fillOval(PADDING_X, (HEADER_HEIGHT - 12) / 2, 12, 12);
+
+        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
+        g.setColor(TEXT_WHITE);
+        g.drawString("Scenario Execution Tree Progression", PADDING_X + 22, (HEADER_HEIGHT / 2) + 5);
+
+        int rightX = canvasW - PADDING_X;
+        final int topY = (HEADER_HEIGHT - 22) / 2;
+
+        rightX -= drawBadge(g, totalExecs + " total execs", rightX, topY, new Color(51, 65, 85), TEXT_WHITE) + 10;
+
+        final Color covBg = (coveredLeafs == totalLeafs && totalLeafs > 0) ? new Color(22, 101, 52) : new Color(180, 83, 9);
+        rightX -= drawBadge(g, "Leafs: " + coveredLeafs + "/" + totalLeafs, rightX, topY, covBg, TEXT_WHITE) + 10;
+
+        rightX -= drawBadge(g, "Target: " + target, rightX, topY, new Color(51, 65, 85), new Color(203, 213, 225)) + 10;
+
+        drawBadge(g, "Cycle #" + currentCycle, rightX, topY, new Color(2, 132, 199), Color.WHITE);
+    }
+
+    private static int drawBadge(
+            final Graphics2D g,
+            final String text,
+            final int rightX,
+            final int topY,
+            final Color bg,
+            final Color fg) {
+
+        g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 11));
+        final FontMetrics fm = g.getFontMetrics();
+        final int textW = fm.stringWidth(text);
+        final int badgeW = textW + 16;
+        final int badgeH = 22;
+        final int leftX = rightX - badgeW;
+
+        g.setColor(bg);
+        g.fillRoundRect(leftX, topY, badgeW, badgeH, 6, 6);
+        g.setColor(fg);
+        g.drawString(text, leftX + 8, topY + 15);
+        return badgeW;
+    }
+
+    private static File resolveRunDirectory() {
+        if (isNotNull(customOutputDir)) return customOutputDir;
+        if (isNotNull(parameters) && isNotNull(timer) && isNotNull(core)) {
+            try {
+                final String logFilePath = name(RUN_LOG_);
+                final File logFile = new File(logFilePath);
+                final File parent = logFile.getParentFile();
+                if (isNotNull(parent)) return parent;
+            } catch (final Exception ignored) {
+            }
+        }
+        return new File("target/runs");
+    }
+}

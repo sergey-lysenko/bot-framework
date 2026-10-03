@@ -17,23 +17,35 @@ public record Scenario() {
     /**
      * Represents the completion weight for a scenario.
      */
-    public static final Fraction completionWeight = _COMPLETION_WEIGHT.get();
+    public static Fraction completionWeight = _COMPLETION_WEIGHT.get();
     /**
      * Represents the default weight for a scenario.
      */
-    public static final String defaultWeight = _DEFAULT_WEIGHT.get();
+    public static String defaultWeight = _DEFAULT_WEIGHT.get();
     /**
      * Represents the number of retries for selecting a scenario.
      */
-    public static final Integer selectionRetries = _DEFAULT_SCENARIO_SUFFICIENCY_ATTEMPTS.get();
+    public static Integer selectionRetries = _DEFAULT_SCENARIO_SUFFICIENCY_ATTEMPTS.get();
     /**
      * Indicates whether failed scenario selection should be ignored.
      */
-    public static final boolean ignoreFailedSelection = _IGNORE_FAILED_SCENARIO_SELECTION.get();
+    public static boolean ignoreFailedSelection = _IGNORE_FAILED_SCENARIO_SELECTION.get();
     /**
      * Represents the root identifier or path for a scenario within the system.
      */
-    public static final String root = _ROOT.get();
+    public static String root = _ROOT.get();
+
+    /**
+     * Refreshes static fields from current test properties.
+     */
+    public static void refresh() {
+
+        completionWeight = _COMPLETION_WEIGHT.get();
+        defaultWeight = _DEFAULT_WEIGHT.get();
+        selectionRetries = _DEFAULT_SCENARIO_SUFFICIENCY_ATTEMPTS.get();
+        ignoreFailedSelection = _IGNORE_FAILED_SCENARIO_SELECTION.get();
+        root = _ROOT.get();
+    }
 
     private static String getIgnoredList() {
 

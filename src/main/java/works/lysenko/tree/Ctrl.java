@@ -56,7 +56,6 @@ public class Ctrl extends Root implements _Ctrl {
     private final _Pool pool;
     private final _Scenario parent;
     private final int attempts;
-    private Integer recommendedCycles = null;
 
     /**
      * Construct new instance
@@ -152,15 +151,6 @@ public class Ctrl extends Root implements _Ctrl {
     }
 
     @Override
-    public final int getRecommendedCycles() {
-
-        if (isNull(recommendedCycles)) {
-            recommendedCycles = CoverageEstimator.estimateAverageCycles(this);
-        }
-        return recommendedCycles;
-    }
-
-    @Override
     public final Set<_Scenario> getAccessibleLeafs() {
 
         final Set<_Scenario> leafs = new HashSet<>();
@@ -178,6 +168,28 @@ public class Ctrl extends Root implements _Ctrl {
                     collectAccessibleLeafs(node.getPool().getPairList(), leafs);
                 } else {
                     leafs.add(s);
+                }
+            }
+        }
+    }
+
+    @Override
+    public final Set<_Scenario> getAccessibleScenarios() {
+
+        final Set<_Scenario> scenarios = new HashSet<>();
+        collectAccessibleScenarios(getWeightedList(), scenarios);
+        return scenarios;
+    }
+
+    private static void collectAccessibleScenarios(final Iterable<KeyValue<_Scenario, Fraction>> pairs, final Set<_Scenario> scenarios) {
+
+        if (isNull(pairs)) return;
+        for (final KeyValue<_Scenario, Fraction> pair : pairs) {
+            final _Scenario s = pair.k();
+            if ((s.isExecutable() || (s instanceof Mono && isNotNull(s.weightConfigured()))) && s.calculateCombinations(true) > 0) {
+                scenarios.add(s);
+                if (s instanceof _Node node) {
+                    collectAccessibleScenarios(node.getPool().getPairList(), scenarios);
                 }
             }
         }

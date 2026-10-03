@@ -2,6 +2,7 @@ package works.lysenko.base.test;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import works.lysenko.base.output.ProgressionTracker;
+import works.lysenko.base.output.TreeProgressionTracker;
 import org.apache.commons.lang3.StringUtils;
 import works.lysenko.base.core.Routines;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
@@ -15,6 +16,7 @@ import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.prop.core.Test;
 import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.spec.Level;
+import works.lysenko.util.spec.PropEnum;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -142,9 +144,15 @@ public class Repeater implements _Repeater {
         time();
         history();
         ProgressionTracker.onLimbo(testNum);
+        TreeProgressionTracker.onLimbo(testNum);
         timeSafeguard();
         stopIfFailingEvents();
         done = core.getStopFlag();
+    }
+
+    private static boolean isCountAllLeafs() {
+        final Integer count = PropEnum._ALL_LEAFS_COUNT.get();
+        return isNotNull(count) && count > 1;
     }
 
     @SuppressWarnings("MethodWithMultipleReturnPoints")
@@ -153,7 +161,10 @@ public class Repeater implements _Repeater {
         if (isNull(startedAt)) return null;
         if (isNull(exec) || done) return null;
         final int current = statistics.history().size() + 1;
-        if ((isNotNull(parameters) && parameters.isAllLeafs()) || isNull(getTotalTests())) return current;
+        final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
+                || Boolean.TRUE.equals(PropEnum._ALL_LEAFS.get())
+                || isCountAllLeafs();
+        if (allLeafsMode || isNull(getTotalTests())) return current;
         return (current > getTotalTests()) ? null : current;
     }
 
@@ -255,7 +266,10 @@ public class Repeater implements _Repeater {
     @SuppressWarnings("NestedConditionalExpression")
     private String getTitle() {
 
-        if (isNotNull(parameters) && parameters.isAllLeafs()) {
+        final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
+                || Boolean.TRUE.equals(PropEnum._ALL_LEAFS.get())
+                || isCountAllLeafs();
+        if (allLeafsMode) {
             final int executed = core.getExecutedLeafsCount();
             final int total = core.getAccessibleLeafs().size();
             final String progress = (0 == total) ? StringUtils.EMPTY :

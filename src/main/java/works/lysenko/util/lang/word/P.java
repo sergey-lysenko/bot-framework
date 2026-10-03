@@ -37,6 +37,7 @@ public record P() {
     public static final String POSSIBLE = s(POSS, IBLE);
     public static final String PREEMPTIVELY = s(PR, EE, MP, TIVE, LY);
     public static final String PRESENCE = s(PR, ESEN, CE);
+    public static final String PREVIEW = s(PREV, IE, W);
     public static final String PROBABILITY = s(PROB, ABILITY);
     public static final String PROBLEM = s(PROB, L, EM);
     public static final String PROCEED = s(PROC, E, ED);

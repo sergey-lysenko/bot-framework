@@ -1,38 +1,85 @@
 package works.lysenko.base.parameters;
 
+import works.lysenko.Base;
 import works.lysenko.base.Parameters;
+import works.lysenko.base.TestProperties;
 import works.lysenko.base.util.Platforms;
+import works.lysenko.tree.CoverageEstimator;
+import works.lysenko.tree.Ctrl;
 import works.lysenko.util.apis.parameters._GUI;
+import works.lysenko.util.apis.scenario._Ctrl;
+import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.test._Test;
 import works.lysenko.util.data.enums.Platform;
+import works.lysenko.util.data.records.TestPropertiesDescriptor;
+import works.lysenko.util.func.core.ClassLoader;
+import works.lysenko.util.prop.tree.Include;
+import works.lysenko.util.prop.tree.Scenario;
+import works.lysenko.util.spec.PropEnum;
 
-import javax.swing.*;
+import javax.swing.Box;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JProgressBar;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import java.awt.Component;
-import java.awt.Container;
-import java.awt.GridLayout;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Window;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.IntConsumer;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.removeEnd;
 import static works.lysenko.base.Parameters.WIDTH;
 import static works.lysenko.util.chrs.__.BY;
 import static works.lysenko.util.chrs.__.TO;
+import static works.lysenko.util.chrs.___.DOTS;
+import static works.lysenko.util.chrs.___.FOR;
 import static works.lysenko.util.chrs.____.FILE;
-import static works.lysenko.util.data.enums.ExecutionParameter.*;
+import static works.lysenko.util.chrs.____.FULL;
+import static works.lysenko.util.data.enums.Brackets.ROUND;
+import static works.lysenko.util.data.enums.ExecutionParameter.ALL_LEAFS;
+import static works.lysenko.util.data.enums.ExecutionParameter.ALL_LEAFS_COUNT;
+import static works.lysenko.util.data.enums.ExecutionParameter.DOMAIN;
+import static works.lysenko.util.data.enums.ExecutionParameter.HEADLESS;
+import static works.lysenko.util.data.enums.ExecutionParameter.PLATFORM;
+import static works.lysenko.util.data.enums.ExecutionParameter.POOL;
+import static works.lysenko.util.data.enums.ExecutionParameter.TEST;
 import static works.lysenko.util.data.enums.ExitCode.CLOSED_THROUGH_GUI;
 import static works.lysenko.util.data.enums.ExitCode.PLATFORMS_RESET;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.s1;
+import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.data.strs.Wrap.q;
+import static works.lysenko.util.func.core.TestProperties.readTestPropertiesFromFile;
 import static works.lysenko.util.func.type.Objects.isNotNull;
+import static java.util.Objects.isNull;
 import static works.lysenko.util.lang.word.C.CONFIGURATION;
+import static works.lysenko.util.lang.word.C.COVERAGE;
 import static works.lysenko.util.lang.word.D.DELETE;
 import static works.lysenko.util.lang.word.F.FIXED;
+import static works.lysenko.util.lang.word.M.MODIFY;
 import static works.lysenko.util.lang.word.P.PARAMETERS;
 import static works.lysenko.util.lang.word.P.PLATFORMS;
+import static works.lysenko.util.lang.word.P.PROPERTIES;
+import static works.lysenko.util.lang.word.R.REQUIRED;
 import static works.lysenko.util.lang.word.R.RESET;
+import static works.lysenko.util.lang.word.T.TESTS;
 import static works.lysenko.util.lang.word.U.UNABLE;
 import static works.lysenko.util.lang.word.V.VERIFICATION;
 import static works.lysenko.util.prop.core.Start.forcedPlatform;
@@ -41,6 +88,7 @@ import static works.lysenko.util.spec.Layout.Files.PLATFORMS_;
 import static works.lysenko.util.spec.Layout.Parts.TEST_PROPERTIES_EXTENSION;
 import static works.lysenko.util.spec.Layout.Parts.USERS_POOL_EXTENSION;
 import static works.lysenko.util.spec.Layout.Paths._TESTS_;
+import static works.lysenko.util.spec.Symbols._DASH_;
 
 /**
  * Represents a Graphical User Interface (GUI) for parameter input and user interaction.
@@ -49,6 +97,7 @@ import static works.lysenko.util.spec.Layout.Paths._TESTS_;
 public class Gui implements _GUI {
 
     private final Parameters parameters;
+    private JPanel panel = null;
     private JTextField domain = null;
     private JCheckBox headless = null;
     private JCheckBox allLeafs = null;
@@ -56,6 +105,10 @@ public class Gui implements _GUI {
     private JComboBox<Object> test = null;
     private JComboBox<Object> pool = null;
     private JButton reset = null;
+    private JButton calculateCycles = null;
+    private JProgressBar progressBar = null;
+    private JLabel cycles = null;
+    private JButton properties = null;
     private List<JTextField> aParams = null;
 
     /**
@@ -69,13 +122,14 @@ public class Gui implements _GUI {
     }
 
     /**
-     * Adds a label and a component to a container.
+     * Adds a labeled row to a GridBagLayout container.
      *
      * @param label     the label for the component
      * @param comp      the component to add
      * @param container the container to add the label and component to
+     * @param row       the grid row index
      */
-    private static void add(final String label, final Component comp, final Container container) {
+    private static void addRow(final String label, final Component comp, final JPanel container, final int row) {
 
         final JLabel l = new JLabel(label);
         if (comp instanceof JCheckBox cb) {
@@ -86,8 +140,26 @@ public class Gui implements _GUI {
                 }
             });
         }
-        container.add(l);
-        container.add(comp);
+
+        final GridBagConstraints cLabel = new GridBagConstraints();
+        cLabel.gridx = 0;
+        cLabel.gridy = row;
+        cLabel.anchor = GridBagConstraints.LINE_START;
+        cLabel.insets = new Insets(3, 4, 3, 12);
+        container.add(l, cLabel);
+
+        final GridBagConstraints cComp = new GridBagConstraints();
+        cComp.gridx = 1;
+        cComp.gridy = row;
+        cComp.weightx = 1.0;
+        cComp.anchor = GridBagConstraints.LINE_START;
+        if (comp instanceof JButton) {
+            cComp.fill = GridBagConstraints.NONE;
+        } else {
+            cComp.fill = GridBagConstraints.HORIZONTAL;
+        }
+        cComp.insets = new Insets(3, 0, 3, 4);
+        container.add(comp, cComp);
     }
 
     /**
@@ -207,7 +279,7 @@ public class Gui implements _GUI {
     /**
      * Adds the standard parameters to the Parameters object.
      */
-    private void addStandardParameters() {
+    void addStandardParameters() {
         // Standard parameters
         test = addFromFiles(TEST.name(), _TESTS_, TEST_PROPERTIES_EXTENSION);
         pool = addFromFiles(POOL.name(), ETC_, USERS_POOL_EXTENSION);
@@ -218,14 +290,245 @@ public class Gui implements _GUI {
             /* Devices selection is commented out until implementation of automatic devices management
             List<String> devices = loadLinesFromFile(Paths.get(DEVICES_FILE));
             device = new JComboBox<>(devices.toArray());
-            device.setSelectedItem(get("DEVICE")); */
+            device.setSelectedItem(get(\"DEVICE\")); */
         } else {
             domain = new JTextField(parameters.getProperty(DOMAIN.name()), WIDTH);
             headless = new JCheckBox();
             headless.setSelected(Boolean.parseBoolean(parameters.getProperty(HEADLESS.name())));
         }
         allLeafs = new JCheckBox();
-        allLeafs.setSelected(Boolean.parseBoolean(parameters.getProperty(ALL_LEAFS.name())));
+        allLeafs.setSelected(parameters.isAllLeafs());
+        initCyclesComponents();
+        initPropertiesComponents();
+    }
+
+    /**
+     * Initializes the cycles calculation button, progress bar, and result label.
+     */
+    private void initCyclesComponents() {
+
+        calculateCycles = new JButton(b(c(REQUIRED), FOR, FULL, COVERAGE));
+        progressBar = new JProgressBar(0, 100);
+        progressBar.setPreferredSize(new Dimension(110, 20));
+        progressBar.setStringPainted(true);
+        progressBar.setVisible(false);
+        cycles = new JLabel(s(_DASH_));
+        calculateCycles.addActionListener(e -> onCalculateCycles());
+        if (isNotNull(test)) {
+            test.addActionListener(e -> onTestSelectionChanged());
+        }
+        if (isNotNull(allLeafs)) {
+            allLeafs.addActionListener(e -> onTestSelectionChanged());
+        }
+    }
+
+    /**
+     * Resets the cycle estimation display when test parameters change.
+     */
+    private void onTestSelectionChanged() {
+
+        cycles.setText(s(_DASH_));
+        progressBar.setValue(0);
+        progressBar.setString(EMPTY);
+        progressBar.setVisible(false);
+        updateWindowLayout();
+    }
+
+    /**
+     * Initializes the properties preview and editing button.
+     */
+    private void initPropertiesComponents() {
+
+        properties = new JButton(s(c(MODIFY), DOTS));
+        properties.addActionListener(e -> onPropertiesClicked());
+    }
+
+    /**
+     * Handles clicking the properties button to open the properties preview and edit dialog.
+     */
+    void onPropertiesClicked() {
+
+        if (isNull(Base.properties)) {
+            Base.properties = new TestProperties();
+        }
+        final Object selected = (isNotNull(test)) ? test.getSelectedItem() : null;
+        final String testName = (isNotNull(selected)) ? selected.toString() : parameters.getTest();
+        final boolean isHeadless = isNotNull(headless) && headless.isSelected();
+        final boolean isAllLeafs = isNotNull(allLeafs) && allLeafs.isSelected();
+        final int leafsCount = (isNotNull(parameters)) ? parameters.getAllLeafsCount() : 1;
+
+        final Window window = (isNotNull(properties)) ? SwingUtilities.getWindowAncestor(properties) : null;
+        final PropertiesDialog dialog = new PropertiesDialog(window, testName, isHeadless, isAllLeafs, leafsCount);
+        dialog.setVisible(true);
+        if (dialog.isConfirmed() && isNotNull(Base.properties)) {
+            final Map<String, String> userOverrides = Base.properties.getUserOverrides();
+            if (userOverrides.containsKey(PropEnum._ALL_LEAFS_COUNT.getPropertyName())) {
+                final String countStr = userOverrides.get(PropEnum._ALL_LEAFS_COUNT.getPropertyName());
+                try {
+                    final int count = Integer.parseInt(countStr);
+                    if (count > 1) {
+                        if (isNotNull(allLeafs)) {
+                            allLeafs.setSelected(true);
+                        }
+                        parameters.setProperty(ALL_LEAFS.name(), Boolean.TRUE.toString());
+                        parameters.setProperty(ALL_LEAFS_COUNT.name(), String.valueOf(count));
+                    }
+                } catch (final NumberFormatException ignored) {
+                }
+            } else if (isNotNull(parameters)) {
+                final String origCount = Base.properties.getConfigFileDefaults().getOrDefault(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), "1");
+                parameters.setProperty(ALL_LEAFS_COUNT.name(), origCount);
+            }
+            if (userOverrides.containsKey(PropEnum._ALL_LEAFS.getPropertyName())) {
+                final boolean val = Boolean.parseBoolean(userOverrides.get(PropEnum._ALL_LEAFS.getPropertyName()));
+                if (isNotNull(allLeafs)) {
+                    allLeafs.setSelected(val);
+                }
+                parameters.setProperty(ALL_LEAFS.name(), String.valueOf(val));
+            } else if (isNotNull(parameters) && !userOverrides.containsKey(PropEnum._ALL_LEAFS_COUNT.getPropertyName())) {
+                final String origAll = Base.properties.getConfigFileDefaults().getOrDefault(PropEnum._ALL_LEAFS.getPropertyName(), "false");
+                final boolean origVal = Boolean.parseBoolean(origAll);
+                if (isNotNull(allLeafs)) {
+                    allLeafs.setSelected(origVal);
+                }
+                parameters.setProperty(ALL_LEAFS.name(), String.valueOf(origVal));
+            }
+            onTestSelectionChanged();
+        }
+    }
+
+    /**
+     * Calculates the estimated average cycles required for 100% leaf coverage
+     * of the specified test suite.
+     *
+     * @param testName the name of the test to calculate cycles for
+     * @return a formatted string with the result or an explanation of why calculation could not proceed
+     */
+    String calculateEstimatedCycles(final String testName) {
+
+        return calculateEstimatedCycles(testName, null);
+    }
+
+    /**
+     * Calculates the estimated average cycles required for 100% leaf coverage
+     * of the specified test suite, reporting progress to a consumer.
+     *
+     * @param testName         the name of the test to calculate cycles for
+     * @param progressConsumer consumer receiving progress percentage, nullable
+     * @return a formatted string with the result or an explanation of why calculation could not proceed
+     */
+    String calculateEstimatedCycles(final String testName, final IntConsumer progressConsumer) {
+
+        if (isNull(testName) || testName.isBlank()) {
+            return "No test selected";
+        }
+        try {
+            readTestPropertiesFromFile(new TestPropertiesDescriptor(_TESTS_, testName, TEST_PROPERTIES_EXTENSION));
+        } catch (final RuntimeException e) {
+            return "Test configuration not found";
+        }
+
+        final TestProperties tp = (isNotNull(Base.properties)) ? Base.properties : new TestProperties();
+        Base.properties = tp;
+
+        final boolean isHeadless = isNotNull(headless) && headless.isSelected();
+        final boolean isAllLeafs = isNotNull(allLeafs) && allLeafs.isSelected();
+        final int leafsCount = (isNotNull(parameters)) ? parameters.getAllLeafsCount() : 1;
+
+        tp.prepareTestConfiguration(testName, isHeadless, isAllLeafs, leafsCount);
+        Scenario.refresh();
+        Include.refresh();
+
+        final String rootPackage = (isNotNull(Scenario.root) && !Scenario.root.isBlank())
+                ? Scenario.root
+                : PropEnum._ROOT.get();
+
+        if (isNull(rootPackage) || rootPackage.isBlank()) {
+            return "No root scenario configured";
+        }
+
+        final Set<_Scenario> scenarios = ClassLoader.readFrom(rootPackage, false);
+        if (isNull(scenarios) || scenarios.isEmpty()) {
+            return "No scenarios found";
+        }
+
+        final _Ctrl rootCtrl = new Ctrl(null, scenarios);
+        final int leafs = rootCtrl.getAccessibleLeafs().size();
+        if (0 == leafs) {
+            return "0 leafs found";
+        }
+
+        final Integer configured = PropEnum._ALL_LEAFS_COUNT.get();
+        final int target = Math.max((isNotNull(parameters)) ? parameters.getAllLeafsCount() : 1,
+                isNotNull(configured) ? configured : 1);
+        final int recommended = CoverageEstimator.estimateAverageCycles(rootCtrl, target, progressConsumer);
+        return b(s1(recommended, "test"), e(ROUND, s1(leafs, "leaf")));
+    }
+
+    /**
+     * Handles clicking the calculate cycles button.
+     */
+    private void onCalculateCycles() {
+
+        calculateCycles.setEnabled(false);
+        cycles.setText(EMPTY);
+        progressBar.setValue(0);
+        progressBar.setString("0%");
+        progressBar.setVisible(true);
+        updateWindowLayout();
+
+        final Object selected = (isNotNull(test)) ? test.getSelectedItem() : null;
+        final String testName = (isNotNull(selected)) ? selected.toString() : parameters.getTest();
+
+        final Thread thread = new Thread(() -> {
+            try {
+                final String text = calculateEstimatedCycles(testName, percent ->
+                        SwingUtilities.invokeLater(() -> {
+                            progressBar.setValue(percent);
+                            progressBar.setString(percent + "%");
+                        }));
+                SwingUtilities.invokeLater(() -> {
+                    cycles.setText(text);
+                    if (text.contains("leaf")) {
+                        progressBar.setValue(100);
+                        progressBar.setString("100%");
+                        progressBar.setVisible(true);
+                    } else {
+                        progressBar.setVisible(false);
+                    }
+                    calculateCycles.setEnabled(true);
+                    updateWindowLayout();
+                });
+            } catch (final RuntimeException e) {
+                SwingUtilities.invokeLater(() -> {
+                    cycles.setText("Calculation failed");
+                    progressBar.setVisible(false);
+                    calculateCycles.setEnabled(true);
+                    updateWindowLayout();
+                });
+            }
+        });
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    /**
+     * Revalidates and updates the dialog window layout to ensure components fit smoothly.
+     */
+    private void updateWindowLayout() {
+
+        if (isNotNull(panel)) {
+            panel.revalidate();
+            panel.repaint();
+            final Window window = SwingUtilities.getWindowAncestor(panel);
+            if (isNotNull(window)) {
+                final int currentWidth = window.getWidth();
+                window.pack();
+                if (window.getWidth() < currentWidth) {
+                    window.setSize(currentWidth, window.getHeight());
+                }
+            }
+        }
     }
 
     /**
@@ -235,35 +538,56 @@ public class Gui implements _GUI {
      */
     @SuppressWarnings({"StatementWithEmptyBody", "ForeachStatement", "ObjectAllocationInLoop",
             "ValueOfIncrementOrDecrementUsed"})
-    private JPanel dialogueBox() {
+    JPanel dialogueBox() {
 
-        // Building dialogue box
-        final JPanel panel = new JPanel();
+        panel = new JPanel(new GridBagLayout());
+        int row = 0;
 
-        panel.setLayout(new GridLayout(0, 2, 5, 5));
-        add(TEST.name(), test, panel);
-        add(POOL.name(), pool, panel);
-        add(PLATFORM.name(), platform, panel);
+        addRow(TEST.name(), test, panel, row++);
+        addRow(POOL.name(), pool, panel, row++);
+        addRow(PLATFORM.name(), platform, panel, row++);
 
-        if (parameters.getProperty(PLATFORM.name()).equals(Platform.ANDROID.getString())) {
-            // TODO: [framework] continue implementation of automatic emulators management
-            // add("DEVICE", device.template, p);
-        } else {
-            add(DOMAIN.name(), domain, panel);
-            add(HEADLESS.name(), headless, panel);
-        }
-        add(ALL_LEAFS.name(), allLeafs, panel);
+        final JPanel cyclesPanel = new JPanel(new GridBagLayout());
+        final GridBagConstraints c0 = new GridBagConstraints();
+        c0.gridx = 0;
+        c0.anchor = GridBagConstraints.LINE_START;
+        c0.insets = new Insets(0, 0, 0, 8);
+        cyclesPanel.add(calculateCycles, c0);
+
+        final GridBagConstraints c1 = new GridBagConstraints();
+        c1.gridx = 1;
+        c1.anchor = GridBagConstraints.LINE_START;
+        c1.insets = new Insets(0, 0, 0, 8);
+        cyclesPanel.add(progressBar, c1);
+
+        final GridBagConstraints c2 = new GridBagConstraints();
+        c2.gridx = 2;
+        c2.anchor = GridBagConstraints.LINE_START;
+        cyclesPanel.add(cycles, c2);
+
+        final GridBagConstraints c3 = new GridBagConstraints();
+        c3.gridx = 3;
+        c3.weightx = 1.0;
+        c3.fill = GridBagConstraints.HORIZONTAL;
+        cyclesPanel.add(Box.createGlue(), c3);
+
+        addRow(TESTS, cyclesPanel, panel, row++);
+
+        addRow(PROPERTIES, properties, panel, row++);
 
         // Additional parameters
         if (isNotNull(aParams)) {
             int i = 0;
             for (final JTextField aParam : aParams) {
-                panel.add(new JLabel(parameters.getAdditionalValues()[i++]));
-                panel.add(aParam);
+                addRow(parameters.getAdditionalValues()[i++], aParam, panel, row++);
             }
         }
 
-        add(b(EMPTY), reset, panel);
+        addRow(EMPTY, reset, panel, row);
+
+        final Dimension pref = panel.getPreferredSize();
+        panel.setPreferredSize(new Dimension(Math.max(580, pref.width), pref.height));
+
         return panel;
     }
 
@@ -290,6 +614,10 @@ public class Gui implements _GUI {
         if (isNotNull(allLeafs)) {
             parameters.setProperty(ALL_LEAFS.name(), String.valueOf(allLeafs.isSelected()));
         }
+        if (parameters.getAllLeafsCount() > 1) {
+            parameters.setProperty(ALL_LEAFS.name(), Boolean.TRUE.toString());
+            parameters.setProperty(ALL_LEAFS_COUNT.name(), String.valueOf(parameters.getAllLeafsCount()));
+        }
 
         // Additional parameters
         if (isNotNull(aParams)) {
@@ -297,5 +625,25 @@ public class Gui implements _GUI {
             for (final JTextField aParam : aParams)
                 parameters.setProperty(parameters.getAdditionalValues()[i++], aParam.getText());
         }
+    }
+
+    public JButton getCalculateCycles() {
+
+        return calculateCycles;
+    }
+
+    public JProgressBar getProgressBar() {
+
+        return progressBar;
+    }
+
+    public JLabel getCycles() {
+
+        return cycles;
+    }
+
+    public JButton getPropertiesButton() {
+
+        return properties;
     }
 }

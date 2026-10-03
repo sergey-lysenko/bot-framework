@@ -11,13 +11,8 @@ import works.lysenko.util.prop.tree.Include;
 import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.spec.PropEnum;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
+import java.util.function.IntConsumer;
 
 import static java.util.Objects.isNull;
 import static works.lysenko.util.func.core.Weights.downstreamWeight;
@@ -27,9 +22,10 @@ import static works.lysenko.util.func.type.Objects.isNotNull;
  * Estimates the average number of execution cycles required to achieve 100% leaf coverage
  * using Monte Carlo simulation of the scenario selection algorithm.
  */
+@SuppressWarnings({"ClassWithTooManyMethods", "OverlyComplexMethod", "MagicNumber"})
 public record CoverageEstimator() {
 
-    private static final int TRIALS = 200;
+    private static final int TRIALS = 100;
     private static final int MAX_CYCLES_PER_TRIAL = 10000;
 
     /**
@@ -43,7 +39,7 @@ public record CoverageEstimator() {
         final int target = (isNotNull(works.lysenko.Base.parameters))
                 ? works.lysenko.Base.parameters.getAllLeafsCount()
                 : (isNotNull(PropEnum._ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._ALL_LEAFS_COUNT.get()) : 1);
-        return estimateAverageCycles(rootCtrl, target);
+        return estimateAverageCycles(rootCtrl, target, null);
     }
 
     /**
@@ -55,206 +51,416 @@ public record CoverageEstimator() {
      */
     public static int estimateAverageCycles(final _Ctrl rootCtrl, final int target) {
 
+        return estimateAverageCycles(rootCtrl, target, null);
+    }
+
+    /**
+     * Estimates average cycles required to visit all accessible leafs at least target times,
+     * reporting progress to a consumer.
+     *
+     * @param rootCtrl         root controller
+     * @param target           required executions per leaf
+     * @param progressConsumer consumer receiving progress percentage (0..100), nullable
+     * @return estimated average number of cycles
+     */
+    public static int estimateAverageCycles(
+            final _Ctrl rootCtrl,
+            final int target,
+            final IntConsumer progressConsumer) {
+
         if (isNull(rootCtrl)) return 0;
         final Set<_Scenario> accessibleLeafs = rootCtrl.getAccessibleLeafs();
         if (accessibleLeafs.isEmpty()) return 0;
         final int targetExecutions = Math.max(1, target);
-        if (1 == accessibleLeafs.size()) return targetExecutions;
+        if (1 == accessibleLeafs.size()) {
+            if (isNotNull(progressConsumer)) progressConsumer.accept(100);
+            final _Scenario only = accessibleLeafs.iterator().next();
+            return (only instanceof Mono) ? 1 : targetExecutions;
+        }
+
+        if (isNotNull(progressConsumer)) progressConsumer.accept(0);
 
         final double completionBoost = isNotNull(Scenario.completionWeight)
                 ? Scenario.completionWeight.doubleValue() : 0.0;
         final Random random = new Random(42);
 
+        // 1. Index tree structure into primitive-indexed arrays
+        final Map<_Scenario, Integer> scenarioIndexMap = new IdentityHashMap<>();
+        final List<_Scenario> scenarios = new ArrayList<>();
+        final Map<_Pool, Integer> poolIndexMap = new IdentityHashMap<>();
+        final List<_Pool> pools = new ArrayList<>();
+
+        indexTree(rootCtrl.getPool(), scenarioIndexMap, scenarios, poolIndexMap, pools);
+
+        final int totalScenarios = scenarios.size();
+        final int[][] descScenarioIds = new int[totalScenarios][];
+        final int[][] descLeafIds = new int[totalScenarios][];
+        final boolean[] hasRepeatableLeaf = new boolean[totalScenarios];
+        final int[] targets = new int[totalScenarios];
+        final boolean[] isMono = new boolean[totalScenarios];
+        final boolean[] isNode = new boolean[totalScenarios];
+        final boolean[] isAccessibleLeaf = new boolean[totalScenarios];
+
+        for (int i = 0; i < totalScenarios; i++) {
+            final _Scenario sc = scenarios.get(i);
+            isMono[i] = sc instanceof Mono;
+            isNode[i] = sc instanceof _Node;
+            isAccessibleLeaf[i] = accessibleLeafs.contains(sc);
+            targets[i] = isMono[i] ? 1 : targetExecutions;
+
+            if (sc instanceof _Node node) {
+                final Set<_Scenario> descScenarios = new LinkedHashSet<>();
+                collectDescendants(node, descScenarios, new HashSet<>());
+
+                final List<Integer> scList = new ArrayList<>();
+                final List<Integer> leafList = new ArrayList<>();
+                boolean hasRepeatable = false;
+
+                for (final _Scenario d : descScenarios) {
+                    final Integer dId = scenarioIndexMap.get(d);
+                    if (isNotNull(dId)) {
+                        scList.add(dId);
+                        if (accessibleLeafs.contains(d)) {
+                            leafList.add(dId);
+                            if (!(d instanceof Mono)) {
+                                hasRepeatable = true;
+                            }
+                        }
+                    }
+                }
+
+                descScenarioIds[i] = scList.stream().mapToInt(Integer::intValue).toArray();
+                descLeafIds[i] = leafList.stream().mapToInt(Integer::intValue).toArray();
+                hasRepeatableLeaf[i] = hasRepeatable;
+            } else {
+                descScenarioIds[i] = new int[0];
+                if (accessibleLeafs.contains(sc)) {
+                    descLeafIds[i] = new int[]{i};
+                    hasRepeatableLeaf[i] = !(sc instanceof Mono);
+                } else {
+                    descLeafIds[i] = new int[0];
+                    hasRepeatableLeaf[i] = false;
+                }
+            }
+        }
+
+        // 2. Build precomputed simulation pools with static weights
+        final Map<_Pool, SimPool> simPoolMap = new IdentityHashMap<>();
+        final SimPool simRootPool = buildSimPool(rootCtrl.getPool(), scenarioIndexMap, simPoolMap,
+                descScenarioIds, descLeafIds, hasRepeatableLeaf);
+
+        int maxPoolCandidates = 0;
+        for (final SimPool sp : simPoolMap.values()) {
+            if (sp.candidateIds.length > maxPoolCandidates) {
+                maxPoolCandidates = sp.candidateIds.length;
+            }
+        }
+        if (0 == maxPoolCandidates) maxPoolCandidates = 1;
+
+        final int accessibleLeafsCount = accessibleLeafs.size();
+        final int maxCycles = Math.min(MAX_CYCLES_PER_TRIAL, Math.max(1000, accessibleLeafsCount * targetExecutions * 20));
+        final int maxStallCycles = Math.max(300, accessibleLeafsCount * 15);
+
+        // Preallocate reusable buffers for zero allocations in the cycle loop
+        final int[] executions = new int[totalScenarios];
+        final int[] pathBuffer = new int[totalScenarios];
+        final int[] pathLen = new int[1];
+        final int[] candidatesBuffer = new int[maxPoolCandidates];
+        final double[] weightsBuffer = new double[maxPoolCandidates];
+
         long totalCycles = 0;
         int successfulTrials = 0;
 
+        // 3. Monte Carlo trials
         for (int trial = 0; trial < TRIALS; trial++) {
-            final Map<_Scenario, Integer> executions = new HashMap<>();
+            Arrays.fill(executions, 0);
             int coveredLeafsCount = 0;
             int cycles = 0;
+            int cyclesSinceProgress = 0;
 
-            while (coveredLeafsCount < accessibleLeafs.size() && cycles < MAX_CYCLES_PER_TRIAL) {
+            while (coveredLeafsCount < accessibleLeafsCount && cycles < maxCycles) {
                 cycles++;
-                final List<_Scenario> path = new ArrayList<>();
-                final _Scenario selectedLeaf = simulateCycle(rootCtrl.getPool(), executions, targetExecutions, completionBoost, random, path);
-                if (isNull(selectedLeaf)) break;
+                pathLen[0] = 0;
+                final int selectedLeafId = simulateCycle(simRootPool, executions, targetExecutions,
+                        completionBoost, random, pathBuffer, pathLen, candidatesBuffer, weightsBuffer,
+                        isMono, isNode, targets);
+                if (selectedLeafId < 0) break;
 
-                for (final _Scenario p : path) {
-                    executions.put(p, executions.getOrDefault(p, 0) + 1);
+                for (int p = 0; p < pathLen[0]; p++) {
+                    executions[pathBuffer[p]]++;
                 }
-                final int leafExecs = executions.getOrDefault(selectedLeaf, 0) + 1;
-                executions.put(selectedLeaf, leafExecs);
+                executions[selectedLeafId]++;
+                final int leafExecs = executions[selectedLeafId];
 
-                if (leafExecs == targetExecutions && accessibleLeafs.contains(selectedLeaf)) {
+                if (isAccessibleLeaf[selectedLeafId] && leafExecs == targets[selectedLeafId]) {
                     coveredLeafsCount++;
+                    cyclesSinceProgress = 0;
+                } else {
+                    cyclesSinceProgress++;
+                }
+
+                if (cyclesSinceProgress > maxStallCycles) {
+                    break;
                 }
             }
 
-            if (coveredLeafsCount == accessibleLeafs.size()) {
+            if (coveredLeafsCount == accessibleLeafsCount) {
                 totalCycles += cycles;
                 successfulTrials++;
+            }
+
+            if (isNotNull(progressConsumer)) {
+                final int percent = (trial + 1) * 100 / TRIALS;
+                progressConsumer.accept(percent);
             }
         }
 
         if (0 == successfulTrials) {
-            return accessibleLeafs.size() * targetExecutions;
+            int fallbackSum = 0;
+            for (int i = 0; i < totalScenarios; i++) {
+                if (isAccessibleLeaf[i]) {
+                    fallbackSum += targets[i];
+                }
+            }
+            return fallbackSum;
         }
 
         return (int) Math.round((double) totalCycles / successfulTrials);
     }
 
-    private static _Scenario simulateCycle(
+    private static void indexTree(
             final _Pool pool,
-            final Map<_Scenario, Integer> executions,
-            final int target,
-            final double completionBoost,
-            final Random random,
-            final List<_Scenario> path) {
+            final Map<_Scenario, Integer> scenarioIndexMap,
+            final List<_Scenario> scenarios,
+            final Map<_Pool, Integer> poolIndexMap,
+            final List<_Pool> pools) {
 
-        final _Scenario chosen = selectCandidate(pool, executions, target, completionBoost, random);
-        if (isNull(chosen)) return null;
+        if (isNull(pool) || poolIndexMap.containsKey(pool)) return;
+        poolIndexMap.put(pool, pools.size());
+        pools.add(pool);
 
-        if (chosen instanceof _Node node) {
-            path.add(chosen);
-            final _Pool childPool = node.getPool();
-            if (isNotNull(childPool)) {
-                return simulateCycle(childPool, executions, target, completionBoost, random, path);
-            }
-            return chosen;
-        }
-
-        return chosen;
-    }
-
-    private static _Scenario selectCandidate(
-            final _Pool pool,
-            final Map<_Scenario, Integer> executions,
-            final int target,
-            final double completionBoost,
-            final Random random) {
-
-        if (isNull(pool)) return null;
         final List<KeyValue<_Scenario, Fraction>> pairs = pool.getPairList();
-        if (isNull(pairs) || pairs.isEmpty()) return null;
-
-        final List<_Scenario> candidates = new ArrayList<>();
-        final List<Double> weights = new ArrayList<>();
-        double totalWeight = 0.0;
+        if (isNull(pairs)) return;
 
         for (final KeyValue<_Scenario, Fraction> pair : pairs) {
-            final _Scenario scenario = pair.k();
-            if (isNull(scenario)) continue;
-            if (!scenario.isExecutable() || scenario.calculateCombinations(true) <= 0) continue;
-            if (scenario instanceof Mono && executions.getOrDefault(scenario, 0) > 0) continue;
+            final _Scenario sc = pair.k();
+            if (isNull(sc)) continue;
+            if (!scenarioIndexMap.containsKey(sc)) {
+                scenarioIndexMap.put(sc, scenarios.size());
+                scenarios.add(sc);
+            }
+            if (sc instanceof _Node node) {
+                indexTree(node.getPool(), scenarioIndexMap, scenarios, poolIndexMap, pools);
+            }
+        }
+    }
+
+    private static void collectDescendants(final _Node node, final Set<_Scenario> descScenarios, final Set<_Node> visited) {
+
+        if (isNull(node) || isNull(node.getPool()) || !visited.add(node)) return;
+        final List<KeyValue<_Scenario, Fraction>> pairs = node.getPool().getPairList();
+        if (isNull(pairs)) return;
+
+        for (final KeyValue<_Scenario, Fraction> pair : pairs) {
+            final _Scenario child = pair.k();
+            if (isNull(child)) continue;
+            if (!child.isExecutable() || child.calculateCombinations(true) <= 0) continue;
+            if (descScenarios.add(child)) {
+                if (child instanceof _Node childNode) {
+                    collectDescendants(childNode, descScenarios, visited);
+                }
+            }
+        }
+    }
+
+    private static SimPool buildSimPool(
+            final _Pool pool,
+            final Map<_Scenario, Integer> scenarioIndexMap,
+            final Map<_Pool, SimPool> simPoolMap,
+            final int[][] descScenarioIds,
+            final int[][] descLeafIds,
+            final boolean[] hasRepeatableLeaf) {
+
+        if (isNull(pool)) return null;
+        if (simPoolMap.containsKey(pool)) return simPoolMap.get(pool);
+
+        final List<KeyValue<_Scenario, Fraction>> pairs = pool.getPairList();
+        if (isNull(pairs) || pairs.isEmpty()) {
+            final SimPool emptyPool = new SimPool(new int[0], new double[0], new int[0][0], new int[0][0], new boolean[0], new SimPool[0]);
+            simPoolMap.put(pool, emptyPool);
+            return emptyPool;
+        }
+
+        final List<Integer> candIds = new ArrayList<>();
+        final List<Double> baseWeights = new ArrayList<>();
+        final List<SimPool> children = new ArrayList<>();
+
+        for (final KeyValue<_Scenario, Fraction> pair : pairs) {
+            final _Scenario sc = pair.k();
+            if (isNull(sc)) continue;
+            if (!sc.isExecutable() || sc.calculateCombinations(true) <= 0) continue;
+
+            final int scId = scenarioIndexMap.get(sc);
+            if (sc instanceof _Node && descLeafIds[scId].length == 0) continue;
 
             double weight = isNotNull(pair.v()) ? pair.v().doubleValue() : 0.0;
             if (Include.upstream) {
-                final Fraction up = scenario.weightUpstream();
+                final Fraction up = sc.weightUpstream();
                 if (isNotNull(up)) weight += up.doubleValue();
             }
             if (Include.downstream) {
-                final Fraction down = downstreamWeight(scenario);
+                final Fraction down = downstreamWeight(sc);
                 if (isNotNull(down)) weight += down.doubleValue();
             }
-            if (weight > 0.0 && completionBoost > 0.0) {
-                final double ratio = getUncompletedRatio(scenario, executions, target);
+
+            if (weight <= 0.0) continue;
+
+            candIds.add(scId);
+            baseWeights.add(weight);
+
+            if (sc instanceof _Node node && isNotNull(node.getPool())) {
+                children.add(buildSimPool(node.getPool(), scenarioIndexMap, simPoolMap,
+                        descScenarioIds, descLeafIds, hasRepeatableLeaf));
+            } else {
+                children.add(null);
+            }
+        }
+
+        final int size = candIds.size();
+        final int[] cIds = new int[size];
+        final double[] bWeights = new double[size];
+        final int[][] cDescScenarios = new int[size][];
+        final int[][] cDescLeafs = new int[size][];
+        final boolean[] cHasRepeatable = new boolean[size];
+        final SimPool[] cPools = new SimPool[size];
+
+        for (int i = 0; i < size; i++) {
+            final int scId = candIds.get(i);
+            cIds[i] = scId;
+            bWeights[i] = baseWeights.get(i);
+            cDescScenarios[i] = descScenarioIds[scId];
+            cDescLeafs[i] = descLeafIds[scId];
+            cHasRepeatable[i] = hasRepeatableLeaf[scId];
+            cPools[i] = children.get(i);
+        }
+
+        final SimPool simPool = new SimPool(cIds, bWeights, cDescScenarios, cDescLeafs, cHasRepeatable, cPools);
+        simPoolMap.put(pool, simPool);
+        return simPool;
+    }
+
+    private static int simulateCycle(
+            final SimPool pool,
+            final int[] executions,
+            final int target,
+            final double completionBoost,
+            final Random random,
+            final int[] pathBuffer,
+            final int[] pathLen,
+            final int[] candidatesBuffer,
+            final double[] weightsBuffer,
+            final boolean[] isMono,
+            final boolean[] isNode,
+            final int[] targets) {
+
+        if (isNull(pool)) return -1;
+        final int candidateCount = pool.candidateIds.length;
+        if (0 == candidateCount) return -1;
+
+        int validCount = 0;
+        double totalWeight = 0.0;
+
+        for (int i = 0; i < candidateCount; i++) {
+            final int scId = pool.candidateIds[i];
+            if (isMono[scId] && executions[scId] > 0) continue;
+            if (isNode[scId] && !pool.hasRepeatableLeaf[i]) {
+                final int[] descLeafs = pool.descLeafIds[i];
+                boolean hasExecutable = false;
+                for (int j = 0; j < descLeafs.length; j++) {
+                    if (executions[descLeafs[j]] == 0) {
+                        hasExecutable = true;
+                        break;
+                    }
+                }
+                if (!hasExecutable) continue;
+            }
+
+            double weight = pool.baseWeights[i];
+            if (completionBoost > 0.0) {
+                final double ratio = getUncompletedRatio(scId, pool.descScenarioIds[i], executions, targets, isMono);
                 if (ratio > 0.0) {
                     weight += completionBoost * ratio;
                 }
             }
 
             if (weight > 0.0) {
-                candidates.add(scenario);
-                weights.add(weight);
+                candidatesBuffer[validCount] = i;
+                weightsBuffer[validCount] = weight;
+                validCount++;
                 totalWeight += weight;
             }
         }
 
-        if (candidates.isEmpty() || totalWeight <= 0.0) return null;
+        if (0 == validCount || totalWeight <= 0.0) return -1;
 
         final double r = random.nextDouble() * totalWeight;
         double cumulative = 0.0;
-        for (int i = 0; i < candidates.size(); i++) {
-            cumulative += weights.get(i);
+        int chosenIdx = candidatesBuffer[validCount - 1];
+        for (int j = 0; j < validCount; j++) {
+            cumulative += weightsBuffer[j];
             if (r <= cumulative) {
-                return candidates.get(i);
+                chosenIdx = candidatesBuffer[j];
+                break;
             }
         }
-        return candidates.get(candidates.size() - 1);
-    }
 
-    static double getUncompletedRatio(
-            final _Scenario scenario,
-            final Map<_Scenario, Integer> executions,
-            final int target) {
-
-        final int execs = executions.getOrDefault(scenario, 0);
-        double ratio = (execs < target) ? ((double) (target - execs) / target) : 0.0;
-        if (scenario instanceof _Node node) {
-            final double descRatio = getMaxDescendantRatio(node, executions, target, new HashSet<>());
-            ratio = Math.max(ratio, descRatio);
+        final int chosenScId = pool.candidateIds[chosenIdx];
+        final SimPool childPool = pool.childPools[chosenIdx];
+        if (isNotNull(childPool)) {
+            pathBuffer[pathLen[0]++] = chosenScId;
+            return simulateCycle(childPool, executions, target, completionBoost, random,
+                    pathBuffer, pathLen, candidatesBuffer, weightsBuffer, isMono, isNode, targets);
         }
-        return ratio;
+
+        return chosenScId;
     }
 
-    private static double getMaxDescendantRatio(
-            final _Node node,
-            final Map<_Scenario, Integer> executions,
-            final int target,
-            final Set<Object> visited) {
+    private static double getUncompletedRatio(
+            final int scId,
+            final int[] descScenarioIds,
+            final int[] executions,
+            final int[] targets,
+            final boolean[] isMono) {
 
-        if (isNull(node) || isNull(node.getPool()) || !visited.add(node)) return 0.0;
-        final List<KeyValue<_Scenario, Fraction>> pairs = node.getPool().getPairList();
-        if (isNull(pairs)) return 0.0;
+        final int scTarget = targets[scId];
+        final int execs = executions[scId];
+        double maxRatio = (execs < scTarget) ? ((double) (scTarget - execs) / scTarget) : 0.0;
+        if (maxRatio >= 1.0) return 1.0;
 
-        double max = 0.0;
-        for (final KeyValue<_Scenario, Fraction> pair : pairs) {
-            final _Scenario child = pair.k();
-            if (isNotNull(child) && child.isExecutable() && child.calculateCombinations(true) > 0) {
-                final int execs = executions.getOrDefault(child, 0);
-                double childRatio = (execs < target) ? ((double) (target - execs) / target) : 0.0;
-                if (child instanceof _Node childNode) {
-                    final double descRatio = getMaxDescendantRatio(childNode, executions, target, visited);
-                    childRatio = Math.max(childRatio, descRatio);
-                }
-                if (childRatio > max) {
-                    max = childRatio;
-                    if (max >= 1.0) return 1.0;
-                }
-            }
-        }
-        return max;
-    }
-
-    static boolean hasUnexecutedState(final _Scenario scenario, final Set<_Scenario> executedInTrial) {
-
-        if (!executedInTrial.contains(scenario)) return true;
-        if (scenario instanceof _Node node) {
-            return hasUnexecutedDescendants(node, executedInTrial, new HashSet<>());
-        }
-        return false;
-    }
-
-    private static boolean hasUnexecutedDescendants(
-            final _Node node,
-            final Set<_Scenario> executedInTrial,
-            final Set<Object> visited) {
-
-        if (isNull(node) || isNull(node.getPool()) || !visited.add(node)) return false;
-        final List<KeyValue<_Scenario, Fraction>> pairs = node.getPool().getPairList();
-        if (isNull(pairs)) return false;
-
-        for (final KeyValue<_Scenario, Fraction> pair : pairs) {
-            final _Scenario child = pair.k();
-            if (isNotNull(child) && child.isExecutable() && child.calculateCombinations(true) > 0) {
-                if (!executedInTrial.contains(child)) return true;
-                if (child instanceof _Node childNode) {
-                    if (hasUnexecutedDescendants(childNode, executedInTrial, visited)) {
-                        return true;
+        if (isNotNull(descScenarioIds)) {
+            for (int i = 0; i < descScenarioIds.length; i++) {
+                final int did = descScenarioIds[i];
+                if (isMono[did] && executions[did] > 0) continue;
+                final int dTarget = targets[did];
+                final int dExecs = executions[did];
+                if (dExecs < dTarget) {
+                    final double r = (double) (dTarget - dExecs) / dTarget;
+                    if (r > maxRatio) {
+                        maxRatio = r;
+                        if (maxRatio >= 1.0) return 1.0;
                     }
                 }
             }
         }
-        return false;
+        return maxRatio;
     }
+
+    private record SimPool(
+            int[] candidateIds,
+            double[] baseWeights,
+            int[][] descScenarioIds,
+            int[][] descLeafIds,
+            boolean[] hasRepeatableLeaf,
+            SimPool[] childPools
+    ) {}
 }

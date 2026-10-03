@@ -34,6 +34,7 @@ import static works.lysenko.util.lang.word.S.STORE;
 import static works.lysenko.util.lang.word.U.UNABLE;
 import static works.lysenko.util.spec.Layout.Files.PARAMETERS_;
 import static works.lysenko.util.spec.Symbols.SEM_CLN;
+import static works.lysenko.util.spec.Symbols._DOT_;
 
 /**
  * Represents a class that holds and manages various parameters for execution.
@@ -50,7 +51,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
     /**
      * Initializes the Parameters object with the given list of parameters.
      *
-     * @param list the list of parameters, formatted as "params:types". If null, no parameters are loaded.
+     * @param properties the properties to populate from
      */
     public Parameters(final Properties properties) {
 
@@ -61,14 +62,15 @@ public final class Parameters extends Properties implements _ExecutionParameterV
 
     Parameters(final String list) {
 
+        works.lysenko.Base.parameters = this;
         loadFromFile();
         read(TEST);
         read(POOL);
         read(PLATFORM);
         readDeviceOrDomain();
         read(HEADLESS);
-        read(ALL_LEAFS);
-        read(ALL_LEAFS_COUNT);
+        read(ALL_LEAFS.name()); // empty default: allows fallback to properties / count inference
+        read(ALL_LEAFS_COUNT.name());
         readAdditionalParameters(list);
         showOptionalGui();
     }
@@ -107,14 +109,23 @@ public final class Parameters extends Properties implements _ExecutionParameterV
     @Override
     public boolean isAllLeafs() {
 
+        final String countVal = getValue(ALL_LEAFS_COUNT);
+        if (isNotNull(countVal) && !countVal.isEmpty()) {
+            try {
+                if (Integer.parseInt(countVal) > 1) {
+                    return true;
+                }
+            } catch (final NumberFormatException ignored) {
+            }
+        }
         final String val = getValue(ALL_LEAFS);
         if (isNotNull(val) && !val.isEmpty()) {
             return Boolean.parseBoolean(val);
         }
-        if (Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._ALL_LEAFS.get())) {
+        if (getAllLeafsCount() > 1) {
             return true;
         }
-        return getAllLeafsCount() > 1;
+        return Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._ALL_LEAFS.get());
     }
 
     @Override
@@ -123,8 +134,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         final String val = getValue(ALL_LEAFS_COUNT);
         if (isNotNull(val) && !val.isEmpty()) {
             try {
-                final int count = Integer.parseInt(val);
-                return Math.max(1, count);
+                return Math.max(1, Integer.parseInt(val));
             } catch (final NumberFormatException ignored) {
             }
         }
@@ -194,9 +204,12 @@ public final class Parameters extends Properties implements _ExecutionParameterV
     @SuppressWarnings("CallToSystemGetenv")
     private void read(final String name, final String def) {
 
+        final String dotted = name.toLowerCase(java.util.Locale.ROOT).replace('_', '.');
         if (isNotNull(System.getenv(name))) put(name, System.getenv(name)); // prio0: Environment variable
         else if (isNotNull(System.getProperty(name))) put(name, System.getProperty(name)); // prio0.5: System property
         else if (isNotNull(System.getProperty(name.toLowerCase(java.util.Locale.ROOT)))) put(name, System.getProperty(name.toLowerCase(java.util.Locale.ROOT)));
+        else if (isNotNull(System.getProperty(s(_DOT_, dotted)))) put(name, System.getProperty(s(_DOT_, dotted)));
+        else if (isNotNull(System.getProperty(dotted))) put(name, System.getProperty(dotted));
         else if (!containsKey(name)) put(name, def); // prio2: Default value
         // NOP: prio1: Value from cache already loaded
     }

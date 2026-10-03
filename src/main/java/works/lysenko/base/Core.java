@@ -11,6 +11,7 @@ import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_HTML_;
 import works.lysenko.base.ui.Directory;
 import works.lysenko.base.ui.UserInterface;
 import works.lysenko.tree.Root;
+import works.lysenko.tree.base.Mono;
 import works.lysenko.util.apis._PropEnum;
 import works.lysenko.util.apis.core._Core;
 import works.lysenko.util.apis.core._Results;
@@ -120,16 +121,6 @@ public final class Core extends Root implements _Core, _Tests {
         build();
     }
 
-    @Override
-    public int getRecommendedCycles() {
-
-        if (isNotNull(test) && isNotNull(test.executor())) {
-            if (isNotNull(test.executor().ctrl()))
-                return test.executor().ctrl().getRecommendedCycles();
-        }
-        return ZERO;
-    }
-
     public int getActiveScenarioPaths() {
 
         if (isNotNull(test) && isNotNull(test.executor())) {
@@ -150,13 +141,32 @@ public final class Core extends Root implements _Core, _Tests {
     }
 
     @Override
+    public Set<_Scenario> getAccessibleScenarios() {
+
+        if (isNotNull(test) && isNotNull(test.executor())) {
+            if (isNotNull(test.executor().ctrl()))
+                return test.executor().ctrl().getAccessibleScenarios();
+        }
+        return Set.of();
+    }
+
+    private static int resolveAllLeafsTarget() {
+        if (isNotNull(parameters)) {
+            return parameters.getAllLeafsCount();
+        }
+        final Integer prop = works.lysenko.util.spec.PropEnum._ALL_LEAFS_COUNT.get();
+        return isNotNull(prop) ? Math.max(1, prop) : 1;
+    }
+
+    @Override
     public boolean areAllLeafsExecuted() {
 
         final Set<_Scenario> leafs = getAccessibleLeafs();
         if (leafs.isEmpty()) return true;
-        final int target = (isNotNull(parameters)) ? parameters.getAllLeafsCount() : 1;
+        final int target = resolveAllLeafsTarget();
         for (final _Scenario leaf : leafs) {
-            if (getResults().getExecutions(leaf) < target)
+            final int leafTarget = (leaf instanceof Mono) ? 1 : target;
+            if (getResults().getExecutions(leaf) < leafTarget)
                 return false;
         }
         return true;
@@ -167,9 +177,10 @@ public final class Core extends Root implements _Core, _Tests {
 
         final Set<_Scenario> leafs = getAccessibleLeafs();
         int count = 0;
-        final int target = (isNotNull(parameters)) ? parameters.getAllLeafsCount() : 1;
+        final int target = resolveAllLeafsTarget();
         for (final _Scenario leaf : leafs) {
-            if (target <= getResults().getExecutions(leaf))
+            final int leafTarget = (leaf instanceof Mono) ? 1 : target;
+            if (leafTarget <= getResults().getExecutions(leaf))
                 count++;
         }
         return count;
@@ -286,15 +297,12 @@ public final class Core extends Root implements _Core, _Tests {
 
         final WebDriver wd = exec.wd();
         if (isNull(wd)) return;
-        final boolean isHeadless = isNotNull(parameters) && parameters.isHeadless();
-        if (isHeadless || (isInJar() && (Routines.isInsideDocker() || Routines.isInsideCI()))) {
-            try {
-                wd.quit();
-            } catch (final RuntimeException e) {
-                throw new IllegalStateException("Unable to close WebDriver due to an exception", e);
-            } finally {
-                exec.clearDriver();
-            }
+        try {
+            wd.quit();
+        } catch (final RuntimeException e) {
+            throw new IllegalStateException("Unable to close WebDriver due to an exception", e);
+        } finally {
+            exec.clearDriver();
         }
     }
 

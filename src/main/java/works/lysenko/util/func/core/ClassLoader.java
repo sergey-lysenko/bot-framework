@@ -79,7 +79,7 @@ public record ClassLoader() {
      */
     public static Set<Class<?>> findAll(final String inPackage, final boolean silent) {
 
-        if (core.isInJar()) return getClassesSetFromJar(inPackage, silent);
+        if (isNotNull(core) && core.isInJar()) return getClassesSetFromJar(inPackage, silent);
         final InputStream inputStream;
         try {
             inputStream = getInputStreamFromPack(inPackage);

@@ -60,7 +60,10 @@ import static works.lysenko.util.spec.Symbols.*;
 public class TestProperties implements _TestProperties {
 
     private static final String TAG = s(c(C), _DOT_, GET);
+    private static final ThreadLocal<Boolean> IN_GET_LOG = ThreadLocal.withInitial(() -> Boolean.FALSE);
     private final Collection<Class<? extends _PropEnum>> compendium = new ArrayList<>(1);
+    private final Map<String, String> userOverrides = new LinkedHashMap<>();
+    private final Map<String, String> configFileDefaults = new LinkedHashMap<>();
     private Map commonConfiguration = null;
     private Properties the = null;
 
@@ -100,8 +103,14 @@ public class TestProperties implements _TestProperties {
      */
     private static void getLog(final Object field, final Object o, final Object def) {
 
-        log(Level.debug, b(sn(TAG, e(ROUND, bb(field)), e(gray(isDefault(o, def), RGT_DAR)), yb(!isDefault(o, def), o))),
-                true);
+        if (IN_GET_LOG.get()) return;
+        IN_GET_LOG.set(Boolean.TRUE);
+        try {
+            log(Level.debug, b(sn(TAG, e(ROUND, bb(field)), e(gray(isDefault(o, def), RGT_DAR)), yb(!isDefault(o, def), o))),
+                    true);
+        } finally {
+            IN_GET_LOG.set(Boolean.FALSE);
+        }
     }
 
     public final boolean areTestPropertiesReady() {
@@ -122,14 +131,92 @@ public class TestProperties implements _TestProperties {
         return stringParser.result();
     }
 
+    @Override
     @SuppressWarnings("MethodWithMultipleLoops")
-    private Map<String, String> getDefaults() {
+    public final Map<String, String> getDefaults() {
 
         final Map<String, String> def = new HashMap<>(PropEnum.values().length);
         for (final Class<? extends _PropEnum> co : compendium)
             for (final _PropEnum p : co.getEnumConstants())
                 add(p, def);
         return def;
+    }
+
+    @Override
+    public final Map<String, String> getConfigFileDefaults() {
+
+        if (configFileDefaults.isEmpty()) {
+            updateConfigFileDefaults(null);
+        }
+        return new LinkedHashMap<>(configFileDefaults);
+    }
+
+    @Override
+    public final Map<String, String> getConfigFileDefaults(final String testName) {
+
+        updateConfigFileDefaults(testName);
+        return new LinkedHashMap<>(configFileDefaults);
+    }
+
+    @Override
+    public final Map<String, String> getOriginalConfigProperties() {
+
+        return getConfigFileDefaults(isNotNull(works.lysenko.Base.parameters) ? works.lysenko.Base.parameters.getTest() : null);
+    }
+
+    @Override
+    public final Map<String, String> getOriginalConfigProperties(final String testName) {
+
+        return getConfigFileDefaults(testName);
+    }
+
+    private void updateConfigFileDefaults(final String testName) {
+
+        if (isNull(commonConfiguration)) readCommonConfiguration();
+        configFileDefaults.clear();
+        configFileDefaults.putAll(getDefaults());
+        if (isNotNull(commonConfiguration)) {
+            for (final Object k : commonConfiguration.keySet()) {
+                configFileDefaults.put(k.toString(), commonConfiguration.get(k).toString());
+            }
+        }
+        if (isNotNull(testName) && !testName.isBlank()) {
+            try {
+                final works.lysenko.util.func.core.TestProperties.Result res =
+                        readTestPropertiesFromFile(new TestPropertiesDescriptor(_TESTS_, testName, TEST_PROPERTIES_EXTENSION));
+                if (isNotNull(res) && isNotNull(res.properties())) {
+                    for (final String k : res.properties().stringPropertyNames()) {
+                        configFileDefaults.put(k, res.properties().getProperty(k));
+                    }
+                }
+            } catch (final RuntimeException ignored) {
+            }
+        }
+    }
+
+    @Override
+    public final Map<String, String> getUserOverrides() {
+
+        return new LinkedHashMap<>(userOverrides);
+    }
+
+    @Override
+    public final void setUserOverride(final String key, final String value) {
+
+        userOverrides.put(key, value);
+    }
+
+    @Override
+    public final void setUserOverrides(final Map<String, String> overrides) {
+
+        userOverrides.clear();
+        if (isNotNull(overrides)) userOverrides.putAll(overrides);
+    }
+
+    @Override
+    public final void clearUserOverrides() {
+
+        userOverrides.clear();
     }
 
     @Override
@@ -147,7 +234,7 @@ public class TestProperties implements _TestProperties {
         final String def = p.defaultValue();
         final String key = p.getPropertyName();
         final String source = isNull(the) ? def : the.getProperty(key, def);
-        if (isNotNull(exec)) {
+        if (isNotNull(exec) && !IN_GET_LOG.get()) {
             if (isNotNull(def) && !p.silent() && isDebug()) getLog(key, (null == source) ? null : source.trim(), def);
         }
         return source;
@@ -176,7 +263,7 @@ public class TestProperties implements _TestProperties {
     public final String getTestPropertySource(final String name, final boolean silent) {
 
         final String source = the.getProperty(name);
-        if (isNotNull(exec)) {
+        if (isNotNull(exec) && !IN_GET_LOG.get()) {
             if (isNull(source))
                 logEvent(S0, b(c(CONFIGURATION), PARAMETER, q(name), IS, UNDEFINED));
             if (isDebug() && !silent) getLog(name, (null == source) ? null : source.trim(), EMPTY);
@@ -212,6 +299,7 @@ public class TestProperties implements _TestProperties {
             the = new Properties(); // reset
             the.putAll(commonConfiguration);
         }
+        updateConfigFileDefaults(null);
         return result.debug();
     }
 
@@ -226,6 +314,8 @@ public class TestProperties implements _TestProperties {
         result = readTestPropertiesFromFile(new TestPropertiesDescriptor(_TESTS_, parameters.getTest(),
                 TEST_PROPERTIES_EXTENSION));
         the.putAll(result.properties());
+        updateConfigFileDefaults(parameters.getTest());
+        applyUserOverrides();
         if (isNotNull(parameters)) {
             if (parameters.isHeadless()) {
                 the.setProperty(PropEnum._HEADLESS.getPropertyName(), String.valueOf(true));
@@ -239,11 +329,116 @@ public class TestProperties implements _TestProperties {
             }
             if (1 < parameters.getAllLeafsCount()) {
                 the.setProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(parameters.getAllLeafsCount()));
-            } else {
-                the.remove(PropEnum._ALL_LEAFS_COUNT.getPropertyName());
             }
         }
+        applyUserOverrides();
         logTestConfiguration(common, result.debug());
+    }
+
+    @Override
+    @SuppressWarnings("UseOfPropertiesAsHashtable")
+    public final void prepareTestConfiguration(final String testName, final Boolean isHeadless,
+                                               final Boolean isAllLeafs, final Integer allLeafsCount) {
+
+        if (isNull(commonConfiguration)) {
+            readCommonConfiguration();
+        }
+        the = new Properties(); // reset
+        if (isNotNull(commonConfiguration)) {
+            the.putAll(commonConfiguration);
+        }
+        if (isNotNull(testName) && !testName.isBlank()) {
+            try {
+                final works.lysenko.util.func.core.TestProperties.Result res =
+                        readTestPropertiesFromFile(new TestPropertiesDescriptor(_TESTS_, testName, TEST_PROPERTIES_EXTENSION));
+                if (isNotNull(res) && isNotNull(res.properties())) {
+                    the.putAll(res.properties());
+                }
+            } catch (final RuntimeException ignored) {
+            }
+        }
+        updateConfigFileDefaults(testName);
+        if (Boolean.TRUE.equals(isHeadless)) {
+            the.setProperty(PropEnum._HEADLESS.getPropertyName(), String.valueOf(true));
+        } else if (Boolean.FALSE.equals(isHeadless)) {
+            the.remove(PropEnum._HEADLESS.getPropertyName());
+        }
+        if (Boolean.TRUE.equals(isAllLeafs) || (isNotNull(allLeafsCount) && 1 < allLeafsCount)) {
+            the.setProperty(PropEnum._ALL_LEAFS.getPropertyName(), String.valueOf(true));
+        } else if (Boolean.FALSE.equals(isAllLeafs)) {
+            the.remove(PropEnum._ALL_LEAFS.getPropertyName());
+        }
+        if (isNotNull(allLeafsCount) && 1 < allLeafsCount) {
+            the.setProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(allLeafsCount));
+        }
+        applyUserOverrides();
+    }
+
+    private void applyUserOverrides() {
+
+        if (isNull(the)) return;
+        final Map<String, String> defaults = getDefaults();
+        for (final Map.Entry<String, String> entry : userOverrides.entrySet()) {
+            final String key = entry.getKey();
+            final String value = entry.getValue();
+            final String def = defaults.get(key);
+            if (isNotNull(def) && def.equals(value)) {
+                the.remove(key);
+            } else {
+                the.setProperty(key, value);
+            }
+        }
+    }
+
+    @Override
+    public final Map<String, String> resolveEffectiveProperties(final String testName, final Boolean isHeadless,
+                                                                 final Boolean isAllLeafs, final Integer allLeafsCount) {
+
+        return resolveEffectiveProperties(testName, isHeadless, isAllLeafs, allLeafsCount, true);
+    }
+
+    @Override
+    @SuppressWarnings({"UseOfPropertiesAsHashtable", "MethodWithMultipleLoops"})
+    public final Map<String, String> resolveEffectiveProperties(final String testName, final Boolean isHeadless,
+                                                                 final Boolean isAllLeafs, final Integer allLeafsCount,
+                                                                 final boolean includeUserOverrides) {
+
+        if (isNull(commonConfiguration)) readCommonConfiguration();
+        final Map<String, String> effective = new LinkedHashMap<>(getDefaults());
+        if (isNotNull(commonConfiguration)) {
+            for (final Object k : commonConfiguration.keySet()) {
+                effective.put(k.toString(), commonConfiguration.get(k).toString());
+            }
+        }
+        if (isNotNull(testName) && !testName.isBlank()) {
+            try {
+                final works.lysenko.util.func.core.TestProperties.Result res =
+                        readTestPropertiesFromFile(new TestPropertiesDescriptor(_TESTS_, testName, TEST_PROPERTIES_EXTENSION));
+                if (isNotNull(res) && isNotNull(res.properties())) {
+                    for (final String k : res.properties().stringPropertyNames()) {
+                        effective.put(k, res.properties().getProperty(k));
+                    }
+                }
+            } catch (final RuntimeException ignored) {
+            }
+        }
+        if (Boolean.TRUE.equals(isHeadless)) {
+            effective.put(PropEnum._HEADLESS.getPropertyName(), String.valueOf(true));
+        } else if (Boolean.FALSE.equals(isHeadless)) {
+            effective.put(PropEnum._HEADLESS.getPropertyName(), PropEnum._HEADLESS.defaultValue());
+        }
+        if (Boolean.TRUE.equals(isAllLeafs) || (isNotNull(allLeafsCount) && 1 < allLeafsCount)) {
+            effective.put(PropEnum._ALL_LEAFS.getPropertyName(), String.valueOf(true));
+        } else if (Boolean.FALSE.equals(isAllLeafs)) {
+            effective.put(PropEnum._ALL_LEAFS.getPropertyName(), PropEnum._ALL_LEAFS.defaultValue());
+        }
+        if (isNotNull(allLeafsCount) && 1 < allLeafsCount) {
+            effective.put(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(allLeafsCount));
+        }
+        if (includeUserOverrides) {
+            effective.putAll(userOverrides);
+        }
+        return effective;
     }
 
     @Override

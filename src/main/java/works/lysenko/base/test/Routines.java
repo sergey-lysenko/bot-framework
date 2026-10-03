@@ -8,10 +8,6 @@ import works.lysenko.util.data.records.test.Workflow;
 import org.apache.commons.lang3.StringUtils;
 import works.lysenko.util.spec.Level;
 
-import static works.lysenko.util.data.enums.Brackets.ROUND;
-import static works.lysenko.util.data.strs.Swap.s;
-import static works.lysenko.util.data.strs.Wrap.e;
-
 import static works.lysenko.Base.*;
 import static works.lysenko.util.chrs.__.OF;
 import static works.lysenko.util.chrs.___.DOTS;
@@ -51,16 +47,12 @@ public record Routines() {
             logEvent(S2, NO_TESTS_WERE_PERFORMED);
             return;
         }
-        final int recommended = isNotNull(core) ? core.getRecommendedCycles() : 0;
-        final int leafs = isNotNull(core) ? core.getActiveScenarioPaths() : 0;
-        final String recommendedMsg = (0 < recommended && 0 < leafs) ?
-                e(ROUND, b("recommended:", s1(recommended, "cycle"), "to cover all", s1(leafs, "leaf"))) : StringUtils.EMPTY;
 
         final String numberOfRepetitions = yb((null == total) ? TESTS : s1(total, TEST));
         final String testDescription = parameters.testDescription();
         final String allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs()) ? "in ALL_LEAFS mode" : StringUtils.EMPTY;
 
-        log(Level.none, b(false, c(EXECUTING), numberOfRepetitions, OF, testDescription, allLeafsMode, recommendedMsg), true);
+        log(Level.none, b(false, c(EXECUTING), numberOfRepetitions, OF, testDescription, allLeafsMode), true);
     }
 
     /**

@@ -40,6 +40,7 @@ public record R() {
     public static final String REPRODUCED = s(RE, PROD, UC, ED);
     public static final String REQUEST = s(REQU, ES, T);
     public static final String REQUESTED = s(REQUEST, ED);
+    public static final String REQUIRED = s(REQU, IR, ED);
     public static final String REQUIREMENT = s(REQU, IR, EM, ENT);
     public static final String REQUIREMENTS = s(REQU, IR, EMEN, TS);
     public static final String RESET = s(RE, SET);

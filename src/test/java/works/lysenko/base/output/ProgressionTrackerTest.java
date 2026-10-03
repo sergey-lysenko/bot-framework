@@ -98,6 +98,22 @@ class ProgressionTrackerTest {
     }
 
     @Test
+    void testRenderProgressionGraphWithManyAndLongScenarios() {
+        final List<_Scenario> scenarios = new ArrayList<>();
+        for (int i = 0; i < 40; i++) {
+            final String name = (i % 2 == 0)
+                    ? "signIn.correctLogin.settings.configureProducts.Option" + i + ".Execute"
+                    : "signIn.short" + i;
+            scenarios.add(new TestLeaf(name, fr(1.0)));
+        }
+
+        final BufferedImage img = ProgressionTracker.renderProgressionGraph(scenarios, 5, 23);
+        assertNotNull(img);
+        assertEquals(1280, img.getWidth());
+        assertEquals(680, img.getHeight());
+    }
+
+    @Test
     void testWriteAnimatedGif(@TempDir final Path tempDir) throws IOException {
         final File gifFile = tempDir.resolve("test_progression.gif").toFile();
 

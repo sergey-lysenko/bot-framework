@@ -85,7 +85,7 @@ public interface _Ctrl {
     Set<_Scenario> getAccessibleLeafs();
 
     /**
-     * @return recommended execution cycles count to achieve 100% leaf coverage
+     * @return set of all presently accessible scenarios (both nodes and leafs)
      */
-    int getRecommendedCycles();
+    Set<_Scenario> getAccessibleScenarios();
 }

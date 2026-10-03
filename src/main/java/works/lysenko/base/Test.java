@@ -2,6 +2,7 @@ package works.lysenko.base;
 
 import works.lysenko.base.test.*;
 import works.lysenko.base.output.ProgressionTracker;
+import works.lysenko.base.output.TreeProgressionTracker;
 import works.lysenko.tree.Ctrl;
 import works.lysenko.util.apis.core._Status;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
@@ -10,6 +11,7 @@ import works.lysenko.util.data.records.test.Workflow;
 import works.lysenko.util.func.core.ClassLoader;
 import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.spec.Level;
+import works.lysenko.util.spec.PropEnum;
 
 import static works.lysenko.Base.*;
 import static works.lysenko.util.chrs.__.IN;
@@ -69,6 +71,7 @@ public class Test implements _Test {
 
         try {
             ProgressionTracker.onComplete();
+            TreeProgressionTracker.onComplete();
             Stat.reports();
             logEmptyLine();
             log(Level.none, bb(TEST_SESSION_COMPLETED), false);
@@ -155,6 +158,11 @@ public class Test implements _Test {
         if (isNotNull(classes.postflight())) postflight = instantiate(classes.postflight());
     }
 
+    private static boolean isCountAllLeafs() {
+        final Integer count = PropEnum._ALL_LEAFS_COUNT.get();
+        return isNotNull(count) && count > 1;
+    }
+
     /**
      * Checks if the tests execution is not exhausted.
      *
@@ -162,7 +170,10 @@ public class Test implements _Test {
      */
     private boolean isNotExhausted() {
 
-        if (isNotNull(parameters) && parameters.isAllLeafs()) {
+        final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
+                || Boolean.TRUE.equals(PropEnum._ALL_LEAFS.get())
+                || isCountAllLeafs();
+        if (allLeafsMode) {
             return !core.areAllLeafsExecuted();
         }
         return null == core.getTotalTests() || repeater.getHistory().size() < core.getTotalTests();

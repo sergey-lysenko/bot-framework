@@ -17,6 +17,15 @@ import static works.lysenko.util.spec.PropEnum._INCLUDE_UPSTREAM;
 @SuppressWarnings({"MissingJavadoc", "NonFinalStaticVariableUsedInClassInitialization"})
 public record Include() {
 
-    public static final Boolean upstream = _INCLUDE_UPSTREAM.get();
-    public static final Boolean downstream = _INCLUDE_DOWNSTREAM.get();
+    public static Boolean upstream = _INCLUDE_UPSTREAM.get();
+    public static Boolean downstream = _INCLUDE_DOWNSTREAM.get();
+
+    /**
+     * Refreshes upstream and downstream flags from current test properties.
+     */
+    public static void refresh() {
+
+        upstream = _INCLUDE_UPSTREAM.get();
+        downstream = _INCLUDE_DOWNSTREAM.get();
+    }
 }

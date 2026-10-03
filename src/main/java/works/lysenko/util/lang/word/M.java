@@ -25,6 +25,8 @@ public record M() {
     public static final String MINIMUM = s(MIN, IMUM);
     public static final String MODAL = s(MO, DA, L);
     public static final String MODEL = s(MODE, L);
+    public static final String MODIFIED = s(MO, DI, FI, ED);
+    public static final String MODIFY = s(MO, DI, FY);
     public static final String MORE = s(MO, RE);
     public static final String MOST = s(MO, ST);
     public static final String MUCH = s(MU, CH);

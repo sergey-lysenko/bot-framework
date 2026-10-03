@@ -117,10 +117,111 @@ public interface _TestProperties {
     void readTestConfiguration();
 
     /**
+     * Prepares and loads the configuration for a test suite into active test properties without logging.
+     *
+     * @param testName      test suite name
+     * @param isHeadless    headless toggle
+     * @param isAllLeafs    all leafs toggle
+     * @param allLeafsCount leaf executions target
+     */
+    void prepareTestConfiguration(final String testName, final Boolean isHeadless,
+                                  final Boolean isAllLeafs, final Integer allLeafsCount);
+
+    /**
      * Retrieves the size of the default properties.
      *
      * @return the number of default properties
      */
     int getDefaultsSize();
+
+    /**
+     * Retrieves all default property key-value pairs.
+     *
+     * @return a map containing default properties
+     */
+    Map<String, String> getDefaults();
+
+    /**
+     * Retrieves the copy of original configuration properties loaded from config files.
+     *
+     * @return a map containing original config properties
+     */
+    Map<String, String> getConfigFileDefaults();
+
+    /**
+     * Retrieves the copy of original configuration properties loaded from config files for the specified test.
+     *
+     * @param testName test name to load config file defaults for
+     * @return a map containing original config properties
+     */
+    Map<String, String> getConfigFileDefaults(final String testName);
+
+    /**
+     * Retrieves the copy of original configuration properties loaded from config files.
+     *
+     * @return a map containing original config properties
+     */
+    Map<String, String> getOriginalConfigProperties();
+
+    /**
+     * Retrieves the copy of original configuration properties loaded from config files for the specified test.
+     *
+     * @param testName test name to load config file defaults for
+     * @return a map containing original config properties
+     */
+    Map<String, String> getOriginalConfigProperties(final String testName);
+
+    /**
+     * Retrieves user-overridden properties.
+     *
+     * @return a map containing user overrides
+     */
+    Map<String, String> getUserOverrides();
+
+    /**
+     * Sets a user override for a test property.
+     *
+     * @param key   the property key
+     * @param value the property value
+     */
+    void setUserOverride(final String key, final String value);
+
+    /**
+     * Sets all user overrides for test properties.
+     *
+     * @param overrides map of user overrides
+     */
+    void setUserOverrides(final Map<String, String> overrides);
+
+    /**
+     * Clears all user overrides.
+     */
+    void clearUserOverrides();
+
+    /**
+     * Resolves effective properties for the specified test configuration including user overrides.
+     *
+     * @param testName       the test name
+     * @param isHeadless     headless parameter flag
+     * @param isAllLeafs     all leafs parameter flag
+     * @param allLeafsCount  all leafs count parameter value
+     * @return resolved map of effective properties
+     */
+    Map<String, String> resolveEffectiveProperties(final String testName, final Boolean isHeadless,
+                                                   final Boolean isAllLeafs, final Integer allLeafsCount);
+
+    /**
+     * Resolves effective properties for the specified test configuration.
+     *
+     * @param testName             the test name
+     * @param isHeadless           headless parameter flag
+     * @param isAllLeafs           all leafs parameter flag
+     * @param allLeafsCount        all leafs count parameter value
+     * @param includeUserOverrides whether to include user overrides
+     * @return resolved map of effective properties
+     */
+    Map<String, String> resolveEffectiveProperties(final String testName, final Boolean isHeadless,
+                                                   final Boolean isAllLeafs, final Integer allLeafsCount,
+                                                   final boolean includeUserOverrides);
 
 }
