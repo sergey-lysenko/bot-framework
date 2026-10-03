@@ -172,15 +172,13 @@ public class Test implements _Test {
      * This method includes the following steps:
      * - Logs the event indicating that a manual test stop has been performed.
      * - Deactivates the stop button on the dashboard.
-     * - Sets the stop flag in the handler to true, signaling that test execution should halt.
-     * - Closes the repeater to finalize the test process.
+     * - Sets the stop flag in the core to true, signaling that test execution should halt.
      */
     private void performStop() {
 
         logEvent(S2, MANUALLY_REQUESTED_TEST_STOP_PERFORMED);
         core.getDashboard().setStop(false);
         core.setStopFlag(true);
-        repeater.close();
     }
 
     /**

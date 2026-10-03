@@ -134,6 +134,7 @@ public class Repeater implements _Repeater {
 
     public final void close() {
 
+        if (isNull(startedAt)) return;
         final String test = sn(StringUtils.EMPTY, getCurrent());
         close(test);
         time();
