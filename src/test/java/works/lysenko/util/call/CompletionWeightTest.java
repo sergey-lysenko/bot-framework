@@ -6,20 +6,21 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import sun.misc.Unsafe;
 import works.lysenko.Base;
-import works.lysenko.base.Parameters;
-import works.lysenko.util.data.enums.ExecutionParameter;
 import works.lysenko.base.Core;
+import works.lysenko.base.Parameters;
 import works.lysenko.base.Results;
+import works.lysenko.base.TestProperties;
 import works.lysenko.tree.Ctrl;
 import works.lysenko.tree.base.Leaf;
-import works.lysenko.tree.base.Node;
 import works.lysenko.tree.base.Mono;
+import works.lysenko.tree.base.Node;
 import works.lysenko.util.data.records.KeyValue;
 import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.spec.PropEnum;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static works.lysenko.util.func.type.fractions.Factory.fr;
@@ -29,12 +30,15 @@ class CompletionWeightTest {
 
     private Core previousCore;
     private Parameters previousParameters;
+    private TestProperties previousProperties;
 
     @BeforeEach
     void setUp() throws Exception {
         previousCore = Base.core;
         previousParameters = Base.parameters;
+        previousProperties = Base.properties;
         Base.parameters = null;
+        Base.properties = null;
         final Field f = Unsafe.class.getDeclaredField("theUnsafe");
         f.setAccessible(true);
         final Unsafe unsafe = (Unsafe) f.get(null);
@@ -46,13 +50,26 @@ class CompletionWeightTest {
         Base.core = core;
     }
 
-    @org.junit.jupiter.api.AfterEach
+    @AfterEach
     void tearDown() {
         Base.core = previousCore;
         Base.parameters = previousParameters;
+        Base.properties = previousProperties;
     }
 
-
+    private static void setTestProperty(final String key, final String value) {
+        try {
+            final TestProperties testProperties = new TestProperties();
+            final Field theField = TestProperties.class.getDeclaredField("the");
+            theField.setAccessible(true);
+            final Properties props = new Properties();
+            props.put(key, value);
+            theField.set(testProperties, props);
+            Base.properties = testProperties;
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Test
     void testPropertyDefaults() {
@@ -77,9 +94,8 @@ class CompletionWeightTest {
 
     @Test
     void testProportionalWeightReductionWithAllLeafsCount() {
-        final java.util.Properties props = new java.util.Properties();
-        props.put(ExecutionParameter.ALL_LEAFS_COUNT.name(), "2");
-        Base.parameters = new Parameters(props);
+        setTestProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), "2");
+        Base.parameters = new Parameters(new Properties());
 
         final Results results = (Results) Base.core.getResults();
         final TestLeaf leaf = new TestLeaf(fr(1.0));

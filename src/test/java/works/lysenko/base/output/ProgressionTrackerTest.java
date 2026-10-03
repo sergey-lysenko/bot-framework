@@ -10,12 +10,13 @@ import works.lysenko.Base;
 import works.lysenko.base.Core;
 import works.lysenko.base.Parameters;
 import works.lysenko.base.Results;
+import works.lysenko.base.TestProperties;
 import works.lysenko.tree.Ctrl;
 import works.lysenko.tree.base.Leaf;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.test._Exec;
 import works.lysenko.util.apis.test._Test;
-import works.lysenko.util.data.enums.ExecutionParameter;
+import works.lysenko.util.spec.PropEnum;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -28,6 +29,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static works.lysenko.util.func.type.fractions.Factory.fr;
@@ -37,11 +39,15 @@ class ProgressionTrackerTest {
 
     private Core previousCore;
     private Parameters previousParameters;
+    private TestProperties previousProperties;
 
     @BeforeEach
     void setUp() throws Exception {
         previousCore = Base.core;
         previousParameters = Base.parameters;
+        previousProperties = Base.properties;
+        Base.parameters = null;
+        Base.properties = null;
         ProgressionTracker.reset();
 
         final Field f = Unsafe.class.getDeclaredField("theUnsafe");
@@ -59,7 +65,22 @@ class ProgressionTrackerTest {
     void tearDown() {
         Base.core = previousCore;
         Base.parameters = previousParameters;
+        Base.properties = previousProperties;
         ProgressionTracker.reset();
+    }
+
+    private static void setTestProperty(final String key, final String value) {
+        try {
+            final TestProperties testProperties = new TestProperties();
+            final Field theField = TestProperties.class.getDeclaredField("the");
+            theField.setAccessible(true);
+            final Properties props = new Properties();
+            props.put(key, value);
+            theField.set(testProperties, props);
+            Base.properties = testProperties;
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
@@ -108,9 +129,8 @@ class ProgressionTrackerTest {
         final File customRunDir = tempDir.toFile();
         ProgressionTracker.setCustomOutputDir(customRunDir);
 
-        final java.util.Properties props = new java.util.Properties();
-        props.put(ExecutionParameter.ALL_LEAFS_COUNT.name(), "2");
-        Base.parameters = new Parameters(props);
+        setTestProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), "2");
+        Base.parameters = new Parameters(new Properties());
 
         final Ctrl rootCtrl = new Ctrl(null);
         final TestLeaf leaf1 = new TestLeaf("ScenarioAlpha", fr(1.0));

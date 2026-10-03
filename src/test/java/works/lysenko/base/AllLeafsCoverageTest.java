@@ -9,7 +9,6 @@ import works.lysenko.Base;
 import works.lysenko.tree.Ctrl;
 import works.lysenko.tree.base.Leaf;
 import works.lysenko.tree.base.Mono;
-
 import works.lysenko.tree.base.Node;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.test._Exec;
@@ -18,6 +17,8 @@ import works.lysenko.util.data.enums.ExecutionParameter;
 import works.lysenko.util.spec.PropEnum;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Properties;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,12 +29,15 @@ class AllLeafsCoverageTest {
 
     private Core previousCore;
     private Parameters previousParameters;
+    private TestProperties previousProperties;
 
     @BeforeEach
     void setUp() throws Exception {
         previousCore = Base.core;
         previousParameters = Base.parameters;
+        previousProperties = Base.properties;
         Base.parameters = null;
+        Base.properties = null;
         final Field f = Unsafe.class.getDeclaredField("theUnsafe");
         f.setAccessible(true);
         final Unsafe unsafe = (Unsafe) f.get(null);
@@ -49,6 +53,74 @@ class AllLeafsCoverageTest {
     void tearDown() {
         Base.core = previousCore;
         Base.parameters = previousParameters;
+        Base.properties = previousProperties;
+    }
+
+    private static void setTestProperty(final String key, final String value) {
+        try {
+            final TestProperties testProperties = new TestProperties();
+            final Field ccField = TestProperties.class.getDeclaredField("commonConfiguration");
+        ccField.setAccessible(true);
+        ccField.set(testProperties, new Properties());
+
+        final Field theField = TestProperties.class.getDeclaredField("the");
+            theField.setAccessible(true);
+            final Properties props = new Properties();
+            props.put(key, value);
+            theField.set(testProperties, props);
+            Base.properties = testProperties;
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    void testTestPropertiesValidationWithAllLeafsCount() throws Exception {
+        final TestProperties tp = new TestProperties();
+        final Field ccField = TestProperties.class.getDeclaredField("commonConfiguration");
+        ccField.setAccessible(true);
+        ccField.set(tp, new Properties());
+        Base.properties = tp;
+
+        // Default parameters (ALL_LEAFS_COUNT = 1)
+        final java.util.Properties props1 = new java.util.Properties();
+        props1.put(ExecutionParameter.ALL_LEAFS_COUNT.name(), "1");
+        Base.parameters = new Parameters(props1);
+
+        final java.util.Properties the1 = new java.util.Properties();
+        if (1 < Base.parameters.getAllLeafsCount()) {
+            the1.setProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(Base.parameters.getAllLeafsCount()));
+        } else {
+            the1.remove(PropEnum._ALL_LEAFS_COUNT.getPropertyName());
+        }
+
+        final Field theField = TestProperties.class.getDeclaredField("the");
+        theField.setAccessible(true);
+        theField.set(tp, the1);
+
+        final Method getDefaultsMethod = TestProperties.class.getDeclaredMethod("getDefaults");
+        getDefaultsMethod.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        final java.util.Map<String, String> defaults = (java.util.Map<String, String>) getDefaultsMethod.invoke(tp);
+
+        final works.lysenko.util.data.records.PropertiesMeta meta1 = new works.lysenko.util.data.records.PropertiesMeta(new java.util.HashMap<>(defaults), new java.util.ArrayList<>(0));
+        assertDoesNotThrow(() -> works.lysenko.base.properties.Renderer.outputAndValidate(tp.getSorted(), meta1));
+
+        // Custom count (ALL_LEAFS_COUNT = 3)
+        final java.util.Properties props3 = new java.util.Properties();
+        props3.put(ExecutionParameter.ALL_LEAFS_COUNT.name(), "3");
+        Base.parameters = new Parameters(props3);
+
+        final java.util.Properties the3 = new java.util.Properties();
+        if (1 < Base.parameters.getAllLeafsCount()) {
+            the3.setProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(Base.parameters.getAllLeafsCount()));
+        } else {
+            the3.remove(PropEnum._ALL_LEAFS_COUNT.getPropertyName());
+        }
+
+        theField.set(tp, the3);
+        final works.lysenko.util.data.records.PropertiesMeta meta3 = new works.lysenko.util.data.records.PropertiesMeta(new java.util.HashMap<>(defaults), new java.util.ArrayList<>(0));
+        assertDoesNotThrow(() -> works.lysenko.base.properties.Renderer.outputAndValidate(tp.getSorted(), meta3));
     }
 
     @Test
@@ -61,23 +133,20 @@ class AllLeafsCoverageTest {
 
     @Test
     void testParametersAllLeafsCount() {
-        final java.util.Properties propsDefault = new java.util.Properties();
-        final Parameters pDefault = new Parameters(propsDefault);
+        final Parameters pDefault = new Parameters(new Properties());
         assertEquals(1, pDefault.getAllLeafsCount());
         assertFalse(pDefault.isAllLeafs());
 
-        final java.util.Properties props3 = new java.util.Properties();
-        props3.put(ExecutionParameter.ALL_LEAFS_COUNT.name(), "3");
-        final Parameters p3 = new Parameters(props3);
+        setTestProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), "3");
+        final Parameters p3 = new Parameters(new Properties());
         assertEquals(3, p3.getAllLeafsCount());
         assertTrue(p3.isAllLeafs());
     }
 
     @Test
     void testMultiCountLeafExecutionTrackingInCore() throws Exception {
-        final java.util.Properties props = new java.util.Properties();
-        props.put(ExecutionParameter.ALL_LEAFS_COUNT.name(), "2");
-        Base.parameters = new Parameters(props);
+        setTestProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), "2");
+        Base.parameters = new Parameters(new Properties());
 
         final Ctrl rootCtrl = new Ctrl(null);
         final TestLeaf leaf1 = new TestLeaf(fr(1.0));
@@ -136,12 +205,12 @@ class AllLeafsCoverageTest {
 
     @Test
     void testParametersIsAllLeafs() {
-        final java.util.Properties propsFalse = new java.util.Properties();
+        final Properties propsFalse = new Properties();
         propsFalse.put(ExecutionParameter.ALL_LEAFS.name(), "false");
         final Parameters pFalse = new Parameters(propsFalse);
         assertFalse(pFalse.isAllLeafs());
 
-        final java.util.Properties propsTrue = new java.util.Properties();
+        final Properties propsTrue = new Properties();
         propsTrue.put(ExecutionParameter.ALL_LEAFS.name(), "true");
         final Parameters pTrue = new Parameters(propsTrue);
         assertTrue(pTrue.isAllLeafs());
