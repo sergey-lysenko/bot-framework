@@ -946,4 +946,60 @@ public record Base() {
 
         exec.waitForText(text);
     }
+
+    /**
+     * Types the specified content into the element identified by the locator.
+     *
+     * @param locator the identifier of the element to type into
+     * @param content the content to type
+     * @return true if successful
+     */
+    public static boolean typeInto(final String locator, final Object content) {
+
+        return exec.typeInto(locator, content);
+    }
+
+    /**
+     * Types the specified content into the element identified by the locator, optionally masking it.
+     *
+     * @param locator the identifier of the element to type into
+     * @param content the content to type
+     * @param secret  whether the content is secret
+     * @return true if successful
+     */
+    public static boolean typeInto(final String locator, final Object content, final boolean secret) {
+
+        return exec.typeInto(locator, content, secret);
+    }
+
+    /**
+     * Waits for the element identified by the locator to become visible.
+     *
+     * @param locator the identifier of the element to wait for
+     */
+    public static void waitForVisibilityOf(final String locator) {
+
+        exec.waitForVisibilityOf(locator);
+    }
+
+    /**
+     * Waits for the specified text to become visible.
+     *
+     * @param text the text to wait for
+     */
+    public static void waitForVisibilityOfText(final String text) {
+
+        exec.waitForVisibilityOfText(text);
+    }
+
+    /**
+     * Waits for the element identified by the locator to become invisible if it is present.
+     *
+     * @param locator the identifier of the element
+     * @return true if invisible or absent
+     */
+    public static boolean waitForInvisibilityOfOptional(final String locator) {
+
+        return exec.waitForInvisibilityOfOptional(locator);
+    }
 }
