@@ -430,6 +430,12 @@ public final class LogHtml {
 
         final String statsStrip = renderStatsStrip(testData, limboData, tMin, tAvg, tMax, tTotal, lMin, lAvg, lMax, lTotal);
         final String timelineBars = renderTimeline(configItem, preflightItem, testData, limboByPrevTest, postflightItem, tMax, lMax, maxSec);
+        final boolean isLineDefault = testData.size() > 50;
+        final String lineHidden = isLineDefault ? "" : " hidden";
+        final String barsHidden = isLineDefault ? " hidden" : "";
+        final String timelineToggle = testData.isEmpty() ? "" : renderTimelineToggle(isLineDefault);
+        final String timelineLineGraph = renderLineGraph(testData, limboByPrevTest, tAvg, tMax, lMax);
+        final String lgScriptData = renderLgScriptData(testData, limboByPrevTest, tMax, lMax);
         final String commonPath = renderCommonPath(commonPathSteps);
         final String pathsRows = renderPathsRows(testPaths);
         final String scenSubtitle = buildScenSubtitle(pathsPossibleStr, pathsChanceStr, pathsExecutedStr);
@@ -445,8 +451,13 @@ public final class LogHtml {
                 .replace("{{JSON_LINK}}", escapeHtml(basePrefix + ".run.json"))
                 .replace("{{RAW_LINK}}", escapeHtml(basePrefix + ".run.log"))
                 .replace("{{TELEM_LINK}}", escapeHtml(basePrefix + ".telemetry.log"))
+                .replace("{{TIMELINE_TOGGLE}}", timelineToggle)
                 .replace("{{STATS_STRIP}}", statsStrip)
+                .replace("{{LINE_HIDDEN}}", lineHidden)
+                .replace("{{BARS_HIDDEN}}", barsHidden)
+                .replace("{{TIMELINE_LINE_GRAPH}}", timelineLineGraph)
                 .replace("{{TIMELINE_BARS}}", timelineBars)
+                .replace("{{LG_SCRIPT_DATA}}", lgScriptData)
                 .replace("{{PATHS_COUNT}}", String.valueOf(testPaths.size()))
                 .replace("{{COMMON_PATH}}", commonPath)
                 .replace("{{PATHS_ROWS}}", pathsRows)
@@ -923,6 +934,244 @@ public final class LogHtml {
             openSpans--;
         }
         return linkifyArtifacts(sb.toString());
+    }
+
+    private static double getNiceCeil(final double max) {
+        if (max <= 0.0) return 1.0;
+        final double mag = Math.pow(10, Math.floor(Math.log10(max)));
+        final double norm = max / mag;
+        final double factor;
+        if (norm <= 1.0) factor = 1.0;
+        else if (norm <= 2.0) factor = 2.0;
+        else if (norm <= 2.5) factor = 2.5;
+        else if (norm <= 5.0) factor = 5.0;
+        else factor = 10.0;
+        return factor * mag;
+    }
+
+    private static String escapeJson(final String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "");
+    }
+
+    private static String renderTimelineToggle(final boolean isLineDefault) {
+        final String activeLine = isLineDefault ? " active" : "";
+        final String activeBars = isLineDefault ? "" : " active";
+        return s(
+                "<div class=\"chart-view-toggle\">\n",
+                "  <button type=\"button\" id=\"btnViewLine\" class=\"chart-toggle-btn", activeLine, "\" onclick=\"switchTimelineView('line')\">Line</button>\n",
+                "  <button type=\"button\" id=\"btnViewBars\" class=\"chart-toggle-btn", activeBars, "\" onclick=\"switchTimelineView('bars')\">Bars</button>\n",
+                "</div>\n"
+        );
+    }
+
+    private static String renderLgScriptData(
+            final List<TelemetryItem> testData,
+            final Map<Integer, TelemetryItem> limboByPrevTest,
+            final double tMax, final double lMax) {
+        if (testData.isEmpty()) return "";
+        final boolean hasLimbo = lMax > 0 && !limboByPrevTest.isEmpty();
+        final double tCeil = getNiceCeil(tMax > 0 ? tMax : 1.0);
+        final double lCeil = hasLimbo ? getNiceCeil(lMax) : 1.0;
+
+        final StringBuilder sb = new StringBuilder();
+        sb.append("  window.lgTCeil = ").append(String.format(Locale.ROOT, "%.2f", tCeil)).append(";\n");
+        sb.append("  window.lgLCeil = ").append(String.format(Locale.ROOT, "%.2f", lCeil)).append(";\n");
+        sb.append("  window.lgHasLimbo = ").append(hasLimbo).append(";\n");
+        sb.append("  window.lgData = [");
+        for (int i = 0; i < testData.size(); i++) {
+            if (i > 0) sb.append(",");
+            final TelemetryItem t = testData.get(i);
+            final TelemetryItem l = limboByPrevTest.get(t.testNum);
+            final long lMs = l != null ? Math.round(l.ms) : 0;
+            sb.append("{\"n\":").append(t.testNum)
+                    .append(",\"t\":\"").append(escapeJson(t.title)).append("\"")
+                    .append(String.format(Locale.ROOT, ",\"s\":%.3f", t.sec))
+                    .append(",\"ms\":").append(Math.round(t.ms))
+                    .append(",\"l\":").append(lMs)
+                    .append(",\"st\":\"").append(escapeJson(t.status)).append("\"}");
+        }
+        sb.append("];\n");
+        return sb.toString();
+    }
+
+    private static String renderLineGraph(
+            final List<TelemetryItem> testData,
+            final Map<Integer, TelemetryItem> limboByPrevTest,
+            final double tAvg, final double tMax, final double lMax) {
+        if (testData.isEmpty()) return "";
+
+        final int N = testData.size();
+        final double width = 1000.0;
+        final double height = 240.0;
+        final boolean hasLimbo = lMax > 0 && !limboByPrevTest.isEmpty();
+        final double marginLeft = 55.0;
+        final double marginRight = hasLimbo ? 55.0 : 25.0;
+        final double marginTop = 26.0;
+        final double marginBottom = 34.0;
+        final double plotW = width - marginLeft - marginRight;
+        final double plotH = height - marginTop - marginBottom;
+
+        final double tCeil = getNiceCeil(tMax > 0 ? tMax : 1.0);
+        final double lCeil = hasLimbo ? getNiceCeil(lMax) : 1.0;
+
+        final StringBuilder sb = new StringBuilder();
+
+        // Legend
+        sb.append("<div class=\"line-graph-legend\">\n");
+        sb.append("  <span class=\"lg-legend-item\"><span class=\"lg-line-sample test-line\"></span> Test Time (s)</span>\n");
+        if (hasLimbo) {
+            sb.append("  <span class=\"lg-legend-item lg-legend-limbo\"><span class=\"lg-line-sample limbo-line\"></span> Limbo (ms)</span>\n");
+        }
+        if (tAvg > 0) {
+            sb.append(String.format(Locale.ROOT,
+                    "  <span class=\"lg-legend-item\"><span class=\"lg-dash-sample\"></span> Avg: %.2fs</span>\n", tAvg));
+        }
+        sb.append("  <span class=\"lg-legend-item\"><span class=\"lg-dot-sample fail\"></span> Failed</span>\n");
+        sb.append("  <span class=\"lg-legend-item\"><span class=\"lg-dot-sample warn\"></span> Warning</span>\n");
+        sb.append("</div>\n");
+
+        sb.append("<div class=\"line-graph-svg-wrap\">\n");
+        sb.append("<svg class=\"timeline-line-svg\" viewBox=\"0 0 1000 240\" preserveAspectRatio=\"none\">\n");
+        sb.append("  <defs>\n");
+        sb.append("    <linearGradient id=\"testAreaGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n");
+        sb.append("      <stop offset=\"0%\" stop-color=\"#38bdf8\" stop-opacity=\"0.35\"/>\n");
+        sb.append("      <stop offset=\"100%\" stop-color=\"#38bdf8\" stop-opacity=\"0.02\"/>\n");
+        sb.append("    </linearGradient>\n");
+        sb.append("    <linearGradient id=\"limboAreaGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n");
+        sb.append("      <stop offset=\"0%\" stop-color=\"#a855f7\" stop-opacity=\"0.25\"/>\n");
+        sb.append("      <stop offset=\"100%\" stop-color=\"#a855f7\" stop-opacity=\"0.02\"/>\n");
+        sb.append("    </linearGradient>\n");
+        sb.append("  </defs>\n");
+
+        // Horizontal grid lines and Y-axis labels
+        for (int k = 0; k <= 4; k++) {
+            final double ratio = (double) k / 4.0;
+            final double y = (marginTop + plotH) - ratio * plotH;
+            final double tVal = ratio * tCeil;
+            sb.append(String.format(Locale.ROOT,
+                    "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.06)\" stroke-dasharray=\"3,3\" />\n",
+                    marginLeft, y, marginLeft + plotW, y));
+            sb.append(String.format(Locale.ROOT,
+                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"end\" fill=\"#64748b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%.1fs</text>\n",
+                    marginLeft - 8, y + 3.5, tVal));
+            if (hasLimbo) {
+                final double lVal = ratio * lCeil;
+                sb.append(String.format(Locale.ROOT,
+                        "  <text class=\"lg-limbo-series\" x=\"%.1f\" y=\"%.1f\" text-anchor=\"start\" fill=\"#c084fc\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%dms</text>\n",
+                        marginLeft + plotW + 8, y + 3.5, Math.round(lVal)));
+            }
+        }
+
+        // X-axis ticks and labels
+        final int tickCount = Math.min(8, N);
+        final int step = (tickCount > 1) ? Math.max(1, (N - 1) / (tickCount - 1)) : 1;
+        final Set<Integer> tickIndices = new LinkedHashSet<>();
+        for (int i = 0; i < N; i += step) {
+            tickIndices.add(i);
+        }
+        tickIndices.add(N - 1);
+
+        for (final int idx : tickIndices) {
+            final TelemetryItem item = testData.get(idx);
+            final double x = marginLeft + (N > 1 ? (double) idx / (N - 1) * plotW : plotW / 2.0);
+            sb.append(String.format(Locale.ROOT,
+                    "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.15)\" />\n",
+                    x, marginTop + plotH, x, marginTop + plotH + 4));
+            sb.append(String.format(Locale.ROOT,
+                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>\n",
+                    x, height - 10, item.label));
+        }
+
+        // Average reference line
+        if (tAvg > 0 && tAvg <= tCeil) {
+            final double yAvg = (marginTop + plotH) - (tAvg / tCeil) * plotH;
+            sb.append(String.format(Locale.ROOT,
+                    "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"#0284c7\" stroke-dasharray=\"5,4\" stroke-width=\"1.2\" opacity=\"0.75\" />\n",
+                    marginLeft, yAvg, marginLeft + plotW, yAvg));
+        }
+
+        // Build Paths
+        final StringBuilder testPath = new StringBuilder();
+        final StringBuilder testArea = new StringBuilder();
+        final StringBuilder limboPath = new StringBuilder();
+        final StringBuilder limboArea = new StringBuilder();
+        final StringBuilder markers = new StringBuilder();
+
+        for (int i = 0; i < N; i++) {
+            final TelemetryItem test = testData.get(i);
+            final double x = marginLeft + (N > 1 ? (double) i / (N - 1) * plotW : plotW / 2.0);
+            final double yT = (marginTop + plotH) - Math.min(plotH, (test.sec / tCeil) * plotH);
+
+            if (i == 0) {
+                testPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yT));
+                testArea.append(String.format(Locale.ROOT, "M %.2f %.2f L %.2f %.2f", x, marginTop + plotH, x, yT));
+            } else {
+                testPath.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yT));
+                testArea.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yT));
+            }
+
+            if (hasLimbo) {
+                final TelemetryItem limbo = limboByPrevTest.get(test.testNum);
+                final double lMs = limbo != null ? limbo.ms : 0.0;
+                final double yL = (marginTop + plotH) - Math.min(plotH, (lMs / lCeil) * plotH);
+                if (i == 0) {
+                    limboPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yL));
+                    limboArea.append(String.format(Locale.ROOT, "M %.2f %.2f L %.2f %.2f", x, marginTop + plotH, x, yL));
+                } else {
+                    limboPath.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yL));
+                    limboArea.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yL));
+                }
+                if (i == N - 1) {
+                    limboArea.append(String.format(Locale.ROOT, " L %.2f %.2f Z", x, marginTop + plotH));
+                }
+            }
+
+            if (i == N - 1) {
+                testArea.append(String.format(Locale.ROOT, " L %.2f %.2f Z", x, marginTop + plotH));
+            }
+
+            if ("failed".equals(test.status)) {
+                markers.append(String.format(Locale.ROOT,
+                        "  <circle cx=\"%.2f\" cy=\"%.2f\" r=\"5\" fill=\"#ef4444\" stroke=\"#ffffff\" stroke-width=\"1.5\" />\n",
+                        x, yT));
+                markers.append(String.format(Locale.ROOT,
+                        "  <circle cx=\"%.2f\" cy=\"%.2f\" r=\"8\" fill=\"none\" stroke=\"#ef4444\" stroke-width=\"1\" opacity=\"0.6\" />\n",
+                        x, yT));
+            } else if ("warning".equals(test.status)) {
+                markers.append(String.format(Locale.ROOT,
+                        "  <circle cx=\"%.2f\" cy=\"%.2f\" r=\"4\" fill=\"#f59e0b\" stroke=\"#ffffff\" stroke-width=\"1.5\" />\n",
+                        x, yT));
+            }
+        }
+
+        if (hasLimbo) {
+            sb.append("  <g class=\"lg-limbo-series\">\n");
+            sb.append("    <path d=\"").append(limboArea).append("\" fill=\"url(#limboAreaGrad)\" />\n");
+            sb.append("    <path d=\"").append(limboPath).append("\" fill=\"none\" stroke=\"#a855f7\" stroke-width=\"1.5\" opacity=\"0.7\" />\n");
+            sb.append("  </g>\n");
+        }
+        sb.append("  <path d=\"").append(testArea).append("\" fill=\"url(#testAreaGrad)\" />\n");
+        sb.append("  <path d=\"").append(testPath).append("\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"2\" />\n");
+        sb.append(markers);
+
+        // Crosshair & interactive elements
+        sb.append(String.format(Locale.ROOT,
+                "  <line id=\"lgCrosshair\" x1=\"0\" y1=\"%.1f\" x2=\"0\" y2=\"%.1f\" stroke=\"#94a3b8\" stroke-dasharray=\"2,2\" stroke-width=\"1\" opacity=\"0\" pointer-events=\"none\" />\n",
+                marginTop, marginTop + plotH));
+        sb.append("  <circle id=\"lgTestDot\" cx=\"0\" cy=\"0\" r=\"5\" fill=\"#38bdf8\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />\n");
+        if (hasLimbo) {
+            sb.append("  <circle id=\"lgLimboDot\" cx=\"0\" cy=\"0\" r=\"4\" fill=\"#a855f7\" stroke=\"#ffffff\" stroke-width=\"1.5\" opacity=\"0\" pointer-events=\"none\" />\n");
+        }
+        sb.append(String.format(Locale.ROOT,
+                "  <rect id=\"lgOverlay\" x=\"%.1f\" y=\"%.1f\" width=\"%.1f\" height=\"%.1f\" fill=\"transparent\" style=\"cursor: crosshair;\" onmousemove=\"onLgHover(event)\" onmouseleave=\"onLgLeave()\" onclick=\"onLgClick()\" />\n",
+                marginLeft, marginTop, plotW, plotH));
+
+        sb.append("</svg>\n");
+        sb.append("<div id=\"lgTooltip\" class=\"lg-tooltip hidden\"></div>\n");
+        sb.append("</div>\n");
+
+        return sb.toString();
     }
 
     private static String escapeHtml(final String s) {

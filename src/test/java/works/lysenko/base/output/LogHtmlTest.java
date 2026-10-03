@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -61,5 +62,40 @@ class LogHtmlTest {
         assertTrue(html.contains("37 paths were possible with current set of Scenarios"), "Should include paths possible string in HTML");
         assertTrue(html.contains("37 (100.0%) among these had a chance to be executed"), "Should include paths chance string in HTML");
         assertTrue(html.contains("35 (94.6%) among these were actually executed"), "Should include paths executed string in HTML");
+    }
+
+    @Test
+    void testLineGraphRenderedForMoreThan50Cycles(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("many_cycles.run.log");
+        final Path htmlPath = tempDir.resolve("many_cycles.run.log.html");
+
+        final List<String> logLines = new ArrayList<>();
+        logLines.add("Starting Bot core ...");
+        logLines.add("# Applied test configuration");
+
+        for (int i = 1; i <= 60; i++) {
+            final double t0 = (i - 1) * 2.0;
+            final double t1 = t0 + 1.5;
+            final double tLimboEnd = t0 + 2.0;
+            logLines.add(String.format("[%3d][%d][%.3f][10] Executing Scenario Test%d", i, (i * 4), t0, i));
+            logLines.add(String.format("[%3d][%d][%.3f][5] • Closing test %d ...", i, (i * 4 + 1), t1, i));
+            logLines.add(String.format("[   ][%d][%.3f][2] • Test time 1 s 500 ms", (i * 4 + 2), t1 + 0.05));
+            logLines.add(String.format("[   ][%d][%.3f][1] Persisting Test history", (i * 4 + 3), tLimboEnd));
+        }
+        logLines.add("[   ][300][122.000][1] 60 tests of LargeSuite done in 2 m 2 s");
+
+        Files.write(logPath, logLines);
+        LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+
+        assertTrue(Files.exists(htmlPath), "HTML report should be generated");
+        final String html = Files.readString(htmlPath);
+
+        // When > 50 tests, line graph is the default active view
+        assertTrue(html.contains("id=\"timelineLineContainer\" class=\"timeline-view-line\""), "Line graph container should be active (not hidden)");
+        assertTrue(html.contains("id=\"timelineBarsContainer\" class=\"chart-scroll-wrap timeline-view-bars hidden\""), "Bars container should be hidden by default");
+        assertTrue(html.contains("id=\"btnViewLine\" class=\"chart-toggle-btn active\""), "Line toggle button should be active");
+        assertTrue(html.contains("class=\"timeline-line-svg\""), "SVG line graph should be rendered");
+        assertTrue(html.contains("window.lgData = ["), "Interactive line graph script data should be embedded");
+        assertTrue(html.contains("Test Time (s)"), "Legend should contain Test Time");
     }
 }
