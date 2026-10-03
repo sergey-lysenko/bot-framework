@@ -231,7 +231,7 @@ public abstract class Exceptional extends Core {
      */
     private void failBecauseTimeout(final String detail) {
 
-        logEvent(S0, b(c(TIMEOUT_EXCEPTION), s(_COLON_), detail));
+        logEvent(S0, b(TIMEOUT_EXCEPTION, s(_COLON_), detail));
     }
 
     private void failBecauseTimeout() {
