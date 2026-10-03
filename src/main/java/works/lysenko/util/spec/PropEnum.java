@@ -46,6 +46,7 @@ public enum PropEnum implements _PropEnum {
     _ACTION_RETRIES(Integer.class, _3_),
     _ADEBUG(Boolean.class, FALSE),
     _ALL_LEAFS(Boolean.class, FALSE),
+    _ALL_LEAFS_COUNT(Integer.class, _1_),
     _ALLOWED_MARGIN_SEVERITY_REDUCTION(Integer.class, _2_),
     _ALLOWED_OTHER_SEVERITY_REDUCTION(Integer.class, _2_),
     _APP(String.class, EMPTY),

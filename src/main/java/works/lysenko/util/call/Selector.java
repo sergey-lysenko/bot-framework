@@ -26,6 +26,7 @@ import java.util.concurrent.Callable;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static works.lysenko.Base.core;
+import static works.lysenko.Base.parameters;
 import static works.lysenko.Base.isDebug;
 import static works.lysenko.Base.isTrace;
 import static works.lysenko.util.call.selector.Utils.logEvent;
@@ -132,6 +133,8 @@ public final class Selector implements Callable<_Scenario> {
     @SuppressWarnings("ObjectAllocationInLoop")
     List<KeyValue<_Scenario, Fraction>> getExecutionCandidates() {
 
+        final int target = (isNotNull(parameters))
+                ? parameters.getAllLeafsCount() : 1;
         final List<KeyValue<_Scenario, Fraction>> candidates = new LinkedList<>();
         for (final KeyValue<_Scenario, Fraction> pair : ctrl.getWeightedList()) {
             final _Scenario scenario = pair.k();
@@ -141,9 +144,12 @@ public final class Selector implements Callable<_Scenario> {
                 if (Include.downstream) weight = fr(weight.doubleValue() + downstreamWeight(scenario).doubleValue());
                 if (isNotNull(weight) && 0.0 < weight.doubleValue()
                         && isNotNull(core) && isNotNull(core.getResults())
-                        && hasUnexecutedState(scenario)
-                        && isNotNull(Scenario.completionWeight))
-                    weight = weight.add(Scenario.completionWeight);
+                        && isNotNull(Scenario.completionWeight)) {
+                    final double ratio = getUncompletedRatio(scenario, target);
+                    if (0.0 < ratio) {
+                        weight = weight.add(fr(Scenario.completionWeight.doubleValue() * ratio));
+                    }
+                }
                 final KeyValue<_Scenario, Fraction> newPair = kv(scenario, weight);
                 candidates.add(newPair);
             } else Utils.logScenarioNotExecutable(scenario);
@@ -152,42 +158,60 @@ public final class Selector implements Callable<_Scenario> {
     }
 
     /**
+     * Calculates the uncompleted ratio (deficit) for a scenario towards reaching the target execution count.
+     * Propagates uncompleted ratio up the tree so that ancestor nodes of uncompleted leafs
+     * receive proportional completion weight boost.
+     *
+     * @param scenario the scenario to check
+     * @param target the target execution count
+     * @return ratio in range [0.0, 1.0] representing the deficit towards target executions
+     */
+    static double getUncompletedRatio(final _Scenario scenario, final int target) {
+
+        if (isNull(core) || isNull(core.getResults()) || target <= 0) return 0.0;
+        final int execs = core.getResults().getExecutions(scenario);
+        double ratio = (execs < target) ? ((double) (target - execs) / target) : 0.0;
+        if (scenario instanceof _Node node) {
+            final double descRatio = getMaxDescendantUncompletedRatio(node, target, new HashSet<>());
+            ratio = Math.max(ratio, descRatio);
+        }
+        return ratio;
+    }
+
+    private static double getMaxDescendantUncompletedRatio(final _Node node, final int target, final Set<Object> visited) {
+
+        if (isNull(node) || isNull(node.getPool()) || !visited.add(node)) return 0.0;
+        final List<KeyValue<_Scenario, Fraction>> pairs = node.getPool().getPairList();
+        if (isNull(pairs)) return 0.0;
+        double max = 0.0;
+        for (final KeyValue<_Scenario, Fraction> pair : pairs) {
+            final _Scenario child = pair.k();
+            if (isNotNull(child) && child.isExecutable() && child.calculateCombinations(true) > 0) {
+                final int execs = core.getResults().getExecutions(child);
+                double childRatio = (execs < target) ? ((double) (target - execs) / target) : 0.0;
+                if (child instanceof _Node childNode) {
+                    final double descRatio = getMaxDescendantUncompletedRatio(childNode, target, visited);
+                    childRatio = Math.max(childRatio, descRatio);
+                }
+                if (childRatio > max) {
+                    max = childRatio;
+                    if (max >= 1.0) return 1.0;
+                }
+            }
+        }
+        return max;
+    }
+
+    /**
      * Checks if a scenario or any of its executable descendants are unexecuted.
-     * Propagates un-executed state up the tree so that ancestor nodes of unexecuted leafs
-     * receive the completion weight rebalancing boost.
+     * Retained for backward compatibility.
      *
      * @param scenario the scenario to check
      * @return true if the scenario itself has zero executions or has any unexecuted executable descendants
      */
     static boolean hasUnexecutedState(final _Scenario scenario) {
 
-        if (isNull(core) || isNull(core.getResults())) return false;
-        if (0 == core.getResults().getExecutions(scenario)) return true;
-        if (scenario instanceof _Node node) {
-            return hasUnexecutedDescendants(node, new HashSet<>());
-        }
-        return false;
-    }
-
-    private static boolean hasUnexecutedDescendants(final _Node node, final Set<Object> visited) {
-
-        if (isNull(node) || isNull(node.getPool()) || !visited.add(node)) return false;
-        final List<KeyValue<_Scenario, Fraction>> pairs = node.getPool().getPairList();
-        if (isNull(pairs)) return false;
-        for (final KeyValue<_Scenario, Fraction> pair : pairs) {
-            final _Scenario child = pair.k();
-            if (isNotNull(child) && child.isExecutable() && child.calculateCombinations(true) > 0) {
-                if (0 == core.getResults().getExecutions(child)) {
-                    return true;
-                }
-                if (child instanceof _Node childNode) {
-                    if (hasUnexecutedDescendants(childNode, visited)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+        return getUncompletedRatio(scenario, 1) > 0.0;
     }
 
     @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "NestedConditionalExpression"})

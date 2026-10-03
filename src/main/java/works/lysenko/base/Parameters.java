@@ -52,7 +52,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
      *
      * @param list the list of parameters, formatted as "params:types". If null, no parameters are loaded.
      */
-    Parameters(final Properties properties) {
+    public Parameters(final Properties properties) {
 
         if (isNotNull(properties)) {
             putAll(properties);
@@ -68,6 +68,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         readDeviceOrDomain();
         read(HEADLESS);
         read(ALL_LEAFS);
+        read(ALL_LEAFS_COUNT);
         readAdditionalParameters(list);
         showOptionalGui();
     }
@@ -110,7 +111,25 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         if (isNotNull(val) && !val.isEmpty()) {
             return Boolean.parseBoolean(val);
         }
-        return Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._ALL_LEAFS.get());
+        if (Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._ALL_LEAFS.get())) {
+            return true;
+        }
+        return getAllLeafsCount() > 1;
+    }
+
+    @Override
+    public int getAllLeafsCount() {
+
+        final String val = getValue(ALL_LEAFS_COUNT);
+        if (isNotNull(val) && !val.isEmpty()) {
+            try {
+                final int count = Integer.parseInt(val);
+                return Math.max(1, count);
+            } catch (final NumberFormatException ignored) {
+            }
+        }
+        final Integer prop = works.lysenko.util.spec.PropEnum._ALL_LEAFS_COUNT.get();
+        return isNotNull(prop) ? Math.max(1, prop) : 1;
     }
 
     @Override

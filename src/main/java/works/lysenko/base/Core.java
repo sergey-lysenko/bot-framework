@@ -154,8 +154,9 @@ public final class Core extends Root implements _Core, _Tests {
 
         final Set<_Scenario> leafs = getAccessibleLeafs();
         if (leafs.isEmpty()) return true;
+        final int target = (isNotNull(parameters)) ? parameters.getAllLeafsCount() : 1;
         for (final _Scenario leaf : leafs) {
-            if (0 == getResults().getExecutions(leaf))
+            if (getResults().getExecutions(leaf) < target)
                 return false;
         }
         return true;
@@ -166,8 +167,9 @@ public final class Core extends Root implements _Core, _Tests {
 
         final Set<_Scenario> leafs = getAccessibleLeafs();
         int count = 0;
+        final int target = (isNotNull(parameters)) ? parameters.getAllLeafsCount() : 1;
         for (final _Scenario leaf : leafs) {
-            if (0 < getResults().getExecutions(leaf))
+            if (target <= getResults().getExecutions(leaf))
                 count++;
         }
         return count;

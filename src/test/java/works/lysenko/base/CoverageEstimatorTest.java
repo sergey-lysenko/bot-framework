@@ -16,6 +16,19 @@ import static works.lysenko.util.func.type.fractions.Factory.fr;
 
 class CoverageEstimatorTest {
 
+    private Parameters previousParameters;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        previousParameters = works.lysenko.Base.parameters;
+        works.lysenko.Base.parameters = null;
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        works.lysenko.Base.parameters = previousParameters;
+    }
+
     @Test
     void testSingleLeaf() {
         final Ctrl rootCtrl = new Ctrl(null);

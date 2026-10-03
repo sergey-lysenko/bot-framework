@@ -42,6 +42,13 @@ public interface _TestParameters {
     boolean isAllLeafs();
 
     /**
+     * Retrieves the required number of executions per leaf in all leafs mode.
+     *
+     * @return the number of required executions per leaf
+     */
+    int getAllLeafsCount();
+
+    /**
      * Checks if headless mode is enabled.
      *
      * @return true if headless, false otherwise

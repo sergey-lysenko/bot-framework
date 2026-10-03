@@ -1,6 +1,7 @@
 package works.lysenko.base;
 
 import works.lysenko.base.test.*;
+import works.lysenko.base.output.ProgressionTracker;
 import works.lysenko.tree.Ctrl;
 import works.lysenko.util.apis.core._Status;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
@@ -67,6 +68,7 @@ public class Test implements _Test {
     public final void complete() {
 
         try {
+            ProgressionTracker.onComplete();
             Stat.reports();
             logEmptyLine();
             log(Level.none, bb(TEST_SESSION_COMPLETED), false);

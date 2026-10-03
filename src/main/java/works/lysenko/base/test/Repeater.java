@@ -1,6 +1,7 @@
 package works.lysenko.base.test;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
+import works.lysenko.base.output.ProgressionTracker;
 import org.apache.commons.lang3.StringUtils;
 import works.lysenko.base.core.Routines;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
@@ -135,10 +136,12 @@ public class Repeater implements _Repeater {
     public final void close() {
 
         if (isNull(startedAt)) return;
-        final String test = sn(StringUtils.EMPTY, getCurrent());
+        final Integer testNum = getCurrent();
+        final String test = sn(StringUtils.EMPTY, testNum);
         close(test);
         time();
         history();
+        ProgressionTracker.onLimbo(testNum);
         timeSafeguard();
         stopIfFailingEvents();
         done = core.getStopFlag();

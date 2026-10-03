@@ -24,7 +24,7 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 @SuppressWarnings({"unused", "EnumClass", "MissingJavadoc", "CallToSuspiciousStringMethod"})
 public enum ExecutionParameter implements _Default {
 
-    ALL_LEAFS(Boolean.FALSE.toString()), DEVICE(EMPTY), DOMAIN(EMPTY), HEADLESS(Boolean.FALSE.toString()), PLATFORM(Platform.CHROME.getString()), POOL(EMPTY), TEST(EMPTY);
+    ALL_LEAFS(Boolean.FALSE.toString()), ALL_LEAFS_COUNT("1"), DEVICE(EMPTY), DOMAIN(EMPTY), HEADLESS(Boolean.FALSE.toString()), PLATFORM(Platform.CHROME.getString()), POOL(EMPTY), TEST(EMPTY);
 
     private final String def;
 

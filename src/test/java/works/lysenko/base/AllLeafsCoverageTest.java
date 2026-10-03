@@ -33,6 +33,7 @@ class AllLeafsCoverageTest {
     void setUp() throws Exception {
         previousCore = Base.core;
         previousParameters = Base.parameters;
+        Base.parameters = null;
         final Field f = Unsafe.class.getDeclaredField("theUnsafe");
         f.setAccessible(true);
         final Unsafe unsafe = (Unsafe) f.get(null);
@@ -48,6 +49,78 @@ class AllLeafsCoverageTest {
     void tearDown() {
         Base.core = previousCore;
         Base.parameters = previousParameters;
+    }
+
+    @Test
+    void testPropEnumAllLeafsCount() {
+        assertEquals(".all.leafs.count", PropEnum._ALL_LEAFS_COUNT.getPropertyName());
+        assertEquals(Integer.class, PropEnum._ALL_LEAFS_COUNT.type());
+        assertEquals("1", PropEnum._ALL_LEAFS_COUNT.defaultValue());
+        assertEquals(1, (int) PropEnum._ALL_LEAFS_COUNT.get());
+    }
+
+    @Test
+    void testParametersAllLeafsCount() {
+        final java.util.Properties propsDefault = new java.util.Properties();
+        final Parameters pDefault = new Parameters(propsDefault);
+        assertEquals(1, pDefault.getAllLeafsCount());
+        assertFalse(pDefault.isAllLeafs());
+
+        final java.util.Properties props3 = new java.util.Properties();
+        props3.put(ExecutionParameter.ALL_LEAFS_COUNT.name(), "3");
+        final Parameters p3 = new Parameters(props3);
+        assertEquals(3, p3.getAllLeafsCount());
+        assertTrue(p3.isAllLeafs());
+    }
+
+    @Test
+    void testMultiCountLeafExecutionTrackingInCore() throws Exception {
+        final java.util.Properties props = new java.util.Properties();
+        props.put(ExecutionParameter.ALL_LEAFS_COUNT.name(), "2");
+        Base.parameters = new Parameters(props);
+
+        final Ctrl rootCtrl = new Ctrl(null);
+        final TestLeaf leaf1 = new TestLeaf(fr(1.0));
+        final TestLeaf leaf2 = new TestLeaf(fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(leaf1, fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(leaf2, fr(1.0));
+
+        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
+        f.setAccessible(true);
+        final Unsafe unsafe = (Unsafe) f.get(null);
+        final _Test mockTest = (_Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
+        final _Exec mockExec = (_Exec) unsafe.allocateInstance(works.lysenko.base.test.Exec.class);
+
+        final Field ctrlField = works.lysenko.base.test.Exec.class.getDeclaredField("ctrl");
+        ctrlField.setAccessible(true);
+        ctrlField.set(mockExec, rootCtrl);
+
+        final Field execField = works.lysenko.base.Test.class.getDeclaredField("executor");
+        execField.setAccessible(true);
+        execField.set(mockTest, mockExec);
+
+        final Field testField = Core.class.getDeclaredField("test");
+        testField.setAccessible(true);
+        testField.set(Base.core, mockTest);
+
+        assertEquals(0, Base.core.getExecutedLeafsCount());
+        assertFalse(Base.core.areAllLeafsExecuted());
+
+        Base.core.getResults().count(leaf1);
+        assertEquals(0, Base.core.getExecutedLeafsCount());
+        assertFalse(Base.core.areAllLeafsExecuted());
+
+        Base.core.getResults().count(leaf1);
+        assertEquals(1, Base.core.getExecutedLeafsCount());
+        assertFalse(Base.core.areAllLeafsExecuted());
+
+        Base.core.getResults().count(leaf2);
+        assertEquals(1, Base.core.getExecutedLeafsCount());
+        assertFalse(Base.core.areAllLeafsExecuted());
+
+        Base.core.getResults().count(leaf2);
+        assertEquals(2, Base.core.getExecutedLeafsCount());
+        assertTrue(Base.core.areAllLeafsExecuted());
     }
 
     @Test

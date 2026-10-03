@@ -9,10 +9,13 @@ import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.records.KeyValue;
 import works.lysenko.util.prop.tree.Include;
 import works.lysenko.util.prop.tree.Scenario;
+import works.lysenko.util.spec.PropEnum;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -30,17 +33,33 @@ public record CoverageEstimator() {
     private static final int MAX_CYCLES_PER_TRIAL = 10000;
 
     /**
-     * Estimates average cycles required to visit all accessible leafs at least once.
+     * Estimates average cycles required to visit all accessible leafs the required amount of times.
      *
      * @param rootCtrl root controller
      * @return estimated average number of cycles
      */
     public static int estimateAverageCycles(final _Ctrl rootCtrl) {
 
+        final int target = (isNotNull(works.lysenko.Base.parameters))
+                ? works.lysenko.Base.parameters.getAllLeafsCount()
+                : (isNotNull(PropEnum._ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._ALL_LEAFS_COUNT.get()) : 1);
+        return estimateAverageCycles(rootCtrl, target);
+    }
+
+    /**
+     * Estimates average cycles required to visit all accessible leafs at least target times.
+     *
+     * @param rootCtrl root controller
+     * @param target required executions per leaf
+     * @return estimated average number of cycles
+     */
+    public static int estimateAverageCycles(final _Ctrl rootCtrl, final int target) {
+
         if (isNull(rootCtrl)) return 0;
         final Set<_Scenario> accessibleLeafs = rootCtrl.getAccessibleLeafs();
         if (accessibleLeafs.isEmpty()) return 0;
-        if (1 == accessibleLeafs.size()) return 1;
+        final int targetExecutions = Math.max(1, target);
+        if (1 == accessibleLeafs.size()) return targetExecutions;
 
         final double completionBoost = isNotNull(Scenario.completionWeight)
                 ? Scenario.completionWeight.doubleValue() : 0.0;
@@ -50,31 +69,35 @@ public record CoverageEstimator() {
         int successfulTrials = 0;
 
         for (int trial = 0; trial < TRIALS; trial++) {
-            final Set<_Scenario> executedInTrial = new HashSet<>();
-            final Set<_Scenario> coveredLeafs = new HashSet<>();
+            final Map<_Scenario, Integer> executions = new HashMap<>();
+            int coveredLeafsCount = 0;
             int cycles = 0;
 
-            while (coveredLeafs.size() < accessibleLeafs.size() && cycles < MAX_CYCLES_PER_TRIAL) {
+            while (coveredLeafsCount < accessibleLeafs.size() && cycles < MAX_CYCLES_PER_TRIAL) {
                 cycles++;
                 final List<_Scenario> path = new ArrayList<>();
-                final _Scenario selectedLeaf = simulateCycle(rootCtrl.getPool(), executedInTrial, completionBoost, random, path);
+                final _Scenario selectedLeaf = simulateCycle(rootCtrl.getPool(), executions, targetExecutions, completionBoost, random, path);
                 if (isNull(selectedLeaf)) break;
 
-                executedInTrial.addAll(path);
-                executedInTrial.add(selectedLeaf);
-                if (accessibleLeafs.contains(selectedLeaf)) {
-                    coveredLeafs.add(selectedLeaf);
+                for (final _Scenario p : path) {
+                    executions.put(p, executions.getOrDefault(p, 0) + 1);
+                }
+                final int leafExecs = executions.getOrDefault(selectedLeaf, 0) + 1;
+                executions.put(selectedLeaf, leafExecs);
+
+                if (leafExecs == targetExecutions && accessibleLeafs.contains(selectedLeaf)) {
+                    coveredLeafsCount++;
                 }
             }
 
-            if (coveredLeafs.size() == accessibleLeafs.size()) {
+            if (coveredLeafsCount == accessibleLeafs.size()) {
                 totalCycles += cycles;
                 successfulTrials++;
             }
         }
 
         if (0 == successfulTrials) {
-            return accessibleLeafs.size();
+            return accessibleLeafs.size() * targetExecutions;
         }
 
         return (int) Math.round((double) totalCycles / successfulTrials);
@@ -82,19 +105,20 @@ public record CoverageEstimator() {
 
     private static _Scenario simulateCycle(
             final _Pool pool,
-            final Set<_Scenario> executedInTrial,
+            final Map<_Scenario, Integer> executions,
+            final int target,
             final double completionBoost,
             final Random random,
             final List<_Scenario> path) {
 
-        final _Scenario chosen = selectCandidate(pool, executedInTrial, completionBoost, random);
+        final _Scenario chosen = selectCandidate(pool, executions, target, completionBoost, random);
         if (isNull(chosen)) return null;
 
         if (chosen instanceof _Node node) {
             path.add(chosen);
             final _Pool childPool = node.getPool();
             if (isNotNull(childPool)) {
-                return simulateCycle(childPool, executedInTrial, completionBoost, random, path);
+                return simulateCycle(childPool, executions, target, completionBoost, random, path);
             }
             return chosen;
         }
@@ -104,7 +128,8 @@ public record CoverageEstimator() {
 
     private static _Scenario selectCandidate(
             final _Pool pool,
-            final Set<_Scenario> executedInTrial,
+            final Map<_Scenario, Integer> executions,
+            final int target,
             final double completionBoost,
             final Random random) {
 
@@ -120,7 +145,7 @@ public record CoverageEstimator() {
             final _Scenario scenario = pair.k();
             if (isNull(scenario)) continue;
             if (!scenario.isExecutable() || scenario.calculateCombinations(true) <= 0) continue;
-            if (scenario instanceof Mono && executedInTrial.contains(scenario)) continue;
+            if (scenario instanceof Mono && executions.getOrDefault(scenario, 0) > 0) continue;
 
             double weight = isNotNull(pair.v()) ? pair.v().doubleValue() : 0.0;
             if (Include.upstream) {
@@ -131,8 +156,11 @@ public record CoverageEstimator() {
                 final Fraction down = downstreamWeight(scenario);
                 if (isNotNull(down)) weight += down.doubleValue();
             }
-            if (weight > 0.0 && completionBoost > 0.0 && hasUnexecutedState(scenario, executedInTrial)) {
-                weight += completionBoost;
+            if (weight > 0.0 && completionBoost > 0.0) {
+                final double ratio = getUncompletedRatio(scenario, executions, target);
+                if (ratio > 0.0) {
+                    weight += completionBoost * ratio;
+                }
             }
 
             if (weight > 0.0) {
@@ -153,6 +181,49 @@ public record CoverageEstimator() {
             }
         }
         return candidates.get(candidates.size() - 1);
+    }
+
+    static double getUncompletedRatio(
+            final _Scenario scenario,
+            final Map<_Scenario, Integer> executions,
+            final int target) {
+
+        final int execs = executions.getOrDefault(scenario, 0);
+        double ratio = (execs < target) ? ((double) (target - execs) / target) : 0.0;
+        if (scenario instanceof _Node node) {
+            final double descRatio = getMaxDescendantRatio(node, executions, target, new HashSet<>());
+            ratio = Math.max(ratio, descRatio);
+        }
+        return ratio;
+    }
+
+    private static double getMaxDescendantRatio(
+            final _Node node,
+            final Map<_Scenario, Integer> executions,
+            final int target,
+            final Set<Object> visited) {
+
+        if (isNull(node) || isNull(node.getPool()) || !visited.add(node)) return 0.0;
+        final List<KeyValue<_Scenario, Fraction>> pairs = node.getPool().getPairList();
+        if (isNull(pairs)) return 0.0;
+
+        double max = 0.0;
+        for (final KeyValue<_Scenario, Fraction> pair : pairs) {
+            final _Scenario child = pair.k();
+            if (isNotNull(child) && child.isExecutable() && child.calculateCombinations(true) > 0) {
+                final int execs = executions.getOrDefault(child, 0);
+                double childRatio = (execs < target) ? ((double) (target - execs) / target) : 0.0;
+                if (child instanceof _Node childNode) {
+                    final double descRatio = getMaxDescendantRatio(childNode, executions, target, visited);
+                    childRatio = Math.max(childRatio, descRatio);
+                }
+                if (childRatio > max) {
+                    max = childRatio;
+                    if (max >= 1.0) return 1.0;
+                }
+            }
+        }
+        return max;
     }
 
     static boolean hasUnexecutedState(final _Scenario scenario, final Set<_Scenario> executedInTrial) {

@@ -388,6 +388,10 @@ public final class LogHtml {
 
         final String runLogName = (null != logFile) ? logFile.getName() : "";
         final String basePrefix = runLogName.replace(".run.log", "");
+        final File gifFile = (null != logFile.getParentFile()) ? new File(logFile.getParentFile(), basePrefix + ".progression.gif") : null;
+        final String progressionLink = (null != gifFile && gifFile.exists())
+                ? String.format("<a class=\"btn-link\" href=\"%s\" target=\"_blank\" title=\"Scenario Coverage Progression Animation (10 fps)\"><button type=\"button\" style=\"border-color: #38bdf8; color: #38bdf8;\">Progression</button></a>", escapeHtml(gifFile.getName()))
+                : "";
 
         String timeStr = "";
         try {
@@ -447,6 +451,7 @@ public final class LogHtml {
         return loadTemplate()
                 .replace("{{TIMESTAMP_BLOCK}}", timestampBlock)
                 .replace("{{RESULT_PLAQUE}}", resultPlaque)
+                .replace("{{PROGRESSION_LINK}}", progressionLink)
                 .replace("{{TREE_LINK}}", escapeHtml(basePrefix + ".tree.html"))
                 .replace("{{JSON_LINK}}", escapeHtml(basePrefix + ".run.json"))
                 .replace("{{RAW_LINK}}", escapeHtml(basePrefix + ".run.log"))

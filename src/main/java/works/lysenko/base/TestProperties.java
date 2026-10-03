@@ -237,6 +237,7 @@ public class TestProperties implements _TestProperties {
             } else {
                 the.remove(PropEnum._ALL_LEAFS.getPropertyName());
             }
+            the.setProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(parameters.getAllLeafsCount()));
         }
         logTestConfiguration(common, result.debug());
     }

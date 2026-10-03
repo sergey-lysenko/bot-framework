@@ -6,6 +6,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import sun.misc.Unsafe;
 import works.lysenko.Base;
+import works.lysenko.base.Parameters;
+import works.lysenko.util.data.enums.ExecutionParameter;
 import works.lysenko.base.Core;
 import works.lysenko.base.Results;
 import works.lysenko.tree.Ctrl;
@@ -26,10 +28,13 @@ import static works.lysenko.util.func.type.fractions.Factory.fr;
 class CompletionWeightTest {
 
     private Core previousCore;
+    private Parameters previousParameters;
 
     @BeforeEach
     void setUp() throws Exception {
         previousCore = Base.core;
+        previousParameters = Base.parameters;
+        Base.parameters = null;
         final Field f = Unsafe.class.getDeclaredField("theUnsafe");
         f.setAccessible(true);
         final Unsafe unsafe = (Unsafe) f.get(null);
@@ -41,10 +46,13 @@ class CompletionWeightTest {
         Base.core = core;
     }
 
-    @AfterEach
+    @org.junit.jupiter.api.AfterEach
     void tearDown() {
         Base.core = previousCore;
+        Base.parameters = previousParameters;
     }
+
+
 
     @Test
     void testPropertyDefaults() {
@@ -65,6 +73,33 @@ class CompletionWeightTest {
         assertEquals(1, results.getExecutions(leaf));
         results.count(leaf);
         assertEquals(2, results.getExecutions(leaf));
+    }
+
+    @Test
+    void testProportionalWeightReductionWithAllLeafsCount() {
+        final java.util.Properties props = new java.util.Properties();
+        props.put(ExecutionParameter.ALL_LEAFS_COUNT.name(), "2");
+        Base.parameters = new Parameters(props);
+
+        final Results results = (Results) Base.core.getResults();
+        final TestLeaf leaf = new TestLeaf(fr(1.0));
+
+        final Ctrl ctrl = new Ctrl(null);
+        ctrl.getPool().appendScenarioWithWeight(leaf, fr(1.0));
+
+        // When 0 executions (target 2): deficit = 2/2 = 1.0 -> weight = 1.0 + 4.5 = 5.5
+        Selector selector = new Selector(ctrl, 1);
+        assertEquals(fr(5.5), selector.getExecutionCandidates().get(0).v());
+
+        // When 1 execution (target 2): deficit = 1/2 = 0.5 -> weight = 1.0 + (4.5 * 0.5) = 1.0 + 2.25 = 3.25
+        results.count(leaf);
+        selector = new Selector(ctrl, 1);
+        assertEquals(fr(3.25), selector.getExecutionCandidates().get(0).v());
+
+        // When 2 executions (target 2): deficit = 0/2 = 0.0 -> weight = 1.0 (no boost)
+        results.count(leaf);
+        selector = new Selector(ctrl, 1);
+        assertEquals(fr(1.0), selector.getExecutionCandidates().get(0).v());
     }
 
     @Test
