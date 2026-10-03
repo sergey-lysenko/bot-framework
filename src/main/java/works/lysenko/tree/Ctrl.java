@@ -56,6 +56,7 @@ public class Ctrl extends Root implements _Ctrl {
     private final _Pool pool;
     private final _Scenario parent;
     private final int attempts;
+    private Integer recommendedCycles = null;
 
     /**
      * Construct new instance
@@ -148,6 +149,15 @@ public class Ctrl extends Root implements _Ctrl {
     public final List<KeyValue<_Scenario, Fraction>> getWeightedList() {
 
         return pool.getPairList();
+    }
+
+    @Override
+    public final int getRecommendedCycles() {
+
+        if (isNull(recommendedCycles)) {
+            recommendedCycles = CoverageEstimator.estimateAverageCycles(this);
+        }
+        return recommendedCycles;
     }
 
     @Override

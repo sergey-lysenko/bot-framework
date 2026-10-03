@@ -56,10 +56,11 @@ public record Renderer() {
     private static void renderRecommendedCycles(final int maxRecordLength) {
 
         if (isNotNull(Base.core)) {
-            final int recommended = Base.core.getActiveScenarioPaths();
-            if (0 < recommended) {
+            final int leafs = Base.core.getActiveScenarioPaths();
+            final int recommended = Base.core.getRecommendedCycles();
+            if (0 < leafs && 0 < recommended) {
                 System.out.println(s(_DASH_).repeat(maxRecordLength));
-                System.out.println(b(gray(_NUMBR_), "Recommended cycles to cover all", s1(recommended, "leaf") + ":", yb(s(recommended))));
+                System.out.println(b(gray(_NUMBR_), "Recommended cycles to cover all", s1(leafs, "leaf") + ":", yb(s(recommended))));
             }
         }
     }

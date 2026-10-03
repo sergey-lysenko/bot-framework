@@ -51,9 +51,10 @@ public record Routines() {
             logEvent(S2, NO_TESTS_WERE_PERFORMED);
             return;
         }
-        final int recommended = isNotNull(core) ? core.getActiveScenarioPaths() : 0;
-        final String recommendedMsg = (0 < recommended) ?
-                e(ROUND, b("recommended:", s1(recommended, "cycle"), "to cover all", s1(recommended, "leaf"))) : StringUtils.EMPTY;
+        final int recommended = isNotNull(core) ? core.getRecommendedCycles() : 0;
+        final int leafs = isNotNull(core) ? core.getActiveScenarioPaths() : 0;
+        final String recommendedMsg = (0 < recommended && 0 < leafs) ?
+                e(ROUND, b("recommended:", s1(recommended, "cycle"), "to cover all", s1(leafs, "leaf"))) : StringUtils.EMPTY;
 
         final String numberOfRepetitions = yb((null == total) ? TESTS : s1(total, TEST));
         final String testDescription = parameters.testDescription();

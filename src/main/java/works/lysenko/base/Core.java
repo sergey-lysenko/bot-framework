@@ -120,6 +120,16 @@ public final class Core extends Root implements _Core, _Tests {
         build();
     }
 
+    @Override
+    public int getRecommendedCycles() {
+
+        if (isNotNull(test) && isNotNull(test.executor())) {
+            if (isNotNull(test.executor().ctrl()))
+                return test.executor().ctrl().getRecommendedCycles();
+        }
+        return ZERO;
+    }
+
     public int getActiveScenarioPaths() {
 
         if (isNotNull(test) && isNotNull(test.executor())) {

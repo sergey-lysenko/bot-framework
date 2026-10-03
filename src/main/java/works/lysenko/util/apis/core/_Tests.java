@@ -18,6 +18,11 @@ public interface _Tests {
     int getActiveScenarioPaths();
 
     /**
+     * @return recommended execution cycles count to achieve 100% leaf coverage
+     */
+    int getRecommendedCycles();
+
+    /**
      * @return set of all presently accessible leaf scenarios
      */
     Set<_Scenario> getAccessibleLeafs();
