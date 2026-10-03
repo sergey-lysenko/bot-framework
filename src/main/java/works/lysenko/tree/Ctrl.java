@@ -212,6 +212,9 @@ public class Ctrl extends Root implements _Ctrl {
 
         final String failureMessage = b(c(ROOT), q(Scenario.root), HAS, NO, c(SCENARIOS));
         logEvent(S0, failureMessage);
+        if (isNotNull(core)) {
+            core.setStopFlag(true);
+        }
     }
 
     /**

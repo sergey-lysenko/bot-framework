@@ -394,7 +394,9 @@ public class Processor implements _LogsProcessor {
                         Stacktrace.getShort(Thread.currentThread().getStackTrace()));
             else writer.getTelemetryWriter().write(s(telemetry, System.lineSeparator()));
         } catch (final IOException e) {
-            e.printStackTrace();
+            if (!"Stream closed".equals(e.getMessage())) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -410,7 +412,9 @@ public class Processor implements _LogsProcessor {
                 logEvent(S0, Ansi.ansi(LOG_WRITER_IS_NOT___), Stacktrace.getShort(Thread.currentThread().getStackTrace()));
             else writer.getLogWriter().write(s(s, System.lineSeparator()));
         } catch (final IOException e) {
-            e.printStackTrace();
+            if (!"Stream closed".equals(e.getMessage())) {
+                e.printStackTrace();
+            }
         }
     }
 

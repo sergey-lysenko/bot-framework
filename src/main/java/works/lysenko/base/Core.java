@@ -316,15 +316,16 @@ public final class Core extends Root implements _Core, _Tests {
         closeWebDriverIfRequired();
         log(Level.none, b(c(CLOSING), c(DASHBOARD)), false);
         disposeDashboardIfExist();
-        log(Level.none, b(c(CLOSING), LOG, AND, TELEMETRY, s(WRITER, S)), false);
-        Routines.closeQuietly(logger.getLogWriter(), "Unable to close log writer"); //NON-NLS
-        Routines.closeQuietly(logger.getTelemetryWriter(), "Unable to close telemetry writer"); //NON-NLS
+        final boolean isSuccess = results.getFailures().isEmpty();
         final boolean isHeadless = (isNotNull(parameters) && parameters.isHeadless()) || GraphicsEnvironment.isHeadless();
         final boolean shouldOpenBrowser = !isHeadless && !Routines.isInsideCI() && !Routines.isInsideDocker();
         final File logFile = new File(name(RUN_LOG_));
         final File htmlFile = new File(name(RUN_LOG_HTML_));
+        log(Level.none, b(c(CLOSING), LOG, AND, TELEMETRY, s(WRITER, S)), false);
+        Routines.closeQuietly(logger.getLogWriter(), "Unable to close log writer"); //NON-NLS
+        Routines.closeQuietly(logger.getTelemetryWriter(), "Unable to close telemetry writer"); //NON-NLS
         PostProcessor.launchDetached(logFile, htmlFile, shouldOpenBrowser);
-        processCode(results.getFailures().isEmpty() ? SUCCESS : EXECUTION_FAILURE);
+        processCode(isSuccess ? SUCCESS : EXECUTION_FAILURE);
     }
 
     private void create(final Collection<Class<? extends _PropEnum>> additional) {

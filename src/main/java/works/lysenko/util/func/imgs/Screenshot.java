@@ -200,7 +200,6 @@ public record Screenshot() {
         return makeScreenshot(element, root, null, write, name);
     }
 
-
     /**
      * Captures a screenshot of a webpage or a specific web element and returns it as a BufferedImage.
      *
@@ -296,20 +295,26 @@ public record Screenshot() {
     private static BufferedImage writePartialScreenshot(BufferedImage image, final ScreenshotSettings settings,
                                                         final String... name) {
 
+        if (isNull(image)) return null;
         final String fullPath = (null == name) ? null : getSnapshotPath(SCREENSHOT_, settings.root(), s(name), s(FULL, _DOT_
                 , PNG));
         final String croppedPath = getSnapshotPath(SCREENSHOT_, settings.root(), (null == name) ? null : s(name), PNG);
         if (!settings.silent()) logDebug(b(GETTING_PARTIAL_SCREENSHOT_OF, q(exec.describe(settings.element()))));
-        final Rectangle rect = settings.element().getRect();
+        final Rectangle rect = (isNull(settings.element())) ? null : settings.element().getRect();
+        if (isNull(rect) || rect.width <= 0 || rect.height <= 0) {
+            return null;
+        }
         // Logs dimensions of element rectangle
         logTrace(b(a(s(X), rect.x, _COMMA_), a(s(Y), rect.y, _COMMA_), a(s(WIDTH), rect.width, _COMMA_), a(s(HEIGHT),
                 rect.height)));
         // Stores screenshots; returns cropped image; handles exceptions
         try {
             final BufferedImage prune = getCropped(image, rect, settings.silent());
-            image = drawArea(image, Marker.colour, rect);
-            if (settings.storeFullscreen() && (isNotNull(fullPath))) storeFullscreen(image, fullPath);
-            if (settings.storeCropped()) storeCropped(prune, croppedPath);
+            if (isNotNull(prune)) {
+                image = drawArea(image, Marker.colour, rect);
+                if (settings.storeFullscreen() && (isNotNull(fullPath))) storeFullscreen(image, fullPath);
+                if (settings.storeCropped()) storeCropped(prune, croppedPath);
+            }
             return prune; // image returned in any case
         } catch (final IOException e) {
             e.printStackTrace();

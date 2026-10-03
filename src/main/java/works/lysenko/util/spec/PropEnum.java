@@ -45,8 +45,8 @@ public enum PropEnum implements _PropEnum {
     _ACTION_MARKER_COLOUR(Color.class, b(_COMMA_, _255, _128, _0_, _128)),
     _ACTION_RETRIES(Integer.class, _3_),
     _ADEBUG(Boolean.class, FALSE),
-    _ALL_LEAFS(Boolean.class, FALSE),
-    _ALL_LEAFS_COUNT(Integer.class, _1_),
+    _ALL_LEAFS(Boolean.class, FALSE, true),
+    _ALL_LEAFS_COUNT(Integer.class, _1_, true),
     _ALLOWED_MARGIN_SEVERITY_REDUCTION(Integer.class, _2_),
     _ALLOWED_OTHER_SEVERITY_REDUCTION(Integer.class, _2_),
     _APP(String.class, EMPTY),
@@ -69,7 +69,7 @@ public enum PropEnum implements _PropEnum {
     _EMPTY_RESULT_SEVERITY(Boolean.class, FALSE),
     _EWAIT(Integer.class, _3_, _0_),
     _EXCEPTION_RETRIES(Integer.class, _3_),
-    _FAIL_BY_EVENT_OF_SEVERITY(Integer.class, s(S1.ordinal())),
+    _FAIL_BY_EVENT_OF_SEVERITY(Integer.class, s(S1.ordinal()), true),
     _FITS_BY_DEFAULT(Boolean.class, FALSE),
     _FORCED_PLATFORM(String.class, NULL),
     _FRACTIONS_ACCURACY(Integer.class, _9_),
@@ -217,6 +217,21 @@ public enum PropEnum implements _PropEnum {
         defaultValue = defaultStringValue;
         this.silent = silent;
 
+    }
+
+    /**
+     * Initialises a new instance of the PropEnum class with the specified type, default character value,
+     * and a flag indicating whether the operation is performed silently.
+     *
+     * @param type the class type which the property corresponds to
+     * @param defaultCharValue the default character value for the property
+     * @param silent a boolean flag indicating if the property should operate in silent mode
+     */
+    PropEnum(final Class<?> type, final char defaultCharValue, final boolean silent) {
+
+        this.type = type;
+        defaultValue = s(defaultCharValue);
+        this.silent = silent;
     }
 
     public String defaultValue() {

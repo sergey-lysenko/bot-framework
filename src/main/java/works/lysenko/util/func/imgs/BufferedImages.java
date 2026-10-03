@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Base64;
 
+import static java.util.Objects.isNull;
 import static works.lysenko.Base.exec;
 import static works.lysenko.Base.logDebug;
 import static works.lysenko.util.chrs.___.PNG;
@@ -143,10 +144,28 @@ public record BufferedImages() {
      */
     static BufferedImage getCropped(final BufferedImage image, final Rectangle rect, final boolean silent) {
 
+        if (isNull(image) || isNull(rect)) return null;
+        if (rect.width <= 0 || rect.height <= 0) {
+            return null;
+        }
+        final int imgWidth = image.getWidth();
+        final int imgHeight = image.getHeight();
+        if (imgWidth <= 0 || imgHeight <= 0) return null;
+
+        final int x = Math.max(0, Math.min(rect.x, imgWidth));
+        final int y = Math.max(0, Math.min(rect.y, imgHeight));
+        final int width = Math.min(rect.width, imgWidth - x);
+        final int height = Math.min(rect.height, imgHeight - y);
+
+        if (width <= 0 || height <= 0) {
+            return null;
+        }
+
         if (!silent) logDebug(b(c(CROPPING), REQUESTED, AREA, FROM, FULLSCREEN, IMAGE));
-        final BufferedImage cropped = new BufferedImage(rect.width, rect.height, image.getType());
+        final int imageType = (image.getType() == 0) ? BufferedImage.TYPE_INT_ARGB : image.getType();
+        final BufferedImage cropped = new BufferedImage(width, height, imageType);
         final Graphics2D g2d = cropped.createGraphics();
-        g2d.drawImage(image.getSubimage(rect.x, rect.y, rect.width, rect.height), 0, 0, null);
+        g2d.drawImage(image.getSubimage(x, y, width, height), 0, 0, null);
         g2d.dispose();
         return cropped;
     }

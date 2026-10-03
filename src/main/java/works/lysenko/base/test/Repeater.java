@@ -86,6 +86,7 @@ public class Repeater implements _Repeater {
     private boolean done = false;
     private CircularFifoQueue<Long> safeguard;
     private volatile int testsCount = 0;
+    private volatile Integer totalTests = null;
 
     /**
      * Creates a new instance of the Repeater class.
@@ -189,7 +190,13 @@ public class Repeater implements _Repeater {
     @Override
     public final Integer getTotalTests() {
 
-        return _TESTS.get();
+        Integer result = totalTests;
+        if (isNull(result)) {
+            result = _TESTS.get();
+            // Cache only after properties are loaded, otherwise the default value would stick
+            if (isNotNull(properties)) totalTests = result;
+        }
+        return result;
     }
 
     public final void run() throws SafeguardException {

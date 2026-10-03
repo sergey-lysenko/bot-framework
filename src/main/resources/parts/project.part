@@ -4,7 +4,7 @@
 
 # Root package of the scenarios tree.
 # TODO: Add handling for invalid package entries.
-.root=bot.scenario
+.root=link.tree
 
 # ------------------------------------------------------------------------------
 # Path to the APK file for the application under test.
@@ -13,11 +13,6 @@
 # ------------------------------------------------------------------------------
 # Application bundle ID used for restart operations.
 # .bundle.id=
-
-# ------------------------------------------------------------------------------
-# Dimensions for generated vector graphic sample representations.
-.svg.width=3840
-.svg.height=2160
 
 # ==============================================================================
 # Log Line Similarity Exceptions

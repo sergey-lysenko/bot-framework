@@ -41,6 +41,7 @@ public class Results implements _Results {
 
     @SuppressWarnings("WeakerAccess")
     private final Map<_Scenario, Result> results = new HashMap<>(0);
+    private final List<_LogRecord> rootEvents = new ArrayList<>(0);
     private Severity max = null;
 
     @SuppressWarnings({"ChainedMethodCall", "LawOfDemeter", "LocalCanBeFinal", "NestedMethodCall"})
@@ -52,13 +53,14 @@ public class Results implements _Results {
     @SuppressWarnings("NestedMethodCall")
     public void addEvent(final _LogRecord lr) {
 
-        if (isNotNull(exec)) // if execution is started
-            if (isNotNull(exec.scenarios().current())) // if there's a place to store
-                if (lr.data() instanceof _Event) // if thing is correct
-                {
-                    max = greaterSeverity(max, ((_Event) lr.data()).severity());
-                    addEvent0(lr);
-                }
+        if (lr.data() instanceof _Event event) {
+            max = greaterSeverity(max, event.severity());
+            if (isNotNull(exec) && isNotNull(exec.scenarios()) && isNotNull(exec.scenarios().current())) {
+                addEvent0(lr);
+            } else {
+                rootEvents.add(lr);
+            }
+        }
     }
 
     /**
@@ -98,6 +100,10 @@ public class Results implements _Results {
     public List<String> getFailures() {
 
         final List<String> list = new ArrayList<>(0);
+        for (final _LogRecord event : rootEvents) {
+            if (((_Event) event.data()).severity().ordinal() <= Stop.atSeverity)
+                list.add(event.data().message());
+        }
         for (final Map.Entry<_Scenario, Result> entry : results.entrySet()) {
             for (final _LogRecord event : entry.getValue().getEvents()) {
                 if (((_Event) event.data()).severity().ordinal() <= Stop.atSeverity)
