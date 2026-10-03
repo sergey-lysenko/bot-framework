@@ -7,6 +7,10 @@ import works.lysenko.tree.Core;
 import works.lysenko.tree.Ctrl;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
 import works.lysenko.util.apis.scenario._Scenario;
+import works.lysenko.util.apis.scenario._Node;
+import java.util.HashSet;
+import java.util.Set;
+import static java.util.Objects.isNull;
 import works.lysenko.util.call.selector.Utils;
 import works.lysenko.util.data.records.KeyValue;
 import works.lysenko.util.prop.tree.Include;
@@ -137,7 +141,7 @@ public final class Selector implements Callable<_Scenario> {
                 if (Include.downstream) weight = fr(weight.doubleValue() + downstreamWeight(scenario).doubleValue());
                 if (isNotNull(weight) && 0.0 < weight.doubleValue()
                         && isNotNull(core) && isNotNull(core.getResults())
-                        && 0 == core.getResults().getExecutions(scenario)
+                        && hasUnexecutedState(scenario)
                         && isNotNull(Scenario.completionWeight))
                     weight = weight.add(Scenario.completionWeight);
                 final KeyValue<_Scenario, Fraction> newPair = kv(scenario, weight);
@@ -145,6 +149,45 @@ public final class Selector implements Callable<_Scenario> {
             } else Utils.logScenarioNotExecutable(scenario);
         }
         return candidates;
+    }
+
+    /**
+     * Checks if a scenario or any of its executable descendants are unexecuted.
+     * Propagates un-executed state up the tree so that ancestor nodes of unexecuted leafs
+     * receive the completion weight rebalancing boost.
+     *
+     * @param scenario the scenario to check
+     * @return true if the scenario itself has zero executions or has any unexecuted executable descendants
+     */
+    static boolean hasUnexecutedState(final _Scenario scenario) {
+
+        if (isNull(core) || isNull(core.getResults())) return false;
+        if (0 == core.getResults().getExecutions(scenario)) return true;
+        if (scenario instanceof _Node node) {
+            return hasUnexecutedDescendants(node, new HashSet<>());
+        }
+        return false;
+    }
+
+    private static boolean hasUnexecutedDescendants(final _Node node, final Set<Object> visited) {
+
+        if (isNull(node) || isNull(node.getPool()) || !visited.add(node)) return false;
+        final List<KeyValue<_Scenario, Fraction>> pairs = node.getPool().getPairList();
+        if (isNull(pairs)) return false;
+        for (final KeyValue<_Scenario, Fraction> pair : pairs) {
+            final _Scenario child = pair.k();
+            if (isNotNull(child) && child.isExecutable() && child.calculateCombinations(true) > 0) {
+                if (0 == core.getResults().getExecutions(child)) {
+                    return true;
+                }
+                if (child instanceof _Node childNode) {
+                    if (hasUnexecutedDescendants(childNode, visited)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "NestedConditionalExpression"})
