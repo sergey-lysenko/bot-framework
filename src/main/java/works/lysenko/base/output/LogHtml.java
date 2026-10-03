@@ -435,7 +435,7 @@ public final class LogHtml {
         final String barsHidden = isLineDefault ? " hidden" : "";
         final String timelineToggle = testData.isEmpty() ? "" : renderTimelineToggle(isLineDefault);
         final String timelineLineGraph = renderLineGraph(testData, limboByPrevTest, tAvg, tMax, lMax);
-        final String lgScriptData = renderLgScriptData(testData, limboByPrevTest, tMax, lMax);
+        final String lgScriptData = renderLgScriptData(testData, limboByPrevTest, tAvg, tMax, lMax);
         final String commonPath = renderCommonPath(commonPathSteps);
         final String pathsRows = renderPathsRows(testPaths);
         final String scenSubtitle = buildScenSubtitle(pathsPossibleStr, pathsChanceStr, pathsExecutedStr);
@@ -968,7 +968,7 @@ public final class LogHtml {
     private static String renderLgScriptData(
             final List<TelemetryItem> testData,
             final Map<Integer, TelemetryItem> limboByPrevTest,
-            final double tMax, final double lMax) {
+            final double tAvg, final double tMax, final double lMax) {
         if (testData.isEmpty()) return "";
         final boolean hasLimbo = lMax > 0 && !limboByPrevTest.isEmpty();
         final double tCeil = getNiceCeil(tMax > 0 ? tMax : 1.0);
@@ -977,6 +977,7 @@ public final class LogHtml {
         final StringBuilder sb = new StringBuilder();
         sb.append("  window.lgTCeil = ").append(String.format(Locale.ROOT, "%.2f", tCeil)).append(";\n");
         sb.append("  window.lgLCeil = ").append(String.format(Locale.ROOT, "%.2f", lCeil)).append(";\n");
+        sb.append("  window.lgTAvg = ").append(String.format(Locale.ROOT, "%.2f", tAvg)).append(";\n");
         sb.append("  window.lgHasLimbo = ").append(hasLimbo).append(";\n");
         sb.append("  window.lgData = [");
         for (int i = 0; i < testData.size(); i++) {
@@ -1032,7 +1033,7 @@ public final class LogHtml {
         sb.append("</div>\n");
 
         sb.append("<div class=\"line-graph-svg-wrap\">\n");
-        sb.append("<svg class=\"timeline-line-svg\" viewBox=\"0 0 1000 240\" preserveAspectRatio=\"none\">\n");
+        sb.append("<svg class=\"timeline-line-svg\" viewBox=\"0 0 1000 240\">\n");
         sb.append("  <defs>\n");
         sb.append("    <linearGradient id=\"testAreaGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n");
         sb.append("      <stop offset=\"0%\" stop-color=\"#38bdf8\" stop-opacity=\"0.35\"/>\n");
@@ -1065,12 +1066,15 @@ public final class LogHtml {
 
         // X-axis ticks and labels
         final int tickCount = Math.min(8, N);
-        final int step = (tickCount > 1) ? Math.max(1, (N - 1) / (tickCount - 1)) : 1;
         final Set<Integer> tickIndices = new LinkedHashSet<>();
-        for (int i = 0; i < N; i += step) {
-            tickIndices.add(i);
+        if (tickCount <= 1 || N <= 1) {
+            tickIndices.add(0);
+        } else {
+            for (int k = 0; k < tickCount - 1; k++) {
+                tickIndices.add((int) Math.round((double) k * (N - 1) / (tickCount - 1)));
+            }
+            tickIndices.add(N - 1);
         }
-        tickIndices.add(N - 1);
 
         for (final int idx : tickIndices) {
             final TelemetryItem item = testData.get(idx);

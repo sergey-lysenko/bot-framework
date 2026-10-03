@@ -73,7 +73,7 @@ body.hide-limbo .lg-limbo-series, body.hide-limbo .lg-legend-limbo { display: no
 .lg-dot-sample.fail { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.6); }
 .lg-dot-sample.warn { background: #f59e0b; box-shadow: 0 0 6px rgba(245, 158, 11, 0.6); }
 .line-graph-svg-wrap { position: relative; width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 6px; padding: 4px 0; overflow: hidden; }
-.timeline-line-svg { width: 100%; height: 220px; display: block; }
+.timeline-line-svg { width: 100%; height: 240px; display: block; }
 .lg-tooltip { position: absolute; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 8px 12px; font-family: ui-monospace, monospace; font-size: 11px; color: #f8fafc; pointer-events: none; z-index: 100; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7); min-width: 140px; }
 .lg-tt-title { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-weight: 600; margin-bottom: 5px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 4px; }
 .lg-tt-num { color: #f8fafc; }
@@ -270,6 +270,124 @@ summary::-webkit-details-marker { display: none; }
     if (el) { el.classList.remove('hidden'); el.open = true; el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('highlight'); setTimeout(() => el.classList.remove('highlight'), 1500); }
   }
 {{LG_SCRIPT_DATA}}
+  function renderTimelineSvg() {
+    const wrap = document.querySelector('.line-graph-svg-wrap');
+    if (!wrap || !window.lgData || !window.lgData.length) return;
+    const width = Math.max(400, Math.round(wrap.getBoundingClientRect().width));
+    const height = 240;
+    const hasLimbo = window.lgHasLimbo;
+    const ml = 55.0, mr = hasLimbo ? 55.0 : 25.0, mt = 26.0, mb = 34.0;
+    const pw = width - ml - mr, ph = height - mt - mb;
+    const N = window.lgData.length;
+    const tCeil = window.lgTCeil, lCeil = window.lgLCeil, tAvg = window.lgTAvg || 0;
+
+    let svg = `<svg class="timeline-line-svg" viewBox="0 0 ${width} ${height}">
+  <defs>
+    <linearGradient id="testAreaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.02"/>
+    </linearGradient>
+    <linearGradient id="limboAreaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a855f7" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#a855f7" stop-opacity="0.02"/>
+    </linearGradient>
+  </defs>`;
+
+    for (let k = 0; k <= 4; k++) {
+      const ratio = k / 4.0;
+      const y = (mt + ph) - ratio * ph;
+      const tVal = ratio * tCeil;
+      svg += `  <line x1="${ml.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(ml + pw).toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3,3" />
+  <text x="${(ml - 8).toFixed(1)}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" fill="#64748b" font-size="10" font-family="ui-monospace, monospace">${tVal.toFixed(1)}s</text>\n`;
+      if (hasLimbo) {
+        const lVal = ratio * lCeil;
+        svg += `  <text class="lg-limbo-series" x="${(ml + pw + 8).toFixed(1)}" y="${(y + 3.5).toFixed(1)}" text-anchor="start" fill="#c084fc" font-size="10" font-family="ui-monospace, monospace">${Math.round(lVal)}ms</text>\n`;
+      }
+    }
+
+    const tickCount = Math.min(8, N);
+    const tickIndices = new Set();
+    if (tickCount <= 1 || N <= 1) {
+      tickIndices.add(0);
+    } else {
+      for (let k = 0; k < tickCount - 1; k++) {
+        tickIndices.add(Math.round(k * (N - 1) / (tickCount - 1)));
+      }
+      tickIndices.add(N - 1);
+    }
+
+    tickIndices.forEach(idx => {
+      const item = window.lgData[idx];
+      const x = ml + (N > 1 ? (idx / (N - 1)) * pw : pw / 2.0);
+      svg += `  <line x1="${x.toFixed(1)}" y1="${(mt + ph).toFixed(1)}" x2="${x.toFixed(1)}" y2="${(mt + ph + 4).toFixed(1)}" stroke="rgba(255,255,255,0.15)" />
+  <text x="${x.toFixed(1)}" y="${(height - 10).toFixed(1)}" text-anchor="middle" fill="#64748b" font-size="10" font-family="ui-monospace, monospace">${item.t}</text>\n`;
+    });
+
+    if (tAvg > 0 && tAvg <= tCeil) {
+      const yAvg = (mt + ph) - (tAvg / tCeil) * ph;
+      svg += `  <line x1="${ml.toFixed(1)}" y1="${yAvg.toFixed(1)}" x2="${(ml + pw).toFixed(1)}" y2="${yAvg.toFixed(1)}" stroke="#0284c7" stroke-dasharray="5,4" stroke-width="1.2" opacity="0.75" />\n`;
+    }
+
+    let testPath = '', testArea = '', limboPath = '', limboArea = '', markers = '';
+    for (let i = 0; i < N; i++) {
+      const test = window.lgData[i];
+      const x = ml + (N > 1 ? (i / (N - 1)) * pw : pw / 2.0);
+      const yT = (mt + ph) - Math.min(ph, (test.s / tCeil) * ph);
+
+      if (i === 0) {
+        testPath += `M ${x.toFixed(2)} ${yT.toFixed(2)}`;
+        testArea += `M ${x.toFixed(2)} ${(mt + ph).toFixed(2)} L ${x.toFixed(2)} ${yT.toFixed(2)}`;
+      } else {
+        testPath += ` L ${x.toFixed(2)} ${yT.toFixed(2)}`;
+        testArea += ` L ${x.toFixed(2)} ${yT.toFixed(2)}`;
+      }
+
+      if (hasLimbo) {
+        const lMs = test.l !== undefined && test.l !== null ? test.l : 0.0;
+        const yL = (mt + ph) - Math.min(ph, (lMs / lCeil) * ph);
+        if (i === 0) {
+          limboPath += `M ${x.toFixed(2)} ${yL.toFixed(2)}`;
+          limboArea += `M ${x.toFixed(2)} ${(mt + ph).toFixed(2)} L ${x.toFixed(2)} ${yL.toFixed(2)}`;
+        } else {
+          limboPath += ` L ${x.toFixed(2)} ${yL.toFixed(2)}`;
+          limboArea += ` L ${x.toFixed(2)} ${yL.toFixed(2)}`;
+        }
+        if (i === N - 1) {
+          limboArea += ` L ${x.toFixed(2)} ${(mt + ph).toFixed(2)} Z`;
+        }
+      }
+
+      if (i === N - 1) {
+        testArea += ` L ${x.toFixed(2)} ${(mt + ph).toFixed(2)} Z`;
+      }
+
+      if (test.st === 'failed') {
+        markers += `  <circle cx="${x.toFixed(2)}" cy="${yT.toFixed(2)}" r="5" fill="#ef4444" stroke="#ffffff" stroke-width="1.5" />
+  <circle cx="${x.toFixed(2)}" cy="${yT.toFixed(2)}" r="8" fill="none" stroke="#ef4444" stroke-width="1" opacity="0.6" />\n`;
+      } else if (test.st === 'warning') {
+        markers += `  <circle cx="${x.toFixed(2)}" cy="${yT.toFixed(2)}" r="4" fill="#f59e0b" stroke="#ffffff" stroke-width="1.5" />\n`;
+      }
+    }
+
+    if (hasLimbo) {
+      svg += `  <g class="lg-limbo-series">
+    <path d="${limboArea}" fill="url(#limboAreaGrad)" />
+    <path d="${limboPath}" fill="none" stroke="#a855f7" stroke-width="1.5" opacity="0.7" />
+  </g>\n`;
+    }
+    svg += `  <path d="${testArea}" fill="url(#testAreaGrad)" />
+  <path d="${testPath}" fill="none" stroke="#38bdf8" stroke-width="2" />\n`;
+    svg += markers;
+
+    svg += `  <line id="lgCrosshair" x1="0" y1="${mt.toFixed(1)}" x2="0" y2="${(mt + ph).toFixed(1)}" stroke="#94a3b8" stroke-dasharray="2,2" stroke-width="1" opacity="0" pointer-events="none" />
+  <circle id="lgLimboDot" cx="0" cy="0" r="4.5" fill="#c084fc" stroke="#ffffff" stroke-width="1.5" opacity="0" pointer-events="none" />
+  <circle id="lgTestDot" cx="0" cy="0" r="5" fill="#38bdf8" stroke="#ffffff" stroke-width="2" opacity="0" pointer-events="none" />
+  <rect id="lgOverlay" x="${ml.toFixed(1)}" y="${mt.toFixed(1)}" width="${pw.toFixed(1)}" height="${ph.toFixed(1)}" fill="transparent" style="cursor: crosshair;" onmousemove="onLgHover(event)" onmouseleave="onLgLeave()" onclick="onLgClick()" />
+</svg>
+<div id="lgTooltip" class="lg-tooltip hidden"></div>`;
+
+    wrap.innerHTML = svg;
+  }
   let lgCurrIdx = -1;
   function onLgHover(e) {
     const overlay = document.getElementById('lgOverlay');
@@ -282,7 +400,7 @@ summary::-webkit-details-marker { display: none; }
     const d = window.lgData[idx];
 
     const ml = 55.0, mr = window.lgHasLimbo ? 55.0 : 25.0, mt = 26.0, mb = 34.0;
-    const pw = 1000.0 - ml - mr, ph = 240.0 - mt - mb;
+    const pw = rect.width, ph = 240.0 - mt - mb;
     const svgX = ml + (window.lgData.length > 1 ? (idx / (window.lgData.length - 1)) * pw : pw / 2.0);
     const svgYTest = (mt + ph) - Math.min(ph, (d.s / window.lgTCeil) * ph);
 
@@ -356,6 +474,7 @@ summary::-webkit-details-marker { display: none; }
       if (barsEl) barsEl.classList.add('hidden');
       if (btnLine) btnLine.classList.add('active');
       if (btnBars) btnBars.classList.remove('active');
+      renderTimelineSvg();
     } else {
       if (barsEl) barsEl.classList.remove('hidden');
       if (lineEl) lineEl.classList.add('hidden');
@@ -363,6 +482,9 @@ summary::-webkit-details-marker { display: none; }
       if (btnLine) btnLine.classList.remove('active');
     }
   }
+  window.addEventListener('DOMContentLoaded', renderTimelineSvg);
+  window.addEventListener('resize', renderTimelineSvg);
+  renderTimelineSvg();
 </script>
 </body>
 </html>
