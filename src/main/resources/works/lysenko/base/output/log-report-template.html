@@ -148,6 +148,11 @@ summary::-webkit-details-marker { display: none; }
 .log-line-entry { height: 19.2px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: pre; }
 .hidden { display: none !important; }
 .highlight { outline: 2px solid var(--accent); }
+.result-plaque-wrap { margin-bottom: 20px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+.result-plaque { padding: 12px 18px; border-radius: 8px; font-size: 13px; line-height: 1.6; font-weight: 600; word-break: break-word; white-space: pre-wrap; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4); border: 1px solid transparent; }
+.result-plaque.passed { background: #14532d; color: #4ade80; border-color: #22c55e; }
+.result-plaque.failed { background: #7f1d1d; color: #fca5a5; border-color: #ef4444; }
+.result-plaque.neutral { background: #1e293b; color: #cbd5e1; border-color: #475569; }
 </style>
 </head>
 <body>
@@ -170,6 +175,8 @@ summary::-webkit-details-marker { display: none; }
     </div>
   </div>
 </header>
+
+{{RESULT_PLAQUE}}
 
 <div id="charts-container">
   <div class="chart-card">

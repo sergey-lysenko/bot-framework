@@ -125,6 +125,8 @@ public final class LogHtml {
         String pathsPossibleStr = "";
         String pathsChanceStr = "";
         final List<String> commonPathSteps = new ArrayList<>();
+        String plaqueStatus = null;
+        String plaqueMessage = null;
 
         for (final String line : lines) {
             final String clean = ANSI_PATTERN.matcher(line).replaceAll("").trim();
@@ -172,6 +174,21 @@ public final class LogHtml {
                     if (!stepTrim.isEmpty()) {
                         commonPathSteps.add(stepTrim);
                     }
+                }
+            }
+
+            final int eqIdx = clean.indexOf("= ");
+            if (eqIdx >= 0) {
+                final String candidate = clean.substring(eqIdx).trim();
+                if (candidate.startsWith("= [FAILURE]") || candidate.startsWith("= [ERROR]")) {
+                    plaqueStatus = "failed";
+                    plaqueMessage = candidate;
+                } else if (candidate.startsWith("= Execution passed successfully")) {
+                    plaqueStatus = "passed";
+                    plaqueMessage = candidate;
+                } else if (candidate.startsWith("= No test results")) {
+                    plaqueStatus = "neutral";
+                    plaqueMessage = candidate;
                 }
             }
 
@@ -381,6 +398,31 @@ public final class LogHtml {
                 "    <div class=\"header-timestamp\">🕒 " + timeStr
                         + "<span class=\"ts-val\">(" + basePrefix + ")</span></div>";
 
+        if (null == plaqueStatus) {
+            boolean hasFailed = false;
+            boolean hasTest = false;
+            for (final LogSection sec : sections) {
+                if ("failed".equals(sec.status)) {
+                    hasFailed = true;
+                    break;
+                }
+                if ("test".equals(sec.type)) {
+                    hasTest = true;
+                }
+            }
+            if (hasFailed) {
+                plaqueStatus = "failed";
+                plaqueMessage = "= [FAILURE] Execution failed =";
+            } else if (hasTest) {
+                plaqueStatus = "passed";
+                plaqueMessage = "= Execution passed successfully =";
+            } else {
+                plaqueStatus = "neutral";
+                plaqueMessage = "= No test results =";
+            }
+        }
+        final String resultPlaque = renderResultPlaque(plaqueStatus, plaqueMessage);
+
         final String statsStrip = renderStatsStrip(testData, limboData, tMin, tAvg, tMax, tTotal, lMin, lAvg, lMax, lTotal);
         final String timelineBars = renderTimeline(configItem, preflightItem, testData, limboByPrevTest, postflightItem, tMax, lMax, maxSec);
         final String commonPath = renderCommonPath(commonPathSteps);
@@ -393,6 +435,7 @@ public final class LogHtml {
 
         return loadTemplate()
                 .replace("{{TIMESTAMP_BLOCK}}", timestampBlock)
+                .replace("{{RESULT_PLAQUE}}", resultPlaque)
                 .replace("{{TREE_LINK}}", escapeHtml(basePrefix + ".tree.html"))
                 .replace("{{JSON_LINK}}", escapeHtml(basePrefix + ".run.json"))
                 .replace("{{RAW_LINK}}", escapeHtml(basePrefix + ".run.log"))
@@ -410,6 +453,19 @@ public final class LogHtml {
     // -------------------------------------------------------------------------
     // Fragment renderers
     // -------------------------------------------------------------------------
+
+    private static String renderResultPlaque(final String status, final String message) {
+        if (null == message || message.isEmpty()) return "";
+        final String escaped = escapeHtml(message);
+        final String formatted = linkifyArtifacts(escaped.replace("• ", "•").replace("•", "<br>&nbsp;&nbsp;• "));
+        return s(
+                "<div class=\"result-plaque-wrap\">\n",
+                "  <div class=\"result-plaque ", status, "\">",
+                formatted,
+                "</div>\n",
+                "</div>\n"
+        );
+    }
 
     private static String renderStatsStrip(
             final List<TelemetryItem> testData, final List<TelemetryItem> limboData,
