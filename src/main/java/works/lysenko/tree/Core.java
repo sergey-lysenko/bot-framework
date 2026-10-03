@@ -9,6 +9,7 @@ import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.data.type.sets.SortedScenario;
 import works.lysenko.util.prop.core.Fits;
+import works.lysenko.util.prop.tree.Include;
 import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.spec.Level;
 
@@ -88,10 +89,10 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     @Override
     public int calculateCombinations(final boolean onlyConfigured) {
 
-        final boolean isDownstream = ZERO < weightDownstream().doubleValue();
-        final boolean isUpstream = ZERO < weightUpstream().doubleValue();
+        final boolean isDownstream = (Include.downstream) && ZERO < weightDownstream().doubleValue();
+        final boolean isUpstream = (Include.upstream) && ZERO < weightUpstream().doubleValue();
         final boolean isConfigured = (isNotNull(weightConfigured())) && ZERO < weightConfigured().doubleValue();
-        if (onlyConfigured) return isDownstream || isUpstream || isConfigured ? ONE : ZERO;
+        if (onlyConfigured) return (isNotNull(weightConfigured())) && (isDownstream || isUpstream || isConfigured) ? ONE : ZERO;
         return ONE;
     }
 

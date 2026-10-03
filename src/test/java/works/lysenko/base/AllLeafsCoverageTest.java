@@ -8,6 +8,8 @@ import sun.misc.Unsafe;
 import works.lysenko.Base;
 import works.lysenko.tree.Ctrl;
 import works.lysenko.tree.base.Leaf;
+import works.lysenko.tree.base.Mono;
+
 import works.lysenko.tree.base.Node;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.test._Exec;
@@ -186,6 +188,51 @@ class AllLeafsCoverageTest {
     private static class TestLeaf extends Leaf {
         TestLeaf(final Fraction weight) {
             super(weight);
+        }
+    }
+
+    @Test
+    void testMonoScenarioRemainsInAccessibleLeafsAfterExecution() {
+        final Ctrl rootCtrl = new Ctrl(null);
+        final TestLeaf leaf1 = new TestLeaf(fr(1.0));
+        final TestMono mono = new TestMono(fr(1.0));
+
+        rootCtrl.getPool().appendScenarioWithWeight(leaf1, fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(mono, fr(1.0));
+
+        // Before execution
+        assertTrue(mono.isExecutable());
+        Set<_Scenario> leafs = rootCtrl.getAccessibleLeafs();
+        assertEquals(2, leafs.size());
+        assertTrue(leafs.contains(mono));
+
+        // Simulate Mono execution (sets executed = true)
+        try {
+            final Field executedField = Mono.class.getDeclaredField("executed");
+            executedField.setAccessible(true);
+            executedField.set(mono, true);
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // Mono is no longer executable for next cycles
+        assertFalse(mono.isExecutable());
+
+        // But it remains accessible in the suite and counted for total / executed
+        leafs = rootCtrl.getAccessibleLeafs();
+        assertEquals(2, leafs.size(), "Mono must remain in accessible leafs even after executed");
+        assertTrue(leafs.contains(mono));
+    }
+
+    private static class TestMono extends Mono {
+        TestMono(final Fraction weight) {
+            try {
+                final Field f = works.lysenko.tree.Core.class.getDeclaredField("codeWeight");
+                f.setAccessible(true);
+                f.set(this, weight);
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

@@ -30,6 +30,7 @@ import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.func.core.Assertions.fail;
 import static works.lysenko.util.func.core.Weights.upstreamWeight;
+import static java.util.Objects.isNull;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.lang.S.SCENARIO_EXECUTION_FAILED_DUE_TO;
 import static works.lysenko.util.lang.word.A.ASSIGNING;
@@ -121,6 +122,7 @@ public abstract class Node extends Core implements _Node {
     @Override
     public final int calculateCombinations(final boolean onlyConfigured) {
 
+        if (onlyConfigured && isNull(weightConfigured())) return 0;
         int combinations = 0;
         for (final KeyValue<_Scenario, Fraction> scenario : ctrl.getWeightedList())
             combinations = combinations + scenario.name().calculateCombinations(onlyConfigured);

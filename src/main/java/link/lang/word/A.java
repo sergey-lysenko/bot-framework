@@ -20,6 +20,7 @@ public record A() {
     public static final String AUDIT = s(AU, DI, T);
     public static final String ADD = s(AD, D);
     public static final String APPLY = s(AP, PL, Y);
+    public static final String ATTEMPTS = s(AT, TE, M, PT, S);
 }
 
 

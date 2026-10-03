@@ -124,6 +124,7 @@ public final class LogHtml {
         final List<ScenEntry> scenStats = new ArrayList<>();
         String pathsPossibleStr = "";
         String pathsChanceStr = "";
+        String pathsExecutedStr = "";
         final List<String> commonPathSteps = new ArrayList<>();
         String plaqueStatus = null;
         String plaqueMessage = null;
@@ -164,6 +165,10 @@ public final class LogHtml {
 
             if (clean.contains("had a chance to be executed")) {
                 pathsChanceStr = clean.contains("]") ? clean.substring(clean.lastIndexOf(']') + 1).trim() : clean;
+            }
+
+            if (clean.contains("were actually executed") || clean.contains("were executed")) {
+                pathsExecutedStr = clean.contains("]") ? clean.substring(clean.lastIndexOf(']') + 1).trim() : clean;
             }
 
             if (clean.contains("Common path:")) {
@@ -427,7 +432,7 @@ public final class LogHtml {
         final String timelineBars = renderTimeline(configItem, preflightItem, testData, limboByPrevTest, postflightItem, tMax, lMax, maxSec);
         final String commonPath = renderCommonPath(commonPathSteps);
         final String pathsRows = renderPathsRows(testPaths);
-        final String scenSubtitle = buildScenSubtitle(pathsPossibleStr, pathsChanceStr);
+        final String scenSubtitle = buildScenSubtitle(pathsPossibleStr, pathsChanceStr, pathsExecutedStr);
         final String scenRows = renderScenRows(scenStats);
         final String sectionsHtml = renderSections(sections, runArtifacts, telemetryCpu, currOpGlobalIdx);
 
@@ -525,14 +530,12 @@ public final class LogHtml {
         return sb.toString();
     }
 
-    private static String buildScenSubtitle(final String pathsPossibleStr, final String pathsChanceStr) {
-        if (!pathsPossibleStr.isEmpty() && !pathsChanceStr.isEmpty()) {
-            return s(escapeHtml(pathsPossibleStr), "<br>", escapeHtml(pathsChanceStr));
-        } else if (!pathsPossibleStr.isEmpty()) {
-            return escapeHtml(pathsPossibleStr);
-        } else {
-            return escapeHtml(pathsChanceStr);
-        }
+    private static String buildScenSubtitle(final String pathsPossibleStr, final String pathsChanceStr, final String pathsExecutedStr) {
+        final List<String> parts = new ArrayList<>(3);
+        if (!pathsPossibleStr.isEmpty()) parts.add(escapeHtml(pathsPossibleStr));
+        if (!pathsChanceStr.isEmpty()) parts.add(escapeHtml(pathsChanceStr));
+        if (!pathsExecutedStr.isEmpty()) parts.add(escapeHtml(pathsExecutedStr));
+        return String.join("<br>", parts);
     }
 
     private static String renderScenRows(final List<ScenEntry> scenStats) {

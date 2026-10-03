@@ -20,6 +20,7 @@ public record A() {
     public static final String ACTION = s(AC, TION);
     public static final String ACTIVATING = s(ACTI, VA, TING);
     public static final String ACTUAL = s(AC, TUAL);
+    public static final String ACTUALLY = s(ACTUAL, LY);
     public static final String ADDITIONAL = s(ADD, IT, ION, AL);
     public static final String ADJACENT = s(AD, J, AC, ENT);
     public static final String AFTER = s(AFT, ER);

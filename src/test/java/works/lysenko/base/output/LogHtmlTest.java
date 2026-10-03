@@ -35,7 +35,8 @@ class LogHtmlTest {
                 "[ ][12][2.095][0] [ 1] [1,050] → - → StepA",
                 "[ ][13][2.098][0] [ 2] [1,050] → - → StepB",
                 "[ ][14][2.100][1] 37 paths were possible with current set of Scenarios",
-                "[ ][15][2.101][0] 37 (100.0%) among these had a chance to be executed"
+                "[ ][15][2.101][0] 37 (100.0%) among these had a chance to be executed",
+                "[ ][16][2.102][0] 35 (94.6%) among these were actually executed"
         );
 
         Files.write(logPath, logLines);
@@ -56,8 +57,9 @@ class LogHtmlTest {
         // Verify execution paths with space-padded test numbers
         assertTrue(html.contains("2 Tests Executed"), "Should recognize both space-padded execution paths");
 
-        // Verify scenario statistics subtitle contains both lines
+        // Verify scenario statistics subtitle contains all 3 lines
         assertTrue(html.contains("37 paths were possible with current set of Scenarios"), "Should include paths possible string in HTML");
         assertTrue(html.contains("37 (100.0%) among these had a chance to be executed"), "Should include paths chance string in HTML");
+        assertTrue(html.contains("35 (94.6%) among these were actually executed"), "Should include paths executed string in HTML");
     }
 }

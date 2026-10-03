@@ -7,9 +7,11 @@ import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.____.*;
 import static works.lysenko.util.data.strs.Bind.*;
 import static works.lysenko.util.data.strs.Case.*;
+import static works.lysenko.util.data.strs.Swap.*;
 import static works.lysenko.util.lang.word.A.*;
 import static works.lysenko.util.lang.word.C.*;
 import static works.lysenko.util.lang.word.W.*;
+import static works.lysenko.util.spec.Symbols.*;
 
 @SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "WeakerAccess"})
 public record A() {

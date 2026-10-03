@@ -35,6 +35,7 @@ import static works.lysenko.util.func.core.Assertions.assertEqualsSilent;
 import static works.lysenko.util.func.core.Assertions.assertEqualsSilentEvent;
 import static works.lysenko.util.lang.T.TEST_EXECUTION;
 import static works.lysenko.util.lang.T.TO_BE;
+import static works.lysenko.util.lang.word.A.ACTUALLY;
 import static works.lysenko.util.lang.word.A.AMONG;
 import static works.lysenko.util.lang.word.A.AVAILABLE;
 import static works.lysenko.util.lang.word.C.*;
@@ -111,6 +112,7 @@ record Scenarios() {
      */
     private static String calculatePercentage(final int total, final int active) {
 
+        if (0 == total) return "0.0%";
         final double percentageValue = (double) active / total * 100.0;
         return s(PERCENTAGE_FORMAT.format(percentageValue), "%");
     }
@@ -124,11 +126,13 @@ record Scenarios() {
      * @param sorted     A1 map containing the scenarios and their results.
      */
     private static void consoleScenariosStatistics(final int total, final int active, final String percentage,
+                                                   final int executed, final String executedPercentage,
                                                    final Map<String, _Result> sorted) {
 
         section(b(s1(sorted.size(), c(SCENARIO)), STATISTICS));
         log(Level.none, b(yb(total), s(PATH, s1(total)), WERE, POSSIBLE, WITH, CURRENT, SET, OF, c(SCENARIOS)), false);
         log(Level.none, b(yb(active), e(ROUND, percentage), AMONG, THESE, HAD, s(A), CHANCE, TO_BE, EXECUTED), false);
+        log(Level.none, b(yb(executed), e(ROUND, executedPercentage), AMONG, THESE, WERE, ACTUALLY, EXECUTED), false);
         if (sorted.isEmpty()) logEvent(S2, b(c(NO), TEST_EXECUTION, DATA, AVAILABLE));
         else {
             int longestNameLength = 0;
@@ -180,9 +184,12 @@ record Scenarios() {
         final int total = core.getTotalScenarioPaths();
         final int active = core.getActiveScenarioPaths();
         final String percentage = calculatePercentage(total, active);
+        final int executed = core.getExecutedLeafsCount();
+        final int base = 0 < active ? active : total;
+        final String executedPercentage = calculatePercentage(base, executed);
         final Map<_Scenario, _Result> scenarioResults = core.getResults().getSorted();
         final Map<String, _Result> aggregatedResults = aggregateResult(scenarioResults);
-        consoleScenariosStatistics(total, active, percentage, aggregatedResults);
+        consoleScenariosStatistics(total, active, percentage, executed, executedPercentage, aggregatedResults);
     }
 
     private static void updateAggregatedResult(final Map<? super String, _Result> aggResults, final _Scenario thisScenario,
