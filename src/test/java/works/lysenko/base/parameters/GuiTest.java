@@ -13,6 +13,7 @@ import works.lysenko.util.data.records.TestPropertiesDescriptor;
 import works.lysenko.util.spec.PropEnum;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
@@ -342,6 +343,56 @@ class GuiTest {
 
         searchField.setText("");
         assertEquals(model.getRowCount(), table.getRowCount(), "Clearing search restores all rows");
+    }
+
+    @Test
+    void usesDropdownForPropertiesWithKnownValidValues() {
+        final PropertiesDialog dialog = new PropertiesDialog(
+                null, new TestProperties(), "default", false, false, 1);
+        final JTable table = dialog.getTable();
+        final DefaultTableModel model = dialog.getModel();
+        int sonificationRow = -1;
+        int booleanRow = -1;
+        int freeFormRow = -1;
+        for (int row = 0; row < model.getRowCount(); row++) {
+            final String property = (String) model.getValueAt(row, 0);
+            if (".progression.tree.sonification".equals(property)) {
+                sonificationRow = row;
+            } else if (PropEnum._PROGRESSION_TREE.getPropertyName().equals(property)) {
+                booleanRow = row;
+            } else if (PropEnum._APP.getPropertyName().equals(property)) {
+                freeFormRow = row;
+            }
+        }
+
+        assertTrue(sonificationRow >= 0);
+        final int sonificationViewRow = table.convertRowIndexToView(sonificationRow);
+        assertTrue(table.editCellAt(sonificationViewRow, 1));
+        assertInstanceOf(JComboBox.class, table.getEditorComponent());
+        final JComboBox<?> choices = (JComboBox<?>) table.getEditorComponent();
+        assertEquals(3, choices.getItemCount());
+        assertEquals("none", choices.getItemAt(0));
+        assertEquals("copilot", choices.getItemAt(1));
+        assertEquals("claude", choices.getItemAt(2));
+        assertNotEquals("", choices.getSelectedItem());
+        table.getCellEditor().cancelCellEditing();
+
+        assertTrue(booleanRow >= 0);
+        final int booleanViewRow = table.convertRowIndexToView(booleanRow);
+        assertTrue(table.editCellAt(booleanViewRow, 1));
+        assertInstanceOf(JComboBox.class, table.getEditorComponent());
+        final JComboBox<?> booleanChoices = (JComboBox<?>) table.getEditorComponent();
+        assertEquals(2, booleanChoices.getItemCount());
+        assertEquals("true", booleanChoices.getItemAt(0));
+        assertEquals("false", booleanChoices.getItemAt(1));
+        assertNotEquals("", booleanChoices.getSelectedItem());
+        table.getCellEditor().cancelCellEditing();
+
+        assertTrue(freeFormRow >= 0);
+        final int freeFormViewRow = table.convertRowIndexToView(freeFormRow);
+        assertTrue(table.editCellAt(freeFormViewRow, 1));
+        assertInstanceOf(JTextField.class, table.getEditorComponent());
+        table.getCellEditor().cancelCellEditing();
     }
 
     @Test

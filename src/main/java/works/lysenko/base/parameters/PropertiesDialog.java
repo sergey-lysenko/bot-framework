@@ -12,6 +12,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.util.*;
@@ -64,6 +65,7 @@ public class PropertiesDialog extends JDialog {
     private final JButton cancelBtn;
     private boolean confirmed = false;
     private boolean isUpdating = false;
+    private final JLabel validationLabel = new JLabel(" ");
 
     /**
      * Constructs a new PropertiesDialog using Base.properties.
@@ -182,6 +184,9 @@ public class PropertiesDialog extends JDialog {
         rightActions.add(okBtn);
 
         bottomPanel.add(leftActions, BorderLayout.WEST);
+        validationLabel.setForeground(new Color(190, 0, 0));
+        validationLabel.setBorder(new EmptyBorder(0, 8, 0, 8));
+        bottomPanel.add(validationLabel, BorderLayout.CENTER);
         bottomPanel.add(rightActions, BorderLayout.EAST);
         add(bottomPanel, BorderLayout.SOUTH);
     }
@@ -307,6 +312,7 @@ public class PropertiesDialog extends JDialog {
         for (int i = 0; i < table.getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
         }
+        table.getColumnModel().getColumn(1).setCellEditor(new ValidatingCellEditor());
 
         model.addTableModelListener(e -> {
             if (isUpdating) return;
@@ -438,31 +444,140 @@ public class PropertiesDialog extends JDialog {
         addPanel.add(new JLabel(b(c(VALUE), s(_COLON_))));
         addPanel.add(propValueField);
 
-        final int res = JOptionPane.showConfirmDialog(this, addPanel, "Add Custom Property",
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (JOptionPane.OK_OPTION == res) {
+        while (true) {
+            final int res = JOptionPane.showConfirmDialog(this, addPanel, "Add Custom Property",
+                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            if (JOptionPane.OK_OPTION != res) return;
             final String name = propNameField.getText().trim();
             final String value = propValueField.getText().trim();
-            if (!name.isEmpty()) {
-                boolean found = false;
-                for (int r = 0; r < model.getRowCount(); r++) {
-                    if (name.equals(model.getValueAt(r, 0))) {
-                        model.setValueAt(value, r, 1);
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    model.addRow(new Object[]{name, value, "", STATUS_CUSTOM, ""});
+            if (name.isEmpty()) return;
+            final String error = PropertyValidator.validate(name, value);
+            if (null != error) {
+                JOptionPane.showMessageDialog(this, error, "Invalid value for " + name, JOptionPane.ERROR_MESSAGE);
+                continue;
+            }
+            boolean found = false;
+            for (int r = 0; r < model.getRowCount(); r++) {
+                if (name.equals(model.getValueAt(r, 0))) {
+                    model.setValueAt(value, r, 1);
+                    found = true;
+                    break;
                 }
             }
+            if (!found) {
+                model.addRow(new Object[]{name, value, "", STATUS_CUSTOM, ""});
+            }
+            return;
+        }
+    }
+
+    /**
+     * Checks all modified values; selects the first invalid row and reports the problem.
+     *
+     * @return true if every modified value is valid
+     */
+    private boolean validateModifiedValues() {
+
+        for (int r = 0; r < model.getRowCount(); r++) {
+            final String k = (String) model.getValueAt(r, 0);
+            final String v = (String) model.getValueAt(r, 1);
+            final String val = (null == v) ? "" : v;
+            final String baseVal = baseline.get(k);
+            final boolean changed = (null == baseVal) ? !val.isEmpty() : !val.equals(baseVal);
+            final String error = changed ? PropertyValidator.validate(k, val) : null;
+            if (null != error) {
+                final int viewRow = table.convertRowIndexToView(r);
+                if (viewRow >= 0) {
+                    table.setRowSelectionInterval(viewRow, viewRow);
+                    table.scrollRectToVisible(table.getCellRect(viewRow, 1, true));
+                }
+                validationLabel.setText(k + ": " + error);
+                JOptionPane.showMessageDialog(this, error, "Invalid value for " + k, JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Text cell editor that refuses to commit a value failing {@link PropertyValidator}.
+     */
+    private final class ValidatingCellEditor extends AbstractCellEditor implements TableCellEditor {
+
+        private JTextField field;
+        private JComboBox<String> comboBox;
+        private javax.swing.border.Border normalBorder;
+        private String propertyName;
+
+        @Override
+        public Component getTableCellEditorComponent(final JTable tbl, final Object value, final boolean isSelected,
+                                                     final int row, final int column) {
+            final int modelRow = tbl.convertRowIndexToModel(row);
+            propertyName = (String) model.getValueAt(modelRow, 0);
+            final String currentValue = null == value ? "" : value.toString();
+            final List<String> validValues = PropertyValidator.validValues(propertyName);
+            if (!validValues.isEmpty() &&
+                    (currentValue.isEmpty() ||
+                            validValues.stream().anyMatch(option -> option.equalsIgnoreCase(currentValue)))) {
+                comboBox = new JComboBox<>(validValues.toArray(new String[0]));
+                comboBox.setSelectedItem(validValues.stream()
+                        .filter(option -> option.equalsIgnoreCase(currentValue))
+                        .findFirst()
+                        .orElse(validValues.get(0)));
+                field = null;
+                normalBorder = null;
+                return comboBox;
+            }
+            field = new JTextField(currentValue);
+            normalBorder = field.getBorder();
+            comboBox = null;
+            return field;
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            return null != comboBox ? comboBox.getSelectedItem() : field.getText();
+        }
+
+        @Override
+        public boolean stopCellEditing() {
+            final String value = String.valueOf(getCellEditorValue());
+            final String error = PropertyValidator.validate(propertyName, value);
+            if (null != error) {
+                if (null != field) {
+                    field.setBorder(BorderFactory.createLineBorder(new Color(190, 0, 0), 2));
+                    field.setToolTipText(error);
+                }
+                validationLabel.setText(propertyName + ": " + error);
+                return false;
+            }
+            if (null != field) {
+                field.setBorder(normalBorder);
+                field.setToolTipText(null);
+            }
+            validationLabel.setText(" ");
+            fireEditingStopped();
+            return true;
+        }
+
+        @Override
+        public void cancelCellEditing() {
+            if (null != field) {
+                field.setBorder(normalBorder);
+                field.setToolTipText(null);
+            }
+            validationLabel.setText(" ");
+            fireEditingCanceled();
         }
     }
 
     private void onOk() {
 
-        if (table.isEditing()) {
-            table.getCellEditor().stopCellEditing();
+        if (table.isEditing() && !table.getCellEditor().stopCellEditing()) {
+            return;
+        }
+        if (!validateModifiedValues()) {
+            return;
         }
         overrides.clear();
         for (int r = 0; r < model.getRowCount(); r++) {
