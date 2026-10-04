@@ -148,9 +148,9 @@ public final class Selector implements Callable<_Scenario> {
                 if (isNotNull(weight) && 0.0 < weight.doubleValue()
                         && isNotNull(core) && isNotNull(core.getResults())
                         && isNotNull(Scenario.completionWeight)) {
-                    final double ratio = getUncompletedRatio(scenario, target);
-                    if (0.0 < ratio) {
-                        weight = weight.add(fr(Scenario.completionWeight.doubleValue() * ratio));
+                    final double uncompletedWeight = getUncompletedWeight(scenario, target);
+                    if (0.0 < uncompletedWeight) {
+                        weight = weight.add(fr(Scenario.completionWeight.doubleValue() * uncompletedWeight));
                     }
                 }
                 final KeyValue<_Scenario, Fraction> newPair = kv(scenario, weight);
@@ -161,50 +161,46 @@ public final class Selector implements Callable<_Scenario> {
     }
 
     /**
-     * Calculates the uncompleted ratio (deficit) for a scenario towards reaching the target execution count.
-     * Propagates uncompleted ratio up the tree so that ancestor nodes of uncompleted leafs
-     * receive proportional completion weight boost.
+     * Sums the remaining execution deficits of a scenario's accessible leaf descendants.
+     * This lets branches with more unfinished leaf work attract proportionally more completion weight.
      *
      * @param scenario the scenario to check
      * @param target the target execution count
-     * @return ratio in range [0.0, 1.0] representing the deficit towards target executions
+     * @return summed deficit across accessible leaf descendants
      */
-    static double getUncompletedRatio(final _Scenario scenario, final int target) {
+    static double getUncompletedWeight(final _Scenario scenario, final int target) {
 
         if (isNull(core) || isNull(core.getResults()) || target <= 0) return 0.0;
-        final int scenarioTarget = (scenario instanceof Mono) ? 1 : target;
-        final int execs = core.getResults().getExecutions(scenario);
-        double ratio = (execs < scenarioTarget) ? ((double) (scenarioTarget - execs) / scenarioTarget) : 0.0;
         if (scenario instanceof _Node node) {
-            final double descRatio = getMaxDescendantUncompletedRatio(node, target, new HashSet<>());
-            ratio = Math.max(ratio, descRatio);
+            return getDescendantUncompletedWeight(node, target, new HashSet<>());
         }
-        return ratio;
+        return getLeafUncompletedRatio(scenario, target);
     }
 
-    private static double getMaxDescendantUncompletedRatio(final _Node node, final int target, final Set<Object> visited) {
+    private static double getDescendantUncompletedWeight(final _Node node, final int target, final Set<Object> visited) {
 
         if (isNull(node) || isNull(node.getPool()) || !visited.add(node)) return 0.0;
         final List<KeyValue<_Scenario, Fraction>> pairs = node.getPool().getPairList();
         if (isNull(pairs)) return 0.0;
-        double max = 0.0;
+        double total = 0.0;
         for (final KeyValue<_Scenario, Fraction> pair : pairs) {
             final _Scenario child = pair.k();
             if (isNotNull(child) && child.isExecutable() && child.calculateCombinations(true) > 0) {
-                final int childTarget = (child instanceof Mono) ? 1 : target;
-                final int execs = core.getResults().getExecutions(child);
-                double childRatio = (execs < childTarget) ? ((double) (childTarget - execs) / childTarget) : 0.0;
                 if (child instanceof _Node childNode) {
-                    final double descRatio = getMaxDescendantUncompletedRatio(childNode, target, visited);
-                    childRatio = Math.max(childRatio, descRatio);
-                }
-                if (childRatio > max) {
-                    max = childRatio;
-                    if (max >= 1.0) return 1.0;
+                    total += getDescendantUncompletedWeight(childNode, target, visited);
+                } else {
+                    total += getLeafUncompletedRatio(child, target);
                 }
             }
         }
-        return max;
+        return total;
+    }
+
+    private static double getLeafUncompletedRatio(final _Scenario leaf, final int target) {
+
+        final int leafTarget = (leaf instanceof Mono) ? 1 : target;
+        final int executions = core.getResults().getExecutions(leaf);
+        return (executions < leafTarget) ? (double) (leafTarget - executions) / leafTarget : 0.0;
     }
 
     /**
@@ -216,7 +212,7 @@ public final class Selector implements Callable<_Scenario> {
      */
     static boolean hasUnexecutedState(final _Scenario scenario) {
 
-        return getUncompletedRatio(scenario, 1) > 0.0;
+        return getUncompletedWeight(scenario, 1) > 0.0;
     }
 
     @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "NestedConditionalExpression"})

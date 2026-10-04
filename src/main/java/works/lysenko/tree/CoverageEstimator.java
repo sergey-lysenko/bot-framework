@@ -387,9 +387,9 @@ public record CoverageEstimator() {
 
             double weight = pool.baseWeights[i];
             if (completionBoost > 0.0) {
-                final double ratio = getUncompletedRatio(scId, pool.descScenarioIds[i], executions, targets, isMono);
-                if (ratio > 0.0) {
-                    weight += completionBoost * ratio;
+                final double uncompletedWeight = getUncompletedWeight(pool.descLeafIds[i], executions, targets);
+                if (uncompletedWeight > 0.0) {
+                    weight += completionBoost * uncompletedWeight;
                 }
             }
 
@@ -425,34 +425,19 @@ public record CoverageEstimator() {
         return chosenScId;
     }
 
-    private static double getUncompletedRatio(
-            final int scId,
-            final int[] descScenarioIds,
+    private static double getUncompletedWeight(
+            final int[] descLeafIds,
             final int[] executions,
-            final int[] targets,
-            final boolean[] isMono) {
+            final int[] targets) {
 
-        final int scTarget = targets[scId];
-        final int execs = executions[scId];
-        double maxRatio = (execs < scTarget) ? ((double) (scTarget - execs) / scTarget) : 0.0;
-        if (maxRatio >= 1.0) return 1.0;
-
-        if (isNotNull(descScenarioIds)) {
-            for (int i = 0; i < descScenarioIds.length; i++) {
-                final int did = descScenarioIds[i];
-                if (isMono[did] && executions[did] > 0) continue;
-                final int dTarget = targets[did];
-                final int dExecs = executions[did];
-                if (dExecs < dTarget) {
-                    final double r = (double) (dTarget - dExecs) / dTarget;
-                    if (r > maxRatio) {
-                        maxRatio = r;
-                        if (maxRatio >= 1.0) return 1.0;
-                    }
-                }
+        double total = 0.0;
+        for (final int leafId : descLeafIds) {
+            final int leafTarget = targets[leafId];
+            if (executions[leafId] < leafTarget) {
+                total += (double) (leafTarget - executions[leafId]) / leafTarget;
             }
         }
-        return maxRatio;
+        return total;
     }
 
     private record SimPool(

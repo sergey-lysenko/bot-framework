@@ -283,6 +283,37 @@ class CompletionWeightTest {
         assertEquals(fr(1.0), candidatesAfter.get(0).v());
     }
 
+    @Test
+    void testCompletionWeightSumsUncompletedDescendantLeafs() {
+        setTestProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), "2");
+        Base.parameters = new Parameters(new Properties());
+
+        final Results results = (Results) Base.core.getResults();
+        final TestLeaf deepLeaf1 = new TestLeaf(fr(1.0));
+        final TestLeaf deepLeaf2 = new TestLeaf(fr(1.0));
+        final TestNode deepBranch = new TestNode(fr(1.0), deepLeaf1, deepLeaf2);
+        final TestLeaf shortPathLeaf = new TestLeaf(fr(1.0));
+
+        results.count(deepLeaf1);
+
+        final Ctrl ctrl = new Ctrl(null);
+        ctrl.getPool().appendScenarioWithWeight(deepBranch, fr(1.0));
+        ctrl.getPool().appendScenarioWithWeight(shortPathLeaf, fr(1.0));
+
+        final List<KeyValue<works.lysenko.util.apis.scenario._Scenario, Fraction>> candidates =
+                new Selector(ctrl, 1).getExecutionCandidates();
+        final Fraction deepBranchWeight = candidates.stream()
+                .filter(kv -> kv.k() == deepBranch)
+                .findFirst().orElseThrow().v();
+        final Fraction shortPathWeight = candidates.stream()
+                .filter(kv -> kv.k() == shortPathLeaf)
+                .findFirst().orElseThrow().v();
+
+        // The deep branch has 1.5 total unfinished leaf weight; the short leaf has 1.0.
+        assertEquals(fr(7.75), deepBranchWeight);
+        assertEquals(fr(5.5), shortPathWeight);
+    }
+
     private static class TestNode extends Node {
         TestNode(final Fraction weight, final works.lysenko.util.apis.scenario._Scenario... scenarios) {
             super(scenarios);

@@ -171,7 +171,8 @@ class CoverageEstimatorTest {
         assertEquals(37, rootCtrl.getAccessibleLeafs().size());
         final int estimated = CoverageEstimator.estimateAverageCycles(rootCtrl);
         System.out.println("BITEHEIST 37-LEAF TREE ESTIMATED CYCLES: " + estimated);
-        assertTrue(estimated >= 60 && estimated <= 100, "Estimated should be near ~79, got: " + estimated);
+        assertTrue(estimated >= 50 && estimated <= 75,
+                "Estimated should reflect balancing by unfinished descendant leaf weight, got: " + estimated);
     }
 
     @Test
