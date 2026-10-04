@@ -38,6 +38,36 @@ class ProgressionMp4Test {
     }
 
     @Test
+    void mapsAndMuxesProvidedAudio(@TempDir final Path tempDir) throws Exception {
+        final Path framePath = tempDir.resolve("frame_0001.png");
+        ImageIO.write(new BufferedImage(4, 2, BufferedImage.TYPE_INT_RGB), "png", framePath.toFile());
+        final Path audioPath = tempDir.resolve("audio.wav");
+        Files.write(audioPath, new byte[]{1, 2, 3});
+        final Path argumentsPath = tempDir.resolve("arguments.txt");
+        final Path encoder = tempDir.resolve("fake-ffmpeg");
+        Files.writeString(
+                encoder,
+                "#!/bin/sh\nprintf '%s\\n' \"$@\" > \"" + argumentsPath + "\"\n"
+                        + "for output do :; done\ncat >/dev/null\nprintf mp4 > \"$output\"\n");
+        assertTrue(encoder.toFile().setExecutable(true));
+
+        ProgressionMp4.write(
+                List.of(framePath.toFile()),
+                tempDir.resolve("output.mp4").toFile(),
+                encoder.toString(),
+                10,
+                16,
+                audioPath.toFile(),
+                percentage -> { });
+
+        final String arguments = Files.readString(argumentsPath);
+        assertTrue(arguments.contains(audioPath.toString()));
+        assertTrue(arguments.contains("-map"));
+        assertTrue(arguments.contains("1:a:0"));
+        assertTrue(arguments.contains("-c:a"));
+    }
+
+    @Test
     void rejectsOddDimensionsBeforeLaunchingEncoder(@TempDir final Path tempDir) throws IOException {
         final Path framePath = tempDir.resolve("odd.png");
         ImageIO.write(new BufferedImage(3, 2, BufferedImage.TYPE_INT_RGB), "png", framePath.toFile());

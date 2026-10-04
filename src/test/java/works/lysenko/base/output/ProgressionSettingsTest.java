@@ -23,6 +23,7 @@ class ProgressionSettingsTest {
 
             assertTrue(ProgressionSettings.current().scenarioMp4Enabled());
             assertTrue(ProgressionSettings.current().treeMp4Enabled());
+            assertFalse(ProgressionSettings.current().treeSonificationEnabled());
         } finally {
             Base.properties = previousProperties;
             ProgressionSettings.initialize();
@@ -41,6 +42,7 @@ class ProgressionSettingsTest {
                     ".progression.max.total.pixels", "5678",
                     ".progression.scenario.mp4", "false",
                     ".progression.tree.mp4", "true",
+                    ".progression.tree.sonification", "copilot",
                     ".progression.ffmpeg", "/tmp/ffmpeg");
             ProgressionSettings.initialize();
             final ProgressionSettings snapshot = ProgressionSettings.current();
@@ -52,6 +54,8 @@ class ProgressionSettingsTest {
             assertEquals(5678, snapshot.maxTotalPixels());
             assertFalse(snapshot.scenarioMp4Enabled());
             assertTrue(snapshot.treeMp4Enabled());
+            assertTrue(snapshot.treeSonificationEnabled());
+            assertEquals("copilot", snapshot.treeSonifier().orElseThrow().mode());
             assertEquals("/tmp/ffmpeg", snapshot.ffmpeg());
 
             Base.properties.put(".progression.max.frames", "29");

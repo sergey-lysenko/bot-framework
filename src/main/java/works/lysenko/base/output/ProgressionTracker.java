@@ -37,7 +37,8 @@ import static works.lysenko.util.spec.Layout.Files.name;
 import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_;
 
 /**
- * Tracks scenario execution progression across test cycles during limbo periods,
+ * Tracks scenario execution progression across test cycles during limbo
+ * periods,
  * generating visual status charts and compiling them into an animated GIF.
  */
 public final class ProgressionTracker {
@@ -105,15 +106,19 @@ public final class ProgressionTracker {
      * @param testNumber the test cycle number just completed
      */
     public static void onLimbo(final Integer testNumber) {
-        if (!ProgressionSettings.current().scenarioEnabled()) return;
-        if (isNull(core)) return;
+        if (!ProgressionSettings.current().scenarioEnabled())
+            return;
+        if (isNull(core))
+            return;
         final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
                 || Boolean.TRUE.equals(PropEnum._ALL_LEAFS.get())
                 || isCountAllLeafs();
-        if (!allLeafsMode) return;
+        if (!allLeafsMode)
+            return;
 
         final Set<_Scenario> leafs = core.getAccessibleLeafs();
-        if (leafs.isEmpty()) return;
+        if (leafs.isEmpty())
+            return;
 
         final List<_Scenario> scenarios = new ArrayList<>(leafs);
         scenarios.sort(Comparator.comparing(_Scenario::getShortName).thenComparing(_Scenario::getName));
@@ -124,10 +129,12 @@ public final class ProgressionTracker {
 
         final BufferedImage image = renderProgressionGraph(scenarios, target, currentCycle);
         final File runDir = resolveRunDirectory();
-        if (isNull(runDir)) return;
+        if (isNull(runDir))
+            return;
 
         final File progressionDir = new File(runDir, "progression");
-        if (!progressionDir.exists() && !progressionDir.mkdirs()) return;
+        if (!progressionDir.exists() && !progressionDir.mkdirs())
+            return;
 
         final int maxFrames = ProgressionFrames.frameLimit(
                 ProgressionSettings.current().maxFrames(),
@@ -147,7 +154,8 @@ public final class ProgressionTracker {
     }
 
     /**
-     * Hook called upon test completion to compile collected frames into animated GIF and WebP.
+     * Hook called upon test completion to compile collected frames into animated
+     * GIF and WebP.
      */
     public static void onComplete() {
         final String prefix = (isNotNull(timer)) ? String.valueOf(timer.startedAt()) : "run";
@@ -157,8 +165,8 @@ public final class ProgressionTracker {
     /**
      * Compiles the captured frames for a completed run.
      *
-     * @param runDir run output directory
-     * @param prefix run-specific artifact prefix
+     * @param runDir   run output directory
+     * @param prefix   run-specific artifact prefix
      * @param progress post-processing progress reporter
      */
     public static void processFrames(
@@ -172,10 +180,10 @@ public final class ProgressionTracker {
     /**
      * Compiles captured frames when scenario progression is enabled.
      *
-     * @param runDir run output directory
-     * @param prefix run-specific artifact prefix
+     * @param runDir   run output directory
+     * @param prefix   run-specific artifact prefix
      * @param progress post-processing progress reporter
-     * @param enabled whether scenario progression is enabled
+     * @param enabled  whether scenario progression is enabled
      */
     public static void processFrames(
             final File runDir,
@@ -364,10 +372,13 @@ public final class ProgressionTracker {
         for (int i = 0; i < scenarios.size(); i++) {
             final _Scenario sc = scenarios.get(i);
             final int scTarget = (sc instanceof Mono) ? 1 : target;
-            final int execs = (isNotNull(core) && isNotNull(core.getResults())) ? core.getResults().getExecutions(sc) : 0;
+            final int execs = (isNotNull(core) && isNotNull(core.getResults())) ? core.getResults().getExecutions(sc)
+                    : 0;
             execsArray[i] = execs;
-            if (execs >= scTarget) completedCount++;
-            if (execs > maxExecs) maxExecs = execs;
+            if (execs >= scTarget)
+                completedCount++;
+            if (execs > maxExecs)
+                maxExecs = execs;
         }
 
         // Header Title
@@ -380,9 +391,11 @@ public final class ProgressionTracker {
         int badgeX = cardX + cardW - 24;
 
         final long elapsedMillis = (isNotNull(timer))
-                ? Math.max(0L, System.currentTimeMillis() - timer.startedAt()) : 0L;
+                ? Math.max(0L, System.currentTimeMillis() - timer.startedAt())
+                : 0L;
         final String elapsedStr = (isNotNull(timer))
-                ? "ELAPSED: " + formatElapsedTime(elapsedMillis) : "ELAPSED: --:--:--";
+                ? "ELAPSED: " + formatElapsedTime(elapsedMillis)
+                : "ELAPSED: --:--:--";
         badgeX -= drawBadge(g, elapsedStr, badgeX, badgeY, CARD_BORDER, TEXT_MUTED) + 8;
 
         // Badge 3: Target count
@@ -394,7 +407,8 @@ public final class ProgressionTracker {
         final int pct = totalScenarios > 0 ? (completedCount * 100 / totalScenarios) : 0;
         final String completedStr = String.format("COMPLETED: %d/%d (%d%%)", completedCount, totalScenarios, pct);
         final Color compColor = (completedCount == totalScenarios) ? GREEN_BAR : AMBER_BAR;
-        badgeX -= drawBadge(g, completedStr, badgeX, badgeY, new Color(compColor.getRed(), compColor.getGreen(), compColor.getBlue(), 40), compColor) + 8;
+        badgeX -= drawBadge(g, completedStr, badgeX, badgeY,
+                new Color(compColor.getRed(), compColor.getGreen(), compColor.getBlue(), 40), compColor) + 8;
 
         // Badge 1: Cycle number
         final String cycleStr = String.format("CYCLE #%d", currentCycle);
@@ -427,7 +441,7 @@ public final class ProgressionTracker {
         // Target Line (dashed sky blue)
         if (target <= maxY) {
             final int targetY = chartY + chartH - (int) Math.round(((double) target / maxY) * chartH);
-            final float[] dash = {6.0f, 4.0f};
+            final float[] dash = { 6.0f, 4.0f };
             g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, dash, 0.0f));
             g.setColor(new Color(56, 189, 248, 200));
             g.drawLine(chartX, targetY, chartX + chartW, targetY);
@@ -487,8 +501,8 @@ public final class ProgressionTracker {
             final int valY = (execs > 0)
                     ? (chartY + chartH - (int) Math.round(((double) execs / maxY) * chartH) - 4)
                     : (chartY + chartH - 6);
-            final Color valColor = (execs >= scTarget) ? new Color(0x4A, 0xDE, 0x80) :
-                    (execs > 0 ? new Color(0xFB, 0xBF, 0x24) : TEXT_DIM);
+            final Color valColor = (execs >= scTarget) ? new Color(0x4A, 0xDE, 0x80)
+                    : (execs > 0 ? new Color(0xFB, 0xBF, 0x24) : TEXT_DIM);
             g.setColor(valColor);
             g.drawString(valStr, centerX - valW / 2, Math.max(chartY + 12, valY));
 
@@ -558,13 +572,15 @@ public final class ProgressionTracker {
     }
 
     private static File resolveRunDirectory() {
-        if (isNotNull(customOutputDir)) return customOutputDir;
+        if (isNotNull(customOutputDir))
+            return customOutputDir;
         if (isNotNull(parameters) && isNotNull(timer) && isNotNull(core)) {
             try {
                 final String logFilePath = name(RUN_LOG_);
                 final File logFile = new File(logFilePath);
                 final File parent = logFile.getParentFile();
-                if (isNotNull(parent)) return parent;
+                if (isNotNull(parent))
+                    return parent;
             } catch (final Exception ignored) {
             }
         }
@@ -574,9 +590,10 @@ public final class ProgressionTracker {
     /**
      * Compiles a sequence of BufferedImages into an animated GIF file.
      *
-     * @param frames                   images to encode
-     * @param outFile                  output GIF file
-     * @param delayCentiseconds        delay for intermediate frames (10 for 10fps)
+     * @param frames                      images to encode
+     * @param outFile                     output GIF file
+     * @param delayCentiseconds           delay for intermediate frames (10 for
+     *                                    10fps)
      * @param finalFrameDelayCentiseconds delay for final frame before looping
      * @throws IOException on write error
      */
@@ -586,7 +603,8 @@ public final class ProgressionTracker {
             final int delayCentiseconds,
             final int finalFrameDelayCentiseconds) throws IOException {
 
-        writeAnimatedGif(frames, outFile, delayCentiseconds, finalFrameDelayCentiseconds, percentage -> { });
+        writeAnimatedGif(frames, outFile, delayCentiseconds, finalFrameDelayCentiseconds, percentage -> {
+        });
     }
 
     static void writeAnimatedGif(
@@ -596,7 +614,8 @@ public final class ProgressionTracker {
             final int finalFrameDelayCentiseconds,
             final IntConsumer progress) throws IOException {
 
-        if (frames.isEmpty()) return;
+        if (frames.isEmpty())
+            return;
         final Iterator<ImageWriter> writers = ImageIO.getImageWritersBySuffix("gif");
         if (!writers.hasNext()) {
             throw new IOException("No GIF ImageWriter available");
@@ -648,9 +667,11 @@ public final class ProgressionTracker {
             final int finalFrameDelayCentiseconds,
             final int maxFramePixels,
             final IntConsumer progress) throws IOException {
-        if (frames.isEmpty()) return;
+        if (frames.isEmpty())
+            return;
         final Iterator<ImageWriter> writers = ImageIO.getImageWritersBySuffix("gif");
-        if (!writers.hasNext()) throw new IOException("No GIF ImageWriter available");
+        if (!writers.hasNext())
+            throw new IOException("No GIF ImageWriter available");
         final ImageWriter writer = writers.next();
         if (isNotNull(outFile.getParentFile()) && !outFile.getParentFile().mkdirs()
                 && !outFile.getParentFile().isDirectory()) {
@@ -710,7 +731,7 @@ public final class ProgressionTracker {
             final IIOMetadataNode appNode = new IIOMetadataNode("ApplicationExtension");
             appNode.setAttribute("applicationID", "NETSCAPE");
             appNode.setAttribute("authenticationCode", "2.0");
-            appNode.setUserObject(new byte[]{0x01, 0x00, 0x00}); // 0 = loop forever
+            appNode.setUserObject(new byte[] { 0x01, 0x00, 0x00 }); // 0 = loop forever
             appExtensions.appendChild(appNode);
             root.appendChild(appExtensions);
         }

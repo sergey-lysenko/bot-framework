@@ -21,25 +21,33 @@ import static works.lysenko.util.lang.word.F.FALSE;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
- * The {@code PropEnum} class is an enumeration that implements the {@code _PropEnum} interface.
- * It is used to define various constant properties, each associated with specific types,
+ * The {@code PropEnum} class is an enumeration that implements the
+ * {@code _PropEnum} interface.
+ * It is used to define various constant properties, each associated with
+ * specific types,
  * default values, and optional behaviour flags.
  * <p>
- * Each enum constant is associated with a specific property descriptor, including:
+ * Each enum constant is associated with a specific property descriptor,
+ * including:
  * <ul>
- *   <li>A {@code Class<?>} type that represents the type of the property value.</li>
- *   <li>A default value represented as a {@code String}.</li>
- *   <li>(Optionally) A silent flag indicating if the property is quiet in its behaviour.</li>
+ * <li>A {@code Class<?>} type that represents the type of the property
+ * value.</li>
+ * <li>A default value represented as a {@code String}.</li>
+ * <li>(Optionally) A silent flag indicating if the property is quiet in its
+ * behaviour.</li>
  * </ul>
  *
- * The {@code PropEnum} class provides utility methods to retrieve property values,
+ * The {@code PropEnum} class provides utility methods to retrieve property
+ * values,
  * property names, and associated metadata.
  * <p>
- * This enumeration supports handling of various data types such as {@code Integer},
- * {@code Boolean}, {@code String}, and others, and is designed to manage configuration properties
+ * This enumeration supports handling of various data types such as
+ * {@code Integer},
+ * {@code Boolean}, {@code String}, and others, and is designed to manage
+ * configuration properties
  * in a structured and type-safe manner.
  */
-@SuppressWarnings({"MissingJavadoc", "OverloadedVarargsMethod"})
+@SuppressWarnings({ "MissingJavadoc", "OverloadedVarargsMethod" })
 public enum PropEnum implements _PropEnum {
 
     _ACTION_MARKER_COLOUR(Color.class, b(_COMMA_, _255, _128, _0_, _128)),
@@ -110,7 +118,7 @@ public enum PropEnum implements _PropEnum {
     _NATIVE_X_RESOLUTION(Integer.class, _1_, _0_, _8_, _0_),
     _NATIVE_Y_RESOLUTION(Integer.class, _2_, _2_, _8_, _0_),
     _NOTIFY_ABOUT_EMPTY_SCENARIO_PACKAGES(Boolean.class, TRUE),
-    _NULL_RESULT_SEVERITY(Integer.class, FALSE),
+    _NULL_RESULT_SEVERITY(Integer.class, _0_),
     _PAUSE_LENGTH(Integer.class, _5_, _0_, _0_, _0_),
     _PERSIST(Boolean.class, FALSE),
     _PROGRESSION_FFMPEG(String.class, "ffmpeg"),
@@ -121,6 +129,7 @@ public enum PropEnum implements _PropEnum {
     _PROGRESSION_SCENARIO_MP4(Boolean.class, TRUE),
     _PROGRESSION_TREE(Boolean.class, TRUE),
     _PROGRESSION_TREE_MP4(Boolean.class, TRUE),
+    _PROGRESSION_TREE_SONIFICATION(String.class, "none"),
     _RANGER_LOG_ABSENT_RANGE(Boolean.class, TRUE),
     _RANGER_LOG_BOUNDARIES(Boolean.class, TRUE),
     _RANGER_LOG_NON_FAILING_OUT_OF_BOUNDS(Boolean.class, TRUE),
@@ -174,9 +183,10 @@ public enum PropEnum implements _PropEnum {
     private final boolean executionParameter;
 
     /**
-     * Initialises a new instance of the PropEnum class with the specified type and default string value.
+     * Initialises a new instance of the PropEnum class with the specified type and
+     * default string value.
      *
-     * @param type the class type which the property corresponds to
+     * @param type               the class type which the property corresponds to
      * @param defaultStringValue the default string value for the property
      */
     PropEnum(final Class<?> type, final String defaultStringValue) {
@@ -188,9 +198,10 @@ public enum PropEnum implements _PropEnum {
     }
 
     /**
-     * Initialises a new instance of the PropEnum class with the specified type and default character value.
+     * Initialises a new instance of the PropEnum class with the specified type and
+     * default character value.
      *
-     * @param type the class type which the property corresponds to
+     * @param type             the class type which the property corresponds to
      * @param defaultCharValue the default character value for the property
      */
     PropEnum(final Class<?> type, final char defaultCharValue) {
@@ -202,9 +213,10 @@ public enum PropEnum implements _PropEnum {
     }
 
     /**
-     * Initialises a new instance of the PropEnum class with the specified type and default characters.
+     * Initialises a new instance of the PropEnum class with the specified type and
+     * default characters.
      *
-     * @param type the class type which the property corresponds to
+     * @param type         the class type which the property corresponds to
      * @param defaultChars the default character values for the property
      */
     PropEnum(final Class<?> type, final char... defaultChars) {
@@ -216,12 +228,14 @@ public enum PropEnum implements _PropEnum {
     }
 
     /**
-     * Initialises a new instance of the PropEnum class with the specified type, default string value,
+     * Initialises a new instance of the PropEnum class with the specified type,
+     * default string value,
      * and a flag indicating whether the operation is performed silently.
      *
-     * @param type the class type which the property corresponds to
+     * @param type               the class type which the property corresponds to
      * @param defaultStringValue the default string value for the property
-     * @param silent a boolean flag indicating if the property should operate in silent mode
+     * @param silent             a boolean flag indicating if the property should
+     *                           operate in silent mode
      */
     PropEnum(final Class<?> type, final String defaultStringValue, final boolean silent) {
 
@@ -232,15 +246,17 @@ public enum PropEnum implements _PropEnum {
     }
 
     /**
-     * Initialises a property with silent behaviour and execution-parameter metadata.
+     * Initialises a property with silent behaviour and execution-parameter
+     * metadata.
      *
-     * @param type the class type which the property corresponds to
+     * @param type               the class type which the property corresponds to
      * @param defaultStringValue the default string value for the property
-     * @param silent true if operations related to the property should be silent
+     * @param silent             true if operations related to the property should
+     *                           be silent
      * @param executionParameter true if the property is also an execution parameter
      */
     PropEnum(final Class<?> type, final String defaultStringValue, final boolean silent,
-             final boolean executionParameter) {
+            final boolean executionParameter) {
 
         this.type = type;
         defaultValue = defaultStringValue;
@@ -250,15 +266,17 @@ public enum PropEnum implements _PropEnum {
     }
 
     /**
-     * Initialises a property with a character default, silent behaviour, and execution-parameter metadata.
+     * Initialises a property with a character default, silent behaviour, and
+     * execution-parameter metadata.
      *
-     * @param type the class type which the property corresponds to
-     * @param defaultCharValue the default character value for the property
-     * @param silent true if operations related to the property should be silent
+     * @param type               the class type which the property corresponds to
+     * @param defaultCharValue   the default character value for the property
+     * @param silent             true if operations related to the property should
+     *                           be silent
      * @param executionParameter true if the property is also an execution parameter
      */
     PropEnum(final Class<?> type, final char defaultCharValue, final boolean silent,
-             final boolean executionParameter) {
+            final boolean executionParameter) {
 
         this.type = type;
         defaultValue = s(defaultCharValue);
@@ -267,12 +285,14 @@ public enum PropEnum implements _PropEnum {
     }
 
     /**
-     * Initialises a new instance of the PropEnum class with the specified type, default character value,
+     * Initialises a new instance of the PropEnum class with the specified type,
+     * default character value,
      * and a flag indicating whether the operation is performed silently.
      *
-     * @param type the class type which the property corresponds to
+     * @param type             the class type which the property corresponds to
      * @param defaultCharValue the default character value for the property
-     * @param silent a boolean flag indicating if the property should operate in silent mode
+     * @param silent           a boolean flag indicating if the property should
+     *                         operate in silent mode
      */
     PropEnum(final Class<?> type, final char defaultCharValue, final boolean silent) {
 
@@ -290,7 +310,8 @@ public enum PropEnum implements _PropEnum {
     @SuppressWarnings("unchecked")
     public <T> T get() {
 
-        return (isNull(properties)) ? (T) StringParser.create(defaultValue, type).result() : (T) properties.getEnum(this);
+        return (isNull(properties)) ? (T) StringParser.create(defaultValue, type).result()
+                : (T) properties.getEnum(this);
     }
 
     public String getPropertyName() {

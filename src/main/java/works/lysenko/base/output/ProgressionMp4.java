@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,6 +27,17 @@ final class ProgressionMp4 {
             final int frameRate,
             final int maxFramePixels,
             final IntConsumer progress) throws IOException, InterruptedException {
+        write(frames, outputFile, ffmpeg, frameRate, maxFramePixels, null, progress);
+    }
+
+    static void write(
+            final List<File> frames,
+            final File outputFile,
+            final String ffmpeg,
+            final int frameRate,
+            final int maxFramePixels,
+            final File audioFile,
+            final IntConsumer progress) throws IOException, InterruptedException {
         if (frames.isEmpty()) throw new IllegalArgumentException("At least one MP4 frame is required");
         final BufferedImage first = ProgressionFrames.read(frames.get(0), maxFramePixels);
         final int width = first.getWidth();
@@ -37,7 +49,7 @@ final class ProgressionMp4 {
         final String executable = (null == ffmpeg || ffmpeg.isBlank()) ? "ffmpeg" : ffmpeg;
         final Process process;
         try {
-            process = new ProcessBuilder(
+            final List<String> command = new ArrayList<>(List.of(
                     executable,
                     "-hide_banner",
                     "-loglevel", "error",
@@ -45,13 +57,23 @@ final class ProgressionMp4 {
                     "-f", "image2pipe",
                     "-vcodec", "png",
                     "-framerate", String.valueOf(Math.max(1, frameRate)),
-                    "-i", "pipe:0",
-                    "-an",
+                    "-i", "pipe:0"));
+            if (null != audioFile) {
+                command.addAll(List.of(
+                        "-i", audioFile.getAbsolutePath(),
+                        "-map", "0:v:0",
+                        "-map", "1:a:0",
+                        "-c:a", "aac",
+                        "-b:a", "96k"));
+            } else {
+                command.add("-an");
+            }
+            command.addAll(List.of(
                     "-c:v", "libx264",
                     "-pix_fmt", "yuv420p",
                     "-movflags", "+faststart",
-                    encodedOutput.toString()
-            ).start();
+                    encodedOutput.toString()));
+            process = new ProcessBuilder(command).start();
         } catch (final IOException e) {
             Files.deleteIfExists(encodedOutput);
             throw new IOException("Unable to start FFmpeg executable '" + executable + "'", e);

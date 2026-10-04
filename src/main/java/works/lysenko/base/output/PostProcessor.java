@@ -129,7 +129,8 @@ public class PostProcessor {
                 String.valueOf((Object) ProgressionSettings.current().scenarioMp4Enabled()),
                 String.valueOf((Object) ProgressionSettings.current().treeMp4Enabled()),
                 ProgressionSettings.current().ffmpeg(),
-                String.valueOf(openBrowser)
+                String.valueOf(openBrowser),
+                ProgressionSettings.current().treeSonification()
         };
     }
 
@@ -161,21 +162,39 @@ public class PostProcessor {
                 if (args.length < 12) {
                     process(logFile, htmlFile, Boolean.parseBoolean(args[3]));
                 } else {
-                    process(
-                            logFile,
-                            htmlFile,
-                            Boolean.parseBoolean(args[3]),
-                            Boolean.parseBoolean(args[4]),
-                            Boolean.parseBoolean(args[5]),
-                            Integer.parseInt(args[6]),
-                            Integer.parseInt(args[7]),
-                            Integer.parseInt(args[8]),
-                            Boolean.parseBoolean(args[9]),
-                            Boolean.parseBoolean(args[10]),
-                            args[11],
-                            13 <= args.length
-                                    ? Boolean.parseBoolean(args[12])
-                                    : Boolean.parseBoolean(args[3]));
+                    final boolean openBrowser = 13 <= args.length
+                            ? Boolean.parseBoolean(args[12])
+                            : Boolean.parseBoolean(args[3]);
+                    if (14 <= args.length) {
+                        process(
+                                logFile,
+                                htmlFile,
+                                Boolean.parseBoolean(args[3]),
+                                Boolean.parseBoolean(args[4]),
+                                Boolean.parseBoolean(args[5]),
+                                Integer.parseInt(args[6]),
+                                Integer.parseInt(args[7]),
+                                Integer.parseInt(args[8]),
+                                Boolean.parseBoolean(args[9]),
+                                Boolean.parseBoolean(args[10]),
+                                args[11],
+                                openBrowser,
+                                args[13]);
+                    } else {
+                        process(
+                                logFile,
+                                htmlFile,
+                                Boolean.parseBoolean(args[3]),
+                                Boolean.parseBoolean(args[4]),
+                                Boolean.parseBoolean(args[5]),
+                                Integer.parseInt(args[6]),
+                                Integer.parseInt(args[7]),
+                                Integer.parseInt(args[8]),
+                                Boolean.parseBoolean(args[9]),
+                                Boolean.parseBoolean(args[10]),
+                                args[11],
+                                openBrowser);
+                    }
                 }
             }
         } catch (final InterruptedException e) {
@@ -306,6 +325,36 @@ public class PostProcessor {
             final boolean treeMp4Enabled,
             final String ffmpeg,
             final boolean openBrowser) {
+        process(
+                logFile,
+                htmlFile,
+                showProgressWindow,
+                scenarioProgressionEnabled,
+                treeProgressionEnabled,
+                maxFrames,
+                maxFramePixels,
+                maxTotalPixels,
+                scenarioMp4Enabled,
+                treeMp4Enabled,
+                ffmpeg,
+                openBrowser,
+                ProgressionSettings.current().treeSonification());
+    }
+
+    static void process(
+            final File logFile,
+            final File htmlFile,
+            final boolean showProgressWindow,
+            final boolean scenarioProgressionEnabled,
+            final boolean treeProgressionEnabled,
+            final int maxFrames,
+            final int maxFramePixels,
+            final int maxTotalPixels,
+            final boolean scenarioMp4Enabled,
+            final boolean treeMp4Enabled,
+            final String ffmpeg,
+            final boolean openBrowser,
+            final String treeSonification) {
         final File runDir = logFile.getAbsoluteFile().getParentFile();
         final String prefix = runPrefix(logFile);
         final ProgressWindow progress = ProgressWindow.create(showProgressWindow);
@@ -329,7 +378,8 @@ public class PostProcessor {
                     maxFramePixels,
                     maxTotalPixels,
                     treeMp4Enabled,
-                    ffmpeg);
+                    ffmpeg,
+                    treeSonification);
 
             progress.update(REPORT_TASK, 0);
             LogHtml.generateReport(

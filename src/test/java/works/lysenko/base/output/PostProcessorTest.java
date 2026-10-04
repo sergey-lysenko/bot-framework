@@ -3,11 +3,12 @@ package works.lysenko.base.output;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import javax.imageio.ImageIO;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import javax.imageio.ImageIO;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,6 +45,7 @@ class PostProcessorTest {
 
         assertEquals("true", command[7]);
         assertEquals("false", command[16]);
+        assertEquals(ProgressionSettings.current().treeSonification(), command[17]);
     }
 
     @Test
@@ -179,9 +181,53 @@ class PostProcessorTest {
         assertTrue(Files.readString(htmlFile).contains(prefix + ".progression.mp4"));
     }
 
+    @Test
+    void passesSelectedSonificationModeThroughDetachedProcessing(@TempDir final Path tempDir) throws IOException {
+        final String prefix = "run-audio";
+        final Path runDir = Files.createDirectory(tempDir.resolve(prefix));
+        writeFrame(runDir.resolve("tree_progression/frame_0001.png"), Color.BLACK);
+        writeFrame(runDir.resolve("tree_progression/frame_0002.png"), Color.GREEN);
+        final Path logFile = runDir.resolve(prefix + ".run.log");
+        final Path htmlFile = runDir.resolve(prefix + ".run.log.html");
+        Files.writeString(logFile, "");
+        final Path encoder = tempDir.resolve("fake-ffmpeg-with-audio");
+        Files.writeString(
+                encoder,
+                "#!/bin/sh\nfor output do :; done\nprintf '%s\\n' \"$@\" > \"$output\"\ncat >/dev/null\n");
+        assertTrue(encoder.toFile().setExecutable(true));
+
+        PostProcessor.process(
+                logFile.toFile(),
+                htmlFile.toFile(),
+                false,
+                false,
+                true,
+                5,
+                16,
+                100,
+                false,
+                true,
+                encoder.toString(),
+                false,
+                ClaudeSonifier.MODE);
+
+        final String ffmpegArguments = Files.readString(runDir.resolve(prefix + ".tree.progression.mp4"));
+        assertTrue(ffmpegArguments.contains("-map\n1:a:0"));
+        assertTrue(ffmpegArguments.contains("tree-progression-audio-"));
+    }
+
     private static void writeFrame(final Path path) throws IOException {
+        writeFrame(path, Color.BLACK);
+    }
+
+    private static void writeFrame(final Path path, final Color color) throws IOException {
         Files.createDirectories(path.getParent());
         final BufferedImage image = new BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB);
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = 0; x < image.getWidth(); x++) {
+                image.setRGB(x, y, color.getRGB());
+            }
+        }
         ImageIO.write(image, "png", path.toFile());
     }
 }

@@ -34,10 +34,12 @@ import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_;
 
 /**
  * Tracks scenario tree progression across test cycles during limbo periods,
- * rendering the scenario hierarchy into PNG frames with visual execution indicators,
+ * rendering the scenario hierarchy into PNG frames with visual execution
+ * indicators,
  * and compiling them into an animated GIF upon test completion.
  */
-@SuppressWarnings({"ClassWithoutLogger", "MagicNumber", "NestedMethodCall", "OverlyComplexMethod", "MethodWithMultipleLoops", "ClassWithTooManyFields"})
+@SuppressWarnings({ "ClassWithoutLogger", "MagicNumber", "NestedMethodCall", "OverlyComplexMethod",
+        "MethodWithMultipleLoops", "ClassWithTooManyFields" })
 public final class TreeProgressionTracker {
 
     private static final int COL_WIDTH = 270;
@@ -142,7 +144,8 @@ public final class TreeProgressionTracker {
     }
 
     static Color getOverExecutionColor(final double overRatio, final double maxOverRatio) {
-        if (overRatio <= 0.0 || maxOverRatio <= 0.0) return GREEN_DONE;
+        if (overRatio <= 0.0 || maxOverRatio <= 0.0)
+            return GREEN_DONE;
 
         final double progress = Math.min(1.0, overRatio / maxOverRatio);
         return new Color(
@@ -173,25 +176,31 @@ public final class TreeProgressionTracker {
      * @param testNumber the test cycle number just completed
      */
     public static void onLimbo(final Integer testNumber) {
-        if (!ProgressionSettings.current().treeEnabled()) return;
-        if (isNull(core) || isNull(core.getResults())) return;
+        if (!ProgressionSettings.current().treeEnabled())
+            return;
+        if (isNull(core) || isNull(core.getResults()))
+            return;
         final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
                 || Boolean.TRUE.equals(PropEnum._ALL_LEAFS.get())
                 || isCountAllLeafs();
-        if (!allLeafsMode) return;
+        if (!allLeafsMode)
+            return;
 
         final TreeMap<String, Result> sorted = core.getResults().getSortedStrings(false);
-        if (sorted.isEmpty()) return;
+        if (sorted.isEmpty())
+            return;
 
         final TreeLayout layout = TreeHtml.computeLayout(sorted);
-        if (layout.nodes().isEmpty()) return;
+        if (layout.nodes().isEmpty())
+            return;
 
         final int target = (isNotNull(parameters)) ? parameters.getAllLeafsCount()
                 : (isNotNull(PropEnum._ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._ALL_LEAFS_COUNT.get()) : 1);
         final int currentCycle = isNotNull(testNumber) ? testNumber : capturedFrames.size() + 1;
 
         final File runDir = resolveRunDirectory();
-        if (isNull(runDir)) return;
+        if (isNull(runDir))
+            return;
 
         final BufferedImage image;
         try {
@@ -201,7 +210,8 @@ public final class TreeProgressionTracker {
             return;
         }
         final File progressionDir = new File(runDir, "tree_progression");
-        if (!progressionDir.exists() && !progressionDir.mkdirs()) return;
+        if (!progressionDir.exists() && !progressionDir.mkdirs())
+            return;
 
         final int maxFrames = ProgressionFrames.frameLimit(
                 ProgressionSettings.current().maxFrames(),
@@ -212,6 +222,12 @@ public final class TreeProgressionTracker {
         final File frameFile = new File(progressionDir, String.format(Locale.US, "frame_%04d.png", frameIndex));
         try {
             ImageIO.write(image, "png", frameFile);
+            if (ProgressionSettings.current().treeMp4Enabled()) {
+                final java.util.Optional<TreeSonifier> sonifier = ProgressionSettings.current().treeSonifier();
+                if (sonifier.isPresent()) {
+                    sonifier.get().capture(frameFile, layout, target);
+                }
+            }
             if (!capturedFrames.contains(frameFile) && capturedFrames.size() < maxFrames) {
                 capturedFrames.add(frameFile);
             }
@@ -221,7 +237,8 @@ public final class TreeProgressionTracker {
     }
 
     /**
-     * Hook called upon test completion to compile collected frames into animated GIF and WebP.
+     * Hook called upon test completion to compile collected frames into animated
+     * GIF and WebP.
      */
     public static void onComplete() {
         final String prefix = (isNotNull(timer)) ? String.valueOf(timer.startedAt()) : "run";
@@ -231,8 +248,8 @@ public final class TreeProgressionTracker {
     /**
      * Compiles the captured tree frames for a completed run.
      *
-     * @param runDir run output directory
-     * @param prefix run-specific artifact prefix
+     * @param runDir   run output directory
+     * @param prefix   run-specific artifact prefix
      * @param progress post-processing progress reporter
      */
     public static void processFrames(
@@ -246,10 +263,10 @@ public final class TreeProgressionTracker {
     /**
      * Compiles captured tree frames when tree progression is enabled.
      *
-     * @param runDir run output directory
-     * @param prefix run-specific artifact prefix
+     * @param runDir   run output directory
+     * @param prefix   run-specific artifact prefix
      * @param progress post-processing progress reporter
-     * @param enabled whether tree progression is enabled
+     * @param enabled  whether tree progression is enabled
      */
     public static void processFrames(
             final File runDir,
@@ -317,6 +334,30 @@ public final class TreeProgressionTracker {
             final int maxTotalPixels,
             final boolean mp4Enabled,
             final String ffmpeg) {
+        processFrames(
+                runDir,
+                prefix,
+                progress,
+                enabled,
+                maxFrames,
+                maxFramePixels,
+                maxTotalPixels,
+                mp4Enabled,
+                ffmpeg,
+                ProgressionSettings.current().treeSonification());
+    }
+
+    public static void processFrames(
+            final File runDir,
+            final String prefix,
+            final ProcessingProgress progress,
+            final boolean enabled,
+            final int maxFrames,
+            final int maxFramePixels,
+            final int maxTotalPixels,
+            final boolean mp4Enabled,
+            final String ffmpeg,
+            final String treeSonification) {
         if (!enabled) {
             progress.skipped("Tree progression GIF");
             progress.skipped("Tree progression WebP");
@@ -386,18 +427,29 @@ public final class TreeProgressionTracker {
             return;
         }
         final File mp4File = new File(runDir, prefix + ".tree.progression.mp4");
+        File audioFile = null;
         try {
+            final java.util.Optional<TreeSonifier> sonifier = TreeProgressionAudio.find(treeSonification);
+            if (sonifier.isPresent() && sonifier.get().canSonify(framesToProcess)) {
+                audioFile = File.createTempFile("tree-progression-audio-", ".wav", runDir);
+                sonifier.get().writeWav(framesToProcess, audioFile, FPS);
+            }
             ProgressionMp4.write(
                     framesToProcess,
                     mp4File,
                     ffmpeg,
                     FPS,
                     maxFramePixels,
+                    audioFile,
                     percentage -> progress.update(mp4Task, percentage));
             progress.complete(mp4Task);
             log("Tree progression MP4 generated: " + mp4File.getAbsolutePath());
         } catch (final Exception e) {
             progress.failed(mp4Task, e);
+        } finally {
+            if (null != audioFile && !audioFile.delete()) {
+                log("Unable to remove temporary tree progression audio: " + audioFile.getAbsolutePath());
+            }
         }
     }
 
@@ -422,8 +474,10 @@ public final class TreeProgressionTracker {
         double maxLeafOverRatio = 0.0;
 
         for (final NodeData n : layout.nodes()) {
-            if (n.col() > maxCol) maxCol = n.col();
-            if (n.row() > maxRow) maxRow = n.row();
+            if (n.col() > maxCol)
+                maxCol = n.col();
+            if (n.row() > maxRow)
+                maxRow = n.row();
             final int execs = (null != n.result()) ? n.result().getExecutions() : 0;
             totalExecs += execs;
             if (ScenarioType.LEAF == getScenarioType(n)) {
@@ -431,7 +485,8 @@ public final class TreeProgressionTracker {
             }
             if (n.children().isEmpty() && isTerminalScenario(n)) {
                 totalLeafs++;
-                if (execs >= getTargetExecutions(n, target)) coveredLeafs++;
+                if (execs >= getTargetExecutions(n, target))
+                    coveredLeafs++;
             }
         }
 
@@ -439,7 +494,7 @@ public final class TreeProgressionTracker {
         final long canvasHeight = evenDimension(Math.max(
                 720L,
                 (long) Math.ceil((maxRow + 1.0) * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y + BOTTOM_PADDING)));
-        final long maxPixels = ProgressionFrames.maxFramePixels(        ProgressionSettings.current().maxFramePixels());
+        final long maxPixels = ProgressionFrames.maxFramePixels(ProgressionSettings.current().maxFramePixels());
         if (canvasWidth > ProgressionFrames.MAX_DIMENSION
                 || canvasHeight > ProgressionFrames.MAX_DIMENSION
                 || canvasWidth * canvasHeight > maxPixels) {
@@ -499,14 +554,18 @@ public final class TreeProgressionTracker {
 
         for (final Edge e : sortedEdges) {
             final int startX = e.from().col() * COL_WIDTH + CARD_WIDTH + PADDING_X;
-            final int startY = (int) Math.round(e.from().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + HEADER_HEIGHT + PADDING_Y);
+            final int startY = (int) Math
+                    .round(e.from().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + HEADER_HEIGHT + PADDING_Y);
             final int endX = e.to().col() * COL_WIDTH + PADDING_X;
-            final int endY = (int) Math.round(e.to().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + HEADER_HEIGHT + PADDING_Y);
+            final int endY = (int) Math
+                    .round(e.to().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + HEADER_HEIGHT + PADDING_Y);
             final int cX = (startX + endX) / 2;
 
             final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
             final int fromExecs = (null != e.from().result()) ? e.from().result().getExecutions() : 0;
-            final int toEvents = (null != e.to().result() && null != e.to().result().getEvents()) ? e.to().result().getEvents().size() : 0;
+            final int toEvents = (null != e.to().result() && null != e.to().result().getEvents())
+                    ? e.to().result().getEvents().size()
+                    : 0;
 
             final Path2D.Double path = new Path2D.Double();
             path.moveTo(startX, startY);
@@ -543,7 +602,8 @@ public final class TreeProgressionTracker {
         final int scenarioTarget = getTargetExecutions(n, target);
         final int safeTarget = Math.max(1, scenarioTarget);
         final double overRatio = (ScenarioType.LEAF == getScenarioType(n))
-                ? getLeafOverExecutionRatio(n, target) : 0.0;
+                ? getLeafOverExecutionRatio(n, target)
+                : 0.0;
 
         final Color progressColor = getScenarioProgressColor(n, target, maxLeafOverRatio);
         final Color cardFill;
@@ -590,7 +650,8 @@ public final class TreeProgressionTracker {
 
             // Fill
             final double fillRatio = (0 == scenarioTarget)
-                    ? 1.0 : Math.min(1.0, (double) execs / (double) safeTarget);
+                    ? 1.0
+                    : Math.min(1.0, (double) execs / (double) safeTarget);
             final int filledW = Math.max(4, (int) Math.round(barW * fillRatio));
             g.setColor(progressColor);
             g.fillRoundRect(barX, barY, filledW, barH, 2, 2);
@@ -678,7 +739,8 @@ public final class TreeProgressionTracker {
     }
 
     private static long evenDimension(final long dimension) {
-        if (dimension >= ProgressionFrames.MAX_DIMENSION) return dimension;
+        if (dimension >= ProgressionFrames.MAX_DIMENSION)
+            return dimension;
         return (dimension & 1L) == 0L ? dimension : dimension + 1L;
     }
 
@@ -723,7 +785,8 @@ public final class TreeProgressionTracker {
 
         rightX -= drawBadge(g, totalExecs + " total execs", rightX, topY, new Color(51, 65, 85), TEXT_WHITE) + 10;
 
-        final Color covBg = (coveredLeafs == totalLeafs && totalLeafs > 0) ? new Color(22, 101, 52) : new Color(180, 83, 9);
+        final Color covBg = (coveredLeafs == totalLeafs && totalLeafs > 0) ? new Color(22, 101, 52)
+                : new Color(180, 83, 9);
         rightX -= drawBadge(g, "Leafs: " + coveredLeafs + "/" + totalLeafs, rightX, topY, covBg, TEXT_WHITE) + 10;
 
         rightX -= drawBadge(g, "Target: " + target, rightX, topY, new Color(51, 65, 85), new Color(203, 213, 225)) + 10;
@@ -754,13 +817,15 @@ public final class TreeProgressionTracker {
     }
 
     private static File resolveRunDirectory() {
-        if (isNotNull(customOutputDir)) return customOutputDir;
+        if (isNotNull(customOutputDir))
+            return customOutputDir;
         if (isNotNull(parameters) && isNotNull(timer) && isNotNull(core)) {
             try {
                 final String logFilePath = name(RUN_LOG_);
                 final File logFile = new File(logFilePath);
                 final File parent = logFile.getParentFile();
-                if (isNotNull(parent)) return parent;
+                if (isNotNull(parent))
+                    return parent;
             } catch (final Exception ignored) {
             }
         }
