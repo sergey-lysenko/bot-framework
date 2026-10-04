@@ -41,6 +41,7 @@ import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static works.lysenko.util.func.type.fractions.Factory.fr;
 
@@ -205,8 +206,20 @@ class TreeProgressionTrackerTest {
         final BufferedImage img = TreeProgressionTracker.renderTreeProgression(layout, 3, 1);
 
         assertNotNull(img);
+        assertEquals(0, img.getWidth() % 2);
+        assertEquals(0, img.getHeight() % 2);
         assertTrue(img.getWidth() >= 1280);
         assertTrue(img.getHeight() >= 720);
+    }
+
+    @Test
+    void rejectsTreeFramesExceedingTheConfiguredDimensions() {
+        final NodeData oversized = new NodeData("large", "Large", "Root", 100, 0.0, null);
+        final TreeLayout layout = new TreeLayout(List.of(oversized), List.of());
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> TreeProgressionTracker.renderTreeProgression(layout, 1, 1));
     }
 
     @Test

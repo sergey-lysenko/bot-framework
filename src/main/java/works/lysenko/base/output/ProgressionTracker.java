@@ -28,6 +28,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.function.IntConsumer;
 
 import static java.util.Objects.isNull;
 import static works.lysenko.Base.*;
@@ -104,6 +105,7 @@ public final class ProgressionTracker {
      * @param testNumber the test cycle number just completed
      */
     public static void onLimbo(final Integer testNumber) {
+        if (!Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION.get())) return;
         if (isNull(core)) return;
         final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
                 || Boolean.TRUE.equals(PropEnum._ALL_LEAFS.get())
@@ -127,10 +129,18 @@ public final class ProgressionTracker {
         final File progressionDir = new File(runDir, "progression");
         if (!progressionDir.exists() && !progressionDir.mkdirs()) return;
 
-        final File frameFile = new File(progressionDir, String.format("frame_%04d.png", currentCycle));
+        final int maxFrames = ProgressionFrames.frameLimit(
+                PropEnum._PROGRESSION_MAX_FRAMES.get(),
+                PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get(),
+                WIDTH,
+                HEIGHT);
+        final int frameIndex = Math.min(currentCycle, maxFrames);
+        final File frameFile = new File(progressionDir, String.format("frame_%04d.png", frameIndex));
         try {
             ImageIO.write(image, "png", frameFile);
-            capturedFrames.add(frameFile);
+            if (!capturedFrames.contains(frameFile) && capturedFrames.size() < maxFrames) {
+                capturedFrames.add(frameFile);
+            }
         } catch (final IOException e) {
             System.err.println("Failed to save progression frame: " + e.getMessage());
         }
@@ -140,53 +150,179 @@ public final class ProgressionTracker {
      * Hook called upon test completion to compile collected frames into animated GIF and WebP.
      */
     public static void onComplete() {
-        final File runDir = resolveRunDirectory();
-        if (isNull(runDir)) return;
-
-        final List<File> framesToProcess = new ArrayList<>();
-        if (!capturedFrames.isEmpty()) {
-            framesToProcess.addAll(capturedFrames);
-        } else {
-            final File progressionDir = new File(runDir, "progression");
-            if (progressionDir.isDirectory()) {
-                final File[] files = progressionDir.listFiles((d, n) -> n.endsWith(".png"));
-                if (isNotNull(files)) {
-                    final List<File> sorted = new ArrayList<>(List.of(files));
-                    sorted.sort(Comparator.comparing(File::getName));
-                    framesToProcess.addAll(sorted);
-                }
-            }
-        }
-
-        if (framesToProcess.isEmpty()) return;
-
         final String prefix = (isNotNull(timer)) ? String.valueOf(timer.startedAt()) : "run";
-        final File gifFile = new File(runDir, prefix + ".progression.gif");
-        final File webpFile = new File(runDir, prefix + ".progression.webp");
-        final List<BufferedImage> images = new ArrayList<>(framesToProcess.size());
+        processFrames(resolveRunDirectory(), prefix, ProcessingProgress.NONE);
+    }
 
+    /**
+     * Compiles the captured frames for a completed run.
+     *
+     * @param runDir run output directory
+     * @param prefix run-specific artifact prefix
+     * @param progress post-processing progress reporter
+     */
+    public static void processFrames(
+            final File runDir,
+            final String prefix,
+            final ProcessingProgress progress) {
+
+        processFrames(runDir, prefix, progress, Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION.get()));
+    }
+
+    /**
+     * Compiles captured frames when scenario progression is enabled.
+     *
+     * @param runDir run output directory
+     * @param prefix run-specific artifact prefix
+     * @param progress post-processing progress reporter
+     * @param enabled whether scenario progression is enabled
+     */
+    public static void processFrames(
+            final File runDir,
+            final String prefix,
+            final ProcessingProgress progress,
+            final boolean enabled) {
+        processFrames(
+                runDir,
+                prefix,
+                progress,
+                enabled,
+                PropEnum._PROGRESSION_MAX_FRAMES.get(),
+                PropEnum._PROGRESSION_MAX_FRAME_PIXELS.get(),
+                PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get(),
+                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION_MP4.get()),
+                PropEnum._PROGRESSION_FFMPEG.get());
+    }
+
+    public static void processFrames(
+            final File runDir,
+            final String prefix,
+            final ProcessingProgress progress,
+            final boolean enabled,
+            final int maxFrames,
+            final int maxFramePixels) {
+        processFrames(
+                runDir,
+                prefix,
+                progress,
+                enabled,
+                maxFrames,
+                maxFramePixels,
+                PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get(),
+                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION_MP4.get()),
+                PropEnum._PROGRESSION_FFMPEG.get());
+    }
+
+    public static void processFrames(
+            final File runDir,
+            final String prefix,
+            final ProcessingProgress progress,
+            final boolean enabled,
+            final int maxFrames,
+            final int maxFramePixels,
+            final int maxTotalPixels) {
+        processFrames(
+                runDir,
+                prefix,
+                progress,
+                enabled,
+                maxFrames,
+                maxFramePixels,
+                maxTotalPixels,
+                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION_MP4.get()),
+                PropEnum._PROGRESSION_FFMPEG.get());
+    }
+
+    public static void processFrames(
+            final File runDir,
+            final String prefix,
+            final ProcessingProgress progress,
+            final boolean enabled,
+            final int maxFrames,
+            final int maxFramePixels,
+            final int maxTotalPixels,
+            final boolean mp4Enabled,
+            final String ffmpeg) {
+        if (!enabled) {
+            progress.skipped("Scenario progression GIF");
+            progress.skipped("Scenario progression WebP");
+            progress.skipped("Scenario progression MP4");
+            return;
+        }
+        if (isNull(runDir)) {
+            progress.skipped("Scenario progression GIF");
+            progress.skipped("Scenario progression WebP");
+            progress.skipped("Scenario progression MP4");
+            return;
+        }
+        final String gifTask = "Scenario progression GIF";
+        final String webpTask = "Scenario progression WebP";
+        final String mp4Task = "Scenario progression MP4";
+        final File progressionDir = new File(runDir, "progression");
+        final List<File> framesToProcess;
         try {
-            for (final File f : framesToProcess) {
-                final BufferedImage img = ImageIO.read(f);
-                if (isNotNull(img)) images.add(img);
-            }
+            framesToProcess = ProgressionFrames.select(
+                    progressionDir,
+                    maxFrames,
+                    maxFramePixels,
+                    maxTotalPixels);
         } catch (final Exception e) {
-            System.err.println("Failed to load progression frames: " + e.getMessage());
+            progress.failed(gifTask, e);
+            progress.failed(webpTask, e);
+            progress.failed(mp4Task, e);
+            return;
+        }
+        if (framesToProcess.isEmpty()) {
+            progress.skipped(gifTask);
+            progress.skipped(webpTask);
+            progress.skipped(mp4Task);
             return;
         }
 
-        if (images.isEmpty()) return;
+        final File gifFile = new File(runDir, prefix + ".progression.gif");
+        final File webpFile = new File(runDir, prefix + ".progression.webp");
         try {
-            writeAnimatedGif(images, gifFile, DELAY_CENTISECONDS, FINAL_FRAME_DELAY_CENTISECONDS);
+            writeAnimatedGifFiles(
+                    framesToProcess,
+                    gifFile,
+                    DELAY_CENTISECONDS,
+                    FINAL_FRAME_DELAY_CENTISECONDS,
+                    maxFramePixels,
+                    percentage -> progress.update(gifTask, 10 + (percentage * 45 / 100)));
+            progress.complete(gifTask);
             log("Progression GIF generated: " + gifFile.getAbsolutePath());
         } catch (final Exception e) {
-            System.err.println("Failed to create progression GIF: " + e.getMessage());
+            progress.failed(gifTask, e);
         }
         try {
-            AnimatedWebP.write(images, webpFile, DELAY_CENTISECONDS * 10, FINAL_FRAME_DELAY_CENTISECONDS * 10);
+            AnimatedWebP.write(
+                    framesToProcess,
+                    webpFile,
+                    DELAY_CENTISECONDS * 10,
+                    FINAL_FRAME_DELAY_CENTISECONDS * 10,
+                    maxFramePixels,
+                    percentage -> progress.update(webpTask, 10 + (percentage * 90 / 100)));
+            progress.complete(webpTask);
             log("Progression WebP generated: " + webpFile.getAbsolutePath());
         } catch (final Exception e) {
-            System.err.println("Failed to create progression WebP: " + e.getMessage());
+            progress.failed(webpTask, e);
+        }
+        if (!mp4Enabled) {
+            progress.skipped(mp4Task);
+            return;
+        }
+        try {
+            ProgressionMp4.write(
+                    framesToProcess,
+                    new File(runDir, prefix + ".progression.mp4"),
+                    ffmpeg,
+                    FPS,
+                    maxFramePixels,
+                    percentage -> progress.update(mp4Task, percentage));
+            progress.complete(mp4Task);
+            log("Progression MP4 generated: " + new File(runDir, prefix + ".progression.mp4").getAbsolutePath());
+        } catch (final Exception e) {
+            progress.failed(mp4Task, e);
         }
     }
 
@@ -450,6 +586,16 @@ public final class ProgressionTracker {
             final int delayCentiseconds,
             final int finalFrameDelayCentiseconds) throws IOException {
 
+        writeAnimatedGif(frames, outFile, delayCentiseconds, finalFrameDelayCentiseconds, percentage -> { });
+    }
+
+    static void writeAnimatedGif(
+            final List<BufferedImage> frames,
+            final File outFile,
+            final int delayCentiseconds,
+            final int finalFrameDelayCentiseconds,
+            final IntConsumer progress) throws IOException {
+
         if (frames.isEmpty()) return;
         final Iterator<ImageWriter> writers = ImageIO.getImageWritersBySuffix("gif");
         if (!writers.hasNext()) {
@@ -472,6 +618,55 @@ public final class ProgressionTracker {
                 final int delay = (i == frames.size() - 1) ? finalFrameDelayCentiseconds : delayCentiseconds;
                 final IIOMetadata metadata = configureGifMetadata(writer, frame, delay, i == 0);
                 writer.writeToSequence(new IIOImage(frame, null, metadata), params);
+                progress.accept((int) (((i + 1L) * 100) / frames.size()));
+            }
+            writer.endWriteSequence();
+        } finally {
+            writer.dispose();
+        }
+    }
+
+    static void writeAnimatedGifFiles(
+            final List<File> frames,
+            final File outFile,
+            final int delayCentiseconds,
+            final int finalFrameDelayCentiseconds,
+            final IntConsumer progress) throws IOException {
+        writeAnimatedGifFiles(
+                frames,
+                outFile,
+                delayCentiseconds,
+                finalFrameDelayCentiseconds,
+                PropEnum._PROGRESSION_MAX_FRAME_PIXELS.get(),
+                progress);
+    }
+
+    static void writeAnimatedGifFiles(
+            final List<File> frames,
+            final File outFile,
+            final int delayCentiseconds,
+            final int finalFrameDelayCentiseconds,
+            final int maxFramePixels,
+            final IntConsumer progress) throws IOException {
+        if (frames.isEmpty()) return;
+        final Iterator<ImageWriter> writers = ImageIO.getImageWritersBySuffix("gif");
+        if (!writers.hasNext()) throw new IOException("No GIF ImageWriter available");
+        final ImageWriter writer = writers.next();
+        if (isNotNull(outFile.getParentFile()) && !outFile.getParentFile().mkdirs()
+                && !outFile.getParentFile().isDirectory()) {
+            throw new IOException("Unable to create GIF output directory: " + outFile.getParent());
+        }
+
+        try (final ImageOutputStream ios = ImageIO.createImageOutputStream(outFile)) {
+            writer.setOutput(ios);
+            writer.prepareWriteSequence(null);
+            final ImageWriteParam params = writer.getDefaultWriteParam();
+            for (int i = 0; i < frames.size(); i++) {
+                final BufferedImage frame = ProgressionFrames.read(frames.get(i), maxFramePixels);
+                final int delay = (i == frames.size() - 1) ? finalFrameDelayCentiseconds : delayCentiseconds;
+                final IIOMetadata metadata = configureGifMetadata(writer, frame, delay, i == 0);
+                writer.writeToSequence(new IIOImage(frame, null, metadata), params);
+                progress.accept((int) (((i + 1L) * 100) / frames.size()));
             }
             writer.endWriteSequence();
         } finally {

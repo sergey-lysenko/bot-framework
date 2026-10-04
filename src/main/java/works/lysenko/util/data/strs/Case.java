@@ -30,6 +30,8 @@ public interface Case {
     static String c(final Object s) {
 
         final String original = s(s);
+        if (!original.isEmpty() && Character.isDigit(original.charAt(0)))
+            throw new IllegalArgumentException("Cannot capitalize a string starting with a digit"); //NON-NLS
         final String capitalized = capitalize(original);
         Assertions.assertNotEqualsSilent(original, capitalized, "No change during Capitalization"); //NON-NLS
         return capitalized;

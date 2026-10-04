@@ -173,6 +173,7 @@ public final class TreeProgressionTracker {
      * @param testNumber the test cycle number just completed
      */
     public static void onLimbo(final Integer testNumber) {
+        if (!Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION.get())) return;
         if (isNull(core) || isNull(core.getResults())) return;
         final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
                 || Boolean.TRUE.equals(PropEnum._ALL_LEAFS.get())
@@ -189,17 +190,31 @@ public final class TreeProgressionTracker {
                 : (isNotNull(PropEnum._ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._ALL_LEAFS_COUNT.get()) : 1);
         final int currentCycle = isNotNull(testNumber) ? testNumber : capturedFrames.size() + 1;
 
-        final BufferedImage image = renderTreeProgression(layout, target, currentCycle);
         final File runDir = resolveRunDirectory();
         if (isNull(runDir)) return;
 
+        final BufferedImage image;
+        try {
+            image = renderTreeProgression(layout, target, currentCycle);
+        } catch (final IllegalArgumentException e) {
+            System.err.println("Skipped tree progression frame: " + e.getMessage());
+            return;
+        }
         final File progressionDir = new File(runDir, "tree_progression");
         if (!progressionDir.exists() && !progressionDir.mkdirs()) return;
 
-        final File frameFile = new File(progressionDir, String.format(Locale.US, "frame_%04d.png", currentCycle));
+        final int maxFrames = ProgressionFrames.frameLimit(
+                PropEnum._PROGRESSION_MAX_FRAMES.get(),
+                PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get(),
+                image.getWidth(),
+                image.getHeight());
+        final int frameIndex = Math.min(currentCycle, maxFrames);
+        final File frameFile = new File(progressionDir, String.format(Locale.US, "frame_%04d.png", frameIndex));
         try {
             ImageIO.write(image, "png", frameFile);
-            capturedFrames.add(frameFile);
+            if (!capturedFrames.contains(frameFile) && capturedFrames.size() < maxFrames) {
+                capturedFrames.add(frameFile);
+            }
         } catch (final IOException e) {
             System.err.println("Failed to save tree progression frame: " + e.getMessage());
         }
@@ -209,53 +224,180 @@ public final class TreeProgressionTracker {
      * Hook called upon test completion to compile collected frames into animated GIF and WebP.
      */
     public static void onComplete() {
-        final File runDir = resolveRunDirectory();
-        if (isNull(runDir)) return;
-
-        final List<File> framesToProcess = new ArrayList<>();
-        if (!capturedFrames.isEmpty()) {
-            framesToProcess.addAll(capturedFrames);
-        } else {
-            final File progressionDir = new File(runDir, "tree_progression");
-            if (progressionDir.isDirectory()) {
-                final File[] files = progressionDir.listFiles((d, n) -> n.endsWith(".png"));
-                if (isNotNull(files)) {
-                    final List<File> sorted = new ArrayList<>(List.of(files));
-                    sorted.sort(Comparator.comparing(File::getName));
-                    framesToProcess.addAll(sorted);
-                }
-            }
-        }
-
-        if (framesToProcess.isEmpty()) return;
-
         final String prefix = (isNotNull(timer)) ? String.valueOf(timer.startedAt()) : "run";
-        final File gifFile = new File(runDir, prefix + ".tree.progression.gif");
-        final File webpFile = new File(runDir, prefix + ".tree.progression.webp");
-        final List<BufferedImage> images = new ArrayList<>(framesToProcess.size());
+        processFrames(resolveRunDirectory(), prefix, ProcessingProgress.NONE);
+    }
 
+    /**
+     * Compiles the captured tree frames for a completed run.
+     *
+     * @param runDir run output directory
+     * @param prefix run-specific artifact prefix
+     * @param progress post-processing progress reporter
+     */
+    public static void processFrames(
+            final File runDir,
+            final String prefix,
+            final ProcessingProgress progress) {
+
+        processFrames(runDir, prefix, progress, Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION.get()));
+    }
+
+    /**
+     * Compiles captured tree frames when tree progression is enabled.
+     *
+     * @param runDir run output directory
+     * @param prefix run-specific artifact prefix
+     * @param progress post-processing progress reporter
+     * @param enabled whether tree progression is enabled
+     */
+    public static void processFrames(
+            final File runDir,
+            final String prefix,
+            final ProcessingProgress progress,
+            final boolean enabled) {
+        processFrames(
+                runDir,
+                prefix,
+                progress,
+                enabled,
+                PropEnum._PROGRESSION_MAX_FRAMES.get(),
+                PropEnum._PROGRESSION_MAX_FRAME_PIXELS.get(),
+                PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get(),
+                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION_MP4.get()),
+                PropEnum._PROGRESSION_FFMPEG.get());
+    }
+
+    public static void processFrames(
+            final File runDir,
+            final String prefix,
+            final ProcessingProgress progress,
+            final boolean enabled,
+            final int maxFrames,
+            final int maxFramePixels) {
+        processFrames(
+                runDir,
+                prefix,
+                progress,
+                enabled,
+                maxFrames,
+                maxFramePixels,
+                PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get(),
+                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION_MP4.get()),
+                PropEnum._PROGRESSION_FFMPEG.get());
+    }
+
+    public static void processFrames(
+            final File runDir,
+            final String prefix,
+            final ProcessingProgress progress,
+            final boolean enabled,
+            final int maxFrames,
+            final int maxFramePixels,
+            final int maxTotalPixels) {
+        processFrames(
+                runDir,
+                prefix,
+                progress,
+                enabled,
+                maxFrames,
+                maxFramePixels,
+                maxTotalPixels,
+                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION_MP4.get()),
+                PropEnum._PROGRESSION_FFMPEG.get());
+    }
+
+    public static void processFrames(
+            final File runDir,
+            final String prefix,
+            final ProcessingProgress progress,
+            final boolean enabled,
+            final int maxFrames,
+            final int maxFramePixels,
+            final int maxTotalPixels,
+            final boolean mp4Enabled,
+            final String ffmpeg) {
+        if (!enabled) {
+            progress.skipped("Tree progression GIF");
+            progress.skipped("Tree progression WebP");
+            progress.skipped("Tree progression MP4");
+            return;
+        }
+        if (isNull(runDir)) {
+            progress.skipped("Tree progression GIF");
+            progress.skipped("Tree progression WebP");
+            progress.skipped("Tree progression MP4");
+            return;
+        }
+        final String gifTask = "Tree progression GIF";
+        final String webpTask = "Tree progression WebP";
+        final String mp4Task = "Tree progression MP4";
+        final File progressionDir = new File(runDir, "tree_progression");
+        final List<File> framesToProcess;
         try {
-            for (final File f : framesToProcess) {
-                final BufferedImage img = ImageIO.read(f);
-                if (isNotNull(img)) images.add(img);
-            }
+            framesToProcess = ProgressionFrames.select(
+                    progressionDir,
+                    maxFrames,
+                    maxFramePixels,
+                    maxTotalPixels);
         } catch (final Exception e) {
-            System.err.println("Failed to load tree progression frames: " + e.getMessage());
+            progress.failed(gifTask, e);
+            progress.failed(webpTask, e);
+            progress.failed(mp4Task, e);
+            return;
+        }
+        if (framesToProcess.isEmpty()) {
+            progress.skipped(gifTask);
+            progress.skipped(webpTask);
+            progress.skipped(mp4Task);
             return;
         }
 
-        if (images.isEmpty()) return;
+        final File gifFile = new File(runDir, prefix + ".tree.progression.gif");
+        final File webpFile = new File(runDir, prefix + ".tree.progression.webp");
         try {
-            ProgressionTracker.writeAnimatedGif(images, gifFile, DELAY_CENTISECONDS, FINAL_FRAME_DELAY_CENTISECONDS);
+            ProgressionTracker.writeAnimatedGifFiles(
+                    framesToProcess,
+                    gifFile,
+                    DELAY_CENTISECONDS,
+                    FINAL_FRAME_DELAY_CENTISECONDS,
+                    maxFramePixels,
+                    percentage -> progress.update(gifTask, 10 + (percentage * 45 / 100)));
+            progress.complete(gifTask);
             log("Tree progression GIF generated: " + gifFile.getAbsolutePath());
         } catch (final Exception e) {
-            System.err.println("Failed to create tree progression GIF: " + e.getMessage());
+            progress.failed(gifTask, e);
         }
         try {
-            AnimatedWebP.write(images, webpFile, DELAY_CENTISECONDS * 10, FINAL_FRAME_DELAY_CENTISECONDS * 10);
+            AnimatedWebP.write(
+                    framesToProcess,
+                    webpFile,
+                    DELAY_CENTISECONDS * 10,
+                    FINAL_FRAME_DELAY_CENTISECONDS * 10,
+                    maxFramePixels,
+                    percentage -> progress.update(webpTask, 10 + (percentage * 90 / 100)));
+            progress.complete(webpTask);
             log("Tree progression WebP generated: " + webpFile.getAbsolutePath());
         } catch (final Exception e) {
-            System.err.println("Failed to create tree progression WebP: " + e.getMessage());
+            progress.failed(webpTask, e);
+        }
+        if (!mp4Enabled) {
+            progress.skipped(mp4Task);
+            return;
+        }
+        final File mp4File = new File(runDir, prefix + ".tree.progression.mp4");
+        try {
+            ProgressionMp4.write(
+                    framesToProcess,
+                    mp4File,
+                    ffmpeg,
+                    FPS,
+                    maxFramePixels,
+                    percentage -> progress.update(mp4Task, percentage));
+            progress.complete(mp4Task);
+            log("Tree progression MP4 generated: " + mp4File.getAbsolutePath());
+        } catch (final Exception e) {
+            progress.failed(mp4Task, e);
         }
     }
 
@@ -293,8 +435,19 @@ public final class TreeProgressionTracker {
             }
         }
 
-        final int canvasW = Math.max(1280, (maxCol + 1) * COL_WIDTH + PADDING_X * 2);
-        final int canvasH = Math.max(720, (int) Math.ceil((maxRow + 1) * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y + BOTTOM_PADDING));
+        final long canvasWidth = evenDimension(Math.max(1280L, ((long) maxCol + 1L) * COL_WIDTH + PADDING_X * 2L));
+        final long canvasHeight = evenDimension(Math.max(
+                720L,
+                (long) Math.ceil((maxRow + 1.0) * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y + BOTTOM_PADDING)));
+        final long maxPixels = ProgressionFrames.maxFramePixels(PropEnum._PROGRESSION_MAX_FRAME_PIXELS.get());
+        if (canvasWidth > ProgressionFrames.MAX_DIMENSION
+                || canvasHeight > ProgressionFrames.MAX_DIMENSION
+                || canvasWidth * canvasHeight > maxPixels) {
+            throw new IllegalArgumentException("Rendered tree frame would exceed the configured limit ("
+                    + canvasWidth + "x" + canvasHeight + ", max pixels " + maxPixels + ")");
+        }
+        final int canvasW = (int) canvasWidth;
+        final int canvasH = (int) canvasHeight;
 
         final BufferedImage img = new BufferedImage(canvasW, canvasH, BufferedImage.TYPE_INT_RGB);
         final Graphics2D g = img.createGraphics();
@@ -522,6 +675,11 @@ public final class TreeProgressionTracker {
 
     private static int interpolate(final int start, final int end, final double progress) {
         return (int) Math.round(start + ((end - start) * progress));
+    }
+
+    private static long evenDimension(final long dimension) {
+        if (dimension >= ProgressionFrames.MAX_DIMENSION) return dimension;
+        return (dimension & 1L) == 0L ? dimension : dimension + 1L;
     }
 
     static String formatElapsedTime(final long elapsedMillis) {

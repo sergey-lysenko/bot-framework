@@ -8,6 +8,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
@@ -16,7 +17,6 @@ import java.util.*;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static works.lysenko.util.chrs.____.TEST;
 import static works.lysenko.util.chrs._____.VALUE;
 import static works.lysenko.util.data.enums.Brackets.ROUND;
 import static works.lysenko.util.data.strs.Bind.b;
@@ -28,7 +28,6 @@ import static works.lysenko.util.lang.word.C.CLEAR;
 import static works.lysenko.util.lang.word.C.CONFIGURED;
 import static works.lysenko.util.lang.word.D.DEFAULT;
 import static works.lysenko.util.lang.word.M.MODIFIED;
-import static works.lysenko.util.lang.word.P.PROPERTIES;
 import static works.lysenko.util.lang.word.P.PROPERTY;
 import static works.lysenko.util.lang.word.R.RESET;
 import static works.lysenko.util.lang.word.S.SEARCH;
@@ -55,6 +54,8 @@ public class PropertiesDialog extends JDialog {
     private final JTable table;
     private final TableRowSorter<DefaultTableModel> sorter;
     private final JTextField searchField;
+    private final JTextArea helpText;
+    private final JLabel helpTitle;
     private final JButton resetSelectedBtn;
     private final JButton resetAllBtn;
     private final JButton addPropertyBtn;
@@ -91,7 +92,8 @@ public class PropertiesDialog extends JDialog {
     public PropertiesDialog(final Window owner, final _TestProperties testProps, final String testName,
                             final boolean isHeadless, final boolean isAllLeafs, final int allLeafsCount) {
 
-        super(owner, b(c(TEST), c(PROPERTIES), e(ROUND, (null == testName || testName.isBlank()) ? "Default" : testName)),
+        super(owner, b("Test", "Properties",
+                        e(ROUND, (null == testName || testName.isBlank()) ? "Default" : testName)),
                 ModalityType.APPLICATION_MODAL);
         this.testProperties = testProps;
 
@@ -133,7 +135,27 @@ public class PropertiesDialog extends JDialog {
 
         final JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(new EmptyBorder(0, 8, 0, 8));
-        add(scrollPane, BorderLayout.CENTER);
+
+        helpTitle = new JLabel("Select a property to see help.");
+        helpText = new JTextArea();
+        helpText.setEditable(false);
+        helpText.setLineWrap(true);
+        helpText.setWrapStyleWord(true);
+        helpText.setFocusable(false);
+        helpText.setOpaque(false);
+        final JPanel helpPanel = new JPanel(new BorderLayout(4, 4));
+        helpPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Help"),
+                new EmptyBorder(4, 8, 8, 8)));
+        helpPanel.add(helpTitle, BorderLayout.NORTH);
+        helpPanel.add(new JScrollPane(helpText), BorderLayout.CENTER);
+
+        final JSplitPane content = new JSplitPane(JSplitPane.VERTICAL_SPLIT, scrollPane, helpPanel);
+        content.setResizeWeight(0.78);
+        content.setDividerLocation(0.78);
+        content.setBorder(null);
+        add(content, BorderLayout.CENTER);
+        table.getSelectionModel().addListSelectionListener(this::onPropertySelected);
 
         // 3. Bottom Panel (Actions)
         final JPanel bottomPanel = new JPanel(new BorderLayout(8, 8));
@@ -321,10 +343,43 @@ public class PropertiesDialog extends JDialog {
                 if (text.isEmpty()) {
                     sorter.setRowFilter(null);
                 } else {
-                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + Pattern.quote(text)));
+                    final Pattern pattern = Pattern.compile("(?i)" + Pattern.quote(text));
+                    final RowFilter<DefaultTableModel, Integer> rowFilter = new RowFilter<>() {
+                        @Override
+                        public boolean include(final Entry<? extends DefaultTableModel, ? extends Integer> entry) {
+                            for (int column = 0; column < entry.getValueCount(); column++) {
+                                if (pattern.matcher(String.valueOf(entry.getValue(column))).find()) {
+                                    return true;
+                                }
+                            }
+                            final String key = String.valueOf(entry.getValue(0));
+                            final String description = PropertyHelp.getDescription(key);
+                            return null != description && pattern.matcher(description).find();
+                        }
+                    };
+                    sorter.setRowFilter(rowFilter);
                 }
             }
         });
+    }
+
+    private void onPropertySelected(final ListSelectionEvent event) {
+
+        if (event.getValueIsAdjusting()) return;
+        final int viewRow = table.getSelectedRow();
+        if (viewRow < 0) {
+            helpTitle.setText("Select a property to see help.");
+            helpText.setText("");
+            return;
+        }
+        final int modelRow = table.convertRowIndexToModel(viewRow);
+        final String key = (String) model.getValueAt(modelRow, 0);
+        final String description = PropertyHelp.getDescription(key);
+        helpTitle.setText(key);
+        helpText.setText((null == description || description.isBlank())
+                ? "No help is available for this property."
+                : description);
+        helpText.setCaretPosition(0);
     }
 
     private void onResetSelected() {
@@ -458,6 +513,16 @@ public class PropertiesDialog extends JDialog {
     public JTextField getSearchField() {
 
         return searchField;
+    }
+
+    public JTextArea getHelpText() {
+
+        return helpText;
+    }
+
+    public JLabel getHelpTitle() {
+
+        return helpTitle;
     }
 
     public JButton getResetSelectedButton() {

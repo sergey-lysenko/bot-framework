@@ -3,11 +3,13 @@ package works.lysenko.base.parameters;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import works.lysenko.Base;
 import works.lysenko.base.Parameters;
 import works.lysenko.base.TestProperties;
 import works.lysenko.base.properties.Renderer;
 import works.lysenko.util.data.records.PropertiesMeta;
+import works.lysenko.util.data.records.TestPropertiesDescriptor;
 import works.lysenko.util.spec.PropEnum;
 
 import javax.swing.JButton;
@@ -23,6 +25,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -306,6 +309,108 @@ class GuiTest {
 
         searchField.setText("");
         assertEquals(model.getRowCount(), table.getRowCount(), "Clearing search restores all rows");
+    }
+
+    @Test
+    void testPropertiesDialogShowsAndSearchesPropertyHelp() {
+        final TestProperties tp = new TestProperties();
+        final PropertiesDialog dialog = new PropertiesDialog(null, tp, "default", false, false, 1);
+        final JTable table = dialog.getTable();
+        final DefaultTableModel model = dialog.getModel();
+
+        int waitRow = -1;
+        for (int row = 0; row < model.getRowCount(); row++) {
+            if (PropEnum._EWAIT.getPropertyName().equals(model.getValueAt(row, 0))) {
+                waitRow = row;
+                break;
+            }
+        }
+        assertTrue(waitRow >= 0);
+
+        table.setRowSelectionInterval(table.convertRowIndexToView(waitRow), table.convertRowIndexToView(waitRow));
+        assertEquals(PropEnum._EWAIT.getPropertyName(), dialog.getHelpTitle().getText());
+        assertTrue(dialog.getHelpText().getText().contains("explicit condition"));
+
+        dialog.getSearchField().setText("explicit condition");
+        assertEquals(1, table.getRowCount(), "Help text should participate in search");
+        assertEquals(PropEnum._EWAIT.getPropertyName(), table.getValueAt(0, 0));
+
+        dialog.getSearchField().setText("");
+        final int customRow = model.getRowCount();
+        model.addRow(new Object[]{"custom.help.less.property", "", "", STATUS_CUSTOM});
+        table.setRowSelectionInterval(table.convertRowIndexToView(customRow), table.convertRowIndexToView(customRow));
+        assertEquals("No help is available for this property.", dialog.getHelpText().getText());
+    }
+
+    @Test
+    void testPropertyHelpOnlyReferencesKnownProperties() {
+        final TestProperties tp = new TestProperties();
+        for (final String propertyName : PropertyHelp.getPropertyNames()) {
+            assertTrue(tp.getDefaults().containsKey(propertyName), propertyName + " is not a known property");
+        }
+        for (final String propertyName : tp.getDefaults().keySet()) {
+            assertNotNull(PropertyHelp.getDescription(propertyName), propertyName + " is missing help");
+            assertFalse(PropertyHelp.getDescription(propertyName).isBlank(), propertyName + " has blank help");
+        }
+    }
+
+    @Test
+    void testProgressionPropertiesUseGroupedNamesAndReadLegacyAliases(@TempDir final Path tempDir) throws IOException {
+        assertEquals(".progression.scenario", PropEnum._SCENARIO_PROGRESSION.getPropertyName());
+        assertEquals(".progression.scenario.mp4", PropEnum._SCENARIO_PROGRESSION_MP4.getPropertyName());
+        assertEquals(".progression.tree", PropEnum._TREE_PROGRESSION.getPropertyName());
+        assertEquals(".progression.tree.mp4", PropEnum._TREE_PROGRESSION_MP4.getPropertyName());
+
+        final Path config = tempDir.resolve("legacy.properties");
+        Files.writeString(config, String.join(System.lineSeparator(),
+                ".scenario.progression=false",
+                ".scenario.progression.mp4=true",
+                ".tree.progression=false",
+                ".tree.progression.mp4=true",
+                ".progression.scenario=true"));
+
+        final works.lysenko.util.func.core.TestProperties.Result result =
+                works.lysenko.util.func.core.TestProperties.readTestPropertiesFromFile(
+                        new TestPropertiesDescriptor(tempDir + File.separator, "legacy", ".properties"));
+        final Properties properties = result.properties();
+        assertEquals("true", properties.getProperty(".progression.scenario"),
+                "The new property name should take precedence over its legacy alias");
+        assertEquals("true", properties.getProperty(".progression.scenario.mp4"));
+        assertEquals("false", properties.getProperty(".progression.tree"));
+        assertEquals("true", properties.getProperty(".progression.tree.mp4"));
+        assertFalse(properties.containsKey(".scenario.progression"));
+
+        final TestProperties overrides = new TestProperties();
+        overrides.setUserOverride(".scenario.progression", "false");
+        assertEquals("false", overrides.getUserOverrides().get(".progression.scenario"));
+    }
+
+    @Test
+    void testSwipeMarkerPropertiesShareSwipeNamespaceAndReadLegacyAliases(@TempDir final Path tempDir) throws IOException {
+        assertEquals(".swipes.marker.line.colour", PropEnum._SWIPE_LINE_MARKER_COLOUR.getPropertyName());
+        assertEquals(".swipes.marker.start.colour", PropEnum._SWIPE_START_MARKER_COLOUR.getPropertyName());
+        assertEquals(".swipes.marker.stop.colour", PropEnum._SWIPE_STOP_MARKER_COLOUR.getPropertyName());
+
+        final Path config = tempDir.resolve("legacy-swipe.properties");
+        Files.writeString(config, String.join(System.lineSeparator(),
+                ".swipe.line.marker.colour=1,2,3,4",
+                ".swipe.start.marker.colour=5,6,7,8",
+                ".swipe.stop.marker.colour=9,10,11,12",
+                ".swipes.marker.line.colour=13,14,15,16"));
+
+        final works.lysenko.util.func.core.TestProperties.Result result =
+                works.lysenko.util.func.core.TestProperties.readTestPropertiesFromFile(
+                        new TestPropertiesDescriptor(tempDir + File.separator, "legacy-swipe", ".properties"));
+        final Properties properties = result.properties();
+        assertEquals("13,14,15,16", properties.getProperty(".swipes.marker.line.colour"),
+                "The new property name should take precedence over its legacy alias");
+        assertEquals("5,6,7,8", properties.getProperty(".swipes.marker.start.colour"));
+        assertEquals("9,10,11,12", properties.getProperty(".swipes.marker.stop.colour"));
+        assertFalse(properties.containsKey(".swipe.start.marker.colour"));
+
+        final TestProperties overrides = new TestProperties();
+        overrides.setUserOverride(".swipe.line.marker.colour", "1,2,3,4");
+        assertEquals("1,2,3,4", overrides.getUserOverrides().get(".swipes.marker.line.colour"));
     }
 
     @Test

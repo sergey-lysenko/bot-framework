@@ -277,8 +277,13 @@ public class Repeater implements _Repeater {
                 || Boolean.TRUE.equals(PropEnum._ALL_LEAFS.get())
                 || isCountAllLeafs();
         if (allLeafsMode) {
-            final int executed = core.getExecutedLeafsCount();
-            final int total = core.getAccessibleLeafs().size();
+            final boolean multipleExecutionsPerLeaf = isNotNull(parameters) && parameters.getAllLeafsCount() > 1;
+            final int executed = multipleExecutionsPerLeaf
+                    ? core.getExecutedLeafExecutionsCount()
+                    : core.getExecutedLeafsCount();
+            final int total = multipleExecutionsPerLeaf
+                    ? core.getTotalLeafExecutionsCount()
+                    : core.getAccessibleLeafs().size();
             final String progress = (0 == total) ? StringUtils.EMPTY :
                     b(s(executed, _SLASH_, total), percentString(executed, total));
             return b(q(parameters.getTest()), null == getCurrent() ? StringUtils.EMPTY :

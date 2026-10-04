@@ -3,6 +3,7 @@ package works.lysenko.base.test;
 
 import works.lysenko.base.Core;
 import works.lysenko.base.output.Reports;
+import works.lysenko.base.output.LogHtml;
 import works.lysenko.util.apis.core._Reports;
 import works.lysenko.util.apis.test._Stat;
 
@@ -12,7 +13,6 @@ import java.util.List;
 import static works.lysenko.Base.section;
 import static works.lysenko.base.output.Json.jsonStats;
 import static works.lysenko.base.output.TreeHtml.treeStats;
-import works.lysenko.base.output.LogHtml;
 import static works.lysenko.util.chrs.__.IN;
 import static works.lysenko.util.chrs.____.JSON;
 import static works.lysenko.util.lang.word.T.TREE;

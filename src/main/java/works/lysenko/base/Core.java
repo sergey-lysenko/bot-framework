@@ -3,6 +3,7 @@ package works.lysenko.base;
 import org.openqa.selenium.WebDriver;
 import works.lysenko.base.core.Routines;
 import works.lysenko.base.output.PostProcessor;
+import works.lysenko.base.output.RunLocks;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
 import static works.lysenko.util.spec.Layout.Files.name;
@@ -83,6 +84,7 @@ import static works.lysenko.util.spec.Symbols.S;
 public final class Core extends Root implements _Core, _Tests {
 
     private final _Test test;
+    private final RunLocks.RunLock runLock;
     private final String parametersList;
     private _Results results = null;
     private _Logs logger = null;
@@ -110,15 +112,21 @@ public final class Core extends Root implements _Core, _Tests {
      */
     public Core(final _Test test, final Collection<Class<? extends _PropEnum>> additional, final String parametersList) {
 
+        runLock = RunLocks.acquireRunLock();
         this.test = test;
         this.parametersList = parametersList;
 
-        Routines.starting();
-        inJarOrNotInJar();
-        create(additional);
-        read();
-        startStopwatch();
-        build();
+        try {
+            Routines.starting();
+            inJarOrNotInJar();
+            create(additional);
+            read();
+            startStopwatch();
+            build();
+        } catch (final RuntimeException | Error e) {
+            runLock.close();
+            throw e;
+        }
     }
 
     public int getActiveScenarioPaths() {
@@ -183,6 +191,28 @@ public final class Core extends Root implements _Core, _Tests {
             if (leafTarget <= getResults().getExecutions(leaf))
                 count++;
         }
+        return count;
+    }
+
+    public int getExecutedLeafExecutionsCount() {
+
+        final Set<_Scenario> leafs = getAccessibleLeafs();
+        int count = 0;
+        final int target = resolveAllLeafsTarget();
+        for (final _Scenario leaf : leafs) {
+            final int leafTarget = (leaf instanceof Mono) ? 1 : target;
+            count += Math.min(getResults().getExecutions(leaf), leafTarget);
+        }
+        return count;
+    }
+
+    public int getTotalLeafExecutionsCount() {
+
+        final Set<_Scenario> leafs = getAccessibleLeafs();
+        int count = 0;
+        final int target = resolveAllLeafsTarget();
+        for (final _Scenario leaf : leafs)
+            count += (leaf instanceof Mono) ? 1 : target;
         return count;
     }
 
@@ -310,22 +340,26 @@ public final class Core extends Root implements _Core, _Tests {
      * Closes resources and handles the exit code based on conditions.
      */
     void conditionalClose() {
-
-        logEmptyLine();
-        log(Level.none, b(c(CLOSING), WebDriver.class.getSimpleName()), false);
-        closeWebDriverIfRequired();
-        log(Level.none, b(c(CLOSING), c(DASHBOARD)), false);
-        disposeDashboardIfExist();
-        final boolean isSuccess = results.getFailures().isEmpty();
-        final boolean isHeadless = (isNotNull(parameters) && parameters.isHeadless()) || GraphicsEnvironment.isHeadless();
-        final boolean shouldOpenBrowser = !isHeadless && !Routines.isInsideCI() && !Routines.isInsideDocker();
-        final File logFile = new File(name(RUN_LOG_));
-        final File htmlFile = new File(name(RUN_LOG_HTML_));
-        log(Level.none, b(c(CLOSING), LOG, AND, TELEMETRY, s(WRITER, S)), false);
-        Routines.closeQuietly(logger.getLogWriter(), "Unable to close log writer"); //NON-NLS
-        Routines.closeQuietly(logger.getTelemetryWriter(), "Unable to close telemetry writer"); //NON-NLS
-        PostProcessor.launchDetached(logFile, htmlFile, shouldOpenBrowser);
-        processCode(isSuccess ? SUCCESS : EXECUTION_FAILURE);
+        try {
+            logEmptyLine();
+            log(Level.none, b(c(CLOSING), WebDriver.class.getSimpleName()), false);
+            closeWebDriverIfRequired();
+            log(Level.none, b(c(CLOSING), c(DASHBOARD)), false);
+            disposeDashboardIfExist();
+            final boolean isSuccess = results.getFailures().isEmpty();
+            final boolean isHeadless = (isNotNull(parameters) && parameters.isHeadless()) || GraphicsEnvironment.isHeadless();
+            final boolean shouldOpenBrowser = !isHeadless && !Routines.isInsideCI() && !Routines.isInsideDocker();
+            final File logFile = new File(name(RUN_LOG_));
+            final File htmlFile = new File(name(RUN_LOG_HTML_));
+            log(Level.none, b(c(CLOSING), LOG, AND, TELEMETRY, s(WRITER, S)), false);
+            Routines.closeQuietly(logger.getLogWriter(), "Unable to close log writer"); //NON-NLS
+            Routines.closeQuietly(logger.getTelemetryWriter(), "Unable to close telemetry writer"); //NON-NLS
+            PostProcessor.launchDetached(logFile, htmlFile, shouldOpenBrowser);
+            runLock.close();
+            processCode(isSuccess ? SUCCESS : EXECUTION_FAILURE);
+        } finally {
+            runLock.close();
+        }
     }
 
     private void create(final Collection<Class<? extends _PropEnum>> additional) {

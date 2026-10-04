@@ -29,9 +29,9 @@
 .screenshots.of.swipes=true
 
 # Marker colors for swipe gesture screenshots (RGBA format).
-# .swipe.line.marker.colour=0,0,0,128
-# .swipe.start.marker.colour=0,255,0,128
-# .swipe.stop.marker.colour=255,0,0,128
+# .swipes.marker.line.colour=0,0,0,128
+# .swipes.marker.start.colour=0,255,0,128
+# .swipes.marker.stop.colour=255,0,0,128
 
 # Marker diameter for long click actions in screenshots. Default: 50
 # .screenshots.of.clicks.marker.diameter=50

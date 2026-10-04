@@ -203,14 +203,23 @@ public class TestProperties implements _TestProperties {
     @Override
     public final void setUserOverride(final String key, final String value) {
 
-        userOverrides.put(key, value);
+        userOverrides.put(works.lysenko.util.func.core.TestProperties.canonicalPropertyName(key), value);
     }
 
     @Override
     public final void setUserOverrides(final Map<String, String> overrides) {
 
         userOverrides.clear();
-        if (isNotNull(overrides)) userOverrides.putAll(overrides);
+        if (isNotNull(overrides)) {
+            for (final Map.Entry<String, String> entry : overrides.entrySet()) {
+                final String name = works.lysenko.util.func.core.TestProperties.canonicalPropertyName(entry.getKey());
+                if (!entry.getKey().equals(name)) {
+                    userOverrides.putIfAbsent(name, entry.getValue());
+                } else {
+                    userOverrides.put(name, entry.getValue());
+                }
+            }
+        }
     }
 
     @Override

@@ -3,6 +3,7 @@ package works.lysenko.util.func.core;
 import works.lysenko.util.data.records.TestPropertiesDescriptor;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static works.lysenko.util.chrs.____.NAME;
@@ -27,6 +28,35 @@ import static works.lysenko.util.spec.Symbols._LFD_;
 public record TestProperties() {
 
     private static final String include = s(_DOT_, INCLUDE);
+    private static final Map<String, String> LEGACY_PROPERTY_NAMES = Map.of(
+            ".scenario.progression", ".progression.scenario",
+            ".scenario.progression.mp4", ".progression.scenario.mp4",
+            ".tree.progression", ".progression.tree",
+            ".tree.progression.mp4", ".progression.tree.mp4",
+            ".swipe.line.marker.colour", ".swipes.marker.line.colour",
+            ".swipe.start.marker.colour", ".swipes.marker.start.colour",
+            ".swipe.stop.marker.colour", ".swipes.marker.stop.colour");
+
+    public static String canonicalPropertyName(final String name) {
+
+        return LEGACY_PROPERTY_NAMES.getOrDefault(name, name);
+    }
+
+    private static Properties canonicalizePropertyNames(final Properties properties) {
+
+        final Properties canonical = new Properties();
+        for (final String name : properties.stringPropertyNames()) {
+            if (!LEGACY_PROPERTY_NAMES.containsKey(name)) {
+                canonical.setProperty(name, properties.getProperty(name));
+            }
+        }
+        for (final Map.Entry<String, String> alias : LEGACY_PROPERTY_NAMES.entrySet()) {
+            if (properties.containsKey(alias.getKey())) {
+                canonical.putIfAbsent(alias.getValue(), properties.getProperty(alias.getKey()));
+            }
+        }
+        return canonical;
+    }
 
     @SuppressWarnings({"AssignmentToMethodParameter", "ObjectAllocationInLoop", "CallToSuspiciousStringMethod",
             "CollectionDeclaredAsConcreteClass"})
@@ -56,13 +86,13 @@ public record TestProperties() {
         final String extension = location.extension();
         String debug = b(a(List.of(kv(DIRECTORY, directory), kv(NAME, name), kv(EXTENSION, extension)), COMMA_SPACE));
         final Properties source = getPropertiesFromFile(s(location.directory(), location.name(), location.extension()));
-        if (!source.containsKey(include)) return new Result(source, debug);
+        if (!source.containsKey(include)) return new Result(canonicalizePropertyNames(source), debug);
         final String include = source.getProperty(TestProperties.include);
         source.remove(TestProperties.include);
         final Properties target = new Properties();
         if (isNotNull(include)) debug = loadIncluded(include, directory, debug, target);
         target.putAll(source); // Defined values have bigger priority then included ones
-        return new Result(target, debug);
+        return new Result(canonicalizePropertyNames(target), debug);
     }
 
     /**

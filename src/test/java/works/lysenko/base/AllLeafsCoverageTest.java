@@ -418,14 +418,18 @@ class AllLeafsCoverageTest {
 
         // Before any execution, not exhausted
         assertTrue((boolean) isNotExhaustedMethod.invoke(testInstance));
+        assertEquals(0, Base.core.getExecutedLeafExecutionsCount());
+        assertEquals(2, Base.core.getTotalLeafExecutionsCount());
 
         // After 1 execution, still not exhausted because target count is 2!
         Base.core.getResults().count(leaf1);
         assertTrue((boolean) isNotExhaustedMethod.invoke(testInstance));
+        assertEquals(1, Base.core.getExecutedLeafExecutionsCount());
 
         // After 2 executions, exhausted!
         Base.core.getResults().count(leaf1);
         assertFalse((boolean) isNotExhaustedMethod.invoke(testInstance));
+        assertEquals(2, Base.core.getExecutedLeafExecutionsCount());
     }
 
     @Test

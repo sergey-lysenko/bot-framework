@@ -1,9 +1,9 @@
 package works.lysenko.base.output;
 
 import works.lysenko.base.core.Routines;
-
 import works.lysenko.util.func.type.Files;
 import works.lysenko.util.spec.Layout;
+import works.lysenko.util.spec.PropEnum;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,7 +12,10 @@ import java.io.IOException;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,7 +25,6 @@ import static works.lysenko.Base.logEvent;
 import static works.lysenko.util.data.enums.Severity.S2;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.spec.Layout.Files.name;
-import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_;
 import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_HTML_;
 
 @SuppressWarnings({"UtilityClass", "MethodWithMultipleLoops", "NestedMethodCall", "ClassWithoutLogger", "OverlyLongMethod"})
@@ -77,29 +79,57 @@ public final class LogHtml {
                     ((java.io.Flushable) core.getLogger().getLogWriter()).flush();
                 }
             }
-            final String logFilePath = name(RUN_LOG_);
-            final File logFile = new File(logFilePath);
-            if (!logFile.exists()) {
-                return;
-            }
-            final String outFilePath = name(RUN_LOG_HTML_);
-            generateReport(logFile, new File(outFilePath));
         } catch (final Exception e) {
-            logEvent(S2, "Failed to generate log.html: " + e.getMessage());
+            logEvent(S2, "Failed to flush run log before report generation: " + e.getMessage());
         }
     }
 
     public static void generateReport(final File logFile, final File outFile) {
+        generateReport(
+                logFile,
+                outFile,
+                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION.get()),
+                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION.get()),
+                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION_MP4.get()),
+                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION_MP4.get()));
+    }
+
+    public static void generateReport(
+            final File logFile,
+            final File outFile,
+            final boolean scenarioProgressionEnabled,
+            final boolean treeProgressionEnabled) {
+        generateReport(
+                logFile,
+                outFile,
+                scenarioProgressionEnabled,
+                treeProgressionEnabled,
+                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION_MP4.get()),
+                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION_MP4.get()));
+    }
+
+    public static void generateReport(
+            final File logFile,
+            final File outFile,
+            final boolean scenarioProgressionEnabled,
+            final boolean treeProgressionEnabled,
+            final boolean scenarioMp4Enabled,
+            final boolean treeMp4Enabled) {
         try {
             if (!logFile.exists()) return;
-            final List<String> lines = new ArrayList<>();
-            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(logFile), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    lines.add(line);
-                }
+            final String html;
+            try (final BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(new FileInputStream(logFile), StandardCharsets.UTF_8));
+                 final LineStore lineStore = new LineStore()) {
+                html = buildHtml(
+                        reader,
+                        logFile,
+                        scenarioProgressionEnabled,
+                        treeProgressionEnabled,
+                        scenarioMp4Enabled,
+                        treeMp4Enabled,
+                        lineStore);
             }
-            final String html = buildHtml(lines, logFile);
             Files.writeToFile(html, outFile.getAbsolutePath());
         } catch (final Exception e) {
             logEvent(S2, "Failed to generate log.html: " + e.getMessage());
@@ -110,12 +140,19 @@ public final class LogHtml {
     // HTML assembly — replaces template placeholders with rendered fragments
     // -------------------------------------------------------------------------
 
-    private static String buildHtml(final List<String> lines, final File logFile) {
+    private static String buildHtml(
+            final BufferedReader reader,
+            final File logFile,
+            final boolean scenarioProgressionEnabled,
+            final boolean treeProgressionEnabled,
+            final boolean scenarioMp4Enabled,
+            final boolean treeMp4Enabled,
+            final LineStore lineStore) throws IOException {
         final List<ArtifactItem> runArtifacts = loadRunArtifacts(logFile);
         final List<Double> telemetryCpu = loadTelemetryCpu(logFile);
         int currOpGlobalIdx = 0;
         final List<LogSection> sections = new ArrayList<>();
-        LogSection currentSec = new LogSection("booting", "Booting", "neutral");
+        LogSection currentSec = new LogSection("booting", "Booting", "neutral", lineStore);
 
         int prevTestNum = 0;
         boolean inPostflight = false;
@@ -129,7 +166,8 @@ public final class LogHtml {
         String plaqueStatus = null;
         String plaqueMessage = null;
 
-        for (final String line : lines) {
+        String line;
+        while (null != (line = reader.readLine())) {
             final String clean = ANSI_PATTERN.matcher(line).replaceAll("").trim();
             if (clean.isEmpty()) {
                 currentSec.lines.add(line);
@@ -199,13 +237,13 @@ public final class LogHtml {
 
             if (clean.contains("# Applied test configuration") && "booting".equals(currentSec.type)) {
                 if (!currentSec.lines.isEmpty()) sections.add(currentSec);
-                currentSec = new LogSection("configuring", "Configuring", "neutral");
+                currentSec = new LogSection("configuring", "Configuring", "neutral", lineStore);
             }
 
             if (!inPostflight && (clean.contains("Closing test service") || clean.contains("Event summary") || clean.contains("Events summary") || clean.contains("Postflight") || clean.contains("Test session completed"))) {
                 inPostflight = true;
                 if (!currentSec.lines.isEmpty()) sections.add(currentSec);
-                currentSec = new LogSection("postflight", "Postflight", "neutral");
+                currentSec = new LogSection("postflight", "Postflight", "neutral", lineStore);
             }
 
             final Matcher mTest = LINE_WITH_TEST_RE.matcher(clean);
@@ -230,7 +268,7 @@ public final class LogHtml {
 
                     if (!"test".equals(currentSec.type) || currentSec.testNum != tNum) {
                         if (!currentSec.lines.isEmpty()) sections.add(currentSec);
-                        currentSec = new LogSection("test", "Test #" + tNum, "passed");
+                        currentSec = new LogSection("test", "Test #" + tNum, "passed", lineStore);
                         currentSec.testNum = tNum;
                         currentSec.startOp = opNum;
                         currentSec.startTime = ts;
@@ -244,12 +282,12 @@ public final class LogHtml {
 
                     if ("booting".equals(currentSec.type) || "configuring".equals(currentSec.type)) {
                         if (!currentSec.lines.isEmpty()) sections.add(currentSec);
-                        currentSec = new LogSection("preflight", "Preflight", "neutral");
+                        currentSec = new LogSection("preflight", "Preflight", "neutral", lineStore);
                         currentSec.startOp = opNum;
                         currentSec.startTime = ts;
                     } else if (prevTestNum > 0 && !"limbo".equals(currentSec.type)) {
                         if (!currentSec.lines.isEmpty()) sections.add(currentSec);
-                        currentSec = new LogSection("limbo", "Limbo", "neutral");
+                        currentSec = new LogSection("limbo", "Limbo", "neutral", lineStore);
                         currentSec.prevTestNum = prevTestNum;
                         currentSec.startOp = opNum;
                         currentSec.startTime = ts;
@@ -285,7 +323,7 @@ public final class LogHtml {
             if (!inPostflight && TEST_RUN_SUMMARY_RE.matcher(clean).matches()) {
                 inPostflight = true;
                 if (!currentSec.lines.isEmpty()) sections.add(currentSec);
-                currentSec = new LogSection("postflight", "Postflight", "neutral");
+                currentSec = new LogSection("postflight", "Postflight", "neutral", lineStore);
             }
         }
         if (!currentSec.lines.isEmpty()) sections.add(currentSec);
@@ -389,21 +427,29 @@ public final class LogHtml {
         final String runLogName = (null != logFile) ? logFile.getName() : "";
         final String basePrefix = runLogName.replace(".run.log", "");
         final File gifFile = (null != logFile.getParentFile()) ? new File(logFile.getParentFile(), basePrefix + ".progression.gif") : null;
-        final String progressionLink = (null != gifFile && gifFile.exists())
+        final String progressionLink = (scenarioProgressionEnabled && null != gifFile && gifFile.exists())
                 ? String.format("<a class=\"btn-link\" href=\"%s\" target=\"_blank\" title=\"Scenario Coverage Progression Animation (10 fps)\"><button type=\"button\" style=\"border-color: #38bdf8; color: #38bdf8;\">Progression</button></a>", escapeHtml(gifFile.getName()))
                 : "";
         final File webpFile = (null != logFile.getParentFile()) ? new File(logFile.getParentFile(), basePrefix + ".progression.webp") : null;
-        final String progressionWebpLink = (null != webpFile && webpFile.exists())
+        final String progressionWebpLink = (scenarioProgressionEnabled && null != webpFile && webpFile.exists())
                 ? String.format("<a class=\"btn-link\" href=\"%s\" target=\"_blank\" title=\"Scenario Coverage Progression Animation (WebP)\"><button type=\"button\" style=\"border-color: #38bdf8; color: #38bdf8;\">Progression WebP</button></a>", escapeHtml(webpFile.getName()))
+                : "";
+        final File mp4File = (null != logFile.getParentFile()) ? new File(logFile.getParentFile(), basePrefix + ".progression.mp4") : null;
+        final String progressionMp4Link = (scenarioProgressionEnabled && scenarioMp4Enabled && null != mp4File && mp4File.exists())
+                ? String.format("<a class=\"btn-link\" href=\"%s\" target=\"_blank\" title=\"Scenario Coverage Progression Animation (MP4)\"><button type=\"button\" style=\"border-color: #38bdf8; color: #38bdf8;\">Progression MP4</button></a>", escapeHtml(mp4File.getName()))
                 : "";
 
         final File treeGifFile = (null != logFile.getParentFile()) ? new File(logFile.getParentFile(), basePrefix + ".tree.progression.gif") : null;
-        final String treeProgressionLink = (null != treeGifFile && treeGifFile.exists())
+        final String treeProgressionLink = (treeProgressionEnabled && null != treeGifFile && treeGifFile.exists())
                 ? String.format("<a class=\"btn-link\" href=\"%s\" target=\"_blank\" title=\"Scenario Tree Progression Animation (10 fps)\"><button type=\"button\" style=\"border-color: #34d399; color: #34d399;\">Tree Progression</button></a>", escapeHtml(treeGifFile.getName()))
                 : "";
         final File treeWebpFile = (null != logFile.getParentFile()) ? new File(logFile.getParentFile(), basePrefix + ".tree.progression.webp") : null;
-        final String treeProgressionWebpLink = (null != treeWebpFile && treeWebpFile.exists())
+        final String treeProgressionWebpLink = (treeProgressionEnabled && null != treeWebpFile && treeWebpFile.exists())
                 ? String.format("<a class=\"btn-link\" href=\"%s\" target=\"_blank\" title=\"Scenario Tree Progression Animation (WebP)\"><button type=\"button\" style=\"border-color: #34d399; color: #34d399;\">Tree WebP</button></a>", escapeHtml(treeWebpFile.getName()))
+                : "";
+        final File treeMp4File = (null != logFile.getParentFile()) ? new File(logFile.getParentFile(), basePrefix + ".tree.progression.mp4") : null;
+        final String treeProgressionMp4Link = (treeProgressionEnabled && treeMp4Enabled && null != treeMp4File && treeMp4File.exists())
+                ? String.format("<a class=\"btn-link\" href=\"%s\" target=\"_blank\" title=\"Scenario Tree Progression Animation (MP4)\"><button type=\"button\" style=\"border-color: #34d399; color: #34d399;\">Tree MP4</button></a>", escapeHtml(treeMp4File.getName()))
                 : "";
 
         String timeStr = "";
@@ -461,30 +507,57 @@ public final class LogHtml {
 
         // ---- populate template ----
 
-        return loadTemplate()
-                .replace("{{TIMESTAMP_BLOCK}}", timestampBlock)
-                .replace("{{RESULT_PLAQUE}}", resultPlaque)
-                .replace("{{PROGRESSION_LINK}}", progressionLink)
-                .replace("{{PROGRESSION_WEBP_LINK}}", progressionWebpLink)
-                .replace("{{TREE_PROGRESSION_LINK}}", treeProgressionLink)
-                .replace("{{TREE_PROGRESSION_WEBP_LINK}}", treeProgressionWebpLink)
-                .replace("{{TREE_LINK}}", escapeHtml(basePrefix + ".tree.html"))
-                .replace("{{JSON_LINK}}", escapeHtml(basePrefix + ".run.json"))
-                .replace("{{RAW_LINK}}", escapeHtml(basePrefix + ".run.log"))
-                .replace("{{TELEM_LINK}}", escapeHtml(basePrefix + ".telemetry.log"))
-                .replace("{{TIMELINE_TOGGLE}}", timelineToggle)
-                .replace("{{STATS_STRIP}}", statsStrip)
-                .replace("{{LINE_HIDDEN}}", lineHidden)
-                .replace("{{BARS_HIDDEN}}", barsHidden)
-                .replace("{{TIMELINE_LINE_GRAPH}}", timelineLineGraph)
-                .replace("{{TIMELINE_BARS}}", timelineBars)
-                .replace("{{LG_SCRIPT_DATA}}", lgScriptData)
-                .replace("{{PATHS_COUNT}}", String.valueOf(testPaths.size()))
-                .replace("{{COMMON_PATH}}", commonPath)
-                .replace("{{PATHS_ROWS}}", pathsRows)
-                .replace("{{SCEN_SUBTITLE}}", scenSubtitle)
-                .replace("{{SCEN_ROWS}}", scenRows)
-                .replace("{{SECTIONS}}", sectionsHtml);
+        final Map<String, String> replacements = new LinkedHashMap<>();
+        replacements.put("{{TIMESTAMP_BLOCK}}", timestampBlock);
+        replacements.put("{{RESULT_PLAQUE}}", resultPlaque);
+        replacements.put("{{PROGRESSION_LINK}}", progressionLink);
+        replacements.put("{{PROGRESSION_WEBP_LINK}}", progressionWebpLink);
+        replacements.put("{{PROGRESSION_MP4_LINK}}", progressionMp4Link);
+        replacements.put("{{TREE_PROGRESSION_LINK}}", treeProgressionLink);
+        replacements.put("{{TREE_PROGRESSION_WEBP_LINK}}", treeProgressionWebpLink);
+        replacements.put("{{TREE_PROGRESSION_MP4_LINK}}", treeProgressionMp4Link);
+        replacements.put("{{TREE_LINK}}", escapeHtml(basePrefix + ".tree.html"));
+        replacements.put("{{JSON_LINK}}", escapeHtml(basePrefix + ".run.json"));
+        replacements.put("{{RAW_LINK}}", escapeHtml(basePrefix + ".run.log"));
+        replacements.put("{{TELEM_LINK}}", escapeHtml(basePrefix + ".telemetry.log"));
+        replacements.put("{{TIMELINE_TOGGLE}}", timelineToggle);
+        replacements.put("{{STATS_STRIP}}", statsStrip);
+        replacements.put("{{LINE_HIDDEN}}", lineHidden);
+        replacements.put("{{BARS_HIDDEN}}", barsHidden);
+        replacements.put("{{TIMELINE_LINE_GRAPH}}", timelineLineGraph);
+        replacements.put("{{TIMELINE_BARS}}", timelineBars);
+        replacements.put("{{LG_SCRIPT_DATA}}", lgScriptData);
+        replacements.put("{{PATHS_COUNT}}", String.valueOf(testPaths.size()));
+        replacements.put("{{COMMON_PATH}}", commonPath);
+        replacements.put("{{PATHS_ROWS}}", pathsRows);
+        replacements.put("{{SCEN_SUBTITLE}}", scenSubtitle);
+        replacements.put("{{SCEN_ROWS}}", scenRows);
+        replacements.put("{{SECTIONS}}", sectionsHtml);
+        return replaceTemplate(loadTemplate(), replacements);
+    }
+
+    private static String replaceTemplate(final String template, final Map<String, String> replacements) {
+        final long capacity = (long) template.length() + replacements.values().stream()
+                .mapToLong(String::length).sum();
+        final StringBuilder output = new StringBuilder((int) Math.min(Integer.MAX_VALUE - 8L, capacity));
+        int cursor = 0;
+        while (cursor < template.length()) {
+            final int placeholderStart = template.indexOf("{{", cursor);
+            if (placeholderStart < 0) break;
+            final int placeholderEnd = template.indexOf("}}", placeholderStart + 2);
+            if (placeholderEnd < 0) break;
+            output.append(template, cursor, placeholderStart);
+            final String placeholder = template.substring(placeholderStart, placeholderEnd + 2);
+            final String replacement = replacements.get(placeholder);
+            if (null == replacement) {
+                output.append(placeholder);
+            } else {
+                output.append(replacement);
+            }
+            cursor = placeholderEnd + 2;
+        }
+        output.append(template, cursor, template.length());
+        return output.toString();
     }
 
     // -------------------------------------------------------------------------
@@ -643,11 +716,6 @@ public final class LogHtml {
                 }
             }
 
-            final List<String> parsedLines = new ArrayList<>();
-            for (final String l : sec.lines) {
-                parsedLines.add(parseAnsi(l));
-            }
-
             // Map artifacts to lines in this section
             final Map<Integer, List<ArtifactItem>> secArtifacts = new HashMap<>();
             final Map<Integer, List<ArtifactItem>> causativeArtifacts = new HashMap<>();
@@ -713,52 +781,6 @@ public final class LogHtml {
                 }
             }
 
-            final List<String> linesDivs = new ArrayList<>();
-            for (int lIdx = 0; lIdx < parsedLines.size(); lIdx++) {
-                String pl = parsedLines.get(lIdx);
-                final StringBuilder badgeHtml = new StringBuilder();
-
-                final List<ArtifactItem> caus = causativeArtifacts.get(lIdx);
-                if (null != caus && !caus.isEmpty()) {
-                    final ArtifactItem firstA = caus.get(0);
-                    final String tip = "Artifact created during this operation: " + firstA.rel();
-                    final java.util.regex.Matcher mSpan = SPAN_BRACKET_RE.matcher(pl);
-                    if (mSpan.find()) {
-                        final String prefix = mSpan.group(1);
-                        final String bracket = mSpan.group(2);
-                        final String linkedBracket = prefix + "<a class=\"log-artifact-link\" href=\"" + firstA.rel() + "\" target=\"_blank\" title=\"" + tip + "\">" + bracket + "</a>";
-                        pl = mSpan.replaceFirst(java.util.regex.Matcher.quoteReplacement(linkedBracket));
-                    }
-                }
-
-                final List<ArtifactItem> matched = secArtifacts.get(lIdx);
-                if (null != matched) {
-                    for (final ArtifactItem a : matched) {
-                        if (".properties".equals(a.ext()) && pl.contains("snapshot of test data") && !pl.contains("log-artifact-link")) {
-                            pl = pl.replaceAll("(Made\\s+(?:'|&#x27;|&quot;)[^<&]+(?:'|&#x27;|&quot;)\\s+snapshot\\s+of\\s+test\\s+data)",
-                                    "<a class=\"log-artifact-link\" href=\"" + a.rel() + "\" target=\"_blank\" title=\"Open artifact: " + a.rel() + "\">$1</a>");
-                        } else if (".xml".equals(a.ext()) && pl.contains("snapshot of page code") && !pl.contains("log-artifact-link")) {
-                            pl = pl.replaceAll("(Making\\s+(?:'|&#x27;|&quot;)[^<&]+(?:'|&#x27;|&quot;)\\s+snapshot\\s+of\\s+page\\s+code)",
-                                    "<a class=\"log-artifact-link\" href=\"" + a.rel() + "\" target=\"_blank\" title=\"Open artifact: " + a.rel() + "\">$1</a>");
-                        }
-                        if (!pl.contains(a.rel())) {
-                            final String bIcon = ".properties".equals(a.ext()) ? "💾" : ".xml".equals(a.ext()) ? "📄" : "📸";
-                            final String bType = ".properties".equals(a.ext()) ? "badge-data" : ".xml".equals(a.ext()) ? "badge-xml" : "badge-img";
-                            badgeHtml.append("<a class=\"gutter-artifact-badge ").append(bType)
-                                     .append("\" href=\"").append(a.rel())
-                                     .append("\" target=\"_blank\" title=\"Open ")
-                                     .append(a.ext().isEmpty() ? "" : a.ext().substring(1))
-                                     .append(": ").append(a.rel()).append("\">").append(bIcon).append("</a>");
-                        }
-                    }
-                }
-
-                if (badgeHtml.length() > 0) {
-                    pl = pl + "  " + badgeHtml;
-                }
-                linesDivs.add("<div class=\"log-line-entry\">" + pl + "</div>");
-            }
-
             if (hasOps && maxS > 0) {
                 final StringBuilder stRows = new StringBuilder();
                 final StringBuilder cpuRows = new StringBuilder();
@@ -796,17 +818,76 @@ public final class LogHtml {
                 sb.append("  <div class=\"log-section-body\">\n");
                 sb.append("    <div class=\"soundtrack-column\" title=\"35mm Optical Track (Operation Duration)\"><div class=\"soundtrack-track\">").append(stRows).append("</div></div>\n");
                 sb.append("    <div class=\"log-content\">");
-                for (final String div : linesDivs) sb.append(div);
+                appendSectionLines(sb, sec, causativeArtifacts, secArtifacts);
                 sb.append("</div>\n");
                 sb.append("    <div class=\"soundtrack-column right-track\" title=\"35mm Optical Track (CPU Load)\"><div class=\"soundtrack-track\">").append(cpuRows).append("</div></div>\n");
                 sb.append("  </div>\n</details>\n");
             } else {
                 sb.append("  <div class=\"log-content\">");
-                for (final String div : linesDivs) sb.append(div);
+                appendSectionLines(sb, sec, causativeArtifacts, secArtifacts);
                 sb.append("</div>\n</details>\n");
             }
         }
         return sb.toString();
+    }
+
+    private static void appendSectionLines(
+            final StringBuilder output,
+            final LogSection section,
+            final Map<Integer, List<ArtifactItem>> causativeArtifacts,
+            final Map<Integer, List<ArtifactItem>> sectionArtifacts) {
+        for (int lineIndex = 0; lineIndex < section.lines.size(); lineIndex++) {
+            String parsedLine = parseAnsi(section.lines.get(lineIndex));
+            final StringBuilder badgeHtml = new StringBuilder();
+
+            final List<ArtifactItem> causative = causativeArtifacts.get(lineIndex);
+            if (null != causative && !causative.isEmpty()) {
+                final ArtifactItem firstArtifact = causative.get(0);
+                final String tip = "Artifact created during this operation: " + firstArtifact.rel();
+                final java.util.regex.Matcher spanMatcher = SPAN_BRACKET_RE.matcher(parsedLine);
+                if (spanMatcher.find()) {
+                    final String prefix = spanMatcher.group(1);
+                    final String bracket = spanMatcher.group(2);
+                    final String linkedBracket = prefix + "<a class=\"log-artifact-link\" href=\""
+                            + firstArtifact.rel() + "\" target=\"_blank\" title=\"" + tip + "\">"
+                            + bracket + "</a>";
+                    parsedLine = spanMatcher.replaceFirst(java.util.regex.Matcher.quoteReplacement(linkedBracket));
+                }
+            }
+
+            final List<ArtifactItem> matched = sectionArtifacts.get(lineIndex);
+            if (null != matched) {
+                for (final ArtifactItem artifact : matched) {
+                    if (".properties".equals(artifact.ext()) && parsedLine.contains("snapshot of test data")
+                            && !parsedLine.contains("log-artifact-link")) {
+                        parsedLine = parsedLine.replaceAll(
+                                "(Made\\s+(?:'|&#x27;|&quot;)[^<&]+(?:'|&#x27;|&quot;)\\s+snapshot\\s+of\\s+test\\s+data)",
+                                "<a class=\"log-artifact-link\" href=\"" + artifact.rel()
+                                        + "\" target=\"_blank\" title=\"Open artifact: " + artifact.rel() + "\">$1</a>");
+                    } else if (".xml".equals(artifact.ext()) && parsedLine.contains("snapshot of page code")
+                            && !parsedLine.contains("log-artifact-link")) {
+                        parsedLine = parsedLine.replaceAll(
+                                "(Making\\s+(?:'|&#x27;|&quot;)[^<&]+(?:'|&#x27;|&quot;)\\s+snapshot\\s+of\\s+page\\s+code)",
+                                "<a class=\"log-artifact-link\" href=\"" + artifact.rel()
+                                        + "\" target=\"_blank\" title=\"Open artifact: " + artifact.rel() + "\">$1</a>");
+                    }
+                    if (!parsedLine.contains(artifact.rel())) {
+                        final String icon = ".properties".equals(artifact.ext()) ? "💾"
+                                : ".xml".equals(artifact.ext()) ? "📄" : "📸";
+                        final String type = ".properties".equals(artifact.ext()) ? "badge-data"
+                                : ".xml".equals(artifact.ext()) ? "badge-xml" : "badge-img";
+                        badgeHtml.append("<a class=\"gutter-artifact-badge ").append(type)
+                                .append("\" href=\"").append(artifact.rel())
+                                .append("\" target=\"_blank\" title=\"Open ")
+                                .append(artifact.ext().isEmpty() ? "" : artifact.ext().substring(1))
+                                .append(": ").append(artifact.rel()).append("\">").append(icon).append("</a>");
+                    }
+                }
+            }
+
+            if (badgeHtml.length() > 0) parsedLine = parsedLine + "  " + badgeHtml;
+            output.append("<div class=\"log-line-entry\">").append(parsedLine).append("</div>");
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -1371,12 +1452,82 @@ public final class LogHtml {
         String durationStr;
         double durationSec;
         final List<String> scenarios = new ArrayList<>();
-        final List<String> lines = new ArrayList<>();
+        final List<String> lines;
 
-        LogSection(final String type, final String title, final String status) {
+        LogSection(final String type, final String title, final String status, final LineStore lineStore) {
             this.type = type;
             this.title = title;
             this.status = status;
+            lines = new SpoolingLines(lineStore);
+        }
+    }
+
+    private static final class SpoolingLines extends AbstractList<String> {
+        private final LineStore store;
+        private final List<Long> positions = new ArrayList<>();
+
+        private SpoolingLines(final LineStore store) {
+            this.store = store;
+        }
+
+        @Override
+        public String get(final int index) {
+            try {
+                return store.read(positions.get(index));
+            } catch (final IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
+        public int size() {
+            return positions.size();
+        }
+
+        @Override
+        public boolean add(final String line) {
+            try {
+                positions.add(store.append(line));
+                return true;
+            } catch (final IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    private static final class LineStore implements AutoCloseable {
+        private final Path path;
+        private final RandomAccessFile file;
+
+        private LineStore() throws IOException {
+            path = java.nio.file.Files.createTempFile("run-report-lines-", ".tmp");
+            file = new RandomAccessFile(path.toFile(), "rw");
+        }
+
+        private synchronized long append(final String line) throws IOException {
+            final byte[] bytes = line.getBytes(StandardCharsets.UTF_8);
+            final long position = file.length();
+            file.seek(position);
+            file.writeInt(bytes.length);
+            file.write(bytes);
+            return position;
+        }
+
+        private synchronized String read(final long position) throws IOException {
+            file.seek(position);
+            final int length = file.readInt();
+            final byte[] bytes = new byte[length];
+            file.readFully(bytes);
+            return new String(bytes, StandardCharsets.UTF_8);
+        }
+
+        @Override
+        public void close() throws IOException {
+            try {
+                file.close();
+            } finally {
+                java.nio.file.Files.deleteIfExists(path);
+            }
         }
     }
 
