@@ -1,6 +1,5 @@
 package works.lysenko.base.output;
 
-import works.lysenko.util.spec.PropEnum;
 
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
@@ -38,6 +37,14 @@ public class PostProcessor {
     };
 
     public static void launchDetached(final File runLogFile, final File outHtmlFile, final boolean openBrowser) {
+        launchDetached(runLogFile, outHtmlFile, openBrowser, openBrowser);
+    }
+
+    public static void launchDetached(
+            final File runLogFile,
+            final File outHtmlFile,
+            final boolean openBrowser,
+            final boolean showProgressWindow) {
         final File postProcessorLog = postProcessorLogFile(runLogFile);
         try {
             if (null == runLogFile || !runLogFile.exists()) {
@@ -53,24 +60,14 @@ public class PostProcessor {
             final String cp = System.getProperty("java.class.path");
             final long parentPid = ProcessHandle.current().pid();
 
-            final Process postProcessor = new ProcessBuilder(
+            final Process postProcessor = new ProcessBuilder(detachedCommand(
                     javaBin,
-                    "-cp",
                     cp,
-                    PostProcessor.class.getName(),
-                    String.valueOf(parentPid),
+                    parentPid,
                     runLogFile.getAbsolutePath(),
                     outHtmlFile.getAbsolutePath(),
-                    String.valueOf(openBrowser),
-                    String.valueOf(Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION.get())),
-                    String.valueOf(Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION.get())),
-                    String.valueOf(PropEnum._PROGRESSION_MAX_FRAMES.get()),
-                    String.valueOf(PropEnum._PROGRESSION_MAX_FRAME_PIXELS.get()),
-                    String.valueOf(PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get()),
-                    String.valueOf(Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION_MP4.get())),
-                    String.valueOf(Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION_MP4.get())),
-                    PropEnum._PROGRESSION_FFMPEG.get()
-            ).redirectErrorStream(true)
+                    showProgressWindow,
+                    openBrowser)).redirectErrorStream(true)
                     .redirectOutput(ProcessBuilder.Redirect.appendTo(postProcessorLog))
                     .start();
             final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
@@ -95,6 +92,45 @@ public class PostProcessor {
                 System.err.println("Unable to write post-processor log: " + logFailure.getMessage());
             }
         }
+    }
+
+    static String[] detachedCommand(
+            final String javaBin,
+            final String classPath,
+            final long parentPid,
+            final String runLogPath,
+            final String htmlPath,
+            final boolean openBrowser) {
+        return detachedCommand(javaBin, classPath, parentPid, runLogPath, htmlPath, openBrowser, openBrowser);
+    }
+
+    static String[] detachedCommand(
+            final String javaBin,
+            final String classPath,
+            final long parentPid,
+            final String runLogPath,
+            final String htmlPath,
+            final boolean showProgressWindow,
+            final boolean openBrowser) {
+        return new String[]{
+                javaBin,
+                "-cp",
+                classPath,
+                PostProcessor.class.getName(),
+                String.valueOf(parentPid),
+                runLogPath,
+                htmlPath,
+                String.valueOf(showProgressWindow),
+                String.valueOf((Object) ProgressionSettings.current().scenarioEnabled()),
+                String.valueOf((Object) ProgressionSettings.current().treeEnabled()),
+                String.valueOf((Object) ProgressionSettings.current().maxFrames()),
+                String.valueOf((Object) ProgressionSettings.current().maxFramePixels()),
+                String.valueOf((Object) ProgressionSettings.current().maxTotalPixels()),
+                String.valueOf((Object) ProgressionSettings.current().scenarioMp4Enabled()),
+                String.valueOf((Object) ProgressionSettings.current().treeMp4Enabled()),
+                ProgressionSettings.current().ffmpeg(),
+                String.valueOf(openBrowser)
+        };
     }
 
     static File postProcessorLogFile(final File runLogFile) {
@@ -136,7 +172,10 @@ public class PostProcessor {
                             Integer.parseInt(args[8]),
                             Boolean.parseBoolean(args[9]),
                             Boolean.parseBoolean(args[10]),
-                            args[11]);
+                            args[11],
+                            13 <= args.length
+                                    ? Boolean.parseBoolean(args[12])
+                                    : Boolean.parseBoolean(args[3]));
                 }
             }
         } catch (final InterruptedException e) {
@@ -152,14 +191,14 @@ public class PostProcessor {
                 logFile,
                 htmlFile,
                 showProgressWindow,
-                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION.get()),
-                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION.get()),
-                PropEnum._PROGRESSION_MAX_FRAMES.get(),
-                PropEnum._PROGRESSION_MAX_FRAME_PIXELS.get(),
-                PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get(),
-                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION_MP4.get()),
-                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION_MP4.get()),
-                PropEnum._PROGRESSION_FFMPEG.get());
+                ProgressionSettings.current().scenarioEnabled(),
+                ProgressionSettings.current().treeEnabled(),
+                ProgressionSettings.current().maxFrames(),
+                ProgressionSettings.current().maxFramePixels(),
+                ProgressionSettings.current().maxTotalPixels(),
+                ProgressionSettings.current().scenarioMp4Enabled(),
+                ProgressionSettings.current().treeMp4Enabled(),
+                ProgressionSettings.current().ffmpeg());
     }
 
     static void process(
@@ -174,12 +213,12 @@ public class PostProcessor {
                 showProgressWindow,
                 scenarioProgressionEnabled,
                 treeProgressionEnabled,
-                PropEnum._PROGRESSION_MAX_FRAMES.get(),
-                PropEnum._PROGRESSION_MAX_FRAME_PIXELS.get(),
-                PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get(),
-                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION_MP4.get()),
-                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION_MP4.get()),
-                PropEnum._PROGRESSION_FFMPEG.get());
+                ProgressionSettings.current().maxFrames(),
+                ProgressionSettings.current().maxFramePixels(),
+                ProgressionSettings.current().maxTotalPixels(),
+                ProgressionSettings.current().scenarioMp4Enabled(),
+                ProgressionSettings.current().treeMp4Enabled(),
+                ProgressionSettings.current().ffmpeg());
     }
 
     static void process(
@@ -198,10 +237,10 @@ public class PostProcessor {
                 treeProgressionEnabled,
                 maxFrames,
                 maxFramePixels,
-                PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get(),
-                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION_MP4.get()),
-                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION_MP4.get()),
-                PropEnum._PROGRESSION_FFMPEG.get());
+                ProgressionSettings.current().maxTotalPixels(),
+                ProgressionSettings.current().scenarioMp4Enabled(),
+                ProgressionSettings.current().treeMp4Enabled(),
+                ProgressionSettings.current().ffmpeg());
     }
 
     static void process(
@@ -222,9 +261,9 @@ public class PostProcessor {
                 maxFrames,
                 maxFramePixels,
                 maxTotalPixels,
-                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION_MP4.get()),
-                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION_MP4.get()),
-                PropEnum._PROGRESSION_FFMPEG.get());
+                ProgressionSettings.current().scenarioMp4Enabled(),
+                ProgressionSettings.current().treeMp4Enabled(),
+                ProgressionSettings.current().ffmpeg());
     }
 
     static void process(
@@ -239,6 +278,34 @@ public class PostProcessor {
             final boolean scenarioMp4Enabled,
             final boolean treeMp4Enabled,
             final String ffmpeg) {
+        process(
+                logFile,
+                htmlFile,
+                showProgressWindow,
+                scenarioProgressionEnabled,
+                treeProgressionEnabled,
+                maxFrames,
+                maxFramePixels,
+                maxTotalPixels,
+                scenarioMp4Enabled,
+                treeMp4Enabled,
+                ffmpeg,
+                showProgressWindow);
+    }
+
+    static void process(
+            final File logFile,
+            final File htmlFile,
+            final boolean showProgressWindow,
+            final boolean scenarioProgressionEnabled,
+            final boolean treeProgressionEnabled,
+            final int maxFrames,
+            final int maxFramePixels,
+            final int maxTotalPixels,
+            final boolean scenarioMp4Enabled,
+            final boolean treeMp4Enabled,
+            final String ffmpeg,
+            final boolean openBrowser) {
         final File runDir = logFile.getAbsoluteFile().getParentFile();
         final String prefix = runPrefix(logFile);
         final ProgressWindow progress = ProgressWindow.create(showProgressWindow);
@@ -273,7 +340,7 @@ public class PostProcessor {
                     scenarioMp4Enabled,
                     treeMp4Enabled);
             progress.complete(REPORT_TASK);
-            if (showProgressWindow) LogHtml.openInBrowser(htmlFile);
+            if (openBrowser) LogHtml.openInBrowser(htmlFile);
         } finally {
             progress.close();
         }

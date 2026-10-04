@@ -215,6 +215,39 @@ class GuiTest {
     }
 
     @Test
+    void testAllLeafPropertiesAreMarkedAsExecutionParametersInPropertiesDialog() {
+        assertTrue(PropEnum._ALL_LEAFS.executionParameter());
+        assertTrue(PropEnum._ALL_LEAFS_COUNT.executionParameter());
+        assertTrue(PropEnum._HEADLESS.executionParameter());
+        assertFalse(PropEnum._DEBUG.executionParameter());
+
+        final PropertiesDialog dialog = new PropertiesDialog(null, new TestProperties(), "default", false, false, 1);
+        final DefaultTableModel model = dialog.getModel();
+        boolean allLeafsMarked = false;
+        boolean allLeafsCountMarked = false;
+        boolean headlessMarked = false;
+        for (int row = 0; row < model.getRowCount(); row++) {
+            final String name = (String) model.getValueAt(row, 0);
+            if (PropEnum._HEADLESS.getPropertyName().equals(name)) {
+                assertEquals("HEADLESS", model.getValueAt(row, 4));
+                headlessMarked = true;
+            } else if (PropEnum._ALL_LEAFS.getPropertyName().equals(name)) {
+                assertEquals("ALL_LEAFS", model.getValueAt(row, 4));
+                allLeafsMarked = true;
+            } else if (PropEnum._ALL_LEAFS_COUNT.getPropertyName().equals(name)) {
+                assertEquals("ALL_LEAFS_COUNT", model.getValueAt(row, 4));
+                allLeafsCountMarked = true;
+            }
+        }
+        assertTrue(allLeafsMarked);
+        assertTrue(allLeafsCountMarked);
+        assertTrue(headlessMarked);
+        assertTrue(PropertyHelp.getDescription(PropEnum._ALL_LEAFS.getPropertyName()).contains("ALL_LEAFS"));
+        assertTrue(PropertyHelp.getDescription(PropEnum._ALL_LEAFS_COUNT.getPropertyName()).contains("ALL_LEAFS_COUNT"));
+        assertTrue(PropertyHelp.getDescription(PropEnum._HEADLESS.getPropertyName()).contains("HEADLESS"));
+    }
+
+    @Test
     void testTestPropertiesOverridesLifecycle() {
         final TestProperties tp = new TestProperties();
         final Map<String, String> defaults = tp.getDefaults();
@@ -356,10 +389,10 @@ class GuiTest {
 
     @Test
     void testProgressionPropertiesUseGroupedNamesAndReadLegacyAliases(@TempDir final Path tempDir) throws IOException {
-        assertEquals(".progression.scenario", PropEnum._SCENARIO_PROGRESSION.getPropertyName());
-        assertEquals(".progression.scenario.mp4", PropEnum._SCENARIO_PROGRESSION_MP4.getPropertyName());
-        assertEquals(".progression.tree", PropEnum._TREE_PROGRESSION.getPropertyName());
-        assertEquals(".progression.tree.mp4", PropEnum._TREE_PROGRESSION_MP4.getPropertyName());
+        assertEquals(".progression.scenario", PropEnum._PROGRESSION_SCENARIO.getPropertyName());
+        assertEquals(".progression.scenario.mp4", PropEnum._PROGRESSION_SCENARIO_MP4.getPropertyName());
+        assertEquals(".progression.tree", PropEnum._PROGRESSION_TREE.getPropertyName());
+        assertEquals(".progression.tree.mp4", PropEnum._PROGRESSION_TREE_MP4.getPropertyName());
 
         final Path config = tempDir.resolve("legacy.properties");
         Files.writeString(config, String.join(System.lineSeparator(),

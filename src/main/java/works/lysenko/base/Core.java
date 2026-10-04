@@ -3,6 +3,7 @@ package works.lysenko.base;
 import org.openqa.selenium.WebDriver;
 import works.lysenko.base.core.Routines;
 import works.lysenko.base.output.PostProcessor;
+import works.lysenko.base.output.ProgressionSettings;
 import works.lysenko.base.output.RunLocks;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
@@ -348,13 +349,15 @@ public final class Core extends Root implements _Core, _Tests {
             disposeDashboardIfExist();
             final boolean isSuccess = results.getFailures().isEmpty();
             final boolean isHeadless = (isNotNull(parameters) && parameters.isHeadless()) || GraphicsEnvironment.isHeadless();
-            final boolean shouldOpenBrowser = !isHeadless && !Routines.isInsideCI() && !Routines.isInsideDocker();
+            final boolean shouldShowPostProcessorWindow =
+                    !GraphicsEnvironment.isHeadless() && !Routines.isInsideCI() && !Routines.isInsideDocker();
+            final boolean shouldOpenBrowser = shouldShowPostProcessorWindow && !isHeadless;
             final File logFile = new File(name(RUN_LOG_));
             final File htmlFile = new File(name(RUN_LOG_HTML_));
             log(Level.none, b(c(CLOSING), LOG, AND, TELEMETRY, s(WRITER, S)), false);
             Routines.closeQuietly(logger.getLogWriter(), "Unable to close log writer"); //NON-NLS
             Routines.closeQuietly(logger.getTelemetryWriter(), "Unable to close telemetry writer"); //NON-NLS
-            PostProcessor.launchDetached(logFile, htmlFile, shouldOpenBrowser);
+            PostProcessor.launchDetached(logFile, htmlFile, shouldOpenBrowser, shouldShowPostProcessorWindow);
             runLock.close();
             processCode(isSuccess ? SUCCESS : EXECUTION_FAILURE);
         } finally {
@@ -472,6 +475,7 @@ public final class Core extends Root implements _Core, _Tests {
 
         System.out.println((b(c(READING), yb(parameters.getTest()), c(TEST), c(PROPERTIES), Routines.DOTS)));
         properties.readTestConfiguration();
+        ProgressionSettings.initialize();
         tick();
     }
 

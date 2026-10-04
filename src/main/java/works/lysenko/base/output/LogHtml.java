@@ -3,7 +3,6 @@ package works.lysenko.base.output;
 import works.lysenko.base.core.Routines;
 import works.lysenko.util.func.type.Files;
 import works.lysenko.util.spec.Layout;
-import works.lysenko.util.spec.PropEnum;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -88,10 +87,10 @@ public final class LogHtml {
         generateReport(
                 logFile,
                 outFile,
-                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION.get()),
-                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION.get()),
-                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION_MP4.get()),
-                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION_MP4.get()));
+                ProgressionSettings.current().scenarioEnabled(),
+                ProgressionSettings.current().treeEnabled(),
+                ProgressionSettings.current().scenarioMp4Enabled(),
+                ProgressionSettings.current().treeMp4Enabled());
     }
 
     public static void generateReport(
@@ -104,8 +103,8 @@ public final class LogHtml {
                 outFile,
                 scenarioProgressionEnabled,
                 treeProgressionEnabled,
-                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION_MP4.get()),
-                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION_MP4.get()));
+                ProgressionSettings.current().scenarioMp4Enabled(),
+                ProgressionSettings.current().treeMp4Enabled());
     }
 
     public static void generateReport(

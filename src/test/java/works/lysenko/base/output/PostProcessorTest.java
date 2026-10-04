@@ -9,11 +9,42 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PostProcessorTest {
+
+    @Test
+    void serializesNumericPropertiesInDetachedCommand() {
+        final String[] command = PostProcessor.detachedCommand(
+                "java",
+                "classpath",
+                123,
+                "run.log",
+                "run.html",
+                false);
+
+        assertDoesNotThrow(() -> Integer.parseInt(command[10]));
+        assertDoesNotThrow(() -> Integer.parseInt(command[11]));
+        assertDoesNotThrow(() -> Integer.parseInt(command[12]));
+    }
+
+    @Test
+    void serializesProgressWindowAndBrowserFlagsIndependently() {
+        final String[] command = PostProcessor.detachedCommand(
+                "java",
+                "classpath",
+                123,
+                "run.log",
+                "run.html",
+                true,
+                false);
+
+        assertEquals("true", command[7]);
+        assertEquals("false", command[16]);
+    }
 
     @Test
     void storesPostProcessorLogBesideRunLog(@TempDir final Path tempDir) {

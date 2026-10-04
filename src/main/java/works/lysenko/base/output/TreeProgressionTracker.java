@@ -173,7 +173,7 @@ public final class TreeProgressionTracker {
      * @param testNumber the test cycle number just completed
      */
     public static void onLimbo(final Integer testNumber) {
-        if (!Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION.get())) return;
+        if (!ProgressionSettings.current().treeEnabled()) return;
         if (isNull(core) || isNull(core.getResults())) return;
         final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
                 || Boolean.TRUE.equals(PropEnum._ALL_LEAFS.get())
@@ -204,8 +204,8 @@ public final class TreeProgressionTracker {
         if (!progressionDir.exists() && !progressionDir.mkdirs()) return;
 
         final int maxFrames = ProgressionFrames.frameLimit(
-                PropEnum._PROGRESSION_MAX_FRAMES.get(),
-                PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get(),
+                ProgressionSettings.current().maxFrames(),
+                ProgressionSettings.current().maxTotalPixels(),
                 image.getWidth(),
                 image.getHeight());
         final int frameIndex = Math.min(currentCycle, maxFrames);
@@ -240,7 +240,7 @@ public final class TreeProgressionTracker {
             final String prefix,
             final ProcessingProgress progress) {
 
-        processFrames(runDir, prefix, progress, Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION.get()));
+        processFrames(runDir, prefix, progress, ProgressionSettings.current().treeEnabled());
     }
 
     /**
@@ -261,11 +261,11 @@ public final class TreeProgressionTracker {
                 prefix,
                 progress,
                 enabled,
-                PropEnum._PROGRESSION_MAX_FRAMES.get(),
-                PropEnum._PROGRESSION_MAX_FRAME_PIXELS.get(),
-                PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get(),
-                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION_MP4.get()),
-                PropEnum._PROGRESSION_FFMPEG.get());
+                ProgressionSettings.current().maxFrames(),
+                ProgressionSettings.current().maxFramePixels(),
+                ProgressionSettings.current().maxTotalPixels(),
+                ProgressionSettings.current().treeMp4Enabled(),
+                ProgressionSettings.current().ffmpeg());
     }
 
     public static void processFrames(
@@ -282,9 +282,9 @@ public final class TreeProgressionTracker {
                 enabled,
                 maxFrames,
                 maxFramePixels,
-                PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get(),
-                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION_MP4.get()),
-                PropEnum._PROGRESSION_FFMPEG.get());
+                ProgressionSettings.current().maxTotalPixels(),
+                ProgressionSettings.current().treeMp4Enabled(),
+                ProgressionSettings.current().ffmpeg());
     }
 
     public static void processFrames(
@@ -303,8 +303,8 @@ public final class TreeProgressionTracker {
                 maxFrames,
                 maxFramePixels,
                 maxTotalPixels,
-                Boolean.TRUE.equals(PropEnum._TREE_PROGRESSION_MP4.get()),
-                PropEnum._PROGRESSION_FFMPEG.get());
+                ProgressionSettings.current().treeMp4Enabled(),
+                ProgressionSettings.current().ffmpeg());
     }
 
     public static void processFrames(
@@ -439,7 +439,7 @@ public final class TreeProgressionTracker {
         final long canvasHeight = evenDimension(Math.max(
                 720L,
                 (long) Math.ceil((maxRow + 1.0) * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y + BOTTOM_PADDING)));
-        final long maxPixels = ProgressionFrames.maxFramePixels(PropEnum._PROGRESSION_MAX_FRAME_PIXELS.get());
+        final long maxPixels = ProgressionFrames.maxFramePixels(        ProgressionSettings.current().maxFramePixels());
         if (canvasWidth > ProgressionFrames.MAX_DIMENSION
                 || canvasHeight > ProgressionFrames.MAX_DIMENSION
                 || canvasWidth * canvasHeight > maxPixels) {

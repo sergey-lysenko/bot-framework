@@ -66,6 +66,16 @@ public interface _PropEnum {
     }
 
     /**
+     * Determines whether this property is also exposed as an execution parameter.
+     *
+     * @return true if the property is also an execution parameter
+     */
+    default boolean executionParameter() {
+
+        return false;
+    }
+
+    /**
      * Retrieves the type of the property associated with this property enumerator.
      *
      * @return the class type of the property

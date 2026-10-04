@@ -3,6 +3,7 @@ package works.lysenko.base.parameters;
 import works.lysenko.Base;
 import works.lysenko.base.TestProperties;
 import works.lysenko.util.apis.properties._TestProperties;
+import works.lysenko.util.spec.PropEnum;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -112,7 +113,7 @@ public class PropertiesDialog extends JDialog {
         add(topPanel, BorderLayout.NORTH);
 
         // 2. Table and Model
-        final String[] columns = {c(PROPERTY), c(VALUE), c(DEFAULT), c(STATUS)};
+        final String[] columns = {c(PROPERTY), c(VALUE), c(DEFAULT), c(STATUS), "Execution parameter"};
         model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(final int r, final int c) {
@@ -256,9 +257,19 @@ public class PropertiesDialog extends JDialog {
                 final String safeDef = (null == def) ? "" : def;
                 final String baseVal = baseline.get(key);
                 final String st = calculateStatus(key, safeVal, safeDef, isDefaultKnown, baseVal);
-                model.addRow(new Object[]{key, safeVal, safeDef, st});
+                model.addRow(new Object[]{key, safeVal, safeDef, st, executionParameterName(key)});
             }
         }
+    }
+
+    private static String executionParameterName(final String propertyName) {
+
+        for (final PropEnum property : PropEnum.values()) {
+            if (property.executionParameter() && property.getPropertyName().equals(propertyName)) {
+                return property.name().substring(1);
+            }
+        }
+        return "";
     }
 
     private void setupTableRenderingAndEditing() {
@@ -442,7 +453,7 @@ public class PropertiesDialog extends JDialog {
                     }
                 }
                 if (!found) {
-                    model.addRow(new Object[]{name, value, "", STATUS_CUSTOM});
+                    model.addRow(new Object[]{name, value, "", STATUS_CUSTOM, ""});
                 }
             }
         }

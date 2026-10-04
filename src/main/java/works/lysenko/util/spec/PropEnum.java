@@ -45,10 +45,10 @@ public enum PropEnum implements _PropEnum {
     _ACTION_MARKER_COLOUR(Color.class, b(_COMMA_, _255, _128, _0_, _128)),
     _ACTION_RETRIES(Integer.class, _3_),
     _ADEBUG(Boolean.class, FALSE),
-    _ALL_LEAFS(Boolean.class, FALSE, true),
-    _ALL_LEAFS_COUNT(Integer.class, _1_, true),
     _ALLOWED_MARGIN_SEVERITY_REDUCTION(Integer.class, _2_),
     _ALLOWED_OTHER_SEVERITY_REDUCTION(Integer.class, _2_),
+    _ALL_LEAFS(Boolean.class, FALSE, true, true),
+    _ALL_LEAFS_COUNT(Integer.class, _1_, true, true),
     _APP(String.class, EMPTY),
     _ASSERTIONS_PRODUCE_EXCEPTION(Boolean.class, TRUE),
     _BUNDLE_ID(String.class, NULL),
@@ -84,7 +84,7 @@ public enum PropEnum implements _PropEnum {
     _GRID_VALIDATION_FENCES(String.class, _9_),
     _GRID_VALIDATION_HSB_THRESHOLD(String.class, _1_, _SLASH_, _9_, _9_),
     _GRID_VALIDATION_SCALE_EPSILON(Double.class, _0_, _DOT_, _0_, _0_, _0_, _1_),
-    _HEADLESS(Boolean.class, FALSE),
+    _HEADLESS(Boolean.class, FALSE, false, true),
     _IGNORED_IN_STACKTRACE(String.class, EMPTY),
     _IGNORE_FAILED_SCENARIO_SELECTION(Boolean.class, FALSE),
     _INCLUDE_DOWNSTREAM(Boolean.class, FALSE),
@@ -114,9 +114,13 @@ public enum PropEnum implements _PropEnum {
     _PAUSE_LENGTH(Integer.class, _5_, _0_, _0_, _0_),
     _PERSIST(Boolean.class, FALSE),
     _PROGRESSION_FFMPEG(String.class, "ffmpeg"),
-    _PROGRESSION_MAX_FRAME_PIXELS(Integer.class, _1_, _6_, _7_, _7_, _7_, _2_, _1_, _6_, _0_),
     _PROGRESSION_MAX_FRAMES(Integer.class, _5_, _0_, _0_, _0_),
+    _PROGRESSION_MAX_FRAME_PIXELS(Integer.class, _1_, _6_, _7_, _7_, _7_, _2_, _1_, _6_, _0_),
     _PROGRESSION_MAX_TOTAL_PIXELS(Integer.class, _1_, _0_, _0_, _0_, _0_, _0_, _0_, _0_, _0_, _0_),
+    _PROGRESSION_SCENARIO(Boolean.class, TRUE),
+    _PROGRESSION_SCENARIO_MP4(Boolean.class, TRUE),
+    _PROGRESSION_TREE(Boolean.class, TRUE),
+    _PROGRESSION_TREE_MP4(Boolean.class, TRUE),
     _RANGER_LOG_ABSENT_RANGE(Boolean.class, TRUE),
     _RANGER_LOG_BOUNDARIES(Boolean.class, TRUE),
     _RANGER_LOG_NON_FAILING_OUT_OF_BOUNDS(Boolean.class, TRUE),
@@ -133,8 +137,6 @@ public enum PropEnum implements _PropEnum {
     _SCENARIO_DOES_NOT_FIT_NOTICE(Boolean.class, TRUE),
     _SCENARIO_HISTORY_DEPTH_SAFEGUARD(Integer.class, _2_, _0_),
     _SCENARIO_NOT_EXECUTABLE_NOTICE(Boolean.class, TRUE),
-    _SCENARIO_PROGRESSION(Boolean.class, TRUE),
-    _SCENARIO_PROGRESSION_MP4(Boolean.class, FALSE),
     _SCREENSHOTS_OF_BINDS(Boolean.class, FALSE),
     _SCREENSHOTS_OF_CLICKS(Boolean.class, FALSE),
     _SCREENSHOTS_OF_LONG_CLICKS(Boolean.class, FALSE),
@@ -148,17 +150,15 @@ public enum PropEnum implements _PropEnum {
     _STAMPS_COMPRESS(Boolean.class, TRUE),
     _STAMPS_DISPLAY(Boolean.class, TRUE),
     _STAMPS_PROCESS(Boolean.class, TRUE),
+    _SWIPES_BIG_REDUCTION(Float.class, _DASH_, _1_, _0_, _DOT_, _0_),
+    _SWIPES_DEFAULT_REDUCTION(Float.class, _DASH_, _2_, _DOT_, _0_),
+    _SWIPES_DEFAULT_WEIGHT(Float.class, _1_, _DOT_, _0_),
+    _SWIPES_MEDIUM_REDUCTION(Float.class, _DASH_, _4_, _DOT_, _5_),
     _SWIPE_LINE_MARKER_COLOUR(Color.class, b(_COMMA_, _0_, _0_, _0_, _128)),
     _SWIPE_START_MARKER_COLOUR(Color.class, b(_COMMA_, _0_, _255, _0_, _128)),
     _SWIPE_STOP_MARKER_COLOUR(Color.class, b(_COMMA_, _255, _0_, _0_, _128)),
-    _SWIPES_BIG_REDUCTION(Float.class, _DASH_, _1_, _0_, _DOT_, _0_),
-    _SWIPES_DEFAULT_REDUCTION(Float.class, _DASH_, _2_, _DOT_, _0_),
-    _SWIPES_MEDIUM_REDUCTION(Float.class, _DASH_, _4_, _DOT_, _5_),
-    _SWIPES_DEFAULT_WEIGHT(Float.class, _1_, _DOT_, _0_),
     _TESTS(Integer.class, NULL),
     _TEST_EXECUTION_TIME_SAFEGUARD(String.class, _2_, _0_, VRT_BAR, _2_, _0_, _0_, _0_),
-    _TREE_PROGRESSION(Boolean.class, TRUE),
-    _TREE_PROGRESSION_MP4(Boolean.class, FALSE),
     _TRACE(Boolean.class, FALSE),
     _UD_ID(String.class, EMPTY),
     _UPDATE_COLOUR_EXPECTATIONS(Boolean.class, FALSE),
@@ -171,6 +171,7 @@ public enum PropEnum implements _PropEnum {
     private final Class<?> type;
     private final String defaultValue;
     private final boolean silent;
+    private final boolean executionParameter;
 
     /**
      * Initialises a new instance of the PropEnum class with the specified type and default string value.
@@ -183,6 +184,7 @@ public enum PropEnum implements _PropEnum {
         this.type = type;
         defaultValue = defaultStringValue;
         silent = false;
+        executionParameter = false;
     }
 
     /**
@@ -196,6 +198,7 @@ public enum PropEnum implements _PropEnum {
         this.type = type;
         defaultValue = s(defaultCharValue);
         silent = false;
+        executionParameter = false;
     }
 
     /**
@@ -209,6 +212,7 @@ public enum PropEnum implements _PropEnum {
         this.type = type;
         defaultValue = new String(defaultChars);
         silent = false;
+        executionParameter = false;
     }
 
     /**
@@ -224,7 +228,42 @@ public enum PropEnum implements _PropEnum {
         this.type = type;
         defaultValue = defaultStringValue;
         this.silent = silent;
+        executionParameter = false;
+    }
 
+    /**
+     * Initialises a property with silent behaviour and execution-parameter metadata.
+     *
+     * @param type the class type which the property corresponds to
+     * @param defaultStringValue the default string value for the property
+     * @param silent true if operations related to the property should be silent
+     * @param executionParameter true if the property is also an execution parameter
+     */
+    PropEnum(final Class<?> type, final String defaultStringValue, final boolean silent,
+             final boolean executionParameter) {
+
+        this.type = type;
+        defaultValue = defaultStringValue;
+        this.silent = silent;
+        this.executionParameter = executionParameter;
+
+    }
+
+    /**
+     * Initialises a property with a character default, silent behaviour, and execution-parameter metadata.
+     *
+     * @param type the class type which the property corresponds to
+     * @param defaultCharValue the default character value for the property
+     * @param silent true if operations related to the property should be silent
+     * @param executionParameter true if the property is also an execution parameter
+     */
+    PropEnum(final Class<?> type, final char defaultCharValue, final boolean silent,
+             final boolean executionParameter) {
+
+        this.type = type;
+        defaultValue = s(defaultCharValue);
+        this.silent = silent;
+        this.executionParameter = executionParameter;
     }
 
     /**
@@ -240,6 +279,7 @@ public enum PropEnum implements _PropEnum {
         this.type = type;
         defaultValue = s(defaultCharValue);
         this.silent = silent;
+        executionParameter = false;
     }
 
     public String defaultValue() {
@@ -256,10 +296,6 @@ public enum PropEnum implements _PropEnum {
     public String getPropertyName() {
 
         return switch (this) {
-            case _SCENARIO_PROGRESSION -> ".progression.scenario";
-            case _SCENARIO_PROGRESSION_MP4 -> ".progression.scenario.mp4";
-            case _TREE_PROGRESSION -> ".progression.tree";
-            case _TREE_PROGRESSION_MP4 -> ".progression.tree.mp4";
             case _SWIPE_LINE_MARKER_COLOUR -> ".swipes.marker.line.colour";
             case _SWIPE_START_MARKER_COLOUR -> ".swipes.marker.start.colour";
             case _SWIPE_STOP_MARKER_COLOUR -> ".swipes.marker.stop.colour";
@@ -271,6 +307,12 @@ public enum PropEnum implements _PropEnum {
     public boolean silent() {
 
         return silent;
+    }
+
+    @Override
+    public boolean executionParameter() {
+
+        return executionParameter;
     }
 
     public Class<?> type() {

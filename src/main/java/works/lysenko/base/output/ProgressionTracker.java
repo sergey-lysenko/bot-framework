@@ -105,7 +105,7 @@ public final class ProgressionTracker {
      * @param testNumber the test cycle number just completed
      */
     public static void onLimbo(final Integer testNumber) {
-        if (!Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION.get())) return;
+        if (!ProgressionSettings.current().scenarioEnabled()) return;
         if (isNull(core)) return;
         final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
                 || Boolean.TRUE.equals(PropEnum._ALL_LEAFS.get())
@@ -130,8 +130,8 @@ public final class ProgressionTracker {
         if (!progressionDir.exists() && !progressionDir.mkdirs()) return;
 
         final int maxFrames = ProgressionFrames.frameLimit(
-                PropEnum._PROGRESSION_MAX_FRAMES.get(),
-                PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get(),
+                ProgressionSettings.current().maxFrames(),
+                ProgressionSettings.current().maxTotalPixels(),
                 WIDTH,
                 HEIGHT);
         final int frameIndex = Math.min(currentCycle, maxFrames);
@@ -166,7 +166,7 @@ public final class ProgressionTracker {
             final String prefix,
             final ProcessingProgress progress) {
 
-        processFrames(runDir, prefix, progress, Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION.get()));
+        processFrames(runDir, prefix, progress, ProgressionSettings.current().scenarioEnabled());
     }
 
     /**
@@ -187,11 +187,11 @@ public final class ProgressionTracker {
                 prefix,
                 progress,
                 enabled,
-                PropEnum._PROGRESSION_MAX_FRAMES.get(),
-                PropEnum._PROGRESSION_MAX_FRAME_PIXELS.get(),
-                PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get(),
-                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION_MP4.get()),
-                PropEnum._PROGRESSION_FFMPEG.get());
+                ProgressionSettings.current().maxFrames(),
+                ProgressionSettings.current().maxFramePixels(),
+                ProgressionSettings.current().maxTotalPixels(),
+                ProgressionSettings.current().scenarioMp4Enabled(),
+                ProgressionSettings.current().ffmpeg());
     }
 
     public static void processFrames(
@@ -208,9 +208,9 @@ public final class ProgressionTracker {
                 enabled,
                 maxFrames,
                 maxFramePixels,
-                PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get(),
-                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION_MP4.get()),
-                PropEnum._PROGRESSION_FFMPEG.get());
+                ProgressionSettings.current().maxTotalPixels(),
+                ProgressionSettings.current().scenarioMp4Enabled(),
+                ProgressionSettings.current().ffmpeg());
     }
 
     public static void processFrames(
@@ -229,8 +229,8 @@ public final class ProgressionTracker {
                 maxFrames,
                 maxFramePixels,
                 maxTotalPixels,
-                Boolean.TRUE.equals(PropEnum._SCENARIO_PROGRESSION_MP4.get()),
-                PropEnum._PROGRESSION_FFMPEG.get());
+                ProgressionSettings.current().scenarioMp4Enabled(),
+                ProgressionSettings.current().ffmpeg());
     }
 
     public static void processFrames(
@@ -637,7 +637,7 @@ public final class ProgressionTracker {
                 outFile,
                 delayCentiseconds,
                 finalFrameDelayCentiseconds,
-                PropEnum._PROGRESSION_MAX_FRAME_PIXELS.get(),
+                ProgressionSettings.current().maxFramePixels(),
                 progress);
     }
 
