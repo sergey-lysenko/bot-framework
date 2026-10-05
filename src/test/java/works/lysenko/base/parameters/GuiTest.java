@@ -430,6 +430,19 @@ class GuiTest {
     }
 
     @Test
+    void copyPropertyNameButtonIsEnabledOnlyForSelectedProperty() {
+        final PropertiesPanel dialog = new PropertiesPanel(new TestProperties(), "default", false, false, 1);
+        final JTable table = dialog.getTable();
+        final JButton copyButton = dialog.getCopyPropertyNameButton();
+
+        assertFalse(copyButton.isEnabled());
+        table.setRowSelectionInterval(0, 0);
+        assertTrue(copyButton.isEnabled());
+        table.clearSelection();
+        assertFalse(copyButton.isEnabled());
+    }
+
+    @Test
     void testPropertyHelpOnlyReferencesKnownProperties() {
         final TestProperties tp = new TestProperties();
         for (final String propertyName : PropertyHelp.getPropertyNames()) {

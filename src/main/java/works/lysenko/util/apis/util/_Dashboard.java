@@ -42,6 +42,13 @@ public interface _Dashboard {
     boolean isDebug();
 
     /**
+     * Sets whether debug output is enabled.
+     *
+     * @param active true to enable debug output
+     */
+    void setDebug(boolean active);
+
+    /**
      * Determines if the application is currently halted.
      *
      * @return true if the application is halted, false otherwise

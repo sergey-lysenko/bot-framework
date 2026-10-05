@@ -90,6 +90,12 @@ public final class Directory implements _Dashboard {
     }
 
     @Override
+    public void setDebug(final boolean active) {
+
+        setButton(DEBUG_PATH, active);
+    }
+
+    @Override
     public boolean isHalt() {
 
         return isFilePresent(HALT_PATH);

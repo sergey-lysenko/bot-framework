@@ -15,6 +15,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.util.*;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -61,6 +62,7 @@ public class PropertiesPanel extends JPanel {
     private final JButton resetSelectedBtn;
     private final JButton resetAllBtn;
     private final JButton addPropertyBtn;
+    private final JButton copyPropertyNameBtn;
     private final JButton okBtn;
     private JButton cancelBtn; // Keeping variable around just in case to not break test, but we'll remove it from the panel
     private boolean confirmed = false;
@@ -174,12 +176,17 @@ public class PropertiesPanel extends JPanel {
         bottomPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
 
         final JPanel leftActions = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        copyPropertyNameBtn = new JButton("Copy Property Name");
+        copyPropertyNameBtn.setToolTipText("Copy the selected property name to the clipboard");
+        copyPropertyNameBtn.setEnabled(false);
+        copyPropertyNameBtn.addActionListener(e -> copySelectedPropertyName());
         resetSelectedBtn = new JButton(b(c(RESET), c(SELECTED)));
         resetSelectedBtn.addActionListener(e -> onResetSelected());
         resetAllBtn = new JButton(b(c(RESET), "All"));
         resetAllBtn.addActionListener(e -> onResetAll());
         addPropertyBtn = new JButton("+ " + c(PROPERTY));
         addPropertyBtn.addActionListener(e -> onAddProperty());
+        leftActions.add(copyPropertyNameBtn);
         leftActions.add(resetSelectedBtn);
         leftActions.add(resetAllBtn);
         leftActions.add(addPropertyBtn);
@@ -393,6 +400,7 @@ public class PropertiesPanel extends JPanel {
 
         if (event.getValueIsAdjusting()) return;
         final int viewRow = table.getSelectedRow();
+        copyPropertyNameBtn.setEnabled(viewRow >= 0);
         if (viewRow < 0) {
             helpTitle.setText("Select a property to see help.");
             helpText.setText("");
@@ -406,6 +414,20 @@ public class PropertiesPanel extends JPanel {
                 ? "No help is available for this property."
                 : description);
         helpText.setCaretPosition(0);
+    }
+
+    private void copySelectedPropertyName() {
+
+        final int viewRow = table.getSelectedRow();
+        if (viewRow < 0) return;
+        final int modelRow = table.convertRowIndexToModel(viewRow);
+        final String propertyName = (String) model.getValueAt(modelRow, 0);
+        try {
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(propertyName), null);
+            validationLabel.setText(" ");
+        } catch (final IllegalStateException e) {
+            validationLabel.setText("Unable to copy property name: clipboard is unavailable.");
+        }
     }
 
     private void onResetSelected() {
@@ -655,6 +677,11 @@ public class PropertiesPanel extends JPanel {
     public JButton getResetSelectedButton() {
 
         return resetSelectedBtn;
+    }
+
+    public JButton getCopyPropertyNameButton() {
+
+        return copyPropertyNameBtn;
     }
 
     public JButton getResetAllButton() {

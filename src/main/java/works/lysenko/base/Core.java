@@ -383,10 +383,8 @@ public final class Core extends Root implements _Core, _Tests {
             dashboard = new Directory(Is.debug);
         } else {
             dashboard = works.lysenko.base.ui.ControlPanel.getInstance();
-            if (dashboard != null && Is.debug) {
-                dashboard.setHalt(true);
-            }
         }
+        if (isNotNull(dashboard)) dashboard.setDebug(Is.debug);
     }
 
     /**

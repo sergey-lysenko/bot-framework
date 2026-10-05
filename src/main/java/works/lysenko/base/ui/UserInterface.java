@@ -58,9 +58,6 @@ public final class UserInterface extends JPanel implements _Dashboard {
     private static final float GREEN_HUE = 0.333F;
     private static final float SATURATION = 1.0F;
     private static final float BRIGHTNESS = 0.75F;
-    private static final int DASHBOARD_WIDTH = 1024;
-    private static final int DASHBOARD_HEIGHT = 256;
-    private static final float DOT_TWENTY_SEVEN = 0.27f;
     private final JPanel container = new JPanel();
     private final JPanel breadcrumb = new JPanel();
     private final JPanel statusboard = new JPanel();
@@ -74,6 +71,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
     private final JLabel runtime = new JLabel(s(QUS_MRK));
     private final JPanel switchboard = new JPanel();
     private final AnsiTextPane log = new AnsiTextPane();
+    private final JScrollPane logScrollPane = new JScrollPane(log);
     private double previous = 0.0;
     private JBotButton debug;
     private JBotButton pause;
@@ -89,7 +87,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
     @SuppressWarnings({"WeakerAccess", "ImplicitCallToSuper", "PublicConstructor", "MethodParameterNamingConvention"})
     public UserInterface(final Integer screenToSpawnDashboard) {
 
-        setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
+        setLayout(new BorderLayout());
         buildStatusBoard();
         buildBusiness();
         buildSwitchBoard();
@@ -194,6 +192,12 @@ public final class UserInterface extends JPanel implements _Dashboard {
         return debug.isActive();
     }
 
+    @Override
+    public void setDebug(final boolean active) {
+
+        setButtonActiveState(debug, active);
+    }
+
     /**
      * Retrieves the halt button from the dashboard.
      *
@@ -273,12 +277,15 @@ public final class UserInterface extends JPanel implements _Dashboard {
      */
     public void setInfo(final String message, final Telemetry telemetry) {
 
-        refreshStatusBoard(telemetry);
-        
         final int depth = works.lysenko.Base.exec == null ? 0 : works.lysenko.Base.exec.scenarios().depth();
         final String indent = "  ".repeat(Math.max(0, depth));
-        
-        log.ansiAppendText(indent + message);
+        SwingUtilities.invokeLater(() -> {
+            final JScrollBar scrollBar = logScrollPane.getVerticalScrollBar();
+            final boolean followOutput = scrollBar.getValue() + scrollBar.getVisibleAmount() >= scrollBar.getMaximum() - 2;
+            refreshStatusBoard(telemetry);
+            log.appendOutput(indent + message);
+            if (followOutput) SwingUtilities.invokeLater(() -> scrollBar.setValue(scrollBar.getMaximum()));
+        });
     }
 
     /**
@@ -302,11 +309,13 @@ public final class UserInterface extends JPanel implements _Dashboard {
      */
     private void buildContainer() {
 
-        add(breadcrumb);
-        add(statusboard);
-        add(business);
-        add(switchboard);
-        add(log);
+        container.setLayout(new BoxLayout(container, BoxLayout.PAGE_AXIS));
+        container.add(breadcrumb);
+        container.add(statusboard);
+        container.add(business);
+        container.add(switchboard);
+        add(container, BorderLayout.NORTH);
+        add(logScrollPane, BorderLayout.CENTER);
     }
 
     /**
@@ -314,15 +323,9 @@ public final class UserInterface extends JPanel implements _Dashboard {
      */
     private void buildLog() {
 
-        log.setBackground(Color.getHSBColor(0.00f, 0.00f, DOT_TWENTY_SEVEN));
-        
-        // Add a component listener to update the max lines when the log pane is resized
-        log.addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override
-            public void componentResized(java.awt.event.ComponentEvent e) {
-                log.updateMaxLines(log.getHeight());
-            }
-        });
+        logScrollPane.setMinimumSize(new Dimension());
+        logScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        logScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     }
 
     /**

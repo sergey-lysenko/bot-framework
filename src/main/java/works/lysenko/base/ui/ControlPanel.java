@@ -123,4 +123,9 @@ public class ControlPanel extends JFrame implements _Dashboard {
     public boolean isDebug() {
         return dashboardPanel.isDebug();
     }
+
+    @Override
+    public void setDebug(boolean active) {
+        dashboardPanel.setDebug(active);
+    }
 }
