@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static works.lysenko.util.func.type.fractions.Factory.fr;
 
 @SuppressWarnings({"removal", "deprecation"})
-class TreeProgressionTrackerTest {
+class TreeTrackerTest {
 
     private Core previousCore;
     private Parameters previousParameters;
@@ -59,7 +59,7 @@ class TreeProgressionTrackerTest {
         previousProperties = Base.properties;
         Base.parameters = null;
         Base.properties = null;
-        TreeProgressionTracker.reset();
+        TreeTracker.reset();
 
         final Field f = Unsafe.class.getDeclaredField("theUnsafe");
         f.setAccessible(true);
@@ -77,7 +77,7 @@ class TreeProgressionTrackerTest {
         Base.core = previousCore;
         Base.parameters = previousParameters;
         Base.properties = previousProperties;
-        TreeProgressionTracker.reset();
+        TreeTracker.reset();
     }
 
     private static void setTestProperty(final String key, final String value) {
@@ -102,20 +102,20 @@ class TreeProgressionTrackerTest {
     @Test
     void testGetProgressColorMonotonicHueTransition() {
         // Zero or negative executions -> unvisited slate border color
-        final Color unvisited = TreeProgressionTracker.getProgressColor(0, 5);
+        final Color unvisited = TreeTracker.getProgressColor(0, 5);
         assertEquals(new Color(0x33, 0x41, 0x55), unvisited);
 
         // Target = 1 -> immediate green
-        final Color targetOne = TreeProgressionTracker.getProgressColor(1, 1);
+        final Color targetOne = TreeTracker.getProgressColor(1, 1);
         assertEquals(new Color(0x22, 0xC5, 0x5E), targetOne);
 
         // Target = 5: hue should monotonically shift from warm amber toward emerald green
         final int target = 5;
-        final float hue1 = getHue(TreeProgressionTracker.getProgressColor(1, target));
-        final float hue2 = getHue(TreeProgressionTracker.getProgressColor(2, target));
-        final float hue3 = getHue(TreeProgressionTracker.getProgressColor(3, target));
-        final float hue4 = getHue(TreeProgressionTracker.getProgressColor(4, target));
-        final float hue5 = getHue(TreeProgressionTracker.getProgressColor(5, target));
+        final float hue1 = getHue(TreeTracker.getProgressColor(1, target));
+        final float hue2 = getHue(TreeTracker.getProgressColor(2, target));
+        final float hue3 = getHue(TreeTracker.getProgressColor(3, target));
+        final float hue4 = getHue(TreeTracker.getProgressColor(4, target));
+        final float hue5 = getHue(TreeTracker.getProgressColor(5, target));
 
         assertTrue(hue1 < hue2, "Hue should increase from 1 to 2");
         assertTrue(hue2 < hue3, "Hue should increase from 2 to 3");
@@ -133,24 +133,24 @@ class TreeProgressionTrackerTest {
         final NodeData node = new NodeData("node", "Node", "Root", 0, 1.0, result(ScenarioType.NODE, 0));
         final NodeData leaf = new NodeData("leaf", "Leaf", "Root", 0, 1.0, result(ScenarioType.LEAF, 0));
 
-        assertEquals(1, TreeProgressionTracker.getTargetExecutions(mono, 5));
-        assertEquals(0, TreeProgressionTracker.getTargetExecutions(node, 5));
-        assertEquals(5, TreeProgressionTracker.getTargetExecutions(leaf, 5));
-        assertEquals("0/1", TreeProgressionTracker.getExecutionBadgeText(mono, 0, 5));
-        assertEquals("\u2713 2/1", TreeProgressionTracker.getExecutionBadgeText(mono, 2, 5));
-        assertEquals("3 execs", TreeProgressionTracker.getExecutionBadgeText(node, 3, 5));
-        assertEquals("\u2713 2/2", TreeProgressionTracker.getExecutionBadgeText(leaf, 2, 2));
-        assertEquals("4/2 +100%", TreeProgressionTracker.getExecutionBadgeText(leaf, 4, 2));
+        assertEquals(1, TreeTracker.getTargetExecutions(mono, 5));
+        assertEquals(0, TreeTracker.getTargetExecutions(node, 5));
+        assertEquals(5, TreeTracker.getTargetExecutions(leaf, 5));
+        assertEquals("0/1", TreeTracker.getExecutionBadgeText(mono, 0, 5));
+        assertEquals("\u2713 2/1", TreeTracker.getExecutionBadgeText(mono, 2, 5));
+        assertEquals("3 execs", TreeTracker.getExecutionBadgeText(node, 3, 5));
+        assertEquals("\u2713 2/2", TreeTracker.getExecutionBadgeText(leaf, 2, 2));
+        assertEquals("4/2 +100%", TreeTracker.getExecutionBadgeText(leaf, 4, 2));
     }
 
     @Test
     void testLeafOverExecutionPercentAndColor() {
-        assertEquals(0, TreeProgressionTracker.getOverExecutionPercent(2, 2));
-        assertEquals(50, TreeProgressionTracker.getOverExecutionPercent(3, 2));
-        assertEquals(100, TreeProgressionTracker.getOverExecutionPercent(4, 2));
+        assertEquals(0, TreeTracker.getOverExecutionPercent(2, 2));
+        assertEquals(50, TreeTracker.getOverExecutionPercent(3, 2));
+        assertEquals(100, TreeTracker.getOverExecutionPercent(4, 2));
 
-        final Color partialOvershoot = TreeProgressionTracker.getOverExecutionColor(0.5, 1.0);
-        assertEquals(new Color(0xF8, 0xFA, 0xFC), TreeProgressionTracker.getOverExecutionColor(1.0, 1.0));
+        final Color partialOvershoot = TreeTracker.getOverExecutionColor(0.5, 1.0);
+        assertEquals(new Color(0xF8, 0xFA, 0xFC), TreeTracker.getOverExecutionColor(1.0, 1.0));
         assertTrue(partialOvershoot.getRed() > new Color(0x22, 0xC5, 0x5E).getRed());
         assertTrue(partialOvershoot.getGreen() < Color.WHITE.getGreen());
         assertTrue(partialOvershoot.getBlue() < Color.WHITE.getBlue());
@@ -158,9 +158,9 @@ class TreeProgressionTrackerTest {
 
     @Test
     void testFormatElapsedTime() {
-        assertEquals("00:00:00", TreeProgressionTracker.formatElapsedTime(999));
-        assertEquals("01:01:01", TreeProgressionTracker.formatElapsedTime(3_661_999));
-        assertEquals("00:00:00", TreeProgressionTracker.formatElapsedTime(-1));
+        assertEquals("00:00:00", TreeTracker.formatElapsedTime(999));
+        assertEquals("01:01:01", TreeTracker.formatElapsedTime(3_661_999));
+        assertEquals("00:00:00", TreeTracker.formatElapsedTime(-1));
     }
 
     @Test
@@ -174,10 +174,10 @@ class TreeProgressionTrackerTest {
         final TreeLayout layout = new TreeLayout(
                 List.of(root, partialLeaf, mostOverExecutedLeaf),
                 List.of(new Edge(root, partialLeaf), new Edge(root, mostOverExecutedLeaf)));
-        final BufferedImage image = TreeProgressionTracker.renderTreeProgression(layout, 2, 1);
+        final BufferedImage image = TreeTracker.renderTreeProgression(layout, 2, 1);
 
         assertEquals(
-                TreeProgressionTracker.getOverExecutionColor(0.5, 1.0),
+                TreeTracker.getOverExecutionColor(0.5, 1.0),
                 new Color(image.getRGB(400, 155)));
         assertEquals(new Color(0xF8, 0xFA, 0xFC), new Color(image.getRGB(400, 215)));
     }
@@ -203,7 +203,7 @@ class TreeProgressionTrackerTest {
         edges.add(new Edge(root, leaf2));
 
         final TreeLayout layout = new TreeLayout(nodes, edges);
-        final BufferedImage img = TreeProgressionTracker.renderTreeProgression(layout, 3, 1);
+        final BufferedImage img = TreeTracker.renderTreeProgression(layout, 3, 1);
 
         assertNotNull(img);
         assertEquals(0, img.getWidth() % 2);
@@ -219,13 +219,13 @@ class TreeProgressionTrackerTest {
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> TreeProgressionTracker.renderTreeProgression(layout, 1, 1));
+                () -> TreeTracker.renderTreeProgression(layout, 1, 1));
     }
 
     @Test
     void testTreeProgressionLifecycleAndGifGeneration(@TempDir final Path tempDir) throws Exception {
         final File customRunDir = tempDir.toFile();
-        TreeProgressionTracker.setCustomOutputDir(customRunDir);
+        TreeTracker.setCustomOutputDir(customRunDir);
 
         setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
@@ -256,18 +256,18 @@ class TreeProgressionTrackerTest {
 
         // Limbo cycle 1: leaf 1 executed
         Base.core.getResults().count(leaf1);
-        TreeProgressionTracker.onLimbo(1);
+        TreeTracker.onLimbo(1);
 
         // Limbo cycle 2: leaf 2 executed
         Base.core.getResults().count(leaf2);
-        TreeProgressionTracker.onLimbo(2);
+        TreeTracker.onLimbo(2);
 
         // Limbo cycle 3: leaf 1 and 2 executed again
         Base.core.getResults().count(leaf1);
         Base.core.getResults().count(leaf2);
-        TreeProgressionTracker.onLimbo(3);
+        TreeTracker.onLimbo(3);
 
-        assertEquals(3, TreeProgressionTracker.getCapturedFrames().size());
+        assertEquals(3, TreeTracker.getCapturedFrames().size());
 
         final File treeProgressionDir = new File(customRunDir, "tree_progression");
         assertTrue(new File(treeProgressionDir, "frame_0001.png").exists());
@@ -275,7 +275,7 @@ class TreeProgressionTrackerTest {
         assertTrue(new File(treeProgressionDir, "frame_0003.png").exists());
 
         // Complete tests -> animated GIF should be produced
-        TreeProgressionTracker.onComplete();
+        TreeTracker.onComplete();
 
         final File[] gifFiles = customRunDir.listFiles((d, name) -> name.endsWith(".tree.progression.gif"));
         assertNotNull(gifFiles);

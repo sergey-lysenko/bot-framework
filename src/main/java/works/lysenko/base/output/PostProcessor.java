@@ -359,7 +359,7 @@ public class PostProcessor {
         final String prefix = runPrefix(logFile);
         final ProgressWindow progress = ProgressWindow.create(showProgressWindow);
         try {
-            ProgressionTracker.processFrames(
+            ScenarioTracker.processFrames(
                     runDir,
                     prefix,
                     progress,
@@ -369,7 +369,7 @@ public class PostProcessor {
                     maxTotalPixels,
                     scenarioMp4Enabled,
                     ffmpeg);
-            TreeProgressionTracker.processFrames(
+            TreeTracker.processFrames(
                     runDir,
                     prefix,
                     progress,

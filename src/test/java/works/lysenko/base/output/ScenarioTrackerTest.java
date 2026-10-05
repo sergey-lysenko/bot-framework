@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static works.lysenko.util.func.type.fractions.Factory.fr;
 
 @SuppressWarnings({"removal", "deprecation"})
-class ProgressionTrackerTest {
+class ScenarioTrackerTest {
 
     private Core previousCore;
     private Parameters previousParameters;
@@ -48,7 +48,7 @@ class ProgressionTrackerTest {
         previousProperties = Base.properties;
         Base.parameters = null;
         Base.properties = null;
-        ProgressionTracker.reset();
+        ScenarioTracker.reset();
 
         final Field f = Unsafe.class.getDeclaredField("theUnsafe");
         f.setAccessible(true);
@@ -66,7 +66,7 @@ class ProgressionTrackerTest {
         Base.core = previousCore;
         Base.parameters = previousParameters;
         Base.properties = previousProperties;
-        ProgressionTracker.reset();
+        ScenarioTracker.reset();
     }
 
     private static void setTestProperty(final String key, final String value) {
@@ -91,7 +91,7 @@ class ProgressionTrackerTest {
         scenarios.add(leaf1);
         scenarios.add(leaf2);
 
-        final BufferedImage img = ProgressionTracker.renderProgressionGraph(scenarios, 2, 1);
+        final BufferedImage img = ScenarioTracker.renderProgressionGraph(scenarios, 2, 1);
         assertNotNull(img);
         assertEquals(1280, img.getWidth());
         assertEquals(680, img.getHeight());
@@ -99,9 +99,9 @@ class ProgressionTrackerTest {
 
     @Test
     void testFormatElapsedTime() {
-        assertEquals("00:00:00", ProgressionTracker.formatElapsedTime(999));
-        assertEquals("01:01:01", ProgressionTracker.formatElapsedTime(3_661_999));
-        assertEquals("00:00:00", ProgressionTracker.formatElapsedTime(-1));
+        assertEquals("00:00:00", ScenarioTracker.formatElapsedTime(999));
+        assertEquals("01:01:01", ScenarioTracker.formatElapsedTime(3_661_999));
+        assertEquals("00:00:00", ScenarioTracker.formatElapsedTime(-1));
     }
 
     @Test
@@ -114,7 +114,7 @@ class ProgressionTrackerTest {
             scenarios.add(new TestLeaf(name, fr(1.0)));
         }
 
-        final BufferedImage img = ProgressionTracker.renderProgressionGraph(scenarios, 5, 23);
+        final BufferedImage img = ScenarioTracker.renderProgressionGraph(scenarios, 5, 23);
         assertNotNull(img);
         assertEquals(1280, img.getWidth());
         assertEquals(680, img.getHeight());
@@ -130,7 +130,7 @@ class ProgressionTrackerTest {
             frames.add(frame);
         }
 
-        ProgressionTracker.writeAnimatedGif(frames, gifFile, 10, 150);
+        ScenarioTracker.writeAnimatedGif(frames, gifFile, 10, 150);
 
         assertTrue(gifFile.exists());
         assertTrue(gifFile.length() > 0);
@@ -150,7 +150,7 @@ class ProgressionTrackerTest {
     @Test
     void testOnLimboAndOnCompleteLifecycle(@TempDir final Path tempDir) throws Exception {
         final File customRunDir = tempDir.toFile();
-        ProgressionTracker.setCustomOutputDir(customRunDir);
+        ScenarioTracker.setCustomOutputDir(customRunDir);
 
         setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
@@ -181,18 +181,18 @@ class ProgressionTrackerTest {
 
         // Limbo cycle 1: leaf 1 executed
         Base.core.getResults().count(leaf1);
-        ProgressionTracker.onLimbo(1);
+        ScenarioTracker.onLimbo(1);
 
         // Limbo cycle 2: leaf 2 executed
         Base.core.getResults().count(leaf2);
-        ProgressionTracker.onLimbo(2);
+        ScenarioTracker.onLimbo(2);
 
         // Limbo cycle 3: leaf 1 and 2 executed again to reach target
         Base.core.getResults().count(leaf1);
         Base.core.getResults().count(leaf2);
-        ProgressionTracker.onLimbo(3);
+        ScenarioTracker.onLimbo(3);
 
-        assertEquals(3, ProgressionTracker.getCapturedFrames().size());
+        assertEquals(3, ScenarioTracker.getCapturedFrames().size());
 
         final File progressionDir = new File(customRunDir, "progression");
         assertTrue(new File(progressionDir, "frame_0001.png").exists());
@@ -200,7 +200,7 @@ class ProgressionTrackerTest {
         assertTrue(new File(progressionDir, "frame_0003.png").exists());
 
         // Complete tests
-        ProgressionTracker.onComplete();
+        ScenarioTracker.onComplete();
 
         final File[] gifFiles = customRunDir.listFiles((d, name) -> name.endsWith(".progression.gif"));
         assertNotNull(gifFiles);

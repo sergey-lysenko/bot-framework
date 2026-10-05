@@ -1,8 +1,8 @@
 package works.lysenko.base.test;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
-import works.lysenko.base.output.ProgressionTracker;
-import works.lysenko.base.output.TreeProgressionTracker;
+import works.lysenko.base.output.ScenarioTracker;
+import works.lysenko.base.output.TreeTracker;
 import org.apache.commons.lang3.StringUtils;
 import works.lysenko.base.core.Routines;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
@@ -144,8 +144,8 @@ public class Repeater implements _Repeater {
         close(test);
         time();
         history();
-        ProgressionTracker.onLimbo(testNum);
-        TreeProgressionTracker.onLimbo(testNum);
+        ScenarioTracker.onLimbo(testNum);
+        TreeTracker.onLimbo(testNum);
         timeSafeguard();
         stopIfFailingEvents();
         done = core.getStopFlag();

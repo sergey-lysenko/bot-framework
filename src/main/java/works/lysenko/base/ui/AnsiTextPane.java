@@ -66,7 +66,19 @@ class AnsiTextPane extends JTextPane {
         };
     }
 
-    private static final int MAX_LINES = 30;
+    private int maxLines = 30;
+
+    public void updateMaxLines(int height) {
+        if (height > 0) {
+            java.awt.FontMetrics fm = getFontMetrics(getFont());
+            if (fm != null) {
+                int fontHeight = fm.getHeight();
+                if (fontHeight > 0) {
+                    maxLines = Math.max(10, height / fontHeight);
+                }
+            }
+        }
+    }
 
     @SuppressWarnings({"MethodWithMultipleReturnPoints", "OverlyLongMethod", "SingleCharacterStringConcatenation",
             "ReassignedVariable",
@@ -124,8 +136,8 @@ class AnsiTextPane extends JTextPane {
             javax.swing.text.Document doc = getDocument();
             javax.swing.text.Element root = doc.getDefaultRootElement();
             int lineCount = root.getElementCount();
-            if (lineCount > MAX_LINES) {
-                int linesToRemove = lineCount - MAX_LINES;
+            if (lineCount > maxLines) {
+                int linesToRemove = lineCount - maxLines;
                 javax.swing.text.Element endElement = root.getElement(linesToRemove - 1);
                 int endOffset = endElement.getEndOffset();
                 doc.remove(0, endOffset);

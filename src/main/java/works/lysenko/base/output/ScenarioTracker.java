@@ -41,7 +41,7 @@ import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_;
  * periods,
  * generating visual status charts and compiling them into an animated GIF.
  */
-public final class ProgressionTracker {
+public final class ScenarioTracker {
 
     private static final int WIDTH = 1280;
     private static final int HEIGHT = 680;
@@ -66,7 +66,7 @@ public final class ProgressionTracker {
     private static final List<File> capturedFrames = new ArrayList<>();
     private static File customOutputDir = null;
 
-    private ProgressionTracker() {
+    private ScenarioTracker() {
     }
 
     /**
@@ -95,11 +95,6 @@ public final class ProgressionTracker {
         return new ArrayList<>(capturedFrames);
     }
 
-    private static boolean isCountAllLeafs() {
-        final Integer count = PropEnum._TEST_ALL_LEAFS_COUNT.get();
-        return isNotNull(count) && count > 1;
-    }
-
     /**
      * Hook called during limbo period between test cycles.
      *
@@ -110,12 +105,6 @@ public final class ProgressionTracker {
             return;
         if (isNull(core))
             return;
-        final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
-                || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get())
-                || isCountAllLeafs();
-        if (!allLeafsMode)
-            return;
-
         final Set<_Scenario> leafs = core.getAccessibleLeafs();
         if (leafs.isEmpty())
             return;

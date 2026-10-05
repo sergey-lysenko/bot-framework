@@ -40,7 +40,7 @@ import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_;
  */
 @SuppressWarnings({ "ClassWithoutLogger", "MagicNumber", "NestedMethodCall", "OverlyComplexMethod",
         "MethodWithMultipleLoops", "ClassWithTooManyFields" })
-public final class TreeProgressionTracker {
+public final class TreeTracker {
 
     private static final int COL_WIDTH = 270;
     private static final int ROW_HEIGHT = 60;
@@ -73,7 +73,7 @@ public final class TreeProgressionTracker {
     private static final List<File> capturedFrames = new ArrayList<>();
     private static File customOutputDir = null;
 
-    private TreeProgressionTracker() {
+    private TreeTracker() {
     }
 
     /**
@@ -100,11 +100,6 @@ public final class TreeProgressionTracker {
      */
     public static List<File> getCapturedFrames() {
         return new ArrayList<>(capturedFrames);
-    }
-
-    private static boolean isCountAllLeafs() {
-        final Integer count = PropEnum._TEST_ALL_LEAFS_COUNT.get();
-        return isNotNull(count) && count > 1;
     }
 
     /**
@@ -180,12 +175,6 @@ public final class TreeProgressionTracker {
             return;
         if (isNull(core) || isNull(core.getResults()))
             return;
-        final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
-                || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get())
-                || isCountAllLeafs();
-        if (!allLeafsMode)
-            return;
-
         final TreeMap<String, Result> sorted = core.getResults().getSortedStrings(false);
         if (sorted.isEmpty())
             return;
@@ -397,7 +386,7 @@ public final class TreeProgressionTracker {
         final File gifFile = new File(runDir, prefix + ".tree.progression.gif");
         final File webpFile = new File(runDir, prefix + ".tree.progression.webp");
         try {
-            ProgressionTracker.writeAnimatedGifFiles(
+            ScenarioTracker.writeAnimatedGifFiles(
                     framesToProcess,
                     gifFile,
                     DELAY_CENTISECONDS,

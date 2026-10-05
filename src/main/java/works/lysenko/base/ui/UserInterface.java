@@ -274,7 +274,11 @@ public final class UserInterface extends JPanel implements _Dashboard {
     public void setInfo(final String message, final Telemetry telemetry) {
 
         refreshStatusBoard(telemetry);
-        log.ansiAppendText(message);
+        
+        final int depth = works.lysenko.Base.exec == null ? 0 : works.lysenko.Base.exec.scenarios().depth();
+        final String indent = "  ".repeat(Math.max(0, depth));
+        
+        log.ansiAppendText(indent + message);
     }
 
     /**
@@ -311,6 +315,14 @@ public final class UserInterface extends JPanel implements _Dashboard {
     private void buildLog() {
 
         log.setBackground(Color.getHSBColor(0.00f, 0.00f, DOT_TWENTY_SEVEN));
+        
+        // Add a component listener to update the max lines when the log pane is resized
+        log.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                log.updateMaxLines(log.getHeight());
+            }
+        });
     }
 
     /**
