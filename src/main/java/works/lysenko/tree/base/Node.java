@@ -53,24 +53,19 @@ public abstract class Node extends Core implements _Node {
     private boolean halted = false;
 
     /**
-     * Default constructor adds all scenarios from properly named package as sub-scenarios of one being created
+     * Default constructor adds all scenarios from the package owned by this node.
+     * A subclass of a node is an alias for its nearest node ancestor, so it shares that ancestor's child package.
      */
     @SuppressWarnings("ThisEscapedInObjectConstruction")
     protected Node() {
 
         ctrl = new Ctrl(this);
-        String name = getClass().getName();
-        { // Strings are immutable, we need to create a new one
-            final int i = name.lastIndexOf(_DOT_) + 1; // save the position of character in question
-            final char[] nameChars = name.toCharArray(); // create character array
-            nameChars[i] = Character.toLowerCase(nameChars[i]); // Lowercase single char
-            name = String.valueOf(nameChars); // DO NOT replace with s();
-        }
-        ctrl.getPool().add(ClassLoader.readFrom(name, false));
+        ctrl.getPool().add(ClassLoader.readFrom(childPackageName(), false));
     }
 
     /**
-     * Default constructor adds all scenarios from properly named package as sub-scenarios of one being created
+     * Default constructor adds all scenarios from the package owned by this node.
+     * A subclass of a node is an alias for its nearest node ancestor, so it shares that ancestor's child package.
      *
      * @param weight of this scenario
      */
@@ -78,14 +73,7 @@ public abstract class Node extends Core implements _Node {
 
         super(weight);
         ctrl = new Ctrl(this);
-        String name = getClass().getName();
-        { // Strings are immutable, we need to create a new one
-            final int i = name.lastIndexOf(_DOT_) + 1; // save the position of character in question
-            final char[] nameChars = name.toCharArray(); // create character array
-            nameChars[i] = Character.toLowerCase(nameChars[i]); // Lowercase single char
-            name = String.valueOf(nameChars); // DO NOT replace with s();
-        }
-        ctrl.getPool().add(ClassLoader.readFrom(name, false));
+        ctrl.getPool().add(ClassLoader.readFrom(childPackageName(), false));
     }
 
     /**
@@ -112,6 +100,20 @@ public abstract class Node extends Core implements _Node {
     protected Node(final String s) {
 
         ctrl = new Ctrl(this, ClassLoader.readFrom(s, false));
+    }
+
+    private String childPackageName() {
+
+        Class<?> owner = getClass();
+        while (owner.getSuperclass() != Node.class) owner = owner.getSuperclass();
+        String name = owner.getName();
+        { // Strings are immutable, we need to create a new one
+            final int i = name.lastIndexOf(_DOT_) + 1; // save the position of character in question
+            final char[] nameChars = name.toCharArray(); // create character array
+            nameChars[i] = Character.toLowerCase(nameChars[i]); // Lowercase single char
+            name = String.valueOf(nameChars); // DO NOT replace with s();
+        }
+        return name;
     }
 
     /**

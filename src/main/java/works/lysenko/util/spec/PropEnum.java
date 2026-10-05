@@ -173,6 +173,7 @@ public enum PropEnum implements _PropEnum {
     _TREE_SCENARIO_DOES_NOT_FIT_NOTICE(Boolean.class, TRUE),
     _TREE_SCENARIO_HISTORY_DEPTH_SAFEGUARD(Integer.class, _2_, _0_),
     _TREE_SCENARIO_NOT_EXECUTABLE_NOTICE(Boolean.class, TRUE),
+    _TREE_TRAVERSE_EXTENSIONS(Boolean.class, FALSE),
     _WEBD_FORCED_PLATFORM(String.class, NULL),
     _WEBD_IWAIT(Integer.class, _1_, _0_, _0_, _0_),
     _WEBD_RECREATE_DRIVER_AFTER_EXCEPTION(Boolean.class, TRUE);

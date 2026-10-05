@@ -2,10 +2,12 @@ package works.lysenko.util.func.core;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.fraction.Fraction;
+import works.lysenko.tree.base.Node;
 import works.lysenko.util.apis.scenario._Node;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.records.KeyValue;
 import works.lysenko.util.prop.tree.Scenario;
+import works.lysenko.util.prop.tree.Traverse;
 
 import java.util.List;
 import java.util.Map;
@@ -46,6 +48,25 @@ public record Weights() {
     }
 
     /**
+     * Retrieves downstream weight in the context of the node that owns the candidate.
+     * Extension nodes are aliases, so their inherited effective weight also applies to
+     * children loaded from the shared node package.
+     *
+     * @param scenario candidate scenario
+     * @param parent   node selecting the candidate
+     * @return effective downstream weight
+     */
+    public static Fraction downstreamWeight(final _Scenario scenario, final _Scenario parent) {
+
+        Fraction weight = downstreamWeight(scenario);
+        if (Traverse.extensions && isExtension(parent)) {
+            weight = weight.add(parent.weightConfigured());
+            weight = weight.add(downstreamWeight(parent));
+        }
+        return weight;
+    }
+
+    /**
      * Calculates the own weight of a given scenario.
      *
      * @param scenario The scenario for which to calculate the own weight
@@ -54,10 +75,32 @@ public record Weights() {
     public static Fraction ownWeight(final _Scenario scenario) {
 
         if (isNotNull(scenario.weightCoded())) return scenario.weightCoded();
-        final String rawWeightValue = getRawScenarioWeight(getScenarioPropertyKey(scenario));
+        final String rawWeightValue = configuredWeightValue(scenario);
         final Double weightValue = (s(_DASH_).equals(rawWeightValue)) ? Double.NaN : Double.parseDouble(rawWeightValue);
         if (weightValue.equals(POSITIVE_INFINITY)) return fr(Double.MAX_VALUE);
         else return fr(weightValue);
+    }
+
+    /**
+     * Resolves the configured weight value for a scenario. When extension traversal is enabled,
+     * an inherited scenario uses the first explicit weight defined by one of its superclasses.
+     *
+     * @param scenario scenario whose configured weight is requested
+     * @return configured raw value, or the default scenario weight
+     */
+    public static String configuredWeightValue(final _Scenario scenario) {
+
+        String weight = configuredWeightValue(scenario.getClass());
+        if (isNotNull(weight)) return weight;
+        if (Traverse.extensions) {
+            Class<?> extension = scenario.getClass().getSuperclass();
+            while (isNotNull(extension) && extension != Object.class) {
+                weight = configuredWeightValue(extension);
+                if (isNotNull(weight)) return weight;
+                extension = extension.getSuperclass();
+            }
+        }
+        return Scenario.defaultWeight;
     }
 
     /**
@@ -101,9 +144,16 @@ public record Weights() {
      * @param key The key for which to retrieve the weight value
      * @return The raw weight value corresponding to the key
      */
-    private static String getRawScenarioWeight(final String key) {
+    private static String configuredWeightValue(final Class<?> scenario) {
 
-        return isNull(properties) ? Scenario.defaultWeight : (String) properties.getProperty(key, Scenario.defaultWeight);
+        if (isNull(properties)) return null;
+        return (String) properties.getProperty(getScenarioPropertyKey(scenario), null);
+    }
+
+    private static boolean isExtension(final _Scenario scenario) {
+
+        return isNotNull(scenario) && scenario instanceof _Node
+                && scenario.getClass().getSuperclass() != Node.class;
     }
 
     /**
@@ -114,7 +164,12 @@ public record Weights() {
      */
     private static String getScenarioPropertyKey(final _Scenario scenario) {
 
-        return StringUtils.removeStart(scenario.getClass().getName(), s(Scenario.root, _DOT_));
+        return getScenarioPropertyKey(scenario.getClass());
+    }
+
+    private static String getScenarioPropertyKey(final Class<?> scenario) {
+
+        return StringUtils.removeStart(scenario.getName(), s(Scenario.root, _DOT_));
     }
 
     /**

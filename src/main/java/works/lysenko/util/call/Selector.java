@@ -144,7 +144,7 @@ public final class Selector implements Callable<_Scenario> {
             Fraction weight = pair.v();
             if (scenario.isExecutable()) {
                 if (Include.upstream) weight = fr(weight.doubleValue() + scenario.weightUpstream().doubleValue());
-                if (Include.downstream) weight = fr(weight.doubleValue() + downstreamWeight(scenario).doubleValue());
+                if (Include.downstream) weight = fr(weight.doubleValue() + downstreamWeight(scenario, ctrl.getParent()).doubleValue());
                 if (isNotNull(weight) && 0.0 < weight.doubleValue()
                         && isNotNull(core) && isNotNull(core.getResults())
                         && isNotNull(Scenario.completionWeight)) {

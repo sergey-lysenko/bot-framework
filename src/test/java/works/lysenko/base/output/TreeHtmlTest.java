@@ -2,9 +2,13 @@ package works.lysenko.base.output;
 
 import org.junit.jupiter.api.Test;
 import works.lysenko.base.output.TreeHtml.NodeData;
+import works.lysenko.base.output.TreeHtml.TreeLayout;
+import works.lysenko.tree.inheritance.Outer;
+import works.lysenko.tree.inheritance.outer.Alias;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,6 +21,26 @@ import works.lysenko.util.data.type.Result;
 
 
 class TreeHtmlTest {
+
+    @Test
+    void rendersSharedPackageChildrenBelowTheirAliasParent() {
+
+        final Outer outer = new Outer();
+        final Alias alias = (Alias) outer.getPool().getSortedSet().iterator().next();
+        final TreeLayout layout = TreeHtml.computeLayout(TreeHtml.rootsOf(outer.list()), new TreeMap<>());
+        final NodeData aliasNode = layout.nodes().stream()
+                .filter(node -> node.label().startsWith(alias.getSimpleName()))
+                .findFirst()
+                .orElseThrow();
+        final NodeData sharedChild = layout.nodes().stream()
+                .filter(node -> node.parent() == aliasNode)
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(aliasNode.col() + 1, sharedChild.col());
+        assertTrue(layout.edges().stream().anyMatch(edge -> edge.from() == aliasNode && edge.to() == sharedChild));
+        assertEquals(3, layout.nodes().size());
+    }
 
     @Test
     void testSolveColumn1DGuaranteesNonOverlapAndMinimization() {

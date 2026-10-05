@@ -34,6 +34,7 @@ import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.func.core.Assertions.assertTrue;
 import static works.lysenko.util.func.core.Weights.downstreamWeight;
+import static works.lysenko.util.func.core.Weights.configuredWeightValue;
 import static works.lysenko.util.func.imgs.Grid.test;
 import static works.lysenko.util.func.imgs.Screenshot.makeScreenshot;
 import static works.lysenko.util.func.type.Objects.isNotNull;
@@ -128,8 +129,7 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         final String defaultWeight = Scenario.defaultWeight;
         if (isNotNull(codeWeight)) return codeWeight;
         if (isNull(properties)) return fr(defaultWeight);
-        final String weightText = (String) properties.getProperty(removeStart(getClass().getName(),
-                s(root, _DOT_)), defaultWeight);
+        final String weightText = configuredWeightValue(this);
         if (s(_DASH_).equals(weightText)) return null;
         return fr(weightText);
     }

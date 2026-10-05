@@ -146,7 +146,8 @@ public record CoverageEstimator() {
 
         // 2. Build precomputed simulation pools with static weights
         final Map<_Pool, SimPool> simPoolMap = new IdentityHashMap<>();
-        final SimPool simRootPool = buildSimPool(rootCtrl.getPool(), scenarioIndexMap, simPoolMap,
+        final _Scenario rootParent = (rootCtrl instanceof Ctrl ctrl) ? ctrl.getParent() : null;
+        final SimPool simRootPool = buildSimPool(rootCtrl.getPool(), rootParent, scenarioIndexMap, simPoolMap,
                 descScenarioIds, descLeafIds, hasRepeatableLeaf);
 
         int maxPoolCandidates = 0;
@@ -275,6 +276,7 @@ public record CoverageEstimator() {
 
     private static SimPool buildSimPool(
             final _Pool pool,
+            final _Scenario parent,
             final Map<_Scenario, Integer> scenarioIndexMap,
             final Map<_Pool, SimPool> simPoolMap,
             final int[][] descScenarioIds,
@@ -309,7 +311,7 @@ public record CoverageEstimator() {
                 if (isNotNull(up)) weight += up.doubleValue();
             }
             if (Include.downstream) {
-                final Fraction down = downstreamWeight(sc);
+                final Fraction down = downstreamWeight(sc, parent);
                 if (isNotNull(down)) weight += down.doubleValue();
             }
 
@@ -319,7 +321,7 @@ public record CoverageEstimator() {
             baseWeights.add(weight);
 
             if (sc instanceof _Node node && isNotNull(node.getPool())) {
-                children.add(buildSimPool(node.getPool(), scenarioIndexMap, simPoolMap,
+                children.add(buildSimPool(node.getPool(), sc, scenarioIndexMap, simPoolMap,
                         descScenarioIds, descLeafIds, hasRepeatableLeaf));
             } else {
                 children.add(null);

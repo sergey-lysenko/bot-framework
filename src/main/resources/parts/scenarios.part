@@ -36,6 +36,7 @@
 # Weight propagation for test nodes.
 .tree.include.downstream=true
 .tree.include.upstream=true
+.tree.traverse.extensions=true
 
 # ==============================================================================
 # Notices and Warnings

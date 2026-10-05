@@ -4,6 +4,8 @@ import works.lysenko.base.output.svg.Groups;
 import works.lysenko.base.output.svg.Parts;
 import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.apis.log._LogRecord;
+import works.lysenko.util.apis.scenario._Node;
+import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.type.Result;
 
 import java.io.File;
@@ -16,6 +18,7 @@ import static works.lysenko.Base.logEvent;
 import static works.lysenko.util.data.enums.Severity.S2;
 import static works.lysenko.util.data.strs.Swap.f;
 import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.func.type.Files.writeToFile;
 import static works.lysenko.util.lang.word.T.TESTS;
 import static works.lysenko.util.spec.Layout.Files.name;
@@ -68,6 +71,11 @@ public final class TreeHtml {
     record TreeLayout(List<NodeData> nodes, List<Edge> edges) {}
 
     static TreeLayout computeLayout(final TreeMap<String, Result> sorted) {
+
+        if (null != core) {
+            final Set<_Scenario> roots = rootsOf(core.getRootScenarios());
+            if (null != roots && !roots.isEmpty()) return computeLayout(roots, sorted);
+        }
         final List<NodeData> nodes = new ArrayList<>();
         final List<Edge> edges = new ArrayList<>();
         final int[] dy = new int[100];
@@ -82,6 +90,58 @@ public final class TreeHtml {
         // and position each next level so plaques move lower to be closer to their parents
         optimizeLayout(nodes);
         return new TreeLayout(nodes, edges);
+    }
+
+    static Set<_Scenario> rootsOf(final Iterable<? extends _Scenario> scenarios) {
+
+        final Set<_Scenario> roots = Collections.newSetFromMap(new IdentityHashMap<>());
+        if (null == scenarios) return roots;
+        for (final _Scenario scenario : scenarios)
+            if (null != scenario) roots.add(scenario);
+        for (final _Scenario scenario : roots.toArray(_Scenario[]::new))
+            if (scenario instanceof _Node node)
+                for (final _Scenario child : node.getPool().getPairList().stream().map(pair -> pair.k()).toList())
+                    roots.remove(child);
+        return roots;
+    }
+
+    static TreeLayout computeLayout(final Iterable<? extends _Scenario> roots, final TreeMap<String, Result> sorted) {
+
+        final List<NodeData> nodes = new ArrayList<>();
+        final List<Edge> edges = new ArrayList<>();
+        final int[] rows = {1};
+        final Set<_Scenario> ancestors = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (final _Scenario root : roots)
+            processScenario(root, null, 0, rows, ancestors, sorted, nodes, edges);
+        optimizeLayout(nodes);
+        return new TreeLayout(nodes, edges);
+    }
+
+    private static void processScenario(final _Scenario scenario, final NodeData parent, final int col, final int[] rows,
+                                        final Set<_Scenario> ancestors, final TreeMap<String, Result> sorted,
+                                        final List<NodeData> nodes, final List<Edge> edges) {
+
+        if (null == scenario || !ancestors.add(scenario)) return;
+        final String label = b(scenario.getSimpleName(), scenario.type().tag());
+        final String id = s("scenario_", nodes.size(), "_", scenario.getSimpleName());
+        final String group = (null == parent) ? TESTS : parent.label();
+        final NodeData node = new NodeData(id, label, group, col, rows[0]++, resultFor(scenario, sorted));
+        nodes.add(node);
+        if (null != parent) {
+            node.setParent(parent);
+            parent.children().add(node);
+            edges.add(new Edge(parent, node));
+        }
+        if (scenario instanceof _Node parentNode)
+            for (final var child : parentNode.getPool().getPairList())
+                processScenario(child.k(), node, col + 1, rows, ancestors, sorted, nodes, edges);
+        ancestors.remove(scenario);
+    }
+
+    private static Result resultFor(final _Scenario scenario, final TreeMap<String, Result> sorted) {
+
+        final Result result = sorted.get(b(scenario.getShortName(), scenario.type().tag()));
+        return (null != result) ? result : new Result(scenario);
     }
 
     public static void treeStats() {

@@ -116,6 +116,11 @@ public class Ctrl extends Root implements _Ctrl {
         return attempts;
     }
 
+    public final _Scenario getParent() {
+
+        return parent;
+    }
+
     /**
      * Calculates the number of possible combinations for underlying scenarios.
      *

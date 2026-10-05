@@ -204,6 +204,10 @@ class GuiTest {
         assertEquals("false", PropEnum._TREE_INCLUDE_DOWNSTREAM.defaultValue());
         assertFalse(PropEnum._TREE_INCLUDE_DOWNSTREAM.silent());
 
+        assertEquals(".tree.traverse.extensions", PropEnum._TREE_TRAVERSE_EXTENSIONS.getPropertyName());
+        assertEquals("false", PropEnum._TREE_TRAVERSE_EXTENSIONS.defaultValue());
+        assertFalse(PropEnum._TREE_TRAVERSE_EXTENSIONS.silent());
+
         assertEquals(".tree.scenario.depth.safeguard", PropEnum._TREE_SCENARIO_DEPTH_SAFEGUARD.getPropertyName());
         assertEquals("20", PropEnum._TREE_SCENARIO_DEPTH_SAFEGUARD.defaultValue());
         assertFalse(PropEnum._TREE_SCENARIO_DEPTH_SAFEGUARD.silent());

@@ -15,6 +15,7 @@ import works.lysenko.util.data.records.TestPropertiesDescriptor;
 import works.lysenko.util.func.core.ClassLoader;
 import works.lysenko.util.prop.tree.Include;
 import works.lysenko.util.prop.tree.Scenario;
+import works.lysenko.util.prop.tree.Traverse;
 import works.lysenko.util.spec.PropEnum;
 
 import javax.swing.Box;
@@ -386,6 +387,7 @@ public class Gui implements _GUI {
         tp.prepareTestConfiguration(testName, isHeadless, isAllLeafs, leafsCount);
         Scenario.refresh();
         Include.refresh();
+        Traverse.refresh();
 
         final String rootPackage = (isNotNull(Scenario.root) && !Scenario.root.isBlank())
                 ? Scenario.root
