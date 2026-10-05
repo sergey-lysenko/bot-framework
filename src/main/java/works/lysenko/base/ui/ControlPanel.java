@@ -80,6 +80,7 @@ public class ControlPanel extends JFrame implements _Dashboard {
         gui.propagateUserInput();
         propertiesPanel.applyChanges();
         tabbedPane.setSelectedIndex(1); // Switch to execution tab
+        tabbedPane.setEnabledAt(0, false);
         runLatch.countDown();
     }
 

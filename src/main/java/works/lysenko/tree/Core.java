@@ -64,6 +64,7 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     private Fraction codeWeight = null;
 
     private long startedAt = ZERO;
+    private _Scenario parentScenario = null;
 
     /**
      * Default constructor
@@ -149,6 +150,16 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     public String getParentScenarioName(final _Scenario scenario) {
 
         return capitalize(substringAfterLast(scenario.getClass().getPackageName(), s(_DOT_)));
+    }
+
+    public final _Scenario getParentScenario() {
+
+        return parentScenario;
+    }
+
+    public final void setParentScenario(final _Scenario parentScenario) {
+
+        this.parentScenario = parentScenario;
     }
 
     @Override

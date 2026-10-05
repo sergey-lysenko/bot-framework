@@ -97,6 +97,12 @@ public class Results implements _Results {
         return isNotNull(r) ? r.getExecutions() : 0;
     }
 
+    @Override
+    public Result getResult(final _Scenario scenario) {
+
+        return results.get(scenario);
+    }
+
     public List<String> getFailures() {
 
         final List<String> list = new ArrayList<>(0);

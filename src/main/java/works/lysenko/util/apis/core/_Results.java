@@ -44,6 +44,14 @@ public interface _Results {
     int getExecutions(_Scenario scenario);
 
     /**
+     * Retrieves the execution result for the exact scenario instance.
+     *
+     * @param scenario scenario whose result is requested
+     * @return result, or null when the scenario has not executed
+     */
+    Result getResult(_Scenario scenario);
+
+    /**
      * Retrieves a list of failure causing events.
      *
      * @return a list of Strings representing failure details.

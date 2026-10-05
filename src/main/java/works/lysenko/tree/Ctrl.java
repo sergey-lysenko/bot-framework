@@ -76,7 +76,7 @@ public class Ctrl extends Root implements _Ctrl {
     private Ctrl(final int sufficiencyRetries, final _Scenario parent) {
 
         this.parent = parent;
-        pool = new Pool();
+        pool = new Pool(parent);
         attempts = sufficiencyRetries;
     }
 

@@ -2,6 +2,7 @@ package works.lysenko.util.func.core;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.fraction.Fraction;
+import works.lysenko.tree.Core;
 import works.lysenko.tree.base.Node;
 import works.lysenko.util.apis.scenario._Node;
 import works.lysenko.util.apis.scenario._Scenario;
@@ -59,9 +60,13 @@ public record Weights() {
     public static Fraction downstreamWeight(final _Scenario scenario, final _Scenario parent) {
 
         Fraction weight = downstreamWeight(scenario);
-        if (Traverse.extensions && isExtension(parent)) {
-            weight = weight.add(parent.weightConfigured());
-            weight = weight.add(downstreamWeight(parent));
+        _Scenario ancestor = parent;
+        while (Traverse.extensions && isNotNull(ancestor)) {
+            if (isExtension(ancestor)) {
+                weight = weight.add(ancestor.weightConfigured());
+                weight = weight.add(downstreamWeight(ancestor));
+            }
+            ancestor = parentOf(ancestor);
         }
         return weight;
     }
@@ -154,6 +159,11 @@ public record Weights() {
 
         return isNotNull(scenario) && scenario instanceof _Node
                 && scenario.getClass().getSuperclass() != Node.class;
+    }
+
+    private static _Scenario parentOf(final _Scenario scenario) {
+
+        return (scenario instanceof Core core) ? core.getParentScenario() : null;
     }
 
     /**

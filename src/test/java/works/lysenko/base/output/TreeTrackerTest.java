@@ -16,6 +16,8 @@ import works.lysenko.base.output.TreeHtml.NodeData;
 import works.lysenko.base.output.TreeHtml.TreeLayout;
 import works.lysenko.tree.Ctrl;
 import works.lysenko.tree.base.Leaf;
+import works.lysenko.tree.inheritance.Outer;
+import works.lysenko.tree.inheritance.outer.Alias;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.test._Exec;
 import works.lysenko.util.apis.test._Test;
@@ -141,6 +143,27 @@ class TreeTrackerTest {
         assertEquals("3 execs", TreeTracker.getExecutionBadgeText(node, 3, 5));
         assertEquals("\u2713 2/2", TreeTracker.getExecutionBadgeText(leaf, 2, 2));
         assertEquals("4/2 +100%", TreeTracker.getExecutionBadgeText(leaf, 4, 2));
+    }
+
+    @Test
+    void keepsExecutionDataForSharedScenarioRenderedThroughAlias() throws Exception {
+
+        final Field inJarField = Core.class.getDeclaredField("inJar");
+        inJarField.setAccessible(true);
+        inJarField.set(Base.core, false);
+
+        final Outer outer = new Outer();
+        final Alias alias = (Alias) outer.getPool().getPairList().get(0).k();
+        final _Scenario child = alias.getPool().getPairList().get(0).k();
+        Base.core.getResults().count(child);
+
+        final TreeLayout layout = TreeHtml.computeLayout(List.of(outer), new TreeMap<>());
+        final NodeData renderedChild = layout.nodes().stream()
+                .filter(node -> node.parent() != null && node.parent().label().startsWith(alias.getSimpleName()))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(1, renderedChild.result().getExecutions());
     }
 
     @Test

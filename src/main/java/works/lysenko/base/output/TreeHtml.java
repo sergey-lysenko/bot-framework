@@ -140,6 +140,10 @@ public final class TreeHtml {
 
     private static Result resultFor(final _Scenario scenario, final TreeMap<String, Result> sorted) {
 
+        if (null != core && null != core.getResults()) {
+            final Result result = core.getResults().getResult(scenario);
+            if (null != result) return result;
+        }
         final Result result = sorted.get(b(scenario.getShortName(), scenario.type().tag()));
         return (null != result) ? result : new Result(scenario);
     }
@@ -252,6 +256,44 @@ public final class TreeHtml {
                 n.setRow(n.row() - shift);
             }
         }
+        compactDisconnectedTrees(nodes);
+    }
+
+    static void compactDisconnectedTrees(final List<NodeData> nodes) {
+
+        final Map<NodeData, List<NodeData>> components = new IdentityHashMap<>();
+        for (final NodeData node : nodes)
+            components.computeIfAbsent(rootOf(node), ignored -> new ArrayList<>()).add(node);
+
+        final List<List<NodeData>> ordered = new ArrayList<>(components.values());
+        ordered.sort(Comparator.comparingDouble(TreeHtml::minimumRow));
+
+        double nextRow = 1.0;
+        for (final List<NodeData> component : ordered) {
+            final double minimum = minimumRow(component);
+            final double shift = nextRow - minimum;
+            if (0.0 != shift)
+                for (final NodeData node : component)
+                    node.setRow(node.row() + shift);
+            nextRow = maximumRow(component) + 1.0;
+        }
+    }
+
+    private static NodeData rootOf(final NodeData node) {
+
+        NodeData root = node;
+        while (null != root.parent()) root = root.parent();
+        return root;
+    }
+
+    private static double minimumRow(final List<NodeData> nodes) {
+
+        return nodes.stream().mapToDouble(NodeData::row).min().orElse(1.0);
+    }
+
+    private static double maximumRow(final List<NodeData> nodes) {
+
+        return nodes.stream().mapToDouble(NodeData::row).max().orElse(1.0);
     }
 
     /**

@@ -8,6 +8,7 @@ import works.lysenko.util.apis.test.*;
 import works.lysenko.util.data.records.test.Workflow;
 import works.lysenko.util.func.core.ClassLoader;
 import works.lysenko.util.prop.tree.Scenario;
+import works.lysenko.util.prop.tree.Traverse;
 import works.lysenko.util.spec.Level;
 import works.lysenko.util.spec.PropEnum;
 
@@ -75,12 +76,15 @@ public class Test implements _Test {
             core.conditionalClose();
         } catch (final RuntimeException e) {
             processUncheckedException(e, TESTS_UNHANDLED_EXCEPTION);
+        } finally {
+            Traverse.unfreeze();
         }
     }
 
     @SuppressWarnings("ChainedMethodCall")
     public final void execute() throws SafeguardException {
 
+        Traverse.freeze();
         if (exec.createDriver() && exec.createScaler()) {
             if (isNotNull(preflight)) preflight.run();
             Routines.verifyProperties();

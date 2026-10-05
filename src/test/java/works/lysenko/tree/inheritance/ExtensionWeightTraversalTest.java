@@ -90,6 +90,30 @@ class ExtensionWeightTraversalTest {
     }
 
     @Test
+    void retainsExtensionTraversalForAnActiveTreeAfterTheGlobalCacheRefreshes() {
+
+        configure(
+                "works.lysenko.tree.inheritance.Parent", "2.0",
+                ".tree.traverse.extensions", "true"
+        );
+        final LinkedNode parent = new LinkedNode();
+        final var child = parent.getPool().getPairList().get(0).k();
+
+        Traverse.freeze();
+        try {
+            install(
+                    "works.lysenko.tree.inheritance.Parent", "2.0",
+                    ".tree.traverse.extensions", "false"
+            );
+            Traverse.refresh();
+
+            assertEquals(fr(2.0), downstreamWeight(child, parent));
+        } finally {
+            Traverse.unfreeze();
+        }
+    }
+
+    @Test
     void propagatesAncestorWeightAcrossExtensionBoundary() {
 
         final String outerName = new Outer().getShortName();
@@ -99,6 +123,21 @@ class ExtensionWeightTraversalTest {
         );
         final Alias alias = (Alias) new Outer().getPool().getSortedSet().iterator().next();
         final var child = alias.getPool().getSortedSet().iterator().next();
+
+        assertEquals(fr(1.0), downstreamWeight(child, alias));
+    }
+
+    @Test
+    void propagatesWeightThroughMultipleExtensionAliases() {
+
+        final AliasRoot root = new AliasRoot();
+        configure(
+                AliasRoot.class.getName(), "1.0",
+                ".tree.traverse.extensions", "true"
+        );
+        assertEquals(fr(1.0), root.weightConfigured());
+        final Alias alias = (Alias) root.getPool().getPairList().get(0).k();
+        final var child = alias.getPool().getPairList().get(0).k();
 
         assertEquals(fr(1.0), downstreamWeight(child, alias));
     }

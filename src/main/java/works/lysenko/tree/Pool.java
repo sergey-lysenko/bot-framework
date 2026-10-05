@@ -24,10 +24,12 @@ import static works.lysenko.util.func.type.Objects.isNotNull;
         "ChainedMethodCall", "ForeachStatement", "ObjectAllocationInLoop"})
 public class Pool implements _Pool {
 
+    private final _Scenario parent;
     private final List<KeyValue<_Scenario, Fraction>> pairList;
 
-    Pool() {
+    Pool(final _Scenario parent) {
 
+        this.parent = parent;
         pairList = new LinkedList<>();
     }
 
@@ -52,8 +54,10 @@ public class Pool implements _Pool {
 
         if (isNotNull(ss)) {
             for (final _Scenario scenario : ss)
-                if (isNotNull(scenario))
+                if (isNotNull(scenario)) {
+                    attach(scenario);
                     pairList.add(kv(scenario, n(scenario.weightConfigured(), weight)));
+                }
         }
     }
 
@@ -76,6 +80,7 @@ public class Pool implements _Pool {
      */
     public final void appendScenarioWithWeight(final _Scenario scenario, final Fraction weight) {
 
+        attach(scenario);
         pairList.add(kv(scenario, weight));
     }
 
@@ -87,7 +92,10 @@ public class Pool implements _Pool {
     @SuppressWarnings("BoundedWildcard")
     public final void appendScenariosMap(final Map<? extends _Scenario, Fraction> map) {
 
-        map.forEach((k, v) -> pairList.add(kv(k, v)));
+        map.forEach((k, v) -> {
+            attach(k);
+            pairList.add(kv(k, v));
+        });
     }
 
     /**
@@ -98,7 +106,10 @@ public class Pool implements _Pool {
      */
     public final void appendScenariosOfWeight(final Iterable<? extends _Scenario> scenarios, final Fraction weight) {
 
-        scenarios.forEach(scenario -> pairList.add(kv(scenario, weight)));
+        scenarios.forEach(scenario -> {
+            attach(scenario);
+            pairList.add(kv(scenario, weight));
+        });
     }
 
     public final List<KeyValue<_Scenario, Fraction>> getPairList() {
@@ -109,5 +120,10 @@ public class Pool implements _Pool {
     public final Set<_Scenario> getSortedSet() {
 
         return pairList.stream().flatMap(scenario -> scenario.name().list().stream()).collect(Collectors.toCollection(SortedScenario::new));
+    }
+
+    private void attach(final _Scenario scenario) {
+
+        if (scenario instanceof Core core) core.setParentScenario(parent);
     }
 }

@@ -9,12 +9,30 @@ import static works.lysenko.util.spec.PropEnum._TREE_TRAVERSE_EXTENSIONS;
 public record Traverse() {
 
     public static Boolean extensions = _TREE_TRAVERSE_EXTENSIONS.get();
+    private static boolean frozen = false;
 
     /**
      * Refreshes traversal flags after loading a test configuration.
      */
     public static void refresh() {
 
-        extensions = _TREE_TRAVERSE_EXTENSIONS.get();
+        if (!frozen) extensions = _TREE_TRAVERSE_EXTENSIONS.get();
+    }
+
+    /**
+     * Prevents configuration-preview refreshes from changing traversal behavior during a test run.
+     */
+    public static void freeze() {
+
+        refresh();
+        frozen = true;
+    }
+
+    /**
+     * Allows the next test configuration to refresh traversal behavior.
+     */
+    public static void unfreeze() {
+
+        frozen = false;
     }
 }

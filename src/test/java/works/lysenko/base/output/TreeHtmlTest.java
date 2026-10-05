@@ -134,6 +134,27 @@ class TreeHtmlTest {
     }
 
     @Test
+    void compactsDisconnectedTreesWithoutChangingTheirInternalLayout() {
+
+        final NodeData firstRoot = new NodeData("first", "First", "Root", 0, 1.0, null);
+        final NodeData firstChild = new NodeData("first-child", "FirstChild", "First", 1, 2.0, null);
+        firstChild.setParent(firstRoot);
+        firstRoot.children().add(firstChild);
+
+        final NodeData secondRoot = new NodeData("second", "Second", "Root", 0, 12.0, null);
+        final NodeData secondChild = new NodeData("second-child", "SecondChild", "Second", 1, 13.0, null);
+        secondChild.setParent(secondRoot);
+        secondRoot.children().add(secondChild);
+
+        TreeHtml.compactDisconnectedTrees(List.of(firstRoot, firstChild, secondRoot, secondChild));
+
+        assertEquals(1.0, firstRoot.row());
+        assertEquals(2.0, firstChild.row());
+        assertEquals(3.0, secondRoot.row());
+        assertEquals(4.0, secondChild.row());
+    }
+
+    @Test
     void testVisitedAndUnvisitedEdgesRendering() {
         final List<NodeData> nodes = new ArrayList<>();
         final List<Edge> edges = new ArrayList<>();
