@@ -124,7 +124,7 @@ public enum PropEnum implements _PropEnum {
     _PROGRESSION_FFMPEG(String.class, "ffmpeg"),
     _PROGRESSION_MAX_FRAMES(Integer.class, _5_, _0_, _0_, _0_),
     _PROGRESSION_MAX_FRAME_PIXELS(Integer.class, _1_, _6_, _7_, _7_, _7_, _2_, _1_, _6_, _0_),
-    _PROGRESSION_MAX_TOTAL_PIXELS(Integer.class, _1_, _0_, _0_, _0_, _0_, _0_, _0_, _0_, _0_, _0_),
+    _PROGRESSION_MAX_TOTAL_PIXELS(Integer.class, _2_, _0_, _0_, _0_, _0_, _0_, _0_, _0_, _0_, _0_),
     _PROGRESSION_SCENARIO(Boolean.class, TRUE),
     _PROGRESSION_SCENARIO_MP4(Boolean.class, TRUE),
     _PROGRESSION_TREE(Boolean.class, TRUE),

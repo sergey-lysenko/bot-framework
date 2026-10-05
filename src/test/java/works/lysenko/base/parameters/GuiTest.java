@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static works.lysenko.base.parameters.PropertiesDialog.*;
+import static works.lysenko.base.parameters.PropertiesPanel.*;
 import static works.lysenko.util.spec.Layout.Files.PLATFORMS_;
 
 class GuiTest {
@@ -192,8 +192,6 @@ class GuiTest {
         assertTrue(panel.getLayout() instanceof GridBagLayout, "Panel layout should be GridBagLayout");
         assertNotNull(gui.getCycles().getParent(), "Cycles label should be added to container");
         assertNotNull(gui.getProgressBar().getParent(), "Progress bar should be added to container");
-        assertNotNull(gui.getCalculateCycles().getParent(), "Calculate cycles button should be added to container");
-        assertEquals(panel, gui.getPropertiesButton().getParent(), "Properties button should be added to panel");
     }
 
     @Test
@@ -216,13 +214,13 @@ class GuiTest {
     }
 
     @Test
-    void testAllLeafPropertiesAreMarkedAsExecutionParametersInPropertiesDialog() {
+    void testAllLeafPropertiesAreMarkedAsExecutionParametersInPropertiesPanel() {
         assertTrue(PropEnum._ALL_LEAFS.executionParameter());
         assertTrue(PropEnum._ALL_LEAFS_COUNT.executionParameter());
         assertTrue(PropEnum._HEADLESS.executionParameter());
         assertFalse(PropEnum._DEBUG.executionParameter());
 
-        final PropertiesDialog dialog = new PropertiesDialog(null, new TestProperties(), "default", false, false, 1);
+        final PropertiesPanel dialog = new PropertiesPanel(new TestProperties(), "default", false, false, 1);
         final DefaultTableModel model = dialog.getModel();
         boolean allLeafsMarked = false;
         boolean allLeafsCountMarked = false;
@@ -297,7 +295,7 @@ class GuiTest {
     }
 
     @Test
-    void testPropertiesDialogStatusCalculation() {
+    void testPropertiesPanelStatusCalculation() {
         assertEquals(STATUS_DEFAULT, calculateStatus("_debug", "false", "false", true, "false"));
         assertEquals(STATUS_CONFIGURED, calculateStatus("_debug", "true", "false", true, "true"));
         assertEquals(STATUS_MODIFIED, calculateStatus("_debug", "true", "false", true, "false"));
@@ -313,11 +311,11 @@ class GuiTest {
     }
 
     @Test
-    void testPropertiesDialogTableAndSearch() {
+    void testPropertiesPanelTableAndSearch() {
         final TestProperties tp = new TestProperties();
         Base.properties = tp;
 
-        final PropertiesDialog dialog = new PropertiesDialog(null, tp, "default", false, false, 1);
+        final PropertiesPanel dialog = new PropertiesPanel(tp, "default", false, false, 1);
         final JTable table = dialog.getTable();
         final DefaultTableModel model = dialog.getModel();
 
@@ -347,8 +345,8 @@ class GuiTest {
 
     @Test
     void usesDropdownForPropertiesWithKnownValidValues() {
-        final PropertiesDialog dialog = new PropertiesDialog(
-                null, new TestProperties(), "default", false, false, 1);
+        final PropertiesPanel dialog = new PropertiesPanel(
+                new TestProperties(), "default", false, false, 1);
         final JTable table = dialog.getTable();
         final DefaultTableModel model = dialog.getModel();
         int sonificationRow = -1;
@@ -370,10 +368,11 @@ class GuiTest {
         assertTrue(table.editCellAt(sonificationViewRow, 1));
         assertInstanceOf(JComboBox.class, table.getEditorComponent());
         final JComboBox<?> choices = (JComboBox<?>) table.getEditorComponent();
-        assertEquals(3, choices.getItemCount());
+        assertEquals(4, choices.getItemCount());
         assertEquals("none", choices.getItemAt(0));
         assertEquals("copilot", choices.getItemAt(1));
         assertEquals("claude", choices.getItemAt(2));
+        assertEquals("gemini", choices.getItemAt(3));
         assertNotEquals("", choices.getSelectedItem());
         table.getCellEditor().cancelCellEditing();
 
@@ -396,9 +395,9 @@ class GuiTest {
     }
 
     @Test
-    void testPropertiesDialogShowsAndSearchesPropertyHelp() {
+    void testPropertiesPanelShowsAndSearchesPropertyHelp() {
         final TestProperties tp = new TestProperties();
-        final PropertiesDialog dialog = new PropertiesDialog(null, tp, "default", false, false, 1);
+        final PropertiesPanel dialog = new PropertiesPanel(tp, "default", false, false, 1);
         final JTable table = dialog.getTable();
         final DefaultTableModel model = dialog.getModel();
 
@@ -498,11 +497,11 @@ class GuiTest {
     }
 
     @Test
-    void testPropertiesDialogEditAndOkCommit() {
+    void testPropertiesPanelEditAndOkCommit() {
         final TestProperties tp = new TestProperties();
         Base.properties = tp;
 
-        final PropertiesDialog dialog = new PropertiesDialog(null, tp, "default", false, false, 1);
+        final PropertiesPanel dialog = new PropertiesPanel(tp, "default", false, false, 1);
         final DefaultTableModel model = dialog.getModel();
 
         // Find _pause.length row
@@ -528,11 +527,11 @@ class GuiTest {
     }
 
     @Test
-    void testPropertiesDialogResetSelected() {
+    void testPropertiesPanelResetSelected() {
         final TestProperties tp = new TestProperties();
         Base.properties = tp;
 
-        final PropertiesDialog dialog = new PropertiesDialog(null, tp, "default", false, false, 1);
+        final PropertiesPanel dialog = new PropertiesPanel(tp, "default", false, false, 1);
         final JTable table = dialog.getTable();
         final DefaultTableModel model = dialog.getModel();
 
@@ -560,11 +559,11 @@ class GuiTest {
     }
 
     @Test
-    void testPropertiesDialogCancelDoesNotCommit() {
+    void testPropertiesPanelCancelDoesNotCommit() {
         final TestProperties tp = new TestProperties();
         Base.properties = tp;
 
-        final PropertiesDialog dialog = new PropertiesDialog(null, tp, "default", false, false, 1);
+        final PropertiesPanel dialog = new PropertiesPanel(tp, "default", false, false, 1);
         final DefaultTableModel model = dialog.getModel();
 
         int pauseRow = -1;
@@ -624,12 +623,12 @@ class GuiTest {
     }
 
     @Test
-    void testReopeningPropertiesDialogPreservesModifiedValueAndStatus() {
+    void testReopeningPropertiesPanelPreservesModifiedValueAndStatus() {
         final TestProperties tp = new TestProperties();
         Base.properties = tp;
 
         // 1. First dialog opening: modify .all.leafs.count from 1 to 2
-        final PropertiesDialog dialog1 = new PropertiesDialog(null, tp, "default", false, false, 1);
+        final PropertiesPanel dialog1 = new PropertiesPanel(tp, "default", false, false, 1);
         final DefaultTableModel model1 = dialog1.getModel();
         int targetRow1 = -1;
         int rootRow1 = -1;
@@ -660,7 +659,7 @@ class GuiTest {
         assertEquals("2", tp.getUserOverrides().get(PropEnum._ALL_LEAFS_COUNT.getPropertyName()));
 
         // 2. Second dialog opening: verify value is 2, default is 1, and status is Modified!
-        final PropertiesDialog dialog2 = new PropertiesDialog(null, tp, "default", false, false, 2);
+        final PropertiesPanel dialog2 = new PropertiesPanel(tp, "default", false, false, 2);
         final DefaultTableModel model2 = dialog2.getModel();
         int targetRow2 = -1;
         int rootRow2 = -1;
@@ -689,7 +688,7 @@ class GuiTest {
                 "Override must not be lost or cleared on second OK");
 
         // 3. Third dialog opening: Reset Selected back to default
-        final PropertiesDialog dialog3 = new PropertiesDialog(null, tp, "default", false, false, 2);
+        final PropertiesPanel dialog3 = new PropertiesPanel(tp, "default", false, false, 2);
         final DefaultTableModel model3 = dialog3.getModel();
         int targetRow3 = -1;
         for (int r = 0; r < model3.getRowCount(); r++) {

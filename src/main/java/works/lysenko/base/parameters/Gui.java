@@ -101,6 +101,7 @@ public class Gui implements _GUI {
     private JTextField domain = null;
     private JCheckBox headless = null;
     private JCheckBox allLeafs = null;
+    private JTextField allLeafsCount = null;
     private JComboBox<Object> platform = null;
     private JComboBox<Object> test = null;
     private JComboBox<Object> pool = null;
@@ -196,13 +197,11 @@ public class Gui implements _GUI {
 
         addStandardParameters();
         addAdditionalParameters();
-        final int answer = JOptionPane.showConfirmDialog(
-                null, dialogueBox(),
-                b(c(PARAMETERS), VERIFICATION),
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE);
-        if (2 == answer || -1 == answer) _Test.processCode(CLOSED_THROUGH_GUI);
-        propagateUserInput();
+        
+        final works.lysenko.base.ui.ControlPanel controlPanel = new works.lysenko.base.ui.ControlPanel(parameters, this);
+        controlPanel.displayAndWait();
+        
+        // Final user input propagation happens in ControlPanel startRun
     }
 
     /**
@@ -298,6 +297,7 @@ public class Gui implements _GUI {
         }
         allLeafs = new JCheckBox();
         allLeafs.setSelected(parameters.isAllLeafs());
+        allLeafsCount = new JTextField(String.valueOf(parameters.getAllLeafsCount()), WIDTH);
         initCyclesComponents();
         initPropertiesComponents();
     }
@@ -340,62 +340,10 @@ public class Gui implements _GUI {
     private void initPropertiesComponents() {
 
         properties = new JButton(s(c(MODIFY), DOTS));
-        properties.addActionListener(e -> onPropertiesClicked());
+        properties.addActionListener(e -> {}); // Handled by unified Control Panel now
     }
 
-    /**
-     * Handles clicking the properties button to open the properties preview and edit dialog.
-     */
-    void onPropertiesClicked() {
-
-        if (isNull(Base.properties)) {
-            Base.properties = new TestProperties();
-        }
-        final Object selected = (isNotNull(test)) ? test.getSelectedItem() : null;
-        final String testName = (isNotNull(selected)) ? selected.toString() : parameters.getTest();
-        final boolean isHeadless = isNotNull(headless) && headless.isSelected();
-        final boolean isAllLeafs = isNotNull(allLeafs) && allLeafs.isSelected();
-        final int leafsCount = (isNotNull(parameters)) ? parameters.getAllLeafsCount() : 1;
-
-        final Window window = (isNotNull(properties)) ? SwingUtilities.getWindowAncestor(properties) : null;
-        final PropertiesDialog dialog = new PropertiesDialog(window, testName, isHeadless, isAllLeafs, leafsCount);
-        dialog.setVisible(true);
-        if (dialog.isConfirmed() && isNotNull(Base.properties)) {
-            final Map<String, String> userOverrides = Base.properties.getUserOverrides();
-            if (userOverrides.containsKey(PropEnum._ALL_LEAFS_COUNT.getPropertyName())) {
-                final String countStr = userOverrides.get(PropEnum._ALL_LEAFS_COUNT.getPropertyName());
-                try {
-                    final int count = Integer.parseInt(countStr);
-                    if (count > 1) {
-                        if (isNotNull(allLeafs)) {
-                            allLeafs.setSelected(true);
-                        }
-                        parameters.setProperty(ALL_LEAFS.name(), Boolean.TRUE.toString());
-                        parameters.setProperty(ALL_LEAFS_COUNT.name(), String.valueOf(count));
-                    }
-                } catch (final NumberFormatException ignored) {
-                }
-            } else if (isNotNull(parameters)) {
-                final String origCount = Base.properties.getConfigFileDefaults().getOrDefault(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), "1");
-                parameters.setProperty(ALL_LEAFS_COUNT.name(), origCount);
-            }
-            if (userOverrides.containsKey(PropEnum._ALL_LEAFS.getPropertyName())) {
-                final boolean val = Boolean.parseBoolean(userOverrides.get(PropEnum._ALL_LEAFS.getPropertyName()));
-                if (isNotNull(allLeafs)) {
-                    allLeafs.setSelected(val);
-                }
-                parameters.setProperty(ALL_LEAFS.name(), String.valueOf(val));
-            } else if (isNotNull(parameters) && !userOverrides.containsKey(PropEnum._ALL_LEAFS_COUNT.getPropertyName())) {
-                final String origAll = Base.properties.getConfigFileDefaults().getOrDefault(PropEnum._ALL_LEAFS.getPropertyName(), "false");
-                final boolean origVal = Boolean.parseBoolean(origAll);
-                if (isNotNull(allLeafs)) {
-                    allLeafs.setSelected(origVal);
-                }
-                parameters.setProperty(ALL_LEAFS.name(), String.valueOf(origVal));
-            }
-            onTestSelectionChanged();
-        }
-    }
+    // Removed onPropertiesClicked as Properties panel is now visible alongside parameters
 
     /**
      * Calculates the estimated average cycles required for 100% leaf coverage
@@ -538,7 +486,7 @@ public class Gui implements _GUI {
      */
     @SuppressWarnings({"StatementWithEmptyBody", "ForeachStatement", "ObjectAllocationInLoop",
             "ValueOfIncrementOrDecrementUsed"})
-    JPanel dialogueBox() {
+    public JPanel dialogueBox() {
 
         panel = new JPanel(new GridBagLayout());
         int row = 0;
@@ -546,6 +494,20 @@ public class Gui implements _GUI {
         addRow(TEST.name(), test, panel, row++);
         addRow(POOL.name(), pool, panel, row++);
         addRow(PLATFORM.name(), platform, panel, row++);
+        
+        // Add additional special properties
+        if (domain != null) {
+            addRow(DOMAIN.name(), domain, panel, row++);
+        }
+        if (headless != null) {
+            addRow(HEADLESS.name(), headless, panel, row++);
+        }
+        if (allLeafs != null) {
+            addRow(ALL_LEAFS.name(), allLeafs, panel, row++);
+        }
+        if (allLeafsCount != null) {
+            addRow(ALL_LEAFS_COUNT.name(), allLeafsCount, panel, row++);
+        }
 
         final JPanel cyclesPanel = new JPanel(new GridBagLayout());
         final GridBagConstraints c0 = new GridBagConstraints();
@@ -573,7 +535,7 @@ public class Gui implements _GUI {
 
         addRow(TESTS, cyclesPanel, panel, row++);
 
-        addRow(PROPERTIES, properties, panel, row++);
+        // addRow(PROPERTIES, properties, panel, row++); // Moved to properties panel on right side
 
         // Additional parameters
         if (isNotNull(aParams)) {
@@ -595,28 +557,37 @@ public class Gui implements _GUI {
      * Propagates user input to the parameters object.
      */
     @SuppressWarnings("ValueOfIncrementOrDecrementUsed")
-    private void propagateUserInput() {
+    public void propagateUserInput() {
         // Propagation of the user input
-        parameters.setProperty(TEST.name(), null == test.getSelectedItem() ? EMPTY : test.getSelectedItem().toString());
-        parameters.setProperty(POOL.name(), null == pool.getSelectedItem() ? EMPTY : pool.getSelectedItem().toString());
-        parameters.setProperty(PLATFORM.name(), null == platform.getSelectedItem() ? EMPTY :
-                platform.getSelectedItem().toString());
+        parameters.setTest(null == test.getSelectedItem() ? EMPTY : test.getSelectedItem().toString());
+        parameters.setPool(null == pool.getSelectedItem() ? EMPTY : pool.getSelectedItem().toString());
+        parameters.setPlatform(null == platform.getSelectedItem() ? EMPTY : platform.getSelectedItem().toString());
+        
         //noinspection StatementWithEmptyBody
         if (parameters.getProperty(PLATFORM.name()).equals(Platform.ANDROID.getString())) {
             /* Devices selection is commented out until implementation of automatic devices management
             put("DEVICE", device.getSelectedItem() == null ? StringUtils.EMPTY : device.getSelectedItem().toString()); */
         } else {
-            parameters.setProperty(DOMAIN.name(), domain.getText());
+            if (domain != null) {
+                parameters.setProperty(DOMAIN.name(), domain.getText());
+            }
             if (isNotNull(headless)) {
-                parameters.setProperty(HEADLESS.name(), String.valueOf(headless.isSelected()));
+                parameters.setHeadless(headless.isSelected());
             }
         }
+        
         if (isNotNull(allLeafs)) {
-            parameters.setProperty(ALL_LEAFS.name(), String.valueOf(allLeafs.isSelected()));
+            parameters.setAllLeafs(allLeafs.isSelected());
+        }
+        if (isNotNull(allLeafsCount)) {
+            try {
+                parameters.setAllLeafsCount(Integer.parseInt(allLeafsCount.getText()));
+            } catch (final NumberFormatException ignored) {
+            }
         }
         if (parameters.getAllLeafsCount() > 1) {
-            parameters.setProperty(ALL_LEAFS.name(), Boolean.TRUE.toString());
-            parameters.setProperty(ALL_LEAFS_COUNT.name(), String.valueOf(parameters.getAllLeafsCount()));
+            parameters.setAllLeafs(true);
+            parameters.setAllLeafsCount(parameters.getAllLeafsCount());
         }
 
         // Additional parameters

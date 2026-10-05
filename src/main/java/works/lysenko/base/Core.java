@@ -382,8 +382,10 @@ public final class Core extends Root implements _Core, _Tests {
         if (Routines.isInsideDocker() || Routines.isInsideCI()) {
             dashboard = new Directory(Is.debug);
         } else {
-            final Integer screen = Start.dashboardScreen; //inline reading
-            SwingUtilities.invokeLater(() -> dashboard = new UserInterface(screen, Is.debug));
+            dashboard = works.lysenko.base.ui.ControlPanel.getInstance();
+            if (dashboard != null && Is.debug) {
+                dashboard.setHalt(true);
+            }
         }
     }
 

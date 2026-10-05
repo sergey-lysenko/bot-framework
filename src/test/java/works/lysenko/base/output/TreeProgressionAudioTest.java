@@ -25,9 +25,50 @@ class TreeProgressionAudioTest {
     void registryResolvesModes() {
         assertTrue(TreeProgressionAudio.find("copilot").orElseThrow() instanceof CopilotSonifier);
         assertTrue(TreeProgressionAudio.find("Claude").orElseThrow() instanceof ClaudeSonifier);
+        assertTrue(TreeProgressionAudio.find("Gemini").orElseThrow() instanceof GeminiSonifier);
         assertTrue(TreeProgressionAudio.find("none").isEmpty());
         assertTrue(TreeProgressionAudio.find("true").isEmpty());
         assertTrue(TreeProgressionAudio.find(null).isEmpty());
+    }
+
+    @Test
+    void geminiSnapshotsAndSonifiesTreeStructureChanges(@TempDir final Path tempDir) throws Exception {
+        final GeminiSonifier gemini = new GeminiSonifier();
+        final File frame1 = tempDir.resolve("frame_0001.png").toFile();
+        final File frame2 = tempDir.resolve("frame_0002.png").toFile();
+        
+        final TreeHtml.NodeData branch = new TreeHtml.NodeData(
+                "branch", "Branch", "Root", 0, 0, new Result(ScenarioType.NODE, null, null, null, List.of(), 2, 0));
+        final TreeHtml.NodeData leaf = new TreeHtml.NodeData(
+                "leaf", "Leaf", "Root", 1, 1, new Result(ScenarioType.LEAF, null, null, null, List.of(), 0, 0));
+        leaf.setParent(branch);
+        branch.children().add(leaf);
+        final TreeHtml.TreeLayout layout1 = new TreeHtml.TreeLayout(new ArrayList<>(List.of(branch, leaf)), List.of());
+        
+        final TreeHtml.NodeData leafCompleted = new TreeHtml.NodeData(
+                "leaf", "Leaf", "Root", 1, 1, new Result(ScenarioType.LEAF, null, null, null, List.of(), 9, 0));
+        leafCompleted.setParent(branch);
+        branch.children().set(0, leafCompleted);
+        final TreeHtml.TreeLayout layout2 = new TreeHtml.TreeLayout(new ArrayList<>(List.of(branch, leafCompleted)), List.of());
+        
+        gemini.capture(frame1, layout1, 9);
+        gemini.capture(frame2, layout2, 9);
+        
+        final String snapshot1 = Files.readString(GeminiSonifier.snapshotFile(frame1).toPath());
+        final String snapshot2 = Files.readString(GeminiSonifier.snapshotFile(frame2).toPath());
+        
+        assertTrue(snapshot1.contains("1\t1\t0\t0")); // col 1 has 1 total, 0 active, 0 completed
+        assertTrue(snapshot2.contains("1\t1\t0\t1")); // col 1 has 1 total, 0 active, 1 completed
+        
+        Files.createFile(frame1.toPath());
+        Files.createFile(frame2.toPath());
+        assertTrue(gemini.canSonify(List.of(frame1, frame2)));
+        
+        final File wavFile = tempDir.resolve("gemini.wav").toFile();
+        gemini.writeWav(List.of(frame1, frame2), wavFile, 10);
+        
+        final byte[] wav = Files.readAllBytes(wavFile.toPath());
+        assertTrue(hasSound(wav));
     }
 
     @Test

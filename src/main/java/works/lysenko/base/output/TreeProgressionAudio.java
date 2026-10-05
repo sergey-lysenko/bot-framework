@@ -10,7 +10,7 @@ import java.util.Optional;
  */
 final class TreeProgressionAudio {
 
-    private static final List<TreeSonifier> ALL = List.of(new CopilotSonifier(), new ClaudeSonifier());
+    private static final List<TreeSonifier> ALL = List.of(new CopilotSonifier(), new ClaudeSonifier(), new GeminiSonifier());
 
     private TreeProgressionAudio() {
     }

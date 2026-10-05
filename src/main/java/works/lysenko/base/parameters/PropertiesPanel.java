@@ -41,7 +41,7 @@ import static works.lysenko.util.spec.Symbols._COLON_;
  * Dialog for previewing and modifying test configuration properties before test execution.
  */
 @SuppressWarnings({"ClassWithTooManyFields", "CallToSuspiciousStringMethod", "MagicNumber"})
-public class PropertiesDialog extends JDialog {
+public class PropertiesPanel extends JPanel {
 
     public static final String STATUS_DEFAULT = c(DEFAULT);
     public static final String STATUS_CONFIGURED = c(CONFIGURED);
@@ -76,10 +76,10 @@ public class PropertiesDialog extends JDialog {
      * @param isAllLeafs    all-leafs flag
      * @param allLeafsCount all-leafs count
      */
-    public PropertiesDialog(final Window owner, final String testName, final boolean isHeadless,
-                            final boolean isAllLeafs, final int allLeafsCount) {
+    public PropertiesPanel(final String testName, final boolean isHeadless,
+                           final boolean isAllLeafs, final int allLeafsCount) {
 
-        this(owner, (isNotNull(Base.properties)) ? Base.properties : new TestProperties(), testName, isHeadless, isAllLeafs, allLeafsCount);
+        this((isNotNull(Base.properties)) ? Base.properties : new TestProperties(), testName, isHeadless, isAllLeafs, allLeafsCount);
     }
 
     /**
@@ -92,16 +92,11 @@ public class PropertiesDialog extends JDialog {
      * @param isAllLeafs    all-leafs flag
      * @param allLeafsCount all-leafs count
      */
-    public PropertiesDialog(final Window owner, final _TestProperties testProps, final String testName,
-                            final boolean isHeadless, final boolean isAllLeafs, final int allLeafsCount) {
+    public PropertiesPanel(final _TestProperties testProps, final String testName,
+                           final boolean isHeadless, final boolean isAllLeafs, final int allLeafsCount) {
 
-        super(owner, b("Test", "Properties",
-                        e(ROUND, (null == testName || testName.isBlank()) ? "Default" : testName)),
-                ModalityType.APPLICATION_MODAL);
         this.testProperties = testProps;
 
-        setSize(850, 520);
-        setLocationRelativeTo(owner);
         setLayout(new BorderLayout(8, 8));
 
         // 1. Top Panel (Search/Filter)
@@ -178,8 +173,8 @@ public class PropertiesDialog extends JDialog {
         final JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         cancelBtn = new JButton("Cancel");
         cancelBtn.addActionListener(e -> onCancel());
-        okBtn = new JButton("OK");
-        okBtn.addActionListener(e -> onOk());
+        okBtn = new JButton("Apply");
+        okBtn.addActionListener(e -> applyChanges());
         rightActions.add(cancelBtn);
         rightActions.add(okBtn);
 
@@ -571,7 +566,7 @@ public class PropertiesDialog extends JDialog {
         }
     }
 
-    private void onOk() {
+    public void applyChanges() {
 
         if (table.isEditing() && !table.getCellEditor().stopCellEditing()) {
             return;
@@ -594,7 +589,6 @@ public class PropertiesDialog extends JDialog {
             testProperties.setUserOverrides(overrides);
         }
         confirmed = true;
-        dispose();
     }
 
     private void onCancel() {
@@ -603,7 +597,6 @@ public class PropertiesDialog extends JDialog {
             table.getCellEditor().cancelCellEditing();
         }
         confirmed = false;
-        dispose();
     }
 
     public boolean isConfirmed() {

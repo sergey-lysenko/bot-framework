@@ -96,6 +96,31 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         properties.readTestConfiguration();
     }
 
+    public void setPool(final String name) {
+        
+        put(POOL.name(), name);
+    }
+    
+    public void setPlatform(final String name) {
+        
+        put(PLATFORM.name(), name);
+    }
+    
+    public void setAllLeafs(final boolean value) {
+        
+        put(ALL_LEAFS.name(), String.valueOf(value));
+    }
+    
+    public void setAllLeafsCount(final int count) {
+        
+        put(ALL_LEAFS_COUNT.name(), String.valueOf(count));
+    }
+    
+    public void setHeadless(final boolean value) {
+        
+        put(HEADLESS.name(), String.valueOf(value));
+    }
+
     public String getValue(final ExecutionParameter parameter) {
 
         return getPropertyString(parameter.name());

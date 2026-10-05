@@ -51,7 +51,7 @@ import static works.lysenko.util.spec.Symbols._PRCNT_;
         "FinalClass",
         "ChainedMethodCall", "NestedMethodCall", "ClassWithTooManyDependencies", "ClassWithTooManyTransitiveDependencies",
         "ClassWithTooManyTransitiveDependents", "CyclicClassDependency", "AutoBoxing", "AutoUnboxing", "LawOfDemeter"})
-public final class UserInterface extends JFrame implements _Dashboard {
+public final class UserInterface extends JPanel implements _Dashboard {
 
     private static final int bytesInMiB = 1 << 20;
     private static final float RED_HUE = 0.0F;
@@ -89,18 +89,13 @@ public final class UserInterface extends JFrame implements _Dashboard {
     @SuppressWarnings({"WeakerAccess", "ImplicitCallToSuper", "PublicConstructor", "MethodParameterNamingConvention"})
     public UserInterface(final Integer screenToSpawnDashboard) {
 
-        setTitle(initialization);
-        setSize(DASHBOARD_WIDTH, DASHBOARD_HEIGHT);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setVisible(true);
-        container.setLayout(new BoxLayout(container, BoxLayout.PAGE_AXIS));
-        add(container);
+        setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
         buildStatusBoard();
         buildBusiness();
         buildSwitchBoard();
         buildLog();
         buildContainer();
-        centerThisWindow(screenToSpawnDashboard);
+        // centerThisWindow(screenToSpawnDashboard);
     }
 
     /**
@@ -303,11 +298,11 @@ public final class UserInterface extends JFrame implements _Dashboard {
      */
     private void buildContainer() {
 
-        container.add(breadcrumb);
-        container.add(statusboard);
-        container.add(business);
-        container.add(switchboard);
-        container.add(log);
+        add(breadcrumb);
+        add(statusboard);
+        add(business);
+        add(switchboard);
+        add(log);
     }
 
     /**
@@ -354,19 +349,7 @@ public final class UserInterface extends JFrame implements _Dashboard {
         switchboard.add(stop);
     }
 
-    /**
-     * Centers the window on the specified screen.
-     *
-     * @param screen The index of the screen to center the window on.
-     */
-    @SuppressWarnings({"SameParameterValue", "NestedMethodCall"})
-    private void centerThisWindow(final int screen) {
-
-        final GraphicsDevice[] screens = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
-        final int i = (screen >= screens.length || 0 > screen) ? 0 : screen;
-        final Rectangle r = screens[i].getDefaultConfiguration().getBounds();
-        setLocation(((r.width - getWidth()) / 2) + r.x, ((r.height - getHeight()) / 2) + r.y);
-    }
+    // Removed centerThisWindow since it is a JPanel
 
     @SuppressWarnings("NestedMethodCall")
     private void refreshBusiness() {
@@ -449,5 +432,15 @@ public final class UserInterface extends JFrame implements _Dashboard {
         usage.setText(b(s(format("%.2f", telemetry.data().spent()), _PRCNT_))); //NON-NLS
         usage.setForeground(calculateUsageColor(previous, currentUsage));
         previous = currentUsage;
+    }
+
+    @Override
+    public void setTitle(String title) {
+        // Ignored for JPanel, handled by ControlPanel
+    }
+
+    @Override
+    public void dispose() {
+        // Ignored for JPanel, handled by ControlPanel
     }
 }
