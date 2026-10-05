@@ -38,7 +38,7 @@ public record CoverageEstimator() {
 
         final int target = (isNotNull(works.lysenko.Base.parameters))
                 ? works.lysenko.Base.parameters.getAllLeafsCount()
-                : (isNotNull(PropEnum._ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._ALL_LEAFS_COUNT.get()) : 1);
+                : (isNotNull(PropEnum._TEST_ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_COUNT.get()) : 1);
         return estimateAverageCycles(rootCtrl, target, null);
     }
 

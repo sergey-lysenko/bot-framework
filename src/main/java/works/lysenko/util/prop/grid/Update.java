@@ -11,10 +11,10 @@ import static works.lysenko.util.spec.PropEnum.*;
 @SuppressWarnings({"MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "NonFinalStaticVariableUsedInClassInitialization"})
 public record Update() {
 
-    public static final boolean colour = _UPDATE_COLOUR_EXPECTATIONS.get();
+    public static final boolean colour = _GRID_UPDATE_COLOUR_EXPECTATIONS.get();
     @SuppressWarnings("unused")
-    public static final boolean hsv = _UPDATE_HSV_EXPECTATIONS.get();
-    public static final boolean passed = _UPDATE_PASSED_EXPECTATIONS.get();
-    public static final boolean polychromy = _UPDATE_POLYCHROMY_EXPECTATIONS.get();
-    public static final boolean shrink = _SHRINK_EXPECTATIONS.get();
+    public static final boolean hsv = _GRID_UPDATE_HSV_EXPECTATIONS.get();
+    public static final boolean passed = _GRID_UPDATE_PASSED_EXPECTATIONS.get();
+    public static final boolean polychromy = _GRID_UPDATE_POLYCHROMY_EXPECTATIONS.get();
+    public static final boolean shrink = _GRID_SHRINK_EXPECTATIONS.get();
 }

@@ -1,7 +1,7 @@
 package works.lysenko.util.prop.tree;
 
-import static works.lysenko.util.spec.PropEnum._INCLUDE_DOWNSTREAM;
-import static works.lysenko.util.spec.PropEnum._INCLUDE_UPSTREAM;
+import static works.lysenko.util.spec.PropEnum._TREE_INCLUDE_DOWNSTREAM;
+import static works.lysenko.util.spec.PropEnum._TREE_INCLUDE_UPSTREAM;
 
 /**
  * Represents an Include class which provides static boolean properties
@@ -17,15 +17,15 @@ import static works.lysenko.util.spec.PropEnum._INCLUDE_UPSTREAM;
 @SuppressWarnings({"MissingJavadoc", "NonFinalStaticVariableUsedInClassInitialization"})
 public record Include() {
 
-    public static Boolean upstream = _INCLUDE_UPSTREAM.get();
-    public static Boolean downstream = _INCLUDE_DOWNSTREAM.get();
+    public static Boolean upstream = _TREE_INCLUDE_UPSTREAM.get();
+    public static Boolean downstream = _TREE_INCLUDE_DOWNSTREAM.get();
 
     /**
      * Refreshes upstream and downstream flags from current test properties.
      */
     public static void refresh() {
 
-        upstream = _INCLUDE_UPSTREAM.get();
-        downstream = _INCLUDE_DOWNSTREAM.get();
+        upstream = _TREE_INCLUDE_UPSTREAM.get();
+        downstream = _TREE_INCLUDE_DOWNSTREAM.get();
     }
 }

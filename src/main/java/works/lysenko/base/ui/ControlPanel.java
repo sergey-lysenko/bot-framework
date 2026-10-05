@@ -46,7 +46,8 @@ public class ControlPanel extends JFrame implements _Dashboard {
         propertiesPanel = new PropertiesPanel(parameters.getTest(), parameters.isHeadless(), parameters.isAllLeafs(), parameters.getAllLeafsCount());
         
         final JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, guiBox, propertiesPanel);
-        splitPane.setDividerLocation(0.35); // 35% for parameters
+        // Properties panel width / Gui panel width = 1.618  =>  Gui = 1 / 2.618 ≈ 0.3819
+        splitPane.setDividerLocation(0.382); 
         
         configPanel.add(splitPane, BorderLayout.CENTER);
 

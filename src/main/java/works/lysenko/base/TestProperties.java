@@ -327,17 +327,17 @@ public class TestProperties implements _TestProperties {
         applyUserOverrides();
         if (isNotNull(parameters)) {
             if (parameters.isHeadless()) {
-                the.setProperty(PropEnum._HEADLESS.getPropertyName(), String.valueOf(true));
+                the.setProperty(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(true));
             } else {
-                the.remove(PropEnum._HEADLESS.getPropertyName());
+                the.remove(PropEnum._TEST_HEADLESS.getPropertyName());
             }
             if (parameters.isAllLeafs()) {
-                the.setProperty(PropEnum._ALL_LEAFS.getPropertyName(), String.valueOf(true));
+                the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(true));
             } else {
-                the.remove(PropEnum._ALL_LEAFS.getPropertyName());
+                the.remove(PropEnum._TEST_ALL_LEAFS.getPropertyName());
             }
             if (1 < parameters.getAllLeafsCount()) {
-                the.setProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(parameters.getAllLeafsCount()));
+                the.setProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(parameters.getAllLeafsCount()));
             }
         }
         applyUserOverrides();
@@ -368,17 +368,17 @@ public class TestProperties implements _TestProperties {
         }
         updateConfigFileDefaults(testName);
         if (Boolean.TRUE.equals(isHeadless)) {
-            the.setProperty(PropEnum._HEADLESS.getPropertyName(), String.valueOf(true));
+            the.setProperty(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(true));
         } else if (Boolean.FALSE.equals(isHeadless)) {
-            the.remove(PropEnum._HEADLESS.getPropertyName());
+            the.remove(PropEnum._TEST_HEADLESS.getPropertyName());
         }
         if (Boolean.TRUE.equals(isAllLeafs) || (isNotNull(allLeafsCount) && 1 < allLeafsCount)) {
-            the.setProperty(PropEnum._ALL_LEAFS.getPropertyName(), String.valueOf(true));
+            the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(true));
         } else if (Boolean.FALSE.equals(isAllLeafs)) {
-            the.remove(PropEnum._ALL_LEAFS.getPropertyName());
+            the.remove(PropEnum._TEST_ALL_LEAFS.getPropertyName());
         }
         if (isNotNull(allLeafsCount) && 1 < allLeafsCount) {
-            the.setProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(allLeafsCount));
+            the.setProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(allLeafsCount));
         }
         applyUserOverrides();
     }
@@ -432,17 +432,17 @@ public class TestProperties implements _TestProperties {
             }
         }
         if (Boolean.TRUE.equals(isHeadless)) {
-            effective.put(PropEnum._HEADLESS.getPropertyName(), String.valueOf(true));
+            effective.put(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(true));
         } else if (Boolean.FALSE.equals(isHeadless)) {
-            effective.put(PropEnum._HEADLESS.getPropertyName(), PropEnum._HEADLESS.defaultValue());
+            effective.put(PropEnum._TEST_HEADLESS.getPropertyName(), PropEnum._TEST_HEADLESS.defaultValue());
         }
         if (Boolean.TRUE.equals(isAllLeafs) || (isNotNull(allLeafsCount) && 1 < allLeafsCount)) {
-            effective.put(PropEnum._ALL_LEAFS.getPropertyName(), String.valueOf(true));
+            effective.put(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(true));
         } else if (Boolean.FALSE.equals(isAllLeafs)) {
-            effective.put(PropEnum._ALL_LEAFS.getPropertyName(), PropEnum._ALL_LEAFS.defaultValue());
+            effective.put(PropEnum._TEST_ALL_LEAFS.getPropertyName(), PropEnum._TEST_ALL_LEAFS.defaultValue());
         }
         if (isNotNull(allLeafsCount) && 1 < allLeafsCount) {
-            effective.put(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(allLeafsCount));
+            effective.put(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(allLeafsCount));
         }
         if (includeUserOverrides) {
             effective.putAll(userOverrides);

@@ -1,8 +1,8 @@
 package works.lysenko.util.prop.logs;
 
-import static works.lysenko.util.spec.PropEnum._ADEBUG;
-import static works.lysenko.util.spec.PropEnum._DEBUG;
-import static works.lysenko.util.spec.PropEnum._TRACE;
+import static works.lysenko.util.spec.PropEnum._LOGS_ADEBUG;
+import static works.lysenko.util.spec.PropEnum._LOGS_DEBUG;
+import static works.lysenko.util.spec.PropEnum._LOGS_TRACE;
 
 /**
  * Represents a class for debugging purposes.
@@ -19,7 +19,7 @@ import static works.lysenko.util.spec.PropEnum._TRACE;
 @SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "NonFinalStaticVariableUsedInClassInitialization", "MissingJavadoc"})
 public record Debug() {
 
-    public static final Boolean adebug = _ADEBUG.get();
-    public static final Boolean debug = _DEBUG.get();
-    public static final Boolean trace = _TRACE.get();
+    public static final Boolean adebug = _LOGS_ADEBUG.get();
+    public static final Boolean debug = _LOGS_DEBUG.get();
+    public static final Boolean trace = _LOGS_TRACE.get();
 }

@@ -1,6 +1,6 @@
 package works.lysenko.util.prop.core;
 
-import static works.lysenko.util.spec.PropEnum._RECREATE_DRIVER_AFTER_EXCEPTION;
+import static works.lysenko.util.spec.PropEnum._WEBD_RECREATE_DRIVER_AFTER_EXCEPTION;
 
 /**
  * Represents a Recreate configuration.
@@ -16,5 +16,5 @@ public record Recreate() {
      * <p>
      * This property is fetched from a properties instance using a specified key.
      */
-    public static final boolean driver = _RECREATE_DRIVER_AFTER_EXCEPTION.get();
+    public static final boolean driver = _WEBD_RECREATE_DRIVER_AFTER_EXCEPTION.get();
 }

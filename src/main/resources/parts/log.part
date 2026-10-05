@@ -2,34 +2,34 @@
 # Sleep and Logging Settings
 # ==============================================================================
 # How short a sleep duration should be to avoid adding a log message. Default: 10 (milliseconds)
-# .silent.sleeping.border=10
+# .logs.silent.sleeping.border=10
 # ------------------------------------------------------------------------------
 # Log table width for alignment in printed logs.
-.log.table.width=192
+.logs.table.width=192
 # ------------------------------------------------------------------------------
 # Ranger-specific log width for aligned output.
-.ranger.log.width=99
+.grid.ranger.log.width=99
 
 # ==============================================================================
 # Long Operation Settings
 # ==============================================================================
 # Maximum duration of an operation to be considered "long". Default: 9999 (milliseconds)
-# .long.operation.border=9999
+# .test.long.operation.threshold=9999
 # ------------------------------------------------------------------------------
 # Severity level for long operations. Default: 0
-.long.operation.severity=1
+.test.long.operation.severity=1
 
 # ==============================================================================
 # Log Line Similarity Settings
 # ==============================================================================
 # Enable or disable log line similarity checks. Default: true
-# .log.lines.similarity.check=true
+# .logs.lines.similarity.check=true
 # ------------------------------------------------------------------------------
 # Maximum allowed difference (in milliseconds) between logged operations for similarity comparison. Default: 2500
-.log.lines.similarity.delta=2500
+.logs.lines.similarity.delta=2500
 # ------------------------------------------------------------------------------
 # Number of consecutive log lines to include in similarity checks. Default: 1
-.log.lines.similarity.depth=7
+.logs.lines.similarity.depth=7
 # ------------------------------------------------------------------------------
 # Maximum number of characters to check for similarity. Default: 5
-.log.lines.similarity.limit=71
+.logs.lines.similarity.limit=71

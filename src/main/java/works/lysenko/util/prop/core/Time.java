@@ -1,6 +1,6 @@
 package works.lysenko.util.prop.core;
 
-import static works.lysenko.util.spec.PropEnum._PAUSE_LENGTH;
+import static works.lysenko.util.spec.PropEnum._TEST_PAUSE_LENGTH;
 
 /**
  * Represents a class to manage time properties for the application.
@@ -9,5 +9,5 @@ import static works.lysenko.util.spec.PropEnum._PAUSE_LENGTH;
 @SuppressWarnings({"MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "NonFinalStaticVariableUsedInClassInitialization"})
 public record Time() {
 
-    public static final int pauseLength = _PAUSE_LENGTH.get();
+    public static final int pauseLength = _TEST_PAUSE_LENGTH.get();
 }

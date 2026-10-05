@@ -1,6 +1,6 @@
 package works.lysenko.util.prop.core;
 
-import static works.lysenko.util.spec.PropEnum._ASSERTIONS_PRODUCE_EXCEPTION;
+import static works.lysenko.util.spec.PropEnum._TEST_ASSERTIONS_PRODUCE_EXCEPTION;
 
 /**
  * Represents a set of assertions configurations for the application.
@@ -11,5 +11,5 @@ public record Assertions() {
     /**
      *
      */
-    public static final Boolean exception = _ASSERTIONS_PRODUCE_EXCEPTION.get();
+    public static final Boolean exception = _TEST_ASSERTIONS_PRODUCE_EXCEPTION.get();
 }

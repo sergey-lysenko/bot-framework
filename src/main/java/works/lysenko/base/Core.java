@@ -163,7 +163,7 @@ public final class Core extends Root implements _Core, _Tests {
         if (isNotNull(parameters)) {
             return parameters.getAllLeafsCount();
         }
-        final Integer prop = works.lysenko.util.spec.PropEnum._ALL_LEAFS_COUNT.get();
+        final Integer prop = works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS_COUNT.get();
         return isNotNull(prop) ? Math.max(1, prop) : 1;
     }
 

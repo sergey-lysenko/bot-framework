@@ -152,7 +152,7 @@ class ProgressionTrackerTest {
         final File customRunDir = tempDir.toFile();
         ProgressionTracker.setCustomOutputDir(customRunDir);
 
-        setTestProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
 
         final Ctrl rootCtrl = new Ctrl(null);

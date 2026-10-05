@@ -57,9 +57,9 @@ import static works.lysenko.util.lang.word.R.REARRANGING;
 import static works.lysenko.util.lang.word.S.SERVICE;
 import static works.lysenko.util.lang.word.S.STARTING;
 import static works.lysenko.util.lang.word.W.WINDOW;
-import static works.lysenko.util.spec.PropEnum._APP;
-import static works.lysenko.util.spec.PropEnum._BUNDLE_ID;
-import static works.lysenko.util.spec.PropEnum._UD_ID;
+import static works.lysenko.util.spec.PropEnum._MOBI_UD_ID;
+import static works.lysenko.util.spec.PropEnum._TEST_APP;
+import static works.lysenko.util.spec.PropEnum._TEST_BUNDLE_ID;
 import static works.lysenko.util.spec.Symbols._DASH_;
 import static works.lysenko.util.spec.Symbols._DOT_;
 
@@ -337,13 +337,13 @@ public class Driver implements _Driver {
         log(Level.none, b(c(CONFIGURING), c(DRIVER), DOTS), true);
 
         File app = null;
-        final String apk = _APP.get();
+        final String apk = _TEST_APP.get();
 
         if (!apk.isEmpty()) {
             final File appDir = new File(System.getProperty(USER_DIR));
             // Attempts to resolve an application path; throws on failure
             try {
-                app = new File(appDir.getCanonicalPath(), _APP.get());
+                app = new File(appDir.getCanonicalPath(), _TEST_APP.get());
             } catch (final IOException e) {
                 throw new IllegalArgumentException(b(UNABLE_TO_LOAD, APP, FROM, q(app.toString())));
             }
@@ -378,7 +378,7 @@ public class Driver implements _Driver {
      */
     private static void defineDevice(final DesiredCapabilities capabilities) {
 
-        final String udid = _UD_ID.get();
+        final String udid = _MOBI_UD_ID.get();
         if (!udid.isEmpty()) capabilities.setCapability(APPIUM_UDID, udid);
     }
 
@@ -396,7 +396,7 @@ public class Driver implements _Driver {
 
         // Configures application based on file or bundle ID
         if (isNull(app)) {
-            final String bid = _BUNDLE_ID.get();
+            final String bid = _TEST_BUNDLE_ID.get();
             if (bid.isEmpty()) throw new IllegalArgumentException(b(UNABLE_TO_START_TEST___));
             capabilities.setCapability(APPIUM_APP_PACKAGE, bid);
             capabilities.setCapability(APPIUM_APP_ACTIVITY, s(bid, _DOT_, MAIN_ACTIVITY));

@@ -4,11 +4,11 @@
 
 # Event severity level at which to stop test execution.
 # Severity levels determine how severe an event must be to halt further testing.
-.fail.by.event.of.severity=0
+.test.fail.by.event.of.severity=0
 
 # ------------------------------------------------------------------------------
 # Default number of tests to perform if not explicitly specified.
-# .tests=99
+# .test.tests=99
 
 # ------------------------------------------------------------------------------
 
@@ -20,9 +20,9 @@
 # ------------------------------------------------------------------------------
 
 # Number of retries for handling exceptional states during UI interactions.
-# .exception.retries=3
+# .test.exception.retries=3
 
 # ------------------------------------------------------------------------------
 
 # Whether to produce an exceptional state on failed assertions.
-# .assertions.produce.exception=true
+# .test.assertions.produce.exception=true

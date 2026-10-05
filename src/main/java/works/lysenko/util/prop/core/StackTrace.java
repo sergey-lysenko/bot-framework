@@ -15,7 +15,7 @@ import static works.lysenko.util.spec.PropEnum.*;
 @SuppressWarnings({"NonFinalStaticVariableUsedInClassInitialization", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass"})
 public record StackTrace() {
 
-    public static final Boolean full = _FULL_STACKTRACE.get();
-    public static final Boolean numbers = _LINE_NUMBER_IN_SHORT_STACKTRACE.get();
-    public static final Boolean references = _STACK_TRACE_REFERENCES.get();
+    public static final Boolean full = _LOGS_FULL_STACKTRACE.get();
+    public static final Boolean numbers = _LOGS_LINE_NUMBER_IN_SHORT_STACKTRACE.get();
+    public static final Boolean references = _LOGS_STACK_TRACE_REFERENCES.get();
 }

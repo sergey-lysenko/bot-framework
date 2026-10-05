@@ -8,7 +8,7 @@
 .grid.validation.scale.epsilon=0.002
 
 # Allow validation of empty grids. Default: false
-.empty.grid.validation.allowed=true
+.grid.empty.grid.validation.allowed=true
 
 # -------------------------------------------------------------------------------------------------
 # Screenshot Settings
@@ -37,41 +37,41 @@
 # .screenshots.of.clicks.marker.diameter=50
 
 # Action marker color for general highlights in screenshots (RGBA format). Default: 255,128,0,128
-.action.marker.colour=0,128,32,128
+.grid.action.marker.colour=0,128,32,128
 
 # -------------------------------------------------------------------------------------------------
 # Color and Probe Settings
 # -------------------------------------------------------------------------------------------------
-# Threshold for color similarity validation. Default: 1.0 (PropEnum: _COLOUR_SIMILARITY_THRESHOLD).
-# .colour.similarity.border=1
+# Threshold for color similarity validation. Default: 1.0 (PropEnum: _GRID_COLOUR_SIMILARITY_THRESHOLD).
+# .grid.colour.similarity.border=1
 
 # Define severity levels for null or empty results (uses default values from PropEnum if not configured):
 # Null result severity: Default 0
 # Empty result severity: Default 0
-# .null.result.severity=0
-# .empty.result.severity=0
+# .grid.null.result.severity=0
+# .grid.empty.result.severity=0
 
 # -------------------------------------------------------------------------------------------------
 # Automatic Matrix/Expectations Update
 # -------------------------------------------------------------------------------------------------
 # Margins for color, HSV, and polychromy validation. Defaults are specified in `PropEnum`
-.default.colour.ranged.margin=a1/33|r1/3
-.default.hsv.margin=1/111
-.default.polychromy.margin=1/111
+.grid.default.colour.ranged.margin=a1/33|r1/3
+.grid.default.hsv.margin=1/111
+.grid.default.polychromy.margin=1/111
 
 # Shrink expectations for color-based validations.
-.shrink.expectations=true
+.grid.shrink.expectations=true
 
 # Dynamically update expectations for:
 # Colour validations. Default: false
-# .update.colour.expectations=true
+# .grid.update.colour.expectations=true
 
 # HSV validations. Default: false
-# .update.hsv.expectations=true
+# .grid.update.hsv.expectations=true
 
 # Passed test data. Default: false
-# .update.passed.expectations=true
+# .grid.update.passed.expectations=true
 
 # Polychromy validations. Default: false
-# .update.polychromy.expectations=true
+# .grid.update.polychromy.expectations=true
 # -------------------------------------------------------------------------------------------------

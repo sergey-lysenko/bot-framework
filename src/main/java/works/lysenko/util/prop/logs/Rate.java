@@ -8,8 +8,8 @@ import static works.lysenko.util.spec.PropEnum.*;
 })
 public record Rate() {
 
-    public static final int red = _LOG_RATE_4.get();
-    public static final int yellow = _LOG_RATE_3.get();
-    public static final int green = _LOG_RATE_2.get();
-    public static final int blue = _LOG_RATE_1.get();
+    public static final int red = _LOGS_RATE_4.get();
+    public static final int yellow = _LOGS_RATE_3.get();
+    public static final int green = _LOGS_RATE_2.get();
+    public static final int blue = _LOGS_RATE_1.get();
 }

@@ -2,7 +2,7 @@ package works.lysenko.util.prop.grid;
 
 import java.awt.Color;
 
-import static works.lysenko.util.spec.PropEnum._ACTION_MARKER_COLOUR;
+import static works.lysenko.util.spec.PropEnum._GRID_ACTION_MARKER_COLOUR;
 
 /**
  * Represents a marker with a specific colour.
@@ -13,5 +13,5 @@ import static works.lysenko.util.spec.PropEnum._ACTION_MARKER_COLOUR;
 @SuppressWarnings({"MissingJavadoc", "NonFinalStaticVariableUsedInClassInitialization"})
 public record Marker() {
 
-    public static final Color colour = _ACTION_MARKER_COLOUR.get();
+    public static final Color colour = _GRID_ACTION_MARKER_COLOUR.get();
 }

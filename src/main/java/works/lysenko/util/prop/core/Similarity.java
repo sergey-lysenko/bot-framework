@@ -24,12 +24,12 @@ import static works.lysenko.util.spec.Symbols.DATA_POINT;
 @SuppressWarnings({"MissingJavadoc", "StaticCollection", "StaticMethodOnlyUsedInOneClass"})
 public record Similarity() {
 
-    public static final boolean check = _LOG_LINES_SIMILARITY_CHECK.get();
-    public static final int delta = _LOG_LINES_SIMILARITY_DELTA.get();
-    public static final int depth = _LOG_LINES_SIMILARITY_DEPTH.get();
-    public static final int limit = _LOG_LINES_SIMILARITY_LIMIT.get();
+    public static final boolean check = _LOGS_LINES_SIMILARITY_CHECK.get();
+    public static final int delta = _LOGS_LINES_SIMILARITY_DELTA.get();
+    public static final int depth = _LOGS_LINES_SIMILARITY_DEPTH.get();
+    public static final int limit = _LOGS_LINES_SIMILARITY_LIMIT.get();
     private static final String INTERNAL_EXCEPTIONS = joinWith(s(L0), _RUNS_, DATA_POINT,
             WARNING.getString(), NOTICE.getString(), FAILURE.getString(), SEVERE.getString());
     public static final List<String> exceptions = List.of((b(L0, INTERNAL_EXCEPTIONS,
-            _LOG_LINES_SIMILARITY_EXCEPTIONS_TEMPORARY.get(), _LOG_LINES_SIMILARITY_EXCEPTIONS_PERMANENT.get())).split(l0));
+            _LOGS_LINES_SIMILARITY_EXCEPTIONS_TEMPORARY.get(), _LOGS_LINES_SIMILARITY_EXCEPTIONS_PERMANENT.get())).split(l0));
 }

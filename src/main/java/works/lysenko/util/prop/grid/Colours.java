@@ -1,6 +1,6 @@
 package works.lysenko.util.prop.grid;
 
-import static works.lysenko.util.spec.PropEnum._COLOUR_SIMILARITY_THRESHOLD;
+import static works.lysenko.util.spec.PropEnum._GRID_COLOUR_SIMILARITY_THRESHOLD;
 
 /**
  * Represents a record for storing colour threshold value.
@@ -17,6 +17,6 @@ public record Colours() {
      * A1 threshold value of 1.0 indicates that no check is necessary for colour matching.
      */
     @SuppressWarnings("StaticMethodOnlyUsedInOneClass")
-    public static final Double threshold = _COLOUR_SIMILARITY_THRESHOLD.get();
+    public static final Double threshold = _GRID_COLOUR_SIMILARITY_THRESHOLD.get();
     // 1.0 means no check
 }

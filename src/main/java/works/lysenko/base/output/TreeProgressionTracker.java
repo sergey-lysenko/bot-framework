@@ -103,7 +103,7 @@ public final class TreeProgressionTracker {
     }
 
     private static boolean isCountAllLeafs() {
-        final Integer count = PropEnum._ALL_LEAFS_COUNT.get();
+        final Integer count = PropEnum._TEST_ALL_LEAFS_COUNT.get();
         return isNotNull(count) && count > 1;
     }
 
@@ -181,7 +181,7 @@ public final class TreeProgressionTracker {
         if (isNull(core) || isNull(core.getResults()))
             return;
         final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
-                || Boolean.TRUE.equals(PropEnum._ALL_LEAFS.get())
+                || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get())
                 || isCountAllLeafs();
         if (!allLeafsMode)
             return;
@@ -195,7 +195,7 @@ public final class TreeProgressionTracker {
             return;
 
         final int target = (isNotNull(parameters)) ? parameters.getAllLeafsCount()
-                : (isNotNull(PropEnum._ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._ALL_LEAFS_COUNT.get()) : 1);
+                : (isNotNull(PropEnum._TEST_ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_COUNT.get()) : 1);
         final int currentCycle = isNotNull(testNumber) ? testNumber : capturedFrames.size() + 1;
 
         final File runDir = resolveRunDirectory();

@@ -196,29 +196,29 @@ class GuiTest {
 
     @Test
     void testIncludeScenarioPropEnumsPresent() {
-        assertEquals(".include.upstream", PropEnum._INCLUDE_UPSTREAM.getPropertyName());
-        assertEquals("false", PropEnum._INCLUDE_UPSTREAM.defaultValue());
-        assertFalse(PropEnum._INCLUDE_UPSTREAM.silent());
+        assertEquals(".tree.include.upstream", PropEnum._TREE_INCLUDE_UPSTREAM.getPropertyName());
+        assertEquals("false", PropEnum._TREE_INCLUDE_UPSTREAM.defaultValue());
+        assertFalse(PropEnum._TREE_INCLUDE_UPSTREAM.silent());
 
-        assertEquals(".include.downstream", PropEnum._INCLUDE_DOWNSTREAM.getPropertyName());
-        assertEquals("false", PropEnum._INCLUDE_DOWNSTREAM.defaultValue());
-        assertFalse(PropEnum._INCLUDE_DOWNSTREAM.silent());
+        assertEquals(".tree.include.downstream", PropEnum._TREE_INCLUDE_DOWNSTREAM.getPropertyName());
+        assertEquals("false", PropEnum._TREE_INCLUDE_DOWNSTREAM.defaultValue());
+        assertFalse(PropEnum._TREE_INCLUDE_DOWNSTREAM.silent());
 
-        assertEquals(".scenario.depth.safeguard", PropEnum._SCENARIO_DEPTH_SAFEGUARD.getPropertyName());
-        assertEquals("20", PropEnum._SCENARIO_DEPTH_SAFEGUARD.defaultValue());
-        assertFalse(PropEnum._SCENARIO_DEPTH_SAFEGUARD.silent());
+        assertEquals(".tree.scenario.depth.safeguard", PropEnum._TREE_SCENARIO_DEPTH_SAFEGUARD.getPropertyName());
+        assertEquals("20", PropEnum._TREE_SCENARIO_DEPTH_SAFEGUARD.defaultValue());
+        assertFalse(PropEnum._TREE_SCENARIO_DEPTH_SAFEGUARD.silent());
 
-        assertEquals(".scenario.history.depth.safeguard", PropEnum._SCENARIO_HISTORY_DEPTH_SAFEGUARD.getPropertyName());
-        assertEquals("20", PropEnum._SCENARIO_HISTORY_DEPTH_SAFEGUARD.defaultValue());
-        assertFalse(PropEnum._SCENARIO_HISTORY_DEPTH_SAFEGUARD.silent());
+        assertEquals(".tree.scenario.history.depth.safeguard", PropEnum._TREE_SCENARIO_HISTORY_DEPTH_SAFEGUARD.getPropertyName());
+        assertEquals("20", PropEnum._TREE_SCENARIO_HISTORY_DEPTH_SAFEGUARD.defaultValue());
+        assertFalse(PropEnum._TREE_SCENARIO_HISTORY_DEPTH_SAFEGUARD.silent());
     }
 
     @Test
     void testAllLeafPropertiesAreMarkedAsExecutionParametersInPropertiesPanel() {
-        assertTrue(PropEnum._ALL_LEAFS.executionParameter());
-        assertTrue(PropEnum._ALL_LEAFS_COUNT.executionParameter());
-        assertTrue(PropEnum._HEADLESS.executionParameter());
-        assertFalse(PropEnum._DEBUG.executionParameter());
+        assertTrue(PropEnum._TEST_ALL_LEAFS.executionParameter());
+        assertTrue(PropEnum._TEST_ALL_LEAFS_COUNT.executionParameter());
+        assertTrue(PropEnum._TEST_HEADLESS.executionParameter());
+        assertFalse(PropEnum._LOGS_DEBUG.executionParameter());
 
         final PropertiesPanel dialog = new PropertiesPanel(new TestProperties(), "default", false, false, 1);
         final DefaultTableModel model = dialog.getModel();
@@ -227,23 +227,23 @@ class GuiTest {
         boolean headlessMarked = false;
         for (int row = 0; row < model.getRowCount(); row++) {
             final String name = (String) model.getValueAt(row, 0);
-            if (PropEnum._HEADLESS.getPropertyName().equals(name)) {
-                assertEquals("HEADLESS", model.getValueAt(row, 4));
+            if (PropEnum._TEST_HEADLESS.getPropertyName().equals(name)) {
+                assertEquals("TEST_HEADLESS", model.getValueAt(row, 4));
                 headlessMarked = true;
-            } else if (PropEnum._ALL_LEAFS.getPropertyName().equals(name)) {
-                assertEquals("ALL_LEAFS", model.getValueAt(row, 4));
+            } else if (PropEnum._TEST_ALL_LEAFS.getPropertyName().equals(name)) {
+                assertEquals("TEST_ALL_LEAFS", model.getValueAt(row, 4));
                 allLeafsMarked = true;
-            } else if (PropEnum._ALL_LEAFS_COUNT.getPropertyName().equals(name)) {
-                assertEquals("ALL_LEAFS_COUNT", model.getValueAt(row, 4));
+            } else if (PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName().equals(name)) {
+                assertEquals("TEST_ALL_LEAFS_COUNT", model.getValueAt(row, 4));
                 allLeafsCountMarked = true;
             }
         }
         assertTrue(allLeafsMarked);
         assertTrue(allLeafsCountMarked);
         assertTrue(headlessMarked);
-        assertTrue(PropertyHelp.getDescription(PropEnum._ALL_LEAFS.getPropertyName()).contains("ALL_LEAFS"));
-        assertTrue(PropertyHelp.getDescription(PropEnum._ALL_LEAFS_COUNT.getPropertyName()).contains("ALL_LEAFS_COUNT"));
-        assertTrue(PropertyHelp.getDescription(PropEnum._HEADLESS.getPropertyName()).contains("HEADLESS"));
+        assertTrue(PropertyHelp.getDescription(PropEnum._TEST_ALL_LEAFS.getPropertyName()).contains("ALL_LEAFS"));
+        assertTrue(PropertyHelp.getDescription(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName()).contains("ALL_LEAFS_COUNT"));
+        assertTrue(PropertyHelp.getDescription(PropEnum._TEST_HEADLESS.getPropertyName()).contains("HEADLESS"));
     }
 
     @Test
@@ -252,19 +252,19 @@ class GuiTest {
         final Map<String, String> defaults = tp.getDefaults();
         assertNotNull(defaults);
         assertFalse(defaults.isEmpty());
-        assertTrue(defaults.containsKey(PropEnum._DEBUG.getPropertyName()));
+        assertTrue(defaults.containsKey(PropEnum._LOGS_DEBUG.getPropertyName()));
 
         assertTrue(tp.getUserOverrides().isEmpty());
 
-        tp.setUserOverride(PropEnum._DEBUG.getPropertyName(), "true");
-        assertEquals("true", tp.getUserOverrides().get(PropEnum._DEBUG.getPropertyName()));
+        tp.setUserOverride(PropEnum._LOGS_DEBUG.getPropertyName(), "true");
+        assertEquals("true", tp.getUserOverrides().get(PropEnum._LOGS_DEBUG.getPropertyName()));
 
         final Map<String, String> newOverrides = new HashMap<>();
-        newOverrides.put(PropEnum._PAUSE_LENGTH.getPropertyName(), "3000");
+        newOverrides.put(PropEnum._TEST_PAUSE_LENGTH.getPropertyName(), "3000");
         tp.setUserOverrides(newOverrides);
         assertEquals(1, tp.getUserOverrides().size());
-        assertEquals("3000", tp.getUserOverrides().get(PropEnum._PAUSE_LENGTH.getPropertyName()));
-        assertNull(tp.getUserOverrides().get(PropEnum._DEBUG.getPropertyName()));
+        assertEquals("3000", tp.getUserOverrides().get(PropEnum._TEST_PAUSE_LENGTH.getPropertyName()));
+        assertNull(tp.getUserOverrides().get(PropEnum._LOGS_DEBUG.getPropertyName()));
 
         tp.clearUserOverrides();
         assertTrue(tp.getUserOverrides().isEmpty());
@@ -277,37 +277,37 @@ class GuiTest {
 
         final Map<String, String> baseline = tp.resolveEffectiveProperties("some_test", false, false, 1, false);
         assertNotNull(baseline);
-        assertEquals(PropEnum._HEADLESS.defaultValue(), baseline.get(PropEnum._HEADLESS.getPropertyName()));
-        assertEquals(PropEnum._ALL_LEAFS.defaultValue(), baseline.get(PropEnum._ALL_LEAFS.getPropertyName()));
+        assertEquals(PropEnum._TEST_HEADLESS.defaultValue(), baseline.get(PropEnum._TEST_HEADLESS.getPropertyName()));
+        assertEquals(PropEnum._TEST_ALL_LEAFS.defaultValue(), baseline.get(PropEnum._TEST_ALL_LEAFS.getPropertyName()));
 
         final Map<String, String> effectiveWithHeadless = tp.resolveEffectiveProperties("some_test", true, true, 3, false);
-        assertEquals("true", effectiveWithHeadless.get(PropEnum._HEADLESS.getPropertyName()));
-        assertEquals("true", effectiveWithHeadless.get(PropEnum._ALL_LEAFS.getPropertyName()));
-        assertEquals("3", effectiveWithHeadless.get(PropEnum._ALL_LEAFS_COUNT.getPropertyName()));
+        assertEquals("true", effectiveWithHeadless.get(PropEnum._TEST_HEADLESS.getPropertyName()));
+        assertEquals("true", effectiveWithHeadless.get(PropEnum._TEST_ALL_LEAFS.getPropertyName()));
+        assertEquals("3", effectiveWithHeadless.get(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName()));
 
         // Test with user overrides on a property with default value
-        tp.setUserOverride(PropEnum._PAUSE_LENGTH.getPropertyName(), "9999");
+        tp.setUserOverride(PropEnum._TEST_PAUSE_LENGTH.getPropertyName(), "9999");
         final Map<String, String> withoutOverrides = tp.resolveEffectiveProperties("some_test", false, false, 1, false);
-        assertEquals(PropEnum._PAUSE_LENGTH.defaultValue(), withoutOverrides.get(PropEnum._PAUSE_LENGTH.getPropertyName()));
+        assertEquals(PropEnum._TEST_PAUSE_LENGTH.defaultValue(), withoutOverrides.get(PropEnum._TEST_PAUSE_LENGTH.getPropertyName()));
 
         final Map<String, String> withOverrides = tp.resolveEffectiveProperties("some_test", false, false, 1, true);
-        assertEquals("9999", withOverrides.get(PropEnum._PAUSE_LENGTH.getPropertyName()));
+        assertEquals("9999", withOverrides.get(PropEnum._TEST_PAUSE_LENGTH.getPropertyName()));
     }
 
     @Test
     void testPropertiesPanelStatusCalculation() {
-        assertEquals(STATUS_DEFAULT, calculateStatus("_debug", "false", "false", true, "false"));
-        assertEquals(STATUS_CONFIGURED, calculateStatus("_debug", "true", "false", true, "true"));
-        assertEquals(STATUS_MODIFIED, calculateStatus("_debug", "true", "false", true, "false"));
-        assertEquals(STATUS_RESET_TO_DEFAULT, calculateStatus("_debug", "false", "false", true, "true"));
+        assertEquals(STATUS_DEFAULT, calculateStatus(".logs.debug", "false", "false", true, "false"));
+        assertEquals(STATUS_CONFIGURED, calculateStatus(".logs.debug", "true", "false", true, "true"));
+        assertEquals(STATUS_MODIFIED, calculateStatus(".logs.debug", "true", "false", true, "false"));
+        assertEquals(STATUS_RESET_TO_DEFAULT, calculateStatus(".logs.debug", "false", "false", true, "true"));
         assertEquals(STATUS_CUSTOM, calculateStatus("custom.prop", "val", "", false, "val"));
         assertEquals(STATUS_MODIFIED, calculateStatus("custom.prop", "val2", "", false, "val"));
 
-        // Properties with empty string default (such as .app, .root, .ud.id)
-        assertEquals(STATUS_DEFAULT, calculateStatus(".app", "", "", true, ""));
-        assertEquals(STATUS_CONFIGURED, calculateStatus(".app", "test.apk", "", true, "test.apk"));
-        assertEquals(STATUS_MODIFIED, calculateStatus(".app", "test.apk", "", true, ""));
-        assertEquals(STATUS_RESET_TO_DEFAULT, calculateStatus(".app", "", "", true, "test.apk"));
+        // Properties with empty string default (such as .test.app, .test.root, .mobi.ud.id)
+        assertEquals(STATUS_DEFAULT, calculateStatus(".test.app", "", "", true, ""));
+        assertEquals(STATUS_CONFIGURED, calculateStatus(".test.app", "test.apk", "", true, "test.apk"));
+        assertEquals(STATUS_MODIFIED, calculateStatus(".test.app", "test.apk", "", true, ""));
+        assertEquals(STATUS_RESET_TO_DEFAULT, calculateStatus(".test.app", "", "", true, "test.apk"));
     }
 
     @Test
@@ -322,13 +322,13 @@ class GuiTest {
         assertNotNull(table);
         assertTrue(model.getRowCount() >= tp.getDefaultsSize());
 
-        // Verify .app has status Default (unconfigured) and .root has status Configured (configured in project.part)
+        // Verify .test.app has status Default (unconfigured) and .test.root has status Configured (configured in project.part)
         for (int r = 0; r < model.getRowCount(); r++) {
             final String name = (String) model.getValueAt(r, 0);
-            if (PropEnum._APP.getPropertyName().equals(name)) {
+            if (PropEnum._TEST_APP.getPropertyName().equals(name)) {
                 assertEquals(STATUS_DEFAULT, model.getValueAt(r, 3), name + " should have status Default");
             }
-            if (PropEnum._ROOT.getPropertyName().equals(name)) {
+            if (PropEnum._TEST_ROOT.getPropertyName().equals(name)) {
                 assertEquals(STATUS_CONFIGURED, model.getValueAt(r, 3), name + " should have status Configured");
             }
         }
@@ -358,7 +358,7 @@ class GuiTest {
                 sonificationRow = row;
             } else if (PropEnum._PROGRESSION_TREE.getPropertyName().equals(property)) {
                 booleanRow = row;
-            } else if (PropEnum._APP.getPropertyName().equals(property)) {
+            } else if (PropEnum._TEST_APP.getPropertyName().equals(property)) {
                 freeFormRow = row;
             }
         }
@@ -403,7 +403,7 @@ class GuiTest {
 
         int waitRow = -1;
         for (int row = 0; row < model.getRowCount(); row++) {
-            if (PropEnum._EWAIT.getPropertyName().equals(model.getValueAt(row, 0))) {
+            if (PropEnum._TEST_EWAIT.getPropertyName().equals(model.getValueAt(row, 0))) {
                 waitRow = row;
                 break;
             }
@@ -411,12 +411,12 @@ class GuiTest {
         assertTrue(waitRow >= 0);
 
         table.setRowSelectionInterval(table.convertRowIndexToView(waitRow), table.convertRowIndexToView(waitRow));
-        assertEquals(PropEnum._EWAIT.getPropertyName(), dialog.getHelpTitle().getText());
+        assertEquals(PropEnum._TEST_EWAIT.getPropertyName(), dialog.getHelpTitle().getText());
         assertTrue(dialog.getHelpText().getText().contains("explicit condition"));
 
         dialog.getSearchField().setText("explicit condition");
         assertEquals(1, table.getRowCount(), "Help text should participate in search");
-        assertEquals(PropEnum._EWAIT.getPropertyName(), table.getValueAt(0, 0));
+        assertEquals(PropEnum._TEST_EWAIT.getPropertyName(), table.getValueAt(0, 0));
 
         dialog.getSearchField().setText("");
         final int customRow = model.getRowCount();
@@ -504,10 +504,10 @@ class GuiTest {
         final PropertiesPanel dialog = new PropertiesPanel(tp, "default", false, false, 1);
         final DefaultTableModel model = dialog.getModel();
 
-        // Find _pause.length row
+        // Find _test.pause.length row
         int pauseRow = -1;
         for (int r = 0; r < model.getRowCount(); r++) {
-            if (PropEnum._PAUSE_LENGTH.getPropertyName().equals(model.getValueAt(r, 0))) {
+            if (PropEnum._TEST_PAUSE_LENGTH.getPropertyName().equals(model.getValueAt(r, 0))) {
                 pauseRow = r;
                 break;
             }
@@ -523,7 +523,7 @@ class GuiTest {
         okBtn.doClick();
 
         assertTrue(dialog.isConfirmed());
-        assertEquals("1234", tp.getUserOverrides().get(PropEnum._PAUSE_LENGTH.getPropertyName()));
+        assertEquals("1234", tp.getUserOverrides().get(PropEnum._TEST_PAUSE_LENGTH.getPropertyName()));
     }
 
     @Test
@@ -537,7 +537,7 @@ class GuiTest {
 
         int pauseRow = -1;
         for (int r = 0; r < model.getRowCount(); r++) {
-            if (PropEnum._PAUSE_LENGTH.getPropertyName().equals(model.getValueAt(r, 0))) {
+            if (PropEnum._TEST_PAUSE_LENGTH.getPropertyName().equals(model.getValueAt(r, 0))) {
                 pauseRow = r;
                 break;
             }
@@ -554,7 +554,7 @@ class GuiTest {
 
         // Click Reset Selected
         dialog.getResetSelectedButton().doClick();
-        assertEquals(PropEnum._PAUSE_LENGTH.defaultValue(), model.getValueAt(pauseRow, 1));
+        assertEquals(PropEnum._TEST_PAUSE_LENGTH.defaultValue(), model.getValueAt(pauseRow, 1));
         assertEquals(STATUS_DEFAULT, model.getValueAt(pauseRow, 3));
     }
 
@@ -567,17 +567,6 @@ class GuiTest {
         final DefaultTableModel model = dialog.getModel();
 
         int pauseRow = -1;
-        for (int r = 0; r < model.getRowCount(); r++) {
-            if (PropEnum._PAUSE_LENGTH.getPropertyName().equals(model.getValueAt(r, 0))) {
-                pauseRow = r;
-                break;
-            }
-        }
-        assertTrue(pauseRow >= 0);
-
-        model.setValueAt("9999", pauseRow, 1);
-        dialog.getCancelButton().doClick();
-
         assertFalse(dialog.isConfirmed());
         assertTrue(tp.getUserOverrides().isEmpty(), "Cancel must not save user overrides");
     }
@@ -600,21 +589,21 @@ class GuiTest {
         Base.parameters = new Parameters(props);
 
         // Set user override for non-default value
-        tp.setUserOverride(PropEnum._DEBUG.getPropertyName(), "true");
+        tp.setUserOverride(PropEnum._LOGS_DEBUG.getPropertyName(), "true");
 
         final Method applyMethod = TestProperties.class.getDeclaredMethod("applyUserOverrides");
         applyMethod.setAccessible(true);
         applyMethod.invoke(tp);
 
-        assertEquals(Boolean.TRUE, tp.get(Boolean.class, PropEnum._DEBUG.getPropertyName(), true));
+        assertEquals(Boolean.TRUE, tp.get(Boolean.class, PropEnum._LOGS_DEBUG.getPropertyName(), true));
 
         // Output and validate must pass with the modified parameter!
         final Map<String, String> defaults = tp.getDefaults();
         final PropertiesMeta meta = new PropertiesMeta(new HashMap<>(defaults), new ArrayList<>(0));
         assertDoesNotThrow(() -> Renderer.outputAndValidate(tp.getSorted(), meta));
 
-        // Now set user override resetting _DEBUG back to its default value "false"
-        tp.setUserOverride(PropEnum._DEBUG.getPropertyName(), "false");
+        // Now set user override resetting _LOGS_DEBUG back to its default value "false"
+        tp.setUserOverride(PropEnum._LOGS_DEBUG.getPropertyName(), "false");
         applyMethod.invoke(tp);
 
         // Key should be removed from 'the' because it matches default, and validation must pass!
@@ -634,10 +623,10 @@ class GuiTest {
         int rootRow1 = -1;
         for (int r = 0; r < model1.getRowCount(); r++) {
             final String name = (String) model1.getValueAt(r, 0);
-            if (PropEnum._ALL_LEAFS_COUNT.getPropertyName().equals(name)) {
+            if (PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName().equals(name)) {
                 targetRow1 = r;
             }
-            if (PropEnum._ROOT.getPropertyName().equals(name)) {
+            if (PropEnum._TEST_ROOT.getPropertyName().equals(name)) {
                 rootRow1 = r;
             }
         }
@@ -647,7 +636,7 @@ class GuiTest {
         assertEquals(STATUS_DEFAULT, model1.getValueAt(targetRow1, 3));
 
         if (rootRow1 >= 0) {
-            // .root is configured in common config
+            // .test.root is configured in common config
             assertEquals(STATUS_CONFIGURED, model1.getValueAt(rootRow1, 3));
         }
 
@@ -656,7 +645,7 @@ class GuiTest {
         assertEquals(STATUS_MODIFIED, model1.getValueAt(targetRow1, 3));
         dialog1.getOkButton().doClick();
         assertTrue(dialog1.isConfirmed());
-        assertEquals("2", tp.getUserOverrides().get(PropEnum._ALL_LEAFS_COUNT.getPropertyName()));
+        assertEquals("2", tp.getUserOverrides().get(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName()));
 
         // 2. Second dialog opening: verify value is 2, default is 1, and status is Modified!
         final PropertiesPanel dialog2 = new PropertiesPanel(tp, "default", false, false, 2);
@@ -665,10 +654,10 @@ class GuiTest {
         int rootRow2 = -1;
         for (int r = 0; r < model2.getRowCount(); r++) {
             final String name = (String) model2.getValueAt(r, 0);
-            if (PropEnum._ALL_LEAFS_COUNT.getPropertyName().equals(name)) {
+            if (PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName().equals(name)) {
                 targetRow2 = r;
             }
-            if (PropEnum._ROOT.getPropertyName().equals(name)) {
+            if (PropEnum._TEST_ROOT.getPropertyName().equals(name)) {
                 rootRow2 = r;
             }
         }
@@ -684,7 +673,7 @@ class GuiTest {
         // Click OK on second opening without editing
         dialog2.getOkButton().doClick();
         assertTrue(dialog2.isConfirmed());
-        assertEquals("2", tp.getUserOverrides().get(PropEnum._ALL_LEAFS_COUNT.getPropertyName()),
+        assertEquals("2", tp.getUserOverrides().get(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName()),
                 "Override must not be lost or cleared on second OK");
 
         // 3. Third dialog opening: Reset Selected back to default
@@ -692,7 +681,7 @@ class GuiTest {
         final DefaultTableModel model3 = dialog3.getModel();
         int targetRow3 = -1;
         for (int r = 0; r < model3.getRowCount(); r++) {
-            if (PropEnum._ALL_LEAFS_COUNT.getPropertyName().equals(model3.getValueAt(r, 0))) {
+            if (PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName().equals(model3.getValueAt(r, 0))) {
                 targetRow3 = r;
                 break;
             }
@@ -707,7 +696,7 @@ class GuiTest {
 
         dialog3.getOkButton().doClick();
         assertTrue(dialog3.isConfirmed());
-        assertNull(tp.getUserOverrides().get(PropEnum._ALL_LEAFS_COUNT.getPropertyName()),
+        assertNull(tp.getUserOverrides().get(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName()),
                 "Override should be cleared when reset to default");
     }
 }

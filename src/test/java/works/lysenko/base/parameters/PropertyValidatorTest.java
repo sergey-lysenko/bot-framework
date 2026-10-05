@@ -49,11 +49,11 @@ class PropertyValidatorTest {
 
     @Test
     void validatesColoursAndFractions() {
-        assertNull(PropertyValidator.validate(".action.marker.colour", "255,128,0,128"));
-        assertNotNull(PropertyValidator.validate(".action.marker.colour", "255,128,0"));
-        assertNotNull(PropertyValidator.validate(".action.marker.colour", "256,0,0,0"));
-        assertNull(PropertyValidator.validate(".completion.weight", "1/2"));
-        assertNotNull(PropertyValidator.validate(".completion.weight", "1 2"));
+        assertNull(PropertyValidator.validate(".grid.action.marker.colour", "255,128,0,128"));
+        assertNotNull(PropertyValidator.validate(".grid.action.marker.colour", "255,128,0"));
+        assertNotNull(PropertyValidator.validate(".grid.action.marker.colour", "256,0,0,0"));
+        assertNull(PropertyValidator.validate(".tree.completion.weight", "1/2"));
+        assertNotNull(PropertyValidator.validate(".tree.completion.weight", "1 2"));
     }
 
     @Test

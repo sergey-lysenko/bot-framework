@@ -66,57 +66,72 @@ class AnsiTextPane extends JTextPane {
         };
     }
 
+    private static final int MAX_LINES = 30;
+
     @SuppressWarnings({"MethodWithMultipleReturnPoints", "OverlyLongMethod", "SingleCharacterStringConcatenation",
             "ReassignedVariable",
             "ContinueStatement", "StringOperationCanBeSimplified", "AssignmentToStaticFieldFromInstanceMethod"})
-    final void ansiSetText(final String s) {
+    final void ansiAppendText(final String s) {
 
-        setText(EMPTY);
         int aPos = 0;   // current char position in addString
         int aIndex; // index of next Escape sequence
         int mIndex; // index of "m" terminating Escape sequence
         String tmpString;
         boolean stillSearching; // true until no more Escape sequences
-        final String addString = s(remaining, s);
+        final String addString = s(remaining, s, "\n");
         remaining = EMPTY;
         if (!addString.isEmpty()) {
             aIndex = addString.indexOf("\u001B"); // find first escape
             if (-1 == aIndex) { // no escape/color change in this string, so just send it with current color
                 append(colorCurrent, addString);
-                return;
-            }
-// otherwise There is an escape character in the string, so we must process it
-            if (0 < aIndex) { // Escape is not first char, so send text up to first escape
-                tmpString = addString.substring(0, aIndex);
-                append(colorCurrent, tmpString);
-                aPos = aIndex;
-            }
-// aPos is now at the beginning of the first escape sequence
-            stillSearching = true;
-            while (stillSearching) {
-                mIndex = addString.indexOf(Symbols.M, aPos); // find the end of the escape sequence
-                if (0 > mIndex) { // the buffer ends halfway through the ansi string!
-                    remaining = addString.substring(aPos, addString.length());
-                    stillSearching = false;
-                    continue;
-                } else {
-                    tmpString = addString.substring(aPos, mIndex + 1);
-                    colorCurrent = getANSIColor(tmpString);
-                }
-                aPos = mIndex + 1;
-// now we have the color, send text that is in that color (up to next escape)
-                aIndex = addString.indexOf("\u001B", aPos);
-                if (-1 == aIndex) { // if that was the last sequence of the input, send remaining text
-                    tmpString = addString.substring(aPos, addString.length());
+            } else {
+                if (0 < aIndex) { // Escape is not first char, so send text up to first escape
+                    tmpString = addString.substring(0, aIndex);
                     append(colorCurrent, tmpString);
-                    stillSearching = false;
-                    continue; // jump out of loop early, as the whole string has been sent now
+                    aPos = aIndex;
                 }
-                // there is another escape sequence, so send part of the string and prepare for the next
-                tmpString = addString.substring(aPos, aIndex);
-                aPos = aIndex;
-                append(colorCurrent, tmpString);
-            } // while there's text in the input buffer
+                stillSearching = true;
+                while (stillSearching) {
+                    mIndex = addString.indexOf(Symbols.M, aPos); // find the end of the escape sequence
+                    if (0 > mIndex) { // the buffer ends halfway through the ansi string!
+                        remaining = addString.substring(aPos, addString.length());
+                        stillSearching = false;
+                        continue;
+                    } else {
+                        tmpString = addString.substring(aPos, mIndex + 1);
+                        colorCurrent = getANSIColor(tmpString);
+                    }
+                    aPos = mIndex + 1;
+                    aIndex = addString.indexOf("\u001B", aPos);
+                    if (-1 == aIndex) { // if that was the last sequence of the input, send remaining text
+                        tmpString = addString.substring(aPos, addString.length());
+                        append(colorCurrent, tmpString);
+                        stillSearching = false;
+                        continue; // jump out of loop early, as the whole string has been sent now
+                    }
+                    tmpString = addString.substring(aPos, aIndex);
+                    aPos = aIndex;
+                    append(colorCurrent, tmpString);
+                } 
+            }
+        }
+        
+        trimLines();
+    }
+    
+    private void trimLines() {
+        try {
+            javax.swing.text.Document doc = getDocument();
+            javax.swing.text.Element root = doc.getDefaultRootElement();
+            int lineCount = root.getElementCount();
+            if (lineCount > MAX_LINES) {
+                int linesToRemove = lineCount - MAX_LINES;
+                javax.swing.text.Element endElement = root.getElement(linesToRemove - 1);
+                int endOffset = endElement.getEndOffset();
+                doc.remove(0, endOffset);
+            }
+        } catch (javax.swing.text.BadLocationException e) {
+            // ignore
         }
     }
 

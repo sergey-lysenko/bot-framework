@@ -1,6 +1,6 @@
 package works.lysenko.util.prop.core;
 
-import static works.lysenko.util.spec.PropEnum._FITS_BY_DEFAULT;
+import static works.lysenko.util.spec.PropEnum._TREE_FITS_BY_DEFAULT;
 
 /**
  * Represents a configuration setting for determining whether certain
@@ -16,8 +16,8 @@ public record Fits() {
      * Represents a boolean configuration property indicating whether a particular feature
      * or behavior should be enabled by default.
      * <p>
-     * The value is fetched dynamically through the `_FITS_BY_DEFAULT` property, linking
+     * The value is fetched dynamically through the `_TREE_FITS_BY_DEFAULT` property, linking
      * the system's runtime or application configuration to the property.
      */
-    public static final boolean byDefault = _FITS_BY_DEFAULT.get();
+    public static final boolean byDefault = _TREE_FITS_BY_DEFAULT.get();
 }

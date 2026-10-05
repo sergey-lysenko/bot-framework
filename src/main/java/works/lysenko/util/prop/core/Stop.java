@@ -1,6 +1,6 @@
 package works.lysenko.util.prop.core;
 
-import static works.lysenko.util.spec.PropEnum._FAIL_BY_EVENT_OF_SEVERITY;
+import static works.lysenko.util.spec.PropEnum._TEST_FAIL_BY_EVENT_OF_SEVERITY;
 
 /**
  * Represents a class to manage stop properties for the application.
@@ -10,5 +10,5 @@ import static works.lysenko.util.spec.PropEnum._FAIL_BY_EVENT_OF_SEVERITY;
 @SuppressWarnings({"NonFinalStaticVariableUsedInClassInitialization", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass"})
 public record Stop() {
 
-    public static final Integer atSeverity = _FAIL_BY_EVENT_OF_SEVERITY.get();
+    public static final Integer atSeverity = _TEST_FAIL_BY_EVENT_OF_SEVERITY.get();
 }

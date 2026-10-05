@@ -274,7 +274,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
     public void setInfo(final String message, final Telemetry telemetry) {
 
         refreshStatusBoard(telemetry);
-        log.ansiSetText(message);
+        log.ansiAppendText(message);
     }
 
     /**

@@ -17,39 +17,39 @@ public record Scenario() {
     /**
      * Represents the completion weight for a scenario.
      */
-    public static Fraction completionWeight = _COMPLETION_WEIGHT.get();
+    public static Fraction completionWeight = _TREE_COMPLETION_WEIGHT.get();
     /**
      * Represents the default weight for a scenario.
      */
-    public static String defaultWeight = _DEFAULT_WEIGHT.get();
+    public static String defaultWeight = _TREE_DEFAULT_WEIGHT.get();
     /**
      * Represents the number of retries for selecting a scenario.
      */
-    public static Integer selectionRetries = _DEFAULT_SCENARIO_SUFFICIENCY_ATTEMPTS.get();
+    public static Integer selectionRetries = _TEST_SCENARIO_SUFFICIENCY_ATTEMPTS.get();
     /**
      * Indicates whether failed scenario selection should be ignored.
      */
-    public static boolean ignoreFailedSelection = _IGNORE_FAILED_SCENARIO_SELECTION.get();
+    public static boolean ignoreFailedSelection = _TREE_IGNORE_FAILED_SCENARIO_SELECTION.get();
     /**
      * Represents the root identifier or path for a scenario within the system.
      */
-    public static String root = _ROOT.get();
+    public static String root = _TEST_ROOT.get();
 
     /**
      * Refreshes static fields from current test properties.
      */
     public static void refresh() {
 
-        completionWeight = _COMPLETION_WEIGHT.get();
-        defaultWeight = _DEFAULT_WEIGHT.get();
-        selectionRetries = _DEFAULT_SCENARIO_SUFFICIENCY_ATTEMPTS.get();
-        ignoreFailedSelection = _IGNORE_FAILED_SCENARIO_SELECTION.get();
-        root = _ROOT.get();
+        completionWeight = _TREE_COMPLETION_WEIGHT.get();
+        defaultWeight = _TREE_DEFAULT_WEIGHT.get();
+        selectionRetries = _TEST_SCENARIO_SUFFICIENCY_ATTEMPTS.get();
+        ignoreFailedSelection = _TREE_IGNORE_FAILED_SCENARIO_SELECTION.get();
+        root = _TEST_ROOT.get();
     }
 
     private static String getIgnoredList() {
 
-        final String list = _IGNORED_IN_STACKTRACE.get();
+        final String list = _LOGS_IGNORED_IN_STACKTRACE.get();
         for (final String item : list.split(l1)) {
             try {
                 Class.forName(item, true, Thread.currentThread().getContextClassLoader());

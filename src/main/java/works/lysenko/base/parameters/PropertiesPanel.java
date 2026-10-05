@@ -62,7 +62,7 @@ public class PropertiesPanel extends JPanel {
     private final JButton resetAllBtn;
     private final JButton addPropertyBtn;
     private final JButton okBtn;
-    private final JButton cancelBtn;
+    private JButton cancelBtn; // Keeping variable around just in case to not break test, but we'll remove it from the panel
     private boolean confirmed = false;
     private boolean isUpdating = false;
     private final JLabel validationLabel = new JLabel(" ");
@@ -99,15 +99,29 @@ public class PropertiesPanel extends JPanel {
 
         setLayout(new BorderLayout(8, 8));
 
-        // 1. Top Panel (Search/Filter)
-        final JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
-        topPanel.add(new JLabel(b(c(SEARCH), s(_COLON_))));
+        // 1. Top Panel (Search/Filter & Quick Filters)
+        final JPanel topContainer = new JPanel(new BorderLayout());
+        
+        final JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        searchPanel.add(new JLabel(b(c(SEARCH), s(_COLON_))));
         searchField = new JTextField(25);
         final JButton clearBtn = new JButton(c(CLEAR));
         clearBtn.addActionListener(e -> searchField.setText(""));
-        topPanel.add(searchField);
-        topPanel.add(clearBtn);
-        add(topPanel, BorderLayout.NORTH);
+        searchPanel.add(searchField);
+        searchPanel.add(clearBtn);
+        topContainer.add(searchPanel, BorderLayout.NORTH);
+
+        final JPanel quickFiltersPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
+        final String[] quickFilters = {".data", ".grid", ".logs", ".math", ".test", ".tree", ".webd", ".mobi", ".swipes", ".progression", ".screenshots"};
+        for (final String filter : quickFilters) {
+            final JButton filterBtn = new JButton(filter);
+            filterBtn.setMargin(new Insets(2, 6, 2, 6));
+            filterBtn.addActionListener(e -> searchField.setText(filter));
+            quickFiltersPanel.add(filterBtn);
+        }
+        topContainer.add(quickFiltersPanel, BorderLayout.SOUTH);
+
+        add(topContainer, BorderLayout.NORTH);
 
         // 2. Table and Model
         final String[] columns = {c(PROPERTY), c(VALUE), c(DEFAULT), c(STATUS), "Execution parameter"};
@@ -171,11 +185,11 @@ public class PropertiesPanel extends JPanel {
         leftActions.add(addPropertyBtn);
 
         final JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
-        cancelBtn = new JButton("Cancel");
-        cancelBtn.addActionListener(e -> onCancel());
+        // cancelBtn = new JButton("Cancel");
+        // cancelBtn.addActionListener(e -> onCancel());
         okBtn = new JButton("Apply");
         okBtn.addActionListener(e -> applyChanges());
-        rightActions.add(cancelBtn);
+        // rightActions.add(cancelBtn);
         rightActions.add(okBtn);
 
         bottomPanel.add(leftActions, BorderLayout.WEST);
@@ -591,13 +605,7 @@ public class PropertiesPanel extends JPanel {
         confirmed = true;
     }
 
-    private void onCancel() {
-
-        if (table.isEditing()) {
-            table.getCellEditor().cancelCellEditing();
-        }
-        confirmed = false;
-    }
+    // Removed onCancel() as it's no longer necessary
 
     public boolean isConfirmed() {
 

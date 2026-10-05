@@ -62,7 +62,7 @@ import static works.lysenko.util.lang.word.S.*;
 import static works.lysenko.util.lang.word.T.TESTS;
 import static works.lysenko.util.lang.word.T.TOOK;
 import static works.lysenko.util.prop.core.Safeguard.historyDepth;
-import static works.lysenko.util.spec.PropEnum._TESTS;
+import static works.lysenko.util.spec.PropEnum._TEST_TESTS;
 import static works.lysenko.util.spec.Symbols._BULLT_;
 import static works.lysenko.util.spec.Symbols._COMMA_;
 import static works.lysenko.util.spec.Symbols._SLASH_;
@@ -152,7 +152,7 @@ public class Repeater implements _Repeater {
     }
 
     private static boolean isCountAllLeafs() {
-        final Integer count = PropEnum._ALL_LEAFS_COUNT.get();
+        final Integer count = PropEnum._TEST_ALL_LEAFS_COUNT.get();
         return isNotNull(count) && count > 1;
     }
 
@@ -163,7 +163,7 @@ public class Repeater implements _Repeater {
         if (isNull(exec) || done) return null;
         final int current = statistics.history().size() + 1;
         final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
-                || Boolean.TRUE.equals(PropEnum._ALL_LEAFS.get())
+                || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get())
                 || isCountAllLeafs();
         if (allLeafsMode || isNull(getTotalTests())) return current;
         return (current > getTotalTests()) ? null : current;
@@ -192,7 +192,7 @@ public class Repeater implements _Repeater {
 
         Integer result = totalTests;
         if (isNull(result)) {
-            result = _TESTS.get();
+            result = _TEST_TESTS.get();
             // Cache only after properties are loaded, otherwise the default value would stick
             if (isNotNull(properties)) totalTests = result;
         }
@@ -274,7 +274,7 @@ public class Repeater implements _Repeater {
     private String getTitle() {
 
         final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
-                || Boolean.TRUE.equals(PropEnum._ALL_LEAFS.get())
+                || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get())
                 || isCountAllLeafs();
         if (allLeafsMode) {
             final boolean multipleExecutionsPerLeaf = isNotNull(parameters) && parameters.getAllLeafsCount() > 1;

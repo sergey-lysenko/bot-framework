@@ -150,7 +150,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         if (getAllLeafsCount() > 1) {
             return true;
         }
-        return Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._ALL_LEAFS.get());
+        return Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS.get());
     }
 
     @Override
@@ -163,7 +163,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
             } catch (final NumberFormatException ignored) {
             }
         }
-        final Integer prop = works.lysenko.util.spec.PropEnum._ALL_LEAFS_COUNT.get();
+        final Integer prop = works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS_COUNT.get();
         return isNotNull(prop) ? Math.max(1, prop) : 1;
     }
 
@@ -174,7 +174,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         if (isNotNull(val) && !val.isEmpty()) {
             return Boolean.parseBoolean(val);
         }
-        return Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._HEADLESS.get());
+        return Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_HEADLESS.get());
     }
 
     /**

@@ -1,7 +1,7 @@
 package works.lysenko.util.prop.core;
 
-import static works.lysenko.util.spec.PropEnum._MAX_TYPING_DELAY;
-import static works.lysenko.util.spec.PropEnum._SILENT_SLEEPING_THRESHOLD;
+import static works.lysenko.util.spec.PropEnum._LOGS_SILENT_SLEEPING_THRESHOLD;
+import static works.lysenko.util.spec.PropEnum._TEST_MAX_TYPING_DELAY;
 
 /**
  * Represents configuration settings related to the sleeping mechanism in the application.
@@ -27,7 +27,7 @@ public record Sleeping() {
      * </p>
      */
 
-    public static final int threshold = _SILENT_SLEEPING_THRESHOLD.get();
+    public static final int threshold = _LOGS_SILENT_SLEEPING_THRESHOLD.get();
     /**
      * Represents the maximum delay allowed between typing actions in milliseconds.
      * <p>
@@ -35,5 +35,5 @@ public record Sleeping() {
      * between keystrokes, ensuring consistency and preventing excessive delay that could
      * degrade user experience.
      */
-    public static final int maxTypingDelay = _MAX_TYPING_DELAY.get();
+    public static final int maxTypingDelay = _TEST_MAX_TYPING_DELAY.get();
 }

@@ -109,7 +109,7 @@ public final class PropertyValidator {
 
     private static String delimiter() {
 
-        final String l1 = PropEnum._DELIMITER_L1.get();
+        final String l1 = PropEnum._DATA_DELIMITER_L1.get();
         return (null == l1 || l1.isEmpty()) ? "," : l1.substring(0, 1);
     }
 

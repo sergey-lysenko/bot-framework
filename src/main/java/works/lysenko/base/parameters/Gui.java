@@ -389,7 +389,7 @@ public class Gui implements _GUI {
 
         final String rootPackage = (isNotNull(Scenario.root) && !Scenario.root.isBlank())
                 ? Scenario.root
-                : PropEnum._ROOT.get();
+                : PropEnum._TEST_ROOT.get();
 
         if (isNull(rootPackage) || rootPackage.isBlank()) {
             return "No root scenario configured";
@@ -406,7 +406,7 @@ public class Gui implements _GUI {
             return "0 leafs found";
         }
 
-        final Integer configured = PropEnum._ALL_LEAFS_COUNT.get();
+        final Integer configured = PropEnum._TEST_ALL_LEAFS_COUNT.get();
         final int target = Math.max((isNotNull(parameters)) ? parameters.getAllLeafsCount() : 1,
                 isNotNull(configured) ? configured : 1);
         final int recommended = CoverageEstimator.estimateAverageCycles(rootCtrl, target, progressConsumer);

@@ -3,53 +3,53 @@
 # ==============================================================================
 
 # Maximum number (or depth) of scenarios within a single case.
-.scenario.depth.safeguard=64
+.tree.scenario.depth.safeguard=64
 
 # ------------------------------------------------------------------------------
 # Maximum number (or depth) of scenario history entries in a single case.
-.scenario.history.depth.safeguard=64
+.tree.scenario.history.depth.safeguard=64
 
 # ------------------------------------------------------------------------------
 # Number of attempts to fit a scenario before marking it as failed.
-# .default.scenario.fitting.attempts=5
+# .test.scenario.fitting.attempts=5
 
 # ------------------------------------------------------------------------------
 # Weight coefficient added to unexecuted scenarios.
-# .completion.weight=4.5
+# .tree.completion.weight=4.5
 
 # ------------------------------------------------------------------------------
 # Execute tests dynamically until all accessible leafs are covered.
-# .all.leafs=false
+# .test.all.leafs=false
 
 # ------------------------------------------------------------------------------
 # Weight coefficient assigned to scenarios that are omitted.
-# .default.weight=0.0
+# .tree.default.weight=0.0
 
 # ------------------------------------------------------------------------------
 # Whether to continue execution even if a scenario selection fails.
-# .ignore.failed.scenario.selection=false
+# .tree.ignore.failed.scenario.selection=false
 
 # ==============================================================================
 # Test Node Configuration
 # ==============================================================================
 
 # Weight propagation for test nodes.
-.include.downstream=true
-.include.upstream=true
+.tree.include.downstream=true
+.tree.include.upstream=true
 
 # ==============================================================================
 # Notices and Warnings
 # ==============================================================================
 
 # Display a notice if a scenario cannot be executed.
-.scenario.not.executable.notice=false
+.tree.scenario.not.executable.notice=false
 
 # ------------------------------------------------------------------------------
 
 # Display a notice if a scenario fails to fit.
-.scenario.does.not.fit.notice=false
+.tree.scenario.does.not.fit.notice=false
 
 # ------------------------------------------------------------------------------
 
 # Notify if there are empty scenario packages.
-.notify.about.empty.scenario.packages=false
+.tree.notify.about.empty.scenario.packages=false

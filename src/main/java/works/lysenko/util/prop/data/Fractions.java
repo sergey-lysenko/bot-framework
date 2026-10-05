@@ -1,8 +1,8 @@
 package works.lysenko.util.prop.data;
 
 import static java.util.Objects.isNull;
-import static works.lysenko.util.spec.PropEnum._FRACTIONS_ACCURACY;
-import static works.lysenko.util.spec.PropEnum._FRACTIONS_OUTPUT;
+import static works.lysenko.util.spec.PropEnum._MATH_FRACTIONS_ACCURACY;
+import static works.lysenko.util.spec.PropEnum._MATH_FRACTIONS_OUTPUT;
 
 /**
  * Represents a utility class for working with fractions.
@@ -22,7 +22,7 @@ public record Fractions() {
     @SuppressWarnings("StaticMethodOnlyUsedInOneClass")
     public static int accuracy() {
 
-        if (isNull(accuracy)) accuracy = _FRACTIONS_ACCURACY.get();
+        if (isNull(accuracy)) accuracy = _MATH_FRACTIONS_ACCURACY.get();
         return accuracy;
     }
 
@@ -35,7 +35,7 @@ public record Fractions() {
     @SuppressWarnings("BooleanMethodNameMustStartWithQuestion")
     public static boolean output() {
 
-        if (isNull(output)) output = _FRACTIONS_OUTPUT.get();
+        if (isNull(output)) output = _MATH_FRACTIONS_OUTPUT.get();
         return output;
     }
 }

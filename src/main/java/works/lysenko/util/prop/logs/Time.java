@@ -1,6 +1,6 @@
 package works.lysenko.util.prop.logs;
 
-import static works.lysenko.util.spec.PropEnum._LOG_TIME_STAMP_FORMAT;
+import static works.lysenko.util.spec.PropEnum._LOGS_TIME_STAMP_FORMAT;
 
 /**
  * Represents a logging entity with a maximum line length limit.
@@ -13,5 +13,5 @@ public record Time() {
     /**
      *
      */
-    public static final String stamp = _LOG_TIME_STAMP_FORMAT.get();
+    public static final String stamp = _LOGS_TIME_STAMP_FORMAT.get();
 }

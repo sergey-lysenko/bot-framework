@@ -99,9 +99,9 @@ class AllLeafsCoverageTest {
 
         final java.util.Properties the1 = new java.util.Properties();
         if (1 < Base.parameters.getAllLeafsCount()) {
-            the1.setProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(Base.parameters.getAllLeafsCount()));
+            the1.setProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(Base.parameters.getAllLeafsCount()));
         } else {
-            the1.remove(PropEnum._ALL_LEAFS_COUNT.getPropertyName());
+            the1.remove(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName());
         }
 
         final Field theField = TestProperties.class.getDeclaredField("the");
@@ -123,9 +123,9 @@ class AllLeafsCoverageTest {
 
         final java.util.Properties the3 = new java.util.Properties();
         if (1 < Base.parameters.getAllLeafsCount()) {
-            the3.setProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(Base.parameters.getAllLeafsCount()));
+            the3.setProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(Base.parameters.getAllLeafsCount()));
         } else {
-            the3.remove(PropEnum._ALL_LEAFS_COUNT.getPropertyName());
+            the3.remove(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName());
         }
 
         theField.set(tp, the3);
@@ -135,10 +135,10 @@ class AllLeafsCoverageTest {
 
     @Test
     void testPropEnumAllLeafsCount() {
-        assertEquals(".all.leafs.count", PropEnum._ALL_LEAFS_COUNT.getPropertyName());
-        assertEquals(Integer.class, PropEnum._ALL_LEAFS_COUNT.type());
-        assertEquals("1", PropEnum._ALL_LEAFS_COUNT.defaultValue());
-        assertEquals(1, (int) PropEnum._ALL_LEAFS_COUNT.get());
+        assertEquals(".test.all.leafs.count", PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName());
+        assertEquals(Integer.class, PropEnum._TEST_ALL_LEAFS_COUNT.type());
+        assertEquals("1", PropEnum._TEST_ALL_LEAFS_COUNT.defaultValue());
+        assertEquals(1, (int) PropEnum._TEST_ALL_LEAFS_COUNT.get());
     }
 
     @Test
@@ -147,7 +147,7 @@ class AllLeafsCoverageTest {
         assertEquals(1, pDefault.getAllLeafsCount());
         assertFalse(pDefault.isAllLeafs());
 
-        setTestProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), "3");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "3");
         final Parameters p3 = new Parameters(new Properties());
         assertEquals(3, p3.getAllLeafsCount());
         assertTrue(p3.isAllLeafs());
@@ -155,7 +155,7 @@ class AllLeafsCoverageTest {
 
     @Test
     void testMultiCountLeafExecutionTrackingInCore() throws Exception {
-        setTestProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
 
         final Ctrl rootCtrl = new Ctrl(null);
@@ -204,7 +204,7 @@ class AllLeafsCoverageTest {
 
     @Test
     void testMultiCountLeafExecutionWithMonoInCore() throws Exception {
-        setTestProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), "3");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "3");
         Base.parameters = new Parameters(new Properties());
 
         final Ctrl rootCtrl = new Ctrl(null);
@@ -256,10 +256,10 @@ class AllLeafsCoverageTest {
         assertEquals("ALL_LEAFS", ExecutionParameter.ALL_LEAFS.name());
         assertEquals("false", ExecutionParameter.ALL_LEAFS.def());
 
-        assertEquals(".all.leafs", PropEnum._ALL_LEAFS.getPropertyName());
-        assertEquals(Boolean.class, PropEnum._ALL_LEAFS.type());
-        assertEquals("false", PropEnum._ALL_LEAFS.defaultValue());
-        assertFalse((boolean) PropEnum._ALL_LEAFS.get());
+        assertEquals(".test.all.leafs", PropEnum._TEST_ALL_LEAFS.getPropertyName());
+        assertEquals(Boolean.class, PropEnum._TEST_ALL_LEAFS.type());
+        assertEquals("false", PropEnum._TEST_ALL_LEAFS.defaultValue());
+        assertFalse((boolean) PropEnum._TEST_ALL_LEAFS.get());
     }
 
     @Test
@@ -388,7 +388,7 @@ class AllLeafsCoverageTest {
 
     @Test
     void testIsNotExhaustedWithAllLeafsCount() throws Exception {
-        setTestProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
 
         final Ctrl rootCtrl = new Ctrl(null);
@@ -434,8 +434,8 @@ class AllLeafsCoverageTest {
 
     @Test
     void testPropertyLoggingCycleProtection() throws Exception {
-        setTestProperty(PropEnum._ALL_LEAFS_COUNT.getPropertyName(), "5");
-        setTestProperty(PropEnum._DEBUG.getPropertyName(), "true");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "5");
+        setTestProperty(PropEnum._LOGS_DEBUG.getPropertyName(), "true");
 
         final Field f = Unsafe.class.getDeclaredField("theUnsafe");
         f.setAccessible(true);
@@ -453,7 +453,7 @@ class AllLeafsCoverageTest {
             @Override
             public Integer getCurrent() {
                 // Mimics Repeater accessing property
-                return PropEnum._ALL_LEAFS_COUNT.get();
+                return PropEnum._TEST_ALL_LEAFS_COUNT.get();
             }
             @Override
             public java.util.List<java.util.List<String>> getHistory() { return java.util.List.of(); }
@@ -506,10 +506,10 @@ class AllLeafsCoverageTest {
         loggerField.setAccessible(true);
         loggerField.set(Base.core, mockLogger);
 
-        // Querying PropEnum._ALL_LEAFS_COUNT.get() when debug is active and exec is not null
+        // Querying PropEnum._TEST_ALL_LEAFS_COUNT.get() when debug is active and exec is not null
         // must not cause any recursion or StackOverflowError
         assertDoesNotThrow(() -> {
-            final Integer val = PropEnum._ALL_LEAFS_COUNT.get();
+            final Integer val = PropEnum._TEST_ALL_LEAFS_COUNT.get();
             assertEquals(5, val);
         });
     }

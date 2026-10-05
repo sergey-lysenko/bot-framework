@@ -1,6 +1,6 @@
 package works.lysenko.util.prop.data;
 
-import static works.lysenko.util.spec.PropEnum._PERSIST;
+import static works.lysenko.util.spec.PropEnum._DATA_PERSIST;
 
 /**
  * Represents a persistence setting for the application.
@@ -12,5 +12,5 @@ import static works.lysenko.util.spec.PropEnum._PERSIST;
 @SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "MissingJavadoc", "NonFinalStaticVariableUsedInClassInitialization"})
 public record Persist() {
 
-    public static final Boolean data = _PERSIST.get();
+    public static final Boolean data = _DATA_PERSIST.get();
 }
