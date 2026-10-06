@@ -85,7 +85,7 @@ public final class ChartsRenderer {
                 "</div>",
                 "</div><div class=\"line-graph-legend\">",
                 "<span class=\"lg-legend-item\"><span class=\"lg-line-sample leaf-line\"></span>",
-                "Leaf Goal Reached</span>",
+                "Leaf executions</span>",
                 "<span class=\"lg-legend-item\"><span class=\"lg-line-sample leaf-eta-line\"></span>",
                 "Projected Total (Passed + ETA)</span></div>",
                 "<div class=\"line-graph-svg-wrap\"><svg id=\"leafCompletionSvg\" class=\"timeline-line-svg\" viewBox=\"0 0 1000 240\">",
