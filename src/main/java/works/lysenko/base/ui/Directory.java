@@ -113,6 +113,12 @@ public final class Directory implements _Dashboard {
         return isFilePresent(PAUSE_PATH);
     }
 
+    @Override
+    public void setPause(final boolean active) {
+
+        setButton(PAUSE_PATH, active);
+    }
+
     public boolean isStop() {
 
         return isFilePresent(STOP_PATH);

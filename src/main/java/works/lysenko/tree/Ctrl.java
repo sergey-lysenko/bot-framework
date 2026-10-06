@@ -40,9 +40,11 @@ import static works.lysenko.util.lang.word.P.PAUSED;
 import static works.lysenko.util.lang.word.P.PERFORMED;
 import static works.lysenko.util.lang.word.R.REQUESTED;
 import static works.lysenko.util.lang.word.R.RESTART;
+import static works.lysenko.util.lang.word.R.RESUMING;
 import static works.lysenko.util.lang.word.S.SCENARIO;
 import static works.lysenko.util.lang.word.S.SCENARIOS;
 import static works.lysenko.util.lang.word.S.SELECTING;
+import static works.lysenko.util.lang.word.W.WAITING;
 import static works.lysenko.util.lang.word.T.TRYING;
 import static works.lysenko.util.lang.word.U.UNTIL;
 import static works.lysenko.util.lang.word.W.WAITING;
@@ -99,7 +101,7 @@ public class Ctrl extends Root implements _Ctrl {
 
         if (getWeightedList().isEmpty()) handleEmptyScenarios();
         else {
-            while (isPause()) sleepWithDurationPrompt();
+            handlePause();
             if (isHalt()) halt();
             else return isOk();
         }
@@ -266,10 +268,17 @@ public class Ctrl extends Root implements _Ctrl {
     }
 
     /**
-     * Sleeps for a specified duration, prompted by properties.
+     * Handles manual pause during execution.
+     * Logs once upon pausing, polls in 100ms intervals, and logs once upon resuming.
      */
-    private void sleepWithDurationPrompt() { // TODO: reimplement "Pause" completely
-        sleep(Time.pauseLength, b(c(TEST), EXECUTION, s(PAUSED, _COMMA_),
-                WAITING, s(Time.pauseLength), b(MS, UNTIL, TRYING, TO, RESTART)));
+    private void handlePause() {
+
+        if (!isPause()) return;
+
+        log(b(c(TEST), EXECUTION, s(PAUSED, _DOT_), WAITING, s(ELLIPSIS)));
+        while (isPause()) {
+            sleep(100L);
+        }
+        log(b(c(RESUMING), TEST, EXECUTION, s(ELLIPSIS)));
     }
 }

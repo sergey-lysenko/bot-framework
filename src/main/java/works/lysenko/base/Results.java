@@ -1,5 +1,6 @@
 package works.lysenko.base;
 
+import works.lysenko.base.output.AllLeafCompletions;
 import works.lysenko.util.apis.core._Results;
 import works.lysenko.util.apis.data._Event;
 import works.lysenko.util.apis.data._Result;
@@ -43,6 +44,11 @@ public class Results implements _Results {
     private final Map<_Scenario, Result> results = new HashMap<>(0);
     private final List<_LogRecord> rootEvents = new ArrayList<>(0);
     private Severity max = null;
+
+    public Results() {
+
+        AllLeafCompletions.reset();
+    }
 
     @SuppressWarnings({"ChainedMethodCall", "LawOfDemeter", "LocalCanBeFinal", "NestedMethodCall"})
     static String getTaggedString(final _Scenario scenario) {

@@ -84,6 +84,13 @@ public class PropertiesPanel extends JPanel {
         this((isNotNull(Base.properties)) ? Base.properties : new TestProperties(), testName, isHeadless, isAllLeafs, allLeafsCount);
     }
 
+    public PropertiesPanel(final String testName, final boolean isHeadless,
+                           final boolean isAllLeafs, final int allLeafsCount,
+                           final JComponent extraSearchComponent) {
+
+        this((isNotNull(Base.properties)) ? Base.properties : new TestProperties(), testName, isHeadless, isAllLeafs, allLeafsCount, extraSearchComponent);
+    }
+
     /**
      * Constructs a new PropertiesDialog with the given test properties instance.
      *
@@ -97,20 +104,34 @@ public class PropertiesPanel extends JPanel {
     public PropertiesPanel(final _TestProperties testProps, final String testName,
                            final boolean isHeadless, final boolean isAllLeafs, final int allLeafsCount) {
 
+        this(testProps, testName, isHeadless, isAllLeafs, allLeafsCount, null);
+    }
+
+    public PropertiesPanel(final _TestProperties testProps, final String testName,
+                           final boolean isHeadless, final boolean isAllLeafs, final int allLeafsCount,
+                           final JComponent extraSearchComponent) {
+
         this.testProperties = testProps;
 
         setLayout(new BorderLayout(8, 8));
 
         // 1. Top Panel (Search/Filter & Quick Filters)
         final JPanel topContainer = new JPanel(new BorderLayout());
-        
+
         final JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
         searchPanel.add(new JLabel(b(c(SEARCH), s(_COLON_))));
-        searchField = new JTextField(25);
+        searchField = new JTextField(12);
         final JButton clearBtn = new JButton(c(CLEAR));
+        clearBtn.setMargin(new Insets(2, 6, 2, 6));
         clearBtn.addActionListener(e -> searchField.setText(""));
         searchPanel.add(searchField);
         searchPanel.add(clearBtn);
+
+        if (null != extraSearchComponent) {
+            searchPanel.add(Box.createHorizontalStrut(12));
+            searchPanel.add(extraSearchComponent);
+        }
+
         topContainer.add(searchPanel, BorderLayout.NORTH);
 
         final JPanel quickFiltersPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));

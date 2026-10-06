@@ -469,7 +469,7 @@ public final class ScenarioTracker {
                 final int barH = Math.max(3, (int) Math.round(((double) execs / maxY) * chartH));
                 final int barTop = chartY + chartH - barH;
                 final int scTarget = (sc instanceof Mono) ? 1 : target;
-                final Color barColor = (execs >= scTarget) ? GREEN_BAR : AMBER_BAR;
+                final Color barColor = (execs >= scTarget) ? GREEN_BAR : ACCENT_BLUE;
                 g.setColor(barColor);
                 g.fillRoundRect(barLeft, barTop, barW, barH, 4, 4);
                 if (barH > 4) {
@@ -491,7 +491,7 @@ public final class ScenarioTracker {
                     ? (chartY + chartH - (int) Math.round(((double) execs / maxY) * chartH) - 4)
                     : (chartY + chartH - 6);
             final Color valColor = (execs >= scTarget) ? new Color(0x4A, 0xDE, 0x80)
-                    : (execs > 0 ? new Color(0xFB, 0xBF, 0x24) : TEXT_DIM);
+                    : (execs > 0 ? ACCENT_BLUE : TEXT_DIM);
             g.setColor(valColor);
             g.drawString(valStr, centerX - valW / 2, Math.max(chartY + 12, valY));
 

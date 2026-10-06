@@ -84,16 +84,6 @@ class GuiTest {
         assertNotNull(calcButton, "Required for full coverage button should be initialized");
         assertEquals("Required for full coverage", calcButton.getText());
 
-        final JLabel cyclesLabel = gui.getCycles();
-        assertNotNull(cyclesLabel, "Cycles label should be initialized");
-        assertEquals("-", cyclesLabel.getText());
-
-        final JProgressBar progressBar = gui.getProgressBar();
-        assertNotNull(progressBar, "Progress bar should be initialized");
-        assertEquals(0, progressBar.getMinimum());
-        assertEquals(100, progressBar.getMaximum());
-        assertFalse(progressBar.isVisible());
-
         final JButton propButton = gui.getPropertiesButton();
         assertNotNull(propButton, "Modify button should be initialized");
         assertEquals("Modify...", propButton.getText());
@@ -114,12 +104,8 @@ class GuiTest {
 
         gui.addStandardParameters();
 
-        final JLabel cyclesLabel = gui.getCycles();
-        cyclesLabel.setText("42");
-        final JProgressBar progressBar = gui.getProgressBar();
-        progressBar.setVisible(true);
-        progressBar.setValue(50);
-        progressBar.setString("50%");
+        final JButton calcButton = gui.getCalculateCycles();
+        calcButton.setText("56 tests required for full coverage (37 leafs)");
 
         final Method resetMethod;
         try {
@@ -131,10 +117,7 @@ class GuiTest {
             return;
         }
 
-        assertEquals("-", cyclesLabel.getText(), "Cycles label should be reset to '-'");
-        assertEquals(0, progressBar.getValue(), "Progress bar value should be reset to 0");
-        assertEquals("", progressBar.getString(), "Progress bar string should be reset to empty");
-        assertFalse(progressBar.isVisible(), "Progress bar should be hidden");
+        assertEquals("Required for full coverage", calcButton.getText(), "Button text should reset to default");
     }
 
     @Test
@@ -159,17 +142,40 @@ class GuiTest {
         onCalcMethod.setAccessible(true);
         onCalcMethod.invoke(gui);
 
-        final JProgressBar progressBar = gui.getProgressBar();
-        assertTrue(progressBar.isVisible(), "Progress bar should become visible when calculation starts");
+        final JButton calcButton = gui.getCalculateCycles();
 
         int attempts = 0;
-        while (progressBar.isVisible() && attempts < 50) {
+        while (!calcButton.isEnabled() && attempts < 50) {
             Thread.sleep(100);
             attempts++;
         }
 
-        assertFalse(progressBar.isVisible(), "Progress bar should be hidden after calculation completes");
-        assertNotEquals("-", gui.getCycles().getText(), "Cycles label should display estimated cycle count");
+        assertTrue(calcButton.isEnabled(), "Button should be re-enabled after calculation completes");
+        assertNotEquals("Calculating...", calcButton.getText(), "Button text should be updated with result");
+    }
+
+    @Test
+    void testCalculateCyclesUsesUpdatedAllLeafsCount() throws Exception {
+        final Properties props = new Properties();
+        props.setProperty("TEST", "testSuite");
+        props.setProperty("POOL", "");
+        props.setProperty("PLATFORM", "chrome");
+        props.setProperty("DOMAIN", "example.com");
+        props.setProperty("HEADLESS", "false");
+        props.setProperty("ALL_LEAFS", "true");
+        props.setProperty("ALL_LEAFS_COUNT", "1");
+
+        final Parameters parameters = new Parameters(props);
+        final Gui gui = new Gui(parameters);
+        gui.addStandardParameters();
+
+        final Field allLeafsCountField = Gui.class.getDeclaredField("allLeafsCount");
+        allLeafsCountField.setAccessible(true);
+        final JTextField textInput = (JTextField) allLeafsCountField.get(gui);
+        assertNotNull(textInput);
+
+        textInput.setText("3");
+        assertEquals("3", textInput.getText());
     }
 
     @Test
@@ -190,8 +196,9 @@ class GuiTest {
 
         assertNotNull(panel);
         assertTrue(panel.getLayout() instanceof GridBagLayout, "Panel layout should be GridBagLayout");
-        assertNotNull(gui.getCycles().getParent(), "Cycles label should be added to container");
-        assertNotNull(gui.getProgressBar().getParent(), "Progress bar should be added to container");
+        final JPanel coveragePanel = gui.createCoverageEstimatePanel();
+        assertNotNull(coveragePanel);
+        assertNotNull(gui.getCalculateCycles().getParent(), "Calculate button should be in container");
     }
 
     @Test

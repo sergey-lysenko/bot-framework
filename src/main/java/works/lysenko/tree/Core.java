@@ -2,6 +2,7 @@ package works.lysenko.tree;
 
 import org.apache.commons.math3.fraction.Fraction;
 import org.openqa.selenium.WebElement;
+import works.lysenko.base.output.AllLeafCompletions;
 import works.lysenko.util.apis.action.Verifies;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
 import works.lysenko.util.apis.scenario._Scenario;
@@ -11,6 +12,7 @@ import works.lysenko.util.data.type.sets.SortedScenario;
 import works.lysenko.util.prop.core.Fits;
 import works.lysenko.util.prop.tree.Include;
 import works.lysenko.util.prop.tree.Scenario;
+import works.lysenko.util.spec.PropEnum;
 import works.lysenko.util.spec.Level;
 
 import java.awt.image.BufferedImage;
@@ -20,6 +22,7 @@ import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.*;
 import static works.lysenko.Base.core;
 import static works.lysenko.Base.exec;
+import static works.lysenko.Base.parameters;
 import static works.lysenko.Base.properties;
 import static works.lysenko.base.core.Routines.msSinceStart;
 import static works.lysenko.util.chrs.__.IN;
@@ -256,7 +259,17 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         final String info = info();
         log(Level.none, b(false, bb(s(q(getShortName()))), // Scenario
                 (null == info || info.isEmpty()) ? EMPTY : yb(info), b(DONE, IN), yb(t(runtime))), false);
+        if ((ScenarioType.LEAF == type() || ScenarioType.MONO == type()) && isAllLeafsMode()) {
+            AllLeafCompletions.checkAndRecord(msSinceStart(), this);
+        }
         exec.scenarios().pop(this);
+    }
+
+    private static boolean isAllLeafsMode() {
+
+        if (isNotNull(parameters)) return parameters.isAllLeafs();
+        final Integer count = PropEnum._TEST_ALL_LEAFS_COUNT.get();
+        return Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get()) || (isNotNull(count) && ONE < count);
     }
 
     /**

@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LogHtmlTest {
@@ -97,5 +98,58 @@ class LogHtmlTest {
         assertTrue(html.contains("class=\"timeline-line-svg\""), "SVG line graph should be rendered");
         assertTrue(html.contains("window.lgData = ["), "Interactive line graph script data should be embedded");
         assertTrue(html.contains("Test Time (s)"), "Legend should contain Test Time");
+    }
+
+    @Test
+    void rendersLeafCompletionGraphFromSeparateDataSeries(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("all_leafs.run.log");
+        final Path htmlPath = tempDir.resolve("all_leafs.run.log.html");
+        final Path completionPath = tempDir.resolve("all_leafs.all-leaf-completions.log");
+        Files.write(logPath, List.of(
+                "[ 1][1][0.000][10] Executing First Scenario",
+                "[ 1][2][10.000][5] • Closing test 1 ...",
+                "[  ][3][10.010][2] • Test time 10 s",
+                "[ 2][4][11.000][10] Executing Second Scenario",
+                "[ 2][5][12.000][5] • Closing test 2 ...",
+                "[  ][6][12.010][2] • Test time 1 s"));
+        Files.write(completionPath, List.of(
+                "[ALL_LEAF_COMPLETION] 1000 checkout.Cart",
+                "[ALL_LEAF_COMPLETION] 4000 checkout.Payment",
+                "[ALL_LEAF_COMPLETION] 4500 checkout.Confirmation"));
+
+        LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+
+        final String html = Files.readString(htmlPath);
+        assertTrue(html.contains("All-Leaf Completion Intervals"));
+        assertTrue(html.contains("checkout.Cart @ 0:01.000 (+1.00s)"));
+        assertTrue(html.contains("checkout.Payment @ 0:04.000 (+3.00s)"));
+        assertTrue(html.contains("checkout.Confirmation @ 0:04.500 (+500ms)"));
+        assertTrue(html.contains("Time since previous completion"));
+        assertTrue(html.indexOf("All-Leaf Completion Intervals") < html.indexOf("Test Executions &amp; Limbo Durations"));
+        assertTrue(html.contains("<section id=\"leafCompletionChart\""));
+        assertTrue(html.contains("<svg id=\"leafCompletionSvg\" class=\"timeline-line-svg\""));
+        assertFalse(html.contains("leaf-chart-scroll-wrap"), "Leaf completion chart should never render a horizontal scroll wrapper");
+        assertTrue(html.contains("viewBox=\"0 0 1000 240\""),
+                "Leaf completion SVG width should be controlled by responsive CSS");
+        assertTrue(html.contains("<path d=\"M 55.00 170.00 L 515.00 98.00 L 975.00 188.00\" class=\"leaf-chart-line\""),
+                "Leaf completion points should be distributed evenly across the chart");
+        assertTrue(html.contains("window.lgData = [{\"n\":1"));
+        assertTrue(html.contains("\"s\":10.000"));
+        assertTrue(html.contains("\"s\":1.000"));
+        final int leafChartStart = html.indexOf("leafCompletionChart");
+        final int leafChartEnd = html.indexOf("</section>", leafChartStart);
+        assertFalse(html.substring(leafChartStart, leafChartEnd)
+                .contains("window.lgData"), "Leaf chart must not use the test/limbo timeline data");
+    }
+
+    @Test
+    void omitsLeafCompletionGraphWithoutAllLeafCompletionMarkers(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("standard.run.log");
+        final Path htmlPath = tempDir.resolve("standard.run.log.html");
+        Files.write(logPath, List.of("[ 1][1][1.000][10] [ALL_LEAF_COMPLETION] 1000 legacy.MainLogMarker"));
+
+        LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+
+        assertFalse(Files.readString(htmlPath).contains("All-Leaf Completion Intervals"));
     }
 }

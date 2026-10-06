@@ -18,6 +18,8 @@ import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.prop.tree.Traverse;
 import works.lysenko.util.spec.PropEnum;
 
+import java.awt.FlowLayout;
+
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -110,6 +112,7 @@ public class Gui implements _GUI {
     private JButton calculateCycles = null;
     private JProgressBar progressBar = null;
     private JLabel cycles = null;
+    private JPanel cyclesPanel = null;
     private JButton properties = null;
     private List<JTextField> aParams = null;
 
@@ -309,17 +312,24 @@ public class Gui implements _GUI {
     private void initCyclesComponents() {
 
         calculateCycles = new JButton(b(c(REQUIRED), FOR, FULL, COVERAGE));
-        progressBar = new JProgressBar(0, 100);
-        progressBar.setPreferredSize(new Dimension(110, 20));
-        progressBar.setStringPainted(true);
-        progressBar.setVisible(false);
-        cycles = new JLabel(s(_DASH_));
         calculateCycles.addActionListener(e -> onCalculateCycles());
+
+        cyclesPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        cyclesPanel.add(calculateCycles);
+
         if (isNotNull(test)) {
             test.addActionListener(e -> onTestSelectionChanged());
         }
         if (isNotNull(allLeafs)) {
             allLeafs.addActionListener(e -> onTestSelectionChanged());
+        }
+        if (isNotNull(allLeafsCount)) {
+            allLeafsCount.addActionListener(e -> onTestSelectionChanged());
+            allLeafsCount.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+                @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
+                @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
+                @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
+            });
         }
     }
 
@@ -328,10 +338,8 @@ public class Gui implements _GUI {
      */
     private void onTestSelectionChanged() {
 
-        cycles.setText(s(_DASH_));
-        progressBar.setValue(0);
-        progressBar.setString(EMPTY);
-        progressBar.setVisible(false);
+        calculateCycles.setText(b(c(REQUIRED), FOR, FULL, COVERAGE));
+        calculateCycles.setEnabled(true);
         updateWindowLayout();
     }
 
@@ -382,7 +390,17 @@ public class Gui implements _GUI {
 
         final boolean isHeadless = isNotNull(headless) && headless.isSelected();
         final boolean isAllLeafs = isNotNull(allLeafs) && allLeafs.isSelected();
-        final int leafsCount = (isNotNull(parameters)) ? parameters.getAllLeafsCount() : 1;
+
+        int leafsCount = 1;
+        if (isNotNull(allLeafsCount) && !allLeafsCount.getText().isBlank()) {
+            try {
+                leafsCount = Math.max(1, Integer.parseInt(allLeafsCount.getText().trim()));
+            } catch (final NumberFormatException ignored) {
+                if (isNotNull(parameters)) leafsCount = parameters.getAllLeafsCount();
+            }
+        } else if (isNotNull(parameters)) {
+            leafsCount = parameters.getAllLeafsCount();
+        }
 
         tp.prepareTestConfiguration(testName, isHeadless, isAllLeafs, leafsCount);
         Scenario.refresh();
@@ -408,11 +426,9 @@ public class Gui implements _GUI {
             return "0 leafs found";
         }
 
-        final Integer configured = PropEnum._TEST_ALL_LEAFS_COUNT.get();
-        final int target = Math.max((isNotNull(parameters)) ? parameters.getAllLeafsCount() : 1,
-                isNotNull(configured) ? configured : 1);
+        final int target = leafsCount;
         final int recommended = CoverageEstimator.estimateAverageCycles(rootCtrl, target, progressConsumer);
-        return b(s1(recommended, "test"), e(ROUND, s1(leafs, "leaf")));
+        return b(s1(recommended, "test"), REQUIRED, FOR, FULL, COVERAGE, e(ROUND, s1(leafs, "leaf")));
     }
 
     /**
@@ -421,10 +437,7 @@ public class Gui implements _GUI {
     private void onCalculateCycles() {
 
         calculateCycles.setEnabled(false);
-        cycles.setText(EMPTY);
-        progressBar.setValue(0);
-        progressBar.setString("0%");
-        progressBar.setVisible(true);
+        calculateCycles.setText("Calculating...");
         updateWindowLayout();
 
         final Object selected = (isNotNull(test)) ? test.getSelectedItem() : null;
@@ -432,27 +445,15 @@ public class Gui implements _GUI {
 
         final Thread thread = new Thread(() -> {
             try {
-                final String text = calculateEstimatedCycles(testName, percent ->
-                        SwingUtilities.invokeLater(() -> {
-                            progressBar.setValue(percent);
-                            progressBar.setString(percent + "%");
-                        }));
+                final String text = calculateEstimatedCycles(testName, null);
                 SwingUtilities.invokeLater(() -> {
-                    cycles.setText(text);
-                    if (text.contains("leaf")) {
-                        progressBar.setValue(100);
-                        progressBar.setString("100%");
-                        progressBar.setVisible(true);
-                    } else {
-                        progressBar.setVisible(false);
-                    }
+                    calculateCycles.setText(text);
                     calculateCycles.setEnabled(true);
                     updateWindowLayout();
                 });
             } catch (final RuntimeException e) {
                 SwingUtilities.invokeLater(() -> {
-                    cycles.setText("Calculation failed");
-                    progressBar.setVisible(false);
+                    calculateCycles.setText("Calculation failed");
                     calculateCycles.setEnabled(true);
                     updateWindowLayout();
                 });
@@ -463,21 +464,17 @@ public class Gui implements _GUI {
     }
 
     /**
-     * Revalidates and updates the dialog window layout to ensure components fit smoothly.
+     * Revalidates and updates the panel layout to ensure components fit smoothly.
      */
     private void updateWindowLayout() {
 
         if (isNotNull(panel)) {
             panel.revalidate();
             panel.repaint();
-            final Window window = SwingUtilities.getWindowAncestor(panel);
-            if (isNotNull(window)) {
-                final int currentWidth = window.getWidth();
-                window.pack();
-                if (window.getWidth() < currentWidth) {
-                    window.setSize(currentWidth, window.getHeight());
-                }
-            }
+        }
+        if (isNotNull(cyclesPanel)) {
+            cyclesPanel.revalidate();
+            cyclesPanel.repaint();
         }
     }
 
@@ -510,32 +507,6 @@ public class Gui implements _GUI {
         if (allLeafsCount != null) {
             addRow(ALL_LEAFS_COUNT.name(), allLeafsCount, panel, row++);
         }
-
-        final JPanel cyclesPanel = new JPanel(new GridBagLayout());
-        final GridBagConstraints c0 = new GridBagConstraints();
-        c0.gridx = 0;
-        c0.anchor = GridBagConstraints.LINE_START;
-        c0.insets = new Insets(0, 0, 0, 8);
-        cyclesPanel.add(calculateCycles, c0);
-
-        final GridBagConstraints c1 = new GridBagConstraints();
-        c1.gridx = 1;
-        c1.anchor = GridBagConstraints.LINE_START;
-        c1.insets = new Insets(0, 0, 0, 8);
-        cyclesPanel.add(progressBar, c1);
-
-        final GridBagConstraints c2 = new GridBagConstraints();
-        c2.gridx = 2;
-        c2.anchor = GridBagConstraints.LINE_START;
-        cyclesPanel.add(cycles, c2);
-
-        final GridBagConstraints c3 = new GridBagConstraints();
-        c3.gridx = 3;
-        c3.weightx = 1.0;
-        c3.fill = GridBagConstraints.HORIZONTAL;
-        cyclesPanel.add(Box.createGlue(), c3);
-
-        addRow(TESTS, cyclesPanel, panel, row++);
 
         // addRow(PROPERTIES, properties, panel, row++); // Moved to properties panel on right side
 
@@ -618,5 +589,19 @@ public class Gui implements _GUI {
     public JButton getPropertiesButton() {
 
         return properties;
+    }
+
+    /**
+     * Creates and returns a panel containing the coverage estimate controls
+     * (calculateCycles button, progressBar, and cycles label).
+     *
+     * @return JPanel containing coverage estimation UI components
+     */
+    public JPanel createCoverageEstimatePanel() {
+
+        if (isNull(cyclesPanel)) {
+            initCyclesComponents();
+        }
+        return cyclesPanel;
     }
 }

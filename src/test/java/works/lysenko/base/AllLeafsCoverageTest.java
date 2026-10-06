@@ -12,16 +12,22 @@ import works.lysenko.tree.base.Mono;
 import works.lysenko.tree.base.Node;
 import works.lysenko.util.apis.log._Logs;
 import works.lysenko.util.apis.scenario._Scenario;
+import works.lysenko.util.apis.execution._Scenarios;
 import works.lysenko.util.apis.test._Exec;
 import works.lysenko.util.apis.test._Repeater;
 import works.lysenko.util.apis.test._Test;
 import works.lysenko.util.data.enums.ExecutionParameter;
+import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.spec.PropEnum;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Properties;
 import java.util.Set;
+
+import static works.lysenko.util.spec.Layout.Templates.RUN_ALL_LEAF_COMPLETIONS_;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static works.lysenko.util.func.type.fractions.Factory.fr;
@@ -249,6 +255,180 @@ class AllLeafsCoverageTest {
         Base.core.getResults().count(leaf1);
         assertEquals(2, Base.core.getExecutedLeafsCount());
         assertTrue(Base.core.areAllLeafsExecuted());
+    }
+
+    @Test
+    void testMonoCompletionRecordedInAllLeafCompletions() throws Exception {
+        if (null == Base.timer) {
+            Base.timer = new Stopwatch();
+        }
+        setTestProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), "true");
+        Base.parameters = new Parameters(new Properties());
+
+        final Ctrl rootCtrl = new Ctrl(null);
+        final TestMono mono = new TestMono(fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(mono, fr(1.0));
+        assertEquals(ScenarioType.MONO, mono.type());
+
+        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
+        f.setAccessible(true);
+        final Unsafe unsafe = (Unsafe) f.get(null);
+        final _Test mockTest = (_Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
+        final works.lysenko.base.test.Exec mockTestExec = (works.lysenko.base.test.Exec) unsafe.allocateInstance(works.lysenko.base.test.Exec.class);
+        final _Repeater mockRepeater = (_Repeater) unsafe.allocateInstance(works.lysenko.base.test.Repeater.class);
+
+        final Field ctrlField = works.lysenko.base.test.Exec.class.getDeclaredField("ctrl");
+        ctrlField.setAccessible(true);
+        ctrlField.set(mockTestExec, rootCtrl);
+
+        final Field execField = works.lysenko.base.Test.class.getDeclaredField("executor");
+        execField.setAccessible(true);
+        execField.set(mockTest, mockTestExec);
+
+        final works.lysenko.base.Exec baseExec = (works.lysenko.base.Exec) unsafe.allocateInstance(works.lysenko.base.Exec.class);
+        final _Scenarios mockScenarios = new works.lysenko.base.exec.Scenarios();
+        final Field scenariosField = works.lysenko.base.Exec.class.getDeclaredField("scenarios");
+        scenariosField.setAccessible(true);
+        scenariosField.set(baseExec, mockScenarios);
+        Base.exec = baseExec;
+
+        final Field repeaterField = works.lysenko.base.Test.class.getDeclaredField("repeater");
+        repeaterField.setAccessible(true);
+        repeaterField.set(mockTest, mockRepeater);
+
+        final Field testField = Core.class.getDeclaredField("test");
+        testField.setAccessible(true);
+        testField.set(Base.core, mockTest);
+
+        final _Logs mockLogger = new _Logs() {
+            @Override public java.io.Closeable getLogWriter() { return null; }
+            @Override public int getSpanLength() { return 0; }
+            @Override public java.io.Closeable getTelemetryWriter() { return null; }
+            @Override public void log(String message) {}
+            @Override public void log(int level, String message) {}
+            @Override public void log(int level, String message, Long redefinedTime) {}
+            @Override public void logEmptyLine() {}
+            @Override public void logEvent(works.lysenko.util.data.enums.Severity severity, String message, String shortStackTrace) {}
+            @Override public void logKnownIssue(String s) {}
+        };
+        final Field loggerField = Core.class.getDeclaredField("logger");
+        loggerField.setAccessible(true);
+        loggerField.set(Base.core, mockLogger);
+
+        final Path completionPath = Path.of(works.lysenko.util.spec.Layout.Files.name(RUN_ALL_LEAF_COMPLETIONS_));
+        Files.deleteIfExists(completionPath);
+
+        final Method doneMethod = works.lysenko.tree.Core.class.getDeclaredMethod("done");
+        doneMethod.setAccessible(true);
+        doneMethod.invoke(mono);
+
+        assertTrue(Files.exists(completionPath), "All-leaf completions file should be created when Mono scenario completes");
+        final String content = Files.readString(completionPath);
+        assertTrue(content.contains("[ALL_LEAF_COMPLETION]"), "Should record completion marker");
+        assertTrue(content.contains("TestMono"), "Should record mono scenario name");
+        Files.deleteIfExists(completionPath);
+    }
+
+    @Test
+    void testAllLeafCompletionsOnlyRecordedWhenAllLeafsCompleted() throws Exception {
+        if (null == Base.timer) {
+            Base.timer = new Stopwatch();
+        }
+        setTestProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), "true");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
+        Base.parameters = new Parameters(new Properties());
+
+        final Ctrl rootCtrl = new Ctrl(null);
+        class TestLeafA extends Leaf {
+            TestLeafA() { super(fr(1.0)); }
+        }
+        class TestLeafB extends Leaf {
+            TestLeafB() { super(fr(1.0)); }
+        }
+        final Leaf leafA = new TestLeafA();
+        final Leaf leafB = new TestLeafB();
+        rootCtrl.getPool().appendScenarioWithWeight(leafA, fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(leafB, fr(1.0));
+
+        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
+        f.setAccessible(true);
+        final Unsafe unsafe = (Unsafe) f.get(null);
+        final _Test mockTest = (_Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
+        final works.lysenko.base.test.Exec mockTestExec = (works.lysenko.base.test.Exec) unsafe.allocateInstance(works.lysenko.base.test.Exec.class);
+        final _Repeater mockRepeater = (_Repeater) unsafe.allocateInstance(works.lysenko.base.test.Repeater.class);
+
+        final Field ctrlField = works.lysenko.base.test.Exec.class.getDeclaredField("ctrl");
+        ctrlField.setAccessible(true);
+        ctrlField.set(mockTestExec, rootCtrl);
+
+        final Field execField = works.lysenko.base.Test.class.getDeclaredField("executor");
+        execField.setAccessible(true);
+        execField.set(mockTest, mockTestExec);
+
+        final works.lysenko.base.Exec baseExec = (works.lysenko.base.Exec) unsafe.allocateInstance(works.lysenko.base.Exec.class);
+        final _Scenarios mockScenarios = new works.lysenko.base.exec.Scenarios();
+        final Field scenariosField = works.lysenko.base.Exec.class.getDeclaredField("scenarios");
+        scenariosField.setAccessible(true);
+        scenariosField.set(baseExec, mockScenarios);
+        Base.exec = baseExec;
+
+        final Field repeaterField = works.lysenko.base.Test.class.getDeclaredField("repeater");
+        repeaterField.setAccessible(true);
+        repeaterField.set(mockTest, mockRepeater);
+
+        final Field testField = Core.class.getDeclaredField("test");
+        testField.setAccessible(true);
+        testField.set(Base.core, mockTest);
+
+        final _Logs mockLogger = new _Logs() {
+            @Override public java.io.Closeable getLogWriter() { return null; }
+            @Override public int getSpanLength() { return 0; }
+            @Override public java.io.Closeable getTelemetryWriter() { return null; }
+            @Override public void log(String message) {}
+            @Override public void log(int level, String message) {}
+            @Override public void log(int level, String message, Long redefinedTime) {}
+            @Override public void logEmptyLine() {}
+            @Override public void logEvent(works.lysenko.util.data.enums.Severity severity, String message, String shortStackTrace) {}
+            @Override public void logKnownIssue(String s) {}
+        };
+        final Field loggerField = Core.class.getDeclaredField("logger");
+        loggerField.setAccessible(true);
+        loggerField.set(Base.core, mockLogger);
+
+        final Path completionPath = Path.of(works.lysenko.util.spec.Layout.Files.name(RUN_ALL_LEAF_COMPLETIONS_));
+        Files.deleteIfExists(completionPath);
+        works.lysenko.base.output.AllLeafCompletions.reset();
+
+        final Method doneMethod = works.lysenko.tree.Core.class.getDeclaredMethod("done");
+        doneMethod.setAccessible(true);
+
+        // Run 1: LeafA done
+        Base.core.getResults().count(leafA);
+        doneMethod.invoke(leafA);
+        assertFalse(Files.exists(completionPath), "No completion logged when only LeafA executed once");
+
+        // Run 1: LeafB done -> Round 1 complete
+        Base.core.getResults().count(leafB);
+        doneMethod.invoke(leafB);
+        assertTrue(Files.exists(completionPath));
+        java.util.List<String> lines = Files.readAllLines(completionPath);
+        assertEquals(1, lines.size(), "Should log 1 completion for round 1");
+        assertTrue(lines.get(0).contains("LeafB"));
+
+        // Run 2: LeafA done 2nd time
+        Base.core.getResults().count(leafA);
+        doneMethod.invoke(leafA);
+        lines = Files.readAllLines(completionPath);
+        assertEquals(1, lines.size(), "Still 1 completion until LeafB completes 2nd time");
+
+        // Run 2: LeafB done 2nd time -> Round 2 complete
+        Base.core.getResults().count(leafB);
+        doneMethod.invoke(leafB);
+        lines = Files.readAllLines(completionPath);
+        assertEquals(2, lines.size(), "Should log 2 completions after round 2 completes");
+        assertTrue(lines.get(1).contains("LeafB"));
+
+        Files.deleteIfExists(completionPath);
     }
 
     @Test

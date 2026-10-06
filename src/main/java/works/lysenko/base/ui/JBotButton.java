@@ -13,6 +13,8 @@ import java.awt.Color;
 public final class JBotButton extends JButton implements _BotButton {
 
     private boolean active = false;
+    private final String inactiveText;
+    private String activeText = null;
 
     /**
      * @param text of button
@@ -21,10 +23,22 @@ public final class JBotButton extends JButton implements _BotButton {
     public JBotButton(final String text) {
 
         super(text);
+        this.inactiveText = text;
         addActionListener(e -> {
             active = !active;
             actualizeUI();
         });
+    }
+
+    /**
+     * @param text       inactive text of button
+     * @param activeText active text of button
+     */
+    @SuppressWarnings("PublicConstructor")
+    public JBotButton(final String text, final String activeText) {
+
+        this(text);
+        this.activeText = activeText;
     }
 
     /**
@@ -56,9 +70,20 @@ public final class JBotButton extends JButton implements _BotButton {
         return active;
     }
 
+    public void setActiveText(final String activeText) {
+
+        this.activeText = activeText;
+        actualizeUI();
+    }
+
     private void actualizeUI() {
 
-        if (active) setForeground(Color.RED);
-        else setForeground(Color.BLACK);
+        if (active) {
+            setForeground(new Color(0xDC, 0x26, 0x26));
+            if (null != activeText) setText(activeText);
+        } else {
+            setForeground(new Color(0x0F, 0x17, 0x2A));
+            if (null != inactiveText) setText(inactiveText);
+        }
     }
 }

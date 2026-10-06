@@ -49,6 +49,8 @@ public record R() {
     public static final String RESOURCE = s(RESO, UR, CE);
     public static final String RESOURCES = s(RESOURCE, S);
     public static final String RESTART = s(REST, ART);
+    public static final String RESUME = s(RE, SU, ME);
+    public static final String RESUMING = s(RE, SU, M, ING);
     public static final String RESULT = s(RE, SU, LT);
     public static final String RESULTS = s(RESULT, S);
     public static final String RETRIES = s(RE, TRI, ES);

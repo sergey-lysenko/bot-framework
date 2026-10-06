@@ -39,6 +39,7 @@ public final class LogHtml {
     private static final Pattern TEST_TIME_RE = Pattern.compile("Test time (.*)");
     private static final Pattern TEST_RUN_SUMMARY_RE = Pattern.compile(".*\\b\\d+\\s+tests?\\s+of\\s+.+\\s+done\\s+in\\s+.*");
     private static final Pattern SPAN_BRACKET_RE = Pattern.compile("(\\[[0-9.]+\\](?:<[^>]+>)*)(\\[\\s*\\d+\\s*\\])");
+    private static final Pattern ALL_LEAF_COMPLETION_RE = Pattern.compile("\\[ALL_LEAF_COMPLETION]\\s+(\\d+)\\s+(.+)$");
 
     private LogHtml() {
     }
@@ -497,12 +498,14 @@ public final class LogHtml {
         final String barsHidden = isLineDefault ? " hidden" : "";
         final String timelineToggle = testData.isEmpty() ? "" : renderTimelineToggle(isLineDefault);
         final String timelineLineGraph = renderLineGraph(testData, limboByPrevTest, tAvg, tMax, lMax);
-        final String lgScriptData = renderLgScriptData(testData, limboByPrevTest, tAvg, tMax, lMax);
+        final List<LeafCompletion> completions = loadLeafCompletions(logFile);
+        final String lgScriptData = renderLgScriptData(testData, limboByPrevTest, completions, tAvg, tMax, lMax);
         final String commonPath = renderCommonPath(commonPathSteps);
         final String pathsRows = renderPathsRows(testPaths);
         final String scenSubtitle = buildScenSubtitle(pathsPossibleStr, pathsChanceStr, pathsExecutedStr);
         final String scenRows = renderScenRows(scenStats);
         final String sectionsHtml = renderSections(sections, runArtifacts, telemetryCpu, currOpGlobalIdx);
+        final String leafCompletionGraph = renderLeafCompletionGraph(completions);
 
         // ---- populate template ----
 
@@ -532,6 +535,7 @@ public final class LogHtml {
         replacements.put("{{SCEN_SUBTITLE}}", scenSubtitle);
         replacements.put("{{SCEN_ROWS}}", scenRows);
         replacements.put("{{SECTIONS}}", sectionsHtml);
+        replacements.put("{{LEAF_COMPLETION_GRAPH}}", leafCompletionGraph);
         return replaceTemplate(loadTemplate(), replacements);
     }
 
@@ -659,6 +663,176 @@ public final class LogHtml {
                     "</tr>"));
         }
         return sb.toString();
+    }
+
+    private static String renderLeafCompletionGraph(final List<LeafCompletion> completions) {
+
+        if (completions.isEmpty()) return "";
+
+        final double width = 1000.0;
+        final double height = 240.0;
+        final double marginLeft = 55.0;
+        final double marginRight = 25.0;
+        final double marginTop = 26.0;
+        final double marginBottom = 34.0;
+        final double plotW = width - marginLeft - marginRight;
+        final double plotH = height - marginTop - marginBottom;
+
+        long maxInterval = 1L;
+        long previous = 0L;
+        final long[] intervals = new long[completions.size()];
+        for (int index = 0; index < completions.size(); index++) {
+            final LeafCompletion completion = completions.get(index);
+            final long interval = Math.max(0L, completion.atMillis - previous);
+            intervals[index] = interval;
+            previous = completion.atMillis;
+            maxInterval = Math.max(maxInterval, interval);
+        }
+
+        final double maxIntervalSec = maxInterval / 1000.0;
+        final double ceilSec = getNiceCeil(maxIntervalSec > 0 ? maxIntervalSec : 1.0);
+
+        final StringBuilder sb = new StringBuilder();
+        sb.append("<section id=\"leafCompletionChart\" class=\"leaf-completion-chart\"><div class=\"chart-card\">")
+                .append("<div class=\"card-title\"><span>All-Leaf Completion Intervals</span>")
+                .append("<span class=\"card-subtitle\">Y: Time since previous completion (first: run start); X: completion order</span>")
+                .append("</div><div class=\"line-graph-legend\">")
+                .append("<span class=\"lg-legend-item\"><span class=\"lg-line-sample leaf-line\"></span>")
+                .append("Time between completions</span></div>")
+                .append("<div class=\"line-graph-svg-wrap\"><svg id=\"leafCompletionSvg\" class=\"timeline-line-svg\" viewBox=\"0 0 1000 240\">")
+                .append("  <defs>\n")
+                .append("    <linearGradient id=\"leafAreaGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n")
+                .append("      <stop offset=\"0%\" stop-color=\"#a855f7\" stop-opacity=\"0.35\"/>\n")
+                .append("      <stop offset=\"100%\" stop-color=\"#a855f7\" stop-opacity=\"0.02\"/>\n")
+                .append("    </linearGradient>\n")
+                .append("  </defs>\n");
+
+        for (int k = 0; k <= 4; k++) {
+            final double ratio = (double) k / 4.0;
+            final double y = (marginTop + plotH) - ratio * plotH;
+            final double valSec = ratio * ceilSec;
+            sb.append(String.format(Locale.ROOT,
+                    "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.06)\" stroke-dasharray=\"3,3\" />\n",
+                    marginLeft, y, marginLeft + plotW, y));
+            final String labelStr;
+            if (ceilSec < 1.0) {
+                labelStr = Math.round(valSec * 1000.0) + "ms";
+            } else {
+                labelStr = String.format(Locale.ROOT, "%.1fs", valSec);
+            }
+            sb.append(String.format(Locale.ROOT,
+                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"end\" fill=\"#64748b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>\n",
+                    marginLeft - 8, y + 3.5, labelStr));
+        }
+
+        final int N = completions.size();
+        final int tickCount = Math.min(8, N);
+        final Set<Integer> tickIndices = new LinkedHashSet<>();
+        if (tickCount <= 1 || N <= 1) {
+            tickIndices.add(0);
+        } else {
+            for (int k = 0; k < tickCount - 1; k++) {
+                tickIndices.add((int) Math.round((double) k * (N - 1) / (tickCount - 1)));
+            }
+            tickIndices.add(N - 1);
+        }
+
+        for (final int idx : tickIndices) {
+            final double x = marginLeft + (N > 1 ? (double) idx / (N - 1) * plotW : plotW / 2.0);
+            sb.append(String.format(Locale.ROOT,
+                    "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.15)\" />\n",
+                    x, marginTop + plotH, x, marginTop + plotH + 4));
+            sb.append(String.format(Locale.ROOT,
+                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">#%d</text>\n",
+                    x, height - 10, idx + 1));
+        }
+
+        final StringBuilder leafPath = new StringBuilder();
+        final StringBuilder leafArea = new StringBuilder();
+
+        for (int i = 0; i < N; i++) {
+            final double intervalSec = intervals[i] / 1000.0;
+            final double x = marginLeft + (N > 1 ? (double) i / (N - 1) * plotW : plotW / 2.0);
+            final double y = (marginTop + plotH) - Math.min(plotH, (intervalSec / ceilSec) * plotH);
+
+            if (i == 0) {
+                leafPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, y));
+                leafArea.append(String.format(Locale.ROOT, "M %.2f %.2f L %.2f %.2f", x, marginTop + plotH, x, y));
+            } else {
+                leafPath.append(String.format(Locale.ROOT, " L %.2f %.2f", x, y));
+                leafArea.append(String.format(Locale.ROOT, " L %.2f %.2f", x, y));
+            }
+            if (i == N - 1) {
+                leafArea.append(String.format(Locale.ROOT, " L %.2f %.2f Z", x, marginTop + plotH));
+            }
+        }
+
+        sb.append("  <path d=\"").append(leafArea).append("\" fill=\"url(#leafAreaGrad)\" />\n");
+        sb.append("  <path d=\"").append(leafPath).append("\" class=\"leaf-chart-line\" fill=\"none\" stroke=\"#a855f7\" stroke-width=\"2\" />\n");
+
+        sb.append(String.format(Locale.ROOT,
+                "  <line id=\"leafCrosshair\" x1=\"0\" y1=\"%.1f\" x2=\"0\" y2=\"%.1f\" stroke=\"#94a3b8\" stroke-dasharray=\"2,2\" stroke-width=\"1\" opacity=\"0\" pointer-events=\"none\" />\n",
+                marginTop, marginTop + plotH));
+        sb.append("  <circle id=\"leafDot\" cx=\"0\" cy=\"0\" r=\"5\" fill=\"#a855f7\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />\n");
+        sb.append(String.format(Locale.ROOT,
+                "  <rect id=\"leafOverlay\" x=\"%.1f\" y=\"%.1f\" width=\"%.1f\" height=\"%.1f\" fill=\"transparent\" style=\"cursor: crosshair;\" onmousemove=\"onLeafHover(event)\" onmouseleave=\"onLeafLeave()\" />\n",
+                marginLeft, marginTop, plotW, plotH));
+        sb.append("</svg>\n");
+        sb.append("<div id=\"leafTooltip\" class=\"lg-tooltip hidden\"></div>\n");
+        sb.append("</div></div></section>");
+
+        return sb.toString();
+    }
+
+    private static List<LeafCompletion> loadLeafCompletions(final File runLogFile) {
+
+        final File completionFile = allLeafCompletionsFile(runLogFile);
+        if (!completionFile.isFile()) return List.of();
+
+        final List<LeafCompletion> completions = new ArrayList<>();
+        try (final BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(completionFile), StandardCharsets.UTF_8))) {
+            String line;
+            while (null != (line = reader.readLine())) {
+                final Matcher matcher = ALL_LEAF_COMPLETION_RE.matcher(line.trim());
+                if (matcher.matches()) {
+                    completions.add(new LeafCompletion(
+                            Long.parseLong(matcher.group(1)),
+                            matcher.group(2).trim()));
+                }
+            }
+        } catch (final IOException | NumberFormatException e) {
+            logEvent(S2, "Failed to read all-leaf completion log " + completionFile + ": " + e.getMessage());
+        }
+        return completions;
+    }
+
+    private static File allLeafCompletionsFile(final File runLogFile) {
+
+        final String suffix = ".run.log";
+        final String name = runLogFile.getName();
+        final String prefix = name.endsWith(suffix) ? name.substring(0, name.length() - suffix.length()) : name;
+        return new File(runLogFile.getParentFile(), prefix + ".all-leaf-completions.log");
+    }
+
+    private static int completionX(
+            final int index, final int completionCount, final int left, final int plotWidth) {
+
+        if (completionCount <= 1) return left + (plotWidth / 2);
+        return left + (int) Math.round((index / (double) (completionCount - 1)) * plotWidth);
+    }
+
+    private static String formatCompletionDuration(final long milliseconds) {
+
+        return milliseconds < 1_000L ? milliseconds + "ms"
+                : String.format(Locale.ROOT, "%.2fs", milliseconds / 1_000.0);
+    }
+
+    private static String formatCompletionMoment(final long milliseconds) {
+
+        final long minutes = milliseconds / 60_000L;
+        final long seconds = (milliseconds / 1_000L) % 60L;
+        return String.format(Locale.ROOT, "%d:%02d.%03d", minutes, seconds, milliseconds % 1_000L);
     }
 
     private static String renderSections(
@@ -1069,31 +1243,68 @@ public final class LogHtml {
     private static String renderLgScriptData(
             final List<TelemetryItem> testData,
             final Map<Integer, TelemetryItem> limboByPrevTest,
+            final List<LeafCompletion> completions,
             final double tAvg, final double tMax, final double lMax) {
-        if (testData.isEmpty()) return "";
-        final boolean hasLimbo = lMax > 0 && !limboByPrevTest.isEmpty();
-        final double tCeil = getNiceCeil(tMax > 0 ? tMax : 1.0);
-        final double lCeil = hasLimbo ? getNiceCeil(lMax) : 1.0;
+        if (testData.isEmpty() && (completions == null || completions.isEmpty())) return "";
 
         final StringBuilder sb = new StringBuilder();
-        sb.append("  window.lgTCeil = ").append(String.format(Locale.ROOT, "%.2f", tCeil)).append(";\n");
-        sb.append("  window.lgLCeil = ").append(String.format(Locale.ROOT, "%.2f", lCeil)).append(";\n");
-        sb.append("  window.lgTAvg = ").append(String.format(Locale.ROOT, "%.2f", tAvg)).append(";\n");
-        sb.append("  window.lgHasLimbo = ").append(hasLimbo).append(";\n");
-        sb.append("  window.lgData = [");
-        for (int i = 0; i < testData.size(); i++) {
-            if (i > 0) sb.append(",");
-            final TelemetryItem t = testData.get(i);
-            final TelemetryItem l = limboByPrevTest.get(t.testNum);
-            final long lMs = l != null ? Math.round(l.ms) : 0;
-            sb.append("{\"n\":").append(t.testNum)
-                    .append(",\"t\":\"").append(escapeJson(t.title)).append("\"")
-                    .append(String.format(Locale.ROOT, ",\"s\":%.3f", t.sec))
-                    .append(",\"ms\":").append(Math.round(t.ms))
-                    .append(",\"l\":").append(lMs)
-                    .append(",\"st\":\"").append(escapeJson(t.status)).append("\"}");
+        if (!testData.isEmpty()) {
+            final boolean hasLimbo = lMax > 0 && !limboByPrevTest.isEmpty();
+            final double tCeil = getNiceCeil(tMax > 0 ? tMax : 1.0);
+            final double lCeil = hasLimbo ? getNiceCeil(lMax) : 1.0;
+
+            sb.append("  window.lgTCeil = ").append(String.format(Locale.ROOT, "%.2f", tCeil)).append(";\n");
+            sb.append("  window.lgLCeil = ").append(String.format(Locale.ROOT, "%.2f", lCeil)).append(";\n");
+            sb.append("  window.lgTAvg = ").append(String.format(Locale.ROOT, "%.2f", tAvg)).append(";\n");
+            sb.append("  window.lgHasLimbo = ").append(hasLimbo).append(";\n");
+            sb.append("  window.lgData = [");
+            for (int i = 0; i < testData.size(); i++) {
+                if (i > 0) sb.append(",");
+                final TelemetryItem t = testData.get(i);
+                final TelemetryItem l = limboByPrevTest.get(t.testNum);
+                final long lMs = l != null ? Math.round(l.ms) : 0;
+                sb.append("{\"n\":").append(t.testNum)
+                        .append(",\"t\":\"").append(escapeJson(t.title)).append("\"")
+                        .append(String.format(Locale.ROOT, ",\"s\":%.3f", t.sec))
+                        .append(",\"ms\":").append(Math.round(t.ms))
+                        .append(",\"l\":").append(lMs)
+                        .append(",\"st\":\"").append(escapeJson(t.status)).append("\"}");
+            }
+            sb.append("];\n");
         }
-        sb.append("];\n");
+
+        if (null != completions && !completions.isEmpty()) {
+            long maxInterval = 1L;
+            long previous = 0L;
+            for (final LeafCompletion c : completions) {
+                final long interval = Math.max(0L, c.atMillis - previous);
+                previous = c.atMillis;
+                maxInterval = Math.max(maxInterval, interval);
+            }
+            final double maxIntervalSec = maxInterval / 1000.0;
+            final double ceilSec = getNiceCeil(maxIntervalSec > 0 ? maxIntervalSec : 1.0);
+
+            sb.append("  window.leafCeil = ").append(String.format(Locale.ROOT, "%.3f", ceilSec)).append(";\n");
+            sb.append("  window.leafData = [");
+            long pAt = 0L;
+            for (int i = 0; i < completions.size(); i++) {
+                if (i > 0) sb.append(",");
+                final LeafCompletion c = completions.get(i);
+                final long intervalMs = Math.max(0L, c.atMillis - pAt);
+                pAt = c.atMillis;
+                final String intervalStr = formatCompletionDuration(intervalMs);
+                final String momentStr = formatCompletionMoment(c.atMillis);
+                final String fullLabel = c.leaf + " @ " + momentStr + " (+" + intervalStr + ")";
+                sb.append("{\"n\":").append(i + 1)
+                        .append(",\"leaf\":\"").append(escapeJson(c.leaf)).append("\"")
+                        .append(",\"ms\":").append(intervalMs)
+                        .append(",\"at\":").append(c.atMillis)
+                        .append(",\"interval\":\"").append(escapeJson(intervalStr)).append("\"")
+                        .append(",\"moment\":\"").append(escapeJson(momentStr)).append("\"")
+                        .append(",\"label\":\"").append(escapeJson(fullLabel)).append("\"}");
+            }
+            sb.append("];\n");
+        }
         return sb.toString();
     }
 
@@ -1539,6 +1750,16 @@ public final class LogHtml {
             this.num = num;
             this.durStr = durStr;
             this.steps = steps;
+        }
+    }
+
+    private static final class LeafCompletion {
+        final long atMillis;
+        final String leaf;
+
+        LeafCompletion(final long atMillis, final String leaf) {
+            this.atMillis = atMillis;
+            this.leaf = leaf;
         }
     }
 

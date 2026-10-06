@@ -104,7 +104,8 @@ public final class TreeTracker {
 
     /**
      * Calculates the visual progress color based on executions and target count.
-     * Gradually transitions from Amber (38°) -> Lime (84°) -> Emerald Green (142°).
+     * Smoothly interpolates from the non-started grayish-dark-blue color (UNVISITED_BORDER)
+     * to the completion emerald green (GREEN_DONE).
      *
      * @param execs  number of executions
      * @param target target executions count
@@ -115,14 +116,14 @@ public final class TreeTracker {
             return UNVISITED_BORDER;
         }
         final int safeTarget = Math.max(1, target);
-        if (safeTarget == 1) {
+        if (execs >= safeTarget) {
             return GREEN_DONE;
         }
-        final double ratio = Math.min(1.0, (double) execs / (double) safeTarget);
-        final float hue = (float) ((38.0 + ratio * (142.0 - 38.0)) / 360.0);
-        final float sat = 0.82f;
-        final float bri = 0.88f;
-        return Color.getHSBColor(hue, sat, bri);
+        final double ratio = (double) execs / (double) safeTarget;
+        final int r = (int) Math.round(UNVISITED_BORDER.getRed() + ratio * (GREEN_DONE.getRed() - UNVISITED_BORDER.getRed()));
+        final int g = (int) Math.round(UNVISITED_BORDER.getGreen() + ratio * (GREEN_DONE.getGreen() - UNVISITED_BORDER.getGreen()));
+        final int b = (int) Math.round(UNVISITED_BORDER.getBlue() + ratio * (GREEN_DONE.getBlue() - UNVISITED_BORDER.getBlue()));
+        return new Color(r, g, b);
     }
 
     static int getTargetExecutions(final NodeData node, final int leafTarget) {

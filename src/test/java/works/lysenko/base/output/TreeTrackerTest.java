@@ -102,7 +102,7 @@ class TreeTrackerTest {
     }
 
     @Test
-    void testGetProgressColorMonotonicHueTransition() {
+    void testGetProgressColorMonotonicGradientTransition() {
         // Zero or negative executions -> unvisited slate border color
         final Color unvisited = TreeTracker.getProgressColor(0, 5);
         assertEquals(new Color(0x33, 0x41, 0x55), unvisited);
@@ -111,22 +111,21 @@ class TreeTrackerTest {
         final Color targetOne = TreeTracker.getProgressColor(1, 1);
         assertEquals(new Color(0x22, 0xC5, 0x5E), targetOne);
 
-        // Target = 5: hue should monotonically shift from warm amber toward emerald green
+        // Target = 5: green channel should monotonically increase from unvisited slate toward emerald green
         final int target = 5;
-        final float hue1 = getHue(TreeTracker.getProgressColor(1, target));
-        final float hue2 = getHue(TreeTracker.getProgressColor(2, target));
-        final float hue3 = getHue(TreeTracker.getProgressColor(3, target));
-        final float hue4 = getHue(TreeTracker.getProgressColor(4, target));
-        final float hue5 = getHue(TreeTracker.getProgressColor(5, target));
+        final Color c1 = TreeTracker.getProgressColor(1, target);
+        final Color c2 = TreeTracker.getProgressColor(2, target);
+        final Color c3 = TreeTracker.getProgressColor(3, target);
+        final Color c4 = TreeTracker.getProgressColor(4, target);
+        final Color c5 = TreeTracker.getProgressColor(5, target);
 
-        assertTrue(hue1 < hue2, "Hue should increase from 1 to 2");
-        assertTrue(hue2 < hue3, "Hue should increase from 2 to 3");
-        assertTrue(hue3 < hue4, "Hue should increase from 3 to 4");
-        assertTrue(hue4 < hue5, "Hue should increase from 4 to 5");
+        assertTrue(c1.getGreen() < c2.getGreen(), "Green intensity should increase from 1 to 2");
+        assertTrue(c2.getGreen() < c3.getGreen(), "Green intensity should increase from 2 to 3");
+        assertTrue(c3.getGreen() < c4.getGreen(), "Green intensity should increase from 3 to 4");
+        assertTrue(c4.getGreen() < c5.getGreen(), "Green intensity should increase from 4 to 5");
 
-        // Verify bounds: 1 is in amber range (~38-60 deg = ~0.10-0.17), 5 is emerald green (~142 deg = ~0.39)
-        assertTrue(hue1 >= 0.10f && hue1 <= 0.20f, "Hue 1 should be warm amber/gold");
-        assertTrue(hue5 >= 0.35f && hue5 <= 0.42f, "Hue 5 should be emerald green");
+        // Verify completion endpoint
+        assertEquals(new Color(0x22, 0xC5, 0x5E), c5, "Target execution should equal GREEN_DONE");
     }
 
     @Test

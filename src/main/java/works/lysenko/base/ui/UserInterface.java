@@ -6,13 +6,20 @@ import works.lysenko.util.apis.util._BotButton;
 import works.lysenko.util.apis.util._Dashboard;
 import works.lysenko.util.data.enums.Brackets;
 
+import works.lysenko.util.spec.PropEnum;
+
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
+import static works.lysenko.util.func.type.Objects.isNotNull;
+import static works.lysenko.Base.core;
 import static works.lysenko.Base.exec;
+import static works.lysenko.Base.parameters;
 import static works.lysenko.Base.timer;
 import static works.lysenko.util.chrs.__.IN;
 import static works.lysenko.util.chrs.__.OF;
@@ -32,6 +39,8 @@ import static works.lysenko.util.lang.word.D.DURING;
 import static works.lysenko.util.lang.word.E.EXECUTION;
 import static works.lysenko.util.lang.word.O.OUTPUT;
 import static works.lysenko.util.lang.word.P.PAUSE;
+import static works.lysenko.util.lang.word.P.PAUSED;
+import static works.lysenko.util.lang.word.R.RESUME;
 import static works.lysenko.util.lang.word.S.SCENARIO;
 import static works.lysenko.util.lang.word.S.SECONDS;
 import static works.lysenko.util.lang.word.T.TESTING;
@@ -69,6 +78,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
     private final JLabel classes = new JLabel(s(QUS_MRK));
     private final JLabel memory = new JLabel(s(QUS_MRK));
     private final JLabel runtime = new JLabel(s(QUS_MRK));
+    private final JLabel eta = new JLabel(s(QUS_MRK));
     private final JPanel switchboard = new JPanel();
     private final AnsiTextPane log = new AnsiTextPane();
     private final JScrollPane logScrollPane = new JScrollPane(log);
@@ -177,8 +187,12 @@ public final class UserInterface extends JPanel implements _Dashboard {
      */
     private static void setButtonActiveState(final _BotButton button, final boolean active) {
 
-        if (active) button.activate();
-        else button.deactivate();
+        final Runnable r = () -> {
+            if (active) button.activate();
+            else button.deactivate();
+        };
+        if (SwingUtilities.isEventDispatchThread()) r.run();
+        else SwingUtilities.invokeLater(r);
     }
 
     /**
@@ -231,6 +245,12 @@ public final class UserInterface extends JPanel implements _Dashboard {
         return pause.isActive();
     }
 
+    @Override
+    public void setPause(final boolean active) {
+
+        setButtonActiveState(pause, active);
+    }
+
     /**
      * Retrieves the stop button from the dashboard.
      *
@@ -261,12 +281,25 @@ public final class UserInterface extends JPanel implements _Dashboard {
     @SuppressWarnings("ForeachStatement")
     public void setBreadcrumb(final List<? extends _Scenario> content) {
 
-        breadcrumb.removeAll();
-        for (final _Scenario scenario : content) {
-            final JLabel scenarioLabel = createScenarioLabel(scenario);
-            breadcrumb.add(scenarioLabel);
-        }
-        container.repaint();
+        final List<_Scenario> safeContent = (null == content) ? List.of() : new ArrayList<>(content);
+        final Runnable r = () -> {
+            breadcrumb.removeAll();
+            for (int i = 0; i < safeContent.size(); i++) {
+                if (i > 0) {
+                    final JLabel separator = new JLabel(" \u2192 ");
+                    separator.setForeground(Color.GRAY);
+                    breadcrumb.add(separator);
+                }
+                final JLabel scenarioLabel = createScenarioLabel(safeContent.get(i));
+                breadcrumb.add(scenarioLabel);
+            }
+            breadcrumb.revalidate();
+            breadcrumb.repaint();
+            container.revalidate();
+            container.repaint();
+        };
+        if (SwingUtilities.isEventDispatchThread()) r.run();
+        else SwingUtilities.invokeLater(r);
     }
 
     /**
@@ -299,6 +332,11 @@ public final class UserInterface extends JPanel implements _Dashboard {
 
     private void buildBusiness() {
 
+        status.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        status.setForeground(new Color(0x02, 0x84, 0xC7));
+        business.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0xCB, 0xD5, 0xE1)),
+                BorderFactory.createEmptyBorder(4, 12, 4, 12)));
         business.add(status);
     }
 
@@ -308,6 +346,17 @@ public final class UserInterface extends JPanel implements _Dashboard {
      * Switchboard, and Log.
      */
     private void buildContainer() {
+
+        breadcrumb.setLayout(new FlowLayout(FlowLayout.LEFT, 4, 2));
+        breadcrumb.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0xCB, 0xD5, 0xE1)),
+                BorderFactory.createEmptyBorder(6, 12, 6, 12)));
+
+        statusboard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0xCB, 0xD5, 0xE1)),
+                BorderFactory.createEmptyBorder(6, 12, 6, 12)));
+
+        switchboard.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
 
         container.setLayout(new BoxLayout(container, BoxLayout.PAGE_AXIS));
         container.add(breadcrumb);
@@ -343,7 +392,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
         addLabelAndComponent(new JLabel(OF), cores);
         addLabelAndComponent(new JLabel(IN), memory);
         addLabelAndComponent(new JLabel(DURING), runtime);
-        addLabelAndComponent(new JLabel(l(SECONDS, true)), new JLabel());
+        addLabelAndComponent(new JLabel(l(SECONDS, true)), eta);
     }
 
     /**
@@ -355,7 +404,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
     private void buildSwitchBoard() {
 
         debug = new JBotButton(b(c(DEBUG), OUTPUT));
-        pause = new JBotButton(b(c(PAUSE), CURRENT, c(TEST), EXECUTION));
+        pause = new JBotButton(b(c(PAUSE), CURRENT, c(TEST), EXECUTION), b(c(RESUME), TEST, EXECUTION, e(Brackets.ROUND, c(PAUSED))));
         halt = new JBotButton(b(c(HALT), c(TEST), AFTER, CURRENT, c(SCENARIO)));
         stop = new JBotButton(b(c(STOP), TESTING, AFTER, CURRENT, c(TEST)));
         switchboard.add(debug);
@@ -425,6 +474,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
         refreshClassStatus(telemetry);
         refreshMemoryStatus(telemetry);
         runtime.setText(s(timer.msSinceStart() / 1000));
+        eta.setText(calculateEtaString());
     }
 
     @SuppressWarnings("NestedMethodCall")
@@ -452,6 +502,90 @@ public final class UserInterface extends JPanel implements _Dashboard {
     @Override
     public void setTitle(String title) {
         // Ignored for JPanel, handled by ControlPanel
+    }
+
+    /**
+     * Calculates the estimated time remaining for current execution across different execution modes
+     * (e.g. all-leaf coverage mode, fixed test count mode, or fallback estimation).
+     *
+     * @return Formatted ETA string (e.g. "(ETA 02:15)", "(ETA --:--)", or "(ETA Done)")
+     */
+    private static String calculateEtaString() {
+
+        if (isNull(core) || isNull(timer)) return "(ETA --:--)";
+
+        final long elapsedMs = timer.msSinceStart();
+        if (elapsedMs < 1000L) return "(ETA --:--)";
+
+        final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
+                || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
+
+        if (allLeafsMode) {
+            final boolean multipleExecutionsPerLeaf = isNotNull(parameters) && parameters.getAllLeafsCount() > 1;
+            final int executed = multipleExecutionsPerLeaf
+                    ? core.getExecutedLeafExecutionsCount()
+                    : core.getExecutedLeafsCount();
+            final int total = multipleExecutionsPerLeaf
+                    ? core.getTotalLeafExecutionsCount()
+                    : core.getAccessibleLeafs().size();
+
+            if (0 == total) return "(ETA --:--)";
+            if (executed >= total && core.areAllLeafsExecuted()) {
+                return "(ETA Done)";
+            }
+            if (executed > 0 && total > executed) {
+                final double avgMsPerExecution = (double) elapsedMs / executed;
+                final int remainingExecutions = total - executed;
+                final long remainingMs = Math.round(remainingExecutions * avgMsPerExecution);
+                return b("(ETA", s(formatMs(remainingMs)) + ")");
+            }
+            return "(ETA --:--)";
+        }
+
+        // Fixed test count mode (.test.tests specified)
+        final Integer totalTests = core.getTotalTests();
+        if (isNotNull(totalTests) && totalTests > 0) {
+            final int completedTests = (isNotNull(core.getTest()) && isNotNull(core.getTest().repeater()) && isNotNull(core.getTest().repeater().getHistory()))
+                    ? core.getTest().repeater().getHistory().size()
+                    : 0;
+            if (completedTests >= totalTests) {
+                return "(ETA Done)";
+            }
+            if (completedTests > 0) {
+                final double avgMsPerTest = (double) elapsedMs / completedTests;
+                final int remainingTests = totalTests - completedTests;
+                final long remainingMs = Math.round(remainingTests * avgMsPerTest);
+                return b("(ETA", s(formatMs(remainingMs)) + ")");
+            }
+            return "(ETA --:--)";
+        }
+
+        // Fallback: general leaf-based progress
+        final int totalLeafs = (isNotNull(core.getAccessibleLeafs())) ? core.getAccessibleLeafs().size() : 0;
+        final int executedLeafs = core.getExecutedLeafsCount();
+
+        if (totalLeafs > 0 && executedLeafs > 0 && totalLeafs > executedLeafs) {
+            final double avgMsPerLeaf = (double) elapsedMs / executedLeafs;
+            final int remainingLeafs = totalLeafs - executedLeafs;
+            final long remainingMs = Math.round(remainingLeafs * avgMsPerLeaf);
+            return b("(ETA", s(formatMs(remainingMs)) + ")");
+        }
+
+        return "(ETA --:--)";
+    }
+
+    private static String formatMs(final long ms) {
+
+        final long totalSec = Math.max(0L, ms / 1000L);
+        final long hours = totalSec / 3600L;
+        final long minutes = (totalSec % 3600L) / 60L;
+        final long seconds = totalSec % 60L;
+
+        if (hours > 0) {
+            return String.format(Locale.ROOT, "%02d:%02d:%02d", hours, minutes, seconds);
+        } else {
+            return String.format(Locale.ROOT, "%02d:%02d", minutes, seconds);
+        }
     }
 
     @Override

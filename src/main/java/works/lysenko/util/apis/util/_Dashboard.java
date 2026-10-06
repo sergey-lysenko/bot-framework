@@ -73,6 +73,13 @@ public interface _Dashboard {
     boolean isPause();
 
     /**
+     * Sets the pause state of the dashboard.
+     *
+     * @param active true if the pause button should be active, false otherwise
+     */
+    void setPause(boolean active);
+
+    /**
      * Determines if the execution is stopping.
      *
      * @return true if the execution is stopping, false otherwise

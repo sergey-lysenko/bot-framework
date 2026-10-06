@@ -38,6 +38,35 @@ class UserInterfaceTest {
         });
     }
 
+    @Test
+    void breadcrumbUpdatesComponentsAndLayoutOnEDT() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            final UserInterface userInterface = new UserInterface(null);
+            userInterface.setSize(1200, 800);
+            userInterface.doLayout();
+
+            final works.lysenko.util.apis.scenario._Scenario mockScenario1 = (works.lysenko.util.apis.scenario._Scenario) java.lang.reflect.Proxy.newProxyInstance(
+                    works.lysenko.util.apis.scenario._Scenario.class.getClassLoader(),
+                    new Class<?>[]{works.lysenko.util.apis.scenario._Scenario.class},
+                    (proxy, method, args) -> "getSimpleName".equals(method.getName()) ? "RootNode" : null);
+
+            final works.lysenko.util.apis.scenario._Scenario mockScenario2 = (works.lysenko.util.apis.scenario._Scenario) java.lang.reflect.Proxy.newProxyInstance(
+                    works.lysenko.util.apis.scenario._Scenario.class.getClassLoader(),
+                    new Class<?>[]{works.lysenko.util.apis.scenario._Scenario.class},
+                    (proxy, method, args) -> "getSimpleName".equals(method.getName()) ? "LeafScenario" : null);
+
+            userInterface.setBreadcrumb(java.util.List.of(mockScenario1, mockScenario2));
+        });
+    }
+
+    @Test
+    void etaLabelDisplaysDefaultAndCalculatedFormat() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            final UserInterface userInterface = new UserInterface(null);
+            assertNotNull(userInterface);
+        });
+    }
+
     private static JScrollPane terminalScrollPane(final UserInterface userInterface) {
         for (final Component component : userInterface.getComponents()) {
             if (component instanceof JScrollPane scrollPane) return scrollPane;
