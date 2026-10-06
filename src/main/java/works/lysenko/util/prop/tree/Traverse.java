@@ -8,7 +8,7 @@ import static works.lysenko.util.spec.PropEnum._TREE_TRAVERSE_EXTENSIONS;
 @SuppressWarnings("NonFinalStaticVariableUsedInClassInitialization")
 public record Traverse() {
 
-    public static Boolean extensions = _TREE_TRAVERSE_EXTENSIONS.get();
+    public static boolean extensions = Boolean.TRUE.equals(_TREE_TRAVERSE_EXTENSIONS.get());
     private static boolean frozen = false;
 
     /**
@@ -16,7 +16,7 @@ public record Traverse() {
      */
     public static void refresh() {
 
-        if (!frozen) extensions = _TREE_TRAVERSE_EXTENSIONS.get();
+        if (!frozen) extensions = Boolean.TRUE.equals(_TREE_TRAVERSE_EXTENSIONS.get());
     }
 
     /**

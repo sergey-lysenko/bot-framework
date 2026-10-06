@@ -561,7 +561,6 @@ public class Gui implements _GUI {
 
         addRow(TEST.name(), test, panel, row++);
         addRow(POOL.name(), pool, panel, row++);
-        addRow(PLATFORM.name(), platform, panel, row++);
         
         // Add additional special properties
         if (domain != null) {
@@ -599,6 +598,7 @@ public class Gui implements _GUI {
             }
         }
 
+        addRow(PLATFORM.name(), platform, panel, row++);
         addRow(EMPTY, reset, panel, row);
 
         final Dimension pref = panel.getPreferredSize();

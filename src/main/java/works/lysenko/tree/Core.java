@@ -95,8 +95,8 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     @Override
     public int calculateCombinations(final boolean onlyConfigured) {
 
-        final boolean isDownstream = (Include.downstream) && ZERO < weightDownstream().doubleValue();
-        final boolean isUpstream = (Include.upstream) && ZERO < weightUpstream().doubleValue();
+        final boolean isDownstream = Boolean.TRUE.equals(Include.downstream) && ZERO < weightDownstream().doubleValue();
+        final boolean isUpstream = Boolean.TRUE.equals(Include.upstream) && ZERO < weightUpstream().doubleValue();
         final boolean isConfigured = (isNotNull(weightConfigured())) && ZERO < weightConfigured().doubleValue();
         if (onlyConfigured) return (isNotNull(weightConfigured())) && (isDownstream || isUpstream || isConfigured) ? ONE : ZERO;
         return ONE;

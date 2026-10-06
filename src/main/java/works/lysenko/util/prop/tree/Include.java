@@ -17,15 +17,15 @@ import static works.lysenko.util.spec.PropEnum._TREE_INCLUDE_UPSTREAM;
 @SuppressWarnings({"MissingJavadoc", "NonFinalStaticVariableUsedInClassInitialization"})
 public record Include() {
 
-    public static Boolean upstream = _TREE_INCLUDE_UPSTREAM.get();
-    public static Boolean downstream = _TREE_INCLUDE_DOWNSTREAM.get();
+    public static boolean upstream = Boolean.TRUE.equals(_TREE_INCLUDE_UPSTREAM.get());
+    public static boolean downstream = Boolean.TRUE.equals(_TREE_INCLUDE_DOWNSTREAM.get());
 
     /**
      * Refreshes upstream and downstream flags from current test properties.
      */
     public static void refresh() {
 
-        upstream = _TREE_INCLUDE_UPSTREAM.get();
-        downstream = _TREE_INCLUDE_DOWNSTREAM.get();
+        upstream = Boolean.TRUE.equals(_TREE_INCLUDE_UPSTREAM.get());
+        downstream = Boolean.TRUE.equals(_TREE_INCLUDE_DOWNSTREAM.get());
     }
 }

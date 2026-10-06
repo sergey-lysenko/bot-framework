@@ -50,7 +50,7 @@ record Keys() {
         final String def = meta.defaults().get(key);
         final String value = entry.getValue();
         final boolean defaultValue = value.equals(def);
-        if (!defaultValue) meta.defaults().remove(key);
+        meta.defaults().remove(key);
         final String commonMarker = properties.isCommonValue(key, value) ? COMMON_MARKER : EMPTY;
         final String renderedKey = bb(!defaultValue, entry.getKey());
         final String equals = gb(isNull(def), s(_EQUAL_));

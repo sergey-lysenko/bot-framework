@@ -17,15 +17,15 @@ public record Notify() {
     /**
      * Whether the scenario is not executable notice.
      */
-    public static final boolean notExecutable = _TREE_SCENARIO_NOT_EXECUTABLE_NOTICE.get();
+    public static final boolean notExecutable = Boolean.TRUE.equals(_TREE_SCENARIO_NOT_EXECUTABLE_NOTICE.get());
 
     /**
      * Represents a flag indicating whether the scenario does not fit notice should be displayed.
      */
-    public static final boolean doesNotFit = _TREE_SCENARIO_DOES_NOT_FIT_NOTICE.get();
+    public static final boolean doesNotFit = Boolean.TRUE.equals(_TREE_SCENARIO_DOES_NOT_FIT_NOTICE.get());
 
     /**
      * Represents a flag indicating whether to notify about empty scenario packages.
      */
-    public static final boolean emptyPackage = _TREE_NOTIFY_ABOUT_EMPTY_SCENARIO_PACKAGES.get();
+    public static final boolean emptyPackage = Boolean.TRUE.equals(_TREE_NOTIFY_ABOUT_EMPTY_SCENARIO_PACKAGES.get());
 }
