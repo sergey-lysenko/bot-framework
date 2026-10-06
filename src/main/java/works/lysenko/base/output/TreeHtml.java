@@ -111,7 +111,14 @@ public final class TreeHtml {
         final List<Edge> edges = new ArrayList<>();
         final int[] rows = {1};
         final Set<_Scenario> ancestors = Collections.newSetFromMap(new IdentityHashMap<>());
-        for (final _Scenario root : roots)
+        final List<_Scenario> sortedRoots = new ArrayList<>();
+        if (null != roots) {
+            for (final _Scenario r : roots) {
+                if (null != r) sortedRoots.add(r);
+            }
+            sortedRoots.sort(Comparator.comparing(_Scenario::getSimpleName));
+        }
+        for (final _Scenario root : sortedRoots)
             processScenario(root, null, 0, rows, ancestors, sorted, nodes, edges);
         optimizeLayout(nodes);
         return new TreeLayout(nodes, edges);
@@ -222,9 +229,9 @@ public final class TreeHtml {
                 final List<NodeData> colNodes = colMap.get(c);
                 if (null == colNodes || colNodes.isEmpty()) continue;
 
-                final double[] targets = new double[colNodes.size()];
-                for (int i = 0; i < colNodes.size(); i++) {
-                    final NodeData n = colNodes.get(i);
+                final record NodeTarget(NodeData node, double target) {}
+                final List<NodeTarget> nodeTargets = new ArrayList<>(colNodes.size());
+                for (final NodeData n : colNodes) {
                     double sum = 0.0;
                     int count = 0;
                     if (null != n.parent()) {
@@ -235,7 +242,16 @@ public final class TreeHtml {
                         sum += child.row();
                         count++;
                     }
-                    targets[i] = (0 < count) ? (sum / count) : n.row();
+                    final double target = (0 < count) ? (sum / count) : n.row();
+                    nodeTargets.add(new NodeTarget(n, target));
+                }
+
+                nodeTargets.sort(Comparator.comparingDouble(NodeTarget::target));
+
+                final double[] targets = new double[colNodes.size()];
+                for (int i = 0; i < nodeTargets.size(); i++) {
+                    colNodes.set(i, nodeTargets.get(i).node);
+                    targets[i] = nodeTargets.get(i).target;
                 }
 
                 final double[] resolved = solveColumn1D(targets);

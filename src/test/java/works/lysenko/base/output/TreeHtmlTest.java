@@ -114,7 +114,7 @@ class TreeHtmlTest {
         // 1. Check non-overlapping constraint: within each column, each subsequent node row >= prevRow + 1.0
         for (int c = 0; c <= 4; c++) {
             final int col = c;
-            final List<NodeData> inCol = nodes.stream().filter(n -> n.col() == col).toList();
+            final List<NodeData> inCol = nodes.stream().filter(n -> n.col() == col).sorted(java.util.Comparator.comparingDouble(NodeData::row)).toList();
             for (int i = 1; i < inCol.size(); i++) {
                 assertTrue(inCol.get(i).row() >= inCol.get(i - 1).row() + 1.0 - 1e-6,
                         "Nodes in col " + col + " must not overlap");

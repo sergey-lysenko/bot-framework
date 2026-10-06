@@ -113,4 +113,13 @@ public interface _Dashboard {
      * @param title the title of the current test to be set
      */
     void setTitle(String title);
+
+    /**
+     * Updates the displayed tree progression image on the dashboard.
+     *
+     * @param image the rendered tree progression image
+     */
+    default void setTreeProgression(final java.awt.Image image) {
+        // Default implementation does nothing
+    }
 }

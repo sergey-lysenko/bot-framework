@@ -21,9 +21,14 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import static java.util.Objects.isNull;
@@ -72,6 +77,8 @@ public final class TreeTracker {
 
     private static final List<File> capturedFrames = new ArrayList<>();
     private static File customOutputDir = null;
+    private static volatile BufferedImage latestFrameImage = null;
+    private static final Map<String, Integer> previousExecutions = new HashMap<>();
 
     private TreeTracker() {
     }
@@ -82,6 +89,17 @@ public final class TreeTracker {
     public static void reset() {
         capturedFrames.clear();
         customOutputDir = null;
+        latestFrameImage = null;
+        previousExecutions.clear();
+    }
+
+    /**
+     * Retrieves the most recent frame image of tree progression.
+     *
+     * @return the most recent rendered BufferedImage, or null if none available
+     */
+    public static BufferedImage getLatestFrameImage() {
+        return latestFrameImage;
     }
 
     /**
@@ -194,11 +212,18 @@ public final class TreeTracker {
 
         final BufferedImage image;
         try {
-            image = renderTreeProgression(layout, target, currentCycle);
+            final Set<String> recentNodeKeys = computeRecentNodeKeys(layout);
+            image = renderTreeProgression(layout, target, currentCycle, recentNodeKeys);
+            updatePreviousExecutions(layout);
         } catch (final IllegalArgumentException e) {
             System.err.println("Skipped tree progression frame: " + e.getMessage());
             return;
         }
+        latestFrameImage = image;
+        if (isNotNull(core) && isNotNull(core.getDashboard())) {
+            core.getDashboard().setTreeProgression(image);
+        }
+
         final File progressionDir = new File(runDir, "tree_progression");
         if (!progressionDir.exists() && !progressionDir.mkdirs())
             return;
@@ -223,6 +248,25 @@ public final class TreeTracker {
             }
         } catch (final IOException e) {
             System.err.println("Failed to save tree progression frame: " + e.getMessage());
+        }
+    }
+
+    private static Set<String> computeRecentNodeKeys(final TreeLayout layout) {
+        final Set<String> recent = new HashSet<>();
+        for (final NodeData n : layout.nodes()) {
+            final int execs = (null != n.result()) ? n.result().getExecutions() : 0;
+            final int prev = previousExecutions.getOrDefault(n.id(), 0);
+            if (execs > prev) {
+                recent.add(n.id());
+            }
+        }
+        return recent;
+    }
+
+    private static void updatePreviousExecutions(final TreeLayout layout) {
+        for (final NodeData n : layout.nodes()) {
+            final int execs = (null != n.result()) ? n.result().getExecutions() : 0;
+            previousExecutions.put(n.id(), execs);
         }
     }
 
@@ -456,6 +500,24 @@ public final class TreeTracker {
             final int target,
             final int currentCycle) {
 
+        return renderTreeProgression(layout, target, currentCycle, Collections.emptySet());
+    }
+
+    /**
+     * Renders scenario tree progression layout as a BufferedImage, highlighting recently changed nodes.
+     *
+     * @param layout         computed tree layout
+     * @param target         target executions count
+     * @param currentCycle   current cycle index
+     * @param recentNodeKeys set of node keys recently traversed or changed
+     * @return rendered BufferedImage
+     */
+    public static BufferedImage renderTreeProgression(
+            final TreeLayout layout,
+            final int target,
+            final int currentCycle,
+            final Set<String> recentNodeKeys) {
+
         int maxCol = 0;
         double maxRow = 0.0;
         int totalLeafs = 0;
@@ -513,13 +575,13 @@ public final class TreeTracker {
         }
 
         // Draw edges
-        drawEdges(g, layout.edges(), target, maxLeafOverRatio);
+        drawEdges(g, layout.edges(), target, maxLeafOverRatio, recentNodeKeys);
 
         // Draw nodes
         final Font fontLabel = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
         final Font fontBadge = new Font(Font.MONOSPACED, Font.BOLD, 10);
         for (final NodeData n : layout.nodes()) {
-            drawNode(g, n, target, maxLeafOverRatio, fontLabel, fontBadge);
+            drawNode(g, n, target, maxLeafOverRatio, fontLabel, fontBadge, recentNodeKeys.contains(n.id()));
         }
 
         // Draw header
@@ -533,7 +595,8 @@ public final class TreeTracker {
             final Graphics2D g,
             final List<Edge> edges,
             final int target,
-            final double maxLeafOverRatio) {
+            final double maxLeafOverRatio,
+            final Set<String> recentNodeKeys) {
 
         final List<Edge> sortedEdges = new ArrayList<>(edges);
         sortedEdges.sort(Comparator.comparingInt(e -> {
@@ -561,18 +624,30 @@ public final class TreeTracker {
             path.moveTo(startX, startY);
             path.curveTo(cX, startY, cX, endY, endX, endY);
 
-            if (toExecs > 0 && fromExecs > 0) {
+            final boolean isRecent = recentNodeKeys.contains(e.to().id());
+
+            if (isRecent) {
+                // Outer glowing aura for recently changed branch edge
+                g.setColor(new Color(0x38, 0xBD, 0xF8, 90));
+                g.setStroke(new BasicStroke(5.0f));
+                g.draw(path);
+
+                g.setColor(ACCENT_CYAN);
+                g.setStroke(new BasicStroke(3.0f));
+                g.draw(path);
+            } else if (toExecs > 0 && fromExecs > 0) {
                 if (toEvents > 0) {
                     g.setColor(WARNING_AMBER);
                 } else {
                     g.setColor(getScenarioProgressColor(e.to(), target, maxLeafOverRatio));
                 }
                 g.setStroke(new BasicStroke(2.2f));
+                g.draw(path);
             } else {
                 g.setColor(UNVISITED_EDGE);
                 g.setStroke(new BasicStroke(1.2f));
+                g.draw(path);
             }
-            g.draw(path);
         }
     }
 
@@ -582,7 +657,8 @@ public final class TreeTracker {
             final int target,
             final double maxLeafOverRatio,
             final Font fontLabel,
-            final Font fontBadge) {
+            final Font fontBadge,
+            final boolean isRecent) {
 
         final int x = n.col() * COL_WIDTH + PADDING_X;
         final int y = (int) Math.round(n.row() * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y);
@@ -600,7 +676,11 @@ public final class TreeTracker {
         final Color borderColor;
         final float strokeW;
 
-        if (execs == 0) {
+        if (isRecent) {
+            cardFill = (overRatio > 0.0) ? progressColor : new Color(0x16, 0x3A, 0x58);
+            borderColor = ACCENT_CYAN;
+            strokeW = 2.8f;
+        } else if (execs == 0) {
             cardFill = UNVISITED_CARD;
             borderColor = UNVISITED_BORDER;
             strokeW = 1.2f;

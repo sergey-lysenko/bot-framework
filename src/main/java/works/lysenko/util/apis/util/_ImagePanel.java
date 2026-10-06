@@ -2,6 +2,7 @@ package works.lysenko.util.apis.util;
 
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.Dimension;
 
 /**
  * The _ImagePanel interface represents a image panel that can be painted on the screen and
@@ -34,5 +35,13 @@ public interface _ImagePanel {
      * @param scale the scale factor to be applied to the image
      */
     void setScale(final float scale);
+
+    /**
+     * Scales the image down to fit within the specified bounds while preserving its aspect ratio.
+     * Images smaller than the bounds retain their native size.
+     *
+     * @param bounds the available display area
+     */
+    void fitTo(final Dimension bounds);
 
 }

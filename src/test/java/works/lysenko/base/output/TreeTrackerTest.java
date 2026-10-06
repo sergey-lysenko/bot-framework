@@ -235,6 +235,19 @@ class TreeTrackerTest {
     }
 
     @Test
+    void testRenderTreeProgressionWithRecentNodeHighlights() {
+        final NodeData root = new NodeData("col_0_0", "root.App", "Root", 0, 1.0, null);
+        final NodeData leaf1 = new NodeData("col_1_0", "root.login.Success", "Root", 1, 1.0, null);
+        leaf1.setParent(root);
+        root.children().add(leaf1);
+
+        final TreeLayout layout = new TreeLayout(List.of(root, leaf1), List.of(new Edge(root, leaf1)));
+        final BufferedImage img = TreeTracker.renderTreeProgression(layout, 1, 1, java.util.Set.of("col_1_0"));
+
+        assertNotNull(img);
+    }
+
+    @Test
     void rejectsTreeFramesExceedingTheConfiguredDimensions() {
         final NodeData oversized = new NodeData("large", "Large", "Root", 100, 0.0, null);
         final TreeLayout layout = new TreeLayout(List.of(oversized), List.of());

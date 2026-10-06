@@ -291,7 +291,7 @@ public class Gui implements _GUI {
     /**
      * Adds the standard parameters to the Parameters object.
      */
-    void addStandardParameters() {
+    public void addStandardParameters() {
         // Standard parameters
         test = addFromFiles(TEST.name(), _TESTS_, TEST_PROPERTIES_EXTENSION);
         pool = addFromFiles(POOL.name(), ETC_, USERS_POOL_EXTENSION);
@@ -556,6 +556,7 @@ public class Gui implements _GUI {
             "ValueOfIncrementOrDecrementUsed"})
     public JPanel dialogueBox() {
 
+        if (test == null) addStandardParameters();
         panel = new JPanel(new GridBagLayout());
         int row = 0;
 

@@ -1,6 +1,7 @@
 package works.lysenko.base.ui;
 
 import works.lysenko.base.Parameters;
+import works.lysenko.base.output.TreeTracker;
 import works.lysenko.base.parameters.Gui;
 import works.lysenko.base.parameters.PropertiesPanel;
 import works.lysenko.util.apis.util._Dashboard;
@@ -9,6 +10,8 @@ import works.lysenko.util.apis.scenario._Scenario;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
@@ -20,6 +23,10 @@ public class ControlPanel extends JFrame implements _Dashboard {
     private final Gui gui;
     private final PropertiesPanel propertiesPanel;
     private UserInterface dashboardPanel;
+    private final CardLayout treeProgressionLayout;
+    private final JPanel treeProgressionPanel;
+    private final ImagePanel treeImagePanel;
+    private final JViewport treeViewport;
     private final CountDownLatch runLatch = new CountDownLatch(1);
 
     public static ControlPanel getInstance() {
@@ -69,6 +76,40 @@ public class ControlPanel extends JFrame implements _Dashboard {
         // 2. Execution Tab (Dashboard)
         dashboardPanel = new UserInterface(null); // will be refactored to JPanel
         tabbedPane.addTab("Execution", dashboardPanel);
+
+        // 3. Tree Progression Tab
+        treeProgressionLayout = new CardLayout();
+        treeProgressionPanel = new JPanel(treeProgressionLayout);
+
+        final JPanel placeholderPanel = new JPanel(new GridBagLayout());
+        final JLabel placeholderLabel = new JLabel("No tree progression frame available yet.");
+        placeholderLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
+        placeholderLabel.setForeground(new Color(0x94, 0xA3, 0xB8));
+        placeholderPanel.add(placeholderLabel);
+
+        treeImagePanel = new ImagePanel();
+        treeImagePanel.setBackground(new Color(0x0F, 0x17, 0x2A));
+        final JScrollPane treeScrollPane = new JScrollPane(treeImagePanel);
+        treeScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        treeScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+        treeViewport = treeScrollPane.getViewport();
+        treeViewport.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(final ComponentEvent event) {
+
+                fitTreeImageToViewport();
+            }
+        });
+
+        treeProgressionPanel.add(placeholderPanel, "PLACEHOLDER");
+        treeProgressionPanel.add(treeScrollPane, "IMAGE");
+
+        tabbedPane.addTab("Tree Progression", treeProgressionPanel);
+
+        final Image initialFrame = TreeTracker.getLatestFrameImage();
+        if (null != initialFrame) {
+            setTreeProgression(initialFrame);
+        }
 
         add(tabbedPane);
     }
@@ -183,5 +224,37 @@ public class ControlPanel extends JFrame implements _Dashboard {
     @Override
     public void setDebug(boolean active) {
         dashboardPanel.setDebug(active);
+    }
+
+    public JTabbedPane getTabbedPane() {
+        return tabbedPane;
+    }
+
+    public ImagePanel getTreeImagePanel() {
+        return treeImagePanel;
+    }
+
+    @Override
+    public void setTreeProgression(final Image image) {
+        if (null == treeProgressionPanel) return;
+        final Runnable updateRunnable = () -> {
+            if (null == image) {
+                treeProgressionLayout.show(treeProgressionPanel, "PLACEHOLDER");
+            } else {
+                treeImagePanel.setImage(image);
+                fitTreeImageToViewport();
+                treeProgressionLayout.show(treeProgressionPanel, "IMAGE");
+            }
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            updateRunnable.run();
+        } else {
+            SwingUtilities.invokeLater(updateRunnable);
+        }
+    }
+
+    private void fitTreeImageToViewport() {
+
+        treeImagePanel.fitTo(treeViewport.getExtentSize());
     }
 }

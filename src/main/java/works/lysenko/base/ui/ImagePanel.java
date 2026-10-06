@@ -6,8 +6,10 @@ import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Point;
+import java.awt.RenderingHints;
 
 import static java.util.Objects.isNull;
 
@@ -61,7 +63,13 @@ public final class ImagePanel extends JPanel implements _ImagePanel {
 
         super.paintComponent(g);
         if (!isNull(img)) {
-            g.drawImage(img, 0, 0, (int) (img.getWidth(null) * scale), (int) (img.getHeight(null) * scale), this);
+            final Graphics2D graphics = (Graphics2D) g.create();
+            try {
+                graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                graphics.drawImage(img, 0, 0, (int) (img.getWidth(null) * scale), (int) (img.getHeight(null) * scale), this);
+            } finally {
+                graphics.dispose();
+            }
         }
     }
 
@@ -69,12 +77,30 @@ public final class ImagePanel extends JPanel implements _ImagePanel {
 
         this.img = img;
         updatePreferredSize();
+        revalidate();
+        repaint();
     }
 
     public void setScale(final float scale) {
 
         this.scale = scale;
         updatePreferredSize();
+        revalidate();
+        repaint();
+    }
+
+    @Override
+    public void fitTo(final Dimension bounds) {
+
+        if (isNull(img) || bounds.width <= 0 || bounds.height <= 0) return;
+
+        final int imageWidth = img.getWidth(null);
+        final int imageHeight = img.getHeight(null);
+        if (imageWidth <= 0 || imageHeight <= 0) return;
+
+        final float widthScale = (float) bounds.width / imageWidth;
+        final float heightScale = (float) bounds.height / imageHeight;
+        setScale(Math.min(1.0F, Math.min(widthScale, heightScale)));
     }
 
     public Image getImage() {
