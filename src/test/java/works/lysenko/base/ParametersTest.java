@@ -112,9 +112,13 @@ class ParametersTest {
     @Test
     void plainAccessors() {
 
-        final Parameters parameters = with("TEST", "smoke", "POOL", "fast", "DOMAIN", "dev");
+        final Parameters parameters = with("TEST", "smoke", "POOL", "fast", "DOMAIN", "dev", "TESTS", "10", "FORBID_OVEREXECUTION", "true", "COMPLETION_WEIGHT", "2.5", "TRAVERSE_EXTENSIONS", "true");
         assertEquals("smoke", parameters.getTest());
         assertEquals("fast", parameters.getPool());
         assertEquals("dev", parameters.getDomain());
+        assertEquals("10", parameters.getTests());
+        assertEquals(Boolean.TRUE, parameters.getForbidOverexecution());
+        assertEquals("2.5", parameters.getCompletionWeight());
+        assertEquals(Boolean.TRUE, parameters.getTraverseExtensions());
     }
 }

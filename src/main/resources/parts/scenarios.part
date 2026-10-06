@@ -29,6 +29,10 @@
 # Whether to continue execution even if a scenario selection fails.
 # .tree.ignore.failed.scenario.selection=false
 
+# ------------------------------------------------------------------------------
+# Forbid over-execution of leaf scenarios that have fulfilled their target goal.
+# .tree.forbid.overexecution=false
+
 # ==============================================================================
 # Test Node Configuration
 # ==============================================================================

@@ -339,8 +339,26 @@ public class TestProperties implements _TestProperties {
             if (1 < parameters.getAllLeafsCount()) {
                 the.setProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(parameters.getAllLeafsCount()));
             }
+            final String testsVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.TESTS);
+            if (isNotNull(testsVal) && !testsVal.isEmpty()) {
+                the.setProperty(PropEnum._TEST_TESTS.getPropertyName(), testsVal);
+            }
+            final String forbidVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.FORBID_OVEREXECUTION);
+            if (isNotNull(forbidVal) && !forbidVal.isEmpty()) {
+                the.setProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), forbidVal);
+            }
+            final String weightVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.COMPLETION_WEIGHT);
+            if (isNotNull(weightVal) && !weightVal.isEmpty()) {
+                the.setProperty(PropEnum._TREE_COMPLETION_WEIGHT.getPropertyName(), weightVal);
+            }
+            final String traverseVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.TRAVERSE_EXTENSIONS);
+            if (isNotNull(traverseVal) && !traverseVal.isEmpty()) {
+                the.setProperty(PropEnum._TREE_TRAVERSE_EXTENSIONS.getPropertyName(), traverseVal);
+            }
         }
         applyUserOverrides();
+        works.lysenko.util.prop.tree.Scenario.refresh();
+        works.lysenko.util.prop.tree.Traverse.refresh();
         logTestConfiguration(common, result.debug());
     }
 
@@ -381,6 +399,8 @@ public class TestProperties implements _TestProperties {
             the.setProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(allLeafsCount));
         }
         applyUserOverrides();
+        works.lysenko.util.prop.tree.Scenario.refresh();
+        works.lysenko.util.prop.tree.Traverse.refresh();
     }
 
     private void applyUserOverrides() {

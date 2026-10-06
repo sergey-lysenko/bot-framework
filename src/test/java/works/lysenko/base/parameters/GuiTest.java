@@ -13,6 +13,7 @@ import works.lysenko.util.data.records.TestPropertiesDescriptor;
 import works.lysenko.util.spec.PropEnum;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -722,5 +723,30 @@ class GuiTest {
         assertTrue(dialog3.isConfirmed());
         assertNull(tp.getUserOverrides().get(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName()),
                 "Override should be cleared when reset to default");
+    }
+
+    @Test
+    void testGuiDefaultPropertyFallbacks() throws Exception {
+        final Parameters emptyParams = new Parameters(new Properties());
+        final Gui gui = new Gui(emptyParams);
+        gui.addStandardParameters();
+
+        final Field weightField = Gui.class.getDeclaredField("completionWeight");
+        weightField.setAccessible(true);
+        final JTextField weightComp = (JTextField) weightField.get(gui);
+        assertNotNull(weightComp);
+        assertEquals("4.5", weightComp.getText());
+
+        final Field forbidField = Gui.class.getDeclaredField("forbidOverexecution");
+        forbidField.setAccessible(true);
+        final JCheckBox forbidComp = (JCheckBox) forbidField.get(gui);
+        assertNotNull(forbidComp);
+        assertFalse(forbidComp.isSelected());
+
+        final Field traverseField = Gui.class.getDeclaredField("traverseExtensions");
+        traverseField.setAccessible(true);
+        final JCheckBox traverseComp = (JCheckBox) traverseField.get(gui);
+        assertNotNull(traverseComp);
+        assertFalse(traverseComp.isSelected());
     }
 }

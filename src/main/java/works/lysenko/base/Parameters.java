@@ -71,6 +71,10 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         read(HEADLESS);
         read(ALL_LEAFS.name()); // empty default: allows fallback to properties / count inference
         read(ALL_LEAFS_COUNT.name());
+        read(TESTS.name());
+        read(FORBID_OVEREXECUTION.name());
+        read(COMPLETION_WEIGHT.name());
+        read(TRAVERSE_EXTENSIONS.name());
         readAdditionalParameters(list);
         showOptionalGui();
     }
@@ -188,6 +192,30 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         return getValue(POOL);
     }
 
+    public String getTests() {
+
+        return getValue(TESTS);
+    }
+
+    public Boolean getForbidOverexecution() {
+
+        final String val = getValue(FORBID_OVEREXECUTION);
+        if (isNotNull(val) && !val.isEmpty()) return Boolean.parseBoolean(val);
+        return null;
+    }
+
+    public String getCompletionWeight() {
+
+        return getValue(COMPLETION_WEIGHT);
+    }
+
+    public Boolean getTraverseExtensions() {
+
+        final String val = getValue(TRAVERSE_EXTENSIONS);
+        if (isNotNull(val) && !val.isEmpty()) return Boolean.parseBoolean(val);
+        return null;
+    }
+
     /**
      * @param name of a parameter
      * @return {@link String} representation of given parameter's value
@@ -231,7 +259,11 @@ public final class Parameters extends Properties implements _ExecutionParameterV
 
         final String dotted = name.toLowerCase(java.util.Locale.ROOT).replace('_', '.');
         if (isNotNull(System.getenv(name))) put(name, System.getenv(name)); // prio0: Environment variable
+        else if (isNotNull(System.getenv("TEST_" + name))) put(name, System.getenv("TEST_" + name)); // prio0: Environment variable with TEST_ prefix
+        else if (isNotNull(System.getenv("TREE_" + name))) put(name, System.getenv("TREE_" + name)); // prio0: Environment variable with TREE_ prefix
         else if (isNotNull(System.getProperty(name))) put(name, System.getProperty(name)); // prio0.5: System property
+        else if (isNotNull(System.getProperty("TEST_" + name))) put(name, System.getProperty("TEST_" + name));
+        else if (isNotNull(System.getProperty("TREE_" + name))) put(name, System.getProperty("TREE_" + name));
         else if (isNotNull(System.getProperty(name.toLowerCase(java.util.Locale.ROOT)))) put(name, System.getProperty(name.toLowerCase(java.util.Locale.ROOT)));
         else if (isNotNull(System.getProperty(s(_DOT_, dotted)))) put(name, System.getProperty(s(_DOT_, dotted)));
         else if (isNotNull(System.getProperty(dotted))) put(name, System.getProperty(dotted));

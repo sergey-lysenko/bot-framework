@@ -90,7 +90,7 @@ public final class AllLeafCompletions {
             if (effectiveExecs <= leafTarget && lastRecordedExecs.getOrDefault(completingScenario, 0) < effectiveExecs) {
                 lastRecordedExecs.put(completingScenario, effectiveExecs);
                 reachedGoal = true;
-                completedGoalIndex = Base.core.getExecutedLeafsCount();
+                completedGoalIndex = Base.core.getExecutedLeafExecutionsCount();
                 if (execs == 0 && completedGoalIndex == 0) {
                     completedGoalIndex = 1;
                 }

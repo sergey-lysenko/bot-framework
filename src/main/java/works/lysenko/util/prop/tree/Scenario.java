@@ -31,6 +31,10 @@ public record Scenario() {
      */
     public static boolean ignoreFailedSelection = _TREE_IGNORE_FAILED_SCENARIO_SELECTION.get();
     /**
+     * Indicates whether over-execution of fulfilled leaf scenarios is forbidden.
+     */
+    public static boolean forbidOverexecution = _TREE_FORBID_OVEREXECUTION.get();
+    /**
      * Represents the root identifier or path for a scenario within the system.
      */
     public static String root = _TEST_ROOT.get();
@@ -44,6 +48,7 @@ public record Scenario() {
         defaultWeight = _TREE_DEFAULT_WEIGHT.get();
         selectionRetries = _TEST_SCENARIO_SUFFICIENCY_ATTEMPTS.get();
         ignoreFailedSelection = _TREE_IGNORE_FAILED_SCENARIO_SELECTION.get();
+        forbidOverexecution = _TREE_FORBID_OVEREXECUTION.get();
         root = _TEST_ROOT.get();
     }
 

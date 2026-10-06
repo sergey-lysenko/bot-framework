@@ -9,8 +9,12 @@ import works.lysenko.util.data.enums.Brackets;
 import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.type.sets.SortedScenario;
 
+import works.lysenko.Base;
+import works.lysenko.util.prop.tree.Scenario;
+
 import java.util.Set;
 
+import static java.util.Objects.isNull;
 import static works.lysenko.util.data.enums.ScenarioType.LEAF;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Wrap.e;
@@ -37,6 +41,25 @@ public abstract class Leaf extends Core {
      */
     protected Leaf() {
 
+    }
+
+    /**
+     * Determines whether this leaf scenario has reached or exceeded its target execution goal.
+     *
+     * @return true if execution goal is fulfilled, false otherwise
+     */
+    public boolean isGoalFulfilled() {
+
+        if (isNull(Base.core) || isNull(Base.core.getResults())) return false;
+        final int target = (this instanceof Mono) ? 1 : works.lysenko.base.Core.resolveAllLeafsTarget();
+        return target <= Base.core.getResults().getExecutions(this);
+    }
+
+    @Override
+    public boolean isExecutable() {
+
+        if (Scenario.forbidOverexecution && isGoalFulfilled()) return false;
+        return super.isExecutable();
     }
 
     /**

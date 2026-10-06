@@ -18,6 +18,7 @@ import works.lysenko.util.apis.test._Repeater;
 import works.lysenko.util.apis.test._Test;
 import works.lysenko.util.data.enums.ExecutionParameter;
 import works.lysenko.util.data.enums.ScenarioType;
+import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.spec.PropEnum;
 
 import java.lang.reflect.Field;
@@ -732,6 +733,44 @@ class AllLeafsCoverageTest {
         leafs = rootCtrl.getAccessibleLeafs();
         assertEquals(2, leafs.size(), "Mono must remain in accessible leafs even after executed");
         assertTrue(leafs.contains(mono));
+    }
+
+    @Test
+    void testForbidOverexecutionProperty() throws Exception {
+        assertEquals(".tree.forbid.overexecution", PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName());
+        assertEquals("false", PropEnum._TREE_FORBID_OVEREXECUTION.defaultValue());
+
+        setTestProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), "false");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
+        Base.parameters = new Parameters(new Properties());
+        Scenario.refresh();
+
+        final Ctrl rootCtrl = new Ctrl(null);
+        final TestLeaf leaf = new TestLeaf(fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(leaf, fr(1.0));
+
+        // When forbidOverexecution is false, leaf remains executable even if goal fulfilled
+        Base.core.getResults().count(leaf);
+        Base.core.getResults().count(leaf);
+        assertTrue(leaf.isGoalFulfilled());
+        assertTrue(leaf.isExecutable());
+
+        // Enable forbidOverexecution
+        setTestProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), "true");
+        Scenario.refresh();
+
+        // Goal is fulfilled (2 executions >= target 2) -> leaf becomes non-executable
+        assertTrue(leaf.isGoalFulfilled());
+        assertFalse(leaf.isExecutable(), "Leaf must be non-executable when forbidOverexecution is true and goal fulfilled");
+
+        // But leaf MUST remain in getAccessibleLeafs()
+        final Set<_Scenario> accessible = rootCtrl.getAccessibleLeafs();
+        assertEquals(1, accessible.size());
+        assertTrue(accessible.contains(leaf));
+
+        // Reset property
+        setTestProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), "false");
+        Scenario.refresh();
     }
 
     private static class TestMono extends Mono {

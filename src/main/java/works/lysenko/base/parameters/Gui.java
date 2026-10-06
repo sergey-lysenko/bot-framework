@@ -1,5 +1,6 @@
 package works.lysenko.base.parameters;
 
+import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.Base;
 import works.lysenko.base.Parameters;
 import works.lysenko.base.TestProperties;
@@ -56,11 +57,14 @@ import static works.lysenko.util.chrs.____.FULL;
 import static works.lysenko.util.data.enums.Brackets.ROUND;
 import static works.lysenko.util.data.enums.ExecutionParameter.ALL_LEAFS;
 import static works.lysenko.util.data.enums.ExecutionParameter.ALL_LEAFS_COUNT;
+import static works.lysenko.util.data.enums.ExecutionParameter.COMPLETION_WEIGHT;
 import static works.lysenko.util.data.enums.ExecutionParameter.DOMAIN;
+import static works.lysenko.util.data.enums.ExecutionParameter.FORBID_OVEREXECUTION;
 import static works.lysenko.util.data.enums.ExecutionParameter.HEADLESS;
 import static works.lysenko.util.data.enums.ExecutionParameter.PLATFORM;
 import static works.lysenko.util.data.enums.ExecutionParameter.POOL;
 import static works.lysenko.util.data.enums.ExecutionParameter.TEST;
+import static works.lysenko.util.data.enums.ExecutionParameter.TRAVERSE_EXTENSIONS;
 import static works.lysenko.util.data.enums.ExitCode.CLOSED_THROUGH_GUI;
 import static works.lysenko.util.data.enums.ExitCode.PLATFORMS_RESET;
 import static works.lysenko.util.data.strs.Bind.b;
@@ -105,6 +109,10 @@ public class Gui implements _GUI {
     private JCheckBox headless = null;
     private JCheckBox allLeafs = null;
     private JTextField allLeafsCount = null;
+    private JTextField testsCount = null;
+    private JCheckBox forbidOverexecution = null;
+    private JTextField completionWeight = null;
+    private JCheckBox traverseExtensions = null;
     private JComboBox<Object> platform = null;
     private JComboBox<Object> test = null;
     private JComboBox<Object> pool = null;
@@ -242,8 +250,9 @@ public class Gui implements _GUI {
     private JComboBox<Object> addFromFiles(final String type, final String directory, final String filter) {
 
         final List<String> entityList = new LinkedList<>();
-        if (!(parameters.getProperty(type)).isEmpty()) {
-            entityList.add(parameters.getProperty(type));
+        final String propVal = parameters.getProperty(type);
+        if (isNotNull(propVal) && !propVal.isEmpty()) {
+            entityList.add(propVal);
         }
 
         final File dir = new File(directory);
@@ -289,7 +298,7 @@ public class Gui implements _GUI {
         addPlatforms();
 
         //noinspection StatementWithEmptyBody
-        if (parameters.getProperty(PLATFORM.name()).equals(Platform.ANDROID.getString())) {
+        if (Platform.ANDROID.getString().equals(parameters.getProperty(PLATFORM.name()))) {
             /* Devices selection is commented out until implementation of automatic devices management
             List<String> devices = loadLinesFromFile(Paths.get(DEVICES_FILE));
             device = new JComboBox<>(devices.toArray());
@@ -302,6 +311,34 @@ public class Gui implements _GUI {
         allLeafs = new JCheckBox();
         allLeafs.setSelected(parameters.isAllLeafs());
         allLeafsCount = new JTextField(String.valueOf(parameters.getAllLeafsCount()), WIDTH);
+
+        final String paramTests = parameters.getTests();
+        final Integer propTests = PropEnum._TEST_TESTS.get();
+        final String defaultTests = (isNotNull(paramTests) && !paramTests.isEmpty())
+                ? paramTests
+                : (isNotNull(propTests) ? propTests.toString() : EMPTY);
+        testsCount = new JTextField(defaultTests, WIDTH);
+
+        final Boolean paramForbid = parameters.getForbidOverexecution();
+        final boolean defaultForbid = (isNotNull(paramForbid))
+                ? paramForbid
+                : Boolean.TRUE.equals(PropEnum._TREE_FORBID_OVEREXECUTION.get());
+        forbidOverexecution = new JCheckBox();
+        forbidOverexecution.setSelected(defaultForbid);
+
+        final String paramWeight = parameters.getCompletionWeight();
+        final String defaultWeight = (isNotNull(paramWeight) && !paramWeight.isEmpty())
+                ? paramWeight
+                : PropEnum._TREE_COMPLETION_WEIGHT.defaultValue();
+        completionWeight = new JTextField(defaultWeight, WIDTH);
+
+        final Boolean paramTraverse = parameters.getTraverseExtensions();
+        final boolean defaultTraverse = (isNotNull(paramTraverse))
+                ? paramTraverse
+                : Boolean.TRUE.equals(PropEnum._TREE_TRAVERSE_EXTENSIONS.get());
+        traverseExtensions = new JCheckBox();
+        traverseExtensions.setSelected(defaultTraverse);
+
         initCyclesComponents();
         initPropertiesComponents();
     }
@@ -330,6 +367,26 @@ public class Gui implements _GUI {
                 @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
                 @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
             });
+        }
+        if (isNotNull(testsCount)) {
+            testsCount.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+                @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
+                @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
+                @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
+            });
+        }
+        if (isNotNull(forbidOverexecution)) {
+            forbidOverexecution.addActionListener(e -> onTestSelectionChanged());
+        }
+        if (isNotNull(completionWeight)) {
+            completionWeight.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+                @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
+                @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
+                @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
+            });
+        }
+        if (isNotNull(traverseExtensions)) {
+            traverseExtensions.addActionListener(e -> onTestSelectionChanged());
         }
     }
 
@@ -403,6 +460,18 @@ public class Gui implements _GUI {
         }
 
         tp.prepareTestConfiguration(testName, isHeadless, isAllLeafs, leafsCount);
+        if (isNotNull(testsCount) && !testsCount.getText().isBlank()) {
+            tp.setUserOverride(PropEnum._TEST_TESTS.getPropertyName(), testsCount.getText().trim());
+        }
+        if (isNotNull(forbidOverexecution)) {
+            tp.setUserOverride(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), String.valueOf(forbidOverexecution.isSelected()));
+        }
+        if (isNotNull(completionWeight) && !completionWeight.getText().isBlank()) {
+            tp.setUserOverride(PropEnum._TREE_COMPLETION_WEIGHT.getPropertyName(), completionWeight.getText().trim());
+        }
+        if (isNotNull(traverseExtensions)) {
+            tp.setUserOverride(PropEnum._TREE_TRAVERSE_EXTENSIONS.getPropertyName(), String.valueOf(traverseExtensions.isSelected()));
+        }
         Scenario.refresh();
         Include.refresh();
         Traverse.refresh();
@@ -507,6 +576,18 @@ public class Gui implements _GUI {
         if (allLeafsCount != null) {
             addRow(ALL_LEAFS_COUNT.name(), allLeafsCount, panel, row++);
         }
+        if (testsCount != null) {
+            addRow(works.lysenko.util.data.enums.ExecutionParameter.TESTS.name(), testsCount, panel, row++);
+        }
+        if (forbidOverexecution != null) {
+            addRow(FORBID_OVEREXECUTION.name(), forbidOverexecution, panel, row++);
+        }
+        if (completionWeight != null) {
+            addRow(COMPLETION_WEIGHT.name(), completionWeight, panel, row++);
+        }
+        if (traverseExtensions != null) {
+            addRow(TRAVERSE_EXTENSIONS.name(), traverseExtensions, panel, row++);
+        }
 
         // addRow(PROPERTIES, properties, panel, row++); // Moved to properties panel on right side
 
@@ -561,6 +642,18 @@ public class Gui implements _GUI {
         if (parameters.getAllLeafsCount() > 1) {
             parameters.setAllLeafs(true);
             parameters.setAllLeafsCount(parameters.getAllLeafsCount());
+        }
+        if (isNotNull(testsCount) && !testsCount.getText().isBlank()) {
+            parameters.setProperty(works.lysenko.util.data.enums.ExecutionParameter.TESTS.name(), testsCount.getText().trim());
+        }
+        if (isNotNull(forbidOverexecution)) {
+            parameters.setProperty(FORBID_OVEREXECUTION.name(), String.valueOf(forbidOverexecution.isSelected()));
+        }
+        if (isNotNull(completionWeight) && !completionWeight.getText().isBlank()) {
+            parameters.setProperty(COMPLETION_WEIGHT.name(), completionWeight.getText().trim());
+        }
+        if (isNotNull(traverseExtensions)) {
+            parameters.setProperty(TRAVERSE_EXTENSIONS.name(), String.valueOf(traverseExtensions.isSelected()));
         }
 
         // Additional parameters

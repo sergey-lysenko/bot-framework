@@ -159,7 +159,7 @@ public final class Core extends Root implements _Core, _Tests {
         return Set.of();
     }
 
-    private static int resolveAllLeafsTarget() {
+    public static int resolveAllLeafsTarget() {
         if (isNotNull(parameters)) {
             return parameters.getAllLeafsCount();
         }

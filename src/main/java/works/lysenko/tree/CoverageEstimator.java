@@ -374,7 +374,7 @@ public record CoverageEstimator() {
 
         for (int i = 0; i < candidateCount; i++) {
             final int scId = pool.candidateIds[i];
-            if (isMono[scId] && executions[scId] > 0) continue;
+            if ((isMono[scId] || Scenario.forbidOverexecution) && executions[scId] >= targets[scId]) continue;
             if (isNode[scId] && !pool.hasRepeatableLeaf[i]) {
                 final int[] descLeafs = pool.descLeafIds[i];
                 boolean hasExecutable = false;

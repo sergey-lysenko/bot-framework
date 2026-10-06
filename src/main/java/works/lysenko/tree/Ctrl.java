@@ -14,7 +14,7 @@ import works.lysenko.util.prop.tree.Scenario;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import works.lysenko.tree.base.Mono;
+import works.lysenko.tree.base.Leaf;
 import works.lysenko.util.apis.scenario._Node;
 
 import static java.util.Objects.isNull;
@@ -170,7 +170,7 @@ public class Ctrl extends Root implements _Ctrl {
         if (isNull(pairs)) return;
         for (final KeyValue<_Scenario, Fraction> pair : pairs) {
             final _Scenario s = pair.k();
-            if ((s.isExecutable() || (s instanceof Mono && isNotNull(s.weightConfigured()))) && s.calculateCombinations(true) > 0) {
+            if ((s.isExecutable() || (s instanceof Leaf && isNotNull(s.weightConfigured()))) && s.calculateCombinations(true) > 0) {
                 if (s instanceof _Node node) {
                     collectAccessibleLeafs(node.getPool().getPairList(), leafs);
                 } else {
@@ -193,7 +193,7 @@ public class Ctrl extends Root implements _Ctrl {
         if (isNull(pairs)) return;
         for (final KeyValue<_Scenario, Fraction> pair : pairs) {
             final _Scenario s = pair.k();
-            if ((s.isExecutable() || (s instanceof Mono && isNotNull(s.weightConfigured()))) && s.calculateCombinations(true) > 0) {
+            if ((s.isExecutable() || (s instanceof Leaf && isNotNull(s.weightConfigured()))) && s.calculateCombinations(true) > 0) {
                 scenarios.add(s);
                 if (s instanceof _Node node) {
                     collectAccessibleScenarios(node.getPool().getPairList(), scenarios);
