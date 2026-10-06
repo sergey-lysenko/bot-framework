@@ -3,6 +3,7 @@ package works.lysenko.util.func.core;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.tree.Core;
+import works.lysenko.tree.base.Leaf;
 import works.lysenko.tree.base.Node;
 import works.lysenko.util.apis.scenario._Node;
 import works.lysenko.util.apis.scenario._Scenario;
@@ -99,7 +100,7 @@ public record Weights() {
         if (isNotNull(weight)) return weight;
         if (Traverse.extensions) {
             Class<?> extension = scenario.getClass().getSuperclass();
-            while (isNotNull(extension) && extension != Object.class) {
+            while (isNotNull(extension) && extension != Object.class && extension != Leaf.class && extension != Node.class && extension != Core.class) {
                 weight = configuredWeightValue(extension);
                 if (isNotNull(weight)) return weight;
                 extension = extension.getSuperclass();

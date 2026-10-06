@@ -10,6 +10,7 @@ import works.lysenko.tree.Ctrl;
 import works.lysenko.tree.base.Leaf;
 import works.lysenko.tree.base.Mono;
 import works.lysenko.tree.base.Node;
+import static works.lysenko.util.func.core.Weights.downstreamWeight;
 import works.lysenko.util.apis.log._Logs;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.execution._Scenarios;
@@ -820,6 +821,21 @@ class AllLeafsCoverageTest {
         // Reset property
         setTestProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), "false");
         Scenario.refresh();
+    }
+
+    @Test
+    void testDownstreamWeightPropagationToChildScenarios() {
+        setTestProperty("SignIn", "1.0");
+        Scenario.refresh();
+
+        final _Scenario dummyScenario = new Leaf(fr(1.0)) {
+            @Override
+            public String getShortName() {
+                return "signIn.WrongPassword";
+            }
+        };
+
+        assertEquals(fr(1.0), downstreamWeight(dummyScenario), "Child scenario starting with signIn. should inherit downstream weight 1.0 from parent SignIn");
     }
 
     private static class TestMono extends Mono {
