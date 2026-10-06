@@ -773,6 +773,45 @@ class AllLeafsCoverageTest {
         Scenario.refresh();
     }
 
+    @Test
+    void testSaturatedNodeBranchIsNonExecutable() throws Exception {
+        setTestProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), "true");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "1");
+        Base.parameters = new Parameters(new Properties());
+        Scenario.refresh();
+
+        final TestLeaf leafInBranchA = new TestLeaf(fr(1.0));
+        final TestLeaf leafInBranchB = new TestLeaf(fr(1.0));
+
+        final TestNode branchA = new TestNode(fr(1.0), leafInBranchA);
+        final TestNode branchB = new TestNode(fr(1.0), leafInBranchB);
+
+        final Ctrl rootCtrl = new Ctrl(null);
+        rootCtrl.getPool().appendScenarioWithWeight(branchA, fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(branchB, fr(1.0));
+
+        // Initially both leaves and branches are executable
+        assertTrue(branchA.isExecutable());
+        assertTrue(branchB.isExecutable());
+
+        // Execute leafInBranchA to its target (1 execution)
+        Base.core.getResults().count(leafInBranchA);
+        assertTrue(leafInBranchA.isGoalFulfilled());
+        assertFalse(leafInBranchA.isExecutable());
+
+        // branchA has no executable children remaining -> branchA itself becomes non-executable!
+        assertFalse(branchA.isExecutable(), "Node with all saturated children must be non-executable");
+        assertTrue(branchB.isExecutable(), "Node with unfulfilled child must remain executable");
+
+        // getAccessibleLeafs must still return both leaves
+        final Set<_Scenario> accessible = rootCtrl.getAccessibleLeafs();
+        assertEquals(2, accessible.size());
+
+        // Reset property
+        setTestProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), "false");
+        Scenario.refresh();
+    }
+
     private static class TestMono extends Mono {
         TestMono(final Fraction weight) {
             try {

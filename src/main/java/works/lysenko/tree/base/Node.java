@@ -116,6 +116,22 @@ public abstract class Node extends Core implements _Node {
         return name;
     }
 
+    @Override
+    public boolean isExecutable() {
+
+        if (!super.isExecutable()) return false;
+        if (isNull(ctrl) || isNull(ctrl.getPool())) return true;
+        final List<KeyValue<_Scenario, Fraction>> pairs = ctrl.getPool().getPairList();
+        if (isNull(pairs) || pairs.isEmpty()) return true;
+        for (final KeyValue<_Scenario, Fraction> pair : pairs) {
+            final _Scenario child = pair.k();
+            if (isNotNull(child) && child.isExecutable()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * @param onlyConfigured whether to include all available paths or only ones
      *                       currently configured for execution
