@@ -150,6 +150,16 @@ public final class Core extends Root implements _Core, _Tests {
     }
 
     @Override
+    public Set<_Scenario> getAccessibleNodes() {
+
+        if (isNotNull(test) && isNotNull(test.executor())) {
+            if (isNotNull(test.executor().ctrl()))
+                return test.executor().ctrl().getAccessibleNodes();
+        }
+        return Set.of();
+    }
+
+    @Override
     public Set<_Scenario> getAccessibleScenarios() {
 
         if (isNotNull(test) && isNotNull(test.executor())) {

@@ -807,6 +807,16 @@ class AllLeafsCoverageTest {
         final Set<_Scenario> accessible = rootCtrl.getAccessibleLeafs();
         assertEquals(2, accessible.size());
 
+        // getAccessibleNodes must return both branch nodes
+        final Set<_Scenario> accessibleNodes = rootCtrl.getAccessibleNodes();
+        assertEquals(2, accessibleNodes.size());
+        assertTrue(accessibleNodes.contains(branchA));
+        assertTrue(accessibleNodes.contains(branchB));
+
+        // getAccessibleScenarios must return all 4 scenarios (2 leaves + 2 nodes)
+        final Set<_Scenario> accessibleScenarios = rootCtrl.getAccessibleScenarios();
+        assertEquals(4, accessibleScenarios.size());
+
         // Reset property
         setTestProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), "false");
         Scenario.refresh();

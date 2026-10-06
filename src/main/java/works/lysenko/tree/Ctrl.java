@@ -181,6 +181,28 @@ public class Ctrl extends Root implements _Ctrl {
     }
 
     @Override
+    public final Set<_Scenario> getAccessibleNodes() {
+
+        final Set<_Scenario> nodes = new HashSet<>();
+        collectAccessibleNodes(getWeightedList(), nodes);
+        return nodes;
+    }
+
+    private static void collectAccessibleNodes(final Iterable<KeyValue<_Scenario, Fraction>> pairs, final Set<_Scenario> nodes) {
+
+        if (isNull(pairs)) return;
+        for (final KeyValue<_Scenario, Fraction> pair : pairs) {
+            final _Scenario s = pair.k();
+            if ((s.isExecutable() || isNotNull(s.weightConfigured())) && s.calculateCombinations(true) > 0) {
+                if (s instanceof _Node node) {
+                    nodes.add(s);
+                    collectAccessibleNodes(node.getPool().getPairList(), nodes);
+                }
+            }
+        }
+    }
+
+    @Override
     public final Set<_Scenario> getAccessibleScenarios() {
 
         final Set<_Scenario> scenarios = new HashSet<>();
