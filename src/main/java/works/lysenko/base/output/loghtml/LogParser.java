@@ -3,6 +3,7 @@ package works.lysenko.base.output.loghtml;
 import works.lysenko.base.output.loghtml.LogModels.ArtifactItem;
 import works.lysenko.base.output.loghtml.LogModels.EtaDebugItem;
 import works.lysenko.base.output.loghtml.LogModels.LeafCompletion;
+import works.lysenko.base.output.loghtml.LogModels.SystemResourceItem;
 import works.lysenko.base.output.loghtml.LogModels.LineStore;
 import works.lysenko.base.output.loghtml.LogModels.LogSection;
 import works.lysenko.base.output.loghtml.LogModels.PathEntry;
@@ -432,7 +433,8 @@ public final class LogParser {
         final String timelineLineGraph = renderLineGraph(testData, limboByPrevTest, tAvg, tMax, lMax);
         final List<LeafCompletion> completions = SidecarLoader.loadLeafCompletions(logFile);
         final List<EtaDebugItem> etaDebugItems = SidecarLoader.loadEtaDebugItems(logFile);
-        final String lgScriptData = renderLgScriptData(testData, limboByPrevTest, completions, etaDebugItems, tAvg, tMax, lMax);
+        final List<SystemResourceItem> resourceItems = SidecarLoader.loadTelemetryResources(logFile);
+        final String lgScriptData = renderLgScriptData(testData, limboByPrevTest, completions, etaDebugItems, resourceItems, tAvg, tMax, lMax);
         final String commonPath = renderCommonPath(commonPathSteps);
         final String pathsRows = renderPathsRows(testPaths);
         final String scenSubtitle = buildScenSubtitle(pathsPossibleStr, pathsChanceStr, pathsExecutedStr);
@@ -440,6 +442,7 @@ public final class LogParser {
         final String sectionsHtml = renderSections(sections, runArtifacts, telemetryCpu, currOpGlobalIdx);
         final String leafCompletionGraph = ChartsRenderer.renderLeafCompletionGraph(completions);
         final String etaDebugGraph = ChartsRenderer.renderEtaDebugGraph(etaDebugItems);
+        final String systemResourcesGraph = ChartsRenderer.renderResourceStatsGraph(resourceItems);
 
         // ---- populate template ----
 
@@ -471,6 +474,7 @@ public final class LogParser {
         replacements.put("{{SECTIONS}}", sectionsHtml);
         replacements.put("{{LEAF_COMPLETION_GRAPH}}", leafCompletionGraph);
         replacements.put("{{ETA_DEBUG_GRAPH}}", etaDebugGraph);
+        replacements.put("{{SYSTEM_RESOURCES_GRAPH}}", systemResourcesGraph);
         return TemplateEngine.replaceTemplate(TemplateEngine.loadTemplate(), replacements);
     }
 

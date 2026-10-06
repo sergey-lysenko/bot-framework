@@ -3,6 +3,7 @@ package works.lysenko.base.output.loghtml;
 import works.lysenko.base.output.loghtml.LogModels.ArtifactItem;
 import works.lysenko.base.output.loghtml.LogModels.EtaDebugItem;
 import works.lysenko.base.output.loghtml.LogModels.LeafCompletion;
+import works.lysenko.base.output.loghtml.LogModels.SystemResourceItem;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -209,5 +210,61 @@ public final class SidecarLoader {
         } catch (final IOException ignored) {
         }
         return cpuLoads;
+    }
+
+    /**
+     * Reads system resource telemetry (CPU % and heap RAM in MB) from the sibling telemetry log file.
+     *
+     * @param runLogFile input run log file
+     * @return list of SystemResourceItem records
+     */
+    public static List<SystemResourceItem> loadTelemetryResources(final File runLogFile) {
+        final List<SystemResourceItem> items = new ArrayList<>();
+        if (null == runLogFile || null == runLogFile.getParentFile()) return items;
+        final String runLogName = runLogFile.getName();
+        final String telemName = runLogName.replace(".run.log", ".telemetry.log");
+        final File telemFile = new File(runLogFile.getParentFile(), telemName);
+        if (!telemFile.exists()) return items;
+
+        int sampleNum = 0;
+        double lastCpu = 0.0;
+        double lastFreeM = 0.0;
+        double lastTotalM = 0.0;
+        int lastThreads = 0;
+
+        try (final BufferedReader br = new BufferedReader(new FileReader(telemFile))) {
+            String line;
+            while (null != (line = br.readLine())) {
+                final String trimmed = line.trim();
+                if (trimmed.isEmpty()) continue;
+                final String[] parts = trimmed.split(",");
+                if (parts.length >= 11) {
+                    sampleNum++;
+                    final String cpuStr = parts[2].trim();
+                    final String threadsStr = parts[5].trim();
+                    final String freeStr = parts[9].trim();
+                    final String totalStr = parts[10].trim();
+
+                    if (!"-".equals(cpuStr)) {
+                        try { lastCpu = Double.parseDouble(cpuStr); } catch (final NumberFormatException ignored) {}
+                    }
+                    if (!"-".equals(threadsStr)) {
+                        try { lastThreads = Integer.parseInt(threadsStr); } catch (final NumberFormatException ignored) {}
+                    }
+                    if (!"-".equals(freeStr)) {
+                        try { lastFreeM = Double.parseDouble(freeStr); } catch (final NumberFormatException ignored) {}
+                    }
+                    if (!"-".equals(totalStr)) {
+                        try { lastTotalM = Double.parseDouble(totalStr); } catch (final NumberFormatException ignored) {}
+                    }
+
+                    final double usedMb = Math.max(0.0, (lastTotalM - lastFreeM) / (1024.0 * 1024.0));
+                    final double totalMb = Math.max(0.0, lastTotalM / (1024.0 * 1024.0));
+                    items.add(new SystemResourceItem(sampleNum, lastCpu, usedMb, totalMb, lastThreads));
+                }
+            }
+        } catch (final IOException ignored) {
+        }
+        return items;
     }
 }

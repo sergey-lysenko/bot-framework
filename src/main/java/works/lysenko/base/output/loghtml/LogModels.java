@@ -187,13 +187,13 @@ public final class LogModels {
 
         public double instabilityPct() {
             if (meanEtaMs <= 0) return 0.0;
-            return Math.min(5000.0, ((double) stdDevEtaMs / meanEtaMs) * 100.0);
+            return Math.min(100000.0, ((double) stdDevEtaMs / meanEtaMs) * 100.0);
         }
 
         public double errorPct() {
             if (realMs <= 0) return 0.0;
             final long diff = Math.abs(predictedMs - realMs);
-            return Math.min(5000.0, ((double) diff / realMs) * 100.0);
+            return Math.min(100000.0, ((double) diff / realMs) * 100.0);
         }
     }
 
@@ -213,6 +213,26 @@ public final class LogModels {
             this.weight = weight;
             this.count = count;
             this.events = events;
+        }
+    }
+
+    /**
+     * Telemetry item representing CPU and RAM resource measurements.
+     */
+    public static final class SystemResourceItem {
+        public final int sampleNum;
+        public final double cpuPct;
+        public final double usedRamMb;
+        public final double totalRamMb;
+        public final int threads;
+
+        public SystemResourceItem(final int sampleNum, final double cpuPct,
+                                  final double usedRamMb, final double totalRamMb, final int threads) {
+            this.sampleNum = sampleNum;
+            this.cpuPct = cpuPct;
+            this.usedRamMb = usedRamMb;
+            this.totalRamMb = totalRamMb;
+            this.threads = threads;
         }
     }
 

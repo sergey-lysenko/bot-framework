@@ -200,4 +200,26 @@ class LogHtmlTest {
         assertTrue(html.contains("window.etaDebugCeilInstability = "));
         assertTrue(html.contains("window.etaDebugCeilError = "));
     }
+
+    @Test
+    void rendersSystemResourcesGraphWithTelemetryData(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("res_test.run.log");
+        final Path htmlPath = tempDir.resolve("res_test.run.log.html");
+        final Path telemPath = tempDir.resolve("res_test.telemetry.log");
+        Files.write(logPath, List.of(
+                "[ 1][1][0.000][10] Executing Scenario",
+                "[ 1][2][10.000][5] • Closing test 1 ...",
+                "[  ][3][10.010][2] • Test time 10 s"));
+        Files.write(telemPath, List.of(
+                "0,100,12.5,100,4,8,10,0,10,104857600,524288000,1048576000,sample1",
+                "0,200,25.0,200,4,8,10,0,10,209715200,524288000,1048576000,sample2"));
+
+        LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+
+        final String html = Files.readString(htmlPath);
+        assertTrue(html.contains("System Resources (CPU &amp; RAM)"));
+        assertTrue(html.contains("window.resourceData = ["));
+        assertTrue(html.contains("\"cpu\":12.50"));
+        assertTrue(html.contains("\"ramUsed\":400.0"));
+    }
 }

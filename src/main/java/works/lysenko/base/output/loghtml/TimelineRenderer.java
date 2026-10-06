@@ -2,6 +2,7 @@ package works.lysenko.base.output.loghtml;
 
 import works.lysenko.base.output.loghtml.LogModels.EtaDebugItem;
 import works.lysenko.base.output.loghtml.LogModels.LeafCompletion;
+import works.lysenko.base.output.loghtml.LogModels.SystemResourceItem;
 import works.lysenko.base.output.loghtml.LogModels.TelemetryItem;
 
 import java.util.LinkedHashSet;
@@ -146,8 +147,9 @@ public final class TimelineRenderer {
             final Map<Integer, TelemetryItem> limboByPrevTest,
             final List<LeafCompletion> completions,
             final List<EtaDebugItem> etaDebugItems,
+            final List<SystemResourceItem> resourceItems,
             final double tAvg, final double tMax, final double lMax) {
-        if (testData.isEmpty() && (completions == null || completions.isEmpty()) && (etaDebugItems == null || etaDebugItems.isEmpty())) return "";
+        if (testData.isEmpty() && (completions == null || completions.isEmpty()) && (etaDebugItems == null || etaDebugItems.isEmpty()) && (resourceItems == null || resourceItems.isEmpty())) return "";
 
         final StringBuilder sb = new StringBuilder();
         if (!testData.isEmpty()) {
@@ -253,7 +255,7 @@ public final class TimelineRenderer {
                 }
             }
             final double ceilInstabilityPct = getNiceCeil(maxInstabilityPct > 0 ? maxInstabilityPct : 10.0);
-            final double ceilErrorPct = Math.min(5000.0, getNiceCeil(maxErrorPct > 0 ? maxErrorPct : 10.0));
+            final double ceilErrorPct = Math.min(100000.0, getNiceCeil(maxErrorPct > 0 ? maxErrorPct : 10.0));
 
             sb.append(s("  window.etaDebugCeilInstability = ", String.format(Locale.ROOT, "%.3f", ceilInstabilityPct), ";\n"));
             sb.append(s("  window.etaDebugCeilError = ", String.format(Locale.ROOT, "%.3f", ceilErrorPct), ";\n"));
@@ -280,6 +282,23 @@ public final class TimelineRenderer {
             }
             sb.append("];\n");
         }
+
+        if (null != resourceItems && !resourceItems.isEmpty()) {
+            sb.append("  window.resourceData = [");
+            for (int i = 0; i < resourceItems.size(); i++) {
+                if (i > 0) sb.append(",");
+                final SystemResourceItem item = resourceItems.get(i);
+                sb.append(s(
+                        "{\"n\":", item.sampleNum,
+                        String.format(Locale.ROOT, ",\"cpu\":%.2f", item.cpuPct),
+                        String.format(Locale.ROOT, ",\"ramUsed\":%.1f", item.usedRamMb),
+                        String.format(Locale.ROOT, ",\"ramTotal\":%.1f", item.totalRamMb),
+                        ",\"threads\":", item.threads, "}"
+                ));
+            }
+            sb.append("];\n");
+        }
+
         return sb.toString();
     }
 

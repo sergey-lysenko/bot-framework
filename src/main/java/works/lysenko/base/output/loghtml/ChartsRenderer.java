@@ -2,6 +2,7 @@ package works.lysenko.base.output.loghtml;
 
 import works.lysenko.base.output.loghtml.LogModels.EtaDebugItem;
 import works.lysenko.base.output.loghtml.LogModels.LeafCompletion;
+import works.lysenko.base.output.loghtml.LogModels.SystemResourceItem;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -239,7 +240,7 @@ public final class ChartsRenderer {
         }
 
         final double ceilInstabilityPct = getNiceCeil(maxInstabilityPct > 0 ? maxInstabilityPct : 10.0);
-        final double ceilErrorPct = Math.min(5000.0, getNiceCeil(maxErrorPct > 0 ? maxErrorPct : 10.0));
+        final double ceilErrorPct = Math.min(100000.0, getNiceCeil(maxErrorPct > 0 ? maxErrorPct : 10.0));
 
         final StringBuilder sb = new StringBuilder();
         sb.append(s(
@@ -257,7 +258,8 @@ public final class ChartsRenderer {
                 "<option value=\"100\">Cutoff: 100%</option>",
                 "<option value=\"500\">Cutoff: 500%</option>",
                 "<option value=\"1000\">Cutoff: 1000%</option>",
-                "<option value=\"5000\">Cutoff: 5000%</option>",
+                "<option value=\"10000\">Cutoff: 10000%</option>",
+                "<option value=\"100000\">Cutoff: 100000%</option>",
                 "<option value=\"max\">Cutoff: Max</option>",
                 "</select>",
                 "</div>",
@@ -354,6 +356,47 @@ public final class ChartsRenderer {
                 "</div></div></section>"
         ));
 
+        return sb.toString();
+    }
+
+    /**
+     * Renders SVG card and script container for System Resources (CPU & RAM) graph.
+     *
+     * @param items list of SystemResourceItem records
+     * @return HTML string for system resources chart card
+     */
+    public static String renderResourceStatsGraph(final List<SystemResourceItem> items) {
+        if (null == items || items.isEmpty()) return "";
+
+        final StringBuilder sb = new StringBuilder();
+        sb.append(s(
+                "<section id=\"resourceStatsChart\" class=\"resource-stats-chart\"><div class=\"chart-card\">",
+                "<div class=\"card-title\"><span>System Resources (CPU &amp; RAM)</span>",
+                "<span class=\"card-subtitle\">Y: CPU (%) &amp; Heap RAM (MB); X: sample</span>",
+                "<div class=\"chart-header-controls\">",
+                "<div class=\"chart-view-toggle\">",
+                "<button type=\"button\" id=\"btnResLog\" class=\"chart-toggle-btn active\" onclick=\"switchResScale('log')\">Log</button>",
+                "<button type=\"button\" id=\"btnResLinear\" class=\"chart-toggle-btn\" onclick=\"switchResScale('linear')\">Linear</button>",
+                "</div>",
+                "<select id=\"selectResCutoff\" class=\"chart-select\" onchange=\"setResCutoff(this.value)\">",
+                "<option value=\"auto\" selected>Cutoff: Auto</option>",
+                "<option value=\"100\">Cutoff: 100% / 100MB</option>",
+                "<option value=\"500\">Cutoff: 500% / 500MB</option>",
+                "<option value=\"1000\">Cutoff: 1000% / 1000MB</option>",
+                "<option value=\"max\">Cutoff: Max</option>",
+                "</select>",
+                "</div>",
+                "</div><div class=\"line-graph-legend\">",
+                "<span class=\"lg-legend-item\"><span class=\"lg-line-sample res-cpu-line\"></span>",
+                "CPU Usage (%)</span>",
+                "<span class=\"lg-legend-item\"><span class=\"lg-line-sample res-ram-line\"></span>",
+                "Used Heap RAM (MB)</span>",
+                "<span class=\"lg-legend-item\"><span class=\"lg-line-sample res-total-ram-line\"></span>",
+                "Total Heap RAM (MB)</span></div>",
+                "<div class=\"line-graph-svg-wrap\"><svg id=\"resourceStatsSvg\" class=\"timeline-line-svg\" viewBox=\"0 0 1000 240\">",
+                "  <text x=\"500\" y=\"120\" fill=\"#94a3b8\" text-anchor=\"middle\" font-size=\"14\">Loading resource statistics...</text>",
+                "</svg></div></div></section>\n"
+        ));
         return sb.toString();
     }
 }
