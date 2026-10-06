@@ -39,7 +39,8 @@ public final class LogHtml {
     private static final Pattern TEST_TIME_RE = Pattern.compile("Test time (.*)");
     private static final Pattern TEST_RUN_SUMMARY_RE = Pattern.compile(".*\\b\\d+\\s+tests?\\s+of\\s+.+\\s+done\\s+in\\s+.*");
     private static final Pattern SPAN_BRACKET_RE = Pattern.compile("(\\[[0-9.]+\\](?:<[^>]+>)*)(\\[\\s*\\d+\\s*\\])");
-    private static final Pattern ALL_LEAF_COMPLETION_RE = Pattern.compile("\\[ALL_LEAF_COMPLETION]\\s+(\\d+)(?:\\s+(\\d+))?\\s+(.+)$");
+    private static final Pattern ALL_LEAF_COMPLETION_RE = Pattern.compile("\\[ALL_LEAF_COMPLETION]\\s+(\\d+)(?:\\s+(\\d+))?(?:\\s+(\\d+))?\\s+(.+)$");
+    private static final Pattern ETA_DEBUG_RE = Pattern.compile("\\[ETA_DEBUG]\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(.+)$");
 
     private LogHtml() {
     }
@@ -499,13 +500,15 @@ public final class LogHtml {
         final String timelineToggle = testData.isEmpty() ? "" : renderTimelineToggle(isLineDefault);
         final String timelineLineGraph = renderLineGraph(testData, limboByPrevTest, tAvg, tMax, lMax);
         final List<LeafCompletion> completions = loadLeafCompletions(logFile);
-        final String lgScriptData = renderLgScriptData(testData, limboByPrevTest, completions, tAvg, tMax, lMax);
+        final List<EtaDebugItem> etaDebugItems = loadEtaDebugItems(logFile);
+        final String lgScriptData = renderLgScriptData(testData, limboByPrevTest, completions, etaDebugItems, tAvg, tMax, lMax);
         final String commonPath = renderCommonPath(commonPathSteps);
         final String pathsRows = renderPathsRows(testPaths);
         final String scenSubtitle = buildScenSubtitle(pathsPossibleStr, pathsChanceStr, pathsExecutedStr);
         final String scenRows = renderScenRows(scenStats);
         final String sectionsHtml = renderSections(sections, runArtifacts, telemetryCpu, currOpGlobalIdx);
         final String leafCompletionGraph = renderLeafCompletionGraph(completions);
+        final String etaDebugGraph = renderEtaDebugGraph(etaDebugItems);
 
         // ---- populate template ----
 
@@ -536,6 +539,7 @@ public final class LogHtml {
         replacements.put("{{SCEN_ROWS}}", scenRows);
         replacements.put("{{SECTIONS}}", sectionsHtml);
         replacements.put("{{LEAF_COMPLETION_GRAPH}}", leafCompletionGraph);
+        replacements.put("{{ETA_DEBUG_GRAPH}}", etaDebugGraph);
         return replaceTemplate(loadTemplate(), replacements);
     }
 
@@ -672,38 +676,60 @@ public final class LogHtml {
         final double width = 1000.0;
         final double height = 240.0;
         final double marginLeft = 55.0;
-        final double marginRight = 25.0;
+        final double marginRight = 55.0;
         final double marginTop = 26.0;
         final double marginBottom = 34.0;
         final double plotW = width - marginLeft - marginRight;
         final double plotH = height - marginTop - marginBottom;
 
-        long maxValMs = 1L;
-        long previous = 0L;
-        final long[] intervals = new long[completions.size()];
-        final long[] etas = new long[completions.size()];
+        long maxIntervalMs = 1L;
+        long maxProjectedMs = 1L;
+        long lastRoundAtMillis = 0L;
+        final long[] roundIntervals = new long[completions.size()];
+        final long[] projectedTotals = new long[completions.size()];
 
         for (int index = 0; index < completions.size(); index++) {
-            final LeafCompletion completion = completions.get(index);
-            final long interval = Math.max(0L, completion.atMillis - previous);
-            intervals[index] = interval;
-            etas[index] = completion.etaMs;
-            previous = completion.atMillis;
-            maxValMs = Math.max(maxValMs, Math.max(interval, completion.etaMs));
+            final LeafCompletion c = completions.get(index);
+            final long projTotal = c.atMillis + c.etaMs;
+            projectedTotals[index] = projTotal;
+            maxProjectedMs = Math.max(maxProjectedMs, projTotal);
+            if (c.roundIndex > 0) {
+                final long roundInterval = Math.max(0L, c.atMillis - lastRoundAtMillis);
+                roundIntervals[index] = roundInterval;
+                lastRoundAtMillis = c.atMillis;
+                maxIntervalMs = Math.max(maxIntervalMs, roundInterval);
+            } else {
+                roundIntervals[index] = -1L;
+            }
         }
 
-        final double maxValSec = maxValMs / 1000.0;
-        final double ceilSec = getNiceCeil(maxValSec > 0 ? maxValSec : 1.0);
+        final double maxIntervalSec = maxIntervalMs / 1000.0;
+        final double maxProjectedSec = maxProjectedMs / 1000.0;
+        final double ceilIntervalSec = getNiceCeil(maxIntervalSec > 0 ? maxIntervalSec : 1.0);
+        final double ceilProjectedSec = getNiceCeil(maxProjectedSec > 0 ? maxProjectedSec : 1.0);
 
         final StringBuilder sb = new StringBuilder();
         sb.append("<section id=\"leafCompletionChart\" class=\"leaf-completion-chart\"><div class=\"chart-card\">")
                 .append("<div class=\"card-title\"><span>All-Leaf Completion Intervals</span>")
-                .append("<span class=\"card-subtitle\">Y: Time since previous completion (first: run start); X: completion order</span>")
+                .append("<span class=\"card-subtitle\">Y: Duration &amp; Projected Total (s); X: test cycle</span>")
+                .append("<div class=\"chart-header-controls\">")
+                .append("<div class=\"chart-view-toggle\">")
+                .append("<button type=\"button\" id=\"btnLeafLog\" class=\"chart-toggle-btn active\" onclick=\"switchLeafScale('log')\">Log</button>")
+                .append("<button type=\"button\" id=\"btnLeafLinear\" class=\"chart-toggle-btn\" onclick=\"switchLeafScale('linear')\">Linear</button>")
+                .append("</div>")
+                .append("<select id=\"selectLeafCutoff\" class=\"chart-select\" onchange=\"setLeafCutoff(this.value)\">")
+                .append("<option value=\"auto\" selected>Cutoff: Auto</option>")
+                .append("<option value=\"10\">Cutoff: 10s</option>")
+                .append("<option value=\"30\">Cutoff: 30s</option>")
+                .append("<option value=\"100\">Cutoff: 100s</option>")
+                .append("<option value=\"max\">Cutoff: Max</option>")
+                .append("</select>")
+                .append("</div>")
                 .append("</div><div class=\"line-graph-legend\">")
                 .append("<span class=\"lg-legend-item\"><span class=\"lg-line-sample leaf-line\"></span>")
-                .append("Time between completions</span>")
+                .append("Leaf Goal Reached</span>")
                 .append("<span class=\"lg-legend-item\"><span class=\"lg-line-sample leaf-eta-line\"></span>")
-                .append("ETA</span></div>")
+                .append("Projected Total (Passed + ETA)</span></div>")
                 .append("<div class=\"line-graph-svg-wrap\"><svg id=\"leafCompletionSvg\" class=\"timeline-line-svg\" viewBox=\"0 0 1000 240\">")
                 .append("  <defs>\n")
                 .append("    <linearGradient id=\"leafAreaGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n")
@@ -712,22 +738,35 @@ public final class LogHtml {
                 .append("    </linearGradient>\n")
                 .append("  </defs>\n");
 
+        final double logMaxInterval = Math.log10(ceilIntervalSec + 1.0);
+        final double logMaxProjected = Math.log10(ceilProjectedSec + 1.0);
+
         for (int k = 0; k <= 4; k++) {
             final double ratio = (double) k / 4.0;
             final double y = (marginTop + plotH) - ratio * plotH;
-            final double valSec = ratio * ceilSec;
+            final double valIntervalSec = (ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logMaxInterval) - 1.0;
+            final double valProjectedSec = (ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logMaxProjected) - 1.0;
             sb.append(String.format(Locale.ROOT,
                     "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.06)\" stroke-dasharray=\"3,3\" />\n",
                     marginLeft, y, marginLeft + plotW, y));
-            final String labelStr;
-            if (ceilSec < 1.0) {
-                labelStr = Math.round(valSec * 1000.0) + "ms";
-            } else {
-                labelStr = String.format(Locale.ROOT, "%.1fs", valSec);
-            }
+
+            final String leftLabel = (valIntervalSec < 1.0)
+                    ? Math.round(valIntervalSec * 1000.0) + "ms"
+                    : (valIntervalSec < 10.0)
+                    ? String.format(Locale.ROOT, "%.1fs", valIntervalSec)
+                    : String.format(Locale.ROOT, "%.0fs", valIntervalSec);
             sb.append(String.format(Locale.ROOT,
-                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"end\" fill=\"#64748b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>\n",
-                    marginLeft - 8, y + 3.5, labelStr));
+                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"end\" fill=\"#a855f7\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>\n",
+                    marginLeft - 8, y + 3.5, leftLabel));
+
+            final String rightLabel = (valProjectedSec < 1.0)
+                    ? Math.round(valProjectedSec * 1000.0) + "ms"
+                    : (valProjectedSec < 10.0)
+                    ? String.format(Locale.ROOT, "%.1fs", valProjectedSec)
+                    : String.format(Locale.ROOT, "%.0fs", valProjectedSec);
+            sb.append(String.format(Locale.ROOT,
+                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"start\" fill=\"#38bdf8\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>\n",
+                    marginLeft + plotW + 8, y + 3.5, rightLabel));
         }
 
         final int N = completions.size();
@@ -753,33 +792,45 @@ public final class LogHtml {
         }
 
         final StringBuilder leafPath = new StringBuilder();
-        final StringBuilder leafArea = new StringBuilder();
         final StringBuilder etaPath = new StringBuilder();
 
+        boolean firstRoundPt = true;
         for (int i = 0; i < N; i++) {
-            final double intervalSec = intervals[i] / 1000.0;
-            final double etaSec = etas[i] / 1000.0;
             final double x = marginLeft + (N > 1 ? (double) i / (N - 1) * plotW : plotW / 2.0);
-            final double yInterval = (marginTop + plotH) - Math.min(plotH, (intervalSec / ceilSec) * plotH);
-            final double yEta = (marginTop + plotH) - Math.min(plotH, (etaSec / ceilSec) * plotH);
+            final double projSec = projectedTotals[i] / 1000.0;
+            final double yEta = logScaleY(projSec, ceilProjectedSec, marginTop, plotH);
 
             if (i == 0) {
-                leafPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yInterval));
-                leafArea.append(String.format(Locale.ROOT, "M %.2f %.2f L %.2f %.2f", x, marginTop + plotH, x, yInterval));
                 etaPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yEta));
             } else {
-                leafPath.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yInterval));
-                leafArea.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yInterval));
                 etaPath.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yEta));
             }
-            if (i == N - 1) {
-                leafArea.append(String.format(Locale.ROOT, " L %.2f %.2f Z", x, marginTop + plotH));
+
+            if (roundIntervals[i] >= 0L) {
+                final double intervalSec = roundIntervals[i] / 1000.0;
+                final double yInterval = logScaleY(intervalSec, ceilIntervalSec, marginTop, plotH);
+                if (firstRoundPt) {
+                    leafPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yInterval));
+                    firstRoundPt = false;
+                } else {
+                    leafPath.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yInterval));
+                }
             }
         }
 
-        sb.append("  <path d=\"").append(leafArea).append("\" fill=\"url(#leafAreaGrad)\" />\n");
         sb.append("  <path d=\"").append(leafPath).append("\" class=\"leaf-chart-line\" fill=\"none\" stroke=\"#a855f7\" stroke-width=\"2\" />\n");
         sb.append("  <path d=\"").append(etaPath).append("\" class=\"leaf-eta-chart-line\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"2\" stroke-dasharray=\"4,3\" />\n");
+
+        for (int i = 0; i < N; i++) {
+            if (roundIntervals[i] >= 0L) {
+                final double x = marginLeft + (N > 1 ? (double) i / (N - 1) * plotW : plotW / 2.0);
+                final double intervalSec = roundIntervals[i] / 1000.0;
+                final double yInterval = logScaleY(intervalSec, ceilIntervalSec, marginTop, plotH);
+                sb.append(String.format(Locale.ROOT,
+                        "  <circle cx=\"%.1f\" cy=\"%.1f\" r=\"4\" fill=\"#a855f7\" stroke=\"#ffffff\" stroke-width=\"1.5\" />\n",
+                        x, yInterval));
+            }
+        }
 
         sb.append(String.format(Locale.ROOT,
                 "  <line id=\"leafCrosshair\" x1=\"0\" y1=\"%.1f\" x2=\"0\" y2=\"%.1f\" stroke=\"#94a3b8\" stroke-dasharray=\"2,2\" stroke-width=\"1\" opacity=\"0\" pointer-events=\"none\" />\n",
@@ -805,14 +856,33 @@ public final class LogHtml {
         try (final BufferedReader reader = new BufferedReader(
                 new InputStreamReader(new FileInputStream(completionFile), StandardCharsets.UTF_8))) {
             String line;
+            int legacyRoundCount = 0;
             while (null != (line = reader.readLine())) {
                 final Matcher matcher = ALL_LEAF_COMPLETION_RE.matcher(line.trim());
                 if (matcher.matches()) {
                     final long atMillis = Long.parseLong(matcher.group(1));
-                    final long etaMs = (null != matcher.group(2) && !matcher.group(2).isEmpty())
-                            ? Long.parseLong(matcher.group(2)) : 0L;
-                    final String leaf = matcher.group(3).trim();
-                    completions.add(new LeafCompletion(atMillis, etaMs, leaf));
+                    final String g2 = matcher.group(2);
+                    final String g3 = matcher.group(3);
+                    final String leaf = matcher.group(4).trim();
+
+                    long etaMs = 0L;
+                    int roundIndex = 0;
+
+                    if (null != g2 && !g2.isEmpty()) {
+                        if (null != g3 && !g3.isEmpty()) {
+                            etaMs = Long.parseLong(g2);
+                            roundIndex = Integer.parseInt(g3);
+                        } else {
+                            etaMs = Long.parseLong(g2);
+                            legacyRoundCount++;
+                            roundIndex = legacyRoundCount;
+                        }
+                    } else {
+                        legacyRoundCount++;
+                        roundIndex = legacyRoundCount;
+                    }
+
+                    completions.add(new LeafCompletion(atMillis, etaMs, roundIndex, leaf));
                 }
             }
         } catch (final IOException | NumberFormatException e) {
@@ -827,6 +897,188 @@ public final class LogHtml {
         final String name = runLogFile.getName();
         final String prefix = name.endsWith(suffix) ? name.substring(0, name.length() - suffix.length()) : name;
         return new File(runLogFile.getParentFile(), prefix + ".all-leaf-completions.log");
+    }
+
+    private static List<EtaDebugItem> loadEtaDebugItems(final File runLogFile) {
+
+        final File etaDebugFile = etaDebugFile(runLogFile);
+        if (!etaDebugFile.isFile()) return List.of();
+
+        final List<EtaDebugItem> items = new ArrayList<>();
+        try (final BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(etaDebugFile), StandardCharsets.UTF_8))) {
+            String line;
+            while (null != (line = reader.readLine())) {
+                final Matcher matcher = ETA_DEBUG_RE.matcher(line.trim());
+                if (matcher.matches()) {
+                    items.add(new EtaDebugItem(
+                            Integer.parseInt(matcher.group(1)),
+                            Long.parseLong(matcher.group(2)),
+                            Long.parseLong(matcher.group(3)),
+                            Long.parseLong(matcher.group(4)),
+                            Long.parseLong(matcher.group(5)),
+                            matcher.group(6).trim()));
+                }
+            }
+        } catch (final IOException | NumberFormatException e) {
+            logEvent(S2, "Failed to read eta debug log " + etaDebugFile + ": " + e.getMessage());
+        }
+        return items;
+    }
+
+    private static File etaDebugFile(final File runLogFile) {
+
+        final String suffix = ".run.log";
+        final String name = runLogFile.getName();
+        final String prefix = name.endsWith(suffix) ? name.substring(0, name.length() - suffix.length()) : name;
+        return new File(runLogFile.getParentFile(), prefix + ".eta-debug.log");
+    }
+
+    private static double logScaleY(final double val, final double maxVal, final double marginTop, final double plotH) {
+        if (val <= 0.0) return marginTop + plotH;
+        final double logMax = Math.log10(Math.max(1.0, maxVal) + 1.0);
+        final double logVal = Math.log10(Math.min(maxVal, val) + 1.0);
+        final double norm = Math.min(1.0, Math.max(0.0, logVal / logMax));
+        return (marginTop + plotH) - norm * plotH;
+    }
+
+    private static String renderEtaDebugGraph(final List<EtaDebugItem> items) {
+
+        if (items.isEmpty()) return "";
+
+        final double width = 1000.0;
+        final double height = 240.0;
+        final double marginLeft = 55.0;
+        final double marginRight = 55.0;
+        final double marginTop = 26.0;
+        final double marginBottom = 34.0;
+        final double plotW = width - marginLeft - marginRight;
+        final double plotH = height - marginTop - marginBottom;
+
+        double maxInstabilityPct = 1.0;
+        double maxErrorPct = 1.0;
+        for (int i = 0; i < items.size(); i++) {
+            final EtaDebugItem item = items.get(i);
+            maxInstabilityPct = Math.max(maxInstabilityPct, item.instabilityPct());
+            if (i > 0 || items.size() == 1) {
+                maxErrorPct = Math.max(maxErrorPct, item.errorPct());
+            }
+        }
+
+        final double ceilInstabilityPct = getNiceCeil(maxInstabilityPct > 0 ? maxInstabilityPct : 10.0);
+        final double ceilErrorPct = Math.min(5000.0, getNiceCeil(maxErrorPct > 0 ? maxErrorPct : 10.0));
+
+        final StringBuilder sb = new StringBuilder();
+        sb.append("<section id=\"etaDebugChart\" class=\"eta-debug-chart\"><div class=\"chart-card\">")
+                .append("<div class=\"card-title\"><span>ETA Debug</span>")
+                .append("<span class=\"card-subtitle\">Y: Deviation &amp; Prediction Error (%); X: test cycle</span>")
+                .append("<div class=\"chart-header-controls\">")
+                .append("<div class=\"chart-view-toggle\">")
+                .append("<button type=\"button\" id=\"btnEtaLog\" class=\"chart-toggle-btn active\" onclick=\"switchEtaScale('log')\">Log</button>")
+                .append("<button type=\"button\" id=\"btnEtaLinear\" class=\"chart-toggle-btn\" onclick=\"switchEtaScale('linear')\">Linear</button>")
+                .append("</div>")
+                .append("<select id=\"selectEtaCutoff\" class=\"chart-select\" onchange=\"setEtaCutoff(this.value)\">")
+                .append("<option value=\"auto\" selected>Cutoff: Auto</option>")
+                .append("<option value=\"50\">Cutoff: 50%</option>")
+                .append("<option value=\"100\">Cutoff: 100%</option>")
+                .append("<option value=\"500\">Cutoff: 500%</option>")
+                .append("<option value=\"1000\">Cutoff: 1000%</option>")
+                .append("<option value=\"5000\">Cutoff: 5000%</option>")
+                .append("<option value=\"max\">Cutoff: Max</option>")
+                .append("</select>")
+                .append("</div>")
+                .append("</div><div class=\"line-graph-legend\">")
+                .append("<span class=\"lg-legend-item\"><span class=\"lg-line-sample eta-instability-line\"></span>")
+                .append("Instability (sample deviation)</span>")
+                .append("<span class=\"lg-legend-item\"><span class=\"lg-line-sample eta-error-line\"></span>")
+                .append("Prediction Error (vs real time)</span></div>")
+                .append("<div class=\"line-graph-svg-wrap\"><svg id=\"etaDebugSvg\" class=\"timeline-line-svg\" viewBox=\"0 0 1000 240\">");
+
+        final double logMaxInst = Math.log10(ceilInstabilityPct + 1.0);
+        final double logMaxErr = Math.log10(ceilErrorPct + 1.0);
+
+        for (int k = 0; k <= 4; k++) {
+            final double ratio = (double) k / 4.0;
+            final double y = (marginTop + plotH) - ratio * plotH;
+            final double instPct = (ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logMaxInst) - 1.0;
+            final double errPct = (ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logMaxErr) - 1.0;
+
+            sb.append(String.format(Locale.ROOT,
+                    "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.06)\" stroke-dasharray=\"3,3\" />\n",
+                    marginLeft, y, marginLeft + plotW, y));
+
+            final String leftLabel = (instPct < 10.0)
+                    ? String.format(Locale.ROOT, "%.1f%%", instPct)
+                    : String.format(Locale.ROOT, "%.0f%%", instPct);
+            sb.append(String.format(Locale.ROOT,
+                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"end\" fill=\"#ec4899\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>\n",
+                    marginLeft - 8, y + 3.5, leftLabel));
+
+            final String rightLabel = (errPct < 10.0)
+                    ? String.format(Locale.ROOT, "%.1f%%", errPct)
+                    : String.format(Locale.ROOT, "%.0f%%", errPct);
+            sb.append(String.format(Locale.ROOT,
+                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"start\" fill=\"#f59e0b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>\n",
+                    marginLeft + plotW + 8, y + 3.5, rightLabel));
+        }
+
+        final int N = items.size();
+        final int tickCount = Math.min(8, N);
+        final Set<Integer> tickIndices = new LinkedHashSet<>();
+        if (tickCount <= 1 || N <= 1) {
+            tickIndices.add(0);
+        } else {
+            for (int k = 0; k < tickCount - 1; k++) {
+                tickIndices.add((int) Math.round((double) k * (N - 1) / (tickCount - 1)));
+            }
+            tickIndices.add(N - 1);
+        }
+
+        for (final int idx : tickIndices) {
+            final double x = marginLeft + (N > 1 ? (double) idx / (N - 1) * plotW : plotW / 2.0);
+            final int tNum = items.get(idx).testNum;
+            sb.append(String.format(Locale.ROOT,
+                    "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.15)\" />\n",
+                    x, marginTop + plotH, x, marginTop + plotH + 4));
+            sb.append(String.format(Locale.ROOT,
+                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">#%d</text>\n",
+                    x, height - 10, tNum));
+        }
+
+        final StringBuilder instabilityPath = new StringBuilder();
+        final StringBuilder errorPath = new StringBuilder();
+
+        for (int i = 0; i < N; i++) {
+            final EtaDebugItem item = items.get(i);
+            final double x = marginLeft + (N > 1 ? (double) i / (N - 1) * plotW : plotW / 2.0);
+            final double yInst = logScaleY(item.instabilityPct(), ceilInstabilityPct, marginTop, plotH);
+            final double yErr = logScaleY(item.errorPct(), ceilErrorPct, marginTop, plotH);
+
+            if (i == 0) {
+                instabilityPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yInst));
+                errorPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yErr));
+            } else {
+                instabilityPath.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yInst));
+                errorPath.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yErr));
+            }
+        }
+
+        sb.append("  <path d=\"").append(instabilityPath).append("\" class=\"eta-instability-chart-line\" fill=\"none\" stroke=\"#ec4899\" stroke-width=\"2\" />\n");
+        sb.append("  <path d=\"").append(errorPath).append("\" class=\"eta-error-chart-line\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"2\" stroke-dasharray=\"4,3\" />\n");
+
+        sb.append(String.format(Locale.ROOT,
+                "  <line id=\"etaDebugCrosshair\" x1=\"0\" y1=\"%.1f\" x2=\"0\" y2=\"%.1f\" stroke=\"#94a3b8\" stroke-dasharray=\"2,2\" stroke-width=\"1\" opacity=\"0\" pointer-events=\"none\" />\n",
+                marginTop, marginTop + plotH));
+        sb.append("  <circle id=\"etaInstabilityDot\" cx=\"0\" cy=\"0\" r=\"4\" fill=\"#ec4899\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />\n");
+        sb.append("  <circle id=\"etaErrorDot\" cx=\"0\" cy=\"0\" r=\"4\" fill=\"#f59e0b\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />\n");
+        sb.append(String.format(Locale.ROOT,
+                "  <rect id=\"etaDebugOverlay\" x=\"%.1f\" y=\"%.1f\" width=\"%.1f\" height=\"%.1f\" fill=\"transparent\" style=\"cursor: crosshair;\" onmousemove=\"onEtaDebugHover(event)\" onmouseleave=\"onEtaDebugLeave()\" />\n",
+                marginLeft, marginTop, plotW, plotH));
+        sb.append("</svg>\n");
+        sb.append("<div id=\"etaDebugTooltip\" class=\"lg-tooltip hidden\"></div>\n");
+        sb.append("</div></div></section>");
+
+        return sb.toString();
     }
 
     private static int completionX(
@@ -1258,8 +1510,9 @@ public final class LogHtml {
             final List<TelemetryItem> testData,
             final Map<Integer, TelemetryItem> limboByPrevTest,
             final List<LeafCompletion> completions,
+            final List<EtaDebugItem> etaDebugItems,
             final double tAvg, final double tMax, final double lMax) {
-        if (testData.isEmpty() && (completions == null || completions.isEmpty())) return "";
+        if (testData.isEmpty() && (completions == null || completions.isEmpty()) && (etaDebugItems == null || etaDebugItems.isEmpty())) return "";
 
         final StringBuilder sb = new StringBuilder();
         if (!testData.isEmpty()) {
@@ -1288,39 +1541,101 @@ public final class LogHtml {
         }
 
         if (null != completions && !completions.isEmpty()) {
-            long maxVal = 1L;
-            long previous = 0L;
+            long maxValMs = 1L;
+            long maxIntervalMs = 1L;
+            long maxProjectedMs = 1L;
+            long lastRoundAtMillis = 0L;
             for (final LeafCompletion c : completions) {
-                final long interval = Math.max(0L, c.atMillis - previous);
-                previous = c.atMillis;
-                maxVal = Math.max(maxVal, Math.max(interval, c.etaMs));
+                final long projTotal = c.atMillis + c.etaMs;
+                maxProjectedMs = Math.max(maxProjectedMs, projTotal);
+                maxValMs = Math.max(maxValMs, projTotal);
+                if (c.roundIndex > 0) {
+                    final long roundInterval = Math.max(0L, c.atMillis - lastRoundAtMillis);
+                    lastRoundAtMillis = c.atMillis;
+                    maxIntervalMs = Math.max(maxIntervalMs, roundInterval);
+                    maxValMs = Math.max(maxValMs, roundInterval);
+                }
             }
-            final double maxValSec = maxVal / 1000.0;
-            final double ceilSec = getNiceCeil(maxValSec > 0 ? maxValSec : 1.0);
+            final double ceilSec = getNiceCeil(maxValMs > 0 ? maxValMs / 1000.0 : 1.0);
+            final double ceilIntervalSec = getNiceCeil(maxIntervalMs > 0 ? maxIntervalMs / 1000.0 : 1.0);
+            final double ceilProjectedSec = getNiceCeil(maxProjectedMs > 0 ? maxProjectedMs / 1000.0 : 1.0);
 
             sb.append("  window.leafCeil = ").append(String.format(Locale.ROOT, "%.3f", ceilSec)).append(";\n");
+            sb.append("  window.leafCeilInterval = ").append(String.format(Locale.ROOT, "%.3f", ceilIntervalSec)).append(";\n");
+            sb.append("  window.leafCeilProjected = ").append(String.format(Locale.ROOT, "%.3f", ceilProjectedSec)).append(";\n");
             sb.append("  window.leafData = [");
             long pAt = 0L;
+            long pRoundAt = 0L;
             for (int i = 0; i < completions.size(); i++) {
                 if (i > 0) sb.append(",");
                 final LeafCompletion c = completions.get(i);
                 final long intervalMs = Math.max(0L, c.atMillis - pAt);
                 pAt = c.atMillis;
+                long roundIntervalMs = -1L;
+                if (c.roundIndex > 0) {
+                    roundIntervalMs = Math.max(0L, c.atMillis - pRoundAt);
+                    pRoundAt = c.atMillis;
+                }
+
                 final String intervalStr = formatCompletionDuration(intervalMs);
+                final String roundIntervalStr = (roundIntervalMs >= 0L) ? formatCompletionDuration(roundIntervalMs) : "";
                 final String etaStr = formatCompletionDuration(c.etaMs);
+                final String projStr = formatCompletionDuration(c.atMillis + c.etaMs);
                 final String momentStr = formatCompletionMoment(c.atMillis);
                 final String fullLabel = (c.etaMs > 0L)
-                        ? c.leaf + " @ " + momentStr + " (+" + intervalStr + ", ETA: " + etaStr + ")"
+                        ? c.leaf + " @ " + momentStr + " (+" + intervalStr + ", Projected: " + projStr + ")"
                         : c.leaf + " @ " + momentStr + " (+" + intervalStr + ")";
                 sb.append("{\"n\":").append(i + 1)
                         .append(",\"leaf\":\"").append(escapeJson(c.leaf)).append("\"")
                         .append(",\"ms\":").append(intervalMs)
+                        .append(",\"round\":").append(c.roundIndex)
+                        .append(",\"roundIntervalMs\":").append(roundIntervalMs)
+                        .append(",\"roundInterval\":\"").append(escapeJson(roundIntervalStr)).append("\"")
                         .append(",\"etaMs\":").append(c.etaMs)
+                        .append(",\"projMs\":").append(c.atMillis + c.etaMs)
                         .append(",\"eta\":\"").append(escapeJson(etaStr)).append("\"")
+                        .append(",\"proj\":\"").append(escapeJson(projStr)).append("\"")
                         .append(",\"at\":").append(c.atMillis)
                         .append(",\"interval\":\"").append(escapeJson(intervalStr)).append("\"")
                         .append(",\"moment\":\"").append(escapeJson(momentStr)).append("\"")
                         .append(",\"label\":\"").append(escapeJson(fullLabel)).append("\"}");
+            }
+            sb.append("];\n");
+        }
+
+        if (null != etaDebugItems && !etaDebugItems.isEmpty()) {
+            double maxInstabilityPct = 1.0;
+            double maxErrorPct = 1.0;
+            for (int i = 0; i < etaDebugItems.size(); i++) {
+                final EtaDebugItem item = etaDebugItems.get(i);
+                maxInstabilityPct = Math.max(maxInstabilityPct, item.instabilityPct());
+                if (i > 0 || etaDebugItems.size() == 1) {
+                    maxErrorPct = Math.max(maxErrorPct, item.errorPct());
+                }
+            }
+            final double ceilInstabilityPct = getNiceCeil(maxInstabilityPct > 0 ? maxInstabilityPct : 10.0);
+            final double ceilErrorPct = Math.min(5000.0, getNiceCeil(maxErrorPct > 0 ? maxErrorPct : 10.0));
+
+            sb.append("  window.etaDebugCeilInstability = ").append(String.format(Locale.ROOT, "%.3f", ceilInstabilityPct)).append(";\n");
+            sb.append("  window.etaDebugCeilError = ").append(String.format(Locale.ROOT, "%.3f", ceilErrorPct)).append(";\n");
+            sb.append("  window.etaDebugCeil = ").append(String.format(Locale.ROOT, "%.3f", Math.max(ceilInstabilityPct, ceilErrorPct))).append(";\n");
+            sb.append("  window.etaDebugData = [");
+            for (int i = 0; i < etaDebugItems.size(); i++) {
+                if (i > 0) sb.append(",");
+                final EtaDebugItem item = etaDebugItems.get(i);
+                final String realStr = formatCompletionDuration(item.realMs);
+                final String meanStr = formatCompletionDuration(item.meanEtaMs);
+                final String stdDevStr = formatCompletionDuration(item.stdDevEtaMs);
+                final String predStr = formatCompletionDuration(item.predictedMs);
+
+                sb.append("{\"n\":").append(item.testNum)
+                        .append(",\"test\":\"").append(escapeJson(item.testName)).append("\"")
+                        .append(String.format(Locale.ROOT, ",\"instability\":%.2f", item.instabilityPct()))
+                        .append(String.format(Locale.ROOT, ",\"error\":%.2f", item.errorPct()))
+                        .append(",\"realStr\":\"").append(escapeJson(realStr)).append("\"")
+                        .append(",\"meanStr\":\"").append(escapeJson(meanStr)).append("\"")
+                        .append(",\"stdDevStr\":\"").append(escapeJson(stdDevStr)).append("\"")
+                        .append(",\"predStr\":\"").append(escapeJson(predStr)).append("\"}");
             }
             sb.append("];\n");
         }
@@ -1775,12 +2090,44 @@ public final class LogHtml {
     private static final class LeafCompletion {
         final long atMillis;
         final long etaMs;
+        final int roundIndex;
         final String leaf;
 
-        LeafCompletion(final long atMillis, final long etaMs, final String leaf) {
+        LeafCompletion(final long atMillis, final long etaMs, final int roundIndex, final String leaf) {
             this.atMillis = atMillis;
             this.etaMs = etaMs;
+            this.roundIndex = roundIndex;
             this.leaf = leaf;
+        }
+    }
+
+    private static final class EtaDebugItem {
+        final int testNum;
+        final long realMs;
+        final long meanEtaMs;
+        final long stdDevEtaMs;
+        final long predictedMs;
+        final String testName;
+
+        EtaDebugItem(final int testNum, final long realMs, final long meanEtaMs,
+                     final long stdDevEtaMs, final long predictedMs, final String testName) {
+            this.testNum = testNum;
+            this.realMs = realMs;
+            this.meanEtaMs = meanEtaMs;
+            this.stdDevEtaMs = stdDevEtaMs;
+            this.predictedMs = predictedMs;
+            this.testName = testName;
+        }
+
+        double instabilityPct() {
+            if (meanEtaMs <= 0) return 0.0;
+            return Math.min(5000.0, ((double) stdDevEtaMs / meanEtaMs) * 100.0);
+        }
+
+        double errorPct() {
+            if (realMs <= 0) return 0.0;
+            final long diff = Math.abs(predictedMs - realMs);
+            return Math.min(5000.0, ((double) diff / realMs) * 100.0);
         }
     }
 

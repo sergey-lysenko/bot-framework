@@ -9,7 +9,7 @@
   <packaging>jar</packaging>
 
   <name>bot-framework</name>
-  <description>Automation test framework developed by works.lysenko</description>
+  <description>Automation test framework developed by Sergii Lysenko</description>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

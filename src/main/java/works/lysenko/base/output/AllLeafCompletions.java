@@ -11,6 +11,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import static java.util.Objects.isNull;
@@ -22,22 +24,18 @@ import static works.lysenko.util.spec.Layout.Templates.RUN_ALL_LEAF_COMPLETIONS_
 
 public final class AllLeafCompletions {
 
-    private static int lastRecordedRound = 0;
+    private static final Map<_Scenario, Integer> lastRecordedExecs = new HashMap<>(0);
     private static long currentCycleEtaSum = 0L;
     private static int currentCycleEtaCount = 0;
-    private static long roundEtaSum = 0L;
-    private static int roundEtaCount = 0;
 
     private AllLeafCompletions() {
     }
 
     public static synchronized void reset() {
 
-        lastRecordedRound = 0;
+        lastRecordedExecs.clear();
         currentCycleEtaSum = 0L;
         currentCycleEtaCount = 0;
-        roundEtaSum = 0L;
-        roundEtaCount = 0;
     }
 
     public static synchronized void recordEtaSample(final long etaMs) {
@@ -48,10 +46,10 @@ public final class AllLeafCompletions {
         }
     }
 
-    public static synchronized void append(final long elapsedMillis, final long etaMs, final String leaf) {
+    public static synchronized void append(final long elapsedMillis, final long etaMs, final int goalIndex, final String leaf) {
 
         final Path path = Path.of(name(RUN_ALL_LEAF_COMPLETIONS_));
-        final String line = "[ALL_LEAF_COMPLETION] " + elapsedMillis + " " + etaMs + " " + leaf + System.lineSeparator();
+        final String line = "[ALL_LEAF_COMPLETION] " + elapsedMillis + " " + etaMs + " " + goalIndex + " " + leaf + System.lineSeparator();
         try {
             Files.writeString(path, line, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (final IOException e) {
@@ -72,40 +70,34 @@ public final class AllLeafCompletions {
         currentCycleEtaSum = 0L;
         currentCycleEtaCount = 0;
 
-        roundEtaSum += cycleAvgEta;
-        roundEtaCount++;
-
-        final Set<_Scenario> accessibleLeafs = Base.core.getAccessibleLeafs();
-        if (isNull(accessibleLeafs) || accessibleLeafs.isEmpty()) return;
-
-        final int target = resolveAllLeafsTarget();
         final String leafName = (isNotNull(completingScenario)) ? completingScenario.getShortName() : "unknown";
 
-        int round = lastRecordedRound + 1;
-        while (round <= target) {
-            boolean roundComplete = true;
-            for (final _Scenario leaf : accessibleLeafs) {
-                final int leafTarget = (leaf instanceof Mono) ? 1 : round;
-                int execs = (isNotNull(Base.core.getResults())) ? Base.core.getResults().getExecutions(leaf) : 0;
-                if (isNotNull(completingScenario) && completingScenario.equals(leaf) && execs == 0) {
-                    execs = 1;
+        final Set<_Scenario> accessibleLeafs = Base.core.getAccessibleLeafs();
+        if (isNull(accessibleLeafs) || accessibleLeafs.isEmpty()) {
+            append(elapsedMillis, cycleAvgEta, 0, leafName);
+            return;
+        }
+
+        final int target = resolveAllLeafsTarget();
+        boolean reachedGoal = false;
+        int completedGoalIndex = 0;
+
+        if (isNotNull(completingScenario)) {
+            final int execs = (isNotNull(Base.core.getResults())) ? Base.core.getResults().getExecutions(completingScenario) : 0;
+            final int effectiveExecs = (execs == 0) ? 1 : execs;
+            final int leafTarget = (completingScenario instanceof Mono) ? 1 : target;
+
+            if (effectiveExecs <= leafTarget && lastRecordedExecs.getOrDefault(completingScenario, 0) < effectiveExecs) {
+                lastRecordedExecs.put(completingScenario, effectiveExecs);
+                reachedGoal = true;
+                completedGoalIndex = Base.core.getExecutedLeafsCount();
+                if (execs == 0 && completedGoalIndex == 0) {
+                    completedGoalIndex = 1;
                 }
-                if (execs < leafTarget) {
-                    roundComplete = false;
-                    break;
-                }
-            }
-            if (roundComplete) {
-                lastRecordedRound = round;
-                final long etaForRound = (roundEtaCount > 0) ? (roundEtaSum / roundEtaCount) : cycleAvgEta;
-                append(elapsedMillis, etaForRound, leafName);
-                roundEtaSum = 0L;
-                roundEtaCount = 0;
-                round++;
-            } else {
-                break;
             }
         }
+
+        append(elapsedMillis, cycleAvgEta, reachedGoal ? completedGoalIndex : 0, leafName);
     }
 
     private static int resolveAllLeafsTarget() {

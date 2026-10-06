@@ -405,28 +405,29 @@ class AllLeafsCoverageTest {
         // Run 1: LeafA done
         Base.core.getResults().count(leafA);
         doneMethod.invoke(leafA);
-        assertFalse(Files.exists(completionPath), "No completion logged when only LeafA executed once");
-
-        // Run 1: LeafB done -> Round 1 complete
-        Base.core.getResults().count(leafB);
-        doneMethod.invoke(leafB);
         assertTrue(Files.exists(completionPath));
         java.util.List<String> lines = Files.readAllLines(completionPath);
-        assertEquals(1, lines.size(), "Should log 1 completion for round 1");
-        assertTrue(lines.get(0).contains("LeafB"));
+        assertEquals(1, lines.size(), "Should log completion for LeafA");
+        assertTrue(lines.get(0).contains("LeafA"));
+
+        // Run 1: LeafB done
+        Base.core.getResults().count(leafB);
+        doneMethod.invoke(leafB);
+        lines = Files.readAllLines(completionPath);
+        assertEquals(2, lines.size(), "Should log completion for LeafB");
+        assertTrue(lines.get(1).contains("LeafB"));
 
         // Run 2: LeafA done 2nd time
         Base.core.getResults().count(leafA);
         doneMethod.invoke(leafA);
         lines = Files.readAllLines(completionPath);
-        assertEquals(1, lines.size(), "Still 1 completion until LeafB completes 2nd time");
+        assertEquals(3, lines.size(), "Should log 3rd completion");
 
-        // Run 2: LeafB done 2nd time -> Round 2 complete
+        // Run 2: LeafB done 2nd time
         Base.core.getResults().count(leafB);
         doneMethod.invoke(leafB);
         lines = Files.readAllLines(completionPath);
-        assertEquals(2, lines.size(), "Should log 2 completions after round 2 completes");
-        assertTrue(lines.get(1).contains("LeafB"));
+        assertEquals(4, lines.size(), "Should log 4th completion");
 
         Files.deleteIfExists(completionPath);
     }

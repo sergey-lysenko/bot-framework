@@ -3,6 +3,7 @@ package works.lysenko.tree;
 import org.apache.commons.math3.fraction.Fraction;
 import org.openqa.selenium.WebElement;
 import works.lysenko.base.output.AllLeafCompletions;
+import works.lysenko.base.output.EtaDebug;
 import works.lysenko.util.apis.action.Verifies;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
 import works.lysenko.util.apis.scenario._Scenario;
@@ -202,6 +203,9 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         startedAt = msSinceStart();
         exec.scenarios().push(this);
         exec.logEmptyLine();
+        if (ScenarioType.LEAF == type() || ScenarioType.MONO == type()) {
+            EtaDebug.startCycle(getShortName());
+        }
         log(Level.none, s(ansi(b(s(type().tag()), getShortName()), BLUE_BOLD_BRIGHT), e(s(_COLON_)),
                 core.getResults().count(this)), false);
         return true;
@@ -259,8 +263,11 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         final String info = info();
         log(Level.none, b(false, bb(s(q(getShortName()))), // Scenario
                 (null == info || info.isEmpty()) ? EMPTY : yb(info), b(DONE, IN), yb(t(runtime))), false);
-        if ((ScenarioType.LEAF == type() || ScenarioType.MONO == type()) && isAllLeafsMode()) {
-            AllLeafCompletions.checkAndRecord(msSinceStart(), this);
+        if (ScenarioType.LEAF == type() || ScenarioType.MONO == type()) {
+            EtaDebug.endCycle(getShortName());
+            if (isAllLeafsMode()) {
+                AllLeafCompletions.checkAndRecord(msSinceStart(), this);
+            }
         }
         exec.scenarios().pop(this);
     }

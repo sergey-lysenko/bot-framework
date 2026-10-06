@@ -124,14 +124,14 @@ class LogHtmlTest {
         assertTrue(html.contains("checkout.Cart @ 0:01.000 (+1.00s)"));
         assertTrue(html.contains("checkout.Payment @ 0:04.000 (+3.00s)"));
         assertTrue(html.contains("checkout.Confirmation @ 0:04.500 (+500ms)"));
-        assertTrue(html.contains("Time since previous completion"));
+        assertTrue(html.contains("Projected Total (Passed + ETA)"));
         assertTrue(html.indexOf("All-Leaf Completion Intervals") < html.indexOf("Test Executions &amp; Limbo Durations"));
         assertTrue(html.contains("<section id=\"leafCompletionChart\""));
         assertTrue(html.contains("<svg id=\"leafCompletionSvg\" class=\"timeline-line-svg\""));
         assertFalse(html.contains("leaf-chart-scroll-wrap"), "Leaf completion chart should never render a horizontal scroll wrapper");
         assertTrue(html.contains("viewBox=\"0 0 1000 240\""),
                 "Leaf completion SVG width should be controlled by responsive CSS");
-        assertTrue(html.contains("<path d=\"M 55.00 170.00 L 515.00 98.00 L 975.00 188.00\" class=\"leaf-chart-line\""),
+        assertTrue(html.contains("<path d=\"M 55.00 136.37 L 500.00 66.73 L 945.00 165.27\" class=\"leaf-chart-line\""),
                 "Leaf completion points should be distributed evenly across the chart");
         assertTrue(html.contains("window.lgData = [{\"n\":1"));
         assertTrue(html.contains("\"s\":10.000"));
@@ -170,9 +170,34 @@ class LogHtmlTest {
 
         final String html = Files.readString(htmlPath);
         assertTrue(html.contains("All-Leaf Completion Intervals"));
-        assertTrue(html.contains("checkout.Cart @ 0:01.000 (+1.00s, ETA: 20.00s)"));
-        assertTrue(html.contains("checkout.Payment @ 0:04.000 (+3.00s, ETA: 15.00s)"));
+        assertTrue(html.contains("checkout.Cart @ 0:01.000 (+1.00s, Projected: 21.00s)"));
+        assertTrue(html.contains("checkout.Payment @ 0:04.000 (+3.00s, Projected: 19.00s)"));
         assertTrue(html.contains("class=\"leaf-eta-chart-line\""));
         assertTrue(html.contains("leaf-eta-line"));
+        assertTrue(html.contains("window.leafCeil = "));
+        assertTrue(html.contains("window.leafCeilInterval = "));
+        assertTrue(html.contains("window.leafCeilProjected = "));
+    }
+
+    @Test
+    void rendersEtaDebugGraphWithCorrectCeilings(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("eta_debug.run.log");
+        final Path htmlPath = tempDir.resolve("eta_debug.run.log.html");
+        final Path etaDebugPath = tempDir.resolve("eta_debug.eta-debug.log");
+        Files.write(logPath, List.of(
+                "[ 1][1][0.000][10] Executing Scenario",
+                "[ 1][2][10.000][5] • Closing test 1 ...",
+                "[  ][3][10.010][2] • Test time 10 s"));
+        Files.write(etaDebugPath, List.of(
+                "[ETA_DEBUG] 1 1000 5000 1000 5500 TestScenario1",
+                "[ETA_DEBUG] 2 2000 5000 1000 5200 TestScenario2"));
+
+        LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+
+        final String html = Files.readString(htmlPath);
+        assertTrue(html.contains("ETA Debug"));
+        assertTrue(html.contains("window.etaDebugCeil = "));
+        assertTrue(html.contains("window.etaDebugCeilInstability = "));
+        assertTrue(html.contains("window.etaDebugCeilError = "));
     }
 }

@@ -178,6 +178,7 @@ public record Layout() {
         public static final String RUN_JSON_ = s($1_S, s, $1_S, _DOT_, RUN, _DOT_, JSON);
         public static final String RUN_ALL_LEAF_COMPLETIONS_ = s($1_S, s, $1_S, _DOT_, ALL, _DASH_, LEAF, _DASH_,
                 "completions", _DOT_, LOG);
+        public static final String RUN_ETA_DEBUG_ = s($1_S, s, $1_S, _DOT_, "eta", _DASH_, "debug", _DOT_, LOG);
         public static final String RUN_LOG_ = s($1_S, s, $1_S, _DOT_, RUN, _DOT_, LOG);
         public static final String RUN_ROOT_ = s($1_S, s, $1_S, _DOT_, $2_S, _DOT_, $3_S, _DOT_, $4_S, _DOT_, $5_S);
         public static final String RUN_TREE_HTML_ = s($1_S, s, $1_S, _DOT_, works.lysenko.util.lang.word.T.TREE, _DOT_, HTML);

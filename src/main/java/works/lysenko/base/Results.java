@@ -1,6 +1,7 @@
 package works.lysenko.base;
 
 import works.lysenko.base.output.AllLeafCompletions;
+import works.lysenko.base.output.EtaDebug;
 import works.lysenko.util.apis.core._Results;
 import works.lysenko.util.apis.data._Event;
 import works.lysenko.util.apis.data._Result;
@@ -48,6 +49,7 @@ public class Results implements _Results {
     public Results() {
 
         AllLeafCompletions.reset();
+        EtaDebug.reset();
     }
 
     @SuppressWarnings({"ChainedMethodCall", "LawOfDemeter", "LocalCanBeFinal", "NestedMethodCall"})
