@@ -1,6 +1,7 @@
 package works.lysenko.base.output;
 
 import works.lysenko.Base;
+import works.lysenko.base.ui.UserInterface;
 import works.lysenko.tree.base.Mono;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.spec.PropEnum;
@@ -22,6 +23,10 @@ import static works.lysenko.util.spec.Layout.Templates.RUN_ALL_LEAF_COMPLETIONS_
 public final class AllLeafCompletions {
 
     private static int lastRecordedRound = 0;
+    private static long currentCycleEtaSum = 0L;
+    private static int currentCycleEtaCount = 0;
+    private static long roundEtaSum = 0L;
+    private static int roundEtaCount = 0;
 
     private AllLeafCompletions() {
     }
@@ -29,12 +34,24 @@ public final class AllLeafCompletions {
     public static synchronized void reset() {
 
         lastRecordedRound = 0;
+        currentCycleEtaSum = 0L;
+        currentCycleEtaCount = 0;
+        roundEtaSum = 0L;
+        roundEtaCount = 0;
     }
 
-    public static synchronized void append(final long elapsedMillis, final String leaf) {
+    public static synchronized void recordEtaSample(final long etaMs) {
+
+        if (etaMs > 0L) {
+            currentCycleEtaSum += etaMs;
+            currentCycleEtaCount++;
+        }
+    }
+
+    public static synchronized void append(final long elapsedMillis, final long etaMs, final String leaf) {
 
         final Path path = Path.of(name(RUN_ALL_LEAF_COMPLETIONS_));
-        final String line = "[ALL_LEAF_COMPLETION] " + elapsedMillis + " " + leaf + System.lineSeparator();
+        final String line = "[ALL_LEAF_COMPLETION] " + elapsedMillis + " " + etaMs + " " + leaf + System.lineSeparator();
         try {
             Files.writeString(path, line, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (final IOException e) {
@@ -45,6 +62,19 @@ public final class AllLeafCompletions {
     public static synchronized void checkAndRecord(final long elapsedMillis, final _Scenario completingScenario) {
 
         if (isNull(Base.core)) return;
+
+        final long cycleAvgEta;
+        if (currentCycleEtaCount > 0) {
+            cycleAvgEta = currentCycleEtaSum / currentCycleEtaCount;
+        } else {
+            cycleAvgEta = UserInterface.calculateEtaMs();
+        }
+        currentCycleEtaSum = 0L;
+        currentCycleEtaCount = 0;
+
+        roundEtaSum += cycleAvgEta;
+        roundEtaCount++;
+
         final Set<_Scenario> accessibleLeafs = Base.core.getAccessibleLeafs();
         if (isNull(accessibleLeafs) || accessibleLeafs.isEmpty()) return;
 
@@ -67,7 +97,10 @@ public final class AllLeafCompletions {
             }
             if (roundComplete) {
                 lastRecordedRound = round;
-                append(elapsedMillis, leafName);
+                final long etaForRound = (roundEtaCount > 0) ? (roundEtaSum / roundEtaCount) : cycleAvgEta;
+                append(elapsedMillis, etaForRound, leafName);
+                roundEtaSum = 0L;
+                roundEtaCount = 0;
                 round++;
             } else {
                 break;

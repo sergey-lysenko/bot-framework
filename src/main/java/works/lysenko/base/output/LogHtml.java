@@ -39,7 +39,7 @@ public final class LogHtml {
     private static final Pattern TEST_TIME_RE = Pattern.compile("Test time (.*)");
     private static final Pattern TEST_RUN_SUMMARY_RE = Pattern.compile(".*\\b\\d+\\s+tests?\\s+of\\s+.+\\s+done\\s+in\\s+.*");
     private static final Pattern SPAN_BRACKET_RE = Pattern.compile("(\\[[0-9.]+\\](?:<[^>]+>)*)(\\[\\s*\\d+\\s*\\])");
-    private static final Pattern ALL_LEAF_COMPLETION_RE = Pattern.compile("\\[ALL_LEAF_COMPLETION]\\s+(\\d+)\\s+(.+)$");
+    private static final Pattern ALL_LEAF_COMPLETION_RE = Pattern.compile("\\[ALL_LEAF_COMPLETION]\\s+(\\d+)(?:\\s+(\\d+))?\\s+(.+)$");
 
     private LogHtml() {
     }
@@ -678,19 +678,22 @@ public final class LogHtml {
         final double plotW = width - marginLeft - marginRight;
         final double plotH = height - marginTop - marginBottom;
 
-        long maxInterval = 1L;
+        long maxValMs = 1L;
         long previous = 0L;
         final long[] intervals = new long[completions.size()];
+        final long[] etas = new long[completions.size()];
+
         for (int index = 0; index < completions.size(); index++) {
             final LeafCompletion completion = completions.get(index);
             final long interval = Math.max(0L, completion.atMillis - previous);
             intervals[index] = interval;
+            etas[index] = completion.etaMs;
             previous = completion.atMillis;
-            maxInterval = Math.max(maxInterval, interval);
+            maxValMs = Math.max(maxValMs, Math.max(interval, completion.etaMs));
         }
 
-        final double maxIntervalSec = maxInterval / 1000.0;
-        final double ceilSec = getNiceCeil(maxIntervalSec > 0 ? maxIntervalSec : 1.0);
+        final double maxValSec = maxValMs / 1000.0;
+        final double ceilSec = getNiceCeil(maxValSec > 0 ? maxValSec : 1.0);
 
         final StringBuilder sb = new StringBuilder();
         sb.append("<section id=\"leafCompletionChart\" class=\"leaf-completion-chart\"><div class=\"chart-card\">")
@@ -698,7 +701,9 @@ public final class LogHtml {
                 .append("<span class=\"card-subtitle\">Y: Time since previous completion (first: run start); X: completion order</span>")
                 .append("</div><div class=\"line-graph-legend\">")
                 .append("<span class=\"lg-legend-item\"><span class=\"lg-line-sample leaf-line\"></span>")
-                .append("Time between completions</span></div>")
+                .append("Time between completions</span>")
+                .append("<span class=\"lg-legend-item\"><span class=\"lg-line-sample leaf-eta-line\"></span>")
+                .append("ETA</span></div>")
                 .append("<div class=\"line-graph-svg-wrap\"><svg id=\"leafCompletionSvg\" class=\"timeline-line-svg\" viewBox=\"0 0 1000 240\">")
                 .append("  <defs>\n")
                 .append("    <linearGradient id=\"leafAreaGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n")
@@ -749,18 +754,23 @@ public final class LogHtml {
 
         final StringBuilder leafPath = new StringBuilder();
         final StringBuilder leafArea = new StringBuilder();
+        final StringBuilder etaPath = new StringBuilder();
 
         for (int i = 0; i < N; i++) {
             final double intervalSec = intervals[i] / 1000.0;
+            final double etaSec = etas[i] / 1000.0;
             final double x = marginLeft + (N > 1 ? (double) i / (N - 1) * plotW : plotW / 2.0);
-            final double y = (marginTop + plotH) - Math.min(plotH, (intervalSec / ceilSec) * plotH);
+            final double yInterval = (marginTop + plotH) - Math.min(plotH, (intervalSec / ceilSec) * plotH);
+            final double yEta = (marginTop + plotH) - Math.min(plotH, (etaSec / ceilSec) * plotH);
 
             if (i == 0) {
-                leafPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, y));
-                leafArea.append(String.format(Locale.ROOT, "M %.2f %.2f L %.2f %.2f", x, marginTop + plotH, x, y));
+                leafPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yInterval));
+                leafArea.append(String.format(Locale.ROOT, "M %.2f %.2f L %.2f %.2f", x, marginTop + plotH, x, yInterval));
+                etaPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yEta));
             } else {
-                leafPath.append(String.format(Locale.ROOT, " L %.2f %.2f", x, y));
-                leafArea.append(String.format(Locale.ROOT, " L %.2f %.2f", x, y));
+                leafPath.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yInterval));
+                leafArea.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yInterval));
+                etaPath.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yEta));
             }
             if (i == N - 1) {
                 leafArea.append(String.format(Locale.ROOT, " L %.2f %.2f Z", x, marginTop + plotH));
@@ -769,11 +779,13 @@ public final class LogHtml {
 
         sb.append("  <path d=\"").append(leafArea).append("\" fill=\"url(#leafAreaGrad)\" />\n");
         sb.append("  <path d=\"").append(leafPath).append("\" class=\"leaf-chart-line\" fill=\"none\" stroke=\"#a855f7\" stroke-width=\"2\" />\n");
+        sb.append("  <path d=\"").append(etaPath).append("\" class=\"leaf-eta-chart-line\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"2\" stroke-dasharray=\"4,3\" />\n");
 
         sb.append(String.format(Locale.ROOT,
                 "  <line id=\"leafCrosshair\" x1=\"0\" y1=\"%.1f\" x2=\"0\" y2=\"%.1f\" stroke=\"#94a3b8\" stroke-dasharray=\"2,2\" stroke-width=\"1\" opacity=\"0\" pointer-events=\"none\" />\n",
                 marginTop, marginTop + plotH));
         sb.append("  <circle id=\"leafDot\" cx=\"0\" cy=\"0\" r=\"5\" fill=\"#a855f7\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />\n");
+        sb.append("  <circle id=\"leafEtaDot\" cx=\"0\" cy=\"0\" r=\"4\" fill=\"#38bdf8\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />\n");
         sb.append(String.format(Locale.ROOT,
                 "  <rect id=\"leafOverlay\" x=\"%.1f\" y=\"%.1f\" width=\"%.1f\" height=\"%.1f\" fill=\"transparent\" style=\"cursor: crosshair;\" onmousemove=\"onLeafHover(event)\" onmouseleave=\"onLeafLeave()\" />\n",
                 marginLeft, marginTop, plotW, plotH));
@@ -796,9 +808,11 @@ public final class LogHtml {
             while (null != (line = reader.readLine())) {
                 final Matcher matcher = ALL_LEAF_COMPLETION_RE.matcher(line.trim());
                 if (matcher.matches()) {
-                    completions.add(new LeafCompletion(
-                            Long.parseLong(matcher.group(1)),
-                            matcher.group(2).trim()));
+                    final long atMillis = Long.parseLong(matcher.group(1));
+                    final long etaMs = (null != matcher.group(2) && !matcher.group(2).isEmpty())
+                            ? Long.parseLong(matcher.group(2)) : 0L;
+                    final String leaf = matcher.group(3).trim();
+                    completions.add(new LeafCompletion(atMillis, etaMs, leaf));
                 }
             }
         } catch (final IOException | NumberFormatException e) {
@@ -1274,15 +1288,15 @@ public final class LogHtml {
         }
 
         if (null != completions && !completions.isEmpty()) {
-            long maxInterval = 1L;
+            long maxVal = 1L;
             long previous = 0L;
             for (final LeafCompletion c : completions) {
                 final long interval = Math.max(0L, c.atMillis - previous);
                 previous = c.atMillis;
-                maxInterval = Math.max(maxInterval, interval);
+                maxVal = Math.max(maxVal, Math.max(interval, c.etaMs));
             }
-            final double maxIntervalSec = maxInterval / 1000.0;
-            final double ceilSec = getNiceCeil(maxIntervalSec > 0 ? maxIntervalSec : 1.0);
+            final double maxValSec = maxVal / 1000.0;
+            final double ceilSec = getNiceCeil(maxValSec > 0 ? maxValSec : 1.0);
 
             sb.append("  window.leafCeil = ").append(String.format(Locale.ROOT, "%.3f", ceilSec)).append(";\n");
             sb.append("  window.leafData = [");
@@ -1293,11 +1307,16 @@ public final class LogHtml {
                 final long intervalMs = Math.max(0L, c.atMillis - pAt);
                 pAt = c.atMillis;
                 final String intervalStr = formatCompletionDuration(intervalMs);
+                final String etaStr = formatCompletionDuration(c.etaMs);
                 final String momentStr = formatCompletionMoment(c.atMillis);
-                final String fullLabel = c.leaf + " @ " + momentStr + " (+" + intervalStr + ")";
+                final String fullLabel = (c.etaMs > 0L)
+                        ? c.leaf + " @ " + momentStr + " (+" + intervalStr + ", ETA: " + etaStr + ")"
+                        : c.leaf + " @ " + momentStr + " (+" + intervalStr + ")";
                 sb.append("{\"n\":").append(i + 1)
                         .append(",\"leaf\":\"").append(escapeJson(c.leaf)).append("\"")
                         .append(",\"ms\":").append(intervalMs)
+                        .append(",\"etaMs\":").append(c.etaMs)
+                        .append(",\"eta\":\"").append(escapeJson(etaStr)).append("\"")
                         .append(",\"at\":").append(c.atMillis)
                         .append(",\"interval\":\"").append(escapeJson(intervalStr)).append("\"")
                         .append(",\"moment\":\"").append(escapeJson(momentStr)).append("\"")
@@ -1755,10 +1774,12 @@ public final class LogHtml {
 
     private static final class LeafCompletion {
         final long atMillis;
+        final long etaMs;
         final String leaf;
 
-        LeafCompletion(final long atMillis, final String leaf) {
+        LeafCompletion(final long atMillis, final long etaMs, final String leaf) {
             this.atMillis = atMillis;
+            this.etaMs = etaMs;
             this.leaf = leaf;
         }
     }

@@ -69,6 +69,7 @@ body.hide-limbo .lg-limbo-series, body.hide-limbo .lg-legend-limbo { display: no
 .lg-line-sample { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
 .lg-line-sample.test-line { background: #38bdf8; box-shadow: 0 0 6px rgba(56, 189, 248, 0.4); }
 .lg-line-sample.leaf-line { background: #a855f7; box-shadow: 0 0 6px rgba(168, 85, 247, 0.4); }
+.lg-line-sample.leaf-eta-line { background: #38bdf8; box-shadow: 0 0 6px rgba(56, 189, 248, 0.4); }
 .lg-line-sample.limbo-line { background: #a855f7; box-shadow: 0 0 6px rgba(168, 85, 247, 0.4); }
 .lg-dash-sample { width: 14px; height: 0; border-top: 1.5px dashed #0284c7; display: inline-block; }
 .lg-dot-sample { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
@@ -539,19 +540,23 @@ summary::-webkit-details-marker { display: none; }
   <text x="${x.toFixed(1)}" y="${(height - 10).toFixed(1)}" text-anchor="middle" fill="#64748b" font-size="10" font-family="ui-monospace, monospace">#${idx + 1}</text>\n`;
     });
 
-    let leafPath = '', leafArea = '';
+    let leafPath = '', leafArea = '', etaPath = '';
     for (let i = 0; i < N; i++) {
       const item = window.leafData[i];
       const x = ml + (N > 1 ? (i / (N - 1)) * pw : pw / 2.0);
       const intervalSec = item.ms / 1000.0;
+      const etaSec = (item.etaMs || 0) / 1000.0;
       const y = (mt + ph) - Math.min(ph, (intervalSec / ceilSec) * ph);
+      const yEta = (mt + ph) - Math.min(ph, (etaSec / ceilSec) * ph);
 
       if (i === 0) {
         leafPath += `M ${x.toFixed(2)} ${y.toFixed(2)}`;
         leafArea += `M ${x.toFixed(2)} ${(mt + ph).toFixed(2)} L ${x.toFixed(2)} ${y.toFixed(2)}`;
+        etaPath += `M ${x.toFixed(2)} ${yEta.toFixed(2)}`;
       } else {
         leafPath += ` L ${x.toFixed(2)} ${y.toFixed(2)}`;
         leafArea += ` L ${x.toFixed(2)} ${y.toFixed(2)}`;
+        etaPath += ` L ${x.toFixed(2)} ${yEta.toFixed(2)}`;
       }
       if (i === N - 1) {
         leafArea += ` L ${x.toFixed(2)} ${(mt + ph).toFixed(2)} Z`;
@@ -559,10 +564,12 @@ summary::-webkit-details-marker { display: none; }
     }
 
     svg += `  <path d="${leafArea}" fill="url(#leafAreaGrad)" />
-  <path d="${leafPath}" class="leaf-chart-line" fill="none" stroke="#a855f7" stroke-width="2" />\n`;
+  <path d="${leafPath}" class="leaf-chart-line" fill="none" stroke="#a855f7" stroke-width="2" />
+  <path d="${etaPath}" class="leaf-eta-chart-line" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,3" />\n`;
 
     svg += `  <line id="leafCrosshair" x1="0" y1="${mt.toFixed(1)}" x2="0" y2="${(mt + ph).toFixed(1)}" stroke="#94a3b8" stroke-dasharray="2,2" stroke-width="1" opacity="0" pointer-events="none" />
   <circle id="leafDot" cx="0" cy="0" r="5" fill="#a855f7" stroke="#ffffff" stroke-width="2" opacity="0" pointer-events="none" />
+  <circle id="leafEtaDot" cx="0" cy="0" r="4" fill="#38bdf8" stroke="#ffffff" stroke-width="2" opacity="0" pointer-events="none" />
   <rect id="leafOverlay" x="${ml.toFixed(1)}" y="${mt.toFixed(1)}" width="${pw.toFixed(1)}" height="${ph.toFixed(1)}" fill="transparent" style="cursor: crosshair;" onmousemove="onLeafHover(event)" onmouseleave="onLeafLeave()" />
 </svg>
 <div id="leafTooltip" class="lg-tooltip hidden"></div>`;
@@ -587,6 +594,7 @@ summary::-webkit-details-marker { display: none; }
 
     const crosshair = document.getElementById('leafCrosshair');
     const dot = document.getElementById('leafDot');
+    const etaDot = document.getElementById('leafEtaDot');
     if (crosshair) {
       crosshair.setAttribute('x1', svgX);
       crosshair.setAttribute('x2', svgX);
@@ -597,11 +605,21 @@ summary::-webkit-details-marker { display: none; }
       dot.setAttribute('cy', svgY);
       dot.style.opacity = '1';
     }
+    if (etaDot) {
+      const etaSec = (d.etaMs || 0) / 1000.0;
+      const svgEtaY = (mt + ph) - Math.min(ph, (etaSec / window.leafCeil) * ph);
+      etaDot.setAttribute('cx', svgX);
+      etaDot.setAttribute('cy', svgEtaY);
+      etaDot.style.opacity = '1';
+    }
 
     const tt = document.getElementById('leafTooltip');
     if (tt) {
       let html = `<div class="lg-tt-title"><span class="lg-tt-num">#${d.n} ${d.leaf}</span></div>`;
       html += `<div class="lg-tt-row"><span class="lg-tt-lbl">Interval:</span> <b>+${d.interval}</b></div>`;
+      if (d.eta) {
+        html += `<div class="lg-tt-row"><span class="lg-tt-lbl">ETA:</span> <b>${d.eta}</b></div>`;
+      }
       html += `<div class="lg-tt-row"><span class="lg-tt-lbl">Completed at:</span> <b>${d.moment}</b></div>`;
       tt.innerHTML = html;
       tt.classList.remove('hidden');
@@ -619,9 +637,11 @@ summary::-webkit-details-marker { display: none; }
   function onLeafLeave() {
     const crosshair = document.getElementById('leafCrosshair');
     const dot = document.getElementById('leafDot');
+    const etaDot = document.getElementById('leafEtaDot');
     const tt = document.getElementById('leafTooltip');
     if (crosshair) crosshair.style.opacity = '0';
     if (dot) dot.style.opacity = '0';
+    if (etaDot) etaDot.style.opacity = '0';
     if (tt) tt.classList.add('hidden');
   }
 

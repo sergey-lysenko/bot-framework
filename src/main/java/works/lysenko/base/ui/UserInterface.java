@@ -1,5 +1,6 @@
 package works.lysenko.base.ui;
 
+import works.lysenko.base.output.AllLeafCompletions;
 import works.lysenko.base.util.Telemetry;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.util._BotButton;
@@ -510,12 +511,12 @@ public final class UserInterface extends JPanel implements _Dashboard {
      *
      * @return Formatted ETA string (e.g. "(ETA 02:15)", "(ETA --:--)", or "(ETA Done)")
      */
-    private static String calculateEtaString() {
+    public static long calculateEtaMs() {
 
-        if (isNull(core) || isNull(timer)) return "(ETA --:--)";
+        if (isNull(core) || isNull(timer)) return 0L;
 
         final long elapsedMs = timer.msSinceStart();
-        if (elapsedMs < 1000L) return "(ETA --:--)";
+        if (elapsedMs < 1000L) return 0L;
 
         final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
                 || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
@@ -529,17 +530,15 @@ public final class UserInterface extends JPanel implements _Dashboard {
                     ? core.getTotalLeafExecutionsCount()
                     : core.getAccessibleLeafs().size();
 
-            if (0 == total) return "(ETA --:--)";
-            if (executed >= total && core.areAllLeafsExecuted()) {
-                return "(ETA Done)";
+            if (0 == total || (executed >= total && core.areAllLeafsExecuted())) {
+                return 0L;
             }
             if (executed > 0 && total > executed) {
                 final double avgMsPerExecution = (double) elapsedMs / executed;
                 final int remainingExecutions = total - executed;
-                final long remainingMs = Math.round(remainingExecutions * avgMsPerExecution);
-                return b("(ETA", s(formatMs(remainingMs)) + ")");
+                return Math.round(remainingExecutions * avgMsPerExecution);
             }
-            return "(ETA --:--)";
+            return 0L;
         }
 
         // Fixed test count mode (.test.tests specified)
@@ -549,15 +548,14 @@ public final class UserInterface extends JPanel implements _Dashboard {
                     ? core.getTest().repeater().getHistory().size()
                     : 0;
             if (completedTests >= totalTests) {
-                return "(ETA Done)";
+                return 0L;
             }
             if (completedTests > 0) {
                 final double avgMsPerTest = (double) elapsedMs / completedTests;
                 final int remainingTests = totalTests - completedTests;
-                final long remainingMs = Math.round(remainingTests * avgMsPerTest);
-                return b("(ETA", s(formatMs(remainingMs)) + ")");
+                return Math.round(remainingTests * avgMsPerTest);
             }
-            return "(ETA --:--)";
+            return 0L;
         }
 
         // Fallback: general leaf-based progress
@@ -567,8 +565,45 @@ public final class UserInterface extends JPanel implements _Dashboard {
         if (totalLeafs > 0 && executedLeafs > 0 && totalLeafs > executedLeafs) {
             final double avgMsPerLeaf = (double) elapsedMs / executedLeafs;
             final int remainingLeafs = totalLeafs - executedLeafs;
-            final long remainingMs = Math.round(remainingLeafs * avgMsPerLeaf);
+            return Math.round(remainingLeafs * avgMsPerLeaf);
+        }
+
+        return 0L;
+    }
+
+    private static String calculateEtaString() {
+
+        final long remainingMs = calculateEtaMs();
+        if (remainingMs > 0L) {
+            AllLeafCompletions.recordEtaSample(remainingMs);
             return b("(ETA", s(formatMs(remainingMs)) + ")");
+        }
+
+        if (isNull(core) || isNull(timer)) return "(ETA --:--)";
+        final long elapsedMs = timer.msSinceStart();
+        if (elapsedMs < 1000L) return "(ETA --:--)";
+
+        final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
+                || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
+        if (allLeafsMode) {
+            final boolean multipleExecutionsPerLeaf = isNotNull(parameters) && parameters.getAllLeafsCount() > 1;
+            final int executed = multipleExecutionsPerLeaf
+                    ? core.getExecutedLeafExecutionsCount()
+                    : core.getExecutedLeafsCount();
+            final int total = multipleExecutionsPerLeaf
+                    ? core.getTotalLeafExecutionsCount()
+                    : core.getAccessibleLeafs().size();
+            if (executed >= total && core.areAllLeafsExecuted()) return "(ETA Done)";
+            return "(ETA --:--)";
+        }
+
+        final Integer totalTests = core.getTotalTests();
+        if (isNotNull(totalTests) && totalTests > 0) {
+            final int completedTests = (isNotNull(core.getTest()) && isNotNull(core.getTest().repeater()) && isNotNull(core.getTest().repeater().getHistory()))
+                    ? core.getTest().repeater().getHistory().size()
+                    : 0;
+            if (completedTests >= totalTests) return "(ETA Done)";
+            return "(ETA --:--)";
         }
 
         return "(ETA --:--)";

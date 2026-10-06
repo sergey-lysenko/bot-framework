@@ -152,4 +152,27 @@ class LogHtmlTest {
 
         assertFalse(Files.readString(htmlPath).contains("All-Leaf Completion Intervals"));
     }
+
+    @Test
+    void rendersLeafCompletionGraphWithEtaSeries(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("eta_test.run.log");
+        final Path htmlPath = tempDir.resolve("eta_test.run.log.html");
+        final Path completionPath = tempDir.resolve("eta_test.all-leaf-completions.log");
+        Files.write(logPath, List.of(
+                "[ 1][1][0.000][10] Executing Scenario",
+                "[ 1][2][10.000][5] • Closing test 1 ...",
+                "[  ][3][10.010][2] • Test time 10 s"));
+        Files.write(completionPath, List.of(
+                "[ALL_LEAF_COMPLETION] 1000 20000 checkout.Cart",
+                "[ALL_LEAF_COMPLETION] 4000 15000 checkout.Payment"));
+
+        LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+
+        final String html = Files.readString(htmlPath);
+        assertTrue(html.contains("All-Leaf Completion Intervals"));
+        assertTrue(html.contains("checkout.Cart @ 0:01.000 (+1.00s, ETA: 20.00s)"));
+        assertTrue(html.contains("checkout.Payment @ 0:04.000 (+3.00s, ETA: 15.00s)"));
+        assertTrue(html.contains("class=\"leaf-eta-chart-line\""));
+        assertTrue(html.contains("leaf-eta-line"));
+    }
 }
