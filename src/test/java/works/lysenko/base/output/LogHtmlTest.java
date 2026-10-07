@@ -195,6 +195,9 @@ class LogHtmlTest {
         assertTrue(html.contains("window.leafCeil = "));
         assertTrue(html.contains("window.leafCeilInterval = "));
         assertTrue(html.contains("window.leafCeilProjected = "));
+        assertTrue(html.contains("onclick=\"onLeafClick()\""));
+        assertTrue(html.contains("function onLeafClick()"));
+        assertTrue(html.contains("\"t\":\"Test #1\""));
     }
 
     @Test
@@ -220,6 +223,9 @@ class LogHtmlTest {
         assertTrue(html.contains("window.etaDebugCeil = "));
         assertTrue(html.contains("window.etaDebugCeilInstability = "));
         assertTrue(html.contains("window.etaDebugCeilError = "));
+        assertTrue(html.contains("onclick=\"onEtaDebugClick()\""));
+        assertTrue(html.contains("function onEtaDebugClick()"));
+        assertTrue(html.contains("\"t\":\"Test #1\""));
     }
 
     @Test
@@ -245,6 +251,10 @@ class LogHtmlTest {
         assertTrue(html.contains("window.resourceData = ["));
         assertTrue(html.contains("\"cpu\":12.50"));
         assertTrue(html.contains("\"ramUsed\":400.0"));
+        assertTrue(html.contains("onclick=\"onResClick()\""));
+        assertTrue(html.contains("function onResClick()"));
+        assertTrue(html.contains("function syncCrosshairs("));
+        assertTrue(html.contains("function clearAllCrosshairs("));
     }
 
     @Test

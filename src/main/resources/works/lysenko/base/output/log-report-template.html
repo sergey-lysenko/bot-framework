@@ -418,16 +418,38 @@ summary::-webkit-details-marker { display: none; }
 
     wrap.innerHTML = svg;
   }
-  let lgCurrIdx = -1;
-  function onLgHover(e) {
+  function syncCrosshairs(testNum) {
+    if (testNum === undefined || testNum === null) return;
+    updateLgCrosshair(testNum);
+    updateLeafCrosshair(testNum);
+    updateEtaDebugCrosshair(testNum);
+    updateResCrosshair(testNum);
+  }
+
+  function clearAllCrosshairs() {
+    ['lgCrosshair', 'lgTestDot', 'lgLimboDot', 'leafCrosshair', 'leafDot', 'leafEtaDot',
+     'etaDebugCrosshair', 'etaInstabilityDot', 'etaErrorDot',
+     'resCrosshair', 'resCpuDot', 'resRamDot'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.opacity = '0';
+    });
+    ['lgTooltip', 'leafTooltip', 'etaDebugTooltip', 'resTooltip'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
+    });
+  }
+
+  function updateLgCrosshair(testNum) {
     const overlay = document.getElementById('lgOverlay');
     if (!overlay || !window.lgData || !window.lgData.length) return;
-    const rect = overlay.getBoundingClientRect();
-    const relX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
-    const ratio = rect.width > 0 ? relX / rect.width : 0;
-    const idx = Math.min(window.lgData.length - 1, Math.max(0, Math.round(ratio * (window.lgData.length - 1))));
-    lgCurrIdx = idx;
+    let idx = window.lgData.findIndex(item => item.n === testNum);
+    if (idx < 0) {
+      const total = window.lgData.length;
+      const ratio = total > 1 ? Math.max(0, Math.min(1, (testNum - 1) / (total - 1))) : 0;
+      idx = Math.round(ratio * (total - 1));
+    }
     const d = window.lgData[idx];
+    if (!d) return;
 
     const ml = 55.0, mr = window.lgHasLimbo ? 55.0 : 25.0, mt = 26.0, mb = 34.0;
     const svgWidth = overlay.closest('svg').viewBox.baseVal.width;
@@ -455,6 +477,236 @@ summary::-webkit-details-marker { display: none; }
       limboDot.setAttribute('cy', svgYLimbo);
       limboDot.style.opacity = '1';
     }
+  }
+
+  function updateLeafCrosshair(testNum) {
+    const overlay = document.getElementById('leafOverlay');
+    if (!overlay || !window.leafData || !window.leafData.length) return;
+    let idx = window.leafData.findIndex(item => item.n === testNum);
+    if (idx < 0) {
+      const total = (window.lgData && window.lgData.length) ? window.lgData.length : window.leafData.length;
+      const ratio = total > 1 ? Math.max(0, Math.min(1, (testNum - 1) / (total - 1))) : 0;
+      idx = Math.round(ratio * (window.leafData.length - 1));
+    }
+    const d = window.leafData[idx];
+    if (!d) return;
+
+    const ml = 55.0, mr = 55.0, mt = 26.0, mb = 34.0;
+    const svgWidth = overlay.closest('svg').viewBox.baseVal.width;
+    const pw = svgWidth - ml - mr, ph = 240.0 - mt - mb;
+    const svgX = ml + (window.leafData.length > 1 ? (idx / (window.leafData.length - 1)) * pw : pw / 2.0);
+    const isLeftLog = window.leafLeftScaleMode !== 'linear';
+    const isRightLog = window.leafRightScaleMode !== 'linear';
+
+    const roundSecs = window.leafData.filter(item => item.round > 0 && item.roundIntervalMs >= 0).map(item => item.roundIntervalMs / 1000.0);
+    const projSecs = window.leafData.map(item => (item.at + (item.etaMs || 0)) / 1000.0);
+    const maxRawInterval = roundSecs.length ? Math.max(...roundSecs) : (window.leafCeilInterval || 1.0);
+    const maxRawProjected = Math.max(...projSecs);
+
+    let ceilIntervalSec;
+    if (!window.leafLeftCutoffSetting || window.leafLeftCutoffSetting === 'auto') {
+      const p95Interval = roundSecs.length ? getPercentile(roundSecs, 0.95) : maxRawInterval;
+      ceilIntervalSec = Math.max(1.0, getNiceCeil(p95Interval * 1.2));
+    } else if (window.leafLeftCutoffSetting === 'max') {
+      ceilIntervalSec = Math.max(1.0, getNiceCeil(maxRawInterval));
+    } else {
+      const cut = parseFloat(window.leafLeftCutoffSetting);
+      ceilIntervalSec = !isNaN(cut) && cut > 0 ? cut : Math.max(1.0, getNiceCeil(maxRawInterval));
+    }
+
+    let ceilProjectedSec;
+    if (!window.leafRightCutoffSetting || window.leafRightCutoffSetting === 'auto') {
+      const p95Projected = getPercentile(projSecs, 0.95);
+      ceilProjectedSec = Math.max(1.0, getNiceCeil(p95Projected * 1.2));
+    } else if (window.leafRightCutoffSetting === 'max') {
+      ceilProjectedSec = Math.max(1.0, getNiceCeil(maxRawProjected));
+    } else {
+      const cut = parseFloat(window.leafRightCutoffSetting);
+      ceilProjectedSec = !isNaN(cut) && cut > 0 ? cut : Math.max(1.0, getNiceCeil(maxRawProjected));
+    }
+
+    const crosshair = document.getElementById('leafCrosshair');
+    const dot = document.getElementById('leafDot');
+    const etaDot = document.getElementById('leafEtaDot');
+
+    if (crosshair) {
+      crosshair.setAttribute('x1', svgX);
+      crosshair.setAttribute('x2', svgX);
+      crosshair.style.opacity = '1';
+    }
+
+    if (d.round > 0 && d.roundIntervalMs >= 0) {
+      const roundSec = d.roundIntervalMs / 1000.0;
+      const svgY = calcY(roundSec, ceilIntervalSec, mt, ph, isLeftLog);
+      if (dot) {
+        dot.setAttribute('cx', svgX);
+        dot.setAttribute('cy', svgY);
+        dot.style.opacity = '1';
+      }
+    } else if (dot) {
+      dot.style.opacity = '0';
+    }
+
+    if (etaDot) {
+      const projSec = (d.at + (d.etaMs || 0)) / 1000.0;
+      const svgEtaY = calcY(projSec, ceilProjectedSec, mt, ph, isRightLog);
+      etaDot.setAttribute('cx', svgX);
+      etaDot.setAttribute('cy', svgEtaY);
+      etaDot.style.opacity = '1';
+    }
+  }
+
+  function updateEtaDebugCrosshair(testNum) {
+    const overlay = document.getElementById('etaDebugOverlay');
+    if (!overlay || !window.etaDebugData || !window.etaDebugData.length) return;
+    let idx = window.etaDebugData.findIndex(item => item.n === testNum);
+    if (idx < 0) {
+      const total = (window.lgData && window.lgData.length) ? window.lgData.length : window.etaDebugData.length;
+      const ratio = total > 1 ? Math.max(0, Math.min(1, (testNum - 1) / (total - 1))) : 0;
+      idx = Math.round(ratio * (window.etaDebugData.length - 1));
+    }
+    const d = window.etaDebugData[idx];
+    if (!d) return;
+
+    const ml = 55.0, mr = 55.0, mt = 26.0, mb = 34.0;
+    const svgWidth = overlay.closest('svg').viewBox.baseVal.width;
+    const pw = svgWidth - ml - mr, ph = 240.0 - mt - mb;
+    const svgX = ml + (window.etaDebugData.length > 1 ? (idx / (window.etaDebugData.length - 1)) * pw : pw / 2.0);
+    const isLeftLog = window.etaLeftScaleMode !== 'linear';
+    const isRightLog = window.etaRightScaleMode !== 'linear';
+
+    const errVals = window.etaDebugData.map(item => item.error);
+    const instVals = window.etaDebugData.map(item => item.instability);
+    const maxRawErr = Math.max(...errVals);
+    const maxRawInst = Math.max(...instVals);
+
+    let ceilInstabilityPct;
+    if (!window.etaLeftCutoffSetting || window.etaLeftCutoffSetting === 'auto') {
+      const p95Inst = getPercentile(instVals, 0.95);
+      ceilInstabilityPct = Math.max(10.0, getNiceCeil(p95Inst * 1.2));
+    } else if (window.etaLeftCutoffSetting === 'max') {
+      ceilInstabilityPct = Math.max(10.0, getNiceCeil(maxRawInst));
+    } else {
+      const cut = parseFloat(window.etaLeftCutoffSetting);
+      ceilInstabilityPct = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxRawInst));
+    }
+
+    let ceilErrorPct;
+    if (!window.etaRightCutoffSetting || window.etaRightCutoffSetting === 'auto') {
+      const p95Err = getPercentile(errVals, 0.95);
+      ceilErrorPct = Math.max(10.0, getNiceCeil(p95Err * 1.2));
+    } else if (window.etaRightCutoffSetting === 'max') {
+      ceilErrorPct = Math.max(10.0, getNiceCeil(maxRawErr));
+    } else {
+      const cut = parseFloat(window.etaRightCutoffSetting);
+      ceilErrorPct = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxRawErr));
+    }
+
+    const yInst = calcY(d.instability, ceilInstabilityPct, mt, ph, isLeftLog);
+    const yErr = calcY(d.error, ceilErrorPct, mt, ph, isRightLog);
+
+    const crosshair = document.getElementById('etaDebugCrosshair');
+    const instDot = document.getElementById('etaInstabilityDot');
+    const errDot = document.getElementById('etaErrorDot');
+    if (crosshair) {
+      crosshair.setAttribute('x1', svgX);
+      crosshair.setAttribute('x2', svgX);
+      crosshair.style.opacity = '1';
+    }
+    if (instDot) {
+      instDot.setAttribute('cx', svgX);
+      instDot.setAttribute('cy', yInst);
+      instDot.style.opacity = '1';
+    }
+    if (errDot) {
+      errDot.setAttribute('cx', svgX);
+      errDot.setAttribute('cy', yErr);
+      errDot.style.opacity = '1';
+    }
+  }
+
+  function updateResCrosshair(testNum) {
+    const overlay = document.getElementById('resOverlay');
+    if (!overlay || !window.resourceData || !window.resourceData.length) return;
+    let idx = window.resourceData.findIndex(item => item.t === testNum);
+    if (idx < 0) {
+      const total = (window.lgData && window.lgData.length) ? window.lgData.length : window.resourceData.length;
+      const ratio = total > 1 ? Math.max(0, Math.min(1, (testNum - 1) / (total - 1))) : 0;
+      idx = Math.round(ratio * (window.resourceData.length - 1));
+    }
+    const d = window.resourceData[idx];
+    if (!d) return;
+
+    const wrap = overlay.closest('.line-graph-svg-wrap');
+    const width = wrap ? (wrap.clientWidth || 1000) : 1000;
+    const ml = 50, mr = 55, mt = 20, mb = 35;
+    const pw = width - ml - mr;
+    const ph = 240 - mt - mb;
+
+    const svgX = ml + (window.resourceData.length > 1 ? (idx / (window.resourceData.length - 1)) * pw : pw / 2);
+
+    const cpuVals = window.resourceData.map(item => item.cpu);
+    const ramVals = window.resourceData.map(item => item.ramTotal);
+    const maxCpu = Math.max(10.0, ...cpuVals);
+    const maxRam = Math.max(100.0, ...ramVals);
+
+    let ceilCpu, ceilRam;
+    if (!window.resLeftCutoffSetting || window.resLeftCutoffSetting === 'auto') {
+      ceilCpu = Math.max(10.0, getNiceCeil(getPercentile(cpuVals, 0.95) * 1.2));
+    } else if (window.resLeftCutoffSetting === 'max') {
+      ceilCpu = Math.max(10.0, getNiceCeil(maxCpu));
+    } else {
+      const cut = parseFloat(window.resLeftCutoffSetting);
+      ceilCpu = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxCpu));
+    }
+
+    if (!window.resRightCutoffSetting || window.resRightCutoffSetting === 'auto') {
+      ceilRam = Math.max(100.0, getNiceCeil(getPercentile(ramVals, 0.95) * 1.2));
+    } else if (window.resRightCutoffSetting === 'max') {
+      ceilRam = Math.max(100.0, getNiceCeil(maxRam));
+    } else {
+      const cut = parseFloat(window.resRightCutoffSetting);
+      ceilRam = !isNaN(cut) && cut > 0 ? cut : Math.max(100.0, getNiceCeil(maxRam));
+    }
+
+    const isLeftLog = (window.resLeftScaleMode === 'log');
+    const isRightLog = (window.resRightScaleMode === 'log');
+    const yCpu = calcY(d.cpu, ceilCpu, mt, ph, isLeftLog);
+    const yRam = calcY(d.ramUsed, ceilRam, mt, ph, isRightLog);
+
+    const crosshair = document.getElementById('resCrosshair');
+    const cpuDot = document.getElementById('resCpuDot');
+    const ramDot = document.getElementById('resRamDot');
+
+    if (crosshair) {
+      crosshair.setAttribute('x1', svgX);
+      crosshair.setAttribute('x2', svgX);
+      crosshair.style.opacity = '1';
+    }
+    if (cpuDot) {
+      cpuDot.setAttribute('cx', svgX);
+      cpuDot.setAttribute('cy', yCpu);
+      cpuDot.style.opacity = '1';
+    }
+    if (ramDot) {
+      ramDot.setAttribute('cx', svgX);
+      ramDot.setAttribute('cy', yRam);
+      ramDot.style.opacity = '1';
+    }
+  }
+
+  let lgCurrIdx = -1;
+  function onLgHover(e) {
+    const overlay = document.getElementById('lgOverlay');
+    if (!overlay || !window.lgData || !window.lgData.length) return;
+    const rect = overlay.getBoundingClientRect();
+    const relX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    const ratio = rect.width > 0 ? relX / rect.width : 0;
+    const idx = Math.min(window.lgData.length - 1, Math.max(0, Math.round(ratio * (window.lgData.length - 1))));
+    lgCurrIdx = idx;
+    const d = window.lgData[idx];
+
+    syncCrosshairs(d.n);
 
     const tt = document.getElementById('lgTooltip');
     if (tt) {
@@ -479,14 +731,8 @@ summary::-webkit-details-marker { display: none; }
   }
 
   function onLgLeave() {
-    const crosshair = document.getElementById('lgCrosshair');
-    const dot = document.getElementById('lgTestDot');
-    const limboDot = document.getElementById('lgLimboDot');
-    const tt = document.getElementById('lgTooltip');
-    if (crosshair) crosshair.style.opacity = '0';
-    if (dot) dot.style.opacity = '0';
-    if (limboDot) limboDot.style.opacity = '0';
-    if (tt) tt.classList.add('hidden');
+    clearAllCrosshairs();
+    lgCurrIdx = -1;
   }
 
   function onLgClick() {
@@ -825,13 +1071,13 @@ summary::-webkit-details-marker { display: none; }
     svg += `  <line id="leafCrosshair" x1="0" y1="${mt.toFixed(1)}" x2="0" y2="${(mt + ph).toFixed(1)}" stroke="#94a3b8" stroke-dasharray="2,2" stroke-width="1" opacity="0" pointer-events="none" />
   <circle id="leafDot" cx="0" cy="0" r="5" fill="#a855f7" stroke="#ffffff" stroke-width="2" opacity="0" pointer-events="none" />
   <circle id="leafEtaDot" cx="0" cy="0" r="4" fill="#38bdf8" stroke="#ffffff" stroke-width="2" opacity="0" pointer-events="none" />
-  <rect id="leafOverlay" x="${ml.toFixed(1)}" y="${mt.toFixed(1)}" width="${pw.toFixed(1)}" height="${ph.toFixed(1)}" fill="transparent" style="cursor: crosshair;" onmousemove="onLeafHover(event)" onmouseleave="onLeafLeave()" />
+  <rect id="leafOverlay" x="${ml.toFixed(1)}" y="${mt.toFixed(1)}" width="${pw.toFixed(1)}" height="${ph.toFixed(1)}" fill="transparent" style="cursor: crosshair;" onmousemove="onLeafHover(event)" onmouseleave="onLeafLeave()" onclick="onLeafClick()" />
 </svg>
 <div id="leafTooltip" class="lg-tooltip hidden"></div>`;
 
     wrap.innerHTML = svg;
   }
-
+  let leafCurrIdx = -1;
   function onLeafHover(e) {
     const overlay = document.getElementById('leafOverlay');
     if (!overlay || !window.leafData || !window.leafData.length) return;
@@ -839,69 +1085,10 @@ summary::-webkit-details-marker { display: none; }
     const relX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
     const ratio = rect.width > 0 ? relX / rect.width : 0;
     const idx = Math.min(window.leafData.length - 1, Math.max(0, Math.round(ratio * (window.leafData.length - 1))));
+    leafCurrIdx = idx;
     const d = window.leafData[idx];
 
-    const ml = 55.0, mr = 55.0, mt = 26.0, mb = 34.0;
-    const svgWidth = overlay.closest('svg').viewBox.baseVal.width;
-    const pw = svgWidth - ml - mr, ph = 240.0 - mt - mb;
-    const svgX = ml + (window.leafData.length > 1 ? (idx / (window.leafData.length - 1)) * pw : pw / 2.0);
-    const isLeftLog = window.leafLeftScaleMode !== 'linear';
-    const isRightLog = window.leafRightScaleMode !== 'linear';
-
-    const roundSecs = window.leafData.filter(item => item.round > 0 && item.roundIntervalMs >= 0).map(item => item.roundIntervalMs / 1000.0);
-    const projSecs = window.leafData.map(item => (item.at + (item.etaMs || 0)) / 1000.0);
-    const maxRawInterval = roundSecs.length ? Math.max(...roundSecs) : (window.leafCeilInterval || 1.0);
-    const maxRawProjected = Math.max(...projSecs);
-
-    let ceilIntervalSec;
-    if (!window.leafLeftCutoffSetting || window.leafLeftCutoffSetting === 'auto') {
-      const p95Interval = roundSecs.length ? getPercentile(roundSecs, 0.95) : maxRawInterval;
-      ceilIntervalSec = Math.max(1.0, getNiceCeil(p95Interval * 1.2));
-    } else if (window.leafLeftCutoffSetting === 'max') {
-      ceilIntervalSec = Math.max(1.0, getNiceCeil(maxRawInterval));
-    } else {
-      const cut = parseFloat(window.leafLeftCutoffSetting);
-      ceilIntervalSec = !isNaN(cut) && cut > 0 ? cut : Math.max(1.0, getNiceCeil(maxRawInterval));
-    }
-
-    let ceilProjectedSec;
-    if (!window.leafRightCutoffSetting || window.leafRightCutoffSetting === 'auto') {
-      const p95Projected = getPercentile(projSecs, 0.95);
-      ceilProjectedSec = Math.max(1.0, getNiceCeil(p95Projected * 1.2));
-    } else if (window.leafRightCutoffSetting === 'max') {
-      ceilProjectedSec = Math.max(1.0, getNiceCeil(maxRawProjected));
-    } else {
-      const cut = parseFloat(window.leafRightCutoffSetting);
-      ceilProjectedSec = !isNaN(cut) && cut > 0 ? cut : Math.max(1.0, getNiceCeil(maxRawProjected));
-    }
-
-    const crosshair = document.getElementById('leafCrosshair');
-    const dot = document.getElementById('leafDot');
-    const etaDot = document.getElementById('leafEtaDot');
-    if (crosshair) {
-      crosshair.setAttribute('x1', svgX);
-      crosshair.setAttribute('x2', svgX);
-      crosshair.style.opacity = '1';
-    }
-    if (d.round > 0 && d.roundIntervalMs >= 0) {
-      const roundSec = d.roundIntervalMs / 1000.0;
-      const svgY = calcY(roundSec, ceilIntervalSec, mt, ph, isLeftLog);
-      if (dot) {
-        dot.setAttribute('cx', svgX);
-        dot.setAttribute('cy', svgY);
-        dot.style.opacity = '1';
-      }
-    } else if (dot) {
-      dot.style.opacity = '0';
-    }
-
-    if (etaDot) {
-      const projSec = (d.at + (d.etaMs || 0)) / 1000.0;
-      const svgEtaY = calcY(projSec, ceilProjectedSec, mt, ph, isRightLog);
-      etaDot.setAttribute('cx', svgX);
-      etaDot.setAttribute('cy', svgEtaY);
-      etaDot.style.opacity = '1';
-    }
+    syncCrosshairs(d.n);
 
     const tt = document.getElementById('leafTooltip');
     if (tt) {
@@ -912,6 +1099,7 @@ summary::-webkit-details-marker { display: none; }
       if (d.round > 0) {
         html += `<div class="lg-tt-row"><span class="lg-tt-lbl">★ Round #${d.round}:</span> <b>+${d.roundInterval || d.interval}</b></div>`;
       }
+      html += `<div class="lg-tt-hint">Click to jump to log</div>`;
       tt.innerHTML = html;
       tt.classList.remove('hidden');
 
@@ -926,14 +1114,16 @@ summary::-webkit-details-marker { display: none; }
   }
 
   function onLeafLeave() {
-    const crosshair = document.getElementById('leafCrosshair');
-    const dot = document.getElementById('leafDot');
-    const etaDot = document.getElementById('leafEtaDot');
-    const tt = document.getElementById('leafTooltip');
-    if (crosshair) crosshair.style.opacity = '0';
-    if (dot) dot.style.opacity = '0';
-    if (etaDot) etaDot.style.opacity = '0';
-    if (tt) tt.classList.add('hidden');
+    clearAllCrosshairs();
+    leafCurrIdx = -1;
+  }
+
+  function onLeafClick() {
+    if (leafCurrIdx >= 0 && window.leafData && window.leafData[leafCurrIdx]) {
+      const d = window.leafData[leafCurrIdx];
+      const title = d.t || ('Test #' + (d.n || (leafCurrIdx + 1)));
+      focusSection(title);
+    }
   }
 
   function renderEtaDebugSvg() {
@@ -1052,13 +1242,13 @@ summary::-webkit-details-marker { display: none; }
     svg += `  <line id="etaDebugCrosshair" x1="0" y1="${mt.toFixed(1)}" x2="0" y2="${(mt + ph).toFixed(1)}" stroke="#94a3b8" stroke-dasharray="2,2" stroke-width="1" opacity="0" pointer-events="none" />
   <circle id="etaInstabilityDot" cx="0" cy="0" r="4" fill="#ec4899" stroke="#ffffff" stroke-width="2" opacity="0" pointer-events="none" />
   <circle id="etaErrorDot" cx="0" cy="0" r="4" fill="#f59e0b" stroke="#ffffff" stroke-width="2" opacity="0" pointer-events="none" />
-  <rect id="etaDebugOverlay" x="${ml.toFixed(1)}" y="${mt.toFixed(1)}" width="${pw.toFixed(1)}" height="${ph.toFixed(1)}" fill="transparent" style="cursor: crosshair;" onmousemove="onEtaDebugHover(event)" onmouseleave="onEtaDebugLeave()" />
+  <rect id="etaDebugOverlay" x="${ml.toFixed(1)}" y="${mt.toFixed(1)}" width="${pw.toFixed(1)}" height="${ph.toFixed(1)}" fill="transparent" style="cursor: crosshair;" onmousemove="onEtaDebugHover(event)" onmouseleave="onEtaDebugLeave()" onclick="onEtaDebugClick()" />
 </svg>
 <div id="etaDebugTooltip" class="lg-tooltip hidden"></div>`;
 
     wrap.innerHTML = svg;
   }
-
+  let etaDebugCurrIdx = -1;
   function onEtaDebugHover(e) {
     const overlay = document.getElementById('etaDebugOverlay');
     if (!overlay || !window.etaDebugData || !window.etaDebugData.length) return;
@@ -1066,71 +1256,46 @@ summary::-webkit-details-marker { display: none; }
     const relX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
     const ratio = rect.width > 0 ? relX / rect.width : 0;
     const idx = Math.min(window.etaDebugData.length - 1, Math.max(0, Math.round(ratio * (window.etaDebugData.length - 1))));
+    etaDebugCurrIdx = idx;
     const d = window.etaDebugData[idx];
 
-    const ml = 55.0, mr = 55.0, mt = 26.0, mb = 34.0;
-    const svgWidth = overlay.closest('svg').viewBox.baseVal.width;
-    const pw = svgWidth - ml - mr, ph = 240.0 - mt - mb;
-    const svgX = ml + (window.etaDebugData.length > 1 ? (idx / (window.etaDebugData.length - 1)) * pw : pw / 2.0);
-    const isLeftLog = window.etaLeftScaleMode !== 'linear';
-    const isRightLog = window.etaRightScaleMode !== 'linear';
-
-    const errVals = window.etaDebugData.map(item => item.error);
-    const instVals = window.etaDebugData.map(item => item.instability);
-    const maxRawErr = Math.max(...errVals);
-    const maxRawInst = Math.max(...instVals);
-
-    let ceilInstabilityPct;
-    if (!window.etaLeftCutoffSetting || window.etaLeftCutoffSetting === 'auto') {
-      const p95Inst = getPercentile(instVals, 0.95);
-      ceilInstabilityPct = Math.max(10.0, getNiceCeil(p95Inst * 1.2));
-    } else if (window.etaLeftCutoffSetting === 'max') {
-      ceilInstabilityPct = Math.max(10.0, getNiceCeil(maxRawInst));
-    } else {
-      const cut = parseFloat(window.etaLeftCutoffSetting);
-      ceilInstabilityPct = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxRawInst));
-    }
-
-    let ceilErrorPct;
-    if (!window.etaRightCutoffSetting || window.etaRightCutoffSetting === 'auto') {
-      const p95Err = getPercentile(errVals, 0.95);
-      ceilErrorPct = Math.max(10.0, getNiceCeil(p95Err * 1.2));
-    } else if (window.etaRightCutoffSetting === 'max') {
-      ceilErrorPct = Math.max(10.0, getNiceCeil(maxRawErr));
-    } else {
-      const cut = parseFloat(window.etaRightCutoffSetting);
-      ceilErrorPct = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxRawErr));
-    }
-
-    const yInst = calcY(d.instability, ceilInstabilityPct, mt, ph, isLeftLog);
-    const yErr = calcY(d.error, ceilErrorPct, mt, ph, isRightLog);
-
-    const crosshair = document.getElementById('etaDebugCrosshair');
-    const instDot = document.getElementById('etaInstabilityDot');
-    const errDot = document.getElementById('etaErrorDot');
-    if (crosshair) {
-      crosshair.setAttribute('x1', svgX);
-      crosshair.setAttribute('x2', svgX);
-      crosshair.style.opacity = '1';
-    }
-    if (instDot) {
-      instDot.setAttribute('cx', svgX);
-      instDot.setAttribute('cy', yInst);
-      instDot.style.opacity = '1';
-    }
-    if (errDot) {
-      errDot.setAttribute('cx', svgX);
-      errDot.setAttribute('cy', yErr);
-      errDot.style.opacity = '1';
-    }
+    syncCrosshairs(d.n);
 
     const tt = document.getElementById('etaDebugTooltip');
     if (tt) {
+      const errVals = window.etaDebugData.map(item => item.error);
+      const instVals = window.etaDebugData.map(item => item.instability);
+      const maxRawErr = Math.max(...errVals);
+      const maxRawInst = Math.max(...instVals);
+
+      let ceilInstabilityPct;
+      if (!window.etaLeftCutoffSetting || window.etaLeftCutoffSetting === 'auto') {
+        const p95Inst = getPercentile(instVals, 0.95);
+        ceilInstabilityPct = Math.max(10.0, getNiceCeil(p95Inst * 1.2));
+      } else if (window.etaLeftCutoffSetting === 'max') {
+        ceilInstabilityPct = Math.max(10.0, getNiceCeil(maxRawInst));
+      } else {
+        const cut = parseFloat(window.etaLeftCutoffSetting);
+        ceilInstabilityPct = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxRawInst));
+      }
+
+      let ceilErrorPct;
+      if (!window.etaRightCutoffSetting || window.etaRightCutoffSetting === 'auto') {
+        const p95Err = getPercentile(errVals, 0.95);
+        ceilErrorPct = Math.max(10.0, getNiceCeil(p95Err * 1.2));
+      } else if (window.etaRightCutoffSetting === 'max') {
+        ceilErrorPct = Math.max(10.0, getNiceCeil(maxRawErr));
+      } else {
+        const cut = parseFloat(window.etaRightCutoffSetting);
+        ceilErrorPct = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxRawErr));
+      }
+
       const isErrCapped = d.error >= ceilErrorPct;
       const isInstCapped = d.instability >= ceilInstabilityPct;
       let html = `<div class="lg-tt-title"><span class="lg-tt-num">Test #${d.n} ${d.test}</span></div>`;
       html += `<div class="lg-tt-row"><span class="lg-tt-lbl">Instability:</span> <b>${d.instability.toFixed(1)}%${isInstCapped ? ' <span style="color:#ef4444;font-size:10px;">(maxed out)</span>' : ''}</b> <span class="lg-tt-sub">(σ = ${d.stdDevStr})</span></div>`;
       html += `<div class="lg-tt-row"><span class="lg-tt-lbl">Prediction Error:</span> <b>${d.error.toFixed(1)}%${isErrCapped ? ' <span style="color:#ef4444;font-size:10px;">(maxed out)</span>' : ''}</b> <span class="lg-tt-sub">(pred = ${d.predStr}, real = ${d.realStr})</span></div>`;
+      html += `<div class="lg-tt-hint">Click to jump to log</div>`;
       tt.innerHTML = html;
       tt.classList.remove('hidden');
 
@@ -1145,14 +1310,16 @@ summary::-webkit-details-marker { display: none; }
   }
 
   function onEtaDebugLeave() {
-    const crosshair = document.getElementById('etaDebugCrosshair');
-    const instDot = document.getElementById('etaInstabilityDot');
-    const errDot = document.getElementById('etaErrorDot');
-    const tt = document.getElementById('etaDebugTooltip');
-    if (crosshair) crosshair.style.opacity = '0';
-    if (instDot) instDot.style.opacity = '0';
-    if (errDot) errDot.style.opacity = '0';
-    if (tt) tt.classList.add('hidden');
+    clearAllCrosshairs();
+    etaDebugCurrIdx = -1;
+  }
+
+  function onEtaDebugClick() {
+    if (etaDebugCurrIdx >= 0 && window.etaDebugData && window.etaDebugData[etaDebugCurrIdx]) {
+      const d = window.etaDebugData[etaDebugCurrIdx];
+      const title = d.t || ('Test #' + d.n);
+      focusSection(title);
+    }
   }
 
   function renderResourceStatsSvg() {
@@ -1286,13 +1453,13 @@ summary::-webkit-details-marker { display: none; }
     svg += `  <line id="resCrosshair" x1="0" y1="${mt.toFixed(1)}" x2="0" y2="${(mt + ph).toFixed(1)}" stroke="#94a3b8" stroke-dasharray="2 2" stroke-width="1" opacity="0" pointer-events="none"/>`;
     svg += `  <circle id="resCpuDot" cx="0" cy="0" r="4" fill="#38bdf8" stroke="#ffffff" stroke-width="2" opacity="0" pointer-events="none"/>`;
     svg += `  <circle id="resRamDot" cx="0" cy="0" r="4" fill="#c084fc" stroke="#ffffff" stroke-width="2" opacity="0" pointer-events="none"/>`;
-    svg += `  <rect id="resOverlay" x="${ml.toFixed(1)}" y="${mt.toFixed(1)}" width="${pw.toFixed(1)}" height="${ph.toFixed(1)}" fill="transparent" style="cursor: crosshair;" onmousemove="onResHover(event)" onmouseleave="onResLeave()"/>`;
+    svg += `  <rect id="resOverlay" x="${ml.toFixed(1)}" y="${mt.toFixed(1)}" width="${pw.toFixed(1)}" height="${ph.toFixed(1)}" fill="transparent" style="cursor: crosshair;" onmousemove="onResHover(event)" onmouseleave="onResLeave()" onclick="onResClick()"/>`;
     svg += `</svg>`;
     svg += `<div id="resTooltip" class="lg-tooltip hidden"></div>`;
 
     wrap.innerHTML = svg;
   }
-
+  let resCurrIdx = -1;
   function onResHover(e) {
     const overlay = document.getElementById('resOverlay');
     if (!overlay || !window.resourceData || !window.resourceData.length) return;
@@ -1301,7 +1468,6 @@ summary::-webkit-details-marker { display: none; }
     const width = wrap ? (wrap.clientWidth || 1000) : 1000;
     const ml = 50, mr = 55, mt = 20, mb = 35;
     const pw = width - ml - mr;
-    const ph = 240 - mt - mb;
 
     const rect = overlay.getBoundingClientRect();
     let relX = e.clientX - rect.left;
@@ -1310,58 +1476,13 @@ summary::-webkit-details-marker { display: none; }
 
     const ratio = pw > 0 ? relX / pw : 0;
     const idx = Math.min(window.resourceData.length - 1, Math.max(0, Math.round(ratio * (window.resourceData.length - 1))));
+    resCurrIdx = idx;
     const d = window.resourceData[idx];
 
-    const svgX = ml + (window.resourceData.length > 1 ? (idx / (window.resourceData.length - 1)) * pw : pw / 2);
+    const totalLg = (window.lgData && window.lgData.length) ? window.lgData.length : 1;
+    const testNum = (d.t && d.t > 0) ? d.t : Math.max(1, Math.round(ratio * (totalLg - 1) + 1));
 
-    const cpuVals = window.resourceData.map(item => item.cpu);
-    const ramVals = window.resourceData.map(item => item.ramTotal);
-    const maxCpu = Math.max(10.0, ...cpuVals);
-    const maxRam = Math.max(100.0, ...ramVals);
-
-    let ceilCpu, ceilRam;
-    if (!window.resLeftCutoffSetting || window.resLeftCutoffSetting === 'auto') {
-      ceilCpu = Math.max(10.0, getNiceCeil(getPercentile(cpuVals, 0.95) * 1.2));
-    } else if (window.resLeftCutoffSetting === 'max') {
-      ceilCpu = Math.max(10.0, getNiceCeil(maxCpu));
-    } else {
-      const cut = parseFloat(window.resLeftCutoffSetting);
-      ceilCpu = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxCpu));
-    }
-
-    if (!window.resRightCutoffSetting || window.resRightCutoffSetting === 'auto') {
-      ceilRam = Math.max(100.0, getNiceCeil(getPercentile(ramVals, 0.95) * 1.2));
-    } else if (window.resRightCutoffSetting === 'max') {
-      ceilRam = Math.max(100.0, getNiceCeil(maxRam));
-    } else {
-      const cut = parseFloat(window.resRightCutoffSetting);
-      ceilRam = !isNaN(cut) && cut > 0 ? cut : Math.max(100.0, getNiceCeil(maxRam));
-    }
-
-    const isLeftLog = (window.resLeftScaleMode === 'log');
-    const isRightLog = (window.resRightScaleMode === 'log');
-    const yCpu = calcY(d.cpu, ceilCpu, mt, ph, isLeftLog);
-    const yRam = calcY(d.ramUsed, ceilRam, mt, ph, isRightLog);
-
-    const crosshair = document.getElementById('resCrosshair');
-    const cpuDot = document.getElementById('resCpuDot');
-    const ramDot = document.getElementById('resRamDot');
-
-    if (crosshair) {
-      crosshair.setAttribute('x1', svgX);
-      crosshair.setAttribute('x2', svgX);
-      crosshair.style.opacity = '1';
-    }
-    if (cpuDot) {
-      cpuDot.setAttribute('cx', svgX);
-      cpuDot.setAttribute('cy', yCpu);
-      cpuDot.style.opacity = '1';
-    }
-    if (ramDot) {
-      ramDot.setAttribute('cx', svgX);
-      ramDot.setAttribute('cy', yRam);
-      ramDot.style.opacity = '1';
-    }
+    syncCrosshairs(testNum);
 
     const tt = document.getElementById('resTooltip');
     if (tt) {
@@ -1372,6 +1493,9 @@ summary::-webkit-details-marker { display: none; }
       html += `<div class="lg-tt-row"><span class="lg-tt-lbl" style="color:#c084fc;">Used Heap RAM:</span> <b>${d.ramUsed.toFixed(1)} MB</b> <span class="lg-tt-sub">/ ${d.ramTotal.toFixed(1)} MB</span></div>`;
       if (d.threads > 0) {
         html += `<div class="lg-tt-row"><span class="lg-tt-lbl">Threads:</span> <b>${d.threads}</b></div>`;
+      }
+      if (d.t && d.t > 0) {
+        html += `<div class="lg-tt-hint">Click to jump to log</div>`;
       }
       tt.innerHTML = html;
       tt.classList.remove('hidden');
@@ -1387,14 +1511,17 @@ summary::-webkit-details-marker { display: none; }
   }
 
   function onResLeave() {
-    const crosshair = document.getElementById('resCrosshair');
-    const cpuDot = document.getElementById('resCpuDot');
-    const ramDot = document.getElementById('resRamDot');
-    const tt = document.getElementById('resTooltip');
-    if (crosshair) crosshair.style.opacity = '0';
-    if (cpuDot) cpuDot.style.opacity = '0';
-    if (ramDot) ramDot.style.opacity = '0';
-    if (tt) tt.classList.add('hidden');
+    clearAllCrosshairs();
+    resCurrIdx = -1;
+  }
+
+  function onResClick() {
+    if (resCurrIdx >= 0 && window.resourceData && window.resourceData[resCurrIdx]) {
+      const d = window.resourceData[resCurrIdx];
+      if (d.t && d.t > 0) {
+        focusSection('Test #' + d.t);
+      }
+    }
   }
 
   function renderAllCharts() {

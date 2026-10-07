@@ -229,8 +229,10 @@ public final class TimelineRenderer {
                 final String fullLabel = (c.etaMs > 0L)
                         ? c.leaf + " @ " + momentStr + " (+" + intervalStr + ", Projected: " + projStr + ")"
                         : c.leaf + " @ " + momentStr + " (+" + intervalStr + ")";
+                final String testTitle = (c.testNum > 0) ? s("Test #", c.testNum) : s("Test #", i + 1);
                 sb.append(s(
                         "{\"n\":", i + 1,
+                        ",\"t\":\"", escapeJson(testTitle), "\"",
                         ",\"leaf\":\"", escapeJson(c.leaf), "\"",
                         ",\"ms\":", intervalMs,
                         ",\"round\":", c.roundIndex,
@@ -275,9 +277,11 @@ public final class TimelineRenderer {
                 final String meanStr = formatCompletionDuration(item.meanEtaMs);
                 final String stdDevStr = formatCompletionDuration(item.stdDevEtaMs);
                 final String predStr = formatCompletionDuration(item.predictedMs);
+                final String testTitle = (item.testNum > 0) ? s("Test #", item.testNum) : s("Test #", i + 1);
 
                 sb.append(s(
                         "{\"n\":", item.testNum,
+                        ",\"t\":\"", escapeJson(testTitle), "\"",
                         ",\"test\":\"", escapeJson(item.testName), "\"",
                         String.format(Locale.ROOT, ",\"instability\":%.2f", item.instabilityPct()),
                         String.format(Locale.ROOT, ",\"error\":%.2f", item.errorPct()),
