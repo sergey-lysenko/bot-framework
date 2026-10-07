@@ -184,6 +184,7 @@ public final class Core extends Root implements _Core, _Tests {
         if (leafs.isEmpty()) return true;
         final int target = resolveAllLeafsTarget();
         for (final _Scenario leaf : leafs) {
+            if (!leaf.isExecutable()) continue;
             final int leafTarget = (leaf instanceof Mono) ? 1 : target;
             if (getResults().getExecutions(leaf) < leafTarget)
                 return false;

@@ -72,6 +72,8 @@ public final class TreeTracker {
     private static final Color UNVISITED_BORDER = new Color(0x33, 0x41, 0x55);
     private static final Color UNVISITED_EDGE = new Color(0x33, 0x41, 0x55, 140);
     private static final Color WARNING_AMBER = new Color(0xF5, 0x9E, 0x0B);
+    private static final Color RED_FAILED = new Color(0xEF, 0x44, 0x44);
+    private static final Color RED_CARD_FILL = new Color(0x45, 0x0A, 0x0A);
     private static final Color GREEN_DONE = new Color(0x22, 0xC5, 0x5E);
     private static final Color TEXT_DARK = new Color(0x0F, 0x17, 0x2A);
 
@@ -673,7 +675,10 @@ public final class TreeTracker {
                 g.setStroke(new BasicStroke(3.0f));
                 g.draw(path);
             } else if (toExecs > 0 && fromExecs > 0) {
-                if (toEvents > 0) {
+                final boolean toFailure = TreeHtml.hasFailure(e.to());
+                if (toFailure) {
+                    g.setColor(RED_FAILED);
+                } else if (toEvents > 0) {
                     g.setColor(WARNING_AMBER);
                 } else {
                     g.setColor(getScenarioProgressColor(e.to(), target, maxLeafOverRatio));
@@ -708,12 +713,17 @@ public final class TreeTracker {
                 ? getLeafOverExecutionRatio(n, target)
                 : 0.0;
 
-        final Color progressColor = getScenarioProgressColor(n, target, maxLeafOverRatio);
+        final boolean failure = TreeHtml.hasFailure(n);
+        final Color progressColor = failure ? RED_FAILED : getScenarioProgressColor(n, target, maxLeafOverRatio);
         final Color cardFill;
         final Color borderColor;
         final float strokeW;
 
-        if (isRecent) {
+        if (failure) {
+            cardFill = RED_CARD_FILL;
+            borderColor = RED_FAILED;
+            strokeW = 2.2f;
+        } else if (isRecent) {
             cardFill = (overRatio > 0.0) ? progressColor : new Color(0x16, 0x3A, 0x58);
             borderColor = ACCENT_CYAN;
             strokeW = 2.8f;
@@ -787,8 +797,11 @@ public final class TreeTracker {
         g.setColor(badgeFg);
         g.drawString(badgeText, pillX + 6, pillY + 13);
 
-        // Warning indicator if events > 0
-        if (eventCount > 0) {
+        // Warning or failure indicator
+        if (failure) {
+            g.setColor(RED_FAILED);
+            g.fillOval(pillX - 10, y + 15, 6, 6);
+        } else if (eventCount > 0) {
             g.setColor(WARNING_AMBER);
             g.fillOval(pillX - 10, y + 15, 6, 6);
         }

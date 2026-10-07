@@ -131,8 +131,18 @@ public class Gui implements _GUI {
      *
      * @param parameters the Parameters object that holds and manages various parameters for execution
      */
-    public Gui(final Parameters parameters) {
+    static {
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (final Exception ignored) {}
+    }
 
+    public Gui(final Parameters parameters) {
         this.parameters = parameters;
     }
 
@@ -209,11 +219,21 @@ public class Gui implements _GUI {
      */
     public final void display() {
 
-        addStandardParameters();
-        addAdditionalParameters();
+        final works.lysenko.base.ui.ControlPanel[] cp = new works.lysenko.base.ui.ControlPanel[1];
+        try {
+            javax.swing.SwingUtilities.invokeAndWait(() -> {
+                addStandardParameters();
+                addAdditionalParameters();
+                cp[0] = new works.lysenko.base.ui.ControlPanel(parameters, this);
+            });
+        } catch (Exception e) {
+            System.err.println("Failed to initialize GUI on EDT: " + e.getMessage());
+            addStandardParameters();
+            addAdditionalParameters();
+            cp[0] = new works.lysenko.base.ui.ControlPanel(parameters, this);
+        }
         
-        final works.lysenko.base.ui.ControlPanel controlPanel = new works.lysenko.base.ui.ControlPanel(parameters, this);
-        controlPanel.displayAndWait();
+        cp[0].displayAndWait();
         
         // Final user input propagation happens in ControlPanel startRun
     }

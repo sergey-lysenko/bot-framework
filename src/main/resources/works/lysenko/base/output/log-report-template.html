@@ -719,6 +719,9 @@ summary::-webkit-details-marker { display: none; }
     if (tt) {
       const stColor = d.st === 'passed' ? '#4ade80' : d.st === 'warning' ? '#f59e0b' : '#ef4444';
       let html = `<div class="lg-tt-title"><span class="lg-tt-num">${d.t}</span> <span class="lg-tt-status" style="color:${stColor}">● ${d.st}</span></div>`;
+      if (d.leaf) {
+        html += `<div class="lg-tt-row"><span class="lg-tt-lbl">Scenario:</span> <b style="color:#a855f7;word-break:break-all;">${d.leaf}</b></div>`;
+      }
       html += `<div class="lg-tt-row"><span class="lg-tt-lbl">Duration:</span> <b>${d.s.toFixed(2)}s</b> (${Math.round(d.ms)}ms)</div>`;
       if (d.l !== undefined && d.l !== null && window.lgHasLimbo) {
         html += `<div class="lg-tt-row"><span class="lg-tt-lbl">Limbo:</span> <b>${d.l}ms</b></div>`;

@@ -96,6 +96,7 @@ public abstract class Leaf extends Core {
                 return true;
             } catch (final RuntimeException e) {
                 markAsFailed();
+                logEvent(works.lysenko.util.data.enums.Severity.S0, e.getMessage());
                 throw new ScenarioRuntimeException(b(type().tag(), q(getShortName()), SCENARIO_EXECUTION_FAILED_DUE_TO,
                         e(Brackets.CURLY, e.getMessage())), e, this);
             } finally {

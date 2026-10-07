@@ -5,6 +5,7 @@ import works.lysenko.base.output.loghtml.LogModels.LeafCompletion;
 import works.lysenko.base.output.loghtml.LogModels.SystemResourceItem;
 import works.lysenko.base.output.loghtml.LogModels.TelemetryItem;
 
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -153,6 +154,15 @@ public final class TimelineRenderer {
 
         final StringBuilder sb = new StringBuilder();
         if (!testData.isEmpty()) {
+            final Map<Integer, String> leafMap = new HashMap<>();
+            if (null != completions) {
+                for (final LeafCompletion c : completions) {
+                    if (c.leaf != null && !c.leaf.isEmpty()) {
+                        leafMap.put(c.testNum, c.leaf);
+                    }
+                }
+            }
+
             final boolean hasLimbo = lMax > 0 && !limboByPrevTest.isEmpty();
             final double tCeil = getNiceCeil(tMax > 0 ? tMax : 1.0);
             final double lCeil = hasLimbo ? getNiceCeil(lMax) : 1.0;
@@ -167,9 +177,11 @@ public final class TimelineRenderer {
                 final TelemetryItem t = testData.get(i);
                 final TelemetryItem l = limboByPrevTest.get(t.testNum);
                 final long lMs = l != null ? Math.round(l.ms) : 0;
+                final String scenarioLeaf = leafMap.getOrDefault(t.testNum, "n/a");
                 sb.append(s(
                         "{\"n\":", t.testNum,
                         ",\"t\":\"", escapeJson(t.title), "\"",
+                        ",\"leaf\":\"", escapeJson(scenarioLeaf), "\"",
                         String.format(Locale.ROOT, ",\"s\":%.3f", t.sec),
                         ",\"ms\":", Math.round(t.ms),
                         ",\"l\":", lMs,

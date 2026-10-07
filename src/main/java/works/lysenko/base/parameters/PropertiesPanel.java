@@ -44,6 +44,17 @@ import static works.lysenko.util.spec.Symbols._COLON_;
 @SuppressWarnings({"ClassWithTooManyFields", "CallToSuspiciousStringMethod", "MagicNumber"})
 public class PropertiesPanel extends JPanel {
 
+    static {
+        try {
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (final Exception ignored) {}
+    }
+
     public static final String STATUS_DEFAULT = c(DEFAULT);
     public static final String STATUS_CONFIGURED = c(CONFIGURED);
     public static final String STATUS_MODIFIED = c(MODIFIED);
@@ -572,6 +583,7 @@ public class PropertiesPanel extends JPanel {
                     (currentValue.isEmpty() ||
                             validValues.stream().anyMatch(option -> option.equalsIgnoreCase(currentValue)))) {
                 comboBox = new JComboBox<>(validValues.toArray(new String[0]));
+                comboBox.putClientProperty("JComboBox.isTableCellEditor", Boolean.TRUE);
                 comboBox.setSelectedItem(validValues.stream()
                         .filter(option -> option.equalsIgnoreCase(currentValue))
                         .findFirst()

@@ -73,9 +73,19 @@ public interface _Scenario {
     String getSimpleName();
 
     /**
+     * @return the execution status of this scenario
+     */
+    works.lysenko.util.data.enums.ExecutionStatus getExecutionStatus();
+
+    /**
      * @return whether this scenario has failed
      */
     boolean hasFailed();
+
+    /**
+     * @return whether a child of this scenario has failed
+     */
+    boolean hasChildFailed();
 
     /**
      * @return very short information about
@@ -88,9 +98,24 @@ public interface _Scenario {
     boolean isExecutable();
 
     /**
+     * @return whether this scenario selection is exhausted
+     */
+    boolean isExhausted();
+
+    /**
      * Marks this scenario as failed.
      */
     void markAsFailed();
+
+    /**
+     * Marks a child of this scenario as failed.
+     */
+    void markAsChildFailed();
+
+    /**
+     * Marks this scenario selection as exhausted.
+     */
+    void markAsExhausted();
 
     /**
      * Probe if the current scenario is from the main scenarios tree.

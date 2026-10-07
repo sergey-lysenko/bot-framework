@@ -6,6 +6,7 @@ import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Node;
 import works.lysenko.util.apis.scenario._Scenario;
+import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.data.type.Result;
 
 import java.io.File;
@@ -42,16 +43,22 @@ public final class TreeHtml {
         private final int col;
         private double row;
         private final _Result result;
+        private final _Scenario scenario;
         private final List<NodeData> children = new ArrayList<>();
         private NodeData parent;
 
-        NodeData(final String id, final String label, final String group, final int col, final double row, final _Result result) {
+        NodeData(final String id, final String label, final String group, final int col, final double row, final _Result result, final _Scenario scenario) {
             this.id = id;
             this.label = label;
             this.group = group;
             this.col = col;
             this.row = row;
             this.result = result;
+            this.scenario = scenario;
+        }
+
+        NodeData(final String id, final String label, final String group, final int col, final double row, final _Result result) {
+            this(id, label, group, col, row, result, null);
         }
 
         public String id() { return id; }
@@ -61,6 +68,7 @@ public final class TreeHtml {
         public double row() { return row; }
         public void setRow(final double row) { this.row = row; }
         public _Result result() { return result; }
+        public _Scenario scenario() { return scenario; }
         public List<NodeData> children() { return children; }
         public NodeData parent() { return parent; }
         public void setParent(final NodeData parent) { this.parent = parent; }
@@ -132,7 +140,7 @@ public final class TreeHtml {
         final String label = b(scenario.getSimpleName(), scenario.type().tag());
         final String id = s("scenario_", nodes.size(), "_", scenario.getSimpleName());
         final String group = (null == parent) ? TESTS : parent.label();
-        final NodeData node = new NodeData(id, label, group, col, rows[0]++, resultFor(scenario, sorted));
+        final NodeData node = new NodeData(id, label, group, col, rows[0]++, resultFor(scenario, sorted), scenario);
         nodes.add(node);
         if (null != parent) {
             node.setParent(parent);
@@ -148,6 +156,32 @@ public final class TreeHtml {
                 processScenario(child.k(), node, col + 1, rows, ancestors, sorted, nodes, edges);
         }
         ancestors.remove(scenario);
+    }
+
+    static boolean hasFailure(final NodeData n) {
+
+        if (null == n) return false;
+        if (null != n.scenario()) {
+            if (n.scenario().hasFailed() || n.scenario().getExecutionStatus() == works.lysenko.util.data.enums.ExecutionStatus.FAILED) return true;
+        }
+        final _Result res = n.result();
+        if (null != res) {
+            return res.status() == works.lysenko.util.data.enums.ExecutionStatus.FAILED;
+        }
+        return false;
+    }
+
+    static boolean hasChildFailure(final NodeData n) {
+
+        if (null == n) return false;
+        if (null != n.scenario()) {
+            if (n.scenario().hasChildFailed() || n.scenario().getExecutionStatus() == works.lysenko.util.data.enums.ExecutionStatus.CHILD_FAILED) return true;
+        }
+        final _Result res = n.result();
+        if (null != res) {
+            return res.status() == works.lysenko.util.data.enums.ExecutionStatus.CHILD_FAILED;
+        }
+        return false;
     }
 
     private static Result resultFor(final _Scenario scenario, final TreeMap<String, Result> sorted) {
@@ -534,10 +568,20 @@ public final class TreeHtml {
             final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
             final int fromExecs = (null != e.from().result()) ? e.from().result().getExecutions() : 0;
             final int toEvents = (null != e.to().result() && null != e.to().result().getEvents()) ? e.to().result().getEvents().size() : 0;
+            final boolean toFailure = hasFailure(e.to());
+            final boolean toChildFailure = hasChildFailure(e.to());
 
             final String edgeClass;
             if (toExecs > 0 && fromExecs > 0) {
-                edgeClass = (toEvents > 0) ? "connector warning" : "connector visited";
+                if (toFailure) {
+                    edgeClass = "connector failed";
+                } else if (toChildFailure) {
+                    edgeClass = "connector child_failed";
+                } else if (toEvents > 0) {
+                    edgeClass = "connector warning";
+                } else {
+                    edgeClass = "connector visited";
+                }
             } else {
                 edgeClass = "connector";
             }
@@ -557,10 +601,18 @@ public final class TreeHtml {
 
             final int execs = (null != res) ? res.getExecutions() : 0;
             final int eventCount = (null != res && null != res.getEvents()) ? res.getEvents().size() : 0;
+            final boolean failure = hasFailure(n);
+            final boolean childFailure = hasChildFailure(n);
 
             String statusClass = "unvisited";
             String badgeColor = "#64748b";
-            if (execs > 0) {
+            if (failure) {
+                statusClass = "failed";
+                badgeColor = "#ef4444";
+            } else if (childFailure) {
+                statusClass = "child_failed";
+                badgeColor = "#fbbf24";
+            } else if (execs > 0) {
                 if (eventCount == 0) {
                     statusClass = "passed";
                     badgeColor = "#22c55e";
@@ -611,11 +663,15 @@ public final class TreeHtml {
                 "  .node-card rect { rx: 8; ry: 8; stroke-width: 1.5; }\n" +
                 "  .node-card.passed rect { fill: #14532d; stroke: #22c55e; }\n" +
                 "  .node-card.warning rect { fill: #713f12; stroke: #f59e0b; }\n" +
+                "  .node-card.failed rect { fill: #450a0a; stroke: #ef4444; }\n" +
+                "  .node-card.child_failed rect { fill: #1e1b4b; stroke: #fbbf24; stroke-width: 1.2; stroke-dasharray: 3 3; }\n" +
                 "  .node-card.unvisited rect { fill: #1e293b; stroke: #475569; }\n" +
                 "  .node-card text { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; fill: #f8fafc; }\n" +
                 "  .connector { fill: none; stroke: #475569; stroke-width: 2; transition: stroke 0.2s, stroke-width 0.2s; }\n" +
                 "  .connector.visited { stroke: #22c55e; stroke-width: 2.5; }\n" +
                 "  .connector.warning { stroke: #f59e0b; stroke-width: 2.5; }\n" +
+                "  .connector.failed { stroke: #ef4444; stroke-width: 2.5; }\n" +
+                "  .connector.child_failed { stroke: #fbbf24; stroke-width: 1.5; stroke-dasharray: 3 3; }\n" +
                 "  .connector.active { stroke: var(--accent); stroke-width: 3.5; }\n" +
                 "  #details-panel { position: absolute; right: 20px; bottom: 20px; width: 360px; max-height: 400px; overflow-y: auto; background: rgba(30, 41, 59, 0.95); border: 1px solid var(--border); backdrop-filter: blur(8px); border-radius: 8px; padding: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); display: none; z-index: 20; }\n" +
                 "  #details-panel h3 { font-size: 14px; margin-bottom: 8px; color: var(--accent); word-break: break-all; }\n" +

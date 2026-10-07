@@ -5,8 +5,10 @@ import org.openqa.selenium.WebElement;
 import works.lysenko.base.output.AllLeafCompletions;
 import works.lysenko.base.output.EtaDebug;
 import works.lysenko.util.apis.action.Verifies;
+import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
 import works.lysenko.util.apis.scenario._Scenario;
+import works.lysenko.util.data.enums.ExecutionStatus;
 import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.data.type.sets.SortedScenario;
@@ -181,6 +183,32 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     }
 
     private boolean failed = false;
+    private boolean childFailed = false;
+    private boolean exhausted = false;
+
+    @Override
+    public boolean isExhausted() {
+
+        return exhausted;
+    }
+
+    @Override
+    public void markAsExhausted() {
+
+        this.exhausted = true;
+    }
+
+    @Override
+    public ExecutionStatus getExecutionStatus() {
+
+        if (failed) return ExecutionStatus.FAILED;
+        if (childFailed) return ExecutionStatus.CHILD_FAILED;
+        if (null != core && null != core.getResults()) {
+            final _Result res = core.getResults().getResult(this);
+            if (null != res) return res.status();
+        }
+        return ExecutionStatus.UNVISITED;
+    }
 
     @Override
     public boolean hasFailed() {
@@ -189,9 +217,33 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     }
 
     @Override
+    public boolean hasChildFailed() {
+
+        return childFailed;
+    }
+
+    @Override
     public void markAsFailed() {
 
         this.failed = true;
+        if (null != core && null != core.getResults()) {
+            final _Result res = core.getResults().getResult(this);
+            if (null != res) {
+                res.updateStatus(ExecutionStatus.FAILED);
+            }
+        }
+    }
+
+    @Override
+    public void markAsChildFailed() {
+
+        this.childFailed = true;
+        if (null != core && null != core.getResults()) {
+            final _Result res = core.getResults().getResult(this);
+            if (null != res) {
+                res.updateStatus(ExecutionStatus.CHILD_FAILED);
+            }
+        }
     }
 
     @Override
@@ -203,7 +255,7 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     @Override
     public boolean isExecutable() {
 
-        return !failed && (isNotNull(weightConfigured()));
+        return !failed && !exhausted && (isNotNull(weightConfigured()));
     }
 
     @Override

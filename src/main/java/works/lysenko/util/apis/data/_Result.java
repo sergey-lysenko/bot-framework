@@ -2,6 +2,7 @@ package works.lysenko.util.apis.data;
 
 import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.util.apis.log._LogRecord;
+import works.lysenko.util.data.enums.ExecutionStatus;
 import works.lysenko.util.data.enums.ScenarioType;
 
 import java.util.List;
@@ -51,6 +52,18 @@ public interface _Result {
      * @return Upstream weight of the Scenario
      */
     Fraction getUpstreamWeight();
+
+    /**
+     * @return the execution status of this result
+     */
+    ExecutionStatus status();
+
+    /**
+     * Updates the status of this result according to status precedence.
+     *
+     * @param status the new status
+     */
+    void updateStatus(ExecutionStatus status);
 
     /**
      * Increment the number of executions for a scenario.

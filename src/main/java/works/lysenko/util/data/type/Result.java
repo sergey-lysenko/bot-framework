@@ -4,6 +4,7 @@ import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Scenario;
+import works.lysenko.util.data.enums.ExecutionStatus;
 import works.lysenko.util.data.enums.ScenarioType;
 
 import java.util.ArrayList;
@@ -39,6 +40,7 @@ public class Result implements _Result {
     private final Fraction configuredWeight;
     private final Fraction upstreamWeight;
     private final Fraction downstreamWeight;
+    private ExecutionStatus status = ExecutionStatus.UNVISITED;
     private int instances = 0;
     private int executions = 0;
 
@@ -52,6 +54,9 @@ public class Result implements _Result {
         upstreamWeight = scenario.weightUpstream();
         downstreamWeight = scenario.weightDownstream();
         events = new ArrayList<>(0);
+        if (scenario != null && scenario.hasFailed()) {
+            status = ExecutionStatus.FAILED;
+        }
     }
 
     /**
@@ -76,12 +81,51 @@ public class Result implements _Result {
         this.events = events;
         this.executions = executions;
         this.instances = instances;
+        if (executions > 0) {
+            status = ExecutionStatus.PASSED;
+        }
+        if (events != null) {
+            for (final _LogRecord lr : events) {
+                if (lr != null && lr.data() instanceof works.lysenko.util.apis.data._Event event) {
+                    final works.lysenko.util.data.enums.Severity sev = event.severity();
+                    if (sev == works.lysenko.util.data.enums.Severity.S0 || sev == works.lysenko.util.data.enums.Severity.S1) {
+                        updateStatus(ExecutionStatus.FAILED);
+                    } else if (sev == works.lysenko.util.data.enums.Severity.S2 || sev == works.lysenko.util.data.enums.Severity.S3) {
+                        updateStatus(ExecutionStatus.WARNING);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public final ExecutionStatus status() {
+
+        return status;
+    }
+
+    @Override
+    public final void updateStatus(final ExecutionStatus newStatus) {
+
+        if (null == newStatus) return;
+        if (status == ExecutionStatus.FAILED) return;
+        if (status == ExecutionStatus.CHILD_FAILED && newStatus != ExecutionStatus.FAILED) return;
+        if (status == ExecutionStatus.WARNING && (newStatus != ExecutionStatus.FAILED && newStatus != ExecutionStatus.CHILD_FAILED)) return;
+        status = newStatus;
     }
 
     @Override
     public final void addEvent(final _LogRecord lr) {
 
         events.add(lr);
+        if (null != lr && lr.data() instanceof works.lysenko.util.apis.data._Event event) {
+            final works.lysenko.util.data.enums.Severity sev = event.severity();
+            if (sev == works.lysenko.util.data.enums.Severity.S0 || sev == works.lysenko.util.data.enums.Severity.S1) {
+                updateStatus(ExecutionStatus.FAILED);
+            } else if (sev == works.lysenko.util.data.enums.Severity.S2 || sev == works.lysenko.util.data.enums.Severity.S3) {
+                updateStatus(ExecutionStatus.WARNING);
+            }
+        }
     }
 
     public final Fraction getConfiguredWeight() {
@@ -123,6 +167,9 @@ public class Result implements _Result {
     public final void tick() {
 
         ++executions;
+        if (status == ExecutionStatus.UNVISITED) {
+            updateStatus(ExecutionStatus.PASSED);
+        }
     }
 
     @SuppressWarnings("NestedConditionalExpression")

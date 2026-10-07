@@ -400,7 +400,12 @@ public final class Helper extends JFrame {
     public static void main(final String[] args) {
 
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
         } catch (final Exception ignored) {}
 
         SwingUtilities.invokeLater(() -> {

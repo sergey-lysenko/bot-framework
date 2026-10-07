@@ -17,6 +17,17 @@ import java.util.concurrent.CountDownLatch;
 
 public class ControlPanel extends JFrame implements _Dashboard {
 
+    static {
+        try {
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (final Exception ignored) {}
+    }
+
     private static ControlPanel instance;
 
     private final JTabbedPane tabbedPane;
@@ -34,7 +45,6 @@ public class ControlPanel extends JFrame implements _Dashboard {
     }
 
     public ControlPanel(final Parameters parameters, final Gui guiInstance) {
-        applyDarkTheme();
         instance = this;
         setTitle("Control Panel");
         setSize(1200, 800);
@@ -115,51 +125,16 @@ public class ControlPanel extends JFrame implements _Dashboard {
     }
 
     public static void applyDarkTheme() {
-        try {
-            for (final UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (final Exception ignored) {
-        }
-
-        final Color bgMain = new Color(0xF1, 0xF5, 0xF9);
-        final Color bgCard = new Color(0xFF, 0xFF, 0xFF);
-        final Color bgInput = new Color(0xFF, 0xFF, 0xFF);
-        final Color textPrimary = new Color(0x0F, 0x17, 0x2A);
-        final Color accentBlue = new Color(0x02, 0x84, 0xC7);
-        final Color gridBorder = new Color(0xCB, 0xD5, 0xE1);
-
-        UIManager.put("control", bgMain);
-        UIManager.put("info", bgCard);
-        UIManager.put("nimbusBase", bgMain);
-        UIManager.put("nimbusBlueGrey", new Color(0xE2, 0xE8, 0xF0));
-        UIManager.put("nimbusFocus", accentBlue);
-        UIManager.put("nimbusLightBackground", bgInput);
-        UIManager.put("nimbusSelectedText", Color.WHITE);
-        UIManager.put("nimbusSelectionBackground", new Color(0x02, 0x84, 0xC7));
-
-        UIManager.put("Panel.background", bgMain);
-        UIManager.put("Table.background", bgInput);
-        UIManager.put("Table.foreground", textPrimary);
-        UIManager.put("Table.gridColor", gridBorder);
-        UIManager.put("TableHeader.background", new Color(0xE2, 0xE8, 0xF0));
-        UIManager.put("TableHeader.foreground", textPrimary);
-        UIManager.put("TableHeader.font", new Font(Font.SANS_SERIF, Font.BOLD, 12));
-        UIManager.put("TabbedPane.background", bgMain);
-        UIManager.put("TabbedPane.foreground", textPrimary);
-        UIManager.put("TextField.background", bgInput);
-        UIManager.put("TextField.foreground", textPrimary);
-        UIManager.put("TextField.caretForeground", textPrimary);
-        UIManager.put("Label.foreground", textPrimary);
-        UIManager.put("Button.background", new Color(0xE2, 0xE8, 0xF0));
-        UIManager.put("Button.foreground", textPrimary);
+        // Disabled theme modifications to prevent com.apple.laf.AquaMenuPainter$RecyclableBorder.get() NPE on macOS.
+        // The default native Look and Feel will be used.
     }
 
     public void displayAndWait() {
-        setVisible(true);
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(() -> setVisible(true));
+        } else {
+            setVisible(true);
+        }
         try {
             runLatch.await();
         } catch (InterruptedException e) {

@@ -51,7 +51,9 @@ public class ExceptionHandler implements _ExceptionsHandler {
 
         if (exception instanceof works.lysenko.util.apis.exception.unchecked.BotRuntimeException bre
                 && bre.getData() instanceof _Scenario s) {
-            s.markAsFailed();
+            if (!s.hasChildFailed()) {
+                s.markAsFailed();
+            }
         }
         section(PROCESSING_EXCEPTIONAL_STATE, () -> {
             this.exception = exception;

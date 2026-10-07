@@ -76,6 +76,7 @@ public final class Json {
             scenMap.put("dWeight", jsonify(entry.getValue().getDownstreamWeight().doubleValue()));
             scenMap.put("uWeight", jsonify(entry.getValue().getUpstreamWeight().doubleValue()));
             scenMap.put("executions", entry.getValue().getExecutions());
+            scenMap.put("status", entry.getValue().status().code());
 
             if (!entry.getValue().getEvents().isEmpty()) {
                 final List<Map<String, Object>> eventList = new ArrayList<>(entry.getValue().getEvents().size());

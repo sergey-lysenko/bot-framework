@@ -121,7 +121,7 @@ public abstract class Node extends Core implements _Node {
     @Override
     public boolean isExecutable() {
 
-        if (hasFailed()) return false;
+        if (hasFailed() || isExhausted()) return false;
         if (!super.isExecutable()) return false;
         if (isNull(ctrl) || isNull(ctrl.getPool())) return true;
         final List<KeyValue<_Scenario, Fraction>> pairs = ctrl.getPool().getPairList();
@@ -195,8 +195,10 @@ public abstract class Node extends Core implements _Node {
     public final boolean isOk() throws SafeguardException {
 
         if (super.isOk()) {
+            boolean actionSucceeded = false;
             try {
                 action();
+                actionSucceeded = true;
                 boolean ok = false;
                 if (halted) halted = false;
                 else ok = ctrl.exec();
@@ -207,7 +209,12 @@ public abstract class Node extends Core implements _Node {
                 if (!Resilient.mode()) stopTests();
                 return false;
             } catch (final RuntimeException e) {
-                markAsFailed();
+                if (actionSucceeded) {
+                    markAsChildFailed();
+                } else {
+                    markAsFailed();
+                    logEvent(works.lysenko.util.data.enums.Severity.S0, e.getMessage());
+                }
                 throw new ScenarioRuntimeException(b(type().tag(), q(getShortName()), SCENARIO_EXECUTION_FAILED_DUE_TO,
                         e(Brackets.CURLY, e.getMessage())), e, this);
             } finally {

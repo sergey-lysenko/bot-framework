@@ -120,10 +120,14 @@ public final class Selector implements Callable<_Scenario> {
         } while (Utils.isStillSelectable(fits, attemptsLeft, candidates));
         ctrl.sleep(1L, true);
         if (fits) return Utils.verifyScenarioSelection(scenario);
-        if (candidates.isEmpty())
+        if (candidates.isEmpty()) {
+            if (isNotNull(ctrl.getParent())) {
+                ctrl.getParent().markAsExhausted();
+            }
             selectionFailed(s(b(c(UNABLE), TO, FIT, ANY, SCENARIO, AMONG,
                     Utils.createReadableScenariosList(ctrl.getWeightedList(), false, isDebug()), s(_COLON_), ALL, SCENARIOS,
                     HAVE, UNMET, REQUIREMENTS, OR, ARE, NOT, EXECUTABLE)));
+        }
         if (!(0 < attemptsLeft)) logEvent(S2, b(c(SCENARIO), SELECTION, EXHAUSTED, AFTER, s1(ctrl.getAttempts(), ATTEMPT)));
         return null;
     }
@@ -261,13 +265,15 @@ public final class Selector implements Callable<_Scenario> {
         Utils.logAccounting();
         Utils.logDebug(a(kv(s(IGNORE, c(FAILED), c(SELECTION)), s(Scenario.ignoreFailedSelection))));
 
-        if (Scenario.ignoreFailedSelection || Resilient.mode()) {
+        if (Scenario.ignoreFailedSelection) {
             if (isTrace()) logEvent(S3, message);
-        } else logEvent(S2, message);
-
-        if (Scenario.ignoreFailedSelection || Resilient.mode()) {
             if (isTrace()) logEvent(S3, b(c(TESTS), WILL, GO, ON, AS, REQUESTED));
-        } else ctrl.stopTests();
+        } else {
+            logEvent(S2, message);
+            if (isNull(ctrl.getParent())) {
+                ctrl.stopTests();
+            }
+        }
     }
 
 }
