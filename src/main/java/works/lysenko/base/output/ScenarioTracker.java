@@ -226,6 +226,8 @@ public final class ScenarioTracker {
                 maxFrames,
                 maxFramePixels,
                 maxTotalPixels,
+                ProgressionSettings.current().scenarioGifEnabled(),
+                ProgressionSettings.current().scenarioWebpEnabled(),
                 ProgressionSettings.current().scenarioMp4Enabled(),
                 ProgressionSettings.current().ffmpeg());
     }
@@ -238,6 +240,32 @@ public final class ScenarioTracker {
             final int maxFrames,
             final int maxFramePixels,
             final int maxTotalPixels,
+            final boolean mp4Enabled,
+            final String ffmpeg) {
+        processFrames(
+                runDir,
+                prefix,
+                progress,
+                enabled,
+                maxFrames,
+                maxFramePixels,
+                maxTotalPixels,
+                ProgressionSettings.current().scenarioGifEnabled(),
+                ProgressionSettings.current().scenarioWebpEnabled(),
+                mp4Enabled,
+                ffmpeg);
+    }
+
+    public static void processFrames(
+            final File runDir,
+            final String prefix,
+            final ProcessingProgress progress,
+            final boolean enabled,
+            final int maxFrames,
+            final int maxFramePixels,
+            final int maxTotalPixels,
+            final boolean gifEnabled,
+            final boolean webpEnabled,
             final boolean mp4Enabled,
             final String ffmpeg) {
         if (!enabled) {
@@ -276,33 +304,42 @@ public final class ScenarioTracker {
             return;
         }
 
-        final File gifFile = new File(runDir, prefix + ".progression.gif");
-        final File webpFile = new File(runDir, prefix + ".progression.webp");
-        try {
-            writeAnimatedGifFiles(
-                    framesToProcess,
-                    gifFile,
-                    DELAY_CENTISECONDS,
-                    FINAL_FRAME_DELAY_CENTISECONDS,
-                    maxFramePixels,
-                    percentage -> progress.update(gifTask, 10 + (percentage * 45 / 100)));
-            progress.complete(gifTask);
-            log("Progression GIF generated: " + gifFile.getAbsolutePath());
-        } catch (final Exception e) {
-            progress.failed(gifTask, e);
+        if (gifEnabled) {
+            final File gifFile = new File(runDir, prefix + ".progression.gif");
+            try {
+                writeAnimatedGifFiles(
+                        framesToProcess,
+                        gifFile,
+                        DELAY_CENTISECONDS,
+                        FINAL_FRAME_DELAY_CENTISECONDS,
+                        maxFramePixels,
+                        percentage -> progress.update(gifTask, 10 + (percentage * 45 / 100)));
+                progress.complete(gifTask);
+                log("Progression GIF generated: " + gifFile.getAbsolutePath());
+            } catch (final Exception e) {
+                progress.failed(gifTask, e);
+            }
+        } else {
+            progress.skipped(gifTask);
         }
-        try {
-            AnimatedWebP.write(
-                    framesToProcess,
-                    webpFile,
-                    DELAY_CENTISECONDS * 10,
-                    FINAL_FRAME_DELAY_CENTISECONDS * 10,
-                    maxFramePixels,
-                    percentage -> progress.update(webpTask, 10 + (percentage * 90 / 100)));
-            progress.complete(webpTask);
-            log("Progression WebP generated: " + webpFile.getAbsolutePath());
-        } catch (final Exception e) {
-            progress.failed(webpTask, e);
+
+        if (webpEnabled) {
+            final File webpFile = new File(runDir, prefix + ".progression.webp");
+            try {
+                AnimatedWebP.write(
+                        framesToProcess,
+                        webpFile,
+                        DELAY_CENTISECONDS * 10,
+                        FINAL_FRAME_DELAY_CENTISECONDS * 10,
+                        maxFramePixels,
+                        percentage -> progress.update(webpTask, 10 + (percentage * 90 / 100)));
+                progress.complete(webpTask);
+                log("Progression WebP generated: " + webpFile.getAbsolutePath());
+            } catch (final Exception e) {
+                progress.failed(webpTask, e);
+            }
+        } else {
+            progress.skipped(webpTask);
         }
         if (!mp4Enabled) {
             progress.skipped(mp4Task);

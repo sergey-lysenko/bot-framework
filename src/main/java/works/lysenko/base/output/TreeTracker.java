@@ -392,6 +392,34 @@ public final class TreeTracker {
             final boolean mp4Enabled,
             final String ffmpeg,
             final String treeSonification) {
+        processFrames(
+                runDir,
+                prefix,
+                progress,
+                enabled,
+                maxFrames,
+                maxFramePixels,
+                maxTotalPixels,
+                ProgressionSettings.current().treeGifEnabled(),
+                ProgressionSettings.current().treeWebpEnabled(),
+                mp4Enabled,
+                ffmpeg,
+                treeSonification);
+    }
+
+    public static void processFrames(
+            final File runDir,
+            final String prefix,
+            final ProcessingProgress progress,
+            final boolean enabled,
+            final int maxFrames,
+            final int maxFramePixels,
+            final int maxTotalPixels,
+            final boolean gifEnabled,
+            final boolean webpEnabled,
+            final boolean mp4Enabled,
+            final String ffmpeg,
+            final String treeSonification) {
         if (!enabled) {
             progress.skipped("Tree progression GIF");
             progress.skipped("Tree progression WebP");
@@ -428,33 +456,42 @@ public final class TreeTracker {
             return;
         }
 
-        final File gifFile = new File(runDir, prefix + ".tree.progression.gif");
-        final File webpFile = new File(runDir, prefix + ".tree.progression.webp");
-        try {
-            ScenarioTracker.writeAnimatedGifFiles(
-                    framesToProcess,
-                    gifFile,
-                    DELAY_CENTISECONDS,
-                    FINAL_FRAME_DELAY_CENTISECONDS,
-                    maxFramePixels,
-                    percentage -> progress.update(gifTask, 10 + (percentage * 45 / 100)));
-            progress.complete(gifTask);
-            log("Tree progression GIF generated: " + gifFile.getAbsolutePath());
-        } catch (final Exception e) {
-            progress.failed(gifTask, e);
+        if (gifEnabled) {
+            final File gifFile = new File(runDir, prefix + ".tree.progression.gif");
+            try {
+                ScenarioTracker.writeAnimatedGifFiles(
+                        framesToProcess,
+                        gifFile,
+                        DELAY_CENTISECONDS,
+                        FINAL_FRAME_DELAY_CENTISECONDS,
+                        maxFramePixels,
+                        percentage -> progress.update(gifTask, 10 + (percentage * 45 / 100)));
+                progress.complete(gifTask);
+                log("Tree progression GIF generated: " + gifFile.getAbsolutePath());
+            } catch (final Exception e) {
+                progress.failed(gifTask, e);
+            }
+        } else {
+            progress.skipped(gifTask);
         }
-        try {
-            AnimatedWebP.write(
-                    framesToProcess,
-                    webpFile,
-                    DELAY_CENTISECONDS * 10,
-                    FINAL_FRAME_DELAY_CENTISECONDS * 10,
-                    maxFramePixels,
-                    percentage -> progress.update(webpTask, 10 + (percentage * 90 / 100)));
-            progress.complete(webpTask);
-            log("Tree progression WebP generated: " + webpFile.getAbsolutePath());
-        } catch (final Exception e) {
-            progress.failed(webpTask, e);
+
+        if (webpEnabled) {
+            final File webpFile = new File(runDir, prefix + ".tree.progression.webp");
+            try {
+                AnimatedWebP.write(
+                        framesToProcess,
+                        webpFile,
+                        DELAY_CENTISECONDS * 10,
+                        FINAL_FRAME_DELAY_CENTISECONDS * 10,
+                        maxFramePixels,
+                        percentage -> progress.update(webpTask, 10 + (percentage * 90 / 100)));
+                progress.complete(webpTask);
+                log("Tree progression WebP generated: " + webpFile.getAbsolutePath());
+            } catch (final Exception e) {
+                progress.failed(webpTask, e);
+            }
+        } else {
+            progress.skipped(webpTask);
         }
         if (!mp4Enabled) {
             progress.skipped(mp4Task);

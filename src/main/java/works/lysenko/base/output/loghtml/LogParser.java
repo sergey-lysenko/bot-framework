@@ -438,7 +438,7 @@ public final class LogParser {
 
         final List<LeafCompletion> completions = addAllLeaf ? SidecarLoader.loadLeafCompletions(logFile) : List.of();
         final List<EtaDebugItem> etaDebugItems = addEtaDebug ? SidecarLoader.loadEtaDebugItems(logFile) : List.of();
-        final List<SystemResourceItem> resourceItems = addCpuDebug ? SidecarLoader.loadTelemetryResources(logFile) : List.of();
+        final List<SystemResourceItem> resourceItems = addCpuDebug ? SidecarLoader.loadTelemetryResources(logFile, testData.size()) : List.of();
         final List<Double> telemetryCpuList = addCpuDebug ? telemetryCpu : List.of();
 
         final String lgScriptData = renderLgScriptData(testData, limboByPrevTest, completions, etaDebugItems, resourceItems, tAvg, tMax, lMax);

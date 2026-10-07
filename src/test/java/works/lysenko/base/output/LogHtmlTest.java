@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -221,5 +222,61 @@ class LogHtmlTest {
         assertTrue(html.contains("window.resourceData = ["));
         assertTrue(html.contains("\"cpu\":12.50"));
         assertTrue(html.contains("\"ramUsed\":400.0"));
+    }
+
+    @Test
+    void testTelemetryDownsamplingWithPeakTracking() {
+        final List<works.lysenko.base.output.loghtml.LogModels.SystemResourceItem> raw = new ArrayList<>();
+        for (int i = 1; i <= 100; i++) {
+            final double cpu = (i % 10 == 0) ? 90.0 : 10.0;
+            raw.add(new works.lysenko.base.output.loghtml.LogModels.SystemResourceItem(i, cpu, 100.0, 500.0, 4));
+        }
+
+        final List<works.lysenko.base.output.loghtml.LogModels.SystemResourceItem> downsampled =
+                works.lysenko.base.output.loghtml.SidecarLoader.downsampleTelemetry(raw, 10);
+
+        assertEquals(10, downsampled.size());
+        for (final works.lysenko.base.output.loghtml.LogModels.SystemResourceItem item : downsampled) {
+            assertEquals(18.0, item.cpuPct, 1e-2); // Average CPU (9 items of 10.0 + 1 item of 90.0 = 180 / 10 = 18.0)
+            assertEquals(90.0, item.maxCpuPct, 1e-2); // Peak CPU tracked in bucket
+        }
+    }
+
+    @Test
+    void testTelemetryDensityPerTest(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("density_test.run.log");
+        final Path telemPath = tempDir.resolve("density_test.telemetry.log");
+        final List<String> telemLines = new ArrayList<>();
+        for (int i = 1; i <= 300; i++) {
+            telemLines.add("0," + i + ",20.0,100,4,8,10,0,10,104857600,524288000,1048576000,sample" + i);
+        }
+        Files.write(telemPath, telemLines);
+        Files.write(logPath, List.of(
+                "[ 1][1][0.000][10] Executing Scenario",
+                "[ 1][2][10.000][5] • Closing test 1 ...",
+                "[ 2][3][11.000][10] Executing Scenario",
+                "[ 2][4][20.000][5] • Closing test 2 ...",
+                "[ 3][5][21.000][10] Executing Scenario",
+                "[ 3][6][30.000][5] • Closing test 3 ..."));
+
+        final works.lysenko.base.TestProperties previousProps = works.lysenko.Base.properties;
+        try {
+            final works.lysenko.base.TestProperties testProps = new works.lysenko.base.TestProperties();
+            final java.lang.reflect.Field f = works.lysenko.base.TestProperties.class.getDeclaredField("the");
+            f.setAccessible(true);
+            final java.util.Properties props = new java.util.Properties();
+            props.setProperty(".test.report.cpu.density.per.test", "true");
+            f.set(testProps, props);
+            works.lysenko.Base.properties = testProps;
+
+            final List<works.lysenko.base.output.loghtml.LogModels.SystemResourceItem> items =
+                    works.lysenko.base.output.loghtml.SidecarLoader.loadTelemetryResources(logPath.toFile(), 3);
+
+            assertEquals(3, items.size());
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            works.lysenko.Base.properties = previousProps;
+        }
     }
 }

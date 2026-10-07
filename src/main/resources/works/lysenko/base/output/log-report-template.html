@@ -1189,7 +1189,8 @@ summary::-webkit-details-marker { display: none; }
     const tt = document.getElementById('resTooltip');
     if (tt) {
       let html = `<div class="lg-tt-title"><span class="lg-tt-num">Sample #${d.n}</span></div>`;
-      html += `<div class="lg-tt-row"><span class="lg-tt-lbl" style="color:#38bdf8;">CPU Usage:</span> <b>${d.cpu.toFixed(2)}%</b></div>`;
+      const peakText = (d.cpuMax && d.cpuMax > d.cpu + 0.01) ? ` <span class="lg-tt-sub">(Peak: ${d.cpuMax.toFixed(2)}%)</span>` : '';
+      html += `<div class="lg-tt-row"><span class="lg-tt-lbl" style="color:#38bdf8;">CPU Usage:</span> <b>${d.cpu.toFixed(2)}%</b>${peakText}</div>`;
       html += `<div class="lg-tt-row"><span class="lg-tt-lbl" style="color:#c084fc;">Used Heap RAM:</span> <b>${d.ramUsed.toFixed(1)} MB</b> <span class="lg-tt-sub">/ ${d.ramTotal.toFixed(1)} MB</span></div>`;
       if (d.threads > 0) {
         html += `<div class="lg-tt-row"><span class="lg-tt-lbl">Threads:</span> <b>${d.threads}</b></div>`;

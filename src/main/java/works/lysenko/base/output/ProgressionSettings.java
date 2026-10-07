@@ -11,7 +11,11 @@ public record ProgressionSettings(
         int maxFrames,
         int maxFramePixels,
         int maxTotalPixels,
+        boolean scenarioGifEnabled,
+        boolean scenarioWebpEnabled,
         boolean scenarioMp4Enabled,
+        boolean treeGifEnabled,
+        boolean treeWebpEnabled,
         boolean treeMp4Enabled,
         String treeSonification,
         String ffmpeg) {
@@ -45,7 +49,11 @@ public record ProgressionSettings(
         final Integer maxFrames = PropEnum._TEST_REPORT_PROGRESSION_MAX_FRAMES.get();
         final Integer maxFramePixels = PropEnum._TEST_REPORT_PROGRESSION_MAX_FRAME_PIXELS.get();
         final Integer maxTotalPixels = PropEnum._TEST_REPORT_PROGRESSION_MAX_TOTAL_PIXELS.get();
+        final Boolean scenarioGifEnabled = PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_GIF.get();
+        final Boolean scenarioWebpEnabled = PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_WEBP.get();
         final Boolean scenarioMp4Enabled = PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_MP4.get();
+        final Boolean treeGifEnabled = PropEnum._TEST_REPORT_PROGRESSION_TREE_GIF.get();
+        final Boolean treeWebpEnabled = PropEnum._TEST_REPORT_PROGRESSION_TREE_WEBP.get();
         final Boolean treeMp4Enabled = PropEnum._TEST_REPORT_PROGRESSION_TREE_MP4.get();
         final String treeSonification = PropEnum._TEST_REPORT_PROGRESSION_TREE_SONIFICATION.get();
         final String ffmpeg = PropEnum._TEST_REPORT_PROGRESSION_FFMPEG.get();
@@ -55,7 +63,11 @@ public record ProgressionSettings(
                 maxFrames,
                 maxFramePixels,
                 maxTotalPixels,
+                Boolean.TRUE.equals(scenarioGifEnabled),
+                Boolean.TRUE.equals(scenarioWebpEnabled),
                 Boolean.TRUE.equals(scenarioMp4Enabled),
+                Boolean.TRUE.equals(treeGifEnabled),
+                Boolean.TRUE.equals(treeWebpEnabled),
                 Boolean.TRUE.equals(treeMp4Enabled),
                 treeSonification,
                 ffmpeg);

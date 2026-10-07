@@ -4,6 +4,7 @@ import works.lysenko.base.output.loghtml.LogModels.ArtifactItem;
 import works.lysenko.base.output.loghtml.LogModels.EtaDebugItem;
 import works.lysenko.base.output.loghtml.LogModels.LeafCompletion;
 import works.lysenko.base.output.loghtml.LogModels.SystemResourceItem;
+import works.lysenko.util.spec.PropEnum;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -219,6 +220,17 @@ public final class SidecarLoader {
      * @return list of SystemResourceItem records
      */
     public static List<SystemResourceItem> loadTelemetryResources(final File runLogFile) {
+        return loadTelemetryResources(runLogFile, 0);
+    }
+
+    /**
+     * Reads system resource telemetry (CPU % and heap RAM in MB) from the sibling telemetry log file.
+     *
+     * @param runLogFile input run log file
+     * @param testCount  total number of tests performed in the run
+     * @return list of SystemResourceItem records
+     */
+    public static List<SystemResourceItem> loadTelemetryResources(final File runLogFile, final int testCount) {
         final List<SystemResourceItem> items = new ArrayList<>();
         if (null == runLogFile || null == runLogFile.getParentFile()) return items;
         final String runLogName = runLogFile.getName();
@@ -265,6 +277,62 @@ public final class SidecarLoader {
             }
         } catch (final IOException ignored) {
         }
-        return items;
+        final int targetDensity;
+        if (Boolean.TRUE.equals(PropEnum._TEST_REPORT_CPU_DENSITY_PER_TEST.get()) && testCount > 0) {
+            targetDensity = testCount;
+        } else {
+            final Integer configuredDensity = PropEnum._TEST_REPORT_CPU_DENSITY.get();
+            targetDensity = (null != configuredDensity && configuredDensity > 0) ? configuredDensity : 5000;
+        }
+        return downsampleTelemetry(items, targetDensity);
+    }
+
+    /**
+     * Downsamples telemetry resource items into uniform buckets with peak CPU tracking.
+     *
+     * @param rawItems      raw telemetry items
+     * @param targetDensity maximum number of samples to retain
+     * @return downsampled list of SystemResourceItem records
+     */
+    public static List<SystemResourceItem> downsampleTelemetry(final List<SystemResourceItem> rawItems, final int targetDensity) {
+        if (null == rawItems || rawItems.size() <= targetDensity || targetDensity <= 0) {
+            return (null == rawItems) ? List.of() : rawItems;
+        }
+
+        final int N = rawItems.size();
+        final int M = targetDensity;
+        final List<SystemResourceItem> downsampled = new ArrayList<>(M);
+
+        for (int i = 0; i < M; i++) {
+            final int startIndex = (int) ((long) i * N / M);
+            int endIndex = (int) ((long) (i + 1) * N / M);
+            endIndex = Math.max(startIndex + 1, Math.min(N, endIndex));
+
+            double sumCpu = 0.0;
+            double maxCpu = 0.0;
+            double sumUsedRam = 0.0;
+            double sumTotalRam = 0.0;
+            long sumThreads = 0L;
+            final int count = endIndex - startIndex;
+
+            for (int j = startIndex; j < endIndex; j++) {
+                final SystemResourceItem item = rawItems.get(j);
+                sumCpu += item.cpuPct;
+                maxCpu = Math.max(maxCpu, Math.max(item.cpuPct, item.maxCpuPct));
+                sumUsedRam += item.usedRamMb;
+                sumTotalRam += item.totalRamMb;
+                sumThreads += item.threads;
+            }
+
+            final int midSampleNum = rawItems.get((startIndex + endIndex) / 2).sampleNum;
+            final double avgCpu = sumCpu / count;
+            final double avgUsedRam = sumUsedRam / count;
+            final double avgTotalRam = sumTotalRam / count;
+            final int avgThreads = (int) Math.round((double) sumThreads / count);
+
+            downsampled.add(new SystemResourceItem(midSampleNum, avgCpu, maxCpu, avgUsedRam, avgTotalRam, avgThreads));
+        }
+
+        return downsampled;
     }
 }

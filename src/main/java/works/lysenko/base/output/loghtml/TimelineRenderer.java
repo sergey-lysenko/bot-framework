@@ -291,6 +291,7 @@ public final class TimelineRenderer {
                 sb.append(s(
                         "{\"n\":", item.sampleNum,
                         String.format(Locale.ROOT, ",\"cpu\":%.2f", item.cpuPct),
+                        String.format(Locale.ROOT, ",\"cpuMax\":%.2f", item.maxCpuPct),
                         String.format(Locale.ROOT, ",\"ramUsed\":%.1f", item.usedRamMb),
                         String.format(Locale.ROOT, ",\"ramTotal\":%.1f", item.totalRamMb),
                         ",\"threads\":", item.threads, "}"

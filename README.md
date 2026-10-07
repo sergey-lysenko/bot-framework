@@ -109,9 +109,15 @@ The framework is configured via system properties, environment variables, or `te
 | `.test.report.add.all.leaf` | `true` | Include all-leaf completion records in test reports |
 | `.test.report.add.eta.debug` | `true` | Include ETA debug timeline charts and metrics in test reports |
 | `.test.report.add.cpu.debug` | `true` | Include CPU telemetry measurements and charts in test reports |
+| `.test.report.cpu.density` | `5000` | Maximum data points density for CPU/RAM telemetry graphs in reports |
+| `.test.report.cpu.density.per.test` | `false` | When true, matches CPU/RAM telemetry data points count to the number of tests performed |
 | `.test.report.progression.scenario` | `true` | Enable scenario coverage progression frames and animations |
-| `.test.report.progression.tree` | `true` | Enable scenario tree progression frames and animations |
+| `.test.report.progression.scenario.gif` | `true` | Generate scenario coverage GIF animation |
+| `.test.report.progression.scenario.webp` | `true` | Generate scenario coverage WebP animation |
 | `.test.report.progression.scenario.mp4` | `true` | Generate scenario coverage MP4 video (requires FFmpeg) |
+| `.test.report.progression.tree` | `true` | Enable scenario tree progression frames and animations |
+| `.test.report.progression.tree.gif` | `true` | Generate scenario tree GIF animation |
+| `.test.report.progression.tree.webp` | `true` | Generate scenario tree WebP animation |
 | `.test.report.progression.tree.mp4` | `true` | Generate scenario tree MP4 video (requires FFmpeg) |
 | `.test.report.progression.ffmpeg` | `ffmpeg` | FFmpeg executable name or absolute path |
 | `.test.report.progression.max.frames` | `500` | Maximum progression snapshots and animation frames; later cycles replace the last snapshot (hard-capped at 10,000) |
