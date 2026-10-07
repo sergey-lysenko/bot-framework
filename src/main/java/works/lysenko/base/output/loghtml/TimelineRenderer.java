@@ -219,7 +219,12 @@ public final class TimelineRenderer {
                 final String intervalStr = formatCompletionDuration(intervalMs);
                 final String roundIntervalStr = (roundIntervalMs >= 0L) ? formatCompletionDuration(roundIntervalMs) : "";
                 final String etaStr = formatCompletionDuration(c.etaMs);
-                final String projStr = formatCompletionDuration(c.atMillis + c.etaMs);
+                final long rawProjMs = c.atMillis + c.etaMs;
+                final long corrMs = works.lysenko.base.output.EtaCorrection.getEstimationCorrection(c.atMillis);
+                final long corrEtaMs = Math.max(0L, c.etaMs - corrMs);
+                final long corrProjMs = c.atMillis + corrEtaMs;
+                final String projStr = formatCompletionDuration(rawProjMs);
+                final String corrProjStr = formatCompletionDuration(corrProjMs);
                 final String momentStr = formatCompletionMoment(c.atMillis);
                 final String fullLabel = (c.etaMs > 0L)
                         ? c.leaf + " @ " + momentStr + " (+" + intervalStr + ", Projected: " + projStr + ")"
@@ -232,9 +237,11 @@ public final class TimelineRenderer {
                         ",\"roundIntervalMs\":", roundIntervalMs,
                         ",\"roundInterval\":\"", escapeJson(roundIntervalStr), "\"",
                         ",\"etaMs\":", c.etaMs,
-                        ",\"projMs\":", c.atMillis + c.etaMs,
+                        ",\"projMs\":", rawProjMs,
+                        ",\"corrProjMs\":", corrProjMs,
                         ",\"eta\":\"", escapeJson(etaStr), "\"",
                         ",\"proj\":\"", escapeJson(projStr), "\"",
+                        ",\"corrProj\":\"", escapeJson(corrProjStr), "\"",
                         ",\"at\":", c.atMillis,
                         ",\"interval\":\"", escapeJson(intervalStr), "\"",
                         ",\"moment\":\"", escapeJson(momentStr), "\"",
@@ -290,6 +297,7 @@ public final class TimelineRenderer {
                 final SystemResourceItem item = resourceItems.get(i);
                 sb.append(s(
                         "{\"n\":", item.sampleNum,
+                        ",\"t\":", item.testNum,
                         String.format(Locale.ROOT, ",\"cpu\":%.2f", item.cpuPct),
                         String.format(Locale.ROOT, ",\"cpuMax\":%.2f", item.maxCpuPct),
                         String.format(Locale.ROOT, ",\"ramUsed\":%.1f", item.usedRamMb),

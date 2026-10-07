@@ -520,7 +520,6 @@ public final class UserInterface extends JPanel implements _Dashboard {
         if (elapsedMs < 1000L) return 0L;
 
         long rawEtaMs = 0L;
-        double progressRatio = 0.0;
 
         final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
                 || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
@@ -541,7 +540,6 @@ public final class UserInterface extends JPanel implements _Dashboard {
                 final double avgMsPerExecution = (double) elapsedMs / executed;
                 final int remainingExecutions = total - executed;
                 rawEtaMs = Math.round(remainingExecutions * avgMsPerExecution);
-                progressRatio = (double) executed / total;
             }
         } else {
             // Fixed test count mode (.test.tests specified)
@@ -557,7 +555,6 @@ public final class UserInterface extends JPanel implements _Dashboard {
                     final double avgMsPerTest = (double) elapsedMs / completedTests;
                     final int remainingTests = totalTests - completedTests;
                     rawEtaMs = Math.round(remainingTests * avgMsPerTest);
-                    progressRatio = (double) completedTests / totalTests;
                 }
             } else {
                 // Fallback: general leaf-based progress
@@ -568,7 +565,6 @@ public final class UserInterface extends JPanel implements _Dashboard {
                     final double avgMsPerLeaf = (double) elapsedMs / executedLeafs;
                     final int remainingLeafs = totalLeafs - executedLeafs;
                     rawEtaMs = Math.round(remainingLeafs * avgMsPerLeaf);
-                    progressRatio = (double) executedLeafs / totalLeafs;
                 }
             }
         }
@@ -576,7 +572,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
         if (rawEtaMs <= 0L) return 0L;
 
         EtaCorrection.recordInitialPrediction(elapsedMs + rawEtaMs);
-        return EtaCorrection.adjustEta(rawEtaMs, progressRatio);
+        return rawEtaMs;
     }
 
     private static String calculateEtaString() {

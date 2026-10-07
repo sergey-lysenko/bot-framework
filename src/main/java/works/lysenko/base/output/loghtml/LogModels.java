@@ -228,20 +228,27 @@ public final class LogModels {
         public final double usedRamMb;
         public final double totalRamMb;
         public final int threads;
+        public final int testNum;
 
         public SystemResourceItem(final int sampleNum, final double cpuPct,
                                   final double usedRamMb, final double totalRamMb, final int threads) {
-            this(sampleNum, cpuPct, cpuPct, usedRamMb, totalRamMb, threads);
+            this(sampleNum, cpuPct, cpuPct, usedRamMb, totalRamMb, threads, 0);
         }
 
         public SystemResourceItem(final int sampleNum, final double cpuPct, final double maxCpuPct,
                                   final double usedRamMb, final double totalRamMb, final int threads) {
+            this(sampleNum, cpuPct, maxCpuPct, usedRamMb, totalRamMb, threads, 0);
+        }
+
+        public SystemResourceItem(final int sampleNum, final double cpuPct, final double maxCpuPct,
+                                  final double usedRamMb, final double totalRamMb, final int threads, final int testNum) {
             this.sampleNum = sampleNum;
             this.cpuPct = cpuPct;
             this.maxCpuPct = maxCpuPct;
             this.usedRamMb = usedRamMb;
             this.totalRamMb = totalRamMb;
             this.threads = threads;
+            this.testNum = testNum;
         }
     }
 

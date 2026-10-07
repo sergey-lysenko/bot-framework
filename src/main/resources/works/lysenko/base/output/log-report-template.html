@@ -1232,26 +1232,45 @@ summary::-webkit-details-marker { display: none; }
     }
 
     svg += `  <path d="${pathRamTotal}" class="res-ram-total-line" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6"/>`;
+    svg += `  <path d="${pathRamTotal}" class="res-ram-total-line" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6"/>`;
     svg += `  <path d="${pathRamUsed}" class="res-ram-used-line" fill="none" stroke="#c084fc" stroke-width="2"/>`;
     svg += `  <path d="${pathCpu}" class="res-cpu-line" fill="none" stroke="#38bdf8" stroke-width="2"/>`;
 
-    const tickCount = Math.min(8, N);
-    const tickIndices = new Set();
-    if (tickCount <= 1 || N <= 1) {
-      tickIndices.add(0);
-    } else {
-      for (let k = 0; k < tickCount - 1; k++) {
-        tickIndices.add(Math.round(k * (N - 1) / (tickCount - 1)));
-      }
-      tickIndices.add(N - 1);
-    }
+    const numTests = (window.lgData && window.lgData.length) ? window.lgData.length : 0;
 
-    tickIndices.forEach(idx => {
-      const x = ml + (N > 1 ? (idx / (N - 1)) * pw : pw / 2);
-      const sampleNum = window.resourceData[idx].n;
-      svg += `  <line x1="${x.toFixed(1)}" y1="${(mt + ph).toFixed(1)}" x2="${x.toFixed(1)}" y2="${(mt + ph + 4).toFixed(1)}" stroke="rgba(255,255,255,0.15)"/>`;
-      svg += `  <text x="${x.toFixed(1)}" y="${(height - 10).toFixed(1)}" text-anchor="middle" fill="#64748b" font-size="10" font-family="ui-monospace, monospace">#${sampleNum}</text>`;
-    });
+    if (numTests > 0) {
+      for (let k = 1; k < numTests; k++) {
+        const xBorder = ml + (k / numTests) * pw;
+        svg += `  <line x1="${xBorder.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xBorder.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(255,255,255,0.18)" stroke-dasharray="3 3" stroke-width="1"/>`;
+      }
+
+      const showAllLabels = numTests <= 15;
+      const step = showAllLabels ? 1 : Math.ceil(numTests / 10);
+      for (let k = 0; k < numTests; k += step) {
+        const xCenter = ml + ((k + 0.5) / numTests) * pw;
+        const testNum = window.lgData[k] ? window.lgData[k].n : (k + 1);
+        svg += `  <line x1="${xCenter.toFixed(1)}" y1="${(mt + ph).toFixed(1)}" x2="${xCenter.toFixed(1)}" y2="${(mt + ph + 4).toFixed(1)}" stroke="rgba(255,255,255,0.15)"/>`;
+        svg += `  <text x="${xCenter.toFixed(1)}" y="${(height - 10).toFixed(1)}" text-anchor="middle" fill="#64748b" font-size="10" font-family="ui-monospace, monospace">#${testNum}</text>`;
+      }
+    } else {
+      const tickCount = Math.min(8, N);
+      const tickIndices = new Set();
+      if (tickCount <= 1 || N <= 1) {
+        tickIndices.add(0);
+      } else {
+        for (let k = 0; k < tickCount - 1; k++) {
+          tickIndices.add(Math.round(k * (N - 1) / (tickCount - 1)));
+        }
+        tickIndices.add(N - 1);
+      }
+
+      tickIndices.forEach(idx => {
+        const x = ml + (N > 1 ? (idx / (N - 1)) * pw : pw / 2);
+        const sampleNum = window.resourceData[idx].n;
+        svg += `  <line x1="${x.toFixed(1)}" y1="${(mt + ph).toFixed(1)}" x2="${x.toFixed(1)}" y2="${(mt + ph + 4).toFixed(1)}" stroke="rgba(255,255,255,0.15)"/>`;
+        svg += `  <text x="${x.toFixed(1)}" y="${(height - 10).toFixed(1)}" text-anchor="middle" fill="#64748b" font-size="10" font-family="ui-monospace, monospace">#${sampleNum}</text>`;
+      });
+    }
 
     if (N <= 50) {
       for (let i = 0; i < N; i++) {
@@ -1346,7 +1365,8 @@ summary::-webkit-details-marker { display: none; }
 
     const tt = document.getElementById('resTooltip');
     if (tt) {
-      let html = `<div class="lg-tt-title"><span class="lg-tt-num">Sample #${d.n}</span></div>`;
+      const testTag = (d.t && d.t > 0) ? `Test #${d.t} &bull; ` : '';
+      let html = `<div class="lg-tt-title"><span class="lg-tt-num">${testTag}Sample #${d.n}</span></div>`;
       const peakText = (d.cpuMax && d.cpuMax > d.cpu + 0.01) ? ` <span class="lg-tt-sub">(Peak: ${d.cpuMax.toFixed(2)}%)</span>` : '';
       html += `<div class="lg-tt-row"><span class="lg-tt-lbl" style="color:#38bdf8;">CPU Usage:</span> <b>${d.cpu.toFixed(2)}%</b>${peakText}</div>`;
       html += `<div class="lg-tt-row"><span class="lg-tt-lbl" style="color:#c084fc;">Used Heap RAM:</span> <b>${d.ramUsed.toFixed(1)} MB</b> <span class="lg-tt-sub">/ ${d.ramTotal.toFixed(1)} MB</span></div>`;

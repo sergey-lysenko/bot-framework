@@ -59,7 +59,6 @@ public final class AllLeafCompletions {
 
     public static synchronized void checkAndRecord(final long elapsedMillis, final _Scenario completingScenario) {
 
-        if (Boolean.FALSE.equals(PropEnum._TEST_REPORT_ADD_ALL_LEAF.get())) return;
         if (isNull(Base.core)) return;
 
         final long cycleAvgEta;
@@ -71,9 +70,12 @@ public final class AllLeafCompletions {
         currentCycleEtaSum = 0L;
         currentCycleEtaCount = 0;
 
-        final String leafName = (isNotNull(completingScenario)) ? completingScenario.getShortName() : "unknown";
-
         final int testNum = isNotNull(Base.core) ? Base.core.getTestsCount() : 0;
+        EtaCorrection.recordTestSample(testNum, elapsedMillis, cycleAvgEta);
+
+        if (Boolean.FALSE.equals(PropEnum._TEST_REPORT_ADD_ALL_LEAF.get())) return;
+
+        final String leafName = (isNotNull(completingScenario)) ? completingScenario.getShortName() : "unknown";
 
         final Set<_Scenario> accessibleLeafs = Base.core.getAccessibleLeafs();
         if (isNull(accessibleLeafs) || accessibleLeafs.isEmpty()) {

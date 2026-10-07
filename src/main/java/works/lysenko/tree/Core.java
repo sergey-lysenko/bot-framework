@@ -265,9 +265,7 @@ public abstract class Core extends Root implements _Scenario, Verifies {
                 (null == info || info.isEmpty()) ? EMPTY : yb(info), b(DONE, IN), yb(t(runtime))), false);
         if (ScenarioType.LEAF == type() || ScenarioType.MONO == type()) {
             EtaDebug.endCycle(getShortName());
-            if (isAllLeafsMode()) {
-                AllLeafCompletions.checkAndRecord(msSinceStart(), this);
-            }
+            AllLeafCompletions.checkAndRecord(msSinceStart(), this);
         }
         exec.scenarios().pop(this);
     }

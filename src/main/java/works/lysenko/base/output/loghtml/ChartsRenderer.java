@@ -45,12 +45,22 @@ public final class ChartsRenderer {
         long lastRoundAtMillis = 0L;
         final long[] roundIntervals = new long[completions.size()];
         final long[] projectedTotals = new long[completions.size()];
+        final long[] correctedTotals = new long[completions.size()];
 
+        boolean hasCorrectionData = false;
         for (int index = 0; index < completions.size(); index++) {
             final LeafCompletion c = completions.get(index);
             final long projTotal = c.atMillis + c.etaMs;
             projectedTotals[index] = projTotal;
             maxProjectedMs = Math.max(maxProjectedMs, projTotal);
+
+            final long corrMs = works.lysenko.base.output.EtaCorrection.getEstimationCorrection(c.atMillis);
+            if (corrMs != 0L) hasCorrectionData = true;
+            final long corrEtaMs = Math.max(0L, c.etaMs - corrMs);
+            final long corrTotal = c.atMillis + corrEtaMs;
+            correctedTotals[index] = corrTotal;
+            maxProjectedMs = Math.max(maxProjectedMs, corrTotal);
+
             if (c.roundIndex > 0) {
                 final long roundInterval = Math.max(0L, c.atMillis - lastRoundAtMillis);
                 roundIntervals[index] = roundInterval;
@@ -99,6 +109,7 @@ public final class ChartsRenderer {
                 "<button type=\"button\" id=\"btnLeafRightLinear\" class=\"chart-toggle-btn\" onclick=\"switchLeafRightScale('linear')\">Linear</button>",
                 "</div>",
                 "<span class=\"lg-legend-item\"><span class=\"lg-line-sample leaf-eta-line\"></span>Projected Total (Passed + ETA)</span>",
+                hasCorrectionData ? "<span class=\"lg-legend-item\"><span class=\"lg-line-sample leaf-corr-eta-line\" style=\"background:#10b981;\"></span>Corrected Total</span>" : "",
                 "</div>",
                 "</div>",
                 "<div class=\"line-graph-svg-wrap\"><svg id=\"leafCompletionSvg\" class=\"timeline-line-svg\" viewBox=\"0 0 1000 240\">",
@@ -166,6 +177,7 @@ public final class ChartsRenderer {
 
         final StringBuilder leafPath = new StringBuilder();
         final StringBuilder etaPath = new StringBuilder();
+        final StringBuilder corrEtaPath = new StringBuilder();
 
         boolean firstRoundPt = true;
         for (int i = 0; i < N; i++) {
@@ -173,10 +185,15 @@ public final class ChartsRenderer {
             final double projSec = projectedTotals[i] / 1000.0;
             final double yEta = logScaleY(projSec, ceilProjectedSec, marginTop, plotH);
 
+            final double corrProjSec = correctedTotals[i] / 1000.0;
+            final double yCorrEta = logScaleY(corrProjSec, ceilProjectedSec, marginTop, plotH);
+
             if (i == 0) {
                 etaPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yEta));
+                corrEtaPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yCorrEta));
             } else {
                 etaPath.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yEta));
+                corrEtaPath.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yCorrEta));
             }
 
             if (roundIntervals[i] >= 0L) {
@@ -193,7 +210,8 @@ public final class ChartsRenderer {
 
         sb.append(s(
                 "  <path d=\"", leafPath, "\" class=\"leaf-chart-line\" fill=\"none\" stroke=\"#a855f7\" stroke-width=\"2\" />\n",
-                "  <path d=\"", etaPath, "\" class=\"leaf-eta-chart-line\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"2\" stroke-dasharray=\"4,3\" />\n"
+                "  <path d=\"", etaPath, "\" class=\"leaf-eta-chart-line\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"2\" stroke-dasharray=\"4,3\" />\n",
+                hasCorrectionData ? s("  <path d=\"", corrEtaPath, "\" class=\"leaf-corr-eta-chart-line\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"2\" />\n") : ""
         ));
 
         for (int i = 0; i < N; i++) {

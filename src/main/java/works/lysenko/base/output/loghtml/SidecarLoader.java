@@ -298,13 +298,40 @@ public final class SidecarLoader {
 
         final List<SystemResourceItem> trimmedItems = trimTelemetryToTestPeriod(items, minTestOp, maxTestOp);
 
-        final int targetDensity;
         if (Boolean.TRUE.equals(PropEnum._TEST_REPORT_CPU_DENSITY_PER_TEST.get()) && testCount > 0) {
-            targetDensity = testCount;
-        } else {
-            final Integer configuredDensity = PropEnum._TEST_REPORT_CPU_DENSITY.get();
-            targetDensity = (null != configuredDensity && configuredDensity > 0) ? configuredDensity : 5000;
+            final int totalSamples = trimmedItems.size();
+            final int samplesPerTest = Math.max(1, (int) Math.round((double) totalSamples / testCount));
+            final List<int[]> perTestBounds = findTestOpBoundsPerTest(runLogFile, testCount);
+
+            final List<SystemResourceItem> perTestResampled = new ArrayList<>(testCount * samplesPerTest);
+            for (int k = 0; k < testCount; k++) {
+                final int testNum = k + 1;
+                final List<SystemResourceItem> testRaw = new ArrayList<>();
+                if (k < perTestBounds.size()) {
+                    final int[] bounds = perTestBounds.get(k);
+                    final int minOp = bounds[0];
+                    final int maxOp = bounds[1];
+                    for (final SystemResourceItem item : trimmedItems) {
+                        if (item.sampleNum >= minOp && item.sampleNum <= maxOp) {
+                            testRaw.add(item);
+                        }
+                    }
+                }
+                if (testRaw.isEmpty() && !trimmedItems.isEmpty()) {
+                    final int startIdx = k * totalSamples / testCount;
+                    int endIdx = (k + 1) * totalSamples / testCount;
+                    if (k == testCount - 1) endIdx = totalSamples;
+                    for (int j = startIdx; j < endIdx; j++) {
+                        testRaw.add(trimmedItems.get(j));
+                    }
+                }
+                perTestResampled.addAll(resampleTestTelemetry(testRaw, samplesPerTest, testNum));
+            }
+            return perTestResampled;
         }
+
+        final Integer configuredDensity = PropEnum._TEST_REPORT_CPU_DENSITY.get();
+        final int targetDensity = (null != configuredDensity && configuredDensity > 0) ? configuredDensity : 5000;
         return downsampleTelemetry(trimmedItems, targetDensity);
     }
 
@@ -389,6 +416,148 @@ public final class SidecarLoader {
         }
 
         return new int[]{minOp, maxOp};
+    }
+
+    /**
+     * Scans the run log file to locate the operation number range for each test in the run.
+     *
+     * @param runLogFile input run log file
+     * @param testCount  total number of tests
+     * @return list of two-element arrays with [minOp, maxOp] for each test
+     */
+    public static List<int[]> findTestOpBoundsPerTest(final File runLogFile, final int testCount) {
+        if (null == runLogFile || !runLogFile.exists() || testCount <= 0) {
+            return List.of();
+        }
+
+        final int[][] bounds = new int[testCount][2];
+        for (int i = 0; i < testCount; i++) {
+            bounds[i][0] = Integer.MAX_VALUE;
+            bounds[i][1] = Integer.MIN_VALUE;
+        }
+
+        boolean inPostflight = false;
+        int currentTestIdx = -1;
+
+        final Pattern lineWithTestRe = Pattern.compile("^\\[\\s*(\\d+)\\s*\\]\\[\\s*(\\d+)\\s*\\]\\[([^\\]]+)\\](?:\\[([^\\]]*)\\])?(.*)$");
+        final Pattern lineNoTestRe = Pattern.compile("^(?:\\[\\s*\\])?\\[\\s*(\\d+)\\s*\\]\\[([^\\]]+)\\](?:\\[([^\\]]*)\\])?(.*)$");
+        final Pattern ansiPat = Pattern.compile("\\x1b\\[[0-9;]*m");
+        final Pattern testRunSummaryRe = Pattern.compile(".*\\b\\d+\\s+tests?\\s+of\\s+.+\\s+done\\s+in\\s+.*");
+
+        try (final BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(runLogFile), StandardCharsets.UTF_8))) {
+            String line;
+            while (null != (line = reader.readLine())) {
+                final String clean = ansiPat.matcher(line).replaceAll("").trim();
+                if (clean.isEmpty()) continue;
+
+                if (!inPostflight && (clean.contains("Closing test service") || clean.contains("Event summary")
+                        || clean.contains("Events summary") || clean.contains("Postflight")
+                        || clean.contains("Test session completed")
+                        || testRunSummaryRe.matcher(clean).matches())) {
+                    inPostflight = true;
+                }
+
+                if (!inPostflight) {
+                    final Matcher mTest = lineWithTestRe.matcher(clean);
+                    if (mTest.matches()) {
+                        final int tNum = Integer.parseInt(mTest.group(1));
+                        final int opNum = Integer.parseInt(mTest.group(2));
+                        if (tNum > 0 && tNum <= testCount) {
+                            currentTestIdx = tNum - 1;
+                            if (opNum < bounds[currentTestIdx][0]) bounds[currentTestIdx][0] = opNum;
+                            if (opNum > bounds[currentTestIdx][1]) bounds[currentTestIdx][1] = opNum;
+                        }
+                    } else {
+                        final Matcher mNoTest = lineNoTestRe.matcher(clean);
+                        if (mNoTest.matches()) {
+                            final int opNum = Integer.parseInt(mNoTest.group(1));
+                            if (currentTestIdx >= 0) {
+                                if (opNum > bounds[currentTestIdx][1]) bounds[currentTestIdx][1] = opNum;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (final IOException | NumberFormatException ignored) {
+        }
+
+        final List<int[]> result = new ArrayList<>(testCount);
+        for (int i = 0; i < testCount; i++) {
+            result.add(bounds[i]);
+        }
+        return result;
+    }
+
+    /**
+     * Resamples raw telemetry items belonging to a single test to match a fixed target count.
+     *
+     * @param rawItems    raw telemetry items for the test
+     * @param targetCount desired number of samples
+     * @param testNum     test identifier
+     * @return resampled list of SystemResourceItem records tagged with testNum
+     */
+    public static List<SystemResourceItem> resampleTestTelemetry(
+            final List<SystemResourceItem> rawItems, final int targetCount, final int testNum) {
+        if (targetCount <= 0) return List.of();
+        final List<SystemResourceItem> resampled = new ArrayList<>(targetCount);
+        final int R = (null == rawItems) ? 0 : rawItems.size();
+
+        if (R == 0) {
+            for (int i = 0; i < targetCount; i++) {
+                resampled.add(new SystemResourceItem(i + 1, 0.0, 0.0, 0.0, 0.0, 0, testNum));
+            }
+            return resampled;
+        }
+
+        if (R == targetCount) {
+            for (final SystemResourceItem item : rawItems) {
+                resampled.add(new SystemResourceItem(item.sampleNum, item.cpuPct, item.maxCpuPct,
+                        item.usedRamMb, item.totalRamMb, item.threads, testNum));
+            }
+            return resampled;
+        }
+
+        if (R > targetCount) {
+            for (int i = 0; i < targetCount; i++) {
+                final int startIndex = (int) ((long) i * R / targetCount);
+                int endIndex = (int) ((long) (i + 1) * R / targetCount);
+                endIndex = Math.max(startIndex + 1, Math.min(R, endIndex));
+
+                double sumCpu = 0.0;
+                double maxCpu = 0.0;
+                double sumUsedRam = 0.0;
+                double sumTotalRam = 0.0;
+                long sumThreads = 0L;
+                final int count = endIndex - startIndex;
+
+                for (int j = startIndex; j < endIndex; j++) {
+                    final SystemResourceItem item = rawItems.get(j);
+                    sumCpu += item.cpuPct;
+                    maxCpu = Math.max(maxCpu, Math.max(item.cpuPct, item.maxCpuPct));
+                    sumUsedRam += item.usedRamMb;
+                    sumTotalRam += item.totalRamMb;
+                    sumThreads += item.threads;
+                }
+
+                final int midSampleNum = rawItems.get((startIndex + endIndex) / 2).sampleNum;
+                final double avgCpu = sumCpu / count;
+                final double avgUsedRam = sumUsedRam / count;
+                final double avgTotalRam = sumTotalRam / count;
+                final int avgThreads = (int) Math.round((double) sumThreads / count);
+
+                resampled.add(new SystemResourceItem(midSampleNum, avgCpu, maxCpu, avgUsedRam, avgTotalRam, avgThreads, testNum));
+            }
+            return resampled;
+        }
+
+        for (int i = 0; i < targetCount; i++) {
+            final int idx = Math.min(R - 1, (int) ((long) i * R / targetCount));
+            final SystemResourceItem src = rawItems.get(idx);
+            resampled.add(new SystemResourceItem(src.sampleNum, src.cpuPct, src.maxCpuPct,
+                    src.usedRamMb, src.totalRamMb, src.threads, testNum));
+        }
+        return resampled;
     }
 
     /**

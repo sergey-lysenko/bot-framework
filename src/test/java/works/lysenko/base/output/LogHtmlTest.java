@@ -295,7 +295,13 @@ class LogHtmlTest {
             final List<works.lysenko.base.output.loghtml.LogModels.SystemResourceItem> items =
                     works.lysenko.base.output.loghtml.SidecarLoader.loadTelemetryResources(logPath.toFile(), 3);
 
-            assertEquals(3, items.size());
+            assertEquals(6, items.size());
+            assertEquals(1, items.get(0).testNum);
+            assertEquals(1, items.get(1).testNum);
+            assertEquals(2, items.get(2).testNum);
+            assertEquals(2, items.get(3).testNum);
+            assertEquals(3, items.get(4).testNum);
+            assertEquals(3, items.get(5).testNum);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -326,7 +332,9 @@ class LogHtmlTest {
             final List<works.lysenko.base.output.loghtml.LogModels.SystemResourceItem> items =
                     works.lysenko.base.output.loghtml.SidecarLoader.loadTelemetryResources(logPath.toFile(), 37);
 
-            assertEquals(37, items.size());
+            assertEquals(518, items.size()); // 37 tests * 14 samples per test
+            assertEquals(1, items.get(0).testNum);
+            assertEquals(37, items.get(517).testNum);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -379,5 +387,58 @@ class LogHtmlTest {
         assertEquals(10.0, items.get(0).cpuPct, 1e-2);
         assertEquals(6, items.get(3).sampleNum);
         assertEquals(11.0, items.get(3).cpuPct, 1e-2);
+    }
+
+    @Test
+    void testPerTestResamplingAndVisualBorders(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("resample_test.run.log");
+        final Path htmlPath = tempDir.resolve("resample_test.run.log.html");
+        final Path telemPath = tempDir.resolve("resample_test.telemetry.log");
+
+        // Test 1 has 2 ops (3, 4); Test 2 has 8 ops (5..12)
+        final List<String> logLines = List.of(
+                "[ 1][3][1.000][10] Executing Test 1",
+                "[ 1][4][1.050][5] • Closing test 1 ...",
+                "[ 2][5][2.000][10] Executing Test 2",
+                "[ 2][6][2.010][10] Op 2",
+                "[ 2][7][2.020][10] Op 3",
+                "[ 2][8][2.030][10] Op 4",
+                "[ 2][9][2.040][10] Op 5",
+                "[ 2][10][2.050][10] Op 6",
+                "[ 2][11][2.060][10] Op 7",
+                "[ 2][12][2.070][5] • Closing test 2 ..."
+        );
+
+        final List<String> telemLines = new ArrayList<>();
+        for (int i = 3; i <= 12; i++) {
+            telemLines.add("0," + i + ",15.0,100,4,8,10,0,10,104857600,524288000,1048576000,sample" + i);
+        }
+
+        Files.write(logPath, logLines);
+        Files.write(telemPath, telemLines);
+
+        final works.lysenko.base.TestProperties previousProps = works.lysenko.Base.properties;
+        try {
+            final works.lysenko.base.TestProperties testProps = new works.lysenko.base.TestProperties();
+            final java.lang.reflect.Field f = works.lysenko.base.TestProperties.class.getDeclaredField("the");
+            f.setAccessible(true);
+            final java.util.Properties props = new java.util.Properties();
+            props.setProperty(".test.report.cpu.density.per.test", "true");
+            props.setProperty(".test.report.add.cpu.debug", "true");
+            f.set(testProps, props);
+            works.lysenko.Base.properties = testProps;
+
+            LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+
+            final String html = Files.readString(htmlPath);
+            assertTrue(html.contains("System Resources (CPU &amp; RAM)"));
+            assertTrue(html.contains("\"t\":1"));
+            assertTrue(html.contains("\"t\":2"));
+            assertTrue(html.contains("stroke-dasharray=\"3 3\""));
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            works.lysenko.Base.properties = previousProps;
+        }
     }
 }
