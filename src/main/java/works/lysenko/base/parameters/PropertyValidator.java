@@ -22,7 +22,7 @@ public final class PropertyValidator {
      * Per-property constraints on string values (compared case-insensitively).
      */
     private static final Map<PropEnum, List<String>> ALLOWED_VALUES = Map.of(
-            PropEnum._PROGRESSION_TREE_SONIFICATION, ProgressionSettings.treeSonificationValues());
+            PropEnum._TEST_REPORT_PROGRESSION_TREE_SONIFICATION, ProgressionSettings.treeSonificationValues());
 
     private PropertyValidator() {
     }

@@ -366,9 +366,9 @@ class GuiTest {
         int freeFormRow = -1;
         for (int row = 0; row < model.getRowCount(); row++) {
             final String property = (String) model.getValueAt(row, 0);
-            if (".progression.tree.sonification".equals(property)) {
+            if (".test.report.progression.tree.sonification".equals(property)) {
                 sonificationRow = row;
-            } else if (PropEnum._PROGRESSION_TREE.getPropertyName().equals(property)) {
+            } else if (PropEnum._TEST_REPORT_PROGRESSION_TREE.getPropertyName().equals(property)) {
                 booleanRow = row;
             } else if (PropEnum._TEST_APP.getPropertyName().equals(property)) {
                 freeFormRow = row;
@@ -464,10 +464,10 @@ class GuiTest {
 
     @Test
     void testProgressionPropertiesUseGroupedNamesAndReadLegacyAliases(@TempDir final Path tempDir) throws IOException {
-        assertEquals(".progression.scenario", PropEnum._PROGRESSION_SCENARIO.getPropertyName());
-        assertEquals(".progression.scenario.mp4", PropEnum._PROGRESSION_SCENARIO_MP4.getPropertyName());
-        assertEquals(".progression.tree", PropEnum._PROGRESSION_TREE.getPropertyName());
-        assertEquals(".progression.tree.mp4", PropEnum._PROGRESSION_TREE_MP4.getPropertyName());
+        assertEquals(".test.report.progression.scenario", PropEnum._TEST_REPORT_PROGRESSION_SCENARIO.getPropertyName());
+        assertEquals(".test.report.progression.scenario.mp4", PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_MP4.getPropertyName());
+        assertEquals(".test.report.progression.tree", PropEnum._TEST_REPORT_PROGRESSION_TREE.getPropertyName());
+        assertEquals(".test.report.progression.tree.mp4", PropEnum._TEST_REPORT_PROGRESSION_TREE_MP4.getPropertyName());
 
         final Path config = tempDir.resolve("legacy.properties");
         Files.writeString(config, String.join(System.lineSeparator(),
@@ -481,16 +481,16 @@ class GuiTest {
                 works.lysenko.util.func.core.TestProperties.readTestPropertiesFromFile(
                         new TestPropertiesDescriptor(tempDir + File.separator, "legacy", ".properties"));
         final Properties properties = result.properties();
-        assertEquals("true", properties.getProperty(".progression.scenario"),
+        assertEquals("true", properties.getProperty(".test.report.progression.scenario"),
                 "The new property name should take precedence over its legacy alias");
-        assertEquals("true", properties.getProperty(".progression.scenario.mp4"));
-        assertEquals("false", properties.getProperty(".progression.tree"));
-        assertEquals("true", properties.getProperty(".progression.tree.mp4"));
+        assertEquals("true", properties.getProperty(".test.report.progression.scenario.mp4"));
+        assertEquals("false", properties.getProperty(".test.report.progression.tree"));
+        assertEquals("true", properties.getProperty(".test.report.progression.tree.mp4"));
         assertFalse(properties.containsKey(".scenario.progression"));
 
         final TestProperties overrides = new TestProperties();
         overrides.setUserOverride(".scenario.progression", "false");
-        assertEquals("false", overrides.getUserOverrides().get(".progression.scenario"));
+        assertEquals("false", overrides.getUserOverrides().get(".test.report.progression.scenario"));
     }
 
     @Test

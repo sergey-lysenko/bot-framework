@@ -35,15 +35,15 @@ class ProgressionSettingsTest {
         final TestProperties previousProperties = Base.properties;
         try {
             Base.properties = properties(
-                    ".progression.scenario", "false",
-                    ".progression.tree", "true",
-                    ".progression.max.frames", "17",
-                    ".progression.max.frame.pixels", "1234",
-                    ".progression.max.total.pixels", "5678",
-                    ".progression.scenario.mp4", "false",
-                    ".progression.tree.mp4", "true",
-                    ".progression.tree.sonification", "copilot",
-                    ".progression.ffmpeg", "/tmp/ffmpeg");
+                    ".test.report.progression.scenario", "false",
+                    ".test.report.progression.tree", "true",
+                    ".test.report.progression.max.frames", "17",
+                    ".test.report.progression.max.frame.pixels", "1234",
+                    ".test.report.progression.max.total.pixels", "5678",
+                    ".test.report.progression.scenario.mp4", "false",
+                    ".test.report.progression.tree.mp4", "true",
+                    ".test.report.progression.tree.sonification", "copilot",
+                    ".test.report.progression.ffmpeg", "/tmp/ffmpeg");
             ProgressionSettings.initialize();
             final ProgressionSettings snapshot = ProgressionSettings.current();
 
@@ -58,7 +58,7 @@ class ProgressionSettingsTest {
             assertEquals("copilot", snapshot.treeSonifier().orElseThrow().mode());
             assertEquals("/tmp/ffmpeg", snapshot.ffmpeg());
 
-            Base.properties.put(".progression.max.frames", "29");
+            Base.properties.put(".test.report.progression.max.frames", "29");
             assertSame(snapshot, ProgressionSettings.current());
             assertEquals(17, ProgressionSettings.current().maxFrames());
 

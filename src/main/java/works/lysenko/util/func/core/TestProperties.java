@@ -28,14 +28,23 @@ import static works.lysenko.util.spec.Symbols._LFD_;
 public record TestProperties() {
 
     private static final String include = s(_DOT_, INCLUDE);
-    private static final Map<String, String> LEGACY_PROPERTY_NAMES = Map.of(
-            ".scenario.progression", ".progression.scenario",
-            ".scenario.progression.mp4", ".progression.scenario.mp4",
-            ".tree.progression", ".progression.tree",
-            ".tree.progression.mp4", ".progression.tree.mp4",
-            ".swipe.line.marker.colour", ".swipes.marker.line.colour",
-            ".swipe.start.marker.colour", ".swipes.marker.start.colour",
-            ".swipe.stop.marker.colour", ".swipes.marker.stop.colour");
+    private static final Map<String, String> LEGACY_PROPERTY_NAMES = Map.ofEntries(
+            Map.entry(".scenario.progression", ".test.report.progression.scenario"),
+            Map.entry(".progression.scenario", ".test.report.progression.scenario"),
+            Map.entry(".scenario.progression.mp4", ".test.report.progression.scenario.mp4"),
+            Map.entry(".progression.scenario.mp4", ".test.report.progression.scenario.mp4"),
+            Map.entry(".tree.progression", ".test.report.progression.tree"),
+            Map.entry(".progression.tree", ".test.report.progression.tree"),
+            Map.entry(".tree.progression.mp4", ".test.report.progression.tree.mp4"),
+            Map.entry(".progression.tree.mp4", ".test.report.progression.tree.mp4"),
+            Map.entry(".progression.ffmpeg", ".test.report.progression.ffmpeg"),
+            Map.entry(".progression.max.frames", ".test.report.progression.max.frames"),
+            Map.entry(".progression.max.frame.pixels", ".test.report.progression.max.frame.pixels"),
+            Map.entry(".progression.max.total.pixels", ".test.report.progression.max.total.pixels"),
+            Map.entry(".progression.tree.sonification", ".test.report.progression.tree.sonification"),
+            Map.entry(".swipe.line.marker.colour", ".swipes.marker.line.colour"),
+            Map.entry(".swipe.start.marker.colour", ".swipes.marker.start.colour"),
+            Map.entry(".swipe.stop.marker.colour", ".swipes.marker.stop.colour"));
 
     public static String canonicalPropertyName(final String name) {
 

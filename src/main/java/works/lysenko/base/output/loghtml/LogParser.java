@@ -10,6 +10,7 @@ import works.lysenko.base.output.loghtml.LogModels.PathEntry;
 import works.lysenko.base.output.loghtml.LogModels.ScenEntry;
 import works.lysenko.base.output.loghtml.LogModels.TelemetryItem;
 import works.lysenko.util.func.type.Files;
+import works.lysenko.util.spec.PropEnum;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -431,18 +432,24 @@ public final class LogParser {
         final String barsHidden = isLineDefault ? " hidden" : "";
         final String timelineToggle = testData.isEmpty() ? "" : renderTimelineToggle(isLineDefault);
         final String timelineLineGraph = renderLineGraph(testData, limboByPrevTest, tAvg, tMax, lMax);
-        final List<LeafCompletion> completions = SidecarLoader.loadLeafCompletions(logFile);
-        final List<EtaDebugItem> etaDebugItems = SidecarLoader.loadEtaDebugItems(logFile);
-        final List<SystemResourceItem> resourceItems = SidecarLoader.loadTelemetryResources(logFile);
+        final boolean addAllLeaf = Boolean.TRUE.equals(PropEnum._TEST_REPORT_ADD_ALL_LEAF.get());
+        final boolean addEtaDebug = Boolean.TRUE.equals(PropEnum._TEST_REPORT_ADD_ETA_DEBUG.get());
+        final boolean addCpuDebug = Boolean.TRUE.equals(PropEnum._TEST_REPORT_ADD_CPU_DEBUG.get());
+
+        final List<LeafCompletion> completions = addAllLeaf ? SidecarLoader.loadLeafCompletions(logFile) : List.of();
+        final List<EtaDebugItem> etaDebugItems = addEtaDebug ? SidecarLoader.loadEtaDebugItems(logFile) : List.of();
+        final List<SystemResourceItem> resourceItems = addCpuDebug ? SidecarLoader.loadTelemetryResources(logFile) : List.of();
+        final List<Double> telemetryCpuList = addCpuDebug ? telemetryCpu : List.of();
+
         final String lgScriptData = renderLgScriptData(testData, limboByPrevTest, completions, etaDebugItems, resourceItems, tAvg, tMax, lMax);
         final String commonPath = renderCommonPath(commonPathSteps);
         final String pathsRows = renderPathsRows(testPaths);
         final String scenSubtitle = buildScenSubtitle(pathsPossibleStr, pathsChanceStr, pathsExecutedStr);
         final String scenRows = renderScenRows(scenStats);
-        final String sectionsHtml = renderSections(sections, runArtifacts, telemetryCpu, currOpGlobalIdx);
-        final String leafCompletionGraph = ChartsRenderer.renderLeafCompletionGraph(completions);
-        final String etaDebugGraph = ChartsRenderer.renderEtaDebugGraph(etaDebugItems);
-        final String systemResourcesGraph = ChartsRenderer.renderResourceStatsGraph(resourceItems);
+        final String sectionsHtml = renderSections(sections, runArtifacts, telemetryCpuList, currOpGlobalIdx);
+        final String leafCompletionGraph = addAllLeaf ? ChartsRenderer.renderLeafCompletionGraph(completions) : "";
+        final String etaDebugGraph = addEtaDebug ? ChartsRenderer.renderEtaDebugGraph(etaDebugItems) : "";
+        final String systemResourcesGraph = addCpuDebug ? ChartsRenderer.renderResourceStatsGraph(resourceItems) : "";
 
         // ---- populate template ----
 

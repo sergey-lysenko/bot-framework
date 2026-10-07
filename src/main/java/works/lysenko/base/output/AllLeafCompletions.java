@@ -59,6 +59,7 @@ public final class AllLeafCompletions {
 
     public static synchronized void checkAndRecord(final long elapsedMillis, final _Scenario completingScenario) {
 
+        if (Boolean.FALSE.equals(PropEnum._TEST_REPORT_ADD_ALL_LEAF.get())) return;
         if (isNull(Base.core)) return;
 
         final long cycleAvgEta;

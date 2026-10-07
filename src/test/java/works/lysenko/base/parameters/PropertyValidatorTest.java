@@ -19,7 +19,7 @@ class PropertyValidatorTest {
 
     @Test
     void sonificationAcceptsOnlyKnownModes() {
-        final String name = ".progression.tree.sonification";
+        final String name = ".test.report.progression.tree.sonification";
         for (final String ok : new String[]{"none", "copilot", "claude", "Claude", "gemini", "Gemini", ""}) {
             assertNull(PropertyValidator.validate(name, ok), ok);
         }
@@ -32,19 +32,19 @@ class PropertyValidatorTest {
     void exposesFiniteKnownValuesForGuiSelection() {
         assertEquals(
                 java.util.List.of("none", "copilot", "claude", "gemini"),
-                PropertyValidator.validValues(".progression.tree.sonification"));
-        assertEquals(java.util.List.of("true", "false"), PropertyValidator.validValues(".progression.tree"));
-        assertEquals(java.util.List.of(), PropertyValidator.validValues(".progression.max.frames"));
+                PropertyValidator.validValues(".test.report.progression.tree.sonification"));
+        assertEquals(java.util.List.of("true", "false"), PropertyValidator.validValues(".test.report.progression.tree"));
+        assertEquals(java.util.List.of(), PropertyValidator.validValues(".test.report.progression.max.frames"));
         assertEquals(java.util.List.of(), PropertyValidator.validValues("custom.property"));
     }
 
     @Test
     void validatesPrimitiveTypes() {
-        assertNull(PropertyValidator.validate(".progression.max.frames", "100"));
-        assertNotNull(PropertyValidator.validate(".progression.max.frames", "abc"));
-        assertNotNull(PropertyValidator.validate(".progression.max.frames", " 10"));
-        assertNull(PropertyValidator.validate(".progression.tree", "TRUE"));
-        assertNotNull(PropertyValidator.validate(".progression.tree", "yes"));
+        assertNull(PropertyValidator.validate(".test.report.progression.max.frames", "100"));
+        assertNotNull(PropertyValidator.validate(".test.report.progression.max.frames", "abc"));
+        assertNotNull(PropertyValidator.validate(".test.report.progression.max.frames", " 10"));
+        assertNull(PropertyValidator.validate(".test.report.progression.tree", "TRUE"));
+        assertNotNull(PropertyValidator.validate(".test.report.progression.tree", "yes"));
     }
 
     @Test

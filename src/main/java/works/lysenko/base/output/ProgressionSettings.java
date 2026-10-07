@@ -40,15 +40,15 @@ public record ProgressionSettings(
     private static volatile ProgressionSettings current;
 
     public static synchronized void initialize() {
-        final Boolean scenarioEnabled = PropEnum._PROGRESSION_SCENARIO.get();
-        final Boolean treeEnabled = PropEnum._PROGRESSION_TREE.get();
-        final Integer maxFrames = PropEnum._PROGRESSION_MAX_FRAMES.get();
-        final Integer maxFramePixels = PropEnum._PROGRESSION_MAX_FRAME_PIXELS.get();
-        final Integer maxTotalPixels = PropEnum._PROGRESSION_MAX_TOTAL_PIXELS.get();
-        final Boolean scenarioMp4Enabled = PropEnum._PROGRESSION_SCENARIO_MP4.get();
-        final Boolean treeMp4Enabled = PropEnum._PROGRESSION_TREE_MP4.get();
-        final String treeSonification = PropEnum._PROGRESSION_TREE_SONIFICATION.get();
-        final String ffmpeg = PropEnum._PROGRESSION_FFMPEG.get();
+        final Boolean scenarioEnabled = PropEnum._TEST_REPORT_PROGRESSION_SCENARIO.get();
+        final Boolean treeEnabled = PropEnum._TEST_REPORT_PROGRESSION_TREE.get();
+        final Integer maxFrames = PropEnum._TEST_REPORT_PROGRESSION_MAX_FRAMES.get();
+        final Integer maxFramePixels = PropEnum._TEST_REPORT_PROGRESSION_MAX_FRAME_PIXELS.get();
+        final Integer maxTotalPixels = PropEnum._TEST_REPORT_PROGRESSION_MAX_TOTAL_PIXELS.get();
+        final Boolean scenarioMp4Enabled = PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_MP4.get();
+        final Boolean treeMp4Enabled = PropEnum._TEST_REPORT_PROGRESSION_TREE_MP4.get();
+        final String treeSonification = PropEnum._TEST_REPORT_PROGRESSION_TREE_SONIFICATION.get();
+        final String ffmpeg = PropEnum._TEST_REPORT_PROGRESSION_FFMPEG.get();
         current = new ProgressionSettings(
                 Boolean.TRUE.equals(scenarioEnabled),
                 Boolean.TRUE.equals(treeEnabled),

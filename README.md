@@ -106,14 +106,17 @@ The framework is configured via system properties, environment variables, or `te
 | `debug` | `false` | Enable verbose debug logging and telemetry |
 | `retries` | `3` | Max retry attempts for state transitions |
 | `colours.cutoff` | `0` | Visual comparison tolerance threshold |
-| `.progression.scenario` | `true` | Enable scenario coverage progression frames and animations |
-| `.progression.tree` | `true` | Enable scenario tree progression frames and animations |
-| `.progression.scenario.mp4` | `true` | Generate scenario coverage MP4 video (requires FFmpeg) |
-| `.progression.tree.mp4` | `true` | Generate scenario tree MP4 video (requires FFmpeg) |
-| `.progression.ffmpeg` | `ffmpeg` | FFmpeg executable name or absolute path |
-| `.progression.max.frames` | `500` | Maximum progression snapshots and animation frames; later cycles replace the last snapshot (hard-capped at 10,000) |
-| `.progression.max.frame.pixels` | `16777216` | Maximum pixel count for a frame; oversized tree progression frames are skipped (hard-capped at 33,554,432) |
-| `.progression.max.total.pixels` | `1000000000` | Animation pixel-work budget; large frames automatically reduce the sampled frame count (hard-capped at 2,000,000,000) |
+| `.test.report.add.all.leaf` | `true` | Include all-leaf completion records in test reports |
+| `.test.report.add.eta.debug` | `true` | Include ETA debug timeline charts and metrics in test reports |
+| `.test.report.add.cpu.debug` | `true` | Include CPU telemetry measurements and charts in test reports |
+| `.test.report.progression.scenario` | `true` | Enable scenario coverage progression frames and animations |
+| `.test.report.progression.tree` | `true` | Enable scenario tree progression frames and animations |
+| `.test.report.progression.scenario.mp4` | `true` | Generate scenario coverage MP4 video (requires FFmpeg) |
+| `.test.report.progression.tree.mp4` | `true` | Generate scenario tree MP4 video (requires FFmpeg) |
+| `.test.report.progression.ffmpeg` | `ffmpeg` | FFmpeg executable name or absolute path |
+| `.test.report.progression.max.frames` | `500` | Maximum progression snapshots and animation frames; later cycles replace the last snapshot (hard-capped at 10,000) |
+| `.test.report.progression.max.frame.pixels` | `16777216` | Maximum pixel count for a frame; oversized tree progression frames are skipped (hard-capped at 33,554,432) |
+| `.test.report.progression.max.total.pixels` | `1000000000` | Animation pixel-work budget; large frames automatically reduce the sampled frame count (hard-capped at 2,000,000,000) |
 
 The framework uses OS-backed `run/.run.lock` and `run/.postprocess.lock` files to prevent a new test run from starting while a test or its detached post-processor is active. The lock files remain in place; the OS lock state determines whether either process is still running.
 

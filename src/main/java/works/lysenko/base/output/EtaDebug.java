@@ -2,6 +2,7 @@ package works.lysenko.base.output;
 
 import works.lysenko.Base;
 import works.lysenko.base.ui.UserInterface;
+import works.lysenko.util.spec.PropEnum;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -57,6 +58,7 @@ public final class EtaDebug {
 
     public static synchronized void endCycle(final String name) {
 
+        if (Boolean.FALSE.equals(PropEnum._TEST_REPORT_ADD_ETA_DEBUG.get())) return;
         if (cycleStartMs == 0L) return;
 
         final long cycleEndMs = (isNotNull(Base.timer)) ? Base.timer.msSinceStart() : 0L;
