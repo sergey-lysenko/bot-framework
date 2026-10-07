@@ -73,6 +73,11 @@ public interface _Scenario {
     String getSimpleName();
 
     /**
+     * @return whether this scenario has failed
+     */
+    boolean hasFailed();
+
+    /**
      * @return very short information about
      */
     String info();
@@ -81,6 +86,11 @@ public interface _Scenario {
      * @return whether this scenario is executable
      */
     boolean isExecutable();
+
+    /**
+     * Marks this scenario as failed.
+     */
+    void markAsFailed();
 
     /**
      * Probe if the current scenario is from the main scenarios tree.

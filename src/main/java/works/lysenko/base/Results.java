@@ -201,6 +201,11 @@ public class Results implements _Results {
                 final _Result result = results.getOrDefault(current, new Result(current));
                 if (isNotNull(result)) {
                     result.addEvent(lr);
+                    if (lr.data() instanceof works.lysenko.util.apis.data._Event event) {
+                        if (event.severity() == Severity.S0 || event.severity() == Severity.S1) {
+                            current.markAsFailed();
+                        }
+                    }
                 } else throw new IllegalStateException(b(c(RESULT), IS, NULL));
             } else throw new IllegalStateException(b(c(CURRENT), SCENARIO, IS, NULL));
         } else throw new IllegalStateException(b(c(EXECUTION), IS, NULL));

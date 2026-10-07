@@ -14,6 +14,7 @@ import java.util.Set;
 import static java.util.Objects.isNull;
 import works.lysenko.util.call.selector.Utils;
 import works.lysenko.util.data.records.KeyValue;
+import works.lysenko.util.prop.core.Resilient;
 import works.lysenko.util.prop.tree.Include;
 import works.lysenko.util.prop.tree.Notify;
 import works.lysenko.util.prop.tree.Scenario;
@@ -260,11 +261,11 @@ public final class Selector implements Callable<_Scenario> {
         Utils.logAccounting();
         Utils.logDebug(a(kv(s(IGNORE, c(FAILED), c(SELECTION)), s(Scenario.ignoreFailedSelection))));
 
-        if (Scenario.ignoreFailedSelection) {
+        if (Scenario.ignoreFailedSelection || Resilient.mode()) {
             if (isTrace()) logEvent(S3, message);
         } else logEvent(S2, message);
 
-        if (Scenario.ignoreFailedSelection) {
+        if (Scenario.ignoreFailedSelection || Resilient.mode()) {
             if (isTrace()) logEvent(S3, b(c(TESTS), WILL, GO, ON, AS, REQUESTED));
         } else ctrl.stopTests();
     }

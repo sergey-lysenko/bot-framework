@@ -4,6 +4,7 @@ import org.openqa.selenium.WebElement;
 import works.lysenko.tree.base.exceptional.Core;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
 import works.lysenko.util.prop.core.Recreate;
+import works.lysenko.util.prop.core.Resilient;
 
 import java.util.List;
 
@@ -166,7 +167,7 @@ public abstract class Exceptional extends Core {
                 ? triplet().ultimate().getMessage()
                 : (isNotNull(exception()) ? exception().getMessage() : UNRESOLVED___);
         logEvent(S0, detail);
-        stopTests();
+        if (!Resilient.mode()) stopTests();
     }
 
     /**
@@ -219,7 +220,7 @@ public abstract class Exceptional extends Core {
         if (in(ANDROID) && isPresent(ANDROID_LAUNCHER)) restartOrStop();
         else {
             determineTimeoutResolvingAction(cause.getMessage());
-            stopTests();
+            if (!Resilient.mode()) stopTests();
         }
         markAsResolved();
     }
@@ -251,6 +252,6 @@ public abstract class Exceptional extends Core {
     private void restartOrStop() {
 
         if (Recreate.driver) exec.createDriver();
-        else stopTests();
+        else if (!Resilient.mode()) stopTests();
     }
 }

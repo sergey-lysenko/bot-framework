@@ -11,6 +11,7 @@ import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.data.type.sets.SortedScenario;
 import works.lysenko.util.prop.core.Fits;
+import works.lysenko.util.prop.core.Resilient;
 import works.lysenko.util.prop.tree.Include;
 import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.spec.PropEnum;
@@ -179,6 +180,20 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         return getClass().getSimpleName();
     }
 
+    private boolean failed = false;
+
+    @Override
+    public boolean hasFailed() {
+
+        return failed;
+    }
+
+    @Override
+    public void markAsFailed() {
+
+        this.failed = true;
+    }
+
     @Override
     public String info() {
 
@@ -188,7 +203,7 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     @Override
     public boolean isExecutable() {
 
-        return (isNotNull(weightConfigured()));
+        return !failed && (isNotNull(weightConfigured()));
     }
 
     @Override
@@ -250,8 +265,8 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     @SuppressWarnings("WeakerAccess")
     protected boolean areFailingEvents() {
 
-        if (!core.getStopFlag() && core.getResults().areFailingEvents()) stopTest(core.getResults().getGreatestSeverity());
-        return core.getResults().areFailingEvents();
+        if (!Resilient.mode() && !core.getStopFlag() && core.getResults().areFailingEvents()) stopTest(core.getResults().getGreatestSeverity());
+        return !Resilient.mode() && core.getResults().areFailingEvents();
     }
 
     /**

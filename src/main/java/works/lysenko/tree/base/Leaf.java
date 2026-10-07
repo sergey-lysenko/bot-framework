@@ -58,6 +58,7 @@ public abstract class Leaf extends Core {
     @Override
     public boolean isExecutable() {
 
+        if (hasFailed()) return false;
         if (Scenario.forbidOverexecution && isGoalFulfilled()) return false;
         return super.isExecutable();
     }
@@ -92,11 +93,13 @@ public abstract class Leaf extends Core {
             try {
                 action();
                 finals();
-                done();
                 return true;
             } catch (final RuntimeException e) {
+                markAsFailed();
                 throw new ScenarioRuntimeException(b(type().tag(), q(getShortName()), SCENARIO_EXECUTION_FAILED_DUE_TO,
                         e(Brackets.CURLY, e.getMessage())), e, this);
+            } finally {
+                done();
             }
         } else return false;
     }

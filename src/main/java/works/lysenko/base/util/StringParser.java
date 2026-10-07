@@ -95,6 +95,13 @@ public final class StringParser<T> implements _Result<T> {
         if (aType.getSimpleName().equals(RelativeOrAbsoluteFraction.class.getSimpleName()))
             return (T) RelativeOrAbsoluteFraction.raf(source);
         if (aType.getSimpleName().equals(String.class.getSimpleName())) return (T) source;
+        if (aType.isEnum()) {
+            for (final Object value : aType.getEnumConstants()) {
+                final Enum<?> enumValue = (Enum<?>) value;
+                if (enumValue.name().equalsIgnoreCase(source)) return (T) enumValue;
+            }
+            return (T) Enum.valueOf((Class) aType, source);
+        }
         logEvent(S0, b(c(TYPE), aType.getName(), OF, q(source), IS, NOT, SUPPORTED, BY, STRING, P.PARSER));
         return null;
     }

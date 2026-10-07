@@ -66,6 +66,11 @@ public final class PropertyValidator {
                 return validateRelativeOrAbsolute(value);
             } else if (Character.class == type && 1 != value.length()) {
                 return "Expected a single character";
+            } else if (type.isEnum()) {
+                for (final Object enumValue : type.getEnumConstants()) {
+                    if (((Enum<?>) enumValue).name().equalsIgnoreCase(value)) return null;
+                }
+                return "Expected one of: " + String.join(", ", validValues(propertyName));
             }
         } catch (final NumberFormatException e) {
             return "Expected " + describe(type) + ": '" + value + "' is not valid";
@@ -90,6 +95,12 @@ public final class PropertyValidator {
         final PropEnum property = find(propertyName);
         if (null == property) return List.of();
         if (Boolean.class == property.type()) return List.of("true", "false");
+        if (property.type().isEnum()) {
+            return java.util.Arrays.stream(property.type().getEnumConstants())
+                    .map(Enum.class::cast)
+                    .map(Enum::name)
+                    .toList();
+        }
         return ALLOWED_VALUES.getOrDefault(property, List.of());
     }
 

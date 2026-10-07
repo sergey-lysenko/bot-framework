@@ -63,6 +63,7 @@ import static works.lysenko.util.data.enums.ExecutionParameter.FORBID_OVEREXECUT
 import static works.lysenko.util.data.enums.ExecutionParameter.HEADLESS;
 import static works.lysenko.util.data.enums.ExecutionParameter.PLATFORM;
 import static works.lysenko.util.data.enums.ExecutionParameter.POOL;
+import static works.lysenko.util.data.enums.ExecutionParameter.RESILIENT_MODE;
 import static works.lysenko.util.data.enums.ExecutionParameter.TEST;
 import static works.lysenko.util.data.enums.ExecutionParameter.TRAVERSE_EXTENSIONS;
 import static works.lysenko.util.data.enums.ExitCode.CLOSED_THROUGH_GUI;
@@ -111,6 +112,7 @@ public class Gui implements _GUI {
     private JTextField allLeafsCount = null;
     private JTextField testsCount = null;
     private JCheckBox forbidOverexecution = null;
+    private JCheckBox resilientMode = null;
     private JTextField completionWeight = null;
     private JCheckBox traverseExtensions = null;
     private JComboBox<Object> platform = null;
@@ -326,6 +328,13 @@ public class Gui implements _GUI {
         forbidOverexecution = new JCheckBox();
         forbidOverexecution.setSelected(defaultForbid);
 
+        final Boolean paramResilient = parameters.getResilientMode();
+        final boolean defaultResilient = (isNotNull(paramResilient))
+                ? paramResilient
+                : Boolean.TRUE.equals(PropEnum._TEST_RESILIENT_MODE.get());
+        resilientMode = new JCheckBox();
+        resilientMode.setSelected(defaultResilient);
+
         final String paramWeight = parameters.getCompletionWeight();
         final String defaultWeight = (isNotNull(paramWeight) && !paramWeight.isEmpty())
                 ? paramWeight
@@ -466,6 +475,9 @@ public class Gui implements _GUI {
         if (isNotNull(forbidOverexecution)) {
             tp.setUserOverride(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), String.valueOf(forbidOverexecution.isSelected()));
         }
+        if (isNotNull(resilientMode)) {
+            tp.setUserOverride(PropEnum._TEST_RESILIENT_MODE.getPropertyName(), String.valueOf(resilientMode.isSelected()));
+        }
         if (isNotNull(completionWeight) && !completionWeight.getText().isBlank()) {
             tp.setUserOverride(PropEnum._TREE_COMPLETION_WEIGHT.getPropertyName(), completionWeight.getText().trim());
         }
@@ -582,6 +594,9 @@ public class Gui implements _GUI {
         if (forbidOverexecution != null) {
             addRow(FORBID_OVEREXECUTION.name(), forbidOverexecution, panel, row++);
         }
+        if (resilientMode != null) {
+            addRow(RESILIENT_MODE.name(), resilientMode, panel, row++);
+        }
         if (completionWeight != null) {
             addRow(COMPLETION_WEIGHT.name(), completionWeight, panel, row++);
         }
@@ -649,6 +664,9 @@ public class Gui implements _GUI {
         }
         if (isNotNull(forbidOverexecution)) {
             parameters.setProperty(FORBID_OVEREXECUTION.name(), String.valueOf(forbidOverexecution.isSelected()));
+        }
+        if (isNotNull(resilientMode)) {
+            parameters.setProperty(RESILIENT_MODE.name(), String.valueOf(resilientMode.isSelected()));
         }
         if (isNotNull(completionWeight) && !completionWeight.getText().isBlank()) {
             parameters.setProperty(COMPLETION_WEIGHT.name(), completionWeight.getText().trim());

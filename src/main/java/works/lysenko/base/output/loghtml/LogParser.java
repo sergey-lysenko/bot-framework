@@ -446,21 +446,43 @@ public final class LogParser {
             for (final TelemetryItem item : testData) {
                 validTestNums.add(item.testNum);
             }
-            final java.util.Map<Integer, LeafCompletion> compMap = new java.util.LinkedHashMap<>();
-            for (final LeafCompletion c : rawCompletions) {
-                if (validTestNums.contains(c.testNum)) {
-                    compMap.put(c.testNum, c);
+            if (!rawCompletions.isEmpty()) {
+                final java.util.Map<Integer, LeafCompletion> compMap = new java.util.LinkedHashMap<>();
+                for (final LeafCompletion c : rawCompletions) {
+                    if (validTestNums.contains(c.testNum)) {
+                        compMap.put(c.testNum, c);
+                    }
+                }
+                for (final TelemetryItem item : testData) {
+                    if (!compMap.containsKey(item.testNum)) {
+                        final long durMs = Math.round(item.ms);
+                        compMap.put(item.testNum, new LeafCompletion(item.testNum, durMs, 0L, 0, "n/a"));
+                    }
+                }
+                for (final TelemetryItem item : testData) {
+                    final LeafCompletion c = compMap.get(item.testNum);
+                    if (null != c) completions.add(c);
                 }
             }
-            completions.addAll(compMap.values());
 
-            final java.util.Map<Integer, EtaDebugItem> etaMap = new java.util.LinkedHashMap<>();
-            for (final EtaDebugItem e : rawEtaDebugItems) {
-                if (validTestNums.contains(e.testNum)) {
-                    etaMap.put(e.testNum, e);
+            if (!rawEtaDebugItems.isEmpty()) {
+                final java.util.Map<Integer, EtaDebugItem> etaMap = new java.util.LinkedHashMap<>();
+                for (final EtaDebugItem e : rawEtaDebugItems) {
+                    if (validTestNums.contains(e.testNum)) {
+                        etaMap.put(e.testNum, e);
+                    }
+                }
+                for (final TelemetryItem item : testData) {
+                    if (!etaMap.containsKey(item.testNum)) {
+                        final long durMs = Math.round(item.ms);
+                        etaMap.put(item.testNum, new EtaDebugItem(item.testNum, durMs, durMs, 0L, durMs, "Test #" + item.testNum));
+                    }
+                }
+                for (final TelemetryItem item : testData) {
+                    final EtaDebugItem e = etaMap.get(item.testNum);
+                    if (null != e) etaDebugItems.add(e);
                 }
             }
-            etaDebugItems.addAll(etaMap.values());
         } else {
             completions.addAll(rawCompletions);
             etaDebugItems.addAll(rawEtaDebugItems);

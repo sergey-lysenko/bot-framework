@@ -258,6 +258,36 @@ class LogHtmlTest {
     }
 
     @Test
+    void padsMissingCompletionsAndEtaItemsToMatchAllTestExecutions(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("missing.run.log");
+        final Path htmlPath = tempDir.resolve("missing.run.log.html");
+        final Path completionPath = tempDir.resolve("missing.all-leaf-completions.log");
+        final Path etaDebugPath = tempDir.resolve("missing.eta-debug.log");
+
+        Files.write(logPath, List.of(
+                "[ 1][1][1.000][5] • Closing test 1 ...",
+                "[ 2][2][2.000][5] • Closing test 2 ...",
+                "[ 3][3][3.000][5] • Closing test 3 ...",
+                "[ 4][4][4.000][5] • Closing test 4 ...",
+                "[ 5][5][5.000][5] • Closing test 5 ..."));
+        Files.write(completionPath, List.of(
+                "[ALL_LEAF_COMPLETION] 1 1000 10000 1 leaf1",
+                "[ALL_LEAF_COMPLETION] 2 2000 10000 2 leaf2",
+                "[ALL_LEAF_COMPLETION] 3 3000 10000 3 leaf3",
+                "[ALL_LEAF_COMPLETION] 4 4000 10000 4 leaf4"));
+        Files.write(etaDebugPath, List.of(
+                "[ETA_DEBUG] 1 1000 5000 1000 5500 Test1",
+                "[ETA_DEBUG] 2 2000 5000 1000 5200 Test2",
+                "[ETA_DEBUG] 3 3000 5000 1000 5100 Test3",
+                "[ETA_DEBUG] 4 4000 5000 1000 5000 Test4"));
+
+        LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+
+        final String html = Files.readString(htmlPath);
+        assertTrue(html.contains("\"n\":5"), "Leaf and ETA debug data must include padded entry for missing Test #5");
+    }
+
+    @Test
     void testTelemetryDownsamplingWithPeakTracking() {
         final List<works.lysenko.base.output.loghtml.LogModels.SystemResourceItem> raw = new ArrayList<>();
         for (int i = 1; i <= 100; i++) {

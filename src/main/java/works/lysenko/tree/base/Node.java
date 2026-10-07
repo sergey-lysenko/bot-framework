@@ -9,6 +9,7 @@ import works.lysenko.util.apis.exception.unchecked.ScenarioRuntimeException;
 import works.lysenko.util.apis.scenario._Node;
 import works.lysenko.util.apis.scenario._Pool;
 import works.lysenko.util.apis.scenario._Scenario;
+import works.lysenko.util.prop.core.Resilient;
 import works.lysenko.util.data.enums.Brackets;
 import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.enums.Severity;
@@ -18,6 +19,7 @@ import works.lysenko.util.func.core.ClassLoader;
 import java.util.*;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static works.lysenko.Base.exec;
 import static works.lysenko.util.chrs.__.TO;
 import static works.lysenko.util.chrs.___.NEW;
 import static works.lysenko.util.chrs.___.SUB;
@@ -119,6 +121,7 @@ public abstract class Node extends Core implements _Node {
     @Override
     public boolean isExecutable() {
 
+        if (hasFailed()) return false;
         if (!super.isExecutable()) return false;
         if (isNull(ctrl) || isNull(ctrl.getPool())) return true;
         final List<KeyValue<_Scenario, Fraction>> pairs = ctrl.getPool().getPairList();
@@ -198,15 +201,17 @@ public abstract class Node extends Core implements _Node {
                 if (halted) halted = false;
                 else ok = ctrl.exec();
                 finals();
-                done();
                 return ok;
             } catch (final NoSuchSessionException e) {
                 fail(b(c(SESSION), LOST));
-                stopTests();
+                if (!Resilient.mode()) stopTests();
                 return false;
             } catch (final RuntimeException e) {
+                markAsFailed();
                 throw new ScenarioRuntimeException(b(type().tag(), q(getShortName()), SCENARIO_EXECUTION_FAILED_DUE_TO,
                         e(Brackets.CURLY, e.getMessage())), e, this);
+            } finally {
+                done();
             }
         } else return false;
     }

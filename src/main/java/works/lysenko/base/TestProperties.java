@@ -392,6 +392,16 @@ public class TestProperties implements _TestProperties {
             } else {
                 the.remove(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName());
             }
+            final String resilientVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.RESILIENT_MODE);
+            if (isNotNull(resilientVal) && !resilientVal.isEmpty()) {
+                if (Boolean.parseBoolean(resilientVal)) {
+                    the.setProperty(PropEnum._TEST_RESILIENT_MODE.getPropertyName(), String.valueOf(true));
+                } else {
+                    the.setProperty(PropEnum._TEST_RESILIENT_MODE.getPropertyName(), String.valueOf(false));
+                }
+            } else {
+                the.remove(PropEnum._TEST_RESILIENT_MODE.getPropertyName());
+            }
             final String weightVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.COMPLETION_WEIGHT);
             if (isNotNull(weightVal) && !weightVal.isEmpty() && !PropEnum._TREE_COMPLETION_WEIGHT.defaultValue().equals(weightVal)) {
                 the.setProperty(PropEnum._TREE_COMPLETION_WEIGHT.getPropertyName(), weightVal);

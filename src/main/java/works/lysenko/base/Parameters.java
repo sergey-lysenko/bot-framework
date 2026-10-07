@@ -73,6 +73,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         read(ALL_LEAFS_COUNT.name());
         read(TESTS.name());
         read(FORBID_OVEREXECUTION.name());
+        read(RESILIENT_MODE.name());
         read(COMPLETION_WEIGHT.name());
         read(TRAVERSE_EXTENSIONS.name());
         readAdditionalParameters(list);
@@ -200,6 +201,13 @@ public final class Parameters extends Properties implements _ExecutionParameterV
     public Boolean getForbidOverexecution() {
 
         final String val = getValue(FORBID_OVEREXECUTION);
+        if (isNotNull(val) && !val.isEmpty()) return Boolean.parseBoolean(val);
+        return null;
+    }
+
+    public Boolean getResilientMode() {
+
+        final String val = getValue(RESILIENT_MODE);
         if (isNotNull(val) && !val.isEmpty()) return Boolean.parseBoolean(val);
         return null;
     }

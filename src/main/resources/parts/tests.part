@@ -6,6 +6,9 @@
 # Severity levels determine how severe an event must be to halt further testing.
 .test.fail.by.event.of.severity=0
 
+# Enables resilient mode where execution continues after exceptions to collect all failures.
+# .test.resilient.mode=false
+
 # ------------------------------------------------------------------------------
 # Default number of tests to perform if not explicitly specified.
 # .test.tests=99
@@ -26,3 +29,6 @@
 
 # Whether to produce an exceptional state on failed assertions.
 # .test.assertions.produce.exception=true
+
+# Severity used when logging failed assertions (S0, S1, S2, S3, or SK).
+# .test.assertions.severity=s0

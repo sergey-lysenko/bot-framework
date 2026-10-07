@@ -1,6 +1,7 @@
 package works.lysenko.base.parameters;
 
 import org.junit.jupiter.api.Test;
+import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.spec.PropEnum;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -34,6 +35,9 @@ class PropertyValidatorTest {
                 java.util.List.of("none", "copilot", "claude", "gemini"),
                 PropertyValidator.validValues(".test.report.progression.tree.sonification"));
         assertEquals(java.util.List.of("true", "false"), PropertyValidator.validValues(".test.report.progression.tree"));
+        assertEquals(
+                java.util.Arrays.stream(Severity.values()).map(Enum::name).toList(),
+                PropertyValidator.validValues(".test.assertions.severity"));
         assertEquals(java.util.List.of(), PropertyValidator.validValues(".test.report.progression.max.frames"));
         assertEquals(java.util.List.of(), PropertyValidator.validValues("custom.property"));
     }
@@ -45,6 +49,8 @@ class PropertyValidatorTest {
         assertNotNull(PropertyValidator.validate(".test.report.progression.max.frames", " 10"));
         assertNull(PropertyValidator.validate(".test.report.progression.tree", "TRUE"));
         assertNotNull(PropertyValidator.validate(".test.report.progression.tree", "yes"));
+        assertNull(PropertyValidator.validate(".test.assertions.severity", "S0"));
+        assertNotNull(PropertyValidator.validate(".test.assertions.severity", "invalid"));
     }
 
     @Test

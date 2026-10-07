@@ -373,7 +373,7 @@ public record Assertions() {
         );
         if (isNull(exec)) еггог(s);
         else {
-            logEvent(Severity.S0, s);
+            logEvent(works.lysenko.util.prop.core.Assertions.severity, s);
             if (works.lysenko.util.prop.core.Assertions.exception) еггог(s);
         }
     }

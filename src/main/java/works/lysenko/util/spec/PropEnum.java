@@ -3,6 +3,7 @@ package works.lysenko.util.spec;
 import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.base.util.StringParser;
 import works.lysenko.util.apis._PropEnum;
+import works.lysenko.util.data.enums.*;
 
 import java.awt.Color;
 import java.util.Locale;
@@ -140,6 +141,7 @@ public enum PropEnum implements _PropEnum {
     _TEST_ALL_LEAFS_COUNT(Integer.class, _1_, true, true),
     _TEST_APP(String.class, EMPTY),
     _TEST_ASSERTIONS_PRODUCE_EXCEPTION(Boolean.class, TRUE),
+    _TEST_ASSERTIONS_SEVERITY(Severity.class, s(S, _0_)),
     _TEST_BUNDLE_ID(String.class, NULL),
     _TEST_EWAIT(Integer.class, _3_, _0_),
     _TEST_EXCEPTION_RETRIES(Integer.class, _3_),
@@ -168,6 +170,7 @@ public enum PropEnum implements _PropEnum {
     _TEST_REPORT_PROGRESSION_TREE_MP4(Boolean.class, TRUE),
     _TEST_REPORT_PROGRESSION_TREE_SONIFICATION(String.class, "none"),
     _TEST_REPORT_PROGRESSION_TREE_WEBP(Boolean.class, TRUE),
+    _TEST_RESILIENT_MODE(Boolean.class, FALSE, true, true),
     _TEST_ROOT(String.class, EMPTY),
     _TEST_SCENARIO_SUFFICIENCY_ATTEMPTS(Integer.class, _9_),
     _TEST_TESTS(Integer.class, NULL, false, true),

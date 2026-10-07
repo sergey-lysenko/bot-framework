@@ -13,6 +13,8 @@ import works.lysenko.util.apis.test._Repeater;
 import works.lysenko.util.apis.test._Stat;
 import works.lysenko.util.data.enums.Ansi;
 import works.lysenko.util.data.enums.Severity;
+import works.lysenko.util.prop.core.Recreate;
+import works.lysenko.util.prop.core.Resilient;
 import works.lysenko.util.prop.core.Test;
 import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.spec.Level;
@@ -395,7 +397,7 @@ public class Repeater implements _Repeater {
      */
     private void stopIfFailingEvents() {
 
-        if (!core.getStopFlag() && core.getResults().areFailingEvents()) {
+        if (!Resilient.mode() && !core.getStopFlag() && core.getResults().areFailingEvents()) {
             final Severity severity = core.getResults().getGreatestSeverity();
             final String explanation = (null == severity) ? DOTS : b(DUE_TO, severity.type().getString(), EVENT);
             log(rb(b(c(STOPPING), explanation)));
