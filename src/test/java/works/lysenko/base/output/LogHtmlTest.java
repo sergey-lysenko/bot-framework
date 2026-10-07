@@ -1,5 +1,7 @@
 package works.lysenko.base.output;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -15,6 +17,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LogHtmlTest {
+
+    @BeforeEach
+    @AfterEach
+    void resetState() {
+        if (works.lysenko.util.func.type.Objects.isNotNull(works.lysenko.Base.properties)) {
+            works.lysenko.Base.properties.clearUserOverrides();
+        }
+        works.lysenko.base.output.EtaCorrection.reset();
+    }
 
     @Test
     void testLimboAndPreflightParsedWithPaddedBrackets(@TempDir final Path tempDir) throws IOException {
@@ -114,9 +125,9 @@ class LogHtmlTest {
                 "[ 2][5][12.000][5] • Closing test 2 ...",
                 "[  ][6][12.010][2] • Test time 1 s"));
         Files.write(completionPath, List.of(
-                "[ALL_LEAF_COMPLETION] 1000 checkout.Cart",
-                "[ALL_LEAF_COMPLETION] 4000 checkout.Payment",
-                "[ALL_LEAF_COMPLETION] 4500 checkout.Confirmation"));
+                "[ALL_LEAF_COMPLETION] 1 1000 checkout.Cart",
+                "[ALL_LEAF_COMPLETION] 2 4000 checkout.Payment",
+                "[ALL_LEAF_COMPLETION] 3 4500 checkout.Confirmation"));
 
         LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
 
@@ -147,7 +158,7 @@ class LogHtmlTest {
     void omitsLeafCompletionGraphWithoutAllLeafCompletionMarkers(@TempDir final Path tempDir) throws IOException {
         final Path logPath = tempDir.resolve("standard.run.log");
         final Path htmlPath = tempDir.resolve("standard.run.log.html");
-        Files.write(logPath, List.of("[ 1][1][1.000][10] [ALL_LEAF_COMPLETION] 1000 legacy.MainLogMarker"));
+        Files.write(logPath, List.of("[ 1][1][1.000][10] [ALL_LEAF_COMPLETION] 1 1000 legacy.MainLogMarker"));
 
         LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
 
@@ -164,8 +175,8 @@ class LogHtmlTest {
                 "[ 1][2][10.000][5] • Closing test 1 ...",
                 "[  ][3][10.010][2] • Test time 10 s"));
         Files.write(completionPath, List.of(
-                "[ALL_LEAF_COMPLETION] 1000 20000 checkout.Cart",
-                "[ALL_LEAF_COMPLETION] 4000 15000 checkout.Payment"));
+                "[ALL_LEAF_COMPLETION] 1 1000 20000 checkout.Cart",
+                "[ALL_LEAF_COMPLETION] 2 4000 15000 checkout.Payment"));
 
         LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
 

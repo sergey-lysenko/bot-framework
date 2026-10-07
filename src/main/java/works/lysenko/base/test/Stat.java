@@ -43,6 +43,9 @@ public class Stat implements _Stat {
      */
     public static void reports() {
 
+        if (null != works.lysenko.Base.timer) {
+            works.lysenko.base.output.EtaCorrection.recordRunCompletion(works.lysenko.Base.timer.msSinceStart());
+        }
         reports.run();
         section(JSON);
         jsonStats();

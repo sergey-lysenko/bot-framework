@@ -151,12 +151,14 @@ public final class LogModels {
      * Scenario tree leaf completion record capturing completion moment, ETA, and round index.
      */
     public static final class LeafCompletion {
+        public final int testNum;
         public final long atMillis;
         public final long etaMs;
         public final int roundIndex;
         public final String leaf;
 
-        public LeafCompletion(final long atMillis, final long etaMs, final int roundIndex, final String leaf) {
+        public LeafCompletion(final int testNum, final long atMillis, final long etaMs, final int roundIndex, final String leaf) {
+            this.testNum = testNum;
             this.atMillis = atMillis;
             this.etaMs = etaMs;
             this.roundIndex = roundIndex;

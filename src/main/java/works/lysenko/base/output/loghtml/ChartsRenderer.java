@@ -143,12 +143,13 @@ public final class ChartsRenderer {
 
         for (final int idx : tickIndices) {
             final double x = marginLeft + (N > 1 ? (double) idx / (N - 1) * plotW : plotW / 2.0);
+            final int tNum = completions.get(idx).testNum;
             sb.append(String.format(Locale.ROOT,
                     "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.15)\" />\n",
                     x, marginTop + plotH, x, marginTop + plotH + 4));
             sb.append(String.format(Locale.ROOT,
                     "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">#%d</text>\n",
-                    x, height - 10, idx + 1));
+                    x, height - 10, tNum));
         }
 
         final StringBuilder leafPath = new StringBuilder();

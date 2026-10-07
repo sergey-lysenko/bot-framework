@@ -60,6 +60,9 @@ class GuiTest {
     void tearDown() {
         Base.parameters = previousParameters;
         Base.properties = previousProperties;
+        if (null != Base.properties) {
+            Base.properties.clearUserOverrides();
+        }
         if (createdPlatformsFile) {
             new File(PLATFORMS_).delete();
             new File("var").delete();
@@ -304,6 +307,26 @@ class GuiTest {
 
         final Map<String, String> withOverrides = tp.resolveEffectiveProperties("some_test", false, false, 1, true);
         assertEquals("9999", withOverrides.get(PropEnum._TEST_PAUSE_LENGTH.getPropertyName()));
+    }
+
+    @Test
+    void testGuiOverridesPropagateToNewTestPropertiesAndRun() {
+        final TestProperties oldProperties = new TestProperties();
+        Base.properties = oldProperties;
+
+        // Set GUI user override for cpu density per test
+        oldProperties.setUserOverride(PropEnum._TEST_REPORT_CPU_DENSITY_PER_TEST.getPropertyName(), "true");
+
+        // When Core initializes a new TestProperties instance for run
+        final TestProperties newProperties = new TestProperties();
+        Base.properties = newProperties;
+
+        // The user overrides from previous Base.properties should be preserved in new instance
+        assertEquals("true", newProperties.getUserOverrides().get(PropEnum._TEST_REPORT_CPU_DENSITY_PER_TEST.getPropertyName()));
+
+        // When readTestConfiguration is called, user overrides are applied to 'the'
+        newProperties.readCommonConfiguration();
+        assertEquals(Boolean.TRUE, PropEnum._TEST_REPORT_CPU_DENSITY_PER_TEST.get());
     }
 
     @Test

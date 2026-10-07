@@ -29,7 +29,7 @@ import static works.lysenko.util.data.strs.Swap.s;
 @SuppressWarnings({"ClassWithoutLogger", "MethodWithMultipleLoops", "NestedMethodCall"})
 public final class SidecarLoader {
 
-    private static final Pattern ALL_LEAF_COMPLETION_RE = Pattern.compile("\\[ALL_LEAF_COMPLETION]\\s+(\\d+)(?:\\s+(\\d+))?(?:\\s+(\\d+))?\\s+(.+)$");
+    private static final Pattern ALL_LEAF_COMPLETION_RE = Pattern.compile("\\[ALL_LEAF_COMPLETION]\\s+(\\d+)\\s+(\\d+)(?:\\s+(\\d+))?(?:\\s+(\\d+))?\\s+(.+)$");
     private static final Pattern ETA_DEBUG_RE = Pattern.compile("\\[ETA_DEBUG]\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(.+)$");
 
     private SidecarLoader() {
@@ -53,20 +53,21 @@ public final class SidecarLoader {
             while (null != (line = reader.readLine())) {
                 final Matcher matcher = ALL_LEAF_COMPLETION_RE.matcher(line.trim());
                 if (matcher.matches()) {
-                    final long atMillis = Long.parseLong(matcher.group(1));
-                    final String g2 = matcher.group(2);
+                    final int testNum = Integer.parseInt(matcher.group(1));
+                    final long atMillis = Long.parseLong(matcher.group(2));
                     final String g3 = matcher.group(3);
-                    final String leaf = matcher.group(4).trim();
+                    final String g4 = matcher.group(4);
+                    final String leaf = matcher.group(5).trim();
 
                     long etaMs = 0L;
                     int roundIndex = 0;
 
-                    if (null != g2 && !g2.isEmpty()) {
-                        if (null != g3 && !g3.isEmpty()) {
-                            etaMs = Long.parseLong(g2);
-                            roundIndex = Integer.parseInt(g3);
+                    if (null != g3 && !g3.isEmpty()) {
+                        if (null != g4 && !g4.isEmpty()) {
+                            etaMs = Long.parseLong(g3);
+                            roundIndex = Integer.parseInt(g4);
                         } else {
-                            etaMs = Long.parseLong(g2);
+                            etaMs = Long.parseLong(g3);
                             legacyRoundCount++;
                             roundIndex = legacyRoundCount;
                         }
@@ -75,7 +76,7 @@ public final class SidecarLoader {
                         roundIndex = legacyRoundCount;
                     }
 
-                    completions.add(new LeafCompletion(atMillis, etaMs, roundIndex, leaf));
+                    completions.add(new LeafCompletion(testNum, atMillis, etaMs, roundIndex, leaf));
                 }
             }
         } catch (final IOException | NumberFormatException e) {

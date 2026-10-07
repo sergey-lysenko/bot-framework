@@ -46,10 +46,10 @@ public final class AllLeafCompletions {
         }
     }
 
-    public static synchronized void append(final long elapsedMillis, final long etaMs, final int goalIndex, final String leaf) {
+    public static synchronized void append(final int testNum, final long elapsedMillis, final long etaMs, final int goalIndex, final String leaf) {
 
         final Path path = Path.of(name(RUN_ALL_LEAF_COMPLETIONS_));
-        final String line = "[ALL_LEAF_COMPLETION] " + elapsedMillis + " " + etaMs + " " + goalIndex + " " + leaf + System.lineSeparator();
+        final String line = "[ALL_LEAF_COMPLETION] " + testNum + " " + elapsedMillis + " " + etaMs + " " + goalIndex + " " + leaf + System.lineSeparator();
         try {
             Files.writeString(path, line, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (final IOException e) {
@@ -73,9 +73,11 @@ public final class AllLeafCompletions {
 
         final String leafName = (isNotNull(completingScenario)) ? completingScenario.getShortName() : "unknown";
 
+        final int testNum = isNotNull(Base.core) ? Base.core.getTestsCount() : 0;
+
         final Set<_Scenario> accessibleLeafs = Base.core.getAccessibleLeafs();
         if (isNull(accessibleLeafs) || accessibleLeafs.isEmpty()) {
-            append(elapsedMillis, cycleAvgEta, 0, leafName);
+            append(testNum, elapsedMillis, cycleAvgEta, 0, leafName);
             return;
         }
 
@@ -98,7 +100,7 @@ public final class AllLeafCompletions {
             }
         }
 
-        append(elapsedMillis, cycleAvgEta, reachedGoal ? completedGoalIndex : 0, leafName);
+        append(testNum, elapsedMillis, cycleAvgEta, reachedGoal ? completedGoalIndex : 0, leafName);
     }
 
     private static int resolveAllLeafsTarget() {

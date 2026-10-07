@@ -74,6 +74,9 @@ public class TestProperties implements _TestProperties {
     public TestProperties() {
 
         compendium.add(PropEnum.class);
+        if (isNotNull(works.lysenko.Base.properties) && works.lysenko.Base.properties != this) {
+            userOverrides.putAll(works.lysenko.Base.properties.getUserOverrides());
+        }
     }
 
     /**
@@ -203,7 +206,18 @@ public class TestProperties implements _TestProperties {
     @Override
     public final void setUserOverride(final String key, final String value) {
 
-        userOverrides.put(works.lysenko.util.func.core.TestProperties.canonicalPropertyName(key), value);
+        final String canonicalKey = works.lysenko.util.func.core.TestProperties.canonicalPropertyName(key);
+        if (null == value) {
+            userOverrides.remove(canonicalKey);
+            if (isNotNull(the)) {
+                the.remove(canonicalKey);
+            }
+        } else {
+            userOverrides.put(canonicalKey, value);
+            if (isNotNull(the)) {
+                the.setProperty(canonicalKey, value);
+            }
+        }
     }
 
     @Override
@@ -213,13 +227,13 @@ public class TestProperties implements _TestProperties {
         if (isNotNull(overrides)) {
             for (final Map.Entry<String, String> entry : overrides.entrySet()) {
                 final String name = works.lysenko.util.func.core.TestProperties.canonicalPropertyName(entry.getKey());
-                if (!entry.getKey().equals(name)) {
-                    userOverrides.putIfAbsent(name, entry.getValue());
-                } else {
-                    userOverrides.put(name, entry.getValue());
+                final String val = entry.getValue();
+                if (null != val) {
+                    userOverrides.put(name, val);
                 }
             }
         }
+        applyUserOverrides();
     }
 
     @Override
@@ -308,6 +322,7 @@ public class TestProperties implements _TestProperties {
             the = new Properties(); // reset
             the.putAll(commonConfiguration);
         }
+        applyUserOverrides();
         updateConfigFileDefaults(null);
         return result.debug();
     }
@@ -421,7 +436,7 @@ public class TestProperties implements _TestProperties {
             final String def = defaults.get(key);
             if (isNotNull(def) && def.equals(value)) {
                 the.remove(key);
-            } else {
+            } else if (isNotNull(value)) {
                 the.setProperty(key, value);
             }
         }

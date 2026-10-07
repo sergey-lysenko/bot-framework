@@ -1,6 +1,7 @@
 package works.lysenko.base.ui;
 
 import works.lysenko.base.output.AllLeafCompletions;
+import works.lysenko.base.output.EtaCorrection;
 import works.lysenko.base.util.Telemetry;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.util._BotButton;
@@ -518,6 +519,9 @@ public final class UserInterface extends JPanel implements _Dashboard {
         final long elapsedMs = timer.msSinceStart();
         if (elapsedMs < 1000L) return 0L;
 
+        long rawEtaMs = 0L;
+        double progressRatio = 0.0;
+
         final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
                 || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
 
@@ -536,39 +540,43 @@ public final class UserInterface extends JPanel implements _Dashboard {
             if (executed > 0 && total > executed) {
                 final double avgMsPerExecution = (double) elapsedMs / executed;
                 final int remainingExecutions = total - executed;
-                return Math.round(remainingExecutions * avgMsPerExecution);
+                rawEtaMs = Math.round(remainingExecutions * avgMsPerExecution);
+                progressRatio = (double) executed / total;
             }
-            return 0L;
+        } else {
+            // Fixed test count mode (.test.tests specified)
+            final Integer totalTests = core.getTotalTests();
+            if (isNotNull(totalTests) && totalTests > 0) {
+                final int completedTests = (isNotNull(core.getTest()) && isNotNull(core.getTest().repeater()) && isNotNull(core.getTest().repeater().getHistory()))
+                        ? core.getTest().repeater().getHistory().size()
+                        : 0;
+                if (completedTests >= totalTests) {
+                    return 0L;
+                }
+                if (completedTests > 0) {
+                    final double avgMsPerTest = (double) elapsedMs / completedTests;
+                    final int remainingTests = totalTests - completedTests;
+                    rawEtaMs = Math.round(remainingTests * avgMsPerTest);
+                    progressRatio = (double) completedTests / totalTests;
+                }
+            } else {
+                // Fallback: general leaf-based progress
+                final int totalLeafs = (isNotNull(core.getAccessibleLeafs())) ? core.getAccessibleLeafs().size() : 0;
+                final int executedLeafs = core.getExecutedLeafsCount();
+
+                if (totalLeafs > 0 && executedLeafs > 0 && totalLeafs > executedLeafs) {
+                    final double avgMsPerLeaf = (double) elapsedMs / executedLeafs;
+                    final int remainingLeafs = totalLeafs - executedLeafs;
+                    rawEtaMs = Math.round(remainingLeafs * avgMsPerLeaf);
+                    progressRatio = (double) executedLeafs / totalLeafs;
+                }
+            }
         }
 
-        // Fixed test count mode (.test.tests specified)
-        final Integer totalTests = core.getTotalTests();
-        if (isNotNull(totalTests) && totalTests > 0) {
-            final int completedTests = (isNotNull(core.getTest()) && isNotNull(core.getTest().repeater()) && isNotNull(core.getTest().repeater().getHistory()))
-                    ? core.getTest().repeater().getHistory().size()
-                    : 0;
-            if (completedTests >= totalTests) {
-                return 0L;
-            }
-            if (completedTests > 0) {
-                final double avgMsPerTest = (double) elapsedMs / completedTests;
-                final int remainingTests = totalTests - completedTests;
-                return Math.round(remainingTests * avgMsPerTest);
-            }
-            return 0L;
-        }
+        if (rawEtaMs <= 0L) return 0L;
 
-        // Fallback: general leaf-based progress
-        final int totalLeafs = (isNotNull(core.getAccessibleLeafs())) ? core.getAccessibleLeafs().size() : 0;
-        final int executedLeafs = core.getExecutedLeafsCount();
-
-        if (totalLeafs > 0 && executedLeafs > 0 && totalLeafs > executedLeafs) {
-            final double avgMsPerLeaf = (double) elapsedMs / executedLeafs;
-            final int remainingLeafs = totalLeafs - executedLeafs;
-            return Math.round(remainingLeafs * avgMsPerLeaf);
-        }
-
-        return 0L;
+        EtaCorrection.recordInitialPrediction(elapsedMs + rawEtaMs);
+        return EtaCorrection.adjustEta(rawEtaMs, progressRatio);
     }
 
     private static String calculateEtaString() {

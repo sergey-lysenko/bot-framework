@@ -21,7 +21,6 @@ import static works.lysenko.util.spec.Layout.Templates.RUN_ETA_DEBUG_;
 
 public final class EtaDebug {
 
-    private static int currentCycleIndex = 0;
     private static long cycleStartMs = 0L;
     private static long initialEtaMs = 0L;
     private static final List<Long> cycleSamples = new ArrayList<>(0);
@@ -31,7 +30,6 @@ public final class EtaDebug {
 
     public static synchronized void reset() {
 
-        currentCycleIndex = 0;
         cycleStartMs = 0L;
         initialEtaMs = 0L;
         cycleSamples.clear();
@@ -39,7 +37,6 @@ public final class EtaDebug {
 
     public static synchronized void startCycle(final String name) {
 
-        currentCycleIndex++;
         cycleStartMs = (isNotNull(Base.timer)) ? Base.timer.msSinceStart() : 0L;
         initialEtaMs = UserInterface.calculateEtaMs();
         cycleSamples.clear();
@@ -98,7 +95,8 @@ public final class EtaDebug {
             predictedMs = realMs;
         }
 
-        append(currentCycleIndex, realMs, meanEtaMs, stdDevEtaMs, predictedMs, name);
+        final int testNum = isNotNull(Base.core) ? Base.core.getTestsCount() : 0;
+        append(testNum, realMs, meanEtaMs, stdDevEtaMs, predictedMs, name);
 
         cycleStartMs = 0L;
         initialEtaMs = 0L;
