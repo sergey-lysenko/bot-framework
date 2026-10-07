@@ -302,4 +302,82 @@ class LogHtmlTest {
             works.lysenko.Base.properties = previousProps;
         }
     }
+
+    @Test
+    void testTelemetryDensityPerTestWithoutLeadingDot(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("density_test_nodot.run.log");
+        final Path telemPath = tempDir.resolve("density_test_nodot.telemetry.log");
+        final List<String> telemLines = new ArrayList<>();
+        for (int i = 1; i <= 500; i++) {
+            telemLines.add("0," + i + ",20.0,100,4,8,10,0,10,104857600,524288000,1048576000,sample" + i);
+        }
+        Files.write(telemPath, telemLines);
+
+        final works.lysenko.base.TestProperties previousProps = works.lysenko.Base.properties;
+        try {
+            final works.lysenko.base.TestProperties testProps = new works.lysenko.base.TestProperties();
+            final java.lang.reflect.Field f = works.lysenko.base.TestProperties.class.getDeclaredField("the");
+            f.setAccessible(true);
+            final java.util.Properties props = new java.util.Properties();
+            props.setProperty("test.report.cpu.density.per.test", "true");
+            f.set(testProps, props);
+            works.lysenko.Base.properties = testProps;
+
+            final List<works.lysenko.base.output.loghtml.LogModels.SystemResourceItem> items =
+                    works.lysenko.base.output.loghtml.SidecarLoader.loadTelemetryResources(logPath.toFile(), 37);
+
+            assertEquals(37, items.size());
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            works.lysenko.Base.properties = previousProps;
+        }
+    }
+
+    @Test
+    void testSystemResourcesTrimmingPreAndPostTestSamples(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("trim_test.run.log");
+        final Path telemPath = tempDir.resolve("trim_test.telemetry.log");
+
+        // 2 pre-test samples (1, 2), 4 test/limbo samples (3, 4, 5, 6), 2 post-test samples (7, 8)
+        final List<String> logLines = List.of(
+                "Starting Bot core ...",
+                "# Applied test configuration",
+                "[ ][1][.010][9] Initializing Driver ...",                     // pre-test op 1
+                "[ ][2][.020][1] Preflight checks ...",                       // pre-test op 2
+                "[ 1][3][1.000][10] Executing Scenario A",                    // test 1 start op 3
+                "[ 1][4][1.050][5] • Closing test 1 ...",                     // test 1 end op 4
+                "[ ][5][1.060][2] • Test time 50 ms",                         // limbo op 5
+                "[ 2][6][2.000][10] Executing Scenario B",                    // test 2 end op 6
+                "[ ][7][2.070][1] 2 tests of Sample done in 2 s",              // postflight op 7
+                "[ ][8][2.080][1] = Event summary ="                           // postflight op 8
+        );
+
+        final List<String> telemLines = List.of(
+                "0,1,99.0,100,4,8,10,0,10,104857600,524288000,1048576000,pre_1",
+                "0,2,95.0,100,4,8,10,0,10,104857600,524288000,1048576000,pre_2",
+                "0,3,10.0,100,4,8,10,0,10,104857600,524288000,1048576000,test_1",
+                "0,4,12.0,100,4,8,10,0,10,104857600,524288000,1048576000,test_2",
+                "0,5,15.0,100,4,8,10,0,10,104857600,524288000,1048576000,test_3",
+                "0,6,11.0,100,4,8,10,0,10,104857600,524288000,1048576000,test_4",
+                "0,7,88.0,100,4,8,10,0,10,104857600,524288000,1048576000,post_1",
+                "0,8,90.0,100,4,8,10,0,10,104857600,524288000,1048576000,post_2"
+        );
+
+        Files.write(logPath, logLines);
+        Files.write(telemPath, telemLines);
+
+        final int[] bounds = works.lysenko.base.output.loghtml.SidecarLoader.findTestOpBounds(logPath.toFile());
+        assertEquals(3, bounds[0], "First test operation should be op 3");
+        assertEquals(6, bounds[1], "Last test operation should be op 6");
+
+        final List<works.lysenko.base.output.loghtml.LogModels.SystemResourceItem> items =
+                works.lysenko.base.output.loghtml.SidecarLoader.loadTelemetryResources(logPath.toFile(), 0);
+
+        assertEquals(4, items.size(), "Should only retain 4 samples from test period (ops 3..6)");
+        assertEquals(3, items.get(0).sampleNum);
+        assertEquals(10.0, items.get(0).cpuPct, 1e-2);
+        assertEquals(6, items.get(3).sampleNum);
+        assertEquals(11.0, items.get(3).cpuPct, 1e-2);
+    }
 }

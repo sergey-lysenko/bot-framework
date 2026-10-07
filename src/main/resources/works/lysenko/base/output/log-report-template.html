@@ -189,6 +189,10 @@ summary::-webkit-details-marker { display: none; }
 .eta-debug-chart { margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 .leaf-chart-line { fill: none; stroke: #a855f7; stroke-width: 2; }
 .chart-header-controls { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
+.chart-controls-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; font-family: ui-monospace, monospace; font-size: 11px; color: #94a3b8; margin-bottom: 10px; }
+.series-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.left-series-controls { justify-content: flex-start; }
+.right-series-controls { justify-content: flex-end; margin-left: auto; }
 .chart-select { background: #0f172a; border: 1px solid var(--border); color: #38bdf8; font-size: 11px; padding: 2px 6px; border-radius: 4px; cursor: pointer; font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; outline: none; }
 .chart-select:hover { background: #1e293b; border-color: #38bdf8; color: #f8fafc; }
 </style>
@@ -510,17 +514,25 @@ summary::-webkit-details-marker { display: none; }
     }
   }
 
-  window.leafScaleMode = 'log';
-  window.etaScaleMode = 'log';
-  window.resScaleMode = 'log';
-  window.leafCutoffSetting = 'auto';
-  window.etaCutoffSetting = 'auto';
-  window.resCutoffSetting = 'auto';
+  window.leafLeftScaleMode = 'log';
+  window.leafRightScaleMode = 'log';
+  window.leafLeftCutoffSetting = 'auto';
+  window.leafRightCutoffSetting = 'auto';
 
-  function switchLeafScale(mode) {
-    window.leafScaleMode = mode;
-    const btnLog = document.getElementById('btnLeafLog');
-    const btnLinear = document.getElementById('btnLeafLinear');
+  window.etaLeftScaleMode = 'log';
+  window.etaRightScaleMode = 'log';
+  window.etaLeftCutoffSetting = 'auto';
+  window.etaRightCutoffSetting = 'auto';
+
+  window.resLeftScaleMode = 'log';
+  window.resRightScaleMode = 'log';
+  window.resLeftCutoffSetting = 'auto';
+  window.resRightCutoffSetting = 'auto';
+
+  function switchLeafLeftScale(mode) {
+    window.leafLeftScaleMode = mode;
+    const btnLog = document.getElementById('btnLeafLeftLog');
+    const btnLinear = document.getElementById('btnLeafLeftLinear');
     if (btnLog && btnLinear) {
       if (mode === 'log') {
         btnLog.classList.add('active');
@@ -533,10 +545,10 @@ summary::-webkit-details-marker { display: none; }
     renderLeafCompletionSvg();
   }
 
-  function switchEtaScale(mode) {
-    window.etaScaleMode = mode;
-    const btnLog = document.getElementById('btnEtaLog');
-    const btnLinear = document.getElementById('btnEtaLinear');
+  function switchLeafRightScale(mode) {
+    window.leafRightScaleMode = mode;
+    const btnLog = document.getElementById('btnLeafRightLog');
+    const btnLinear = document.getElementById('btnLeafRightLinear');
     if (btnLog && btnLinear) {
       if (mode === 'log') {
         btnLog.classList.add('active');
@@ -546,38 +558,101 @@ summary::-webkit-details-marker { display: none; }
         btnLog.classList.remove('active');
       }
     }
-    renderEtaDebugSvg();
-  }
-
-  function switchResScale(mode) {
-    window.resScaleMode = mode;
-    const btnLog = document.getElementById('btnResLog');
-    const btnLinear = document.getElementById('btnResLinear');
-    if (btnLog && btnLinear) {
-      if (mode === 'log') {
-        btnLog.classList.add('active');
-        btnLinear.classList.remove('active');
-      } else {
-        btnLinear.classList.add('active');
-        btnLog.classList.remove('active');
-      }
-    }
-    renderResourceStatsSvg();
-  }
-
-  function setResCutoff(val) {
-    window.resCutoffSetting = val;
-    renderResourceStatsSvg();
-  }
-
-  function setLeafCutoff(val) {
-    window.leafCutoffSetting = val;
     renderLeafCompletionSvg();
   }
 
-  function setEtaCutoff(val) {
-    window.etaCutoffSetting = val;
+  function switchEtaLeftScale(mode) {
+    window.etaLeftScaleMode = mode;
+    const btnLog = document.getElementById('btnEtaLeftLog');
+    const btnLinear = document.getElementById('btnEtaLeftLinear');
+    if (btnLog && btnLinear) {
+      if (mode === 'log') {
+        btnLog.classList.add('active');
+        btnLinear.classList.remove('active');
+      } else {
+        btnLinear.classList.add('active');
+        btnLog.classList.remove('active');
+      }
+    }
     renderEtaDebugSvg();
+  }
+
+  function switchEtaRightScale(mode) {
+    window.etaRightScaleMode = mode;
+    const btnLog = document.getElementById('btnEtaRightLog');
+    const btnLinear = document.getElementById('btnEtaRightLinear');
+    if (btnLog && btnLinear) {
+      if (mode === 'log') {
+        btnLog.classList.add('active');
+        btnLinear.classList.remove('active');
+      } else {
+        btnLinear.classList.add('active');
+        btnLog.classList.remove('active');
+      }
+    }
+    renderEtaDebugSvg();
+  }
+
+  function switchResLeftScale(mode) {
+    window.resLeftScaleMode = mode;
+    const btnLog = document.getElementById('btnResLeftLog');
+    const btnLinear = document.getElementById('btnResLeftLinear');
+    if (btnLog && btnLinear) {
+      if (mode === 'log') {
+        btnLog.classList.add('active');
+        btnLinear.classList.remove('active');
+      } else {
+        btnLinear.classList.add('active');
+        btnLog.classList.remove('active');
+      }
+    }
+    renderResourceStatsSvg();
+  }
+
+  function switchResRightScale(mode) {
+    window.resRightScaleMode = mode;
+    const btnLog = document.getElementById('btnResRightLog');
+    const btnLinear = document.getElementById('btnResRightLinear');
+    if (btnLog && btnLinear) {
+      if (mode === 'log') {
+        btnLog.classList.add('active');
+        btnLinear.classList.remove('active');
+      } else {
+        btnLinear.classList.add('active');
+        btnLog.classList.remove('active');
+      }
+    }
+    renderResourceStatsSvg();
+  }
+
+  function setLeafLeftCutoff(val) {
+    window.leafLeftCutoffSetting = val;
+    renderLeafCompletionSvg();
+  }
+
+  function setLeafRightCutoff(val) {
+    window.leafRightCutoffSetting = val;
+    renderLeafCompletionSvg();
+  }
+
+  function setEtaLeftCutoff(val) {
+    window.etaLeftCutoffSetting = val;
+    renderEtaDebugSvg();
+  }
+
+  function setEtaRightCutoff(val) {
+    window.etaRightCutoffSetting = val;
+    renderEtaDebugSvg();
+  }
+
+  function setResLeftCutoff(val) {
+    window.resLeftCutoffSetting = val;
+    renderResourceStatsSvg();
+  }
+
+  function setResRightCutoff(val) {
+    window.resRightCutoffSetting = val;
+    renderResourceStatsSvg();
   }
 
   function getPercentile(arr, p) {
@@ -621,7 +696,8 @@ summary::-webkit-details-marker { display: none; }
     const ml = 55.0, mr = 55.0, mt = 26.0, mb = 34.0;
     const pw = width - ml - mr, ph = height - mt - mb;
     const N = window.leafData.length;
-    const isLog = window.leafScaleMode !== 'linear';
+    const isLeftLog = window.leafLeftScaleMode !== 'linear';
+    const isRightLog = window.leafRightScaleMode !== 'linear';
 
     const roundSecs = window.leafData.filter(d => d.round > 0 && d.roundIntervalMs >= 0).map(d => d.roundIntervalMs / 1000.0);
     const projSecs = window.leafData.map(d => (d.at + (d.etaMs || 0)) / 1000.0);
@@ -629,25 +705,35 @@ summary::-webkit-details-marker { display: none; }
     const maxRawProjected = Math.max(...projSecs);
 
     let ceilIntervalSec;
-    let ceilProjectedSec;
-
-    if (!window.leafCutoffSetting || window.leafCutoffSetting === 'auto') {
+    if (!window.leafLeftCutoffSetting || window.leafLeftCutoffSetting === 'auto') {
       const p95Interval = roundSecs.length ? getPercentile(roundSecs, 0.95) : maxRawInterval;
-      const p95Projected = getPercentile(projSecs, 0.95);
       ceilIntervalSec = Math.max(1.0, getNiceCeil(p95Interval * 1.2));
-      ceilProjectedSec = Math.max(1.0, getNiceCeil(p95Projected * 1.2));
-    } else if (window.leafCutoffSetting === 'max') {
+    } else if (window.leafLeftCutoffSetting === 'max') {
       ceilIntervalSec = Math.max(1.0, getNiceCeil(maxRawInterval));
-      ceilProjectedSec = Math.max(1.0, getNiceCeil(maxRawProjected));
     } else {
-      const cut = parseFloat(window.leafCutoffSetting);
+      const cut = parseFloat(window.leafLeftCutoffSetting);
       ceilIntervalSec = !isNaN(cut) && cut > 0 ? cut : Math.max(1.0, getNiceCeil(maxRawInterval));
-      ceilProjectedSec = !isNaN(cut) && cut > 0 ? Math.max(cut, getNiceCeil(maxRawProjected)) : Math.max(1.0, getNiceCeil(maxRawProjected));
     }
 
-    const sel = document.getElementById('selectLeafCutoff');
-    if (sel && sel.options && sel.options[0] && (!window.leafCutoffSetting || window.leafCutoffSetting === 'auto')) {
-      sel.options[0].text = `Cutoff: Auto (${Math.round(ceilIntervalSec)}s)`;
+    let ceilProjectedSec;
+    if (!window.leafRightCutoffSetting || window.leafRightCutoffSetting === 'auto') {
+      const p95Projected = getPercentile(projSecs, 0.95);
+      ceilProjectedSec = Math.max(1.0, getNiceCeil(p95Projected * 1.2));
+    } else if (window.leafRightCutoffSetting === 'max') {
+      ceilProjectedSec = Math.max(1.0, getNiceCeil(maxRawProjected));
+    } else {
+      const cut = parseFloat(window.leafRightCutoffSetting);
+      ceilProjectedSec = !isNaN(cut) && cut > 0 ? cut : Math.max(1.0, getNiceCeil(maxRawProjected));
+    }
+
+    const selLeft = document.getElementById('selectLeafLeftCutoff');
+    if (selLeft && selLeft.options && selLeft.options[0] && (!window.leafLeftCutoffSetting || window.leafLeftCutoffSetting === 'auto')) {
+      selLeft.options[0].text = `Cutoff: Auto (${Math.round(ceilIntervalSec)}s)`;
+    }
+
+    const selRight = document.getElementById('selectLeafRightCutoff');
+    if (selRight && selRight.options && selRight.options[0] && (!window.leafRightCutoffSetting || window.leafRightCutoffSetting === 'auto')) {
+      selRight.options[0].text = `Cutoff: Auto (${Math.round(ceilProjectedSec)}s)`;
     }
 
     let svg = `<svg id="leafCompletionSvg" class="timeline-line-svg" viewBox="0 0 ${width} ${height}">
@@ -664,10 +750,10 @@ summary::-webkit-details-marker { display: none; }
     for (let k = 0; k <= 4; k++) {
       const ratio = k / 4.0;
       const y = (mt + ph) - ratio * ph;
-      const valIntervalSec = isLog
+      const valIntervalSec = isLeftLog
         ? (ratio === 0.0 ? 0.0 : Math.pow(10, ratio * logMaxInterval) - 1.0)
         : ratio * ceilIntervalSec;
-      const valProjectedSec = isLog
+      const valProjectedSec = isRightLog
         ? (ratio === 0.0 ? 0.0 : Math.pow(10, ratio * logMaxProjected) - 1.0)
         : ratio * ceilProjectedSec;
 
@@ -711,7 +797,7 @@ summary::-webkit-details-marker { display: none; }
       const item = window.leafData[i];
       const x = ml + (N > 1 ? (i / (N - 1)) * pw : pw / 2.0);
       const projSec = (item.at + (item.etaMs || 0)) / 1000.0;
-      const yEta = calcY(projSec, ceilProjectedSec, mt, ph, isLog);
+      const yEta = calcY(projSec, ceilProjectedSec, mt, ph, isRightLog);
 
       if (i === 0) {
         etaPath += `M ${x.toFixed(2)} ${yEta.toFixed(2)}`;
@@ -721,7 +807,7 @@ summary::-webkit-details-marker { display: none; }
 
       if (item.round > 0 && item.roundIntervalMs >= 0) {
         const roundSec = item.roundIntervalMs / 1000.0;
-        const yRound = calcY(roundSec, ceilIntervalSec, mt, ph, isLog);
+        const yRound = calcY(roundSec, ceilIntervalSec, mt, ph, isLeftLog);
         if (firstRound) {
           leafPath += `M ${x.toFixed(2)} ${yRound.toFixed(2)}`;
           firstRound = false;
@@ -759,7 +845,8 @@ summary::-webkit-details-marker { display: none; }
     const svgWidth = overlay.closest('svg').viewBox.baseVal.width;
     const pw = svgWidth - ml - mr, ph = 240.0 - mt - mb;
     const svgX = ml + (window.leafData.length > 1 ? (idx / (window.leafData.length - 1)) * pw : pw / 2.0);
-    const isLog = window.leafScaleMode !== 'linear';
+    const isLeftLog = window.leafLeftScaleMode !== 'linear';
+    const isRightLog = window.leafRightScaleMode !== 'linear';
 
     const roundSecs = window.leafData.filter(item => item.round > 0 && item.roundIntervalMs >= 0).map(item => item.roundIntervalMs / 1000.0);
     const projSecs = window.leafData.map(item => (item.at + (item.etaMs || 0)) / 1000.0);
@@ -767,20 +854,25 @@ summary::-webkit-details-marker { display: none; }
     const maxRawProjected = Math.max(...projSecs);
 
     let ceilIntervalSec;
-    let ceilProjectedSec;
-
-    if (!window.leafCutoffSetting || window.leafCutoffSetting === 'auto') {
+    if (!window.leafLeftCutoffSetting || window.leafLeftCutoffSetting === 'auto') {
       const p95Interval = roundSecs.length ? getPercentile(roundSecs, 0.95) : maxRawInterval;
-      const p95Projected = getPercentile(projSecs, 0.95);
       ceilIntervalSec = Math.max(1.0, getNiceCeil(p95Interval * 1.2));
-      ceilProjectedSec = Math.max(1.0, getNiceCeil(p95Projected * 1.2));
-    } else if (window.leafCutoffSetting === 'max') {
+    } else if (window.leafLeftCutoffSetting === 'max') {
       ceilIntervalSec = Math.max(1.0, getNiceCeil(maxRawInterval));
+    } else {
+      const cut = parseFloat(window.leafLeftCutoffSetting);
+      ceilIntervalSec = !isNaN(cut) && cut > 0 ? cut : Math.max(1.0, getNiceCeil(maxRawInterval));
+    }
+
+    let ceilProjectedSec;
+    if (!window.leafRightCutoffSetting || window.leafRightCutoffSetting === 'auto') {
+      const p95Projected = getPercentile(projSecs, 0.95);
+      ceilProjectedSec = Math.max(1.0, getNiceCeil(p95Projected * 1.2));
+    } else if (window.leafRightCutoffSetting === 'max') {
       ceilProjectedSec = Math.max(1.0, getNiceCeil(maxRawProjected));
     } else {
-      const cut = parseFloat(window.leafCutoffSetting);
-      ceilIntervalSec = !isNaN(cut) && cut > 0 ? cut : Math.max(1.0, getNiceCeil(maxRawInterval));
-      ceilProjectedSec = !isNaN(cut) && cut > 0 ? Math.max(cut, getNiceCeil(maxRawProjected)) : Math.max(1.0, getNiceCeil(maxRawProjected));
+      const cut = parseFloat(window.leafRightCutoffSetting);
+      ceilProjectedSec = !isNaN(cut) && cut > 0 ? cut : Math.max(1.0, getNiceCeil(maxRawProjected));
     }
 
     const crosshair = document.getElementById('leafCrosshair');
@@ -793,7 +885,7 @@ summary::-webkit-details-marker { display: none; }
     }
     if (d.round > 0 && d.roundIntervalMs >= 0) {
       const roundSec = d.roundIntervalMs / 1000.0;
-      const svgY = calcY(roundSec, ceilIntervalSec, mt, ph, isLog);
+      const svgY = calcY(roundSec, ceilIntervalSec, mt, ph, isLeftLog);
       if (dot) {
         dot.setAttribute('cx', svgX);
         dot.setAttribute('cy', svgY);
@@ -805,7 +897,7 @@ summary::-webkit-details-marker { display: none; }
 
     if (etaDot) {
       const projSec = (d.at + (d.etaMs || 0)) / 1000.0;
-      const svgEtaY = calcY(projSec, ceilProjectedSec, mt, ph, isLog);
+      const svgEtaY = calcY(projSec, ceilProjectedSec, mt, ph, isRightLog);
       etaDot.setAttribute('cx', svgX);
       etaDot.setAttribute('cy', svgEtaY);
       etaDot.style.opacity = '1';
@@ -852,33 +944,44 @@ summary::-webkit-details-marker { display: none; }
     const ml = 55.0, mr = 55.0, mt = 26.0, mb = 34.0;
     const pw = width - ml - mr, ph = height - mt - mb;
     const N = window.etaDebugData.length;
-    const isLog = window.etaScaleMode !== 'linear';
+    const isLeftLog = window.etaLeftScaleMode !== 'linear';
+    const isRightLog = window.etaRightScaleMode !== 'linear';
 
     const errVals = window.etaDebugData.map(d => d.error);
     const instVals = window.etaDebugData.map(d => d.instability);
     const maxRawErr = Math.max(...errVals);
     const maxRawInst = Math.max(...instVals);
 
-    let ceilErrorPct;
     let ceilInstabilityPct;
-
-    if (!window.etaCutoffSetting || window.etaCutoffSetting === 'auto') {
-      const p95Err = getPercentile(errVals, 0.95);
+    if (!window.etaLeftCutoffSetting || window.etaLeftCutoffSetting === 'auto') {
       const p95Inst = getPercentile(instVals, 0.95);
-      ceilErrorPct = Math.max(10.0, getNiceCeil(p95Err * 1.2));
       ceilInstabilityPct = Math.max(10.0, getNiceCeil(p95Inst * 1.2));
-    } else if (window.etaCutoffSetting === 'max') {
-      ceilErrorPct = Math.max(10.0, getNiceCeil(maxRawErr));
+    } else if (window.etaLeftCutoffSetting === 'max') {
       ceilInstabilityPct = Math.max(10.0, getNiceCeil(maxRawInst));
     } else {
-      const cut = parseFloat(window.etaCutoffSetting);
-      ceilErrorPct = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxRawErr));
-      ceilInstabilityPct = !isNaN(cut) && cut > 0 ? Math.min(cut, Math.max(10.0, getNiceCeil(maxRawInst))) : Math.max(10.0, getNiceCeil(maxRawInst));
+      const cut = parseFloat(window.etaLeftCutoffSetting);
+      ceilInstabilityPct = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxRawInst));
     }
 
-    const sel = document.getElementById('selectEtaCutoff');
-    if (sel && sel.options && sel.options[0] && (!window.etaCutoffSetting || window.etaCutoffSetting === 'auto')) {
-      sel.options[0].text = `Cutoff: Auto (${Math.round(ceilErrorPct)}%)`;
+    let ceilErrorPct;
+    if (!window.etaRightCutoffSetting || window.etaRightCutoffSetting === 'auto') {
+      const p95Err = getPercentile(errVals, 0.95);
+      ceilErrorPct = Math.max(10.0, getNiceCeil(p95Err * 1.2));
+    } else if (window.etaRightCutoffSetting === 'max') {
+      ceilErrorPct = Math.max(10.0, getNiceCeil(maxRawErr));
+    } else {
+      const cut = parseFloat(window.etaRightCutoffSetting);
+      ceilErrorPct = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxRawErr));
+    }
+
+    const selLeft = document.getElementById('selectEtaLeftCutoff');
+    if (selLeft && selLeft.options && selLeft.options[0] && (!window.etaLeftCutoffSetting || window.etaLeftCutoffSetting === 'auto')) {
+      selLeft.options[0].text = `Cutoff: Auto (${Math.round(ceilInstabilityPct)}%)`;
+    }
+
+    const selRight = document.getElementById('selectEtaRightCutoff');
+    if (selRight && selRight.options && selRight.options[0] && (!window.etaRightCutoffSetting || window.etaRightCutoffSetting === 'auto')) {
+      selRight.options[0].text = `Cutoff: Auto (${Math.round(ceilErrorPct)}%)`;
     }
 
     let svg = `<svg id="etaDebugSvg" class="timeline-line-svg" viewBox="0 0 ${width} ${height}">`;
@@ -889,10 +992,10 @@ summary::-webkit-details-marker { display: none; }
     for (let k = 0; k <= 4; k++) {
       const ratio = k / 4.0;
       const y = (mt + ph) - ratio * ph;
-      const instPct = isLog
+      const instPct = isLeftLog
         ? (ratio === 0.0 ? 0.0 : Math.pow(10, ratio * logMaxInst) - 1.0)
         : ratio * ceilInstabilityPct;
-      const errPct = isLog
+      const errPct = isRightLog
         ? (ratio === 0.0 ? 0.0 : Math.pow(10, ratio * logMaxErr) - 1.0)
         : ratio * ceilErrorPct;
 
@@ -926,8 +1029,8 @@ summary::-webkit-details-marker { display: none; }
     for (let i = 0; i < N; i++) {
       const item = window.etaDebugData[i];
       const x = ml + (N > 1 ? (i / (N - 1)) * pw : pw / 2.0);
-      const yInst = calcY(item.instability, ceilInstabilityPct, mt, ph, isLog);
-      const yErr = calcY(item.error, ceilErrorPct, mt, ph, isLog);
+      const yInst = calcY(item.instability, ceilInstabilityPct, mt, ph, isLeftLog);
+      const yErr = calcY(item.error, ceilErrorPct, mt, ph, isRightLog);
 
       if (i === 0) {
         instabilityPath += `M ${x.toFixed(2)} ${yInst.toFixed(2)}`;
@@ -969,32 +1072,38 @@ summary::-webkit-details-marker { display: none; }
     const svgWidth = overlay.closest('svg').viewBox.baseVal.width;
     const pw = svgWidth - ml - mr, ph = 240.0 - mt - mb;
     const svgX = ml + (window.etaDebugData.length > 1 ? (idx / (window.etaDebugData.length - 1)) * pw : pw / 2.0);
-    const isLog = window.etaScaleMode !== 'linear';
+    const isLeftLog = window.etaLeftScaleMode !== 'linear';
+    const isRightLog = window.etaRightScaleMode !== 'linear';
 
     const errVals = window.etaDebugData.map(item => item.error);
     const instVals = window.etaDebugData.map(item => item.instability);
     const maxRawErr = Math.max(...errVals);
     const maxRawInst = Math.max(...instVals);
 
-    let ceilErrorPct;
     let ceilInstabilityPct;
-
-    if (!window.etaCutoffSetting || window.etaCutoffSetting === 'auto') {
-      const p95Err = getPercentile(errVals, 0.95);
+    if (!window.etaLeftCutoffSetting || window.etaLeftCutoffSetting === 'auto') {
       const p95Inst = getPercentile(instVals, 0.95);
-      ceilErrorPct = Math.max(10.0, getNiceCeil(p95Err * 1.2));
       ceilInstabilityPct = Math.max(10.0, getNiceCeil(p95Inst * 1.2));
-    } else if (window.etaCutoffSetting === 'max') {
-      ceilErrorPct = Math.max(10.0, getNiceCeil(maxRawErr));
+    } else if (window.etaLeftCutoffSetting === 'max') {
       ceilInstabilityPct = Math.max(10.0, getNiceCeil(maxRawInst));
     } else {
-      const cut = parseFloat(window.etaCutoffSetting);
-      ceilErrorPct = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxRawErr));
-      ceilInstabilityPct = !isNaN(cut) && cut > 0 ? Math.min(cut, Math.max(10.0, getNiceCeil(maxRawInst))) : Math.max(10.0, getNiceCeil(maxRawInst));
+      const cut = parseFloat(window.etaLeftCutoffSetting);
+      ceilInstabilityPct = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxRawInst));
     }
 
-    const yInst = calcY(d.instability, ceilInstabilityPct, mt, ph, isLog);
-    const yErr = calcY(d.error, ceilErrorPct, mt, ph, isLog);
+    let ceilErrorPct;
+    if (!window.etaRightCutoffSetting || window.etaRightCutoffSetting === 'auto') {
+      const p95Err = getPercentile(errVals, 0.95);
+      ceilErrorPct = Math.max(10.0, getNiceCeil(p95Err * 1.2));
+    } else if (window.etaRightCutoffSetting === 'max') {
+      ceilErrorPct = Math.max(10.0, getNiceCeil(maxRawErr));
+    } else {
+      const cut = parseFloat(window.etaRightCutoffSetting);
+      ceilErrorPct = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxRawErr));
+    }
+
+    const yInst = calcY(d.instability, ceilInstabilityPct, mt, ph, isLeftLog);
+    const yErr = calcY(d.error, ceilErrorPct, mt, ph, isRightLog);
 
     const crosshair = document.getElementById('etaDebugCrosshair');
     const instDot = document.getElementById('etaInstabilityDot');
@@ -1056,25 +1165,38 @@ summary::-webkit-details-marker { display: none; }
     const maxCpu = Math.max(10.0, ...cpuVals);
     const maxRam = Math.max(100.0, ...ramVals);
 
-    let ceilCpu, ceilRam;
-    if (!window.resCutoffSetting || window.resCutoffSetting === 'auto') {
+    let ceilCpu;
+    if (!window.resLeftCutoffSetting || window.resLeftCutoffSetting === 'auto') {
       ceilCpu = Math.max(10.0, getNiceCeil(getPercentile(cpuVals, 0.95) * 1.2));
-      ceilRam = Math.max(100.0, getNiceCeil(getPercentile(ramVals, 0.95) * 1.2));
-    } else if (window.resCutoffSetting === 'max') {
+    } else if (window.resLeftCutoffSetting === 'max') {
       ceilCpu = Math.max(10.0, getNiceCeil(maxCpu));
+    } else {
+      const cut = parseFloat(window.resLeftCutoffSetting);
+      ceilCpu = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxCpu));
+    }
+
+    let ceilRam;
+    if (!window.resRightCutoffSetting || window.resRightCutoffSetting === 'auto') {
+      ceilRam = Math.max(100.0, getNiceCeil(getPercentile(ramVals, 0.95) * 1.2));
+    } else if (window.resRightCutoffSetting === 'max') {
       ceilRam = Math.max(100.0, getNiceCeil(maxRam));
     } else {
-      const cut = parseFloat(window.resCutoffSetting);
-      ceilCpu = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxCpu));
+      const cut = parseFloat(window.resRightCutoffSetting);
       ceilRam = !isNaN(cut) && cut > 0 ? cut : Math.max(100.0, getNiceCeil(maxRam));
     }
 
-    const sel = document.getElementById('selectResCutoff');
-    if (sel && sel.options && sel.options[0] && (!window.resCutoffSetting || window.resCutoffSetting === 'auto')) {
-      sel.options[0].text = `Cutoff: Auto (${Math.round(ceilCpu)}% / ${Math.round(ceilRam)}MB)`;
+    const selLeft = document.getElementById('selectResLeftCutoff');
+    if (selLeft && selLeft.options && selLeft.options[0] && (!window.resLeftCutoffSetting || window.resLeftCutoffSetting === 'auto')) {
+      selLeft.options[0].text = `Cutoff: Auto (${Math.round(ceilCpu)}%)`;
     }
 
-    const isLog = (window.resScaleMode === 'log');
+    const selRight = document.getElementById('selectResRightCutoff');
+    if (selRight && selRight.options && selRight.options[0] && (!window.resRightCutoffSetting || window.resRightCutoffSetting === 'auto')) {
+      selRight.options[0].text = `Cutoff: Auto (${Math.round(ceilRam)}MB)`;
+    }
+
+    const isLeftLog = (window.resLeftScaleMode === 'log');
+    const isRightLog = (window.resRightScaleMode === 'log');
     const width = wrap.clientWidth || 1000;
     const height = 240;
     const ml = 50, mr = 55, mt = 20, mb = 35;
@@ -1086,8 +1208,8 @@ summary::-webkit-details-marker { display: none; }
     const ticks = [0.0, 0.25, 0.5, 0.75, 1.0];
     ticks.forEach(r => {
       const y = mt + ph * (1 - r);
-      const valCpu = isLog ? Math.pow(10, r * Math.log10(ceilCpu + 1)) - 1 : r * ceilCpu;
-      const valRam = isLog ? Math.pow(10, r * Math.log10(ceilRam + 1)) - 1 : r * ceilRam;
+      const valCpu = isLeftLog ? Math.pow(10, r * Math.log10(ceilCpu + 1)) - 1 : r * ceilCpu;
+      const valRam = isRightLog ? Math.pow(10, r * Math.log10(ceilRam + 1)) - 1 : r * ceilRam;
       svg += `  <line x1="${ml}" y1="${y.toFixed(1)}" x2="${(ml + pw).toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(148,163,184,0.12)" stroke-dasharray="3 3"/>`;
       svg += `  <text x="${(ml - 6).toFixed(1)}" y="${(y + 4).toFixed(1)}" fill="#38bdf8" font-size="10" text-anchor="end">${Math.round(valCpu)}%</text>`;
       svg += `  <text x="${(ml + pw + 6).toFixed(1)}" y="${(y + 4).toFixed(1)}" fill="#c084fc" font-size="10" text-anchor="start">${Math.round(valRam)}MB</text>`;
@@ -1100,9 +1222,9 @@ summary::-webkit-details-marker { display: none; }
     for (let i = 0; i < N; i++) {
       const d = window.resourceData[i];
       const x = ml + (N > 1 ? (i / (N - 1)) * pw : pw / 2);
-      const yCpu = calcY(d.cpu, ceilCpu, mt, ph, isLog);
-      const yRamUsed = calcY(d.ramUsed, ceilRam, mt, ph, isLog);
-      const yRamTotal = calcY(d.ramTotal, ceilRam, mt, ph, isLog);
+      const yCpu = calcY(d.cpu, ceilCpu, mt, ph, isLeftLog);
+      const yRamUsed = calcY(d.ramUsed, ceilRam, mt, ph, isRightLog);
+      const yRamTotal = calcY(d.ramTotal, ceilRam, mt, ph, isRightLog);
 
       pathCpu += (i === 0 ? `M ${x.toFixed(1)} ${yCpu.toFixed(1)}` : ` L ${x.toFixed(1)} ${yCpu.toFixed(1)}`);
       pathRamUsed += (i === 0 ? `M ${x.toFixed(1)} ${yRamUsed.toFixed(1)}` : ` L ${x.toFixed(1)} ${yRamUsed.toFixed(1)}`);
@@ -1112,6 +1234,35 @@ summary::-webkit-details-marker { display: none; }
     svg += `  <path d="${pathRamTotal}" class="res-ram-total-line" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6"/>`;
     svg += `  <path d="${pathRamUsed}" class="res-ram-used-line" fill="none" stroke="#c084fc" stroke-width="2"/>`;
     svg += `  <path d="${pathCpu}" class="res-cpu-line" fill="none" stroke="#38bdf8" stroke-width="2"/>`;
+
+    const tickCount = Math.min(8, N);
+    const tickIndices = new Set();
+    if (tickCount <= 1 || N <= 1) {
+      tickIndices.add(0);
+    } else {
+      for (let k = 0; k < tickCount - 1; k++) {
+        tickIndices.add(Math.round(k * (N - 1) / (tickCount - 1)));
+      }
+      tickIndices.add(N - 1);
+    }
+
+    tickIndices.forEach(idx => {
+      const x = ml + (N > 1 ? (idx / (N - 1)) * pw : pw / 2);
+      const sampleNum = window.resourceData[idx].n;
+      svg += `  <line x1="${x.toFixed(1)}" y1="${(mt + ph).toFixed(1)}" x2="${x.toFixed(1)}" y2="${(mt + ph + 4).toFixed(1)}" stroke="rgba(255,255,255,0.15)"/>`;
+      svg += `  <text x="${x.toFixed(1)}" y="${(height - 10).toFixed(1)}" text-anchor="middle" fill="#64748b" font-size="10" font-family="ui-monospace, monospace">#${sampleNum}</text>`;
+    });
+
+    if (N <= 50) {
+      for (let i = 0; i < N; i++) {
+        const d = window.resourceData[i];
+        const x = ml + (N > 1 ? (i / (N - 1)) * pw : pw / 2);
+        const yCpu = calcY(d.cpu, ceilCpu, mt, ph, isLeftLog);
+        const yRamUsed = calcY(d.ramUsed, ceilRam, mt, ph, isRightLog);
+        svg += `  <circle cx="${x.toFixed(1)}" y="${yCpu.toFixed(1)}" r="3" fill="#38bdf8" stroke="#ffffff" stroke-width="1"/>`;
+        svg += `  <circle cx="${x.toFixed(1)}" y="${yRamUsed.toFixed(1)}" r="3" fill="#c084fc" stroke="#ffffff" stroke-width="1"/>`;
+      }
+    }
 
     svg += `  <line id="resCrosshair" x1="0" y1="${mt.toFixed(1)}" x2="0" y2="${(mt + ph).toFixed(1)}" stroke="#94a3b8" stroke-dasharray="2 2" stroke-width="1" opacity="0" pointer-events="none"/>`;
     svg += `  <circle id="resCpuDot" cx="0" cy="0" r="4" fill="#38bdf8" stroke="#ffffff" stroke-width="2" opacity="0" pointer-events="none"/>`;
@@ -1150,21 +1301,28 @@ summary::-webkit-details-marker { display: none; }
     const maxRam = Math.max(100.0, ...ramVals);
 
     let ceilCpu, ceilRam;
-    if (!window.resCutoffSetting || window.resCutoffSetting === 'auto') {
+    if (!window.resLeftCutoffSetting || window.resLeftCutoffSetting === 'auto') {
       ceilCpu = Math.max(10.0, getNiceCeil(getPercentile(cpuVals, 0.95) * 1.2));
-      ceilRam = Math.max(100.0, getNiceCeil(getPercentile(ramVals, 0.95) * 1.2));
-    } else if (window.resCutoffSetting === 'max') {
+    } else if (window.resLeftCutoffSetting === 'max') {
       ceilCpu = Math.max(10.0, getNiceCeil(maxCpu));
+    } else {
+      const cut = parseFloat(window.resLeftCutoffSetting);
+      ceilCpu = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxCpu));
+    }
+
+    if (!window.resRightCutoffSetting || window.resRightCutoffSetting === 'auto') {
+      ceilRam = Math.max(100.0, getNiceCeil(getPercentile(ramVals, 0.95) * 1.2));
+    } else if (window.resRightCutoffSetting === 'max') {
       ceilRam = Math.max(100.0, getNiceCeil(maxRam));
     } else {
-      const cut = parseFloat(window.resCutoffSetting);
-      ceilCpu = !isNaN(cut) && cut > 0 ? cut : Math.max(10.0, getNiceCeil(maxCpu));
+      const cut = parseFloat(window.resRightCutoffSetting);
       ceilRam = !isNaN(cut) && cut > 0 ? cut : Math.max(100.0, getNiceCeil(maxRam));
     }
 
-    const isLog = (window.resScaleMode === 'log');
-    const yCpu = calcY(d.cpu, ceilCpu, mt, ph, isLog);
-    const yRam = calcY(d.ramUsed, ceilRam, mt, ph, isLog);
+    const isLeftLog = (window.resLeftScaleMode === 'log');
+    const isRightLog = (window.resRightScaleMode === 'log');
+    const yCpu = calcY(d.cpu, ceilCpu, mt, ph, isLeftLog);
+    const yRam = calcY(d.ramUsed, ceilRam, mt, ph, isRightLog);
 
     const crosshair = document.getElementById('resCrosshair');
     const cpuDot = document.getElementById('resCpuDot');

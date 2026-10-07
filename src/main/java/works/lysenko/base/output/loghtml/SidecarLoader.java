@@ -225,13 +225,30 @@ public final class SidecarLoader {
     }
 
     /**
-     * Reads system resource telemetry (CPU % and heap RAM in MB) from the sibling telemetry log file.
+     * Reads system resource telemetry (CPU % and heap RAM in MB) from the sibling telemetry log file,
+     * trimming samples outside the test execution period.
      *
      * @param runLogFile input run log file
      * @param testCount  total number of tests performed in the run
      * @return list of SystemResourceItem records
      */
     public static List<SystemResourceItem> loadTelemetryResources(final File runLogFile, final int testCount) {
+        final int[] bounds = findTestOpBounds(runLogFile);
+        return loadTelemetryResources(runLogFile, testCount, bounds[0], bounds[1]);
+    }
+
+    /**
+     * Reads system resource telemetry (CPU % and heap RAM in MB) from the sibling telemetry log file,
+     * trimming samples outside the specified test operation bounds.
+     *
+     * @param runLogFile input run log file
+     * @param testCount  total number of tests performed in the run
+     * @param minTestOp  first operation number of the test period
+     * @param maxTestOp  last operation number of the test period
+     * @return list of SystemResourceItem records
+     */
+    public static List<SystemResourceItem> loadTelemetryResources(
+            final File runLogFile, final int testCount, final int minTestOp, final int maxTestOp) {
         final List<SystemResourceItem> items = new ArrayList<>();
         if (null == runLogFile || null == runLogFile.getParentFile()) return items;
         final String runLogName = runLogFile.getName();
@@ -278,6 +295,9 @@ public final class SidecarLoader {
             }
         } catch (final IOException ignored) {
         }
+
+        final List<SystemResourceItem> trimmedItems = trimTelemetryToTestPeriod(items, minTestOp, maxTestOp);
+
         final int targetDensity;
         if (Boolean.TRUE.equals(PropEnum._TEST_REPORT_CPU_DENSITY_PER_TEST.get()) && testCount > 0) {
             targetDensity = testCount;
@@ -285,7 +305,90 @@ public final class SidecarLoader {
             final Integer configuredDensity = PropEnum._TEST_REPORT_CPU_DENSITY.get();
             targetDensity = (null != configuredDensity && configuredDensity > 0) ? configuredDensity : 5000;
         }
-        return downsampleTelemetry(items, targetDensity);
+        return downsampleTelemetry(trimmedItems, targetDensity);
+    }
+
+    /**
+     * Filters telemetry resource samples to retain only those within the test execution period.
+     *
+     * @param rawItems  unfiltered telemetry items
+     * @param minTestOp lower bound operation index
+     * @param maxTestOp upper bound operation index
+     * @return filtered list of telemetry items
+     */
+    public static List<SystemResourceItem> trimTelemetryToTestPeriod(
+            final List<SystemResourceItem> rawItems, final int minTestOp, final int maxTestOp) {
+        if (null == rawItems || rawItems.isEmpty()) return List.of();
+        if (minTestOp == Integer.MAX_VALUE || maxTestOp == Integer.MIN_VALUE || minTestOp > maxTestOp) {
+            return rawItems;
+        }
+        final List<SystemResourceItem> trimmed = new ArrayList<>();
+        for (final SystemResourceItem item : rawItems) {
+            if (item.sampleNum >= minTestOp && item.sampleNum <= maxTestOp) {
+                trimmed.add(item);
+            }
+        }
+        return trimmed.isEmpty() ? rawItems : trimmed;
+    }
+
+    /**
+     * Scans the run log file to locate the operation number range for the test execution phase.
+     *
+     * @param runLogFile input run log file
+     * @return two-element array with [minTestOp, maxTestOp]
+     */
+    public static int[] findTestOpBounds(final File runLogFile) {
+        if (null == runLogFile || !runLogFile.exists()) {
+            return new int[]{Integer.MAX_VALUE, Integer.MIN_VALUE};
+        }
+
+        int minOp = Integer.MAX_VALUE;
+        int maxOp = Integer.MIN_VALUE;
+        boolean inPostflight = false;
+
+        final Pattern lineWithTestRe = Pattern.compile("^\\[\\s*(\\d+)\\s*\\]\\[\\s*(\\d+)\\s*\\]\\[([^\\]]+)\\](?:\\[([^\\]]*)\\])?(.*)$");
+        final Pattern lineNoTestRe = Pattern.compile("^(?:\\[\\s*\\])?\\[\\s*(\\d+)\\s*\\]\\[([^\\]]+)\\](?:\\[([^\\]]*)\\])?(.*)$");
+        final Pattern ansiPat = Pattern.compile("\\x1b\\[[0-9;]*m");
+        final Pattern testRunSummaryRe = Pattern.compile(".*\\b\\d+\\s+tests?\\s+of\\s+.+\\s+done\\s+in\\s+.*");
+
+        try (final BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(runLogFile), StandardCharsets.UTF_8))) {
+            String line;
+            while (null != (line = reader.readLine())) {
+                final String clean = ansiPat.matcher(line).replaceAll("").trim();
+                if (clean.isEmpty()) continue;
+
+                if (!inPostflight && (clean.contains("Closing test service") || clean.contains("Event summary")
+                        || clean.contains("Events summary") || clean.contains("Postflight")
+                        || clean.contains("Test session completed")
+                        || testRunSummaryRe.matcher(clean).matches())) {
+                    inPostflight = true;
+                }
+
+                if (!inPostflight) {
+                    final Matcher mTest = lineWithTestRe.matcher(clean);
+                    if (mTest.matches()) {
+                        final int tNum = Integer.parseInt(mTest.group(1));
+                        final int opNum = Integer.parseInt(mTest.group(2));
+                        if (tNum > 0) {
+                            if (opNum < minOp) minOp = opNum;
+                            if (opNum > maxOp) maxOp = opNum;
+                        }
+                    } else {
+                        final Matcher mNoTest = lineNoTestRe.matcher(clean);
+                        if (mNoTest.matches()) {
+                            final int opNum = Integer.parseInt(mNoTest.group(1));
+                            if (minOp != Integer.MAX_VALUE) {
+                                if (opNum > maxOp) maxOp = opNum;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (final IOException | NumberFormatException ignored) {
+        }
+
+        return new int[]{minOp, maxOp};
     }
 
     /**

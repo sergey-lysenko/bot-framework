@@ -466,7 +466,18 @@ public final class LogParser {
             etaDebugItems.addAll(rawEtaDebugItems);
         }
         
-        final List<SystemResourceItem> resourceItems = addCpuDebug ? SidecarLoader.loadTelemetryResources(logFile, testData.size()) : List.of();
+        int minTestOp = Integer.MAX_VALUE;
+        int maxTestOp = Integer.MIN_VALUE;
+        for (final LogSection sec : sections) {
+            if ("test".equals(sec.type) || "limbo".equals(sec.type)) {
+                if (sec.startOp != null && sec.startOp < minTestOp) minTestOp = sec.startOp;
+                if (sec.endOp != null && sec.endOp > maxTestOp) maxTestOp = sec.endOp;
+            }
+        }
+
+        final List<SystemResourceItem> resourceItems = addCpuDebug
+                ? SidecarLoader.loadTelemetryResources(logFile, testData.size(), minTestOp, maxTestOp)
+                : List.of();
         final List<Double> telemetryCpuList = addCpuDebug ? telemetryCpu : List.of();
 
         final String lgScriptData = renderLgScriptData(testData, limboByPrevTest, completions, etaDebugItems, resourceItems, tAvg, tMax, lMax);

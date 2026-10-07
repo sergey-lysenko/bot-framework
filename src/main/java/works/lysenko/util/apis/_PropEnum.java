@@ -39,7 +39,11 @@ public interface _PropEnum {
     @SuppressWarnings("unchecked")
     default <T> T get() {
 
-        return (isNull(properties)) ? (T) StringParser.create(defaultValue(), type()).result() : (T) properties.getEnum(this);
+        if (isNull(properties)) {
+            properties = new works.lysenko.base.TestProperties();
+            properties.readCommonConfiguration();
+        }
+        return (T) properties.getEnum(this);
     }
 
     /**

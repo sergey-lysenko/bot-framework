@@ -253,9 +253,17 @@ public class TestProperties implements _TestProperties {
     @Override
     public final String getEnumTestPropertySource(final _PropEnum p) {
 
+        if (isNull(the)) readCommonConfiguration();
         final String def = p.defaultValue();
         final String key = p.getPropertyName();
-        final String source = isNull(the) ? def : the.getProperty(key, def);
+        String source = isNull(the) ? null : the.getProperty(key);
+        if (isNull(source) && isNotNull(the) && key.startsWith(".")) {
+            source = the.getProperty(key.substring(1));
+        }
+        if (isNull(source) && isNotNull(the) && !key.startsWith(".")) {
+            source = the.getProperty("." + key);
+        }
+        if (isNull(source)) source = def;
         if (isNotNull(exec) && !IN_GET_LOG.get()) {
             if (isNotNull(def) && !p.silent() && isDebug()) getLog(key, (null == source) ? null : source.trim(), def);
         }
@@ -270,7 +278,16 @@ public class TestProperties implements _TestProperties {
     @Override
     public final Object getProperty(final String key, final String def) {
 
-        return the.getProperty(key, def);
+        if (isNull(the)) readCommonConfiguration();
+        if (isNull(the)) return def;
+        String val = the.getProperty(key);
+        if (isNull(val) && key.startsWith(".")) {
+            val = the.getProperty(key.substring(1));
+        }
+        if (isNull(val) && !key.startsWith(".")) {
+            val = the.getProperty("." + key);
+        }
+        return (null != val) ? val : def;
     }
 
     public final Map<String, String> getSorted() {
@@ -284,7 +301,14 @@ public class TestProperties implements _TestProperties {
 
     public final String getTestPropertySource(final String name, final boolean silent) {
 
-        final String source = the.getProperty(name);
+        if (isNull(the)) readCommonConfiguration();
+        String source = isNull(the) ? null : the.getProperty(name);
+        if (isNull(source) && isNotNull(the) && name.startsWith(".")) {
+            source = the.getProperty(name.substring(1));
+        }
+        if (isNull(source) && isNotNull(the) && !name.startsWith(".")) {
+            source = the.getProperty("." + name);
+        }
         if (isNotNull(exec) && !IN_GET_LOG.get()) {
             if (isNull(source))
                 logEvent(S0, b(c(CONFIGURATION), PARAMETER, q(name), IS, UNDEFINED));
@@ -314,16 +338,19 @@ public class TestProperties implements _TestProperties {
     @SuppressWarnings("UseOfPropertiesAsHashtable")
     public final String readCommonConfiguration() {
 
+        if (isNotNull(commonConfiguration) && isNotNull(the) && !the.isEmpty()) return "";
+        if (isNull(the)) {
+            the = new Properties();
+        }
         final works.lysenko.util.func.core.TestProperties.Result result;
         result = readTestPropertiesFromFile(new TestPropertiesDescriptor(_RESOURCES_, COMMON_CONFIGURATION, _DOT_PROPERTIES));
-        commonConfiguration = result.properties();
-        if (isNull(the)) {
-            the = new Properties(); // reset
+        if (isNotNull(result) && isNotNull(result.properties())) {
+            commonConfiguration = result.properties();
             the.putAll(commonConfiguration);
         }
         applyUserOverrides();
         updateConfigFileDefaults(null);
-        return result.debug();
+        return (isNotNull(result)) ? result.debug() : "";
     }
 
     @SuppressWarnings("UseOfPropertiesAsHashtable")
