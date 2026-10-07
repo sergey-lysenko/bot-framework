@@ -31,10 +31,13 @@ public final class ChartsRenderer {
     public static String renderLeafCompletionGraph(final List<LeafCompletion> completions) {
         if (completions.isEmpty()) return "";
 
+        final int N = completions.size();
         final double width = 1000.0;
         final double height = 240.0;
-        final double marginLeft = 55.0;
-        final double marginRight = 55.0;
+        final double marginX = 55.0;
+        final double testWidthY = (width - 2.0 * marginX) / Math.max(1, N);
+        final double marginLeft = marginX + testWidthY / 2.0;
+        final double marginRight = marginX + testWidthY / 2.0;
         final double marginTop = 26.0;
         final double marginBottom = 34.0;
         final double plotW = width - marginLeft - marginRight;
@@ -152,7 +155,6 @@ public final class ChartsRenderer {
                     marginLeft + plotW + 8, y + 3.5, rightLabel));
         }
 
-        final int N = completions.size();
         final int tickCount = Math.min(8, N);
         final Set<Integer> tickIndices = new LinkedHashSet<>();
         if (tickCount <= 1 || N <= 1) {
@@ -251,10 +253,13 @@ public final class ChartsRenderer {
     public static String renderEtaDebugGraph(final List<EtaDebugItem> items) {
         if (items.isEmpty()) return "";
 
+        final int N = items.size();
         final double width = 1000.0;
         final double height = 240.0;
-        final double marginLeft = 55.0;
-        final double marginRight = 55.0;
+        final double marginX = 55.0;
+        final double testWidthY = (width - 2.0 * marginX) / Math.max(1, N);
+        final double marginLeft = marginX + testWidthY / 2.0;
+        final double marginRight = marginX + testWidthY / 2.0;
         final double marginTop = 26.0;
         final double marginBottom = 34.0;
         final double plotW = width - marginLeft - marginRight;
@@ -345,7 +350,6 @@ public final class ChartsRenderer {
                     marginLeft + plotW + 8, y + 3.5, rightLabel));
         }
 
-        final int N = items.size();
         final int tickCount = Math.min(8, N);
         final Set<Integer> tickIndices = new LinkedHashSet<>();
         if (tickCount <= 1 || N <= 1) {

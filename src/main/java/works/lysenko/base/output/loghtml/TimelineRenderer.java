@@ -335,8 +335,10 @@ public final class TimelineRenderer {
         final double width = 1000.0;
         final double height = 240.0;
         final boolean hasLimbo = lMax > 0 && !limboByPrevTest.isEmpty();
-        final double marginLeft = 55.0;
-        final double marginRight = hasLimbo ? 55.0 : 25.0;
+        final double marginX = 55.0;
+        final double testWidthY = (width - 2.0 * marginX) / Math.max(1, N);
+        final double marginLeft = marginX + testWidthY / 2.0;
+        final double marginRight = marginX + testWidthY / 2.0;
         final double marginTop = 26.0;
         final double marginBottom = 34.0;
         final double plotW = width - marginLeft - marginRight;

@@ -146,8 +146,8 @@ class LogHtmlTest {
         assertFalse(html.contains("leaf-chart-scroll-wrap"), "Leaf completion chart should never render a horizontal scroll wrapper");
         assertTrue(html.contains("viewBox=\"0 0 1000 240\""),
                 "Leaf completion SVG width should be controlled by responsive CSS");
-        assertTrue(html.contains("<path d=\"M 55.00 136.37 L 500.00 66.73 L 945.00 165.27\" class=\"leaf-chart-line\""),
-                "Leaf completion points should be distributed evenly across the chart");
+        assertTrue(html.contains("<path d=\"M 203.33 136.37 L 500.00 66.73 L 796.67 165.27\" class=\"leaf-chart-line\""),
+                "Leaf completion points should be centered in test sections across the chart");
         assertTrue(html.contains("window.lgData = [{\"n\":1"));
         assertTrue(html.contains("\"s\":10.000"));
         assertTrue(html.contains("\"s\":1.000"));
