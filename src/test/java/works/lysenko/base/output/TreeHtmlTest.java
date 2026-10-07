@@ -8,6 +8,7 @@ import works.lysenko.tree.inheritance.outer.Alias;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -183,4 +184,140 @@ class TreeHtmlTest {
         assertTrue(html.contains(".connector.visited { stroke: #22c55e; stroke-width: 2.5; }"));
     }
 
+    @Test
+    void testLayoutDeterminismAndNoEdgeCrossings() {
+        final List<NodeData> run1Nodes = createTestGraph();
+        final List<NodeData> run2Nodes = createTestGraph();
+
+        // Permute/shuffle run2Nodes order to simulate non-deterministic initial list order
+        java.util.Collections.shuffle(run2Nodes, new java.util.Random(42));
+
+        TreeHtml.optimizeLayout(run1Nodes);
+        TreeHtml.optimizeLayout(run2Nodes);
+
+        // 1. Check 100% deterministic positioning across runs
+        final Map<String, Double> run1Map = run1Nodes.stream().collect(java.util.stream.Collectors.toMap(NodeData::id, NodeData::row));
+        final Map<String, Double> run2Map = run2Nodes.stream().collect(java.util.stream.Collectors.toMap(NodeData::id, NodeData::row));
+
+        assertEquals(run1Map.size(), run2Map.size());
+        for (final String id : run1Map.keySet()) {
+            assertEquals(run1Map.get(id), run2Map.get(id), 1e-6, "Node " + id + " row must be identical across runs");
+        }
+
+        // 2. Check no edge crossings between adjacent columns
+        for (final NodeData n1 : run1Nodes) {
+            for (final NodeData n2 : run1Nodes) {
+                if (n1.col() == n2.col() && n1.row() < n2.row()) {
+                    for (final NodeData child1 : n1.children()) {
+                        for (final NodeData child2 : n2.children()) {
+                            if (child1.col() == child2.col()) {
+                                assertTrue(child1.row() <= child2.row(),
+                                        "Edge (" + n1.label() + " -> " + child1.label() + ") and ("
+                                                + n2.label() + " -> " + child2.label() + ") must not cross");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static List<NodeData> createTestGraph() {
+        final List<NodeData> nodes = new ArrayList<>();
+        final NodeData root = new NodeData("col_0_0", "SignIn", "Root", 0, 1.0, null);
+        nodes.add(root);
+
+        final NodeData loginA = new NodeData("col_1_0", "CorrectLogin", "Login", 1, 1.0, null);
+        final NodeData loginB = new NodeData("col_1_1", "WrongLogin", "Login", 1, 2.0, null);
+        loginA.setParent(root); root.children().add(loginA);
+        loginB.setParent(root); root.children().add(loginB);
+        nodes.add(loginA); nodes.add(loginB);
+
+        final NodeData modA1 = new NodeData("col_2_0", "Dashboard", "Main", 2, 1.0, null);
+        final NodeData modA2 = new NodeData("col_2_1", "Reports", "Main", 2, 2.0, null);
+        final NodeData modB1 = new NodeData("col_2_2", "AuditLogs", "Main", 2, 3.0, null);
+
+        modA1.setParent(loginA); loginA.children().add(modA1);
+        modA2.setParent(loginA); loginA.children().add(modA2);
+        modB1.setParent(loginB); loginB.children().add(modB1);
+        nodes.add(modA1); nodes.add(modA2); nodes.add(modB1);
+
+        return nodes;
+    }
+
+    @Test
+    void testComplex37LeafTreeHasNoEdgeCrossings() {
+        final List<NodeData> nodes = createComplex37LeafGraph();
+        TreeHtml.optimizeLayout(nodes);
+
+        // Verify zero edge crossings between any adjacent columns
+        for (final NodeData n1 : nodes) {
+            for (final NodeData n2 : nodes) {
+                if (n1.col() == n2.col() && n1.row() < n2.row()) {
+                    for (final NodeData child1 : n1.children()) {
+                        for (final NodeData child2 : n2.children()) {
+                            if (child1.col() == child2.col()) {
+                                assertTrue(child1.row() <= child2.row(),
+                                        "Edge (" + n1.label() + " -> " + child1.label() + ") at row " + child1.row()
+                                                + " and (" + n2.label() + " -> " + child2.label() + ") at row " + child2.row()
+                                                + " must not cross");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static List<NodeData> createComplex37LeafGraph() {
+        final List<NodeData> nodes = new ArrayList<>();
+        final NodeData root = new NodeData("signIn", "SignIn", "Root", 0, 1.0, null);
+        nodes.add(root);
+
+        final NodeData correctLogin = new NodeData("correctLogin", "CorrectLogin", "Login", 1, 1.0, null);
+        final NodeData wrongLogin = new NodeData("wrongLogin", "WrongLogin", "Login", 1, 2.0, null);
+        final NodeData wrongPassword = new NodeData("wrongPassword", "WrongPassword", "Login", 1, 3.0, null);
+        correctLogin.setParent(root); root.children().add(correctLogin);
+        wrongLogin.setParent(root); root.children().add(wrongLogin);
+        wrongPassword.setParent(root); root.children().add(wrongPassword);
+        nodes.add(correctLogin); nodes.add(wrongLogin); nodes.add(wrongPassword);
+
+        // Col 2 under CorrectLogin
+        final NodeData aiUsage = new NodeData("aiUsage", "AiUsageReport", "Main", 2, 1.0, null);
+        final NodeData appMgmt = new NodeData("appMgmt", "AppManagement", "Main", 2, 2.0, null);
+        final NodeData auditLogs = new NodeData("auditLogs", "AuditLogs", "Main", 2, 3.0, null);
+        final NodeData billing = new NodeData("billing", "Billing", "Main", 2, 4.0, null);
+        final NodeData reports = new NodeData("reports", "Reports", "Main", 2, 5.0, null);
+        final NodeData settings = new NodeData("settings", "Settings", "Main", 2, 6.0, null);
+
+        for (final NodeData nd : List.of(aiUsage, appMgmt, auditLogs, billing, reports, settings)) {
+            nd.setParent(correctLogin);
+            correctLogin.children().add(nd);
+            nodes.add(nd);
+        }
+
+        // Col 3
+        final NodeData aiChild = new NodeData("aiChild", "Export", "Ai", 3, 1.0, null);
+        aiChild.setParent(aiUsage); aiUsage.children().add(aiChild); nodes.add(aiChild);
+
+        final NodeData details = new NodeData("details", "Details", "Audit", 3, 1.0, null);
+        details.setParent(auditLogs); auditLogs.children().add(details); nodes.add(details);
+
+        final NodeData inv = new NodeData("inv", "Invoices", "Bill", 3, 1.0, null);
+        final NodeData mod = new NodeData("mod", "Modules", "Bill", 3, 2.0, null);
+        inv.setParent(billing); billing.children().add(inv); nodes.add(inv);
+        mod.setParent(billing); billing.children().add(mod); nodes.add(mod);
+
+        final NodeData repBilling = new NodeData("repBilling", "Billing", "Rep", 3, 1.0, null);
+        repBilling.setParent(reports); reports.children().add(repBilling); nodes.add(repBilling);
+
+        final NodeData configProd = new NodeData("configProd", "ConfigureProducts", "Set", 3, 1.0, null);
+        configProd.setParent(settings); settings.children().add(configProd); nodes.add(configProd);
+
+        // Col 4
+        final NodeData filter = new NodeData("filter", "Filter", "RepBill", 4, 1.0, null);
+        filter.setParent(repBilling); repBilling.children().add(filter); nodes.add(filter);
+
+        return nodes;
+    }
 }

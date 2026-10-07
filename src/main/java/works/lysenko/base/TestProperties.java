@@ -206,16 +206,15 @@ public class TestProperties implements _TestProperties {
     @Override
     public final void setUserOverride(final String key, final String value) {
 
-        final String canonicalKey = works.lysenko.util.func.core.TestProperties.canonicalPropertyName(key);
         if (null == value) {
-            userOverrides.remove(canonicalKey);
+            userOverrides.remove(key);
             if (isNotNull(the)) {
-                the.remove(canonicalKey);
+                the.remove(key);
             }
         } else {
-            userOverrides.put(canonicalKey, value);
+            userOverrides.put(key, value);
             if (isNotNull(the)) {
-                the.setProperty(canonicalKey, value);
+                the.setProperty(key, value);
             }
         }
     }
@@ -226,7 +225,7 @@ public class TestProperties implements _TestProperties {
         userOverrides.clear();
         if (isNotNull(overrides)) {
             for (final Map.Entry<String, String> entry : overrides.entrySet()) {
-                final String name = works.lysenko.util.func.core.TestProperties.canonicalPropertyName(entry.getKey());
+                final String name = entry.getKey();
                 final String val = entry.getValue();
                 if (null != val) {
                     userOverrides.put(name, val);
@@ -434,7 +433,7 @@ public class TestProperties implements _TestProperties {
             final String key = entry.getKey();
             final String value = entry.getValue();
             final String def = defaults.get(key);
-            if (isNotNull(def) && def.equals(value)) {
+            if (isNotNull(def) && def.equalsIgnoreCase(value)) {
                 the.remove(key);
             } else if (isNotNull(value)) {
                 the.setProperty(key, value);

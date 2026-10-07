@@ -49,7 +49,7 @@ record Keys() {
         if (!meta.defaults().containsKey(key)) return processUnknown(entry, meta.keysWithValidClasses());
         final String def = meta.defaults().get(key);
         final String value = entry.getValue();
-        final boolean defaultValue = value.equals(def);
+        final boolean defaultValue = value.equalsIgnoreCase(def);
         meta.defaults().remove(key);
         final String commonMarker = properties.isCommonValue(key, value) ? COMMON_MARKER : EMPTY;
         final String renderedKey = bb(!defaultValue, entry.getKey());

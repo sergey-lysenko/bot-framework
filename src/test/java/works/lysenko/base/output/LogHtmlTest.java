@@ -123,7 +123,10 @@ class LogHtmlTest {
                 "[  ][3][10.010][2] • Test time 10 s",
                 "[ 2][4][11.000][10] Executing Second Scenario",
                 "[ 2][5][12.000][5] • Closing test 2 ...",
-                "[  ][6][12.010][2] • Test time 1 s"));
+                "[  ][6][12.010][2] • Test time 1 s",
+                "[ 3][7][13.000][10] Executing Third Scenario",
+                "[ 3][8][14.000][5] • Closing test 3 ...",
+                "[  ][9][14.010][2] • Test time 1 s"));
         Files.write(completionPath, List.of(
                 "[ALL_LEAF_COMPLETION] 1 1000 checkout.Cart",
                 "[ALL_LEAF_COMPLETION] 2 4000 checkout.Payment",
@@ -173,7 +176,10 @@ class LogHtmlTest {
         Files.write(logPath, List.of(
                 "[ 1][1][0.000][10] Executing Scenario",
                 "[ 1][2][10.000][5] • Closing test 1 ...",
-                "[  ][3][10.010][2] • Test time 10 s"));
+                "[  ][3][10.010][2] • Test time 10 s",
+                "[ 2][4][11.000][10] Executing Second Scenario",
+                "[ 2][5][12.000][5] • Closing test 2 ...",
+                "[  ][6][12.010][2] • Test time 1 s"));
         Files.write(completionPath, List.of(
                 "[ALL_LEAF_COMPLETION] 1 1000 20000 checkout.Cart",
                 "[ALL_LEAF_COMPLETION] 2 4000 15000 checkout.Payment"));
@@ -199,7 +205,10 @@ class LogHtmlTest {
         Files.write(logPath, List.of(
                 "[ 1][1][0.000][10] Executing Scenario",
                 "[ 1][2][10.000][5] • Closing test 1 ...",
-                "[  ][3][10.010][2] • Test time 10 s"));
+                "[  ][3][10.010][2] • Test time 10 s",
+                "[ 2][4][11.000][10] Executing Second Scenario",
+                "[ 2][5][12.000][5] • Closing test 2 ...",
+                "[  ][6][12.010][2] • Test time 1 s"));
         Files.write(etaDebugPath, List.of(
                 "[ETA_DEBUG] 1 1000 5000 1000 5500 TestScenario1",
                 "[ETA_DEBUG] 2 2000 5000 1000 5200 TestScenario2"));
@@ -221,7 +230,10 @@ class LogHtmlTest {
         Files.write(logPath, List.of(
                 "[ 1][1][0.000][10] Executing Scenario",
                 "[ 1][2][10.000][5] • Closing test 1 ...",
-                "[  ][3][10.010][2] • Test time 10 s"));
+                "[  ][3][10.010][2] • Test time 10 s",
+                "[ 2][4][11.000][10] Executing Second Scenario",
+                "[ 2][5][12.000][5] • Closing test 2 ...",
+                "[  ][6][12.010][2] • Test time 1 s"));
         Files.write(telemPath, List.of(
                 "0,100,12.5,100,4,8,10,0,10,104857600,524288000,1048576000,sample1",
                 "0,200,25.0,200,4,8,10,0,10,209715200,524288000,1048576000,sample2"));

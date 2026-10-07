@@ -116,7 +116,7 @@ public final class TreeHtml {
             for (final _Scenario r : roots) {
                 if (null != r) sortedRoots.add(r);
             }
-            sortedRoots.sort(Comparator.comparing(_Scenario::getSimpleName));
+            sortedRoots.sort(Comparator.comparing(_Scenario::getSimpleName).thenComparing(_Scenario::getName));
         }
         for (final _Scenario root : sortedRoots)
             processScenario(root, null, 0, rows, ancestors, sorted, nodes, edges);
@@ -139,9 +139,14 @@ public final class TreeHtml {
             parent.children().add(node);
             edges.add(new Edge(parent, node));
         }
-        if (scenario instanceof _Node parentNode)
-            for (final var child : parentNode.getPool().getPairList())
+        if (scenario instanceof _Node parentNode) {
+            final List<works.lysenko.util.data.records.KeyValue<_Scenario, org.apache.commons.math3.fraction.Fraction>> pairs =
+                    new ArrayList<>(parentNode.getPool().getPairList());
+            pairs.sort(Comparator.comparing((works.lysenko.util.data.records.KeyValue<_Scenario, org.apache.commons.math3.fraction.Fraction> p) -> p.k().getSimpleName())
+                    .thenComparing(p -> p.k().getName()));
+            for (final var child : pairs)
                 processScenario(child.k(), node, col + 1, rows, ancestors, sorted, nodes, edges);
+        }
         ancestors.remove(scenario);
     }
 
@@ -199,28 +204,50 @@ public final class TreeHtml {
         }
     }
 
+    private static double columnWeight(final int col) {
+        return Math.pow(2.0, Math.max(0, col));
+    }
+
     static void optimizeLayout(final List<NodeData> nodes) {
         if (nodes.isEmpty()) return;
 
-        final Map<Integer, List<NodeData>> colMap = new HashMap<>();
+        final Map<Integer, List<NodeData>> colMap = new TreeMap<>();
         int maxCol = 0;
         for (final NodeData n : nodes) {
             colMap.computeIfAbsent(n.col(), k -> new ArrayList<>()).add(n);
             if (n.col() > maxCol) maxCol = n.col();
         }
 
-        // Initialize rows sequentially in each column
-        for (final List<NodeData> colNodes : colMap.values()) {
+        // Initialize rows top-down (column by column) aligned with parents
+        for (int c = 0; c <= maxCol; c++) {
+            final List<NodeData> colNodes = colMap.get(c);
+            if (null == colNodes || colNodes.isEmpty()) continue;
+            colNodes.sort((n1, n2) -> {
+                final double p1 = (null != n1.parent()) ? n1.parent().row() : n1.row();
+                final double p2 = (null != n2.parent()) ? n2.parent().row() : n2.row();
+                final int pCmp = Double.compare(p1, p2);
+                if (pCmp != 0) return pCmp;
+                final int lCmp = n1.label().compareTo(n2.label());
+                if (lCmp != 0) return lCmp;
+                return n1.id().compareTo(n2.id());
+            });
+            final double[] targets = new double[colNodes.size()];
             for (int i = 0; i < colNodes.size(); i++) {
-                colNodes.get(i).setRow(i + 1.0);
+                final NodeData n = colNodes.get(i);
+                targets[i] = (null != n.parent()) ? n.parent().row() : (i + 1.0);
+            }
+            final double[] resolved = solveColumn1D(targets);
+            for (int i = 0; i < colNodes.size(); i++) {
+                colNodes.get(i).setRow(resolved[i]);
             }
         }
 
-        // Iterative barycentric relaxation with isotonic regression (PAVA)
-        // Minimizes total edge distance while strictly enforcing the non-overlapping constraint (row[i+1] >= row[i] + 1.0)
-        final int iterations = 24;
+        // Iterative barycentric relaxation with isotonic regression (PAVA) and depth-based tension
+        // Tension increases exponentially with column depth (W_c = 2^c).
+        // Vertical gaps between intermediate nodes are created naturally to minimize total edge lengths while preventing edge crossings.
+        final int iterations = 32;
         for (int iter = 0; iter < iterations; iter++) {
-            final boolean backward = (0 == iter % 2);
+            final boolean backward = (1 == iter % 2);
             final int startCol = backward ? maxCol : 0;
             final int endCol = backward ? 0 : maxCol;
             final int step = backward ? -1 : 1;
@@ -229,29 +256,76 @@ public final class TreeHtml {
                 final List<NodeData> colNodes = colMap.get(c);
                 if (null == colNodes || colNodes.isEmpty()) continue;
 
-                final record NodeTarget(NodeData node, double target) {}
-                final List<NodeTarget> nodeTargets = new ArrayList<>(colNodes.size());
+                final Map<NodeData, Double> parentRowMap = new HashMap<>();
+                final Map<NodeData, Double> childrenRowMap = new HashMap<>();
+                final Map<NodeData, Double> targetMap = new HashMap<>();
+
                 for (final NodeData n : colNodes) {
-                    double sum = 0.0;
-                    int count = 0;
+                    double parentSum = 0.0;
+                    double parentWeight = 0.0;
                     if (null != n.parent()) {
-                        sum += n.parent().row();
-                        count++;
+                        final double wP = columnWeight(c - 1);
+                        parentSum += n.parent().row() * wP;
+                        parentWeight += wP;
                     }
+
+                    double childSum = 0.0;
+                    double childWeight = 0.0;
+                    final double wC = columnWeight(c);
                     for (final NodeData child : n.children()) {
-                        sum += child.row();
-                        count++;
+                        if (!child.children().isEmpty()) {
+                            childSum += child.row() * wC;
+                            childWeight += wC;
+                        }
                     }
-                    final double target = (0 < count) ? (sum / count) : n.row();
-                    nodeTargets.add(new NodeTarget(n, target));
+
+                    if (parentWeight > 0.0) {
+                        parentRowMap.put(n, parentSum / parentWeight);
+                    }
+                    if (childWeight > 0.0) {
+                        childrenRowMap.put(n, childSum / childWeight);
+                    }
+
+                    final double target;
+                    if (parentWeight > 0.0 && childWeight > 0.0) {
+                        target = (parentSum + childSum) / (parentWeight + childWeight);
+                    } else if (parentWeight > 0.0) {
+                        target = parentSum / parentWeight;
+                    } else if (childWeight > 0.0) {
+                        target = childSum / childWeight;
+                    } else {
+                        target = n.row();
+                    }
+                    targetMap.put(n, target);
                 }
 
-                nodeTargets.sort(Comparator.comparingDouble(NodeTarget::target));
+                // Interpolate targets for sibling nodes without children so they space out smoothly in gaps
+                interpolateSiblingTargets(colNodes, parentRowMap, childrenRowMap, targetMap);
+
+                // Sort colNodes to strictly prevent edge crossings and minimize connection lengths
+                colNodes.sort((n1, n2) -> {
+                    final double p1 = parentRowMap.containsKey(n1) ? parentRowMap.get(n1) : n1.row();
+                    final double p2 = parentRowMap.containsKey(n2) ? parentRowMap.get(n2) : n2.row();
+                    final int pCmp = Double.compare(p1, p2);
+                    if (pCmp != 0) return pCmp;
+
+                    final double c1 = childrenRowMap.containsKey(n1) ? childrenRowMap.get(n1) : n1.row();
+                    final double c2 = childrenRowMap.containsKey(n2) ? childrenRowMap.get(n2) : n2.row();
+                    final int cCmp = Double.compare(c1, c2);
+                    if (cCmp != 0) return cCmp;
+
+                    final int tCmp = Double.compare(targetMap.get(n1), targetMap.get(n2));
+                    if (tCmp != 0) return tCmp;
+
+                    final int lCmp = n1.label().compareTo(n2.label());
+                    if (lCmp != 0) return lCmp;
+
+                    return n1.id().compareTo(n2.id());
+                });
 
                 final double[] targets = new double[colNodes.size()];
-                for (int i = 0; i < nodeTargets.size(); i++) {
-                    colNodes.set(i, nodeTargets.get(i).node);
-                    targets[i] = nodeTargets.get(i).target;
+                for (int i = 0; i < colNodes.size(); i++) {
+                    targets[i] = targetMap.get(colNodes.get(i));
                 }
 
                 final double[] resolved = solveColumn1D(targets);
@@ -275,6 +349,62 @@ public final class TreeHtml {
         compactDisconnectedTrees(nodes);
     }
 
+    private static void interpolateSiblingTargets(
+            final List<NodeData> colNodes,
+            final Map<NodeData, Double> parentRowMap,
+            final Map<NodeData, Double> childrenRowMap,
+            final Map<NodeData, Double> targetMap) {
+
+        final Map<NodeData, List<NodeData>> parentGroups = new LinkedHashMap<>();
+        for (final NodeData n : colNodes) {
+            parentGroups.computeIfAbsent(n.parent(), k -> new ArrayList<>()).add(n);
+        }
+
+        for (final List<NodeData> siblings : parentGroups.values()) {
+            if (siblings.size() <= 1) continue;
+
+            final List<Integer> fixedIndices = new ArrayList<>();
+            for (int i = 0; i < siblings.size(); i++) {
+                if (childrenRowMap.containsKey(siblings.get(i))) {
+                    fixedIndices.add(i);
+                }
+            }
+
+            if (fixedIndices.isEmpty()) continue;
+
+            for (int k = 0; k < siblings.size(); k++) {
+                final NodeData s = siblings.get(k);
+                if (childrenRowMap.containsKey(s)) continue;
+
+                int leftIdx = -1;
+                for (final int f : fixedIndices) {
+                    if (f < k) leftIdx = f;
+                    else break;
+                }
+
+                int rightIdx = -1;
+                for (final int f : fixedIndices) {
+                    if (f > k) { rightIdx = f; break; }
+                }
+
+                final double parentRow = parentRowMap.getOrDefault(s, s.row());
+
+                if (leftIdx != -1 && rightIdx != -1) {
+                    final double leftTarget = targetMap.get(siblings.get(leftIdx));
+                    final double rightTarget = targetMap.get(siblings.get(rightIdx));
+                    final double ratio = (double) (k - leftIdx) / (rightIdx - leftIdx);
+                    targetMap.put(s, leftTarget + ratio * (rightTarget - leftTarget));
+                } else if (leftIdx != -1) {
+                    final double leftTarget = targetMap.get(siblings.get(leftIdx));
+                    targetMap.put(s, leftTarget + (k - leftIdx) * 1.0);
+                } else if (rightIdx != -1) {
+                    final double rightTarget = targetMap.get(siblings.get(rightIdx));
+                    targetMap.put(s, Math.max(parentRow, rightTarget - (rightIdx - k) * 1.0));
+                }
+            }
+        }
+    }
+
     static void compactDisconnectedTrees(final List<NodeData> nodes) {
 
         final Map<NodeData, List<NodeData>> components = new IdentityHashMap<>();
@@ -282,7 +412,17 @@ public final class TreeHtml {
             components.computeIfAbsent(rootOf(node), ignored -> new ArrayList<>()).add(node);
 
         final List<List<NodeData>> ordered = new ArrayList<>(components.values());
-        ordered.sort(Comparator.comparingDouble(TreeHtml::minimumRow));
+        ordered.sort((c1, c2) -> {
+            final int mCmp = Double.compare(minimumRow(c1), minimumRow(c2));
+            if (mCmp != 0) return mCmp;
+            final String l1 = c1.isEmpty() ? "" : c1.get(0).label();
+            final String l2 = c2.isEmpty() ? "" : c2.get(0).label();
+            final int lCmp = l1.compareTo(l2);
+            if (lCmp != 0) return lCmp;
+            final String id1 = c1.isEmpty() ? "" : c1.get(0).id();
+            final String id2 = c2.isEmpty() ? "" : c2.get(0).id();
+            return id1.compareTo(id2);
+        });
 
         double nextRow = 1.0;
         for (final List<NodeData> component : ordered) {

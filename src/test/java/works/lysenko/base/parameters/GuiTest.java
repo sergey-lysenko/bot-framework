@@ -486,62 +486,18 @@ class GuiTest {
     }
 
     @Test
-    void testProgressionPropertiesUseGroupedNamesAndReadLegacyAliases(@TempDir final Path tempDir) throws IOException {
+    void testProgressionPropertiesUseGroupedNames() {
         assertEquals(".test.report.progression.scenario", PropEnum._TEST_REPORT_PROGRESSION_SCENARIO.getPropertyName());
         assertEquals(".test.report.progression.scenario.mp4", PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_MP4.getPropertyName());
         assertEquals(".test.report.progression.tree", PropEnum._TEST_REPORT_PROGRESSION_TREE.getPropertyName());
         assertEquals(".test.report.progression.tree.mp4", PropEnum._TEST_REPORT_PROGRESSION_TREE_MP4.getPropertyName());
-
-        final Path config = tempDir.resolve("legacy.properties");
-        Files.writeString(config, String.join(System.lineSeparator(),
-                ".scenario.progression=false",
-                ".scenario.progression.mp4=true",
-                ".tree.progression=false",
-                ".tree.progression.mp4=true",
-                ".progression.scenario=true"));
-
-        final works.lysenko.util.func.core.TestProperties.Result result =
-                works.lysenko.util.func.core.TestProperties.readTestPropertiesFromFile(
-                        new TestPropertiesDescriptor(tempDir + File.separator, "legacy", ".properties"));
-        final Properties properties = result.properties();
-        assertEquals("true", properties.getProperty(".test.report.progression.scenario"),
-                "The new property name should take precedence over its legacy alias");
-        assertEquals("true", properties.getProperty(".test.report.progression.scenario.mp4"));
-        assertEquals("false", properties.getProperty(".test.report.progression.tree"));
-        assertEquals("true", properties.getProperty(".test.report.progression.tree.mp4"));
-        assertFalse(properties.containsKey(".scenario.progression"));
-
-        final TestProperties overrides = new TestProperties();
-        overrides.setUserOverride(".scenario.progression", "false");
-        assertEquals("false", overrides.getUserOverrides().get(".test.report.progression.scenario"));
     }
 
     @Test
-    void testSwipeMarkerPropertiesShareSwipeNamespaceAndReadLegacyAliases(@TempDir final Path tempDir) throws IOException {
+    void testSwipeMarkerPropertiesShareSwipeNamespace() {
         assertEquals(".swipes.marker.line.colour", PropEnum._SWIPE_LINE_MARKER_COLOUR.getPropertyName());
         assertEquals(".swipes.marker.start.colour", PropEnum._SWIPE_START_MARKER_COLOUR.getPropertyName());
         assertEquals(".swipes.marker.stop.colour", PropEnum._SWIPE_STOP_MARKER_COLOUR.getPropertyName());
-
-        final Path config = tempDir.resolve("legacy-swipe.properties");
-        Files.writeString(config, String.join(System.lineSeparator(),
-                ".swipe.line.marker.colour=1,2,3,4",
-                ".swipe.start.marker.colour=5,6,7,8",
-                ".swipe.stop.marker.colour=9,10,11,12",
-                ".swipes.marker.line.colour=13,14,15,16"));
-
-        final works.lysenko.util.func.core.TestProperties.Result result =
-                works.lysenko.util.func.core.TestProperties.readTestPropertiesFromFile(
-                        new TestPropertiesDescriptor(tempDir + File.separator, "legacy-swipe", ".properties"));
-        final Properties properties = result.properties();
-        assertEquals("13,14,15,16", properties.getProperty(".swipes.marker.line.colour"),
-                "The new property name should take precedence over its legacy alias");
-        assertEquals("5,6,7,8", properties.getProperty(".swipes.marker.start.colour"));
-        assertEquals("9,10,11,12", properties.getProperty(".swipes.marker.stop.colour"));
-        assertFalse(properties.containsKey(".swipe.start.marker.colour"));
-
-        final TestProperties overrides = new TestProperties();
-        overrides.setUserOverride(".swipe.line.marker.colour", "1,2,3,4");
-        assertEquals("1,2,3,4", overrides.getUserOverrides().get(".swipes.marker.line.colour"));
     }
 
     @Test

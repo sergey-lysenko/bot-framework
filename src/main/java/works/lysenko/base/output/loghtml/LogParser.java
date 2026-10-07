@@ -436,8 +436,36 @@ public final class LogParser {
         final boolean addEtaDebug = Boolean.TRUE.equals(PropEnum._TEST_REPORT_ADD_ETA_DEBUG.get());
         final boolean addCpuDebug = Boolean.TRUE.equals(PropEnum._TEST_REPORT_ADD_CPU_DEBUG.get());
 
-        final List<LeafCompletion> completions = addAllLeaf ? SidecarLoader.loadLeafCompletions(logFile) : List.of();
-        final List<EtaDebugItem> etaDebugItems = addEtaDebug ? SidecarLoader.loadEtaDebugItems(logFile) : List.of();
+        final List<LeafCompletion> rawCompletions = addAllLeaf ? SidecarLoader.loadLeafCompletions(logFile) : List.of();
+        final List<EtaDebugItem> rawEtaDebugItems = addEtaDebug ? SidecarLoader.loadEtaDebugItems(logFile) : List.of();
+        
+        final List<LeafCompletion> completions = new ArrayList<>();
+        final List<EtaDebugItem> etaDebugItems = new ArrayList<>();
+        if (!testData.isEmpty()) {
+            final java.util.Set<Integer> validTestNums = new java.util.LinkedHashSet<>();
+            for (final TelemetryItem item : testData) {
+                validTestNums.add(item.testNum);
+            }
+            final java.util.Map<Integer, LeafCompletion> compMap = new java.util.LinkedHashMap<>();
+            for (final LeafCompletion c : rawCompletions) {
+                if (validTestNums.contains(c.testNum)) {
+                    compMap.put(c.testNum, c);
+                }
+            }
+            completions.addAll(compMap.values());
+
+            final java.util.Map<Integer, EtaDebugItem> etaMap = new java.util.LinkedHashMap<>();
+            for (final EtaDebugItem e : rawEtaDebugItems) {
+                if (validTestNums.contains(e.testNum)) {
+                    etaMap.put(e.testNum, e);
+                }
+            }
+            etaDebugItems.addAll(etaMap.values());
+        } else {
+            completions.addAll(rawCompletions);
+            etaDebugItems.addAll(rawEtaDebugItems);
+        }
+        
         final List<SystemResourceItem> resourceItems = addCpuDebug ? SidecarLoader.loadTelemetryResources(logFile, testData.size()) : List.of();
         final List<Double> telemetryCpuList = addCpuDebug ? telemetryCpu : List.of();
 

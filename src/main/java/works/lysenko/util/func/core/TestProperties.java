@@ -3,7 +3,6 @@ package works.lysenko.util.func.core;
 import works.lysenko.util.data.records.TestPropertiesDescriptor;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 import static works.lysenko.util.chrs.____.NAME;
@@ -28,58 +27,6 @@ import static works.lysenko.util.spec.Symbols._LFD_;
 public record TestProperties() {
 
     private static final String include = s(_DOT_, INCLUDE);
-    private static Map<String, String> createLegacyMap() {
-        final Map<String, String> map = new java.util.LinkedHashMap<>();
-        map.put(".scenario.progression", ".test.report.progression.scenario");
-        map.put(".progression.scenario", ".test.report.progression.scenario");
-        map.put(".scenario.progression.gif", ".test.report.progression.scenario.gif");
-        map.put(".progression.scenario.gif", ".test.report.progression.scenario.gif");
-        map.put(".scenario.progression.webp", ".test.report.progression.scenario.webp");
-        map.put(".progression.scenario.webp", ".test.report.progression.scenario.webp");
-        map.put(".scenario.progression.mp4", ".test.report.progression.scenario.mp4");
-        map.put(".progression.scenario.mp4", ".test.report.progression.scenario.mp4");
-        map.put(".tree.progression.gif", ".test.report.progression.tree.gif");
-        map.put(".progression.tree.gif", ".test.report.progression.tree.gif");
-        map.put(".tree.progression.webp", ".test.report.progression.tree.webp");
-        map.put(".progression.tree.webp", ".test.report.progression.tree.webp");
-        map.put(".tree.progression", ".test.report.progression.tree");
-        map.put(".progression.tree", ".test.report.progression.tree");
-        map.put(".tree.progression.mp4", ".test.report.progression.tree.mp4");
-        map.put(".progression.tree.mp4", ".test.report.progression.tree.mp4");
-        map.put(".progression.ffmpeg", ".test.report.progression.ffmpeg");
-        map.put(".progression.max.frames", ".test.report.progression.max.frames");
-        map.put(".progression.max.frame.pixels", ".test.report.progression.max.frame.pixels");
-        map.put(".progression.max.total.pixels", ".test.report.progression.max.total.pixels");
-        map.put(".progression.tree.sonification", ".test.report.progression.tree.sonification");
-        map.put(".test.report.cpu.dencity", ".test.report.cpu.density");
-        map.put(".swipe.line.marker.colour", ".swipes.marker.line.colour");
-        map.put(".swipe.start.marker.colour", ".swipes.marker.start.colour");
-        map.put(".swipe.stop.marker.colour", ".swipes.marker.stop.colour");
-        return java.util.Collections.unmodifiableMap(map);
-    }
-
-    private static final Map<String, String> LEGACY_PROPERTY_NAMES = createLegacyMap();
-
-    public static String canonicalPropertyName(final String name) {
-
-        return LEGACY_PROPERTY_NAMES.getOrDefault(name, name);
-    }
-
-    private static Properties canonicalizePropertyNames(final Properties properties) {
-
-        final Properties canonical = new Properties();
-        for (final Map.Entry<String, String> alias : LEGACY_PROPERTY_NAMES.entrySet()) {
-            if (properties.containsKey(alias.getKey())) {
-                canonical.setProperty(alias.getValue(), properties.getProperty(alias.getKey()));
-            }
-        }
-        for (final String name : properties.stringPropertyNames()) {
-            if (!LEGACY_PROPERTY_NAMES.containsKey(name)) {
-                canonical.setProperty(name, properties.getProperty(name));
-            }
-        }
-        return canonical;
-    }
 
     @SuppressWarnings({"AssignmentToMethodParameter", "ObjectAllocationInLoop", "CallToSuspiciousStringMethod",
             "CollectionDeclaredAsConcreteClass"})
@@ -109,13 +56,13 @@ public record TestProperties() {
         final String extension = location.extension();
         String debug = b(a(List.of(kv(DIRECTORY, directory), kv(NAME, name), kv(EXTENSION, extension)), COMMA_SPACE));
         final Properties source = getPropertiesFromFile(s(location.directory(), location.name(), location.extension()));
-        if (!source.containsKey(include)) return new Result(canonicalizePropertyNames(source), debug);
+        if (!source.containsKey(include)) return new Result(source, debug);
         final String include = source.getProperty(TestProperties.include);
         source.remove(TestProperties.include);
         final Properties target = new Properties();
         if (isNotNull(include)) debug = loadIncluded(include, directory, debug, target);
         target.putAll(source); // Defined values have bigger priority then included ones
-        return new Result(canonicalizePropertyNames(target), debug);
+        return new Result(target, debug);
     }
 
     /**
