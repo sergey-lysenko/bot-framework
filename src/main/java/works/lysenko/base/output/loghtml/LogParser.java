@@ -97,6 +97,7 @@ public final class LogParser {
 
         final List<PathEntry> testPaths = new ArrayList<>();
         final List<ScenEntry> scenStats = new ArrayList<>();
+        String execConfigStr = "";
         String pathsPossibleStr = "";
         String pathsChanceStr = "";
         String pathsExecutedStr = "";
@@ -133,6 +134,11 @@ public final class LogParser {
                 final String count = mScen.group(4);
                 final String events = mScen.group(5) != null ? mScen.group(5).trim() : "";
                 scenStats.add(new ScenEntry(sym, name, weight, count, events));
+            }
+
+            if (clean.contains("Executing ") && clean.contains(" of ")) {
+                final int idx = clean.indexOf("Executing ");
+                execConfigStr = clean.substring(idx).trim();
             }
 
             if (clean.contains("possible with current set of Scenarios") || clean.contains("possible with current set of scenarios")) {
@@ -515,7 +521,8 @@ public final class LogParser {
         final String etaDebugGraph = addEtaDebug ? ChartsRenderer.renderEtaDebugGraph(etaDebugItems) : "";
         final String systemResourcesGraph = addCpuDebug ? ChartsRenderer.renderResourceStatsGraph(resourceItems) : "";
 
-        final SummaryPlaque summaryPlaque = SummaryPlaque.computeFromScenEntries(scenStats);
+        final String pathsSummary = SummaryPlaque.cleanPathsSummary(pathsExecutedStr, pathsChanceStr, pathsPossibleStr);
+        final SummaryPlaque summaryPlaque = SummaryPlaque.computeFromScenEntries(scenStats, execConfigStr, pathsSummary);
 
         // ---- populate template ----
 

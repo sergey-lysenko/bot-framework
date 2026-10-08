@@ -611,7 +611,7 @@ public final class TreeHtml {
                 badgeColor = "#ef4444";
             } else if (childFailure) {
                 statusClass = "child_failed";
-                badgeColor = "#fbbf24";
+                badgeColor = "#818cf8";
             } else if (execs > 0) {
                 if (eventCount == 0) {
                     statusClass = "passed";
@@ -666,14 +666,14 @@ public final class TreeHtml {
                 "  .node-card.passed rect { fill: #14532d; stroke: #22c55e; }\n" +
                 "  .node-card.warning rect { fill: #713f12; stroke: #f59e0b; }\n" +
                 "  .node-card.failed rect { fill: #450a0a; stroke: #ef4444; }\n" +
-                "  .node-card.child_failed rect { fill: #1e1b4b; stroke: #fbbf24; stroke-width: 1.2; stroke-dasharray: 3 3; }\n" +
+                "  .node-card.child_failed rect { fill: #1e1b4b; stroke: #818cf8; stroke-width: 1.2; stroke-dasharray: 3 3; }\n" +
                 "  .node-card.unvisited rect { fill: #1e293b; stroke: #475569; }\n" +
                 "  .node-card text { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; fill: #f8fafc; }\n" +
                 "  .connector { fill: none; stroke: #475569; stroke-width: 2; transition: stroke 0.2s, stroke-width 0.2s; }\n" +
                 "  .connector.visited { stroke: #22c55e; stroke-width: 2.5; }\n" +
                 "  .connector.warning { stroke: #f59e0b; stroke-width: 2.5; }\n" +
                 "  .connector.failed { stroke: #ef4444; stroke-width: 2.5; }\n" +
-                "  .connector.child_failed { stroke: #fbbf24; stroke-width: 1.5; stroke-dasharray: 3 3; }\n" +
+                "  .connector.child_failed { stroke: #818cf8; stroke-width: 1.5; stroke-dasharray: 3 3; }\n" +
                 "  .connector.active { stroke: var(--accent); stroke-width: 3.5; }\n" +
                 "  #details-panel { position: absolute; right: 20px; bottom: 20px; width: 360px; max-height: 400px; overflow-y: auto; background: rgba(30, 41, 59, 0.95); border: 1px solid var(--border); backdrop-filter: blur(8px); border-radius: 8px; padding: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); display: none; z-index: 20; }\n" +
                 "  #details-panel h3 { font-size: 14px; margin-bottom: 8px; color: var(--accent); word-break: break-all; }\n" +
