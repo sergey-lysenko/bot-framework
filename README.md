@@ -119,6 +119,7 @@ The framework is configured via system properties, environment variables, or `te
 | `.test.report.progression.tree.gif` | `true` | Generate scenario tree GIF animation |
 | `.test.report.progression.tree.webp` | `true` | Generate scenario tree WebP animation |
 | `.test.report.progression.tree.mp4` | `true` | Generate scenario tree MP4 video (requires FFmpeg) |
+| `.test.report.progression.tree.per.node` | `false` | Generate test-tree progression frame on every executed scenario node |
 | `.test.report.progression.ffmpeg` | `ffmpeg` | FFmpeg executable name or absolute path |
 | `.test.report.progression.max.frames` | `500` | Maximum progression snapshots and animation frames; later cycles replace the last snapshot (hard-capped at 10,000) |
 | `.test.report.progression.max.frame.pixels` | `16777216` | Maximum pixel count for a frame; oversized tree progression frames are skipped (hard-capped at 33,554,432) |

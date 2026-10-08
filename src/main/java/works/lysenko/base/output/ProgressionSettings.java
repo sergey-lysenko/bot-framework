@@ -8,6 +8,7 @@ import works.lysenko.util.spec.PropEnum;
 public record ProgressionSettings(
         boolean scenarioEnabled,
         boolean treeEnabled,
+        boolean treePerNodeEnabled,
         int maxFrames,
         int maxFramePixels,
         int maxTotalPixels,
@@ -46,6 +47,7 @@ public record ProgressionSettings(
     public static synchronized void initialize() {
         final Boolean scenarioEnabled = PropEnum._TEST_REPORT_PROGRESSION_SCENARIO.get();
         final Boolean treeEnabled = PropEnum._TEST_REPORT_PROGRESSION_TREE.get();
+        final Boolean treePerNodeEnabled = PropEnum._TEST_REPORT_PROGRESSION_TREE_PER_NODE.get();
         final Integer maxFrames = PropEnum._TEST_REPORT_PROGRESSION_MAX_FRAMES.get();
         final Integer maxFramePixels = PropEnum._TEST_REPORT_PROGRESSION_MAX_FRAME_PIXELS.get();
         final Integer maxTotalPixels = PropEnum._TEST_REPORT_PROGRESSION_MAX_TOTAL_PIXELS.get();
@@ -60,6 +62,7 @@ public record ProgressionSettings(
         current = new ProgressionSettings(
                 Boolean.TRUE.equals(scenarioEnabled),
                 Boolean.TRUE.equals(treeEnabled),
+                Boolean.TRUE.equals(treePerNodeEnabled),
                 maxFrames,
                 maxFramePixels,
                 maxTotalPixels,

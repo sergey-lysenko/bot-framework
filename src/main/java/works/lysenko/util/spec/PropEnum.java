@@ -168,6 +168,7 @@ public enum PropEnum implements _PropEnum {
     _TEST_REPORT_PROGRESSION_TREE(Boolean.class, TRUE),
     _TEST_REPORT_PROGRESSION_TREE_GIF(Boolean.class, TRUE),
     _TEST_REPORT_PROGRESSION_TREE_MP4(Boolean.class, TRUE),
+    _TEST_REPORT_PROGRESSION_TREE_PER_NODE(Boolean.class, FALSE),
     _TEST_REPORT_PROGRESSION_TREE_SONIFICATION(String.class, "none"),
     _TEST_REPORT_PROGRESSION_TREE_WEBP(Boolean.class, TRUE),
     _TEST_RESILIENT_MODE(Boolean.class, FALSE, true, true),

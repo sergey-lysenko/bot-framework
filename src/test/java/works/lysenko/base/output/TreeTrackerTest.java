@@ -420,6 +420,83 @@ class TreeTrackerTest {
         assertTrue(htmlContent.contains("123456789.tree.progression.webp"), "HTML report must link to the tree WebP animation");
     }
 
+    @Test
+    void testPerNodeTreeProgressionDisabledByDefault(@TempDir final Path tempDir) throws Exception {
+        TreeTracker.reset();
+        final File customRunDir = tempDir.toFile();
+        TreeTracker.setCustomOutputDir(customRunDir);
+
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
+        Base.parameters = new Parameters(new Properties());
+        ProgressionSettings.initialize();
+
+        final Ctrl rootCtrl = new Ctrl(null);
+        final TestLeaf leaf1 = new TestLeaf("root.auth.LoginSuccess", fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(leaf1, fr(1.0));
+
+        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
+        f.setAccessible(true);
+        final Unsafe unsafe = (Unsafe) f.get(null);
+        final _Test mockTest = (_Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
+        final _Exec mockExec = (_Exec) unsafe.allocateInstance(works.lysenko.base.test.Exec.class);
+
+        final Field ctrlField = works.lysenko.base.test.Exec.class.getDeclaredField("ctrl");
+        ctrlField.setAccessible(true);
+        ctrlField.set(mockExec, rootCtrl);
+
+        final Field execField = works.lysenko.base.Test.class.getDeclaredField("executor");
+        execField.setAccessible(true);
+        execField.set(mockTest, mockExec);
+
+        final Field testField = Core.class.getDeclaredField("test");
+        testField.setAccessible(true);
+        testField.set(Base.core, mockTest);
+
+        Base.core.getResults().count(leaf1);
+        TreeTracker.onNode();
+
+        assertEquals(0, TreeTracker.getCapturedFrames().size(), "onNode should do nothing when per-node progression is disabled by default");
+    }
+
+    @Test
+    void testPerNodeTreeProgressionWhenEnabled(@TempDir final Path tempDir) throws Exception {
+        TreeTracker.reset();
+        final File customRunDir = tempDir.toFile();
+        TreeTracker.setCustomOutputDir(customRunDir);
+
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_REPORT_PROGRESSION_TREE_PER_NODE.getPropertyName(), "true");
+        Base.parameters = new Parameters(new Properties());
+        ProgressionSettings.initialize();
+
+        final Ctrl rootCtrl = new Ctrl(null);
+        final TestLeaf leaf1 = new TestLeaf("root.auth.LoginSuccess", fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(leaf1, fr(1.0));
+
+        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
+        f.setAccessible(true);
+        final Unsafe unsafe = (Unsafe) f.get(null);
+        final _Test mockTest = (_Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
+        final _Exec mockExec = (_Exec) unsafe.allocateInstance(works.lysenko.base.test.Exec.class);
+
+        final Field ctrlField = works.lysenko.base.test.Exec.class.getDeclaredField("ctrl");
+        ctrlField.setAccessible(true);
+        ctrlField.set(mockExec, rootCtrl);
+
+        final Field execField = works.lysenko.base.Test.class.getDeclaredField("executor");
+        execField.setAccessible(true);
+        execField.set(mockTest, mockExec);
+
+        final Field testField = Core.class.getDeclaredField("test");
+        testField.setAccessible(true);
+        testField.set(Base.core, mockTest);
+
+        Base.core.getResults().count(leaf1);
+        TreeTracker.onNode();
+
+        assertEquals(1, TreeTracker.getCapturedFrames().size(), "onNode should capture frame when per-node progression is enabled");
+    }
+
     private static class TestLeaf extends Leaf {
         private final String name;
 

@@ -486,6 +486,7 @@ class GuiTest {
         assertEquals(".test.report.progression.scenario.mp4", PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_MP4.getPropertyName());
         assertEquals(".test.report.progression.tree", PropEnum._TEST_REPORT_PROGRESSION_TREE.getPropertyName());
         assertEquals(".test.report.progression.tree.mp4", PropEnum._TEST_REPORT_PROGRESSION_TREE_MP4.getPropertyName());
+        assertEquals(".test.report.progression.tree.per.node", PropEnum._TEST_REPORT_PROGRESSION_TREE_PER_NODE.getPropertyName());
     }
 
     @Test

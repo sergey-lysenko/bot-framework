@@ -23,6 +23,7 @@ class ProgressionSettingsTest {
 
             assertTrue(ProgressionSettings.current().scenarioMp4Enabled());
             assertTrue(ProgressionSettings.current().treeMp4Enabled());
+            assertFalse(ProgressionSettings.current().treePerNodeEnabled());
             assertFalse(ProgressionSettings.current().treeSonificationEnabled());
         } finally {
             Base.properties = previousProperties;
@@ -37,6 +38,7 @@ class ProgressionSettingsTest {
             Base.properties = properties(
                     ".test.report.progression.scenario", "false",
                     ".test.report.progression.tree", "true",
+                    ".test.report.progression.tree.per.node", "true",
                     ".test.report.progression.max.frames", "17",
                     ".test.report.progression.max.frame.pixels", "1234",
                     ".test.report.progression.max.total.pixels", "5678",
@@ -49,6 +51,7 @@ class ProgressionSettingsTest {
 
             assertFalse(snapshot.scenarioEnabled());
             assertTrue(snapshot.treeEnabled());
+            assertTrue(snapshot.treePerNodeEnabled());
             assertEquals(17, snapshot.maxFrames());
             assertEquals(1234, snapshot.maxFramePixels());
             assertEquals(5678, snapshot.maxTotalPixels());

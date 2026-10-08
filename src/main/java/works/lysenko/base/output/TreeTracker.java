@@ -194,6 +194,19 @@ public final class TreeTracker {
     public static void onLimbo(final Integer testNumber) {
         if (!ProgressionSettings.current().treeEnabled())
             return;
+        captureFrame(testNumber);
+    }
+
+    /**
+     * Hook called whenever a scenario node is executed.
+     */
+    public static void onNode() {
+        if (!ProgressionSettings.current().treeEnabled() || !ProgressionSettings.current().treePerNodeEnabled())
+            return;
+        captureFrame(null);
+    }
+
+    private static synchronized void captureFrame(final Integer testNumber) {
         if (isNull(core) || isNull(core.getResults()))
             return;
         final TreeMap<String, Result> sorted = core.getResults().getSortedStrings(false);
@@ -235,7 +248,7 @@ public final class TreeTracker {
                 ProgressionSettings.current().maxTotalPixels(),
                 image.getWidth(),
                 image.getHeight());
-        final int frameIndex = Math.min(currentCycle, maxFrames);
+        final int frameIndex = Math.min(capturedFrames.size() + 1, maxFrames);
         final File frameFile = new File(progressionDir, String.format(Locale.US, "frame_%04d.png", frameIndex));
         try {
             ImageIO.write(image, "png", frameFile);

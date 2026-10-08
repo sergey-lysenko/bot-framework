@@ -4,6 +4,7 @@ import org.apache.commons.math3.fraction.Fraction;
 import org.openqa.selenium.WebElement;
 import works.lysenko.base.output.AllLeafCompletions;
 import works.lysenko.base.output.EtaDebug;
+import works.lysenko.base.output.TreeTracker;
 import works.lysenko.util.apis.action.Verifies;
 import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
@@ -275,6 +276,7 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         }
         log(Level.none, s(ansi(b(s(type().tag()), getShortName()), BLUE_BOLD_BRIGHT), e(s(_COLON_)),
                 core.getResults().count(this)), false);
+        TreeTracker.onNode();
         return true;
     }
 
