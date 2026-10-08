@@ -49,6 +49,7 @@ class ScenarioTrackerTest {
         Base.parameters = null;
         Base.properties = null;
         ScenarioTracker.reset();
+        ProgressionSettings.initialize();
 
         final Field f = Unsafe.class.getDeclaredField("theUnsafe");
         f.setAccessible(true);
@@ -67,6 +68,7 @@ class ScenarioTrackerTest {
         Base.parameters = previousParameters;
         Base.properties = previousProperties;
         ScenarioTracker.reset();
+        ProgressionSettings.initialize();
     }
 
     private static void setTestProperty(final String key, final String value) {
@@ -153,7 +155,9 @@ class ScenarioTrackerTest {
         ScenarioTracker.setCustomOutputDir(customRunDir);
 
         setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_GIF.getPropertyName(), "true");
         Base.parameters = new Parameters(new Properties());
+        ProgressionSettings.initialize();
 
         final Ctrl rootCtrl = new Ctrl(null);
         final TestLeaf leaf1 = new TestLeaf("ScenarioAlpha", fr(1.0));

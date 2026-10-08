@@ -23,6 +23,10 @@ class ProgressionSettingsTest {
 
             assertTrue(ProgressionSettings.current().scenarioMp4Enabled());
             assertTrue(ProgressionSettings.current().treeMp4Enabled());
+            assertTrue(ProgressionSettings.current().scenarioWebpEnabled());
+            assertTrue(ProgressionSettings.current().treeWebpEnabled());
+            assertFalse(ProgressionSettings.current().scenarioGifEnabled());
+            assertFalse(ProgressionSettings.current().treeGifEnabled());
             assertFalse(ProgressionSettings.current().treePerNodeEnabled());
             assertFalse(ProgressionSettings.current().treeSonificationEnabled());
         } finally {
@@ -42,7 +46,11 @@ class ProgressionSettingsTest {
                     ".test.report.progression.max.frames", "17",
                     ".test.report.progression.max.frame.pixels", "1234",
                     ".test.report.progression.max.total.pixels", "5678",
+                    ".test.report.progression.scenario.gif", "true",
+                    ".test.report.progression.scenario.webp", "false",
                     ".test.report.progression.scenario.mp4", "false",
+                    ".test.report.progression.tree.gif", "true",
+                    ".test.report.progression.tree.webp", "false",
                     ".test.report.progression.tree.mp4", "true",
                     ".test.report.progression.tree.sonification", "copilot",
                     ".test.report.progression.ffmpeg", "/tmp/ffmpeg");
@@ -55,7 +63,11 @@ class ProgressionSettingsTest {
             assertEquals(17, snapshot.maxFrames());
             assertEquals(1234, snapshot.maxFramePixels());
             assertEquals(5678, snapshot.maxTotalPixels());
+            assertTrue(snapshot.scenarioGifEnabled());
+            assertFalse(snapshot.scenarioWebpEnabled());
             assertFalse(snapshot.scenarioMp4Enabled());
+            assertTrue(snapshot.treeGifEnabled());
+            assertFalse(snapshot.treeWebpEnabled());
             assertTrue(snapshot.treeMp4Enabled());
             assertTrue(snapshot.treeSonificationEnabled());
             assertEquals("copilot", snapshot.treeSonifier().orElseThrow().mode());

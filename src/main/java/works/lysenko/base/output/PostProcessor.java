@@ -16,7 +16,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -27,14 +29,30 @@ import java.util.concurrent.TimeUnit;
 public class PostProcessor {
 
     private static final String REPORT_TASK = "Run timeline report";
-    private static final String[] MEDIA_TASKS = {
-            "Scenario progression GIF",
-            "Scenario progression WebP",
-            "Scenario progression MP4",
-            "Tree progression GIF",
-            "Tree progression WebP",
-            "Tree progression MP4"
-    };
+
+    static List<String> enabledTasks(
+            final boolean scenarioEnabled,
+            final boolean scenarioGifEnabled,
+            final boolean scenarioWebpEnabled,
+            final boolean scenarioMp4Enabled,
+            final boolean treeEnabled,
+            final boolean treeGifEnabled,
+            final boolean treeWebpEnabled,
+            final boolean treeMp4Enabled) {
+        final List<String> tasks = new ArrayList<>();
+        tasks.add(REPORT_TASK);
+        if (scenarioEnabled) {
+            if (scenarioGifEnabled) tasks.add("Scenario progression GIF");
+            if (scenarioWebpEnabled) tasks.add("Scenario progression WebP");
+            if (scenarioMp4Enabled) tasks.add("Scenario progression MP4");
+        }
+        if (treeEnabled) {
+            if (treeGifEnabled) tasks.add("Tree progression GIF");
+            if (treeWebpEnabled) tasks.add("Tree progression WebP");
+            if (treeMp4Enabled) tasks.add("Tree progression MP4");
+        }
+        return tasks;
+    }
 
     public static void launchDetached(final File runLogFile, final File outHtmlFile, final boolean openBrowser) {
         launchDetached(runLogFile, outHtmlFile, openBrowser, openBrowser);
@@ -130,7 +148,11 @@ public class PostProcessor {
                 String.valueOf((Object) ProgressionSettings.current().treeMp4Enabled()),
                 ProgressionSettings.current().ffmpeg(),
                 String.valueOf(openBrowser),
-                ProgressionSettings.current().treeSonification()
+                ProgressionSettings.current().treeSonification(),
+                String.valueOf((Object) ProgressionSettings.current().scenarioGifEnabled()),
+                String.valueOf((Object) ProgressionSettings.current().scenarioWebpEnabled()),
+                String.valueOf((Object) ProgressionSettings.current().treeGifEnabled()),
+                String.valueOf((Object) ProgressionSettings.current().treeWebpEnabled())
         };
     }
 
@@ -165,36 +187,39 @@ public class PostProcessor {
                     final boolean openBrowser = 13 <= args.length
                             ? Boolean.parseBoolean(args[12])
                             : Boolean.parseBoolean(args[3]);
-                    if (14 <= args.length) {
-                        process(
-                                logFile,
-                                htmlFile,
-                                Boolean.parseBoolean(args[3]),
-                                Boolean.parseBoolean(args[4]),
-                                Boolean.parseBoolean(args[5]),
-                                Integer.parseInt(args[6]),
-                                Integer.parseInt(args[7]),
-                                Integer.parseInt(args[8]),
-                                Boolean.parseBoolean(args[9]),
-                                Boolean.parseBoolean(args[10]),
-                                args[11],
-                                openBrowser,
-                                args[13]);
-                    } else {
-                        process(
-                                logFile,
-                                htmlFile,
-                                Boolean.parseBoolean(args[3]),
-                                Boolean.parseBoolean(args[4]),
-                                Boolean.parseBoolean(args[5]),
-                                Integer.parseInt(args[6]),
-                                Integer.parseInt(args[7]),
-                                Integer.parseInt(args[8]),
-                                Boolean.parseBoolean(args[9]),
-                                Boolean.parseBoolean(args[10]),
-                                args[11],
-                                openBrowser);
-                    }
+                    final String treeSonification = 14 <= args.length
+                            ? args[13]
+                            : ProgressionSettings.current().treeSonification();
+                    final boolean scenarioGifEnabled = 18 <= args.length
+                            ? Boolean.parseBoolean(args[14])
+                            : ProgressionSettings.current().scenarioGifEnabled();
+                    final boolean scenarioWebpEnabled = 18 <= args.length
+                            ? Boolean.parseBoolean(args[15])
+                            : ProgressionSettings.current().scenarioWebpEnabled();
+                    final boolean treeGifEnabled = 18 <= args.length
+                            ? Boolean.parseBoolean(args[16])
+                            : ProgressionSettings.current().treeGifEnabled();
+                    final boolean treeWebpEnabled = 18 <= args.length
+                            ? Boolean.parseBoolean(args[17])
+                            : ProgressionSettings.current().treeWebpEnabled();
+                    process(
+                            logFile,
+                            htmlFile,
+                            Boolean.parseBoolean(args[3]),
+                            Boolean.parseBoolean(args[4]),
+                            scenarioGifEnabled,
+                            scenarioWebpEnabled,
+                            Boolean.parseBoolean(args[9]),
+                            Boolean.parseBoolean(args[5]),
+                            treeGifEnabled,
+                            treeWebpEnabled,
+                            Boolean.parseBoolean(args[10]),
+                            Integer.parseInt(args[6]),
+                            Integer.parseInt(args[7]),
+                            Integer.parseInt(args[8]),
+                            args[11],
+                            openBrowser,
+                            treeSonification);
                 }
             }
         } catch (final InterruptedException e) {
@@ -238,6 +263,36 @@ public class PostProcessor {
                 ProgressionSettings.current().scenarioMp4Enabled(),
                 ProgressionSettings.current().treeMp4Enabled(),
                 ProgressionSettings.current().ffmpeg());
+    }
+
+    static void process(
+            final File logFile,
+            final File htmlFile,
+            final boolean showProgressWindow,
+            final boolean scenarioProgressionEnabled,
+            final boolean scenarioGifEnabled,
+            final boolean scenarioWebpEnabled,
+            final boolean treeProgressionEnabled,
+            final boolean treeGifEnabled,
+            final boolean treeWebpEnabled) {
+        process(
+                logFile,
+                htmlFile,
+                showProgressWindow,
+                scenarioProgressionEnabled,
+                scenarioGifEnabled,
+                scenarioWebpEnabled,
+                ProgressionSettings.current().scenarioMp4Enabled(),
+                treeProgressionEnabled,
+                treeGifEnabled,
+                treeWebpEnabled,
+                ProgressionSettings.current().treeMp4Enabled(),
+                ProgressionSettings.current().maxFrames(),
+                ProgressionSettings.current().maxFramePixels(),
+                ProgressionSettings.current().maxTotalPixels(),
+                ProgressionSettings.current().ffmpeg(),
+                showProgressWindow,
+                ProgressionSettings.current().treeSonification());
     }
 
     static void process(
@@ -355,9 +410,56 @@ public class PostProcessor {
             final String ffmpeg,
             final boolean openBrowser,
             final String treeSonification) {
+        process(
+                logFile,
+                htmlFile,
+                showProgressWindow,
+                scenarioProgressionEnabled,
+                ProgressionSettings.current().scenarioGifEnabled(),
+                ProgressionSettings.current().scenarioWebpEnabled(),
+                scenarioMp4Enabled,
+                treeProgressionEnabled,
+                ProgressionSettings.current().treeGifEnabled(),
+                ProgressionSettings.current().treeWebpEnabled(),
+                treeMp4Enabled,
+                maxFrames,
+                maxFramePixels,
+                maxTotalPixels,
+                ffmpeg,
+                openBrowser,
+                treeSonification);
+    }
+
+    static void process(
+            final File logFile,
+            final File htmlFile,
+            final boolean showProgressWindow,
+            final boolean scenarioProgressionEnabled,
+            final boolean scenarioGifEnabled,
+            final boolean scenarioWebpEnabled,
+            final boolean scenarioMp4Enabled,
+            final boolean treeProgressionEnabled,
+            final boolean treeGifEnabled,
+            final boolean treeWebpEnabled,
+            final boolean treeMp4Enabled,
+            final int maxFrames,
+            final int maxFramePixels,
+            final int maxTotalPixels,
+            final String ffmpeg,
+            final boolean openBrowser,
+            final String treeSonification) {
         final File runDir = logFile.getAbsoluteFile().getParentFile();
         final String prefix = runPrefix(logFile);
-        final ProgressWindow progress = ProgressWindow.create(showProgressWindow);
+        final List<String> tasks = enabledTasks(
+                scenarioProgressionEnabled,
+                scenarioGifEnabled,
+                scenarioWebpEnabled,
+                scenarioMp4Enabled,
+                treeProgressionEnabled,
+                treeGifEnabled,
+                treeWebpEnabled,
+                treeMp4Enabled);
+        final ProgressWindow progress = ProgressWindow.create(showProgressWindow, tasks);
         try {
             ScenarioTracker.processFrames(
                     runDir,
@@ -367,6 +469,8 @@ public class PostProcessor {
                     maxFrames,
                     maxFramePixels,
                     maxTotalPixels,
+                    scenarioGifEnabled,
+                    scenarioWebpEnabled,
                     scenarioMp4Enabled,
                     ffmpeg);
             TreeTracker.processFrames(
@@ -377,6 +481,8 @@ public class PostProcessor {
                     maxFrames,
                     maxFramePixels,
                     maxTotalPixels,
+                    treeGifEnabled,
+                    treeWebpEnabled,
                     treeMp4Enabled,
                     ffmpeg,
                     treeSonification);
@@ -413,7 +519,7 @@ public class PostProcessor {
             this.bars = bars;
         }
 
-        private static ProgressWindow create(final boolean show) {
+        private static ProgressWindow create(final boolean show, final List<String> tasks) {
             if (!show || GraphicsEnvironment.isHeadless()) return new ProgressWindow(null, Map.of());
             final Map<String, JProgressBar> bars = new LinkedHashMap<>();
             final JFrame[] frameRef = new JFrame[1];
@@ -423,10 +529,9 @@ public class PostProcessor {
                     window.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                     final JPanel panel = new JPanel(new GridLayout(0, 1, 6, 6));
                     panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-                    addTask(panel, bars, REPORT_TASK);
-                    for (final String task : MEDIA_TASKS) addTask(panel, bars, task);
+                    for (final String task : tasks) addTask(panel, bars, task);
                     window.setContentPane(panel);
-                    window.setMinimumSize(new Dimension(430, 220));
+                    window.setMinimumSize(new Dimension(430, 80));
                     window.pack();
                     window.setLocationRelativeTo(null);
                     window.setVisible(true);
