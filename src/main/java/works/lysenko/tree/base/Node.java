@@ -1,5 +1,7 @@
 package works.lysenko.tree.base;
 
+import static works.lysenko.Base.core;
+
 import org.apache.commons.math3.fraction.Fraction;
 import org.openqa.selenium.NoSuchSessionException;
 import works.lysenko.tree.Core;
@@ -201,6 +203,7 @@ public abstract class Node extends Core implements _Node {
                 actionSucceeded = true;
                 boolean ok = false;
                 if (halted) halted = false;
+                else if (isNotNull(core) && core.getStopFlag()) return false;
                 else ok = ctrl.exec();
                 finals();
                 return ok;

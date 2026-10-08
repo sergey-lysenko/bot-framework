@@ -217,7 +217,7 @@ public final class LogParser {
             final int eqIdx = clean.indexOf("= ");
             if (eqIdx >= 0) {
                 final String candidate = clean.substring(eqIdx).trim();
-                if (candidate.startsWith("= [FAILURE]") || candidate.startsWith("= [ERROR]")) {
+                if (candidate.startsWith("= [FAILURE]") || candidate.startsWith("= [ERROR]") || candidate.startsWith("= [WARNING]")) {
                     plaqueStatus = "failed";
                     plaqueMessage = candidate;
                 } else if (candidate.startsWith("= Execution passed successfully")) {

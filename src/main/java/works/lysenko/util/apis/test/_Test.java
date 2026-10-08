@@ -205,6 +205,16 @@ public interface _Test {
     void stop();
 
     /**
+     * Stop tests with a specified reason.
+     *
+     * @param reason description of why tests are stopped
+     */
+    default void stop(final String reason) {
+
+        stop();
+    }
+
+    /**
      * Creates executor for root scenarios.
      */
     void prepareRoot();

@@ -19,6 +19,16 @@ public interface ControlsExecution {
     void stopTests();
 
     /**
+     * Do not start any consequent tests, recording a specific stop reason.
+     *
+     * @param reason description of why tests are stopped
+     */
+    default void stopTests(final String reason) {
+
+        stopTests();
+    }
+
+    /**
      * Switch to other WebDriver window
      *
      * @param window handle to switch to

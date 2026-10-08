@@ -1,7 +1,12 @@
 package works.lysenko.base.output;
 
+import works.lysenko.util.apis.data._Result;
+import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.enums.Ansi;
+import works.lysenko.util.data.enums.ExecutionStatus;
 import works.lysenko.util.spec.Level;
+
+import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.SPACE;
 import static works.lysenko.Base.core;
@@ -18,6 +23,8 @@ import static works.lysenko.util.data.strs.Null.sn;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.func.imgs.Screenshot.makeScreenAndCodeSnapshot;
+import static works.lysenko.util.func.type.Objects.isNotNull;
+import static works.lysenko.util.lang.T.TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY;
 import static works.lysenko.util.lang.word.E.EXECUTION;
 import static works.lysenko.util.lang.word.P.PASSED;
 import static works.lysenko.util.lang.word.R.RESULTS;
@@ -28,16 +35,58 @@ import static works.lysenko.util.spec.Symbols.*;
 record ResultMarker() {
 
     /**
-     * Generates a failure message using the core's failure message.
+     * Generates a failure message using the core's stoppage reason or failure summary.
      *
      * @return The generated failure message.
      */
     @SuppressWarnings({"MethodWithMultipleReturnPoints", "CallToSuspiciousStringMethod"})
     private static String generateFailureMessage() {
 
+        if (core.getStopFlag()) {
+            final String stopReason = core.getStopReason();
+            final String message;
+            if (null != stopReason && !stopReason.isBlank()) {
+                String clean = stopReason.trim().replace(_LFD_, _BULLT_);
+                if (!clean.startsWith("[FAILURE]") && !clean.startsWith("[ERROR]")) {
+                    clean = b(s("[FAILURE]"), clean);
+                }
+                message = clean;
+            } else {
+                message = b(s("[FAILURE]"), TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY);
+            }
+            return generateMessage(message);
+        }
+
+        final int failedCount = countFailedScenarios();
+        if (failedCount > 0) {
+            return generateMessage(b(s("[FAILURE]"), String.format("Execution finished with %d failed scenario%s",
+                    failedCount, (1 == failedCount) ? "" : "s")));
+        }
+
         if (core.getResults().getFailures().isEmpty()) return null;
         final String s = core.getResults().getFailures().get(0);
         return generateMessage(s.trim().replace(_LFD_, _BULLT_));
+    }
+
+    private static int countFailedScenarios() {
+
+        int count = 0;
+        if (isNotNull(core) && isNotNull(core.getResults())) {
+            final Map<_Scenario, _Result> sorted = core.getResults().getSorted();
+            if (isNotNull(sorted)) {
+                for (final Map.Entry<_Scenario, _Result> entry : sorted.entrySet()) {
+                    final _Scenario scen = entry.getKey();
+                    final _Result res = entry.getValue();
+                    if ((isNotNull(scen) && scen.hasFailed()) || (isNotNull(res) && res.status() == ExecutionStatus.FAILED)) {
+                        count++;
+                    }
+                }
+            }
+            if (0 == count && !core.getResults().getFailures().isEmpty()) {
+                count = core.getResults().getFailures().size();
+            }
+        }
+        return count;
     }
 
     /**
@@ -82,7 +131,7 @@ record ResultMarker() {
             resultMessage = generateMessage(b(c(NO), TEST, RESULTS));
             foreground = WHITE_BOLD_BRIGHT;
             background = BLACK_BACKGROUND_BRIGHT;
-        } else if (core.getResults().getFailures().isEmpty()) {
+        } else if (!core.getStopFlag() && core.getResults().getFailures().isEmpty()) {
             resultMessage = generateMessage(b(c(EXECUTION), PASSED, SUCCESSFULLY));
             foreground = BLACK;
             background = GREEN_BACKGROUND;

@@ -998,8 +998,20 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
 
     public final void stopTests() {
 
-        log(b(c(STOPPING), TEST, SESSION));
-        core.getTest().stop();
+        stopTests(null);
+    }
+
+    public final void stopTests(final String reason) {
+
+        if (isNotNull(core) && isNotNull(core.getLogger())) log(b(c(STOPPING), TEST, SESSION));
+        if (isNotNull(core)) {
+            if (isNotNull(core.getTest())) {
+                core.getTest().stop(reason);
+            } else {
+                core.setStopReason(reason);
+                core.setStopFlag(true);
+            }
+        }
     }
 
     public final void swipeToText(final String text, final boolean lazy, final Runnable afterScroll, final float reduction) {

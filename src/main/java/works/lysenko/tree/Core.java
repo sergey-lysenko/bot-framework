@@ -267,6 +267,7 @@ public abstract class Core extends Root implements _Scenario, Verifies {
 
     public boolean isOk() throws SafeguardException {
 
+        if (isNotNull(core) && core.getStopFlag()) return false;
         if (areFailingEvents()) return false;
         startedAt = msSinceStart();
         exec.scenarios().push(this);

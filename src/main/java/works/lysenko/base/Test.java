@@ -143,6 +143,12 @@ public class Test implements _Test {
 
     public final void stop() {
 
+        stop(null);
+    }
+
+    public final void stop(final String reason) {
+
+        if (null != reason) core.setStopReason(reason);
         core.setStopFlag(true);
     }
 
@@ -192,7 +198,7 @@ public class Test implements _Test {
 
         logEvent(S2, MANUALLY_REQUESTED_TEST_STOP_PERFORMED);
         core.getDashboard().setStop(false);
-        core.setStopFlag(true);
+        stop(MANUALLY_REQUESTED_TEST_STOP_PERFORMED);
     }
 
     /**
@@ -230,6 +236,7 @@ public class Test implements _Test {
                     repeater.run();
             } catch (final Error e) { // Failed assertions, no rethrow
                 _Test.printThrowable(e);
+                stop(e.getMessage() != null ? e.getMessage() : e.toString());
             }
         }
     }

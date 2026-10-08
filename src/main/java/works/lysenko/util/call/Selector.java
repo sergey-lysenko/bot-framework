@@ -36,6 +36,7 @@ import static works.lysenko.util.call.selector.Utils.logEvent;
 import static works.lysenko.util.chrs.__.*;
 import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.____.*;
+import static works.lysenko.util.data.enums.Severity.S0;
 import static works.lysenko.util.data.enums.Severity.S2;
 import static works.lysenko.util.data.enums.Severity.S3;
 import static works.lysenko.util.data.records.KeyValue.kv;
@@ -269,9 +270,9 @@ public final class Selector implements Callable<_Scenario> {
             if (isTrace()) logEvent(S3, message);
             if (isTrace()) logEvent(S3, b(c(TESTS), WILL, GO, ON, AS, REQUESTED));
         } else {
-            logEvent(S2, message);
+            logEvent(S0, message);
             if (isNull(ctrl.getParent())) {
-                ctrl.stopTests();
+                ctrl.stopTests(message);
             }
         }
     }

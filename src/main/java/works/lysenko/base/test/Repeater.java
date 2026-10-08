@@ -401,7 +401,7 @@ public class Repeater implements _Repeater {
             final Severity severity = core.getResults().getGreatestSeverity();
             final String explanation = (null == severity) ? DOTS : b(DUE_TO, severity.type().getString(), EVENT);
             log(rb(b(c(STOPPING), explanation)));
-            exec.stopTests();
+            exec.stopTests(explanation);
         }
     }
 }

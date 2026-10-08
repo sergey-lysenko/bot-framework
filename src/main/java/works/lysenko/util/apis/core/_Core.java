@@ -50,4 +50,18 @@ public interface _Core {
      * @return true if execution is performed from Jar file
      */
     boolean isInJar();
+
+    /**
+     * Retrieves the reason why test execution was stopped, if any.
+     *
+     * @return The stop reason description, or null if execution was not stopped with an explicit reason.
+     */
+    String getStopReason();
+
+    /**
+     * Sets the reason why test execution was stopped.
+     *
+     * @param reason The stop reason description.
+     */
+    void setStopReason(String reason);
 }

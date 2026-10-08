@@ -10,6 +10,7 @@ import java.util.Arrays;
 import static java.lang.Math.abs;
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static works.lysenko.Base.core;
 import static works.lysenko.Base.exec;
 import static works.lysenko.Base.logDebug;
 import static works.lysenko.Base.logEvent;
@@ -399,8 +400,19 @@ public record Assertions() {
     public static void notImplemented(final boolean stop) {
 
         final String message = b(c(NOT), IMPLEMENTED);
-        if (stop) fail(message);
-        else еггог(message);
+        if (stop) {
+            fail(message);
+            if (isNotNull(core)) {
+                if (isNotNull(core.getTest())) {
+                    core.getTest().stop(message);
+                } else {
+                    core.setStopReason(message);
+                    core.setStopFlag(true);
+                }
+            }
+        } else {
+            еггог(message);
+        }
     }
 
     /**

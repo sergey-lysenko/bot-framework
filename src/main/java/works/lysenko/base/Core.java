@@ -93,6 +93,7 @@ public final class Core extends Root implements _Core, _Tests {
     private long previousTickAt = System.currentTimeMillis();
     private Boolean inJar = null;
     private boolean stopFlag = false;
+    private String stopReason = null;
 
     public boolean getStopFlag() {
 
@@ -102,6 +103,20 @@ public final class Core extends Root implements _Core, _Tests {
     public void setStopFlag(final boolean stopFlag) {
 
         this.stopFlag = stopFlag;
+    }
+
+    @Override
+    public String getStopReason() {
+
+        return stopReason;
+    }
+
+    @Override
+    public void setStopReason(final String stopReason) {
+
+        if (null == this.stopReason) {
+            this.stopReason = stopReason;
+        }
     }
 
     /**
