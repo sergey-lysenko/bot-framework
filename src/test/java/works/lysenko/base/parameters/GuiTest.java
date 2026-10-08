@@ -3,21 +3,17 @@ package works.lysenko.base.parameters;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import works.lysenko.Base;
 import works.lysenko.base.Parameters;
 import works.lysenko.base.TestProperties;
 import works.lysenko.base.properties.Renderer;
 import works.lysenko.util.data.records.PropertiesMeta;
-import works.lysenko.util.data.records.TestPropertiesDescriptor;
 import works.lysenko.util.spec.PropEnum;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.table.DefaultTableModel;
@@ -27,7 +23,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -139,7 +134,7 @@ class GuiTest {
 
         gui.addStandardParameters();
 
-        final JPanel box = gui.dialogueBox();
+        final JPanel box = gui.parametersPanel();
         assertNotNull(box);
 
         final Method onCalcMethod = Gui.class.getDeclaredMethod("onCalculateCycles");
@@ -196,7 +191,7 @@ class GuiTest {
         final Gui gui = new Gui(parameters);
 
         gui.addStandardParameters();
-        final JPanel panel = gui.dialogueBox();
+        final JPanel panel = gui.parametersPanel();
 
         assertNotNull(panel);
         assertTrue(panel.getLayout() instanceof GridBagLayout, "Panel layout should be GridBagLayout");
@@ -727,5 +722,61 @@ class GuiTest {
         final JCheckBox traverseComp = (JCheckBox) traverseField.get(gui);
         assertNotNull(traverseComp);
         assertFalse(traverseComp.isSelected());
+    }
+
+    @Test
+    void testAddRowOptional() {
+        final JPanel panel = new JPanel(new GridBagLayout());
+        final JTextField textField = new JTextField("test");
+
+        final int nextRow = Gui.addRowOptional("Label", textField, panel, 0);
+        assertEquals(1, nextRow);
+        assertEquals(2, panel.getComponentCount());
+
+        final int sameRow = Gui.addRowOptional("OptionalLabel", null, panel, nextRow);
+        assertEquals(1, sameRow);
+        assertEquals(2, panel.getComponentCount());
+    }
+
+    @Test
+    void testAddDivider() {
+        final JPanel panel = new JPanel(new GridBagLayout());
+        final int nextRow = Gui.addDivider(panel, 0);
+        assertEquals(1, nextRow);
+        assertEquals(1, panel.getComponentCount());
+        assertTrue(panel.getComponent(0) instanceof javax.swing.JSeparator);
+    }
+
+    @Test
+    void testPropertyTooltipsOnGuiComponents() {
+        final JPanel panel = new JPanel(new GridBagLayout());
+        final JCheckBox checkBox = new JCheckBox();
+
+        Gui.addRowOptional("HEADLESS", checkBox, panel, 0);
+
+        final javax.swing.JLabel label = (javax.swing.JLabel) panel.getComponent(0);
+        assertNotNull(label.getToolTipText(), "Label should have a tooltip set from property help");
+        assertTrue(label.getToolTipText().contains("browser automation"), "Tooltip should contain description from property-help");
+        assertNotNull(checkBox.getToolTipText(), "Component should have a tooltip set from property help");
+    }
+
+    @Test
+    void testClickingLabelCopiesNameToClipboard() {
+        final JPanel panel = new JPanel(new GridBagLayout());
+        final JTextField textField = new JTextField();
+
+        Gui.addRowOptional("COMPLETION_WEIGHT", textField, panel, 0);
+
+        final javax.swing.JLabel label = (javax.swing.JLabel) panel.getComponent(0);
+        for (final java.awt.event.MouseListener listener : label.getMouseListeners()) {
+            listener.mouseClicked(new java.awt.event.MouseEvent(label, 0, System.currentTimeMillis(), 0, 0, 0, 1, false));
+        }
+
+        assertEquals("COMPLETION_WEIGHT", works.lysenko.util.func.core.Clipboard.readClipboard());
+    }
+
+    @Test
+    void testToolTipDismissDelayIsConfigured() {
+        assertEquals(Integer.MAX_VALUE, javax.swing.ToolTipManager.sharedInstance().getDismissDelay());
     }
 }

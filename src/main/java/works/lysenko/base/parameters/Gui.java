@@ -1,32 +1,16 @@
 package works.lysenko.base.parameters;
 
-import org.apache.commons.math3.fraction.Fraction;
-import works.lysenko.Base;
 import works.lysenko.base.Parameters;
-import works.lysenko.base.TestProperties;
 import works.lysenko.base.util.Platforms;
-import works.lysenko.tree.CoverageEstimator;
-import works.lysenko.tree.Ctrl;
 import works.lysenko.util.apis.parameters._GUI;
-import works.lysenko.util.apis.scenario._Ctrl;
-import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.test._Test;
 import works.lysenko.util.data.enums.Platform;
-import works.lysenko.util.data.records.TestPropertiesDescriptor;
-import works.lysenko.util.func.core.ClassLoader;
-import works.lysenko.util.prop.tree.Include;
-import works.lysenko.util.prop.tree.Scenario;
-import works.lysenko.util.prop.tree.Traverse;
 import works.lysenko.util.spec.PropEnum;
 
-import java.awt.FlowLayout;
-
-import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JProgressBar;
@@ -34,19 +18,14 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.Window;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
 import java.util.function.IntConsumer;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.apache.commons.lang3.StringUtils.removeEnd;
 import static works.lysenko.base.Parameters.WIDTH;
 import static works.lysenko.util.chrs.__.BY;
 import static works.lysenko.util.chrs.__.TO;
@@ -54,27 +33,12 @@ import static works.lysenko.util.chrs.___.DOTS;
 import static works.lysenko.util.chrs.___.FOR;
 import static works.lysenko.util.chrs.____.FILE;
 import static works.lysenko.util.chrs.____.FULL;
-import static works.lysenko.util.data.enums.Brackets.ROUND;
-import static works.lysenko.util.data.enums.ExecutionParameter.ALL_LEAFS;
-import static works.lysenko.util.data.enums.ExecutionParameter.ALL_LEAFS_COUNT;
-import static works.lysenko.util.data.enums.ExecutionParameter.COMPLETION_WEIGHT;
-import static works.lysenko.util.data.enums.ExecutionParameter.DOMAIN;
-import static works.lysenko.util.data.enums.ExecutionParameter.FORBID_OVEREXECUTION;
-import static works.lysenko.util.data.enums.ExecutionParameter.HEADLESS;
-import static works.lysenko.util.data.enums.ExecutionParameter.PLATFORM;
-import static works.lysenko.util.data.enums.ExecutionParameter.POOL;
-import static works.lysenko.util.data.enums.ExecutionParameter.RESILIENT_MODE;
-import static works.lysenko.util.data.enums.ExecutionParameter.TEST;
-import static works.lysenko.util.data.enums.ExecutionParameter.TRAVERSE_EXTENSIONS;
-import static works.lysenko.util.data.enums.ExitCode.CLOSED_THROUGH_GUI;
+import static works.lysenko.util.data.enums.ExecutionParameter.*;
 import static works.lysenko.util.data.enums.ExitCode.PLATFORMS_RESET;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.s;
-import static works.lysenko.util.data.strs.Swap.s1;
-import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.data.strs.Wrap.q;
-import static works.lysenko.util.func.core.TestProperties.readTestPropertiesFromFile;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static java.util.Objects.isNull;
 import static works.lysenko.util.lang.word.C.CONFIGURATION;
@@ -82,21 +46,16 @@ import static works.lysenko.util.lang.word.C.COVERAGE;
 import static works.lysenko.util.lang.word.D.DELETE;
 import static works.lysenko.util.lang.word.F.FIXED;
 import static works.lysenko.util.lang.word.M.MODIFY;
-import static works.lysenko.util.lang.word.P.PARAMETERS;
 import static works.lysenko.util.lang.word.P.PLATFORMS;
-import static works.lysenko.util.lang.word.P.PROPERTIES;
 import static works.lysenko.util.lang.word.R.REQUIRED;
 import static works.lysenko.util.lang.word.R.RESET;
-import static works.lysenko.util.lang.word.T.TESTS;
 import static works.lysenko.util.lang.word.U.UNABLE;
-import static works.lysenko.util.lang.word.V.VERIFICATION;
 import static works.lysenko.util.prop.core.Start.forcedPlatform;
 import static works.lysenko.util.spec.Layout.Directories.ETC_;
 import static works.lysenko.util.spec.Layout.Files.PLATFORMS_;
 import static works.lysenko.util.spec.Layout.Parts.TEST_PROPERTIES_EXTENSION;
 import static works.lysenko.util.spec.Layout.Parts.USERS_POOL_EXTENSION;
 import static works.lysenko.util.spec.Layout.Paths._TESTS_;
-import static works.lysenko.util.spec.Symbols._DASH_;
 
 /**
  * Represents a Graphical User Interface (GUI) for parameter input and user interaction.
@@ -139,6 +98,7 @@ public class Gui implements _GUI {
                     break;
                 }
             }
+            javax.swing.ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE);
         } catch (final Exception ignored) {}
     }
 
@@ -148,43 +108,23 @@ public class Gui implements _GUI {
 
     /**
      * Adds a labeled row to a GridBagLayout container.
-     *
-     * @param label     the label for the component
-     * @param comp      the component to add
-     * @param container the container to add the label and component to
-     * @param row       the grid row index
      */
     private static void addRow(final String label, final Component comp, final JPanel container, final int row) {
+        GuiLayoutBuilder.addRow(label, comp, container, row);
+    }
 
-        final JLabel l = new JLabel(label);
-        if (comp instanceof JCheckBox cb) {
-            l.addMouseListener(new java.awt.event.MouseAdapter() {
-                @Override
-                public void mouseClicked(final java.awt.event.MouseEvent e) {
-                    cb.setSelected(!cb.isSelected());
-                }
-            });
-        }
+    /**
+     * Adds a labeled row to a GridBagLayout container if the component is non-null.
+     */
+    static int addRowOptional(final String label, final Component comp, final JPanel container, final int row) {
+        return GuiLayoutBuilder.addRowOptional(label, comp, container, row);
+    }
 
-        final GridBagConstraints cLabel = new GridBagConstraints();
-        cLabel.gridx = 0;
-        cLabel.gridy = row;
-        cLabel.anchor = GridBagConstraints.LINE_START;
-        cLabel.insets = new Insets(3, 4, 3, 12);
-        container.add(l, cLabel);
-
-        final GridBagConstraints cComp = new GridBagConstraints();
-        cComp.gridx = 1;
-        cComp.gridy = row;
-        cComp.weightx = 1.0;
-        cComp.anchor = GridBagConstraints.LINE_START;
-        if (comp instanceof JButton) {
-            cComp.fill = GridBagConstraints.NONE;
-        } else {
-            cComp.fill = GridBagConstraints.HORIZONTAL;
-        }
-        cComp.insets = new Insets(3, 0, 3, 4);
-        container.add(comp, cComp);
+    /**
+     * Adds a horizontal separator divider spanning across the GridBagLayout columns.
+     */
+    static int addDivider(final JPanel container, final int row) {
+        return GuiLayoutBuilder.addDivider(container, row);
     }
 
     /**
@@ -214,8 +154,6 @@ public class Gui implements _GUI {
 
     /**
      * Displays the graphical user interface for parameter input and user interaction.
-     * This method adds standard parameters, adds additional parameters, displays a dialogue box,
-     * propagates user input, and allows the user to exit the program.
      */
     public final void display() {
 
@@ -234,20 +172,14 @@ public class Gui implements _GUI {
         }
         
         cp[0].displayAndWait();
-        
-        // Final user input propagation happens in ControlPanel startRun
     }
 
     /**
      * Adds additional parameters based on the given params and types arrays.
-     * Parameters with type "t" will create a JTextField and parameters with type "p" will create a JPasswordField.
-     *
-     * @throws NullPointerException if params is null
      */
     @SuppressWarnings({"ObjectAllocationInLoop", "SwitchStatement"})
     private void addAdditionalParameters() {
 
-        // Additional parameters
         if (isNotNull(parameters.getAdditionalValues())) {
             aParams = new LinkedList<>();
             int i = 0;
@@ -262,34 +194,10 @@ public class Gui implements _GUI {
     }
 
     /**
-     * Returns a JComboBox populated with entity names obtained from files in a given directory that match a specified filter.
-     *
-     * @param type      the type of entity to retrieve
-     * @param directory the directory to search for files
-     * @param filter    the filter to match file names against
-     * @return a JComboBox containing the entity names obtained from the files
+     * Returns a JComboBox populated with entity names obtained from files matching a filter.
      */
     private JComboBox<Object> addFromFiles(final String type, final String directory, final String filter) {
-
-        final List<String> entityList = new LinkedList<>();
-        final String propVal = parameters.getProperty(type);
-        if (isNotNull(propVal) && !propVal.isEmpty()) {
-            entityList.add(propVal);
-        }
-
-        final File dir = new File(directory);
-        final File[] files = dir.listFiles((dir1, name) -> name.endsWith(filter));
-        if (isNotNull(files)) {
-            for (final File file : files) {
-                final String entity = removeEnd(file.getName(), filter);
-                if (!entityList.contains(entity)) entityList.add(entity);
-            }
-            entityList.sort(null);
-        }
-
-        final JComboBox<Object> comboBox = new JComboBox<>(entityList.toArray());
-        comboBox.setSelectedItem(parameters.getProperty(type));
-        return comboBox;
+        return GuiParameters.addFromFiles(type, directory, filter, parameters);
     }
 
     /**
@@ -299,7 +207,6 @@ public class Gui implements _GUI {
     private void addPlatforms() {
 
         final List<String> platformNames = platformNames();
-        // Creating Browsers ComboBox
         platform = new JComboBox<>(platformNames.toArray());
         platform.setSelectedItem(parameters.getProperty(PLATFORM.name()));
         reset = new JButton((null == forcedPlatform) ? RESET : b(FIXED, BY, CONFIGURATION));
@@ -314,18 +221,12 @@ public class Gui implements _GUI {
      * Adds the standard parameters to the Parameters object.
      */
     public void addStandardParameters() {
-        // Standard parameters
+
         test = addFromFiles(TEST.name(), _TESTS_, TEST_PROPERTIES_EXTENSION);
         pool = addFromFiles(POOL.name(), ETC_, USERS_POOL_EXTENSION);
         addPlatforms();
 
-        //noinspection StatementWithEmptyBody
-        if (Platform.ANDROID.getString().equals(parameters.getProperty(PLATFORM.name()))) {
-            /* Devices selection is commented out until implementation of automatic devices management
-            List<String> devices = loadLinesFromFile(Paths.get(DEVICES_FILE));
-            device = new JComboBox<>(devices.toArray());
-            device.setSelectedItem(get(\"DEVICE\")); */
-        } else {
+        if (!Platform.ANDROID.getString().equals(parameters.getProperty(PLATFORM.name()))) {
             domain = new JTextField(parameters.getProperty(DOMAIN.name()), WIDTH);
             headless = new JCheckBox();
             headless.setSelected(Boolean.parseBoolean(parameters.getProperty(HEADLESS.name())));
@@ -334,42 +235,38 @@ public class Gui implements _GUI {
         allLeafs.setSelected(parameters.isAllLeafs());
         allLeafsCount = new JTextField(String.valueOf(parameters.getAllLeafsCount()), WIDTH);
 
-        final String paramTests = parameters.getTests();
-        final Integer propTests = PropEnum._TEST_TESTS.get();
-        final String defaultTests = (isNotNull(paramTests) && !paramTests.isEmpty())
-                ? paramTests
-                : (isNotNull(propTests) ? propTests.toString() : EMPTY);
+        final String defaultTests = defaultIfEmpty(
+                parameters.getTests(),
+                Objects.toString(PropEnum._TEST_TESTS.get(), EMPTY)
+        );
         testsCount = new JTextField(defaultTests, WIDTH);
 
-        final Boolean paramForbid = parameters.getForbidOverexecution();
-        final boolean defaultForbid = (isNotNull(paramForbid))
-                ? paramForbid
-                : Boolean.TRUE.equals(PropEnum._TREE_FORBID_OVEREXECUTION.get());
-        forbidOverexecution = new JCheckBox();
-        forbidOverexecution.setSelected(defaultForbid);
+        forbidOverexecution = createCheckBox(parameters.getForbidOverexecution(), PropEnum._TREE_FORBID_OVEREXECUTION);
+        resilientMode = createCheckBox(parameters.getResilientMode(), PropEnum._TEST_RESILIENT_MODE);
 
-        final Boolean paramResilient = parameters.getResilientMode();
-        final boolean defaultResilient = (isNotNull(paramResilient))
-                ? paramResilient
-                : Boolean.TRUE.equals(PropEnum._TEST_RESILIENT_MODE.get());
-        resilientMode = new JCheckBox();
-        resilientMode.setSelected(defaultResilient);
-
-        final String paramWeight = parameters.getCompletionWeight();
-        final String defaultWeight = (isNotNull(paramWeight) && !paramWeight.isEmpty())
-                ? paramWeight
-                : PropEnum._TREE_COMPLETION_WEIGHT.defaultValue();
+        final String defaultWeight = defaultIfEmpty(
+                parameters.getCompletionWeight(),
+                PropEnum._TREE_COMPLETION_WEIGHT.defaultValue()
+        );
         completionWeight = new JTextField(defaultWeight, WIDTH);
 
-        final Boolean paramTraverse = parameters.getTraverseExtensions();
-        final boolean defaultTraverse = (isNotNull(paramTraverse))
-                ? paramTraverse
-                : Boolean.TRUE.equals(PropEnum._TREE_TRAVERSE_EXTENSIONS.get());
-        traverseExtensions = new JCheckBox();
-        traverseExtensions.setSelected(defaultTraverse);
+        traverseExtensions = createCheckBox(parameters.getTraverseExtensions(), PropEnum._TREE_TRAVERSE_EXTENSIONS);
 
         initCyclesComponents();
         initPropertiesComponents();
+    }
+
+    private static JCheckBox createCheckBox(final Boolean paramValue, final works.lysenko.util.apis._PropEnum propEnum) {
+        final boolean selected = (paramValue != null)
+                ? paramValue
+                : Boolean.TRUE.equals(propEnum.get());
+        final JCheckBox checkBox = new JCheckBox();
+        checkBox.setSelected(selected);
+        return checkBox;
+    }
+
+    private static String defaultIfEmpty(final String value, final String fallback) {
+        return (value != null && !value.isEmpty()) ? value : fallback;
     }
 
     /**
@@ -380,43 +277,20 @@ public class Gui implements _GUI {
         calculateCycles = new JButton(b(c(REQUIRED), FOR, FULL, COVERAGE));
         calculateCycles.addActionListener(e -> onCalculateCycles());
 
-        cyclesPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        cyclesPanel.add(calculateCycles);
+        cyclesPanel = CycleEstimatorPanel.createPanel(calculateCycles);
 
-        if (isNotNull(test)) {
-            test.addActionListener(e -> onTestSelectionChanged());
-        }
-        if (isNotNull(allLeafs)) {
-            allLeafs.addActionListener(e -> onTestSelectionChanged());
-        }
-        if (isNotNull(allLeafsCount)) {
-            allLeafsCount.addActionListener(e -> onTestSelectionChanged());
-            allLeafsCount.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-                @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
-                @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
-                @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
-            });
-        }
-        if (isNotNull(testsCount)) {
-            testsCount.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-                @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
-                @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
-                @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
-            });
-        }
-        if (isNotNull(forbidOverexecution)) {
-            forbidOverexecution.addActionListener(e -> onTestSelectionChanged());
-        }
-        if (isNotNull(completionWeight)) {
-            completionWeight.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-                @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
-                @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
-                @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { onTestSelectionChanged(); }
-            });
-        }
-        if (isNotNull(traverseExtensions)) {
-            traverseExtensions.addActionListener(e -> onTestSelectionChanged());
-        }
+        attachChangeListener(test);
+        attachChangeListener(allLeafs);
+        attachChangeListener(allLeafsCount);
+        attachChangeListener(completionWeight);
+        attachChangeListener(testsCount);
+        attachChangeListener(forbidOverexecution);
+        attachChangeListener(resilientMode);
+        attachChangeListener(traverseExtensions);
+    }
+
+    private void attachChangeListener(final Component comp) {
+        CycleEstimatorPanel.attachChangeListener(comp, this::onTestSelectionChanged);
     }
 
     /**
@@ -438,14 +312,8 @@ public class Gui implements _GUI {
         properties.addActionListener(e -> {}); // Handled by unified Control Panel now
     }
 
-    // Removed onPropertiesClicked as Properties panel is now visible alongside parameters
-
     /**
-     * Calculates the estimated average cycles required for 100% leaf coverage
-     * of the specified test suite.
-     *
-     * @param testName the name of the test to calculate cycles for
-     * @return a formatted string with the result or an explanation of why calculation could not proceed
+     * Calculates the estimated average cycles required for 100% leaf coverage.
      */
     String calculateEstimatedCycles(final String testName) {
 
@@ -453,83 +321,14 @@ public class Gui implements _GUI {
     }
 
     /**
-     * Calculates the estimated average cycles required for 100% leaf coverage
-     * of the specified test suite, reporting progress to a consumer.
-     *
-     * @param testName         the name of the test to calculate cycles for
-     * @param progressConsumer consumer receiving progress percentage, nullable
-     * @return a formatted string with the result or an explanation of why calculation could not proceed
+     * Calculates the estimated average cycles required for 100% leaf coverage.
      */
     String calculateEstimatedCycles(final String testName, final IntConsumer progressConsumer) {
 
-        if (isNull(testName) || testName.isBlank()) {
-            return "No test selected";
-        }
-        try {
-            readTestPropertiesFromFile(new TestPropertiesDescriptor(_TESTS_, testName, TEST_PROPERTIES_EXTENSION));
-        } catch (final RuntimeException e) {
-            return "Test configuration not found";
-        }
-
-        final TestProperties tp = (isNotNull(Base.properties)) ? Base.properties : new TestProperties();
-        Base.properties = tp;
-
-        final boolean isHeadless = isNotNull(headless) && headless.isSelected();
-        final boolean isAllLeafs = isNotNull(allLeafs) && allLeafs.isSelected();
-
-        int leafsCount = 1;
-        if (isNotNull(allLeafsCount) && !allLeafsCount.getText().isBlank()) {
-            try {
-                leafsCount = Math.max(1, Integer.parseInt(allLeafsCount.getText().trim()));
-            } catch (final NumberFormatException ignored) {
-                if (isNotNull(parameters)) leafsCount = parameters.getAllLeafsCount();
-            }
-        } else if (isNotNull(parameters)) {
-            leafsCount = parameters.getAllLeafsCount();
-        }
-
-        tp.prepareTestConfiguration(testName, isHeadless, isAllLeafs, leafsCount);
-        if (isNotNull(testsCount) && !testsCount.getText().isBlank()) {
-            tp.setUserOverride(PropEnum._TEST_TESTS.getPropertyName(), testsCount.getText().trim());
-        }
-        if (isNotNull(forbidOverexecution)) {
-            tp.setUserOverride(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), String.valueOf(forbidOverexecution.isSelected()));
-        }
-        if (isNotNull(resilientMode)) {
-            tp.setUserOverride(PropEnum._TEST_RESILIENT_MODE.getPropertyName(), String.valueOf(resilientMode.isSelected()));
-        }
-        if (isNotNull(completionWeight) && !completionWeight.getText().isBlank()) {
-            tp.setUserOverride(PropEnum._TREE_COMPLETION_WEIGHT.getPropertyName(), completionWeight.getText().trim());
-        }
-        if (isNotNull(traverseExtensions)) {
-            tp.setUserOverride(PropEnum._TREE_TRAVERSE_EXTENSIONS.getPropertyName(), String.valueOf(traverseExtensions.isSelected()));
-        }
-        Scenario.refresh();
-        Include.refresh();
-        Traverse.refresh();
-
-        final String rootPackage = (isNotNull(Scenario.root) && !Scenario.root.isBlank())
-                ? Scenario.root
-                : PropEnum._TEST_ROOT.get();
-
-        if (isNull(rootPackage) || rootPackage.isBlank()) {
-            return "No root scenario configured";
-        }
-
-        final Set<_Scenario> scenarios = ClassLoader.readFrom(rootPackage, false);
-        if (isNull(scenarios) || scenarios.isEmpty()) {
-            return "No scenarios found";
-        }
-
-        final _Ctrl rootCtrl = new Ctrl(null, scenarios);
-        final int leafs = rootCtrl.getAccessibleLeafs().size();
-        if (0 == leafs) {
-            return "0 leafs found";
-        }
-
-        final int target = leafsCount;
-        final int recommended = CoverageEstimator.estimateAverageCycles(rootCtrl, target, progressConsumer);
-        return b(s1(recommended, "test"), REQUIRED, FOR, FULL, COVERAGE, e(ROUND, s1(leafs, "leaf")));
+        return CycleEstimatorPanel.calculateEstimatedCycles(
+                parameters, testName, headless, allLeafs, allLeafsCount,
+                testsCount, forbidOverexecution, resilientMode, completionWeight,
+                traverseExtensions, progressConsumer);
     }
 
     /**
@@ -586,56 +385,11 @@ public class Gui implements _GUI {
      */
     @SuppressWarnings({"StatementWithEmptyBody", "ForeachStatement", "ObjectAllocationInLoop",
             "ValueOfIncrementOrDecrementUsed"})
-    public JPanel dialogueBox() {
+    public JPanel parametersPanel() {
 
         if (test == null) addStandardParameters();
         panel = new JPanel(new GridBagLayout());
-        int row = 0;
-
-        addRow(TEST.name(), test, panel, row++);
-        addRow(POOL.name(), pool, panel, row++);
-        
-        // Add additional special properties
-        if (domain != null) {
-            addRow(DOMAIN.name(), domain, panel, row++);
-        }
-        if (headless != null) {
-            addRow(HEADLESS.name(), headless, panel, row++);
-        }
-        if (allLeafs != null) {
-            addRow(ALL_LEAFS.name(), allLeafs, panel, row++);
-        }
-        if (allLeafsCount != null) {
-            addRow(ALL_LEAFS_COUNT.name(), allLeafsCount, panel, row++);
-        }
-        if (testsCount != null) {
-            addRow(works.lysenko.util.data.enums.ExecutionParameter.TESTS.name(), testsCount, panel, row++);
-        }
-        if (forbidOverexecution != null) {
-            addRow(FORBID_OVEREXECUTION.name(), forbidOverexecution, panel, row++);
-        }
-        if (resilientMode != null) {
-            addRow(RESILIENT_MODE.name(), resilientMode, panel, row++);
-        }
-        if (completionWeight != null) {
-            addRow(COMPLETION_WEIGHT.name(), completionWeight, panel, row++);
-        }
-        if (traverseExtensions != null) {
-            addRow(TRAVERSE_EXTENSIONS.name(), traverseExtensions, panel, row++);
-        }
-
-        // addRow(PROPERTIES, properties, panel, row++); // Moved to properties panel on right side
-
-        // Additional parameters
-        if (isNotNull(aParams)) {
-            int i = 0;
-            for (final JTextField aParam : aParams) {
-                addRow(parameters.getAdditionalValues()[i++], aParam, panel, row++);
-            }
-        }
-
-        addRow(PLATFORM.name(), platform, panel, row++);
-        addRow(EMPTY, reset, panel, row);
+        addRows();
 
         final Dimension pref = panel.getPreferredSize();
         panel.setPreferredSize(new Dimension(Math.max(580, pref.width), pref.height));
@@ -643,21 +397,58 @@ public class Gui implements _GUI {
         return panel;
     }
 
+    private void addRows() {
+
+        int rows = 0;
+
+        rows = addRowOptional(TEST.name(), test, panel, rows);
+        rows = addRowOptional(POOL.name(), pool, panel, rows);
+        rows = addRowOptional(DOMAIN.name(), domain, panel, rows);
+        // Add platform with reset button
+        rows = addRowOptional(PLATFORM.name(), platform, panel, rows);
+        rows = addRowOptional(EMPTY, reset, panel, rows);
+
+        // Divider 1: between main parameters and special parameters
+        rows = addDivider(panel, rows);
+
+        // Add additional special properties
+        rows = addRowOptional(TESTS.name(), testsCount, panel, rows);
+        rows = addRowOptional(ALL_LEAFS_COUNT.name(), allLeafsCount, panel, rows);
+        rows = addRowOptional(COMPLETION_WEIGHT.name(), completionWeight, panel, rows);
+        rows = addDivider(panel, rows);
+        rows = addRowOptional(ALL_LEAFS.name(), allLeafs, panel, rows);
+        rows = addRowOptional(FORBID_OVEREXECUTION.name(), forbidOverexecution, panel, rows);
+        rows = addRowOptional(RESILIENT_MODE.name(), resilientMode, panel, rows);
+        rows = addRowOptional(TRAVERSE_EXTENSIONS.name(), traverseExtensions, panel, rows);
+        rows = addRowOptional(HEADLESS.name(), headless, panel, rows);
+
+        // Additional parameters
+        rows = addRowsAdditional(rows);
+
+    }
+
+    private int addRowsAdditional(int rows) {
+        if (isNotNull(aParams) && !aParams.isEmpty()) {
+            rows = addDivider(panel, rows);
+            int i = 0;
+            for (final JTextField aParam : aParams) {
+                rows = addRowOptional(parameters.getAdditionalValues()[i++], aParam, panel, rows);
+            }
+        }
+        return rows;
+    }
+
     /**
      * Propagates user input to the parameters object.
      */
     @SuppressWarnings("ValueOfIncrementOrDecrementUsed")
     public void propagateUserInput() {
-        // Propagation of the user input
+
         parameters.setTest(null == test.getSelectedItem() ? EMPTY : test.getSelectedItem().toString());
         parameters.setPool(null == pool.getSelectedItem() ? EMPTY : pool.getSelectedItem().toString());
         parameters.setPlatform(null == platform.getSelectedItem() ? EMPTY : platform.getSelectedItem().toString());
         
-        //noinspection StatementWithEmptyBody
-        if (parameters.getProperty(PLATFORM.name()).equals(Platform.ANDROID.getString())) {
-            /* Devices selection is commented out until implementation of automatic devices management
-            put("DEVICE", device.getSelectedItem() == null ? StringUtils.EMPTY : device.getSelectedItem().toString()); */
-        } else {
+        if (!parameters.getProperty(PLATFORM.name()).equals(Platform.ANDROID.getString())) {
             if (domain != null) {
                 parameters.setProperty(DOMAIN.name(), domain.getText());
             }
@@ -679,21 +470,11 @@ public class Gui implements _GUI {
             parameters.setAllLeafs(true);
             parameters.setAllLeafsCount(parameters.getAllLeafsCount());
         }
-        if (isNotNull(testsCount) && !testsCount.getText().isBlank()) {
-            parameters.setProperty(works.lysenko.util.data.enums.ExecutionParameter.TESTS.name(), testsCount.getText().trim());
-        }
-        if (isNotNull(forbidOverexecution)) {
-            parameters.setProperty(FORBID_OVEREXECUTION.name(), String.valueOf(forbidOverexecution.isSelected()));
-        }
-        if (isNotNull(resilientMode)) {
-            parameters.setProperty(RESILIENT_MODE.name(), String.valueOf(resilientMode.isSelected()));
-        }
-        if (isNotNull(completionWeight) && !completionWeight.getText().isBlank()) {
-            parameters.setProperty(COMPLETION_WEIGHT.name(), completionWeight.getText().trim());
-        }
-        if (isNotNull(traverseExtensions)) {
-            parameters.setProperty(TRAVERSE_EXTENSIONS.name(), String.valueOf(traverseExtensions.isSelected()));
-        }
+        propagatePropertyOptional(testsCount, TESTS.name());
+        propagatePropertyOptional(forbidOverexecution, FORBID_OVEREXECUTION.name());
+        propagatePropertyOptional(resilientMode, RESILIENT_MODE.name());
+        propagatePropertyOptional(completionWeight, COMPLETION_WEIGHT.name());
+        propagatePropertyOptional(traverseExtensions, TRAVERSE_EXTENSIONS.name());
 
         // Additional parameters
         if (isNotNull(aParams)) {
@@ -701,6 +482,14 @@ public class Gui implements _GUI {
             for (final JTextField aParam : aParams)
                 parameters.setProperty(parameters.getAdditionalValues()[i++], aParam.getText());
         }
+    }
+
+    private void propagatePropertyOptional(final JTextField tf, final String key) {
+        GuiParameters.propagatePropertyOptional(parameters, tf, key);
+    }
+
+    private void propagatePropertyOptional(final JCheckBox cb, final String key) {
+        GuiParameters.propagatePropertyOptional(parameters, cb, key);
     }
 
     public JButton getCalculateCycles() {
@@ -724,8 +513,7 @@ public class Gui implements _GUI {
     }
 
     /**
-     * Creates and returns a panel containing the coverage estimate controls
-     * (calculateCycles button, progressBar, and cycles label).
+     * Creates and returns a panel containing the coverage estimate controls.
      *
      * @return JPanel containing coverage estimation UI components
      */

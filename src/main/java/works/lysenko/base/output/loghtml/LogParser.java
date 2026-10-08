@@ -1,5 +1,8 @@
 package works.lysenko.base.output.loghtml;
 
+import works.lysenko.Base;
+import works.lysenko.base.output.SummaryPlaque;
+import works.lysenko.base.output.TreeHtml;
 import works.lysenko.base.output.loghtml.LogModels.ArtifactItem;
 import works.lysenko.base.output.loghtml.LogModels.EtaDebugItem;
 import works.lysenko.base.output.loghtml.LogModels.LeafCompletion;
@@ -512,11 +515,14 @@ public final class LogParser {
         final String etaDebugGraph = addEtaDebug ? ChartsRenderer.renderEtaDebugGraph(etaDebugItems) : "";
         final String systemResourcesGraph = addCpuDebug ? ChartsRenderer.renderResourceStatsGraph(resourceItems) : "";
 
+        final SummaryPlaque summaryPlaque = SummaryPlaque.computeFromScenEntries(scenStats);
+
         // ---- populate template ----
 
         final Map<String, String> replacements = new LinkedHashMap<>();
         replacements.put("{{TIMESTAMP_BLOCK}}", timestampBlock);
         replacements.put("{{RESULT_PLAQUE}}", resultPlaque);
+        replacements.put("{{SUMMARY_PLAQUE}}", summaryPlaque.renderHtml());
         replacements.put("{{PROGRESSION_LINK}}", progressionLink);
         replacements.put("{{PROGRESSION_WEBP_LINK}}", progressionWebpLink);
         replacements.put("{{PROGRESSION_MP4_LINK}}", progressionMp4Link);

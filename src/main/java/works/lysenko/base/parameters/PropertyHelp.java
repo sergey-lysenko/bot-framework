@@ -1,5 +1,7 @@
 package works.lysenko.base.parameters;
 
+import works.lysenko.util.spec.PropEnum;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -7,6 +9,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.Set;
+
+import static works.lysenko.util.func.type.Objects.isNotNull;
 
 final class PropertyHelp {
 
@@ -24,6 +28,41 @@ final class PropertyHelp {
     static Set<String> getPropertyNames() {
 
         return Collections.unmodifiableSet(DESCRIPTIONS.stringPropertyNames());
+    }
+
+    /**
+     * Resolves help text description for a given parameter label or property name.
+     *
+     * @param label parameter label or property name
+     * @return description from property help if found, null otherwise
+     */
+    static String findHelp(final String label) {
+
+        if (null == label || label.isBlank()) {
+            return null;
+        }
+
+        final String direct = getDescription(label);
+        if (isNotNull(direct) && !direct.isBlank()) {
+            return direct;
+        }
+
+        for (final PropEnum prop : PropEnum.values()) {
+            final String name = prop.name();
+            final String subName = name.startsWith("_") ? name.substring(1) : name;
+
+            if (label.equalsIgnoreCase(subName)
+                    || prop.getPropertyName().equalsIgnoreCase(label)
+                    || (subName.startsWith("TEST_") && label.equalsIgnoreCase(subName.substring(5)))
+                    || (subName.startsWith("TREE_") && label.equalsIgnoreCase(subName.substring(5)))) {
+                final String desc = getDescription(prop.getPropertyName());
+                if (isNotNull(desc) && !desc.isBlank()) {
+                    return desc;
+                }
+            }
+        }
+
+        return null;
     }
 
     private static Properties loadDescriptions() {

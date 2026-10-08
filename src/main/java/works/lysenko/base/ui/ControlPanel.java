@@ -58,7 +58,7 @@ public class ControlPanel extends JFrame implements _Dashboard {
         final JPanel configPanel = new JPanel(new BorderLayout());
         
         // Remove old dialogueBox dependencies in Gui if possible, or just use it
-        final JPanel guiBox = gui.dialogueBox();
+        final JPanel guiBox = gui.parametersPanel();
         guiBox.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         final JPanel coveragePanel = gui.createCoverageEstimatePanel();

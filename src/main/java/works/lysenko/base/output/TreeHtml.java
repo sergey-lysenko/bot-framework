@@ -36,7 +36,7 @@ public final class TreeHtml {
 
     private TreeHtml() {}
 
-    static final class NodeData {
+    public static final class NodeData {
         private final String id;
         private final String label;
         private final String group;
@@ -74,11 +74,11 @@ public final class TreeHtml {
         public void setParent(final NodeData parent) { this.parent = parent; }
     }
 
-    record Edge(NodeData from, NodeData to) {}
+    public record Edge(NodeData from, NodeData to) {}
 
-    record TreeLayout(List<NodeData> nodes, List<Edge> edges) {}
+    public record TreeLayout(List<NodeData> nodes, List<Edge> edges) {}
 
-    static TreeLayout computeLayout(final TreeMap<String, Result> sorted) {
+    public static TreeLayout computeLayout(final TreeMap<String, Result> sorted) {
 
         if (null != core) {
             final Set<_Scenario> roots = rootsOf(core.getRootScenarios());
@@ -642,6 +642,8 @@ public final class TreeHtml {
             ));
         }
 
+        final SummaryPlaque summaryPlaque = SummaryPlaque.computeFromNodes(nodes);
+
         return "<!DOCTYPE html>\n" +
                 "<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n" +
                 "<title>Scenario Execution Tree</title>\n" +
@@ -678,6 +680,7 @@ public final class TreeHtml {
                 "  #details-panel p { font-size: 12px; line-height: 1.6; color: var(--text-muted); }\n" +
                 "  #details-panel .val { color: var(--text); font-weight: 500; }\n" +
                 "  #details-panel pre { margin-top: 8px; background: #0f172a; padding: 8px; border-radius: 4px; font-size: 11px; color: #f59e0b; white-space: pre-wrap; word-break: break-all; }\n" +
+                SummaryPlaque.css() +
                 "</style>\n" +
                 "</head>\n<body>\n" +
                 "<header>\n" +
@@ -689,6 +692,9 @@ public final class TreeHtml {
                 "  </div>\n" +
                 "</header>\n" +
                 "<div id=\"canvas-container\">\n" +
+                "  <div id=\"tree-summary-plaque\" style=\"position: absolute; top: 16px; left: 16px; z-index: 15;\">\n" +
+                summaryPlaque.renderHtml() +
+                "  </div>\n" +
                 "  <svg id=\"tree-svg\"><g id=\"viewport\">\n" +
                 svgContent +
                 "  </g></svg>\n" +
