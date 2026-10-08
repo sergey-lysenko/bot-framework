@@ -320,4 +320,59 @@ class TreeHtmlTest {
 
         return nodes;
     }
+
+    @Test
+    void testNonExecutableNodeAndConnectorRendering() {
+        final List<NodeData> nodes = new ArrayList<>();
+        final List<Edge> edges = new ArrayList<>();
+
+        final _Result rootResult = new Result(ScenarioType.NODE, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 1, 1);
+        final Result nonExecResult = new Result(ScenarioType.LEAF, null, null, null, new ArrayList<>(), 0, 0);
+
+        final NodeData root = new NodeData("col_0_0", "RootApp", "Root", 0, 1.0, rootResult);
+        final NodeData childNonExec = new NodeData("col_1_0", "DisabledFeature", "Feature", 1, 1.0, nonExecResult);
+        childNonExec.setParent(root);
+        root.children().add(childNonExec);
+
+        nodes.add(root);
+        nodes.add(childNonExec);
+        edges.add(new Edge(root, childNonExec));
+
+        final String html = TreeHtml.renderHtml(nodes, edges);
+
+        // Node card must have non_executable class and title
+        assertTrue(html.contains("class=\"node-card non_executable\""));
+        assertTrue(html.contains("<title>DisabledFeature (Non-executable)</title>"));
+        // Connector must have non_executable class
+        assertTrue(html.contains("class=\"connector non_executable\" data-from=\"col_0_0\" data-to=\"col_1_0\""));
+        // CSS rules must be present
+        assertTrue(html.contains(".node-card.non_executable rect { fill: #131a2a; stroke: #283548; stroke-width: 1.2; stroke-dasharray: 4 4; }"));
+        assertTrue(html.contains(".connector.non_executable { stroke: #243044; stroke-width: 1.2; stroke-dasharray: 4 4; opacity: 0.6; }"));
+    }
+
+    @Test
+    void testChildFailedNodeAndConnectorRendering() {
+        final List<NodeData> nodes = new ArrayList<>();
+        final List<Edge> edges = new ArrayList<>();
+
+        final Result rootResult = new Result(ScenarioType.NODE, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 1, 1);
+        rootResult.updateStatus(works.lysenko.util.data.enums.ExecutionStatus.CHILD_FAILED);
+
+        final NodeData root = new NodeData("col_0_0", "RootApp", "Root", 0, 1.0, rootResult);
+        final NodeData child = new NodeData("col_1_0", "ChildFeature", "Feature", 1, 1.0, rootResult);
+        child.setParent(root);
+        root.children().add(child);
+
+        nodes.add(root);
+        nodes.add(child);
+        edges.add(new Edge(root, child));
+
+        final String html = TreeHtml.renderHtml(nodes, edges);
+
+        assertTrue(html.contains("class=\"node-card child_failed\""));
+        assertTrue(html.contains("(Upset)"));
+        assertTrue(html.contains("class=\"connector child_failed\" data-from=\"col_0_0\" data-to=\"col_1_0\""));
+        assertTrue(html.contains(".node-card.child_failed rect { fill: #1e1b4b; stroke: #818cf8; stroke-width: 1.2; stroke-dasharray: 3 3; }"));
+        assertTrue(html.contains(".connector.child_failed { stroke: #818cf8; stroke-width: 1.5; stroke-dasharray: 3 3; }"));
+    }
 }

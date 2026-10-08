@@ -6,11 +6,9 @@ import works.lysenko.base.output.TreeHtml.TreeLayout;
 import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.type.Result;
-import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.spec.PropEnum;
 import java.awt.Stroke;
-import static works.lysenko.util.data.strs.Bind.b;
 
 import javax.imageio.ImageIO;
 import java.awt.BasicStroke;
@@ -80,6 +78,8 @@ public final class TreeTracker {
     private static final Color RED_CARD_FILL = new Color(0x45, 0x0A, 0x0A);
     private static final Color GREEN_DONE = new Color(0x22, 0xC5, 0x5E);
     private static final Color TEXT_DARK = new Color(0x0F, 0x17, 0x2A);
+    static final Color INDIGO_UPSET = new Color(0x81, 0x8C, 0xF8);
+    static final Color UPSET_CARD_FILL = new Color(0x1E, 0x1B, 0x4B);
     static final Color EXCLUDED_CARD = new Color(0x13, 0x1A, 0x2A);
     static final Color EXCLUDED_BORDER = new Color(0x28, 0x35, 0x48);
     static final Color EXCLUDED_EDGE = new Color(0x24, 0x30, 0x44, 100);
@@ -88,6 +88,8 @@ public final class TreeTracker {
             1.2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, new float[]{4.0f, 4.0f}, 0.0f);
     static final Stroke DASHED_EDGE_STROKE = new BasicStroke(
             1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, new float[]{3.0f, 3.0f}, 0.0f);
+    static final Stroke DASHED_UPSET_STROKE = new BasicStroke(
+            1.2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, new float[]{3.0f, 3.0f}, 0.0f);
 
     private static final List<File> capturedFrames = new ArrayList<>();
     private static File customOutputDir = null;
@@ -193,7 +195,7 @@ public final class TreeTracker {
             return execs + "/" + target + " +" + getOverExecutionPercent(execs, target) + "%";
         }
         if (execs >= target && 0 < execs) {
-            return "\u2713 " + execs + "/" + target;
+            return "✓ " + execs + "/" + target;
         }
         return execs + "/" + target;
     }
@@ -562,17 +564,7 @@ public final class TreeTracker {
      * @return rendered BufferedImage
      */
     static Set<_Scenario> getAccessibleScenarios() {
-        if (isNotNull(core)) {
-            try {
-                final Set<_Scenario> accessible = core.getAccessibleScenarios();
-                if (isNotNull(accessible) && !accessible.isEmpty()) {
-                    return accessible;
-                }
-            } catch (final Throwable ignored) {
-                // Ignore any core access issues
-            }
-        }
-        return Collections.emptySet();
+        return TreeHtml.getAccessibleScenarios();
     }
 
     /**
@@ -583,48 +575,11 @@ public final class TreeTracker {
      * @return true if theoretically executable, false if excluded by configuration
      */
     static boolean isTheoreticallyExecutable(final NodeData n, final Set<_Scenario> accessibleScenarios) {
-        if (null == n) {
-            return false;
-        }
-        if (null != n.parent()) {
-            final boolean parentIsStructural = null == n.parent().scenario() && null == n.parent().result();
-            if (!parentIsStructural && !isTheoreticallyExecutable(n.parent(), accessibleScenarios)) {
-                return false;
-            }
-        }
-        if (null != accessibleScenarios && !accessibleScenarios.isEmpty()) {
-            if (null != n.scenario()) {
-                return accessibleScenarios.contains(n.scenario())
-                        || accessibleScenarios.stream().anyMatch(s -> s.getName().equals(n.scenario().getName()));
-            }
-            return accessibleScenarios.stream().anyMatch(s ->
-                    s.getSimpleName().equals(n.label())
-                            || s.getShortName().equals(n.label())
-                            || b(s.getSimpleName(), s.type().tag()).equals(n.label()));
-        }
-        if (null != n.scenario()) {
-            final _Scenario s = n.scenario();
-            final boolean combinationsPositive = s.calculateCombinations(true) > 0;
-            final boolean executableOrConfigured = s.isExecutable() || isNotNull(s.weightConfigured());
-            return executableOrConfigured && combinationsPositive;
-        }
-        if (null != n.result()) {
-            final Fraction cw = n.result().getConfiguredWeight();
-            if (null == cw) {
-                return false;
-            }
-            final double cwVal = cw.doubleValue();
-            final double dwVal = (null != n.result().getDownstreamWeight()) ? n.result().getDownstreamWeight().doubleValue() : 0.0;
-            final double uwVal = (null != n.result().getUpstreamWeight()) ? n.result().getUpstreamWeight().doubleValue() : 0.0;
-            if (cwVal <= 0.0 && dwVal <= 0.0 && uwVal <= 0.0) {
-                return false;
-            }
-        }
-        return true;
+        return TreeHtml.isTheoreticallyExecutable(n, accessibleScenarios);
     }
 
     static boolean isTheoreticallyExecutable(final NodeData n) {
-        return isTheoreticallyExecutable(n, getAccessibleScenarios());
+        return TreeHtml.isTheoreticallyExecutable(n);
     }
 
     public static BufferedImage renderTreeProgression(
@@ -810,11 +765,16 @@ public final class TreeTracker {
                 g.setColor(ACCENT_CYAN);
                 g.setStroke(new BasicStroke(3.0f));
                 g.draw(path);
+            } else if (TreeHtml.hasFailure(e.to())) {
+                g.setColor(RED_FAILED);
+                g.setStroke(new BasicStroke(2.2f));
+                g.draw(path);
+            } else if (TreeHtml.hasChildFailure(e.to())) {
+                g.setColor(INDIGO_UPSET);
+                g.setStroke(DASHED_UPSET_STROKE);
+                g.draw(path);
             } else if (toExecs > 0 && fromExecs > 0) {
-                final boolean toFailure = TreeHtml.hasFailure(e.to());
-                if (toFailure) {
-                    g.setColor(RED_FAILED);
-                } else if (toEvents > 0) {
+                if (toEvents > 0) {
                     g.setColor(WARNING_AMBER);
                 } else {
                     g.setColor(getScenarioProgressColor(e.to(), target, maxLeafOverRatio));
@@ -855,7 +815,8 @@ public final class TreeTracker {
                 : 0.0;
 
         final boolean failure = TreeHtml.hasFailure(n);
-        final Color progressColor = failure ? RED_FAILED : getScenarioProgressColor(n, target, maxLeafOverRatio);
+        final boolean childFailure = !failure && TreeHtml.hasChildFailure(n);
+        final Color progressColor = failure ? RED_FAILED : (childFailure ? INDIGO_UPSET : getScenarioProgressColor(n, target, maxLeafOverRatio));
         final boolean theoreticallyExecutable = isTheoreticallyExecutable(n, accessibleScenarios);
         final Color cardFill;
         final Color borderColor;
@@ -869,6 +830,10 @@ public final class TreeTracker {
             cardFill = (overRatio > 0.0) ? progressColor : new Color(0x16, 0x3A, 0x58);
             borderColor = ACCENT_CYAN;
             borderStroke = new BasicStroke(2.8f);
+        } else if (childFailure) {
+            cardFill = UPSET_CARD_FILL;
+            borderColor = INDIGO_UPSET;
+            borderStroke = DASHED_UPSET_STROKE;
         } else if (execs == 0) {
             if (!theoreticallyExecutable) {
                 cardFill = EXCLUDED_CARD;
@@ -930,7 +895,9 @@ public final class TreeTracker {
                 : getExecutionBadgeText(n, execs, target);
         final Color badgeFg = (execs == 0 && !theoreticallyExecutable)
                 ? TEXT_EXCLUDED
-                : (execs == 0) ? TEXT_MUTED : progressColor;
+                : (childFailure)
+                        ? INDIGO_UPSET
+                        : (execs == 0) ? TEXT_MUTED : progressColor;
 
         final int badgeTextW = fmBadge.stringWidth(badgeText);
         final int pillW = badgeTextW + 12;
@@ -941,7 +908,7 @@ public final class TreeTracker {
         // Pill bg
         g.setColor(new Color(15, 23, 42, (execs == 0 && !theoreticallyExecutable) ? 140 : 220));
         g.fillRoundRect(pillX, pillY, pillW, pillH, 6, 6);
-        g.setStroke((execs == 0 && !theoreticallyExecutable) ? DASHED_BORDER_STROKE : new BasicStroke(1.0f));
+        g.setStroke((execs == 0 && !theoreticallyExecutable) ? DASHED_BORDER_STROKE : (childFailure ? DASHED_UPSET_STROKE : new BasicStroke(1.0f)));
         g.setColor(borderColor);
         g.drawRoundRect(pillX, pillY, pillW, pillH, 6, 6);
 
@@ -952,6 +919,9 @@ public final class TreeTracker {
         // Warning or failure indicator
         if (failure) {
             g.setColor(RED_FAILED);
+            g.fillOval(pillX - 10, y + 15, 6, 6);
+        } else if (childFailure) {
+            g.setColor(INDIGO_UPSET);
             g.fillOval(pillX - 10, y + 15, 6, 6);
         } else if (eventCount > 0) {
             g.setColor(WARNING_AMBER);

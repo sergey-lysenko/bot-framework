@@ -611,4 +611,25 @@ class TreeTrackerTest {
     private static Result result(final ScenarioType type, final int executions, final Fraction weight) {
         return new Result(type, weight, null, null, new ArrayList<>(), executions, 0);
     }
+
+    @Test
+    void testRenderProgressionRendersChildFailedNodesWithUpsetStyling() {
+        final NodeData root = new NodeData("col_0_0", "root.App", "Root", 0, 1.0, null);
+        final Result upsetResult = result(ScenarioType.NODE, 1);
+        upsetResult.updateStatus(works.lysenko.util.data.enums.ExecutionStatus.CHILD_FAILED);
+        final NodeData nodeUpset = new NodeData("col_1_0", "root.auth.ParentNode", "Root", 1, 1.0, upsetResult);
+
+        nodeUpset.setParent(root);
+        root.children().add(nodeUpset);
+
+        final TreeLayout layout = new TreeLayout(
+                List.of(root, nodeUpset),
+                List.of(new Edge(root, nodeUpset)));
+
+        final BufferedImage img = TreeTracker.renderTreeProgression(layout, 1, "Step #1", Collections.emptySet());
+        assertNotNull(img);
+
+        final Color upsetFill = new Color(img.getRGB(330, 174));
+        assertEquals(TreeTracker.UPSET_CARD_FILL, upsetFill, "Child failed node must use UPSET_CARD_FILL fill");
+    }
 }

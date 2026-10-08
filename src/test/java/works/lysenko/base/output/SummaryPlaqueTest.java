@@ -1,7 +1,12 @@
 package works.lysenko.base.output;
 
+import org.apache.commons.math3.fraction.Fraction;
 import org.junit.jupiter.api.Test;
 import works.lysenko.base.output.loghtml.LogModels.ScenEntry;
+import works.lysenko.util.data.enums.ExecutionStatus;
+import works.lysenko.util.data.enums.ScenarioType;
+import works.lysenko.util.data.type.LogRecord;
+import works.lysenko.util.data.type.Result;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +52,78 @@ class SummaryPlaqueTest {
         assertTrue(html.contains("Warning"));
         assertTrue(html.contains("Failed"));
         assertTrue(html.contains("20.0%"));
+    }
+
+    @Test
+    void testComputeFromNodesAndRenderHtmlWithUpset() {
+        final List<TreeHtml.NodeData> nodes = new ArrayList<>();
+
+        // Node 1: passed
+        final Result r1 = new Result(ScenarioType.LEAF, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 1, 1);
+        nodes.add(new TreeHtml.NodeData("n1", "Scenario1", "Tests", 0, 1.0, r1));
+
+        // Node 2: warning (with an event)
+        final LogRecord dummyLog = new LogRecord(1, System.currentTimeMillis(), null);
+        final Result r2 = new Result(ScenarioType.LEAF, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(dummyLog), 1, 1);
+        nodes.add(new TreeHtml.NodeData("n2", "Scenario2", "Tests", 0, 2.0, r2));
+
+        // Node 3: upset (child failure downstream)
+        final Result r3 = new Result(ScenarioType.NODE, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 1, 1);
+        r3.updateStatus(ExecutionStatus.CHILD_FAILED);
+        nodes.add(new TreeHtml.NodeData("n3", "Scenario3", "Tests", 0, 3.0, r3));
+
+        // Node 4: failed (direct failure)
+        final Result r4 = new Result(ScenarioType.LEAF, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 1, 1);
+        r4.updateStatus(ExecutionStatus.FAILED);
+        nodes.add(new TreeHtml.NodeData("n4", "Scenario4", "Tests", 0, 4.0, r4));
+
+        // Node 5: unvisited
+        final Result r5 = new Result(ScenarioType.LEAF, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 0, 1);
+        nodes.add(new TreeHtml.NodeData("n5", "Scenario5", "Tests", 0, 5.0, r5));
+
+        final SummaryPlaque.RunConfig config = new SummaryPlaque.RunConfig("SuiteA", "PoolB", "http://domain", "ALL_LEAFS", "10 / 12 / 20");
+        final SummaryPlaque plaque = SummaryPlaque.computeFromNodes(nodes, config);
+
+        assertEquals(5, plaque.total());
+        assertEquals(5, plaque.executable());
+        assertEquals(4, plaque.executed());
+        assertEquals(1, plaque.passed());
+        assertEquals(1, plaque.warning());
+        assertEquals(1, plaque.upset());
+        assertEquals(1, plaque.failed());
+
+        final String html = plaque.renderHtml();
+        assertNotNull(html);
+
+        // Header and config preserved
+        assertTrue(html.contains("SuiteA"));
+        assertTrue(html.contains("PoolB"));
+        assertTrue(html.contains("http://domain"));
+        assertTrue(html.contains("ALL_LEAFS"));
+        assertTrue(html.contains("10 / 12 / 20"));
+
+        // Table restored with upset and node statistics
+        assertTrue(html.contains("<th class=\"col-total\">Total</th>"));
+        assertTrue(html.contains("<th class=\"col-executable\">Executable</th>"));
+        assertTrue(html.contains("<th class=\"col-executed\">Executed</th>"));
+        assertTrue(html.contains("<th class=\"col-passed\">Passed</th>"));
+        assertTrue(html.contains("<th class=\"col-warning\">Warning</th>"));
+        assertTrue(html.contains("<th class=\"col-upset\" title=\"Scenarios whose execution passed, but a child failed downstream\">Upset</th>"));
+        assertTrue(html.contains("<th class=\"col-failed\">Failed</th>"));
+
+        // Amount row checks
+        assertTrue(html.contains("<td class=\"col-total\">5</td>"));
+        assertTrue(html.contains("<td class=\"col-executable\">5</td>"));
+        assertTrue(html.contains("<td class=\"col-executed\">4</td>"));
+        assertTrue(html.contains("<td class=\"stat-passed\">1</td>"));
+        assertTrue(html.contains("<td class=\"stat-warning\">1</td>"));
+        assertTrue(html.contains("<td class=\"stat-upset\">1</td>"));
+        assertTrue(html.contains("<td class=\"stat-failed\">1</td>"));
+
+        final int execIndex = html.indexOf("<th class=\"col-executed\">Executed</th>");
+        final int upsetIndex = html.indexOf("<th class=\"col-upset\"");
+        final int passedIndex = html.indexOf("<th class=\"col-passed\">Passed</th>");
+        assertTrue(execIndex < upsetIndex && upsetIndex < passedIndex, "Upset column must be placed between Executed and Passed");
     }
 
     @Test
@@ -135,5 +212,9 @@ class SummaryPlaqueTest {
         assertNotNull(css);
         assertTrue(css.contains(".summary-plaque-card"));
         assertTrue(css.contains(".col-failed"));
+        assertTrue(css.contains(".col-upset"));
+        assertTrue(css.contains(".col-upset, .summary-plaque-card .stat-upset { color: #818cf8;"));
+        assertTrue(css.contains(".col-total"));
+        assertTrue(css.contains(".col-executable"));
     }
 }

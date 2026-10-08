@@ -28,8 +28,10 @@ public record SummaryPlaque(
         int executed,
         int passed,
         int warning,
+        int upset,
         int failed,
-        int knownIssues
+        int knownIssues,
+        boolean perNode
 ) {
 
     public SummaryPlaque(
@@ -40,7 +42,19 @@ public record SummaryPlaque(
             final int warning,
             final int failed
     ) {
-        this(null, null, null, null, null, total, executable, executed, passed, warning, failed, 0);
+        this(null, null, null, null, null, total, executable, executed, passed, warning, 0, failed, 0, false);
+    }
+
+    public SummaryPlaque(
+            final int total,
+            final int executable,
+            final int executed,
+            final int passed,
+            final int warning,
+            final int upset,
+            final int failed
+    ) {
+        this(null, null, null, null, null, total, executable, executed, passed, warning, upset, failed, 0, true);
     }
 
     public SummaryPlaque(
@@ -56,7 +70,42 @@ public record SummaryPlaque(
             final int warning,
             final int failed
     ) {
-        this(suite, pool, domain, mode, pathsSummary, total, executable, executed, passed, warning, failed, 0);
+        this(suite, pool, domain, mode, pathsSummary, total, executable, executed, passed, warning, 0, failed, 0, false);
+    }
+
+    public SummaryPlaque(
+            final String suite,
+            final String pool,
+            final String domain,
+            final String mode,
+            final String pathsSummary,
+            final int total,
+            final int executable,
+            final int executed,
+            final int passed,
+            final int warning,
+            final int failed,
+            final int knownIssues
+    ) {
+        this(suite, pool, domain, mode, pathsSummary, total, executable, executed, passed, warning, 0, failed, knownIssues, false);
+    }
+
+    public SummaryPlaque(
+            final String suite,
+            final String pool,
+            final String domain,
+            final String mode,
+            final String pathsSummary,
+            final int total,
+            final int executable,
+            final int executed,
+            final int passed,
+            final int warning,
+            final int upset,
+            final int failed,
+            final int knownIssues
+    ) {
+        this(suite, pool, domain, mode, pathsSummary, total, executable, executed, passed, warning, upset, failed, knownIssues, true);
     }
 
     /**
@@ -194,6 +243,7 @@ public record SummaryPlaque(
         int executed = 0;
         int passed = 0;
         int warning = 0;
+        int upset = 0;
         int failed = 0;
         int knownIssues = 0;
 
@@ -201,16 +251,20 @@ public record SummaryPlaque(
             if (!n.knownIssues().isEmpty()) {
                 knownIssues++;
             }
-            final boolean isExec = (null == n.scenario()) || n.scenario().isExecutable();
+            final boolean isExec = TreeHtml.isTheoreticallyExecutable(n);
             if (isExec) executable++;
 
             final _Result res = n.result();
             final int execs = (null != res) ? res.getExecutions() : 0;
             final int eventCount = (null != res && null != res.getEvents()) ? res.getEvents().size() : 0;
-            final boolean failure = TreeHtml.hasFailure(n) || TreeHtml.hasChildFailure(n);
+            final boolean failure = TreeHtml.hasFailure(n);
+            final boolean childFailure = TreeHtml.hasChildFailure(n);
 
             if (failure) {
                 failed++;
+                if (execs > 0) executed++;
+            } else if (childFailure) {
+                upset++;
                 if (execs > 0) executed++;
             } else if (execs > 0) {
                 executed++;
@@ -224,7 +278,7 @@ public record SummaryPlaque(
 
         return new SummaryPlaque(
                 config.suite(), config.pool(), config.domain(), config.mode(), config.pathsSummary(),
-                total, executable, executed, passed, warning, failed, knownIssues);
+                total, executable, executed, passed, warning, upset, failed, knownIssues, true);
     }
 
     public static SummaryPlaque computeFromSections(final List<LogSection> sections) {
@@ -362,6 +416,62 @@ public record SummaryPlaque(
             configHtml.append("    </div>\n");
         }
 
+        if (perNode) {
+            return String.format(Locale.US,
+                    "<div class=\"summary-card summary-plaque-card\">\n" +
+                    "  <div class=\"card-title\">\n" +
+                    "    <span>⚡ Execution Statistics</span>\n" +
+                    "%s" +
+                    "  </div>\n" +
+                    "  <table class=\"plaque-table\">\n" +
+                    "    <thead>\n" +
+                    "      <tr>\n" +
+                    "        <th></th>\n" +
+                    "        <th class=\"col-total\">Total</th>\n" +
+                    "        <th class=\"col-executable\">Executable</th>\n" +
+                    "        <th class=\"col-executed\">Executed</th>\n" +
+                    "        <th class=\"col-upset\" title=\"Scenarios whose execution passed, but a child failed downstream\">Upset</th>\n" +
+                    "        <th class=\"col-passed\">Passed</th>\n" +
+                    "        <th class=\"col-warning\">Warning</th>\n" +
+                    "        <th class=\"col-failed\">Failed</th>\n" +
+                    "      </tr>\n" +
+                    "    </thead>\n" +
+                    "    <tbody>\n" +
+                    "      <tr>\n" +
+                    "        <td class=\"row-label\">Amount</td>\n" +
+                    "        <td class=\"col-total\">%d</td>\n" +
+                    "        <td class=\"col-executable\">%d</td>\n" +
+                    "        <td class=\"col-executed\">%d</td>\n" +
+                    "        <td class=\"stat-upset\">%d</td>\n" +
+                    "        <td class=\"stat-passed\">%d</td>\n" +
+                    "        <td class=\"stat-warning\">%d</td>\n" +
+                    "        <td class=\"stat-failed\">%d</td>\n" +
+                    "      </tr>\n" +
+                    "      <tr>\n" +
+                    "        <td class=\"row-label\">Percentage</td>\n" +
+                    "        <td class=\"col-total\">%s</td>\n" +
+                    "        <td class=\"col-executable\">%s</td>\n" +
+                    "        <td class=\"col-executed\">%s</td>\n" +
+                    "        <td class=\"stat-upset\">%s</td>\n" +
+                    "        <td class=\"stat-passed\">%s</td>\n" +
+                    "        <td class=\"stat-warning\">%s</td>\n" +
+                    "        <td class=\"stat-failed\">%s</td>\n" +
+                    "      </tr>\n" +
+                    "    </tbody>\n" +
+                    "  </table>\n" +
+                    "</div>\n",
+                    configHtml,
+                    total, executable, executed, upset, passed, warning, failed,
+                    formatPct(total, total),
+                    formatPct(executable, total),
+                    formatPct(executed, total),
+                    formatPct(upset, total),
+                    formatPct(passed, total),
+                    formatPct(warning, total),
+                    formatPct(failed, total)
+            );
+        }
+
         return String.format(Locale.US,
                 "<div class=\"summary-card summary-plaque-card\">\n" +
                 "  <div class=\"card-title\">\n" +
@@ -424,9 +534,12 @@ public record SummaryPlaque(
                "  .summary-plaque-card th, .summary-plaque-card td { padding: 8px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }\n" +
                "  .summary-plaque-card th { font-weight: 600; color: #94a3b8; border-bottom: 2px solid #1e293b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }\n" +
                "  .summary-plaque-card td.row-label { font-weight: 600; text-align: left; color: #cbd5e1; padding-right: 16px; font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }\n" +
-               "  .summary-plaque-card .col-executed { color: #38bdf8; font-weight: 600; }\n" +
-               "  .summary-plaque-card .col-passed { color: #22c55e; font-weight: 600; }\n" +
-               "  .summary-plaque-card .col-warning { color: #f59e0b; font-weight: 600; }\n" +
-               "  .summary-plaque-card .col-failed { color: #ef4444; font-weight: 600; }\n";
+               "  .summary-plaque-card .col-total { color: #38bdf8; font-weight: 600; }\n" +
+               "  .summary-plaque-card .col-executable { color: #c084fc; font-weight: 600; }\n" +
+               "  .summary-plaque-card .col-executed { color: #60a5fa; font-weight: 600; }\n" +
+               "  .summary-plaque-card .col-passed, .summary-plaque-card .stat-passed { color: #22c55e; font-weight: 600; }\n" +
+               "  .summary-plaque-card .col-warning, .summary-plaque-card .stat-warning { color: #f59e0b; font-weight: 600; }\n" +
+               "  .summary-plaque-card .col-upset, .summary-plaque-card .stat-upset { color: #818cf8; font-weight: 600; }\n" +
+               "  .summary-plaque-card .col-failed, .summary-plaque-card .stat-failed { color: #ef4444; font-weight: 600; }\n";
     }
 }

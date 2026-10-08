@@ -9,6 +9,7 @@ import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Node;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.type.Result;
+import org.apache.commons.math3.fraction.Fraction;
 
 import java.util.*;
 
@@ -203,6 +204,78 @@ public final class TreeHtml {
             return res.status() == works.lysenko.util.data.enums.ExecutionStatus.CHILD_FAILED;
         }
         return false;
+    }
+
+    /**
+     * Determines whether a scenario node is theoretically executable in the current run configuration.
+     *
+     * @param n                   node to evaluate
+     * @param accessibleScenarios set of scenarios accessible in the current session
+     * @return true if theoretically executable, false if excluded by configuration or saturation
+     */
+    public static boolean isTheoreticallyExecutable(final NodeData n, final Set<_Scenario> accessibleScenarios) {
+        if (null == n) {
+            return false;
+        }
+        if (null != n.parent()) {
+            final boolean parentIsStructural = null == n.parent().scenario() && null == n.parent().result();
+            if (!parentIsStructural && !isTheoreticallyExecutable(n.parent(), accessibleScenarios)) {
+                return false;
+            }
+        }
+        if (null != accessibleScenarios && !accessibleScenarios.isEmpty()) {
+            if (null != n.scenario()) {
+                return accessibleScenarios.contains(n.scenario())
+                        || accessibleScenarios.stream().anyMatch(s -> s.getName().equals(n.scenario().getName()));
+            }
+            return accessibleScenarios.stream().anyMatch(s ->
+                    s.getSimpleName().equals(n.label())
+                            || s.getShortName().equals(n.label())
+                            || b(s.getSimpleName(), s.type().tag()).equals(n.label()));
+        }
+        if (null != n.scenario()) {
+            final _Scenario s = n.scenario();
+            final boolean combinationsPositive = s.calculateCombinations(true) > 0;
+            final boolean executableOrConfigured = s.isExecutable() || isNotNull(s.weightConfigured());
+            return executableOrConfigured && combinationsPositive;
+        }
+        if (null != n.result()) {
+            final Fraction cw = n.result().getConfiguredWeight();
+            if (null == cw) {
+                return false;
+            }
+            final double cwVal = cw.doubleValue();
+            final double dwVal = (null != n.result().getDownstreamWeight()) ? n.result().getDownstreamWeight().doubleValue() : 0.0;
+            final double uwVal = (null != n.result().getUpstreamWeight()) ? n.result().getUpstreamWeight().doubleValue() : 0.0;
+            if (cwVal <= 0.0 && dwVal <= 0.0 && uwVal <= 0.0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Determines whether a scenario node is theoretically executable using the active framework core.
+     *
+     * @param n node to evaluate
+     * @return true if theoretically executable
+     */
+    public static boolean isTheoreticallyExecutable(final NodeData n) {
+        return isTheoreticallyExecutable(n, getAccessibleScenarios());
+    }
+
+    static Set<_Scenario> getAccessibleScenarios() {
+        if (isNotNull(core)) {
+            try {
+                final Set<_Scenario> accessible = core.getAccessibleScenarios();
+                if (isNotNull(accessible) && !accessible.isEmpty()) {
+                    return accessible;
+                }
+            } catch (final Throwable ignored) {
+                // Ignore any core access issues
+            }
+        }
+        return Collections.emptySet();
     }
 
     private static Result resultFor(final _Scenario scenario, final TreeMap<String, Result> sorted) {
@@ -626,6 +699,7 @@ public final class TreeHtml {
             final int toEvents = (null != e.to().result() && null != e.to().result().getEvents()) ? e.to().result().getEvents().size() : 0;
             final boolean toFailure = hasFailure(e.to());
             final boolean toChildFailure = hasChildFailure(e.to());
+            final boolean toTheoreticallyExecutable = isTheoreticallyExecutable(e.to());
 
             final String edgeClass;
             if (toExecs > 0 && fromExecs > 0) {
@@ -638,6 +712,8 @@ public final class TreeHtml {
                 } else {
                     edgeClass = "connector visited";
                 }
+            } else if (!toTheoreticallyExecutable) {
+                edgeClass = "connector non_executable";
             } else {
                 edgeClass = "connector";
             }
@@ -658,23 +734,33 @@ public final class TreeHtml {
             final int eventCount = (null != res && null != res.getEvents()) ? res.getEvents().size() : 0;
             final boolean failure = hasFailure(n);
             final boolean childFailure = hasChildFailure(n);
+            final boolean theoreticallyExecutable = isTheoreticallyExecutable(n);
 
             String statusClass = "unvisited";
             String badgeColor = "#64748b";
+            String statusTitle = "Unvisited";
             if (failure) {
                 statusClass = "failed";
                 badgeColor = "#ef4444";
+                statusTitle = "Failed";
             } else if (childFailure) {
                 statusClass = "child_failed";
                 badgeColor = "#818cf8";
+                statusTitle = "Upset";
             } else if (execs > 0) {
                 if (eventCount == 0) {
                     statusClass = "passed";
                     badgeColor = "#22c55e";
+                    statusTitle = "Passed";
                 } else {
                     statusClass = "warning";
                     badgeColor = "#f59e0b";
+                    statusTitle = "Warning";
                 }
+            } else if (!theoreticallyExecutable) {
+                statusClass = "non_executable";
+                badgeColor = "#475569";
+                statusTitle = "Non-executable";
             }
 
             final StringBuilder eventDetails = new StringBuilder();
@@ -692,13 +778,15 @@ public final class TreeHtml {
             final String safeLabel = n.label().replace("<", "&lt;").replace(">", "&gt;");
             svgContent.append(String.format(
                     Locale.US,
-                    "<g id=\"%s\" class=\"node-card %s\" transform=\"translate(%d, %d)\" onclick=\"showDetails('%s', '%s', '%d', '%d', '%s', '%s')\">\n" +
+                    "<g id=\"%s\" class=\"node-card %s\" transform=\"translate(%d, %d)\" onclick=\"showDetails('%s', '%s', '%s', '%d', '%d', '%s', '%s')\">\n" +
+                    "  <title>%s (%s)</title>\n" +
                     "  <rect width=\"%d\" height=\"%d\" />\n" +
                     "  <text x=\"14\" y=\"26\">%s</text>\n" +
                     "  %s\n" +
                     "  <circle cx=\"%d\" cy=\"22\" r=\"6\" fill=\"%s\" />\n" +
                     "</g>\n",
-                    n.id(), statusClass, x, y, safeLabel, n.group(), execs, eventCount, eventDetails, kiJsEscaped,
+                    n.id(), statusClass, x, y, safeLabel, n.group(), statusTitle, execs, eventCount, eventDetails, kiJsEscaped,
+                    safeLabel, statusTitle,
                     CARD_WIDTH, CARD_HEIGHT, safeLabel, bugIndicator, CARD_WIDTH - 18, badgeColor
             ));
         }
@@ -710,8 +798,7 @@ public final class TreeHtml {
                 "<title>Scenario Execution Tree</title>\n" +
                 "<style>\n" +
                 "  :root { --bg: #0f172a; --panel-bg: #1e293b; --border: #334155; --text: #f8fafc; --text-muted: #94a3b8; --accent: #38bdf8; }\n" +
-                "  * { box-sizing: border-box; margin: 0; padding: 0; }\n" +
-                "  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; width: 100vw; height: 100vh; display: flex; flex-direction: column; }\n" +
+                "  * { box-sizing: border-box; margin: 0; padding: 0; }  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; width: 100vw; height: 100vh; display: flex; flex-direction: column; }\n" +
                 "  header { background: var(--panel-bg); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }\n" +
                 "  h1 { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }\n" +
                 "  .badge { background: #0284c7; color: white; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 500; }\n" +
@@ -729,13 +816,17 @@ public final class TreeHtml {
                 "  .node-card.failed rect { fill: #450a0a; stroke: #ef4444; }\n" +
                 "  .node-card.child_failed rect { fill: #1e1b4b; stroke: #818cf8; stroke-width: 1.2; stroke-dasharray: 3 3; }\n" +
                 "  .node-card.unvisited rect { fill: #1e293b; stroke: #475569; }\n" +
+                "  .node-card.non_executable rect { fill: #131a2a; stroke: #283548; stroke-width: 1.2; stroke-dasharray: 4 4; }\n" +
+                "  .node-card.non_executable text { fill: #475569; }\n" +
+                "  .node-card.non_executable circle { stroke: #283548; stroke-width: 1.2; stroke-dasharray: 2 2; }\n" +
                 "  .node-card text { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; fill: #f8fafc; }\n" +
                 "  .connector { fill: none; stroke: #475569; stroke-width: 2; transition: stroke 0.2s, stroke-width 0.2s; }\n" +
                 "  .connector.visited { stroke: #22c55e; stroke-width: 2.5; }\n" +
                 "  .connector.warning { stroke: #f59e0b; stroke-width: 2.5; }\n" +
                 "  .connector.failed { stroke: #ef4444; stroke-width: 2.5; }\n" +
                 "  .connector.child_failed { stroke: #818cf8; stroke-width: 1.5; stroke-dasharray: 3 3; }\n" +
-                "  .connector.active { stroke: var(--accent); stroke-width: 3.5; }\n" +
+                "  .connector.non_executable { stroke: #243044; stroke-width: 1.2; stroke-dasharray: 4 4; opacity: 0.6; }\n" +
+                "  .connector.active { stroke: var(--accent); stroke-width: 3.5; opacity: 1.0; }\n" +
                 "  #details-panel { position: absolute; right: 20px; bottom: 20px; width: 360px; max-height: 400px; overflow-y: auto; background: rgba(30, 41, 59, 0.95); border: 1px solid var(--border); backdrop-filter: blur(8px); border-radius: 8px; padding: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); display: none; z-index: 20; }\n" +
                 "  #details-panel h3 { font-size: 14px; margin-bottom: 8px; color: var(--accent); word-break: break-all; }\n" +
                 "  #details-panel p { font-size: 12px; line-height: 1.6; color: var(--text-muted); }\n" +
@@ -762,6 +853,7 @@ public final class TreeHtml {
                 "  <div id=\"details-panel\">\n" +
                 "    <h3 id=\"d-name\">Node</h3>\n" +
                 "    <p>Group: <span id=\"d-group\" class=\"val\"></span></p>\n" +
+                "    <p>Status: <span id=\"d-status\" class=\"val\"></span></p>\n" +
                 "    <p>Executions: <span id=\"d-exec\" class=\"val\"></span></p>\n" +
                 "    <p>Events: <span id=\"d-events\" class=\"val\"></span></p>\n" +
                 "    <div id=\"d-known-issues\" style=\"display:none; margin-top:10px; padding:10px; background:rgba(192,132,252,0.12); border:1px solid rgba(192,132,252,0.3); border-radius:6px;\">\n" +
@@ -792,11 +884,12 @@ public final class TreeHtml {
                 "      document.querySelectorAll('.connector.active').forEach(c => c.classList.remove('active'));\n" +
                 "    });\n" +
                 "  });\n" +
-                "  function showDetails(name, group, exec, events, details, kiHtml) {\n" +
+                "  function showDetails(name, group, status, exec, events, details, kiHtml) {\n" +
                 "    const p = document.getElementById('details-panel');\n" +
                 "    p.style.display = 'block';\n" +
                 "    document.getElementById('d-name').innerText = name;\n" +
                 "    document.getElementById('d-group').innerText = group;\n" +
+                "    document.getElementById('d-status').innerText = status;\n" +
                 "    document.getElementById('d-exec').innerText = exec;\n" +
                 "    document.getElementById('d-events').innerText = events;\n" +
                 "    const kiBox = document.getElementById('d-known-issues');\n" +
