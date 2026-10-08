@@ -1,6 +1,7 @@
 package works.lysenko.base.output.loghtml;
 
 import works.lysenko.Base;
+import works.lysenko.base.output.ProcessingProgress;
 import works.lysenko.base.output.SummaryPlaque;
 import works.lysenko.base.output.TreeHtml;
 import works.lysenko.base.output.loghtml.LogModels.ArtifactItem;
@@ -86,6 +87,47 @@ public final class LogParser {
             final boolean scenarioMp4Enabled,
             final boolean treeMp4Enabled,
             final LineStore lineStore) throws IOException {
+        return buildHtml(
+                reader,
+                logFile,
+                scenarioProgressionEnabled,
+                treeProgressionEnabled,
+                scenarioMp4Enabled,
+                treeMp4Enabled,
+                lineStore,
+                ProcessingProgress.NONE);
+    }
+
+    /**
+     * Reads the run log file, categorizes log entries into execution sections, calculates metrics,
+     * renders charts and HTML fragments, and populates the template.
+     *
+     * @param reader                      buffered reader for the run log
+     * @param logFile                     input run log file
+     * @param scenarioProgressionEnabled scenario progression animation flag
+     * @param treeProgressionEnabled     tree progression animation flag
+     * @param scenarioMp4Enabled         scenario MP4 video flag
+     * @param treeMp4Enabled             tree MP4 video flag
+     * @param lineStore                   disk-backed storage for log section lines
+     * @param progress                    progress callback for status updates
+     * @return fully rendered HTML report content
+     * @throws IOException if reading the log file fails
+     */
+    public static String buildHtml(
+            final BufferedReader reader,
+            final File logFile,
+            final boolean scenarioProgressionEnabled,
+            final boolean treeProgressionEnabled,
+            final boolean scenarioMp4Enabled,
+            final boolean treeMp4Enabled,
+            final LineStore lineStore,
+            final ProcessingProgress progress) throws IOException {
+        final String task = "Run timeline report";
+        final ProcessingProgress prg = null != progress ? progress : ProcessingProgress.NONE;
+        final long totalBytes = (null != logFile && logFile.exists()) ? logFile.length() : 0;
+        long bytesRead = 0;
+        int lastPct = -1;
+
         final List<ArtifactItem> runArtifacts = SidecarLoader.loadRunArtifacts(logFile);
         final List<Double> telemetryCpu = SidecarLoader.loadTelemetryCpu(logFile);
         int currOpGlobalIdx = 0;
@@ -107,6 +149,14 @@ public final class LogParser {
 
         String line;
         while (null != (line = reader.readLine())) {
+            bytesRead += line.getBytes(StandardCharsets.UTF_8).length + 1;
+            if (totalBytes > 0) {
+                final int pct = (int) Math.min(75, (bytesRead * 75) / totalBytes);
+                if (pct != lastPct) {
+                    lastPct = pct;
+                    prg.update(task, pct);
+                }
+            }
             final String clean = ANSI_PATTERN.matcher(line).replaceAll("").trim();
             if (clean.isEmpty()) {
                 currentSec.lines.add(line);
@@ -577,8 +627,43 @@ public final class LogParser {
             final boolean treeProgressionEnabled,
             final boolean scenarioMp4Enabled,
             final boolean treeMp4Enabled) {
+        generateReport(
+                logFile,
+                outFile,
+                scenarioProgressionEnabled,
+                treeProgressionEnabled,
+                scenarioMp4Enabled,
+                treeMp4Enabled,
+                ProcessingProgress.NONE);
+    }
+
+    /**
+     * Generates an HTML report from a run log file and writes it to disk with progress reporting.
+     *
+     * @param logFile                   input raw run log file
+     * @param outFile                   target output HTML report file
+     * @param scenarioProgressionEnabled whether scenario progression media links should be included
+     * @param treeProgressionEnabled     whether scenario tree progression media links should be included
+     * @param scenarioMp4Enabled         whether scenario MP4 video links should be included
+     * @param treeMp4Enabled             tree MP4 video flag
+     * @param progress                   progress callback
+     */
+    public static void generateReport(
+            final File logFile,
+            final File outFile,
+            final boolean scenarioProgressionEnabled,
+            final boolean treeProgressionEnabled,
+            final boolean scenarioMp4Enabled,
+            final boolean treeMp4Enabled,
+            final ProcessingProgress progress) {
+        final String task = "Run timeline report";
+        final ProcessingProgress prg = null != progress ? progress : ProcessingProgress.NONE;
         try {
-            if (!logFile.exists()) return;
+            if (!logFile.exists()) {
+                prg.skipped(task);
+                return;
+            }
+            prg.update(task, 0);
             final String html;
             try (final BufferedReader reader = new BufferedReader(
                     new InputStreamReader(new FileInputStream(logFile), StandardCharsets.UTF_8));
@@ -590,10 +675,13 @@ public final class LogParser {
                         treeProgressionEnabled,
                         scenarioMp4Enabled,
                         treeMp4Enabled,
-                        lineStore);
+                        lineStore,
+                        prg);
             }
             Files.writeToFile(html, outFile.getAbsolutePath());
+            prg.complete(task);
         } catch (final Exception e) {
+            prg.failed(task, e);
             logEvent(S2, "Failed to generate log.html: " + e.getMessage());
         }
     }

@@ -94,13 +94,43 @@ public final class LogHtml {
             final boolean treeProgressionEnabled,
             final boolean scenarioMp4Enabled,
             final boolean treeMp4Enabled) {
+        generateReport(
+                logFile,
+                outFile,
+                scenarioProgressionEnabled,
+                treeProgressionEnabled,
+                scenarioMp4Enabled,
+                treeMp4Enabled,
+                ProcessingProgress.NONE);
+    }
+
+    /**
+     * Generates an HTML report from a run log file with full progression parameters and progress reporting.
+     *
+     * @param logFile                   input raw run log file
+     * @param outFile                   target output HTML report file
+     * @param scenarioProgressionEnabled whether scenario progression media links should be included
+     * @param treeProgressionEnabled     whether scenario tree progression media links should be included
+     * @param scenarioMp4Enabled         whether scenario MP4 video links should be included
+     * @param treeMp4Enabled             whether scenario tree MP4 video links should be included
+     * @param progress                   progress callback
+     */
+    public static void generateReport(
+            final File logFile,
+            final File outFile,
+            final boolean scenarioProgressionEnabled,
+            final boolean treeProgressionEnabled,
+            final boolean scenarioMp4Enabled,
+            final boolean treeMp4Enabled,
+            final ProcessingProgress progress) {
         LogParser.generateReport(
                 logFile,
                 outFile,
                 scenarioProgressionEnabled,
                 treeProgressionEnabled,
                 scenarioMp4Enabled,
-                treeMp4Enabled);
+                treeMp4Enabled,
+                progress);
     }
 
     /**

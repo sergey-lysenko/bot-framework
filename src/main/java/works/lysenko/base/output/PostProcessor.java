@@ -388,7 +388,8 @@ public class PostProcessor {
                     scenarioProgressionEnabled,
                     treeProgressionEnabled,
                     scenarioMp4Enabled,
-                    treeMp4Enabled);
+                    treeMp4Enabled,
+                    progress);
             progress.complete(REPORT_TASK);
             if (openBrowser) LogHtml.openInBrowser(htmlFile);
         } finally {
@@ -491,7 +492,14 @@ public class PostProcessor {
         }
 
         private void close() {
-            if (null != frame) SwingUtilities.invokeLater(frame::dispose);
+            if (null != frame) {
+                try {
+                    Thread.sleep(1200);
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                SwingUtilities.invokeLater(frame::dispose);
+            }
         }
     }
 }

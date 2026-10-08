@@ -216,6 +216,50 @@ class PostProcessorTest {
         assertTrue(ffmpegArguments.contains("tree-progression-audio-"));
     }
 
+    @Test
+    void reportsProgressDuringReportGeneration(@TempDir final Path tempDir) throws IOException {
+        final Path logFile = tempDir.resolve("test.run.log");
+        final Path htmlFile = tempDir.resolve("test.html");
+        final StringBuilder logContent = new StringBuilder();
+        for (int i = 0; i < 1000; i++) {
+            logContent.append("[ 1 ][ 100 ][2026-01-01 12:00:00.000] Log line ").append(i).append("\n");
+        }
+        Files.writeString(logFile, logContent.toString());
+
+        final java.util.List<Integer> updates = new java.util.ArrayList<>();
+        final boolean[] completed = new boolean[1];
+
+        final ProcessingProgress progress = new ProcessingProgress() {
+            @Override
+            public void update(final String task, final int percentage) {
+                if ("Run timeline report".equals(task)) {
+                    updates.add(percentage);
+                }
+            }
+
+            @Override
+            public void complete(final String task) {
+                if ("Run timeline report".equals(task)) {
+                    completed[0] = true;
+                }
+            }
+        };
+
+        LogHtml.generateReport(
+                logFile.toFile(),
+                htmlFile.toFile(),
+                true,
+                true,
+                true,
+                true,
+                progress);
+
+        assertTrue(Files.exists(htmlFile));
+        assertTrue(completed[0]);
+        assertFalse(updates.isEmpty());
+        assertTrue(updates.stream().anyMatch(pct -> pct > 0 && pct < 100));
+    }
+
     private static void writeFrame(final Path path) throws IOException {
         writeFrame(path, Color.BLACK);
     }
