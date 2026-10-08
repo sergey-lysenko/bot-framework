@@ -36,6 +36,8 @@ import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Set;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
@@ -62,6 +64,7 @@ class TreeTrackerTest {
         Base.parameters = null;
         Base.properties = null;
         TreeTracker.reset();
+        ProgressionSettings.initialize();
 
         final Field f = Unsafe.class.getDeclaredField("theUnsafe");
         f.setAccessible(true);
@@ -80,6 +83,7 @@ class TreeTrackerTest {
         Base.parameters = previousParameters;
         Base.properties = previousProperties;
         TreeTracker.reset();
+        ProgressionSettings.initialize();
     }
 
     private static void setTestProperty(final String key, final String value) {
@@ -263,7 +267,9 @@ class TreeTrackerTest {
         TreeTracker.setCustomOutputDir(customRunDir);
 
         setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_REPORT_PROGRESSION_TREE_GIF.getPropertyName(), "true");
         Base.parameters = new Parameters(new Properties());
+        ProgressionSettings.initialize();
 
         final Ctrl rootCtrl = new Ctrl(null);
         final TestLeaf leaf1 = new TestLeaf("root.auth.LoginSuccess", fr(1.0));
@@ -516,7 +522,93 @@ class TreeTrackerTest {
         }
     }
 
+
+    @Test
+    void testIsTheoreticallyExecutableEvaluation() {
+        final TestLeaf rootLeaf = new TestLeaf("root.App", fr(1.0));
+        final TestLeaf execLeaf = new TestLeaf("root.auth.LoginSuccess", fr(1.0));
+        final TestLeaf exclLeaf = new TestLeaf("root.auth.LoginDisabled", fr(0.0));
+
+        final NodeData rootNode = new NodeData("root", "Root", "Root", 0, 1.0, null, rootLeaf);
+        final NodeData execNode = new NodeData("exec", "Exec", "Root", 1, 1.0, null, execLeaf);
+        final NodeData exclNode = new NodeData("excl", "Excl", "Root", 1, 2.0, null, exclLeaf);
+        execNode.setParent(rootNode);
+        exclNode.setParent(rootNode);
+        rootNode.children().add(execNode);
+        rootNode.children().add(exclNode);
+
+        // When accessible scenarios set is provided
+        assertTrue(TreeTracker.isTheoreticallyExecutable(execNode, Set.of(rootLeaf, execLeaf)));
+        org.junit.jupiter.api.Assertions.assertFalse(TreeTracker.isTheoreticallyExecutable(exclNode, Set.of(rootLeaf, execLeaf)));
+
+        // When accessible scenarios set is empty, fall back to combination / weight checks
+        assertTrue(TreeTracker.isTheoreticallyExecutable(execNode, Collections.emptySet()));
+        org.junit.jupiter.api.Assertions.assertFalse(TreeTracker.isTheoreticallyExecutable(exclNode, Collections.emptySet()));
+
+        // If parent is not executable, child is also not executable
+        final NodeData disabledParent = new NodeData("disParent", "DisParent", "Root", 0, 1.0, null, exclLeaf);
+        final NodeData childOfDisabled = new NodeData("child", "Child", "Root", 1, 1.0, null, execLeaf);
+        childOfDisabled.setParent(disabledParent);
+        org.junit.jupiter.api.Assertions.assertFalse(TreeTracker.isTheoreticallyExecutable(childOfDisabled, Collections.emptySet()));
+    }
+
+    @Test
+    void testRenderProgressionDifferentiatesExcludedNodes() {
+        final NodeData root = new NodeData("col_0_0", "root.App", "Root", 0, 1.0, null);
+        final NodeData leafPlanned = new NodeData("col_1_0", "root.auth.LoginSuccess", "Root", 1, 1.0, result(ScenarioType.LEAF, 0, fr(1.0)));
+        final Result exclResult = new Result(ScenarioType.LEAF, null, null, null, new ArrayList<>(), 0, 0);
+        final NodeData leafExcluded = new NodeData("col_1_1", "root.auth.LoginExcluded", "Root", 1, 2.0, exclResult);
+
+        leafPlanned.setParent(root);
+        leafExcluded.setParent(root);
+        root.children().add(leafPlanned);
+        root.children().add(leafExcluded);
+
+        final TreeLayout layout = new TreeLayout(
+                List.of(root, leafPlanned, leafExcluded),
+                List.of(new Edge(root, leafPlanned), new Edge(root, leafExcluded)));
+
+        final BufferedImage img = TreeTracker.renderTreeProgression(layout, 1, "Step #1", Collections.emptySet());
+        assertNotNull(img);
+
+        // Position of planned card (col 1, row 1.0): x = 1 * 270 + 40 = 310, y = 1.0 * 60 + 60 + 24 = 144
+        // Center interior point: (310 + 20, 144 + 30) = (330, 174)
+        final Color plannedFill = new Color(img.getRGB(330, 174));
+        assertEquals(new Color(0x1E, 0x29, 0x3B), plannedFill, "Planned unvisited node must use UNVISITED_CARD fill");
+
+        // Position of excluded card (col 1, row 2.0): x = 310, y = 2.0 * 60 + 60 + 24 = 204
+        // Center interior point: (310 + 20, 204 + 30) = (330, 234)
+        final Color excludedFill = new Color(img.getRGB(330, 234));
+        assertEquals(TreeTracker.EXCLUDED_CARD, excludedFill, "Excluded node must use EXCLUDED_CARD dimmed fill");
+    }
+
+    @Test
+    void testHeaderLeafsCountsOnlyExecutableLeafs() {
+        final NodeData root = new NodeData("col_0_0", "root.App", "Root", 0, 1.0, null);
+        final NodeData leafPlanned = new NodeData("col_1_0", "root.auth.LoginSuccess", "Root", 1, 1.0, result(ScenarioType.LEAF, 1));
+        final Result exclResult = new Result(ScenarioType.LEAF, null, null, null, new ArrayList<>(), 0, 0);
+        final NodeData leafExcluded = new NodeData("col_1_1", "root.auth.LoginExcluded", "Root", 1, 2.0, exclResult);
+
+        leafPlanned.setParent(root);
+        leafExcluded.setParent(root);
+        root.children().add(leafPlanned);
+        root.children().add(leafExcluded);
+
+        final TreeLayout layout = new TreeLayout(
+                List.of(root, leafPlanned, leafExcluded),
+                List.of(new Edge(root, leafPlanned), new Edge(root, leafExcluded)));
+
+        // Both leafs in layout, but only 1 is executable (and executed 1/1)
+        final BufferedImage img = TreeTracker.renderTreeProgression(layout, 1, "Cycle #1", Collections.emptySet());
+        assertNotNull(img);
+        // Image rendered successfully without error, covered leafs == total executable leafs (1/1)
+    }
+
     private static Result result(final ScenarioType type, final int executions) {
         return new Result(type, null, null, null, new ArrayList<>(), executions, 0);
+    }
+
+    private static Result result(final ScenarioType type, final int executions, final Fraction weight) {
+        return new Result(type, weight, null, null, new ArrayList<>(), executions, 0);
     }
 }

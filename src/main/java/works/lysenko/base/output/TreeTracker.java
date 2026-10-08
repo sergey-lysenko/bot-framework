@@ -6,7 +6,11 @@ import works.lysenko.base.output.TreeHtml.TreeLayout;
 import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.type.Result;
+import org.apache.commons.math3.fraction.Fraction;
+import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.spec.PropEnum;
+import java.awt.Stroke;
+import static works.lysenko.util.data.strs.Bind.b;
 
 import javax.imageio.ImageIO;
 import java.awt.BasicStroke;
@@ -76,6 +80,14 @@ public final class TreeTracker {
     private static final Color RED_CARD_FILL = new Color(0x45, 0x0A, 0x0A);
     private static final Color GREEN_DONE = new Color(0x22, 0xC5, 0x5E);
     private static final Color TEXT_DARK = new Color(0x0F, 0x17, 0x2A);
+    static final Color EXCLUDED_CARD = new Color(0x13, 0x1A, 0x2A);
+    static final Color EXCLUDED_BORDER = new Color(0x28, 0x35, 0x48);
+    static final Color EXCLUDED_EDGE = new Color(0x24, 0x30, 0x44, 100);
+    static final Color TEXT_EXCLUDED = new Color(0x47, 0x55, 0x69);
+    static final Stroke DASHED_BORDER_STROKE = new BasicStroke(
+            1.2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, new float[]{4.0f, 4.0f}, 0.0f);
+    static final Stroke DASHED_EDGE_STROKE = new BasicStroke(
+            1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, new float[]{3.0f, 3.0f}, 0.0f);
 
     private static final List<File> capturedFrames = new ArrayList<>();
     private static File customOutputDir = null;
@@ -549,12 +561,78 @@ public final class TreeTracker {
      * @param currentCycle current cycle index
      * @return rendered BufferedImage
      */
+    static Set<_Scenario> getAccessibleScenarios() {
+        if (isNotNull(core)) {
+            try {
+                final Set<_Scenario> accessible = core.getAccessibleScenarios();
+                if (isNotNull(accessible) && !accessible.isEmpty()) {
+                    return accessible;
+                }
+            } catch (final Throwable ignored) {
+                // Ignore any core access issues
+            }
+        }
+        return Collections.emptySet();
+    }
+
+    /**
+     * Determines whether a scenario node is theoretically to be executed during the current test session.
+     *
+     * @param n                   node to evaluate
+     * @param accessibleScenarios set of scenarios accessible in the current session
+     * @return true if theoretically executable, false if excluded by configuration
+     */
+    static boolean isTheoreticallyExecutable(final NodeData n, final Set<_Scenario> accessibleScenarios) {
+        if (null == n) {
+            return false;
+        }
+        if (null != n.parent()) {
+            final boolean parentIsStructural = null == n.parent().scenario() && null == n.parent().result();
+            if (!parentIsStructural && !isTheoreticallyExecutable(n.parent(), accessibleScenarios)) {
+                return false;
+            }
+        }
+        if (null != accessibleScenarios && !accessibleScenarios.isEmpty()) {
+            if (null != n.scenario()) {
+                return accessibleScenarios.contains(n.scenario())
+                        || accessibleScenarios.stream().anyMatch(s -> s.getName().equals(n.scenario().getName()));
+            }
+            return accessibleScenarios.stream().anyMatch(s ->
+                    s.getSimpleName().equals(n.label())
+                            || s.getShortName().equals(n.label())
+                            || b(s.getSimpleName(), s.type().tag()).equals(n.label()));
+        }
+        if (null != n.scenario()) {
+            final _Scenario s = n.scenario();
+            final boolean combinationsPositive = s.calculateCombinations(true) > 0;
+            final boolean executableOrConfigured = s.isExecutable() || isNotNull(s.weightConfigured());
+            return executableOrConfigured && combinationsPositive;
+        }
+        if (null != n.result()) {
+            final Fraction cw = n.result().getConfiguredWeight();
+            if (null == cw) {
+                return false;
+            }
+            final double cwVal = cw.doubleValue();
+            final double dwVal = (null != n.result().getDownstreamWeight()) ? n.result().getDownstreamWeight().doubleValue() : 0.0;
+            final double uwVal = (null != n.result().getUpstreamWeight()) ? n.result().getUpstreamWeight().doubleValue() : 0.0;
+            if (cwVal <= 0.0 && dwVal <= 0.0 && uwVal <= 0.0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static boolean isTheoreticallyExecutable(final NodeData n) {
+        return isTheoreticallyExecutable(n, getAccessibleScenarios());
+    }
+
     public static BufferedImage renderTreeProgression(
             final TreeLayout layout,
             final int target,
             final int currentCycle) {
 
-        return renderTreeProgression(layout, target, "Cycle #" + currentCycle, Collections.emptySet());
+        return renderTreeProgression(layout, target, "Cycle #" + currentCycle, Collections.emptySet(), getAccessibleScenarios());
     }
 
     /**
@@ -591,6 +669,27 @@ public final class TreeTracker {
             final String badgeText,
             final Set<String> recentNodeKeys) {
 
+        return renderTreeProgression(layout, target, badgeText, recentNodeKeys, getAccessibleScenarios());
+    }
+
+    /**
+     * Renders scenario tree progression layout as a BufferedImage with a custom badge label,
+     * highlighting recently changed nodes and differentiating executable vs excluded nodes.
+     *
+     * @param layout              computed tree layout
+     * @param target              target executions count
+     * @param badgeText           text for the frame badge (e.g. "Cycle #1", "Step #42")
+     * @param recentNodeKeys      set of node keys recently traversed or changed
+     * @param accessibleScenarios set of scenarios accessible in the current session
+     * @return rendered BufferedImage
+     */
+    public static BufferedImage renderTreeProgression(
+            final TreeLayout layout,
+            final int target,
+            final String badgeText,
+            final Set<String> recentNodeKeys,
+            final Set<_Scenario> accessibleScenarios) {
+
         int maxCol = 0;
         double maxRow = 0.0;
         int totalLeafs = 0;
@@ -609,9 +708,11 @@ public final class TreeTracker {
                 maxLeafOverRatio = Math.max(maxLeafOverRatio, getLeafOverExecutionRatio(n, target));
             }
             if (n.children().isEmpty() && isTerminalScenario(n)) {
-                totalLeafs++;
-                if (execs >= getTargetExecutions(n, target))
-                    coveredLeafs++;
+                if (isTheoreticallyExecutable(n, accessibleScenarios) || execs > 0) {
+                    totalLeafs++;
+                    if (execs >= getTargetExecutions(n, target))
+                        coveredLeafs++;
+                }
             }
         }
 
@@ -648,13 +749,13 @@ public final class TreeTracker {
         }
 
         // Draw edges
-        drawEdges(g, layout.edges(), target, maxLeafOverRatio, recentNodeKeys);
+        drawEdges(g, layout.edges(), target, maxLeafOverRatio, recentNodeKeys, accessibleScenarios);
 
         // Draw nodes
         final Font fontLabel = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
         final Font fontBadge = new Font(Font.MONOSPACED, Font.BOLD, 10);
         for (final NodeData n : layout.nodes()) {
-            drawNode(g, n, target, maxLeafOverRatio, fontLabel, fontBadge, recentNodeKeys.contains(n.id()));
+            drawNode(g, n, target, maxLeafOverRatio, fontLabel, fontBadge, recentNodeKeys.contains(n.id()), accessibleScenarios);
         }
 
         // Draw header
@@ -669,7 +770,8 @@ public final class TreeTracker {
             final List<Edge> edges,
             final int target,
             final double maxLeafOverRatio,
-            final Set<String> recentNodeKeys) {
+            final Set<String> recentNodeKeys,
+            final Set<_Scenario> accessibleScenarios) {
 
         final List<Edge> sortedEdges = new ArrayList<>(edges);
         sortedEdges.sort(Comparator.comparingInt(e -> {
@@ -719,6 +821,10 @@ public final class TreeTracker {
                 }
                 g.setStroke(new BasicStroke(2.2f));
                 g.draw(path);
+            } else if (!isTheoreticallyExecutable(e.to(), accessibleScenarios)) {
+                g.setColor(EXCLUDED_EDGE);
+                g.setStroke(DASHED_EDGE_STROKE);
+                g.draw(path);
             } else {
                 g.setColor(UNVISITED_EDGE);
                 g.setStroke(new BasicStroke(1.2f));
@@ -734,7 +840,8 @@ public final class TreeTracker {
             final double maxLeafOverRatio,
             final Font fontLabel,
             final Font fontBadge,
-            final boolean isRecent) {
+            final boolean isRecent,
+            final Set<_Scenario> accessibleScenarios) {
 
         final int x = n.col() * COL_WIDTH + PADDING_X;
         final int y = (int) Math.round(n.row() * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y);
@@ -749,33 +856,40 @@ public final class TreeTracker {
 
         final boolean failure = TreeHtml.hasFailure(n);
         final Color progressColor = failure ? RED_FAILED : getScenarioProgressColor(n, target, maxLeafOverRatio);
+        final boolean theoreticallyExecutable = isTheoreticallyExecutable(n, accessibleScenarios);
         final Color cardFill;
         final Color borderColor;
-        final float strokeW;
+        final Stroke borderStroke;
 
         if (failure) {
             cardFill = RED_CARD_FILL;
             borderColor = RED_FAILED;
-            strokeW = 2.2f;
+            borderStroke = new BasicStroke(2.2f);
         } else if (isRecent) {
             cardFill = (overRatio > 0.0) ? progressColor : new Color(0x16, 0x3A, 0x58);
             borderColor = ACCENT_CYAN;
-            strokeW = 2.8f;
+            borderStroke = new BasicStroke(2.8f);
         } else if (execs == 0) {
-            cardFill = UNVISITED_CARD;
-            borderColor = UNVISITED_BORDER;
-            strokeW = 1.2f;
+            if (!theoreticallyExecutable) {
+                cardFill = EXCLUDED_CARD;
+                borderColor = EXCLUDED_BORDER;
+                borderStroke = DASHED_BORDER_STROKE;
+            } else {
+                cardFill = UNVISITED_CARD;
+                borderColor = UNVISITED_BORDER;
+                borderStroke = new BasicStroke(1.2f);
+            }
         } else if (overRatio > 0.0) {
             cardFill = progressColor;
             borderColor = (eventCount > 0) ? WARNING_AMBER : progressColor;
-            strokeW = 1.8f;
+            borderStroke = new BasicStroke(1.8f);
         } else {
             final int r = (int) (UNVISITED_CARD.getRed() * 0.7 + progressColor.getRed() * 0.3);
             final int gr = (int) (UNVISITED_CARD.getGreen() * 0.7 + progressColor.getGreen() * 0.3);
             final int b = (int) (UNVISITED_CARD.getBlue() * 0.7 + progressColor.getBlue() * 0.3);
             cardFill = new Color(r, gr, b);
             borderColor = (eventCount > 0) ? WARNING_AMBER : progressColor;
-            strokeW = 1.8f;
+            borderStroke = new BasicStroke(1.8f);
         }
 
         // Draw card background
@@ -784,7 +898,7 @@ public final class TreeTracker {
         g.fill(rect);
 
         // Draw card border
-        g.setStroke(new BasicStroke(strokeW));
+        g.setStroke(borderStroke);
         g.setColor(borderColor);
         g.draw(rect);
 
@@ -808,11 +922,15 @@ public final class TreeTracker {
             g.fillRoundRect(barX, barY, filledW, barH, 2, 2);
         }
 
-        // Right pill badge: e.g. "0/5", "3/5", "✓ 5/5"
+        // Right pill badge: e.g. "0/5", "3/5", "✓ 5/5", "OFF"
         g.setFont(fontBadge);
         final FontMetrics fmBadge = g.getFontMetrics();
-        final String badgeText = getExecutionBadgeText(n, execs, target);
-        final Color badgeFg = (execs == 0) ? TEXT_MUTED : progressColor;
+        final String badgeText = (execs == 0 && !theoreticallyExecutable)
+                ? "OFF"
+                : getExecutionBadgeText(n, execs, target);
+        final Color badgeFg = (execs == 0 && !theoreticallyExecutable)
+                ? TEXT_EXCLUDED
+                : (execs == 0) ? TEXT_MUTED : progressColor;
 
         final int badgeTextW = fmBadge.stringWidth(badgeText);
         final int pillW = badgeTextW + 12;
@@ -821,9 +939,9 @@ public final class TreeTracker {
         final int pillY = y + 10;
 
         // Pill bg
-        g.setColor(new Color(15, 23, 42, 220));
+        g.setColor(new Color(15, 23, 42, (execs == 0 && !theoreticallyExecutable) ? 140 : 220));
         g.fillRoundRect(pillX, pillY, pillW, pillH, 6, 6);
-        g.setStroke(new BasicStroke(1.0f));
+        g.setStroke((execs == 0 && !theoreticallyExecutable) ? DASHED_BORDER_STROKE : new BasicStroke(1.0f));
         g.setColor(borderColor);
         g.drawRoundRect(pillX, pillY, pillW, pillH, 6, 6);
 
@@ -851,7 +969,7 @@ public final class TreeTracker {
             }
             label = label + "...";
         }
-        g.setColor((overRatio > 0.0) ? TEXT_DARK : (execs > 0) ? TEXT_WHITE : TEXT_MUTED);
+        g.setColor((overRatio > 0.0) ? TEXT_DARK : (execs > 0) ? TEXT_WHITE : (!theoreticallyExecutable ? TEXT_EXCLUDED : TEXT_MUTED));
         g.drawString(label, x + 12, y + 24);
     }
 
