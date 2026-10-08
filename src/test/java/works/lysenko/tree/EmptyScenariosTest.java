@@ -54,7 +54,6 @@ class EmptyScenariosTest {
                 final LogRecord lr = new LogRecord(null, System.currentTimeMillis(), new Event(++count, type, 0, message, shortStackTrace));
                 core.getResults().addEvent(lr);
             }
-            @Override public void logKnownIssue(String s) {}
         };
 
         final Field lf = Core.class.getDeclaredField("logger");

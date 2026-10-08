@@ -522,7 +522,7 @@ public final class LogParser {
         final String systemResourcesGraph = addCpuDebug ? ChartsRenderer.renderResourceStatsGraph(resourceItems) : "";
 
         final String pathsSummary = SummaryPlaque.cleanPathsSummary(pathsExecutedStr, pathsChanceStr, pathsPossibleStr);
-        final SummaryPlaque summaryPlaque = SummaryPlaque.computeFromScenEntries(scenStats, execConfigStr, pathsSummary);
+        final SummaryPlaque summaryPlaque = SummaryPlaque.computeFromSections(sections, execConfigStr, pathsSummary);
 
         // ---- populate template ----
 
@@ -530,6 +530,7 @@ public final class LogParser {
         replacements.put("{{TIMESTAMP_BLOCK}}", timestampBlock);
         replacements.put("{{RESULT_PLAQUE}}", resultPlaque);
         replacements.put("{{SUMMARY_PLAQUE}}", summaryPlaque.renderHtml());
+        replacements.put("{{SUMMARY_PLAQUE_CSS}}", SummaryPlaque.css());
         replacements.put("{{PROGRESSION_LINK}}", progressionLink);
         replacements.put("{{PROGRESSION_WEBP_LINK}}", progressionWebpLink);
         replacements.put("{{PROGRESSION_MP4_LINK}}", progressionMp4Link);

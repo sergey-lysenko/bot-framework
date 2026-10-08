@@ -121,8 +121,6 @@ public record Layout() {
         public static final String LOCATORS_ = s(_RESOURCES_, LOCATORS);
         public static final String PARAMETERS_ = s(VAR_, PARAMETERS);
         public static final String PLATFORMS_ = s(VAR_, PLATFORMS);
-        static final String KNOWN_ISSUES_ = s(_RESOURCES_, KNOWN, _SLASH_, ISSUES);
-        public static final Properties knownIssues = getStore(KNOWN_ISSUES_);
         static final String KNOWN_COLOURS_ = s(_RESOURCES_, KNOWN, _SLASH_, COLOURS);
         // Containers
         public static final Properties knownColours = getStore(s(KNOWN_COLOURS_));

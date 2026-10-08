@@ -128,6 +128,45 @@ The framework uses OS-backed `run/.run.lock` and `run/.postprocess.lock` files t
 
 ---
 
+## 🐞 Per-Node Known Issues Tracking
+
+The framework supports per-node Known Issues mapping. This allows test runs to track expected failures, staging defects, or known environment issues directly against specific scenarios in the interactive `TreeHtml` report.
+
+### `known_issues.json` Schema
+
+Known issues are configured in `src/main/resources/known_issues.json`:
+
+```json
+{
+  "issues": [
+    {
+      "scenario": "com.biteheist.scenarios.menu.SelectCategory",
+      "title": "Staging Auth Timeout",
+      "description": "Auth service failure on staging under load.",
+      "link": "https://jira.company.com/browse/BH-1234",
+      "pattern": ".*TimeoutException.*"
+    },
+    {
+      "scenario": "com.biteheist.scenarios.checkout.*",
+      "title": "Payment Gateway Maintenance",
+      "description": "Payment service undergoing scheduled maintenance on staging.",
+      "link": "https://github.com/org/repo/issues/567"
+    }
+  ]
+}
+```
+
+### Key Capabilities
+
+- **Flexible Scenario Addressing**: Match scenarios by Fully Qualified Class Name (FQN), simple class name, or package wildcards (e.g. `com.biteheist.scenarios.checkout.*`).
+- **Selective Pattern Matching (`pattern`)**: Optional regular expression evaluated against failure log messages or stacktraces. The issue is only attached if the failure log matches the pattern, preventing misclassification of new or unexpected defects.
+- **Interactive TreeHtml Integration**:
+  - Nodes with active known issues render a `🐞` bug badge indicator on SVG cards.
+  - Interactive details panel displays full issue titles, descriptions, and clickable tracker links.
+  - Execution summary plaque highlights known issue statistics across test runs.
+
+---
+
 ## 👨‍💻 Author & Consulting
 
 Architected and developed by **Sergii Lysenko** — Principal Test Automation Architect with 20+ years of experience designing resilient test engines, distributed CI infrastructures, and autonomous quality systems for desktop, mobile, and web applications.

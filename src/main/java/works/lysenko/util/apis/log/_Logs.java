@@ -80,11 +80,4 @@ public interface _Logs {
      * @param shortStackTrace the short stack trace of the event
      */
     void logEvent(Severity severity, String message, String shortStackTrace);
-
-    /**
-     * Log a addEvent as Known Issue
-     *
-     * @param s description of known issue
-     */
-    void logKnownIssue(String s);
 }

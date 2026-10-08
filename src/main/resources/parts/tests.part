@@ -30,5 +30,5 @@
 # Whether to produce an exceptional state on failed assertions.
 # .test.assertions.produce.exception=true
 
-# Severity used when logging failed assertions (S0, S1, S2, S3, or SK).
+# Severity used when logging failed assertions (S0, S1, S2, or S3).
 # .test.assertions.severity=s0

@@ -41,7 +41,6 @@ import static works.lysenko.util.chrs.__.IN;
 import static works.lysenko.util.chrs.___.AND;
 import static works.lysenko.util.data.enums.Ansi.removeANSICodes;
 import static works.lysenko.util.data.enums.Brackets.SQUARE;
-import static works.lysenko.util.data.enums.EventType.KNOWN_ISSUE;
 import static works.lysenko.util.data.enums.Platform.CHROME;
 import static works.lysenko.util.data.enums.Severity.S0;
 import static works.lysenko.util.data.enums.Severity.S2;
@@ -61,7 +60,6 @@ import static works.lysenko.util.lang.word.B.BROWSER;
 import static works.lysenko.util.lang.word.E.EMPTY;
 import static works.lysenko.util.prop.core.Similarity.exceptions;
 import static works.lysenko.util.spec.Numbers.ZERO;
-import static works.lysenko.util.spec.Symbols.SEM_CLN;
 import static works.lysenko.util.spec.Symbols._LFD_;
 
 /**
@@ -119,22 +117,16 @@ public class Processor implements _LogsProcessor {
      * @param stacktrace The stack trace information relevant to the event, if any.
      * @return A {@code LogRecord} object representing the newly created event.
      */
-    @SuppressWarnings({"IfStatementWithTooManyBranches", "ValueOfIncrementOrDecrementUsed"})
+    @SuppressWarnings({"ValueOfIncrementOrDecrementUsed"})
     private static LogRecord createEvent(final long time, final int depth, final _Severity severity, final String text,
                                          final String stacktrace) {
 
         final LogRecord newLogRecord;
-        final Set<String> ki = (null == exec) ? null : exec.issues().getKnownIssueFor(text);
         final Integer test = core.getCurrentTestNumber();
-        if (isNotNull(ki) && !ki.isEmpty())
-            newLogRecord = new LogRecord(test, time, new Event(++counter, KNOWN_ISSUE, depth, s(KNOWN_ISSUE.getString(),
-                    SEM_CLN, ki, SEM_CLN, text), stacktrace));
-        else if (isNotNull(severity)) {
+        if (isNotNull(severity)) {
             newLogRecord = new LogRecord(test, time, new Event(++counter, severity.type(), depth, text, stacktrace));
             if (isNotNull(exec)) exec.issues().add(newLogRecord);
-        } else if (text.contains(KNOWN_ISSUE.getString()))
-            newLogRecord = new LogRecord(test, time, new Event(++counter, KNOWN_ISSUE, depth, text, stacktrace));
-        else newLogRecord = new LogRecord(test, time, new Event(++counter, EventType.UNDEFINED, depth, text, stacktrace));
+        } else newLogRecord = new LogRecord(test, time, new Event(++counter, EventType.UNDEFINED, depth, text, stacktrace));
         core.getResults().addEvent(newLogRecord);
         return newLogRecord;
     }

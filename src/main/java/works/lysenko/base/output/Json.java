@@ -49,20 +49,6 @@ public final class Json {
             newIssues.add(stripAnsi(rendered).replace("\n", " ").trim());
         }
         issues.put("newIssues", newIssues);
-
-        final List<String> knownIssues = new ArrayList<>();
-        for (final String str : exec.issues().known()) {
-            knownIssues.add(stripAnsi(str).replace("\n", " ").trim());
-        }
-        issues.put("knownIssues", knownIssues);
-
-        if (isNotNull(exec.issues().notReproduced())) {
-            final List<String> notRep = new ArrayList<>();
-            for (final String str : exec.issues().notReproduced()) {
-                notRep.add(stripAnsi(str).replace("\n", " ").trim());
-            }
-            issues.put("notReproduced", notRep);
-        }
         root.put("issues", issues);
 
         // Run / scenarios block

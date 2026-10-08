@@ -3,7 +3,6 @@ package works.lysenko.util.lang.word;
 import static works.lysenko.util.chrs.__.*;
 import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.____.*;
-import static works.lysenko.util.data.enums.Severity.SK;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.spec.Symbols.*;
 

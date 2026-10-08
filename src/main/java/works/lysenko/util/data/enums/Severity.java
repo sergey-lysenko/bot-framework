@@ -32,12 +32,7 @@ public enum Severity implements _Severity {
     /**
      * Notice
      */
-    S3(NOTICE, Ansi.CYAN),
-
-    /**
-     * Known Issue
-     */
-    SK(KNOWN_ISSUE, Ansi.BLUE);
+    S3(NOTICE, Ansi.CYAN);
 
     private final EventType type;
     private final Ansi color;

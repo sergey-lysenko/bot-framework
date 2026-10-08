@@ -311,7 +311,6 @@ class AllLeafsCoverageTest {
             @Override public void log(int level, String message, Long redefinedTime) {}
             @Override public void logEmptyLine() {}
             @Override public void logEvent(works.lysenko.util.data.enums.Severity severity, String message, String shortStackTrace) {}
-            @Override public void logKnownIssue(String s) {}
         };
         final Field loggerField = Core.class.getDeclaredField("logger");
         loggerField.setAccessible(true);
@@ -391,7 +390,6 @@ class AllLeafsCoverageTest {
             @Override public void log(int level, String message, Long redefinedTime) {}
             @Override public void logEmptyLine() {}
             @Override public void logEvent(works.lysenko.util.data.enums.Severity severity, String message, String shortStackTrace) {}
-            @Override public void logKnownIssue(String s) {}
         };
         final Field loggerField = Core.class.getDeclaredField("logger");
         loggerField.setAccessible(true);
@@ -681,8 +679,6 @@ class AllLeafsCoverageTest {
             public void logEmptyLine() {}
             @Override
             public void logEvent(works.lysenko.util.data.enums.Severity severity, String message, String shortStackTrace) {}
-            @Override
-            public void logKnownIssue(String s) {}
         };
 
         final Field loggerField = Core.class.getDeclaredField("logger");

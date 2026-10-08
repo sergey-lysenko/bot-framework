@@ -12,8 +12,6 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-import static works.lysenko.util.data.enums.Severity.SK;
-
 /**
  * @author Sergii Lysenko
  */
@@ -69,10 +67,5 @@ public class Logs implements _Logs {
     public final void logEvent(final Severity severity, final String message, final String shortStackTrace) {
 
         processor.logEvent(severity, message, shortStackTrace);
-    }
-
-    public final void logKnownIssue(final String s) {
-
-        logEvent(SK, s, Stacktrace.getShort(Thread.currentThread().getStackTrace()));
     }
 }

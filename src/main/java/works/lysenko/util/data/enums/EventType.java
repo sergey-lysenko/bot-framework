@@ -14,7 +14,6 @@ public enum EventType implements _String {
     SEVERE,
     WARNING,
     NOTICE,
-    KNOWN_ISSUE,
     UNDEFINED;
 
     public String getString() {

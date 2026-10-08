@@ -1,26 +1,25 @@
 package works.lysenko.base.output;
 
+import works.lysenko.base.issues.KnownIssue;
+import works.lysenko.base.issues.KnownIssuesStore;
 import works.lysenko.base.output.svg.Groups;
 import works.lysenko.base.output.svg.Parts;
 import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Node;
 import works.lysenko.util.apis.scenario._Scenario;
-import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.data.type.Result;
 
-import java.io.File;
 import java.util.*;
 
 import static org.apache.commons.lang3.StringUtils.SPACE;
 import static works.lysenko.Base.core;
-import static works.lysenko.Base.log;
 import static works.lysenko.Base.logEvent;
 import static works.lysenko.util.data.enums.Severity.S2;
-import static works.lysenko.util.data.strs.Swap.f;
-import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Bind.b;
+import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Files.writeToFile;
+import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.lang.word.T.TESTS;
 import static works.lysenko.util.spec.Layout.Files.name;
 import static works.lysenko.util.spec.Layout.Templates.RUN_TREE_HTML_;
@@ -34,7 +33,20 @@ public final class TreeHtml {
     private static final int CARD_WIDTH = 220;
     private static final int CARD_HEIGHT = 44;
 
+    private static KnownIssuesStore knownIssuesStore = null;
+
     private TreeHtml() {}
+
+    public static void setKnownIssuesStore(final KnownIssuesStore store) {
+        knownIssuesStore = store;
+    }
+
+    private static KnownIssuesStore getKnownIssuesStore() {
+        if (null == knownIssuesStore) {
+            knownIssuesStore = new KnownIssuesStore();
+        }
+        return knownIssuesStore;
+    }
 
     public static final class NodeData {
         private final String id;
@@ -45,6 +57,7 @@ public final class TreeHtml {
         private final _Result result;
         private final _Scenario scenario;
         private final List<NodeData> children = new ArrayList<>();
+        private final List<KnownIssue> knownIssues = new ArrayList<>();
         private NodeData parent;
 
         NodeData(final String id, final String label, final String group, final int col, final double row, final _Result result, final _Scenario scenario) {
@@ -70,6 +83,7 @@ public final class TreeHtml {
         public _Result result() { return result; }
         public _Scenario scenario() { return scenario; }
         public List<NodeData> children() { return children; }
+        public List<KnownIssue> knownIssues() { return knownIssues; }
         public NodeData parent() { return parent; }
         public void setParent(final NodeData parent) { this.parent = parent; }
     }
@@ -94,8 +108,6 @@ public final class TreeHtml {
             processGroup(group, null, 0, dy, nodes, edges);
         }
 
-        // Harmonic centering: align parents vertically to the center of their children
-        // and position each next level so plaques move lower to be closer to their parents
         optimizeLayout(nodes);
         return new TreeLayout(nodes, edges);
     }
@@ -141,6 +153,15 @@ public final class TreeHtml {
         final String id = s("scenario_", nodes.size(), "_", scenario.getSimpleName());
         final String group = (null == parent) ? TESTS : parent.label();
         final NodeData node = new NodeData(id, label, group, col, rows[0]++, resultFor(scenario, sorted), scenario);
+
+        final KnownIssuesStore store = getKnownIssuesStore();
+        if (null != store) {
+            final List<KnownIssue> matched = store.getForNode(scenario, node.result());
+            if (null != matched && !matched.isEmpty()) {
+                node.knownIssues().addAll(matched);
+            }
+        }
+
         nodes.add(node);
         if (null != parent) {
             node.setParent(parent);
@@ -219,6 +240,16 @@ public final class TreeHtml {
             final String shortKey = rawKey.split(SPACE)[ZERO];
             final String nodeId = s("col_", col, "_row_", myRow, "_", shortKey.replace('.', '_'));
             final NodeData nd = new NodeData(nodeId, rawKey, group.getKey(), col, myRow, entry.getValue());
+
+            final KnownIssuesStore store = getKnownIssuesStore();
+            if (null != store && null != nd.result()) {
+                for (final KnownIssue ki : store.getIssues()) {
+                    if (KnownIssuesStore.matchesScenario(ki.scenario(), rawKey, shortKey)) {
+                        nd.knownIssues().add(ki);
+                    }
+                }
+            }
+
             nodes.add(nd);
             myNodes.put(shortKey.toLowerCase(), nd);
 
@@ -252,7 +283,6 @@ public final class TreeHtml {
             if (n.col() > maxCol) maxCol = n.col();
         }
 
-        // Initialize rows top-down (column by column) aligned with parents
         for (int c = 0; c <= maxCol; c++) {
             final List<NodeData> colNodes = colMap.get(c);
             if (null == colNodes || colNodes.isEmpty()) continue;
@@ -276,9 +306,6 @@ public final class TreeHtml {
             }
         }
 
-        // Iterative barycentric relaxation with isotonic regression (PAVA) and depth-based tension
-        // Tension increases exponentially with column depth (W_c = 2^c).
-        // Vertical gaps between intermediate nodes are created naturally to minimize total edge lengths while preventing edge crossings.
         final int iterations = 32;
         for (int iter = 0; iter < iterations; iter++) {
             final boolean backward = (1 == iter % 2);
@@ -333,10 +360,8 @@ public final class TreeHtml {
                     targetMap.put(n, target);
                 }
 
-                // Interpolate targets for sibling nodes without children so they space out smoothly in gaps
                 interpolateSiblingTargets(colNodes, parentRowMap, childrenRowMap, targetMap);
 
-                // Sort colNodes to strictly prevent edge crossings and minimize connection lengths
                 colNodes.sort((n1, n2) -> {
                     final double p1 = parentRowMap.containsKey(n1) ? parentRowMap.get(n1) : n1.row();
                     final double p2 = parentRowMap.containsKey(n2) ? parentRowMap.get(n2) : n2.row();
@@ -369,7 +394,6 @@ public final class TreeHtml {
             }
         }
 
-        // Normalize vertical offset so top node starts at row 1.0
         double minRow = Double.MAX_VALUE;
         for (final NodeData n : nodes) {
             if (n.row() < minRow) minRow = n.row();
@@ -486,10 +510,6 @@ public final class TreeHtml {
         return nodes.stream().mapToDouble(NodeData::row).max().orElse(1.0);
     }
 
-    /**
-     * Solves the 1D non-overlapping layout problem minimizing squared distance to targets
-     * subject to y[i+1] >= y[i] + 1.0 and y[0] >= 1.0 using the Pool Adjacent Violators Algorithm (PAVA).
-     */
     static double[] solveColumn1D(final double[] targets) {
         final int m = targets.length;
         if (0 == m) return new double[0];
@@ -546,10 +566,47 @@ public final class TreeHtml {
         return y;
     }
 
+    private static String renderKnownIssuesHtml(final List<KnownIssue> issues) {
+        if (null == issues || issues.isEmpty()) return "";
+        final StringBuilder sb = new StringBuilder();
+        for (final KnownIssue ki : issues) {
+            sb.append("<div style=\"margin-bottom:8px;\">");
+            if (isNotNull(ki.title()) && !ki.title().isBlank()) {
+                sb.append("<div style=\"font-weight:600; color:#f8fafc;\">").append(escapeHtml(ki.title())).append("</div>");
+            }
+            if (isNotNull(ki.description()) && !ki.description().isBlank()) {
+                sb.append("<div style=\"color:#94a3b8; font-size:11px; margin-top:2px;\">").append(escapeHtml(ki.description())).append("</div>");
+            }
+            if (isNotNull(ki.link()) && !ki.link().isBlank()) {
+                final String safeLink = escapeHtml(ki.link());
+                sb.append("<div style=\"margin-top:4px;\"><a href=\"").append(safeLink).append("\" target=\"_blank\" style=\"color:#38bdf8; text-decoration:underline; font-size:11px;\">").append(safeLink).append("</a></div>");
+            }
+            sb.append("</div>");
+        }
+        return sb.toString();
+    }
+
+    private static String escapeHtml(final String text) {
+        if (null == text) return "";
+        return text.replace("&", "&amp;")
+                   .replace("<", "&lt;")
+                   .replace(">", "&gt;")
+                   .replace("\"", "&quot;")
+                   .replace("'", "&#39;");
+    }
+
+    private static String escapeJsString(final String text) {
+        if (null == text) return "";
+        return text.replace("\\", "\\\\")
+                   .replace("'", "\\'")
+                   .replace("\"", "\\\"")
+                   .replace("\n", "\\n")
+                   .replace("\r", "");
+    }
+
     static String renderHtml(final List<NodeData> nodes, final List<Edge> edges) {
         final StringBuilder svgContent = new StringBuilder();
 
-        // Sort edges so visited/active paths are rendered on top of unvisited paths
         final List<Edge> sortedEdges = new ArrayList<>(edges);
         sortedEdges.sort(Comparator.comparingInt(e -> {
             final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
@@ -557,7 +614,6 @@ public final class TreeHtml {
             return (toExecs > 0 && fromExecs > 0) ? 1 : 0;
         }));
 
-        // Render Edges (smooth cubic Béziers)
         for (final Edge e : sortedEdges) {
             final int startX = e.from().col() * COL_WIDTH + CARD_WIDTH + 40;
             final int startY = (int) Math.round(e.from().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + 20);
@@ -593,7 +649,6 @@ public final class TreeHtml {
             ));
         }
 
-                // Render Nodes
         for (final NodeData n : nodes) {
             final int x = n.col() * COL_WIDTH + 40;
             final int y = (int) Math.round(n.row() * ROW_HEIGHT + 20);
@@ -629,16 +684,22 @@ public final class TreeHtml {
                 }
             }
 
+            final boolean hasKnownIssues = !n.knownIssues().isEmpty();
+            final String kiHtml = renderKnownIssuesHtml(n.knownIssues());
+            final String kiJsEscaped = escapeJsString(kiHtml);
+            final String bugIndicator = hasKnownIssues ? String.format(Locale.US, "<text x=\"%d\" y=\"26\" font-size=\"12\">🐞</text>", CARD_WIDTH - 36) : "";
+
             final String safeLabel = n.label().replace("<", "&lt;").replace(">", "&gt;");
             svgContent.append(String.format(
                     Locale.US,
-                    "<g id=\"%s\" class=\"node-card %s\" transform=\"translate(%d, %d)\" onclick=\"showDetails('%s', '%s', '%d', '%d', '%s')\">\n" +
+                    "<g id=\"%s\" class=\"node-card %s\" transform=\"translate(%d, %d)\" onclick=\"showDetails('%s', '%s', '%d', '%d', '%s', '%s')\">\n" +
                     "  <rect width=\"%d\" height=\"%d\" />\n" +
                     "  <text x=\"14\" y=\"26\">%s</text>\n" +
+                    "  %s\n" +
                     "  <circle cx=\"%d\" cy=\"22\" r=\"6\" fill=\"%s\" />\n" +
                     "</g>\n",
-                    n.id(), statusClass, x, y, safeLabel, n.group(), execs, eventCount, eventDetails,
-                    CARD_WIDTH, CARD_HEIGHT, safeLabel, CARD_WIDTH - 18, badgeColor
+                    n.id(), statusClass, x, y, safeLabel, n.group(), execs, eventCount, eventDetails, kiJsEscaped,
+                    CARD_WIDTH, CARD_HEIGHT, safeLabel, bugIndicator, CARD_WIDTH - 18, badgeColor
             ));
         }
 
@@ -703,6 +764,10 @@ public final class TreeHtml {
                 "    <p>Group: <span id=\"d-group\" class=\"val\"></span></p>\n" +
                 "    <p>Executions: <span id=\"d-exec\" class=\"val\"></span></p>\n" +
                 "    <p>Events: <span id=\"d-events\" class=\"val\"></span></p>\n" +
+                "    <div id=\"d-known-issues\" style=\"display:none; margin-top:10px; padding:10px; background:rgba(192,132,252,0.12); border:1px solid rgba(192,132,252,0.3); border-radius:6px;\">\n" +
+                "      <div style=\"font-weight:600; font-size:12px; color:#c084fc; margin-bottom:6px;\">🐞 Known Issues</div>\n" +
+                "      <div id=\"d-ki-content\" style=\"font-size:11px; color:#f8fafc;\"></div>\n" +
+                "    </div>\n" +
                 "    <pre id=\"d-details\"></pre>\n" +
                 "  </div>\n" +
                 "</div>\n" +
@@ -727,13 +792,22 @@ public final class TreeHtml {
                 "      document.querySelectorAll('.connector.active').forEach(c => c.classList.remove('active'));\n" +
                 "    });\n" +
                 "  });\n" +
-                "  function showDetails(name, group, exec, events, details) {\n" +
+                "  function showDetails(name, group, exec, events, details, kiHtml) {\n" +
                 "    const p = document.getElementById('details-panel');\n" +
                 "    p.style.display = 'block';\n" +
                 "    document.getElementById('d-name').innerText = name;\n" +
                 "    document.getElementById('d-group').innerText = group;\n" +
                 "    document.getElementById('d-exec').innerText = exec;\n" +
                 "    document.getElementById('d-events').innerText = events;\n" +
+                "    const kiBox = document.getElementById('d-known-issues');\n" +
+                "    const kiContent = document.getElementById('d-ki-content');\n" +
+                "    if (kiHtml && kiHtml.trim().length > 0) {\n" +
+                "      kiBox.style.display = 'block';\n" +
+                "      kiContent.innerHTML = kiHtml;\n" +
+                "    } else {\n" +
+                "      kiBox.style.display = 'none';\n" +
+                "      kiContent.innerHTML = '';\n" +
+                "    }\n" +
                 "    const det = document.getElementById('d-details');\n" +
                 "    if (details && details.trim().length > 0) { det.style.display = 'block'; det.innerText = details; }\n" +
                 "    else { det.style.display = 'none'; }\n" +

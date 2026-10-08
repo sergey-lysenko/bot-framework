@@ -43,8 +43,6 @@ import static works.lysenko.util.lang.W.WEB_DRIVER;
 import static works.lysenko.util.lang.word.C.CREATING;
 import static works.lysenko.util.lang.word.E.EXECUTION;
 import static works.lysenko.util.lang.word.I.INACCESSIBLE;
-import static works.lysenko.util.lang.word.I.ISSUES;
-import static works.lysenko.util.lang.word.K.KNOWN;
 import static works.lysenko.util.lang.word.R.READING;
 import static works.lysenko.util.lang.word.R.RUNNING;
 import static works.lysenko.util.lang.word.S.*;
@@ -292,7 +290,6 @@ public final class Exec extends Root implements _TestData, _Executes {
 
         if (core.isInJar()) log(Level.none, ansi(b(c(RUNNING), FROM, JAR, FILE), MAGENTA_BOLD_BRIGHT), false);
 
-        log(Level.none, b(c(READING), c(KNOWN), c(ISSUES), DOTS), true);
         issues = new Issues();
 
         log(Level.none, b(c(CREATING), c(TEST), c(DATA), c(STORAGE), DOTS), true);
