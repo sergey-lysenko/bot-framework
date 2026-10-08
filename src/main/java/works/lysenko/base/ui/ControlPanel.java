@@ -72,12 +72,19 @@ public class ControlPanel extends JFrame implements _Dashboard {
 
         // Run Button Panel
         final JPanel runPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 10));
-        final JButton runButton = new JButton("  Run / Continue  ");
+
+        final JButton cancelButton = new JButton(" Cancel ");
+        cancelButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 13));
+        cancelButton.addActionListener(e -> cancelRun());
+
+        final JButton runButton = new JButton("  Start Test  ");
         runButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
         runButton.setBackground(new Color(0x16, 0xA3, 0x4A));
         runButton.setForeground(Color.WHITE);
         runButton.setFocusPainted(false);
         runButton.addActionListener(e -> startRun());
+
+        runPanel.add(cancelButton);
         runPanel.add(runButton);
         configPanel.add(runPanel, BorderLayout.SOUTH);
 
@@ -116,6 +123,10 @@ public class ControlPanel extends JFrame implements _Dashboard {
 
         tabbedPane.addTab("Tree Progression", treeProgressionPanel);
 
+        // 4. Known Issues Tab
+        final KnownIssuesPanel knownIssuesPanel = new KnownIssuesPanel();
+        tabbedPane.addTab("Known Issues", knownIssuesPanel);
+
         final Image initialFrame = TreeTracker.getLatestFrameImage();
         if (null != initialFrame) {
             setTreeProgression(initialFrame);
@@ -140,6 +151,11 @@ public class ControlPanel extends JFrame implements _Dashboard {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    private void cancelRun() {
+        dispose();
+        works.lysenko.util.apis.test._Test.processCode(works.lysenko.util.data.enums.ExitCode.CLOSED_THROUGH_GUI);
     }
 
     private void startRun() {
