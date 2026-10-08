@@ -219,7 +219,9 @@ public final class TreeTracker {
 
         final int target = (isNotNull(parameters)) ? parameters.getAllLeafsCount()
                 : (isNotNull(PropEnum._TEST_ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_COUNT.get()) : 1);
-        final int currentCycle = isNotNull(testNumber) ? testNumber : capturedFrames.size() + 1;
+        final String badgeText = isNotNull(testNumber)
+                ? "Cycle #" + testNumber
+                : "Step #" + (capturedFrames.size() + 1);
 
         final File runDir = resolveRunDirectory();
         if (isNull(runDir))
@@ -228,7 +230,7 @@ public final class TreeTracker {
         final BufferedImage image;
         try {
             final Set<String> recentNodeKeys = computeRecentNodeKeys(layout);
-            image = renderTreeProgression(layout, target, currentCycle, recentNodeKeys);
+            image = renderTreeProgression(layout, target, badgeText, recentNodeKeys);
             updatePreviousExecutions(layout);
         } catch (final IllegalArgumentException e) {
             System.err.println("Skipped tree progression frame: " + e.getMessage());
@@ -552,7 +554,7 @@ public final class TreeTracker {
             final int target,
             final int currentCycle) {
 
-        return renderTreeProgression(layout, target, currentCycle, Collections.emptySet());
+        return renderTreeProgression(layout, target, "Cycle #" + currentCycle, Collections.emptySet());
     }
 
     /**
@@ -568,6 +570,25 @@ public final class TreeTracker {
             final TreeLayout layout,
             final int target,
             final int currentCycle,
+            final Set<String> recentNodeKeys) {
+
+        return renderTreeProgression(layout, target, "Cycle #" + currentCycle, recentNodeKeys);
+    }
+
+    /**
+     * Renders scenario tree progression layout as a BufferedImage with a custom badge label,
+     * highlighting recently changed nodes.
+     *
+     * @param layout         computed tree layout
+     * @param target         target executions count
+     * @param badgeText      text for the frame badge (e.g. "Cycle #1", "Step #42")
+     * @param recentNodeKeys set of node keys recently traversed or changed
+     * @return rendered BufferedImage
+     */
+    public static BufferedImage renderTreeProgression(
+            final TreeLayout layout,
+            final int target,
+            final String badgeText,
             final Set<String> recentNodeKeys) {
 
         int maxCol = 0;
@@ -637,7 +658,7 @@ public final class TreeTracker {
         }
 
         // Draw header
-        drawHeader(g, canvasW, currentCycle, target, coveredLeafs, totalLeafs, totalExecs);
+        drawHeader(g, canvasW, badgeText, target, coveredLeafs, totalLeafs, totalExecs);
 
         g.dispose();
         return img;
@@ -890,7 +911,7 @@ public final class TreeTracker {
     private static void drawHeader(
             final Graphics2D g,
             final int canvasW,
-            final int currentCycle,
+            final String badgeText,
             final int target,
             final int coveredLeafs,
             final int totalLeafs,
@@ -924,7 +945,7 @@ public final class TreeTracker {
 
         rightX -= drawBadge(g, "Target: " + target, rightX, topY, new Color(51, 65, 85), new Color(203, 213, 225)) + 10;
 
-        drawBadge(g, "Cycle #" + currentCycle, rightX, topY, new Color(2, 132, 199), Color.WHITE);
+        drawBadge(g, badgeText, rightX, topY, new Color(2, 132, 199), Color.WHITE);
     }
 
     private static int drawBadge(
