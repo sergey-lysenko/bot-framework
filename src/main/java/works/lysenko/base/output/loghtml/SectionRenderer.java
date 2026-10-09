@@ -8,12 +8,15 @@ import works.lysenko.base.output.loghtml.LogModels.TelemetryItem;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static works.lysenko.base.output.loghtml.LogFormatting.SCEN_TOKEN_RE;
 import static works.lysenko.base.output.loghtml.LogFormatting.escapeHtml;
 import static works.lysenko.base.output.loghtml.LogFormatting.extractLineSpan;
 import static works.lysenko.base.output.loghtml.LogFormatting.linkifyArtifacts;
@@ -110,7 +113,10 @@ public final class SectionRenderer {
         sb.append("    <div class=\"common-path-box\"><span class=\"common-path-label\">Common path:</span><div class=\"path-chain\">");
         for (final String step : commonPathSteps) {
             sb.append(s(" <span class=\"step-arrow\">→</span> ",
-                    "<span class=\"path-step common\">", escapeHtml(step), "</span>"));
+                    "<a class=\"path-step common\" href=\"#", escapeHtml(step),
+                    "\" onclick=\"focusScenario(event, null, '", escapeHtml(step),
+                    "')\" title=\"Jump to ", escapeHtml(step), " in log\">",
+                    escapeHtml(step), "</a>"));
         }
         sb.append("</div></div>\n");
         return sb.toString();
@@ -132,7 +138,11 @@ public final class SectionRenderer {
                     "</div><div class=\"path-chain\">"));
             for (int sIdx = 0; sIdx < p.steps.size(); sIdx++) {
                 if (sIdx > 0) sb.append(" <span class=\"step-arrow\">→</span> ");
-                sb.append(s("<span class=\"path-step\">", escapeHtml(p.steps.get(sIdx)), "</span>"));
+                final String stepName = p.steps.get(sIdx);
+                sb.append(s("<a class=\"path-step\" href=\"#test-", p.num, "-", escapeHtml(stepName),
+                        "\" onclick=\"focusScenario(event, '", p.num, "', '", escapeHtml(stepName),
+                        "')\" title=\"Jump to ", escapeHtml(stepName), " in Test #", p.num, "\">",
+                        escapeHtml(stepName), "</a>"));
             }
             sb.append("</div></div>");
         }
@@ -172,7 +182,11 @@ public final class SectionRenderer {
                     ? s("<span class=\"badge warning\" style=\"margin-left: 8px;\">", escapeHtml(sc.events), "</span>")
                     : "";
             sb.append(s("<tr>",
-                    "<td><span class=\"", symClass, "\">", sc.sym, "</span> <b>", escapeHtml(sc.name), "</b></td>",
+                    "<td><span class=\"", symClass, "\">", sc.sym,
+                    "</span> <a class=\"scen-stat-link\" href=\"#", escapeHtml(sc.name),
+                    "\" onclick=\"focusScenario(event, null, '", escapeHtml(sc.name),
+                    "')\" title=\"Jump to ", escapeHtml(sc.name), " in log\"><b>",
+                    escapeHtml(sc.name), "</b></a></td>",
                     "<td class=\"cell-mono text-muted\">", escapeHtml(sc.weight), "</td>",
                     "<td class=\"cell-mono text-right\"><b>", sc.count, "</b>", evtBadge, "</td>",
                     "</tr>"));
@@ -226,7 +240,9 @@ public final class SectionRenderer {
             if ("test".equals(sec.type) && !sec.scenarios.isEmpty()) {
                 sb.append("  <div class=\"section-breadcrumb\">\n    <span class=\"breadcrumb-label\">Scenario:</span>\n");
                 for (final String sc : sec.scenarios) {
-                    sb.append(s("    <span class=\"pill\">", escapeHtml(sc), "</span>\n"));
+                    sb.append(s("    <a class=\"pill scen-pill\" href=\"#test-", sec.testNum, "-", escapeHtml(sc),
+                            "\" onclick=\"focusScenario(event, '", sec.testNum, "', '", escapeHtml(sc),
+                            "')\" title=\"Jump to ", escapeHtml(sc), "\">", escapeHtml(sc), "</a>\n"));
                 }
                 sb.append("  </div>\n");
             }
@@ -334,7 +350,7 @@ public final class SectionRenderer {
                             final String cClass = (cpuVal > 47.0) ? " rate-red" : (cpuVal > 44.0) ? " rate-yellow" : (cpuVal > 38.0) ? " rate-green" : (cpuVal > 25.0) ? " rate-blue" : " rate-white";
                             final double cpuPct = Math.min(1.0, Math.max(0.0, cpuVal / 50.0));
                             final int cpuW = Math.max(2, Math.min(32, (int) Math.round(cpuPct * 32)));
-                            cpuRows.append(String.format(Locale.ROOT, s("<div class=\"st-row%s\" title=\"%.2f%%\"><div class=\"st-wave\" style=\"width: %dpx;\"></div></div>"), cClass, cpuVal, cpuW));
+                            cpuRows.append(String.format(Locale.ROOT, s("<div class=\"st-row%s\" title=\"%.2f%%\\\"><div class=\"st-wave\" style=\"width: %dpx;\"></div></div>"), cClass, cpuVal, cpuW));
                         }
                     } else {
                         cpuRows.append("<div class=\"st-row rate-white\" title=\"-\"><div class=\"st-wave\" style=\"width: 1px; opacity: 0.15;\"></div></div>");
@@ -374,8 +390,35 @@ public final class SectionRenderer {
             final LogSection section,
             final Map<Integer, List<ArtifactItem>> causativeArtifacts,
             final Map<Integer, List<ArtifactItem>> sectionArtifacts) {
+        final Map<String, Integer> scenCounts = new HashMap<>();
+        final Set<String> seenOps = new HashSet<>();
         for (int lineIndex = 0; lineIndex < section.lines.size(); lineIndex++) {
-            String parsedLine = parseAnsi(section.lines.get(lineIndex));
+            final String rawLine = section.lines.get(lineIndex);
+            final String cleanL = ANSI_PATTERN.matcher(rawLine).replaceAll("").trim();
+            final Matcher mTest = LINE_WITH_TEST_RE.matcher(cleanL);
+            final Matcher mNoTest = mTest.matches() ? null : LINE_NO_TEST_RE.matcher(cleanL);
+
+            String opNum = null;
+            int tNum = section.testNum;
+            if (mTest.matches()) {
+                tNum = Integer.parseInt(mTest.group(1).trim());
+                opNum = mTest.group(2).trim();
+            } else if (null != mNoTest && mNoTest.matches()) {
+                opNum = mNoTest.group(1).trim();
+            }
+
+            String scenName = null;
+            if (cleanL.contains("▷") || cleanL.contains("◆") || cleanL.contains("◼") || cleanL.contains("●")) {
+                final Matcher mScen = SCEN_TOKEN_RE.matcher(cleanL);
+                if (mScen.find()) {
+                    final String cand = mScen.group(2).trim();
+                    if (!cand.isEmpty() && !"scenario".equalsIgnoreCase(cand)) {
+                        scenName = cand;
+                    }
+                }
+            }
+
+            String parsedLine = parseAnsi(rawLine);
             final StringBuilder badgeHtml = new StringBuilder();
 
             final List<ArtifactItem> causative = causativeArtifacts.get(lineIndex);
@@ -403,13 +446,13 @@ public final class SectionRenderer {
                         parsedLine = parsedLine.replaceAll(
                                 "(Made\\s+(?:'|&#x27;|&quot;)[^<&]+(?:'|&#x27;|&quot;)\\s+snapshot\\s+of\\s+test\\s+data)",
                                 s("<a class=\"log-artifact-link\" href=\"", artifact.rel(),
-                                        "\" target=\"_blank\" title=\"Open artifact: ", artifact.rel(), "\">$1</a>"));
+                                        "\" target=\"_blank\" title=\"Open artifact: ", artifact.rel(), "\">", "$1</a>"));
                     } else if (".xml".equals(artifact.ext()) && parsedLine.contains("snapshot of page code")
                             && !parsedLine.contains("log-artifact-link")) {
                         parsedLine = parsedLine.replaceAll(
                                 "(Making\\s+(?:'|&#x27;|&quot;)[^<&]+(?:'|&#x27;|&quot;)\\s+snapshot\\s+of\\s+page\\s+code)",
                                 s("<a class=\"log-artifact-link\" href=\"", artifact.rel(),
-                                        "\" target=\"_blank\" title=\"Open artifact: ", artifact.rel(), "\">$1</a>"));
+                                        "\" target=\"_blank\" title=\"Open artifact: ", artifact.rel(), "\">", "$1</a>"));
                     }
                     if (!parsedLine.contains(artifact.rel())) {
                         final String icon = ".properties".equals(artifact.ext()) ? "💾"
@@ -427,8 +470,54 @@ public final class SectionRenderer {
                 }
             }
 
+            final StringBuilder divOpen = new StringBuilder("<div class=\"log-line-entry");
+            final StringBuilder anchorsHtml = new StringBuilder();
+
+            if (null != scenName) {
+                divOpen.append(" is-scenario");
+            }
+            if (null != opNum && !seenOps.contains(opNum)) {
+                seenOps.add(opNum);
+                divOpen.append(" id=\"op_").append(opNum).append("\" data-op=\"").append(opNum).append("\"");
+            }
+            if (tNum > 0) {
+                divOpen.append(" data-test=\"").append(tNum).append("\"");
+            }
+
+            if (null != scenName) {
+                divOpen.append(" data-scenario=\"").append(escapeHtml(scenName)).append("\"");
+                final int occ = scenCounts.merge(scenName, 1, Integer::sum);
+                final String canonicalHash;
+                if (tNum > 0) {
+                    canonicalHash = s("test-", tNum, "-", scenName);
+                    anchorsHtml.append(s("<a id=\"test-", tNum, "-", scenName, "\" class=\"scenario-anchor\"></a>"));
+                    anchorsHtml.append(s("<a id=\"test_", tNum, "_", scenName, "\" class=\"scenario-anchor\"></a>"));
+                    if (occ > 1) {
+                        anchorsHtml.append(s("<a id=\"test-", tNum, "-", scenName, "-", occ, "\" class=\"scenario-anchor\"></a>"));
+                        anchorsHtml.append(s("<a id=\"test_", tNum, "_", scenName, "_", occ, "\" class=\"scenario-anchor\"></a>"));
+                    }
+                    if (null != opNum) {
+                        anchorsHtml.append(s("<a id=\"test-", tNum, "-op-", opNum, "\" class=\"scenario-anchor\"></a>"));
+                        anchorsHtml.append(s("<a id=\"test_", tNum, "_op_", opNum, "\" class=\"scenario-anchor\"></a>"));
+                    }
+                } else if (null != opNum) {
+                    canonicalHash = s("op_", opNum);
+                } else {
+                    canonicalHash = scenName;
+                }
+                if (1 == occ) {
+                    anchorsHtml.append(s("<a id=\"", escapeHtml(scenName), "\" class=\"scenario-anchor\"></a>"));
+                }
+                badgeHtml.append(s(
+                        "<a class=\"scen-link-btn\" href=\"#", canonicalHash,
+                        "\" onclick=\"onScenarioLinkClick(event, '", canonicalHash, "')\" title=\"Copy link to this scenario (#",
+                        canonicalHash, ")\">🔗</a>"
+                ));
+            }
+
+            divOpen.append(">");
             if (badgeHtml.length() > 0) parsedLine = s(parsedLine, "  ", badgeHtml);
-            output.append(s("<div class=\"log-line-entry\">", parsedLine, "</div>"));
+            output.append(divOpen).append(anchorsHtml).append(parsedLine).append("</div>");
         }
     }
 }

@@ -91,14 +91,8 @@ public class Gui implements _GUI {
      * @param parameters the Parameters object that holds and manages various parameters for execution
      */
     static {
+        works.lysenko.base.ui.ControlPanel.initializeLookAndFeel();
         try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-            works.lysenko.base.ui.ControlPanel.applyMenuShortcutKeyMask();
             javax.swing.ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE);
         } catch (final Exception ignored) {}
     }

@@ -481,4 +481,55 @@ class LogHtmlTest {
             works.lysenko.Base.properties = previousProps;
         }
     }
+    @Test
+    void testScenarioLinkingAndAddressingInLogHtml(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("scenario_link.run.log");
+        final Path htmlPath = tempDir.resolve("scenario_link.run.log.html");
+
+        final List<String> logLines = List.of(
+                "Starting Bot core ...",
+                "# Applied test configuration",
+                "[25][2450][153.990][   77]    ▷ signIn.correctLogin.Settings : [1] 15",
+                "[25][2451][154.000][   10] Performing action in Settings",
+                "[25][2452][154.050][   50] • Closing test 25 ...",
+                "[  ][2453][154.060][   10] Common path: → signIn.correctLogin.Settings",
+                "[  ][2454][154.070][   10] [25] [154,050] → - → signIn.correctLogin.Settings",
+                "[  ][2455][154.080][   10] ▷ signIn.correctLogin.Settings [1.0] 15"
+        );
+
+        Files.write(logPath, logLines);
+        LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+
+        assertTrue(Files.exists(htmlPath), "HTML report should be generated");
+        final String html = Files.readString(htmlPath);
+
+        // Verify scenario line attributes and anchors
+        assertTrue(html.contains("id=\"op_2450\""), "Scenario line should have op ID");
+        assertTrue(html.contains("data-op=\"2450\""), "Scenario line should have data-op");
+        assertTrue(html.contains("data-test=\"25\""), "Scenario line should have data-test");
+        assertTrue(html.contains("data-scenario=\"signIn.correctLogin.Settings\""), "Scenario line should have data-scenario");
+        assertTrue(html.contains("id=\"test-25-signIn.correctLogin.Settings\""), "Should render test-scen anchor");
+        assertTrue(html.contains("id=\"test_25_signIn.correctLogin.Settings\""), "Should render underscored test-scen anchor");
+        assertTrue(html.contains("id=\"test-25-op-2450\""), "Should render test-op anchor");
+        assertTrue(html.contains("id=\"signIn.correctLogin.Settings\""), "Should render global scenario anchor");
+
+        // Verify link button on scenario line
+        assertTrue(html.contains("class=\"scen-link-btn\""), "Should render link button on scenario line");
+        assertTrue(html.contains("href=\"#test-25-signIn.correctLogin.Settings\""), "Link button should target scenario");
+        assertTrue(html.contains("onclick=\"onScenarioLinkClick(event, test-25-signIn.correctLogin.Settings)\""), "Link button should have copy/navigate click handler");
+
+        // Verify breadcrumbs in section header
+        assertTrue(html.contains("class=\"pill scen-pill\""), "Breadcrumb scenario pill should be hyperlinked");
+
+        // Verify execution paths step link
+        assertTrue(html.contains("onclick=\"focusScenario(event, 25, signIn.correctLogin.Settings)\""), "Execution paths step should have scenario focus handler");
+
+        // Verify JS handlers and hash listener exist in HTML report
+        assertTrue(html.contains("function focusScenario("), "Should contain focusScenario JS function");
+        assertTrue(html.contains("function onScenarioLinkClick("), "Should contain onScenarioLinkClick JS function");
+        assertTrue(html.contains("function scrollToScenarioOrElement("), "Should contain scrollToScenarioOrElement JS function");
+        assertTrue(html.contains("function highlightScenarioStep("), "Should contain highlightScenarioStep JS function");
+        assertTrue(html.contains("function handleHashLink("), "Should contain handleHashLink JS function");
+        assertTrue(html.contains("window.addEventListener(hashchange, handleHashLink)"), "Should listen to hashchange");
+    }
 }

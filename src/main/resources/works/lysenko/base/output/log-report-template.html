@@ -177,7 +177,17 @@ summary::-webkit-details-marker { display: none; }
 .st-row.rate-yellow .st-wave { background: #eab308; box-shadow: 0 0 8px rgba(234, 179, 8, 0.8); }
 .st-row.rate-red .st-wave { background: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.9); }
 .log-content { flex: 1; padding: 12px 18px; overflow-x: auto; background: transparent; font-size: 12px; line-height: 19.2px; white-space: pre; word-break: normal; border-top: none; }
-.log-line-entry { height: 19.2px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: pre; }
+a.path-step { text-decoration: none; }
+.scenario-anchor { position: absolute; pointer-events: none; width: 0; height: 0; }
+.scen-link-btn { display: inline-flex; align-items: center; justify-content: center; margin-left: 8px; padding: 0 4px; color: #64748b; text-decoration: none; font-size: 11px; opacity: 0.35; border-radius: 3px; transition: all 0.15s ease; user-select: none; cursor: pointer; }
+.log-line-entry:hover .scen-link-btn, .scen-link-btn:hover { opacity: 1; color: #38bdf8; background: rgba(56, 189, 248, 0.15); }
+.scen-pill { text-decoration: none; cursor: pointer; transition: all 0.15s ease; }
+.scen-pill:hover { background: #334155; border-color: #38bdf8; color: #38bdf8; transform: translateY(-1px); }
+.scen-stat-link { color: inherit; text-decoration: none; transition: color 0.15s ease; cursor: pointer; }
+.scen-stat-link:hover { color: #38bdf8; text-decoration: underline; }
+.log-toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #38bdf8; border: 1px solid #38bdf8; padding: 8px 16px; border-radius: 6px; font-family: ui-monospace, monospace; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.6); opacity: 0; pointer-events: none; transform: translateY(10px); transition: opacity 0.2s ease, transform 0.2s ease; z-index: 9999; }
+.log-toast.show { opacity: 1; transform: translateY(0); }
+.log-line-entry { position: relative; height: 19.2px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: pre; }
 .hidden { display: none !important; }
 .highlight { outline: 2px solid var(--accent); }
 .result-plaque-wrap { margin-bottom: 20px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
@@ -303,6 +313,174 @@ summary::-webkit-details-marker { display: none; }
     const el = document.getElementById(id);
     if (el) { el.classList.remove('hidden'); el.open = true; el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('highlight'); setTimeout(() => el.classList.remove('highlight'), 1500); }
   }
+  function copyTextToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+    } catch (e) {}
+    document.body.removeChild(textArea);
+    return Promise.resolve();
+  }
+  function showToast(msg) {
+    let toast = document.getElementById('logToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'logToast';
+      toast.className = 'log-toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(window.logToastTimeout);
+    window.logToastTimeout = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2200);
+  }
+  function onScenarioLinkClick(e, hash) {
+    if (e) {
+      if (e.preventDefault) e.preventDefault();
+      if (e.stopPropagation) e.stopPropagation();
+    }
+    const fullUrl = window.location.origin + window.location.pathname + '#' + hash;
+    copyTextToClipboard(fullUrl).then(() => {
+      showToast('Link copied: #' + hash);
+    });
+    if (history.pushState) {
+      history.pushState(null, '', '#' + hash);
+    } else {
+      window.location.hash = hash;
+    }
+    scrollToScenarioOrElement(hash);
+  }
+  function focusScenario(e, testNum, scenName) {
+    if (e) {
+      if (e.preventDefault) e.preventDefault();
+      if (e.stopPropagation) e.stopPropagation();
+    }
+    const hash = testNum ? ('test-' + testNum + '-' + scenName) : scenName;
+    if (history.pushState) {
+      history.pushState(null, '', '#' + hash);
+    } else {
+      window.location.hash = hash;
+    }
+    scrollToScenarioOrElement(hash);
+  }
+  function highlightScenarioStep(startLine) {
+    if (!startLine) return;
+    document.querySelectorAll('.log-line-entry.step-highlight').forEach(el => {
+      el.classList.remove('step-highlight', 'step-highlight-first', 'step-highlight-last', 'step-highlight-flash');
+    });
+
+    const stepLines = [startLine];
+    let next = startLine.nextElementSibling;
+    while (next && next.classList.contains('log-line-entry') && !next.classList.contains('is-scenario')) {
+      stepLines.push(next);
+      next = next.nextElementSibling;
+    }
+
+    stepLines.forEach((line, idx) => {
+      line.classList.add('step-highlight', 'step-highlight-flash');
+      if (idx === 0) line.classList.add('step-highlight-first');
+      if (idx === stepLines.length - 1) line.classList.add('step-highlight-last');
+    });
+
+    setTimeout(() => {
+      stepLines.forEach(line => line.classList.remove('step-highlight-flash'));
+    }, 3200);
+  }
+  function scrollToScenarioOrElement(hash) {
+    if (!hash) return;
+    if (hash.startsWith('#')) hash = hash.substring(1);
+    hash = decodeURIComponent(hash);
+
+    let target = document.getElementById(hash);
+
+    if (!target) {
+      const opMatch = hash.match(/^(?:op[-_]?)?(\d+)$/i);
+      if (opMatch) {
+        target = document.getElementById('op_' + opMatch[1]) ||
+                 document.querySelector('.log-line-entry[data-op="' + opMatch[1] + '"]');
+      }
+    }
+
+    if (!target) {
+      const testOpMatch = hash.match(/^test[-_]?(\d+)[-_]op[-_]?(\d+)$/i);
+      if (testOpMatch) {
+        target = document.getElementById('op_' + testOpMatch[2]) ||
+                 document.querySelector('.log-line-entry[data-test="' + testOpMatch[1] + '"][data-op="' + testOpMatch[2] + '"]');
+      }
+    }
+
+    if (!target) {
+      const testScenMatch = hash.match(/^test[-_]?(\d+)[-_/:](.+)$/i);
+      if (testScenMatch) {
+        const tNum = testScenMatch[1];
+        const sc = testScenMatch[2];
+        const candidates = document.querySelectorAll('.log-line-entry.is-scenario[data-test="' + tNum + '"]');
+        for (const el of candidates) {
+          if (el.getAttribute('data-scenario') === sc) {
+            target = el;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!target) {
+      const allScens = document.querySelectorAll('.log-line-entry.is-scenario');
+      for (const el of allScens) {
+        if (el.getAttribute('data-scenario') === hash) {
+          target = el;
+          break;
+        }
+      }
+    }
+
+    if (!target) {
+      const testNumMatch = hash.match(/^test[-_]?(\d+)$/i);
+      if (testNumMatch) {
+        focusSection('Test #' + testNumMatch[1]);
+        return;
+      }
+      focusSection(hash);
+      return;
+    }
+
+    const lineEntry = target.classList.contains('log-line-entry') ? target : target.closest('.log-line-entry');
+    const sec = target.closest('details.log-section');
+    if (sec) {
+      if (hideLimbo && sec.classList.contains('limbo')) {
+        toggleLimbo();
+      }
+      sec.classList.remove('hidden');
+      sec.open = true;
+    }
+
+    const scrollTarget = lineEntry || target;
+    scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    if (lineEntry) {
+      highlightScenarioStep(lineEntry);
+    } else {
+      target.classList.add('highlight');
+      setTimeout(() => target.classList.remove('highlight'), 1500);
+    }
+  }
+  function handleHashLink() {
+    if (window.location.hash) {
+      scrollToScenarioOrElement(window.location.hash);
+    }
+  }
+  window.addEventListener('hashchange', handleHashLink);
 {{LG_SCRIPT_DATA}}
   function renderTimelineSvg() {
     const wrap = document.querySelector('#timelineLineContainer .line-graph-svg-wrap');
@@ -1553,9 +1731,13 @@ summary::-webkit-details-marker { display: none; }
     renderEtaDebugSvg();
     renderResourceStatsSvg();
   }
-  window.addEventListener('DOMContentLoaded', renderAllCharts);
+  window.addEventListener('DOMContentLoaded', () => {
+    renderAllCharts();
+    setTimeout(handleHashLink, 100);
+  });
   window.addEventListener('resize', renderAllCharts);
   renderAllCharts();
+  setTimeout(handleHashLink, 100);
 </script>
 </body>
 </html>

@@ -23,6 +23,10 @@ import static works.lysenko.util.func.type.Objects.isNotNull;
  */
 public class KnownIssuesPanel extends JPanel {
 
+    static {
+        ControlPanel.initializeLookAndFeel();
+    }
+
     private static final ObjectMapper MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
     private static final String DEFAULT_FILE_PATH = "src/main/resources/known_issues.json";
 

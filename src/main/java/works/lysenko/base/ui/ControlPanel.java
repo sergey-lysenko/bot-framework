@@ -30,10 +30,12 @@ public class ControlPanel extends JFrame implements _Dashboard {
      */
     public static void initializeLookAndFeel() {
         try {
-            for (final UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    UIManager.setLookAndFeel(info.getClassName());
-                    break;
+            if (UIManager.getLookAndFeel() == null || !"Nimbus".equals(UIManager.getLookAndFeel().getName())) {
+                for (final UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                    if ("Nimbus".equals(info.getName())) {
+                        UIManager.setLookAndFeel(info.getClassName());
+                        break;
+                    }
                 }
             }
         } catch (final Exception ignored) {}

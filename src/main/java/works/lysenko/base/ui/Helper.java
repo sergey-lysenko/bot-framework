@@ -399,15 +399,7 @@ public final class Helper extends JFrame {
      */
     public static void main(final String[] args) {
 
-        try {
-            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-            ControlPanel.applyMenuShortcutKeyMask();
-        } catch (final Exception ignored) {}
+        ControlPanel.initializeLookAndFeel();
 
         SwingUtilities.invokeLater(() -> {
             final File file = (args.length > 0) ? new File(args[0]) : null;

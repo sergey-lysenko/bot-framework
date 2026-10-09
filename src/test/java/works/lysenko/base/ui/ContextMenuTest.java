@@ -6,6 +6,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.UIManager;
+import javax.swing.InputMap;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.event.PopupMenuEvent;
@@ -19,6 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ContextMenuTest {
+
+    @org.junit.jupiter.api.BeforeAll
+    static void setUpAll() {
+        ControlPanel.initializeLookAndFeel();
+    }
 
     @Test
     void testAttachContextMenu() throws Exception {
@@ -83,13 +90,15 @@ class ContextMenuTest {
     }
 
     @Test
-    void testMenuShortcutKeyMaskApplied() {
-        ControlPanel.applyMenuShortcutKeyMask();
-        final int mask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
-        final JTextField tf = new JTextField();
-        assertEquals("paste-from-clipboard", tf.getInputMap().get(KeyStroke.getKeyStroke(KeyEvent.VK_V, mask)));
-        assertEquals("copy-to-clipboard", tf.getInputMap().get(KeyStroke.getKeyStroke(KeyEvent.VK_C, mask)));
-        assertEquals("cut-to-clipboard", tf.getInputMap().get(KeyStroke.getKeyStroke(KeyEvent.VK_X, mask)));
-        assertEquals("select-all", tf.getInputMap().get(KeyStroke.getKeyStroke(KeyEvent.VK_A, mask)));
+    void testMenuShortcutKeyMaskApplied() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            ControlPanel.initializeLookAndFeel();
+            final int mask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+            final JTextField tf = new JTextField();
+            assertEquals("paste-from-clipboard", tf.getInputMap().get(KeyStroke.getKeyStroke(KeyEvent.VK_V, mask)));
+            assertEquals("copy-to-clipboard", tf.getInputMap().get(KeyStroke.getKeyStroke(KeyEvent.VK_C, mask)));
+            assertEquals("cut-to-clipboard", tf.getInputMap().get(KeyStroke.getKeyStroke(KeyEvent.VK_X, mask)));
+            assertEquals("select-all", tf.getInputMap().get(KeyStroke.getKeyStroke(KeyEvent.VK_A, mask)));
+        });
     }
 }

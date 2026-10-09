@@ -45,15 +45,7 @@ import static works.lysenko.util.spec.Symbols._COLON_;
 public class PropertiesPanel extends JPanel {
 
     static {
-        try {
-            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-            works.lysenko.base.ui.ControlPanel.applyMenuShortcutKeyMask();
-        } catch (final Exception ignored) {}
+        works.lysenko.base.ui.ControlPanel.initializeLookAndFeel();
     }
 
     public static final String STATUS_DEFAULT = c(DEFAULT);

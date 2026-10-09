@@ -31,6 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static works.lysenko.Base.logEvent;
+import static works.lysenko.base.output.loghtml.LogFormatting.SCEN_TOKEN_RE;
 import static works.lysenko.base.output.loghtml.LogFormatting.calculateBootSpentSeconds;
 import static works.lysenko.base.output.loghtml.LogFormatting.escapeHtml;
 import static works.lysenko.base.output.loghtml.LogFormatting.formatDeltaTime;
@@ -303,9 +304,9 @@ public final class LogParser {
             }
 
             if ("test".equals(currentSec.type)) {
-                final Matcher mScenToken = Pattern.compile("[▷◆◼●]\\s+([a-zA-Z0-9_]+(?:\\.[a-zA-Z0-9_]+)*)\\s*:").matcher(clean);
+                final Matcher mScenToken = SCEN_TOKEN_RE.matcher(clean);
                 if (mScenToken.find()) {
-                    final String sc = mScenToken.group(1).trim();
+                    final String sc = mScenToken.group(2).trim();
                     if (!sc.isEmpty() && !"scenario".equalsIgnoreCase(sc) && !currentSec.scenarios.contains(sc)) {
                         currentSec.scenarios.add(sc);
                     }
