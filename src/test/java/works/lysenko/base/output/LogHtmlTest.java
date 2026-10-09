@@ -516,13 +516,13 @@ class LogHtmlTest {
         // Verify link button on scenario line
         assertTrue(html.contains("class=\"scen-link-btn\""), "Should render link button on scenario line");
         assertTrue(html.contains("href=\"#test-25-signIn.correctLogin.Settings\""), "Link button should target scenario");
-        assertTrue(html.contains("onclick=\"onScenarioLinkClick(event, test-25-signIn.correctLogin.Settings)\""), "Link button should have copy/navigate click handler");
+        assertTrue(html.contains("onclick=\"onScenarioLinkClick(event, 'test-25-signIn.correctLogin.Settings')\""), "Link button should have copy/navigate click handler");
 
         // Verify breadcrumbs in section header
         assertTrue(html.contains("class=\"pill scen-pill\""), "Breadcrumb scenario pill should be hyperlinked");
 
         // Verify execution paths step link
-        assertTrue(html.contains("onclick=\"focusScenario(event, 25, signIn.correctLogin.Settings)\""), "Execution paths step should have scenario focus handler");
+        assertTrue(html.contains("onclick=\"focusScenario(event, '25', 'signIn.correctLogin.Settings')\""), "Execution paths step should have scenario focus handler");
 
         // Verify JS handlers and hash listener exist in HTML report
         assertTrue(html.contains("function focusScenario("), "Should contain focusScenario JS function");
@@ -530,6 +530,6 @@ class LogHtmlTest {
         assertTrue(html.contains("function scrollToScenarioOrElement("), "Should contain scrollToScenarioOrElement JS function");
         assertTrue(html.contains("function highlightScenarioStep("), "Should contain highlightScenarioStep JS function");
         assertTrue(html.contains("function handleHashLink("), "Should contain handleHashLink JS function");
-        assertTrue(html.contains("window.addEventListener(hashchange, handleHashLink)"), "Should listen to hashchange");
+        assertTrue(html.contains("window.addEventListener('hashchange', handleHashLink)"), "Should listen to hashchange");
     }
 }
