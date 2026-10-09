@@ -126,11 +126,20 @@ public final class SectionRenderer {
      * Renders HTML rows for recorded test paths.
      *
      * @param testPaths recorded test paths with execution steps
+     * @param sections  parsed log sections for status lookup
      * @return HTML snippet containing path rows
      */
-    public static String renderPathsRows(final List<PathEntry> testPaths) {
+    public static String renderPathsRows(final List<PathEntry> testPaths, final List<LogSection> sections) {
         final StringBuilder sb = new StringBuilder();
         for (final PathEntry p : testPaths) {
+            String testStatus = "neutral";
+            for (final LogSection sec : sections) {
+                if ("test".equals(sec.type) && String.valueOf(sec.testNum).equals(p.num)) {
+                    testStatus = sec.status;
+                    break;
+                }
+            }
+
             sb.append(s("<div class=\"path-row\" onclick=\"focusSection('Test #", p.num, "')\">",
                     "<div class=\"path-meta\">",
                     "<span class=\"path-num\">Test #", p.num, "</span>",
@@ -139,7 +148,18 @@ public final class SectionRenderer {
             for (int sIdx = 0; sIdx < p.steps.size(); sIdx++) {
                 if (sIdx > 0) sb.append(" <span class=\"step-arrow\">→</span> ");
                 final String stepName = p.steps.get(sIdx);
-                sb.append(s("<a class=\"path-step\" href=\"#test-", p.num, "-", escapeHtml(stepName),
+                
+                String nodeCssClass = "passed";
+                if (sIdx == p.steps.size() - 1) {
+                    if ("failed".equals(testStatus)) nodeCssClass = "failed";
+                    else if ("warning".equals(testStatus)) nodeCssClass = "warning";
+                } else {
+                    if ("failed".equals(testStatus) || "warning".equals(testStatus)) {
+                        nodeCssClass = "child_failed";
+                    }
+                }
+
+                sb.append(s("<a class=\"path-step ", nodeCssClass, "\" href=\"#test-", p.num, "-", escapeHtml(stepName),
                         "\" onclick=\"focusScenario(event, '", p.num, "', '", escapeHtml(stepName),
                         "')\" title=\"Jump to ", escapeHtml(stepName), " in Test #", p.num, "\">",
                         escapeHtml(stepName), "</a>"));

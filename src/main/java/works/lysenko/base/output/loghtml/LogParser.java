@@ -564,7 +564,7 @@ public final class LogParser {
 
         final String lgScriptData = renderLgScriptData(testData, limboByPrevTest, completions, etaDebugItems, resourceItems, tAvg, tMax, lMax);
         final String commonPath = renderCommonPath(commonPathSteps);
-        final String pathsRows = renderPathsRows(testPaths);
+        final String pathsRows = renderPathsRows(testPaths, sections);
         final String scenSubtitle = buildScenSubtitle(pathsPossibleStr, pathsChanceStr, pathsExecutedStr);
         final String scenRows = renderScenRows(scenStats);
         final String sectionsHtml = renderSections(sections, runArtifacts, telemetryCpuList, currOpGlobalIdx);
@@ -601,6 +601,7 @@ public final class LogParser {
         replacements.put("{{LG_SCRIPT_DATA}}", lgScriptData);
         replacements.put("{{PATHS_COUNT}}", String.valueOf(testPaths.size()));
         replacements.put("{{COMMON_PATH}}", commonPath);
+        replacements.put("{{PATH_STYLES}}", works.lysenko.base.output.TreeHtml.NodeStyle.getExecutionPathStyles());
         replacements.put("{{PATHS_ROWS}}", pathsRows);
         replacements.put("{{SCEN_SUBTITLE}}", scenSubtitle);
         replacements.put("{{SCEN_ROWS}}", scenRows);

@@ -34,6 +34,38 @@ public final class TreeHtml {
     private static final int CARD_WIDTH = 220;
     private static final int CARD_HEIGHT = 44;
 
+    public enum NodeStyle {
+        FAILED("failed", "Failed", "#ef4444", "#450a0a", "#fca5a5"),
+        UPSET("child_failed", "Upset", "#818cf8", "#1e1b4b", "#a5b4fc"),
+        PASSED("passed", "Passed", "#22c55e", "#052e16", "#86efac"),
+        WARNING("warning", "Warning", "#f59e0b", "#451a03", "#fcd34d"),
+        NON_EXECUTABLE("non_executable", "Non-executable", "#475569", "#131a2a", "#64748b"),
+        UNVISITED("unvisited", "Unvisited", "#64748b", "#1e293b", "#94a3b8");
+
+        public final String cssClass;
+        public final String title;
+        public final String border;
+        public final String bg;
+        public final String text;
+
+        NodeStyle(final String cssClass, final String title, final String border, final String bg, final String text) {
+            this.cssClass = cssClass;
+            this.title = title;
+            this.border = border;
+            this.bg = bg;
+            this.text = text;
+        }
+
+        public static String getExecutionPathStyles() {
+            final StringBuilder sb = new StringBuilder();
+            for (final NodeStyle ns : values()) {
+                sb.append(String.format(Locale.ROOT, "  .path-step.%s { background: %s; border-color: %s; color: %s; }\n", ns.cssClass, ns.bg, ns.border, ns.text));
+                sb.append(String.format(Locale.ROOT, "  .path-step.%s:hover { background: %s; border-color: %s; color: %s; }\n", ns.cssClass, ns.border, ns.text, ns.bg));
+            }
+            return sb.toString();
+        }
+    }
+
     private static KnownIssuesStore knownIssuesStore = null;
 
     private TreeHtml() {}
@@ -736,31 +768,19 @@ public final class TreeHtml {
             final boolean childFailure = hasChildFailure(n);
             final boolean theoreticallyExecutable = isTheoreticallyExecutable(n);
 
-            String statusClass = "unvisited";
-            String badgeColor = "#64748b";
-            String statusTitle = "Unvisited";
+            NodeStyle nodeStyle = NodeStyle.UNVISITED;
             if (failure) {
-                statusClass = "failed";
-                badgeColor = "#ef4444";
-                statusTitle = "Failed";
+                nodeStyle = NodeStyle.FAILED;
             } else if (childFailure) {
-                statusClass = "child_failed";
-                badgeColor = "#818cf8";
-                statusTitle = "Upset";
+                nodeStyle = NodeStyle.UPSET;
             } else if (execs > 0) {
                 if (eventCount == 0) {
-                    statusClass = "passed";
-                    badgeColor = "#22c55e";
-                    statusTitle = "Passed";
+                    nodeStyle = NodeStyle.PASSED;
                 } else {
-                    statusClass = "warning";
-                    badgeColor = "#f59e0b";
-                    statusTitle = "Warning";
+                    nodeStyle = NodeStyle.WARNING;
                 }
             } else if (!theoreticallyExecutable) {
-                statusClass = "non_executable";
-                badgeColor = "#475569";
-                statusTitle = "Non-executable";
+                nodeStyle = NodeStyle.NON_EXECUTABLE;
             }
 
             final StringBuilder eventDetails = new StringBuilder();
@@ -785,9 +805,9 @@ public final class TreeHtml {
                     "  %s\n" +
                     "  <circle cx=\"%d\" cy=\"22\" r=\"6\" fill=\"%s\" />\n" +
                     "</g>\n",
-                    n.id(), statusClass, x, y, safeLabel, n.group(), statusTitle, execs, eventCount, eventDetails, kiJsEscaped,
-                    safeLabel, statusTitle,
-                    CARD_WIDTH, CARD_HEIGHT, safeLabel, bugIndicator, CARD_WIDTH - 18, badgeColor
+                    n.id(), nodeStyle.cssClass, x, y, safeLabel, n.group(), nodeStyle.title, execs, eventCount, eventDetails, kiJsEscaped,
+                    safeLabel, nodeStyle.title,
+                    CARD_WIDTH, CARD_HEIGHT, safeLabel, bugIndicator, CARD_WIDTH - 18, nodeStyle.border
             ));
         }
 

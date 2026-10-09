@@ -206,6 +206,7 @@ a.path-step { text-decoration: none; }
 .right-series-controls { justify-content: flex-end; margin-left: auto; }
 .chart-select { background: #0f172a; border: 1px solid var(--border); color: #38bdf8; font-size: 11px; padding: 2px 6px; border-radius: 4px; cursor: pointer; font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; outline: none; }
 .chart-select:hover { background: #1e293b; border-color: #38bdf8; color: #f8fafc; }
+{{PATH_STYLES}}
 {{SUMMARY_PLAQUE_CSS}}
 </style>
 </head>
@@ -424,10 +425,11 @@ a.path-step { text-decoration: none; }
       const testScenMatch = hash.match(/^test[-_]?(\d+)[-_/:](.+)$/i);
       if (testScenMatch) {
         const tNum = testScenMatch[1];
-        const sc = testScenMatch[2];
+        const sc = testScenMatch[2].toLowerCase();
         const candidates = document.querySelectorAll('.log-line-entry.is-scenario[data-test="' + tNum + '"]');
         for (const el of candidates) {
-          if (el.getAttribute('data-scenario') === sc) {
+          const elScen = el.getAttribute('data-scenario').toLowerCase();
+          if (elScen === sc || elScen.endsWith('.' + sc)) {
             target = el;
             break;
           }
