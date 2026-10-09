@@ -150,6 +150,9 @@ public class Test implements _Test {
 
         if (null != reason) core.setStopReason(reason);
         core.setStopFlag(true);
+        if (null == core.getStopScenario() && isNotNull(exec) && isNotNull(exec.scenarios())) {
+            core.setStopScenario(exec.scenarios().current());
+        }
     }
 
     /**

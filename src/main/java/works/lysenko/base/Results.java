@@ -121,7 +121,7 @@ public class Results implements _Results {
         for (final Map.Entry<_Scenario, Result> entry : results.entrySet()) {
             for (final _LogRecord event : entry.getValue().getEvents()) {
                 if (((_Event) event.data()).severity().ordinal() <= Stop.atSeverity)
-                    list.add(b(event.data().message(), IN, q(entry.getKey().getShortName()), SCENARIO));
+                    list.add(b(event.data().message(), IN, q(entry.getKey().getName()), SCENARIO));
             }
         }
         return list;

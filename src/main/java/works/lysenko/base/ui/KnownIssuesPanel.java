@@ -94,6 +94,15 @@ public class KnownIssuesPanel extends JPanel {
         formViewPanel.add(tableScrollPane, BorderLayout.CENTER);
         formViewPanel.add(formPanel, BorderLayout.SOUTH);
 
+        ContextMenu.attach(
+                scenarioField,
+                titleField,
+                descriptionField,
+                linkField,
+                patternField,
+                rawJsonArea
+        );
+
         rawJsonArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         final JScrollPane jsonScrollPane = new JScrollPane(rawJsonArea);
 

@@ -98,6 +98,7 @@ public class Gui implements _GUI {
                     break;
                 }
             }
+            works.lysenko.base.ui.ControlPanel.applyMenuShortcutKeyMask();
             javax.swing.ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE);
         } catch (final Exception ignored) {}
     }

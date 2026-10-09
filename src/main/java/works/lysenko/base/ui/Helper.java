@@ -406,6 +406,7 @@ public final class Helper extends JFrame {
                     break;
                 }
             }
+            ControlPanel.applyMenuShortcutKeyMask();
         } catch (final Exception ignored) {}
 
         SwingUtilities.invokeLater(() -> {

@@ -52,6 +52,7 @@ public class PropertiesPanel extends JPanel {
                     break;
                 }
             }
+            works.lysenko.base.ui.ControlPanel.applyMenuShortcutKeyMask();
         } catch (final Exception ignored) {}
     }
 

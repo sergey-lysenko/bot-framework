@@ -9,23 +9,71 @@ import works.lysenko.base.util.Telemetry;
 import works.lysenko.util.apis.scenario._Scenario;
 
 import javax.swing.*;
+import javax.swing.text.DefaultEditorKit;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.KeyEvent;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class ControlPanel extends JFrame implements _Dashboard {
 
     static {
+        initializeLookAndFeel();
+    }
+
+    /**
+     * Initializes the Nimbus Look and Feel and maps menu shortcut key masks globally
+     * for all standard Swing text components.
+     */
+    public static void initializeLookAndFeel() {
         try {
-            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+            for (final UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
                     UIManager.setLookAndFeel(info.getClassName());
                     break;
                 }
             }
         } catch (final Exception ignored) {}
+        applyMenuShortcutKeyMask();
+    }
+
+    /**
+     * Maps the platform's default menu shortcut key mask (Command on macOS, Control on others)
+     * globally in UIManager for all text editing actions (Copy, Paste, Cut, Select All).
+     */
+    public static void applyMenuShortcutKeyMask() {
+        try {
+            final int mask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+            final String[] mapKeys = {
+                    "TextField.focusInputMap",
+                    "TextArea.focusInputMap",
+                    "TextPane.focusInputMap",
+                    "EditorPane.focusInputMap",
+                    "PasswordField.focusInputMap",
+                    "FormattedTextField.focusInputMap"
+            };
+            for (final String mapKey : mapKeys) {
+                final InputMap im = (InputMap) UIManager.get(mapKey);
+                if (im != null) {
+                    im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, mask), DefaultEditorKit.copyAction);
+                    im.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, mask), DefaultEditorKit.pasteAction);
+                    im.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, mask), DefaultEditorKit.cutAction);
+                    im.put(KeyStroke.getKeyStroke(KeyEvent.VK_A, mask), DefaultEditorKit.selectAllAction);
+                }
+            }
+        } catch (final Exception ignored) {}
+    }
+
+    /**
+     * Attaches a right-click context menu (Cut, Copy, Paste, Select All) to the given text components.
+     *
+     * @param components the text components to attach the context menu to
+     */
+    public static void addContextMenu(final JTextComponent... components) {
+        ContextMenu.attach(components);
     }
 
     private static ControlPanel instance;
@@ -45,6 +93,7 @@ public class ControlPanel extends JFrame implements _Dashboard {
     }
 
     public ControlPanel(final Parameters parameters, final Gui guiInstance) {
+        applyMenuShortcutKeyMask();
         instance = this;
         setTitle("Control Panel");
         setSize(1200, 800);

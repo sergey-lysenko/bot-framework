@@ -94,6 +94,7 @@ public final class Core extends Root implements _Core, _Tests {
     private Boolean inJar = null;
     private boolean stopFlag = false;
     private String stopReason = null;
+    private _Scenario stopScenario = null;
 
     public boolean getStopFlag() {
 
@@ -103,6 +104,9 @@ public final class Core extends Root implements _Core, _Tests {
     public void setStopFlag(final boolean stopFlag) {
 
         this.stopFlag = stopFlag;
+        if (stopFlag && null == this.stopScenario && isNotNull(exec) && isNotNull(exec.scenarios())) {
+            this.stopScenario = exec.scenarios().current();
+        }
     }
 
     @Override
@@ -116,6 +120,23 @@ public final class Core extends Root implements _Core, _Tests {
 
         if (null == this.stopReason) {
             this.stopReason = stopReason;
+            if (null == this.stopScenario && isNotNull(exec) && isNotNull(exec.scenarios())) {
+                this.stopScenario = exec.scenarios().current();
+            }
+        }
+    }
+
+    @Override
+    public _Scenario getStopScenario() {
+
+        return stopScenario;
+    }
+
+    @Override
+    public void setStopScenario(final _Scenario stopScenario) {
+
+        if (null == this.stopScenario || null == stopScenario) {
+            this.stopScenario = stopScenario;
         }
     }
 

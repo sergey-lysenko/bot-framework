@@ -22,6 +22,8 @@ import static works.lysenko.util.data.strs.Case.u;
 import static works.lysenko.util.data.strs.Null.sn;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Wrap.e;
+import static works.lysenko.util.data.strs.Wrap.q;
+import static works.lysenko.util.chrs.__.IN;
 import static works.lysenko.util.func.imgs.Screenshot.makeScreenAndCodeSnapshot;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.lang.T.TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY;
@@ -45,14 +47,25 @@ record ResultMarker() {
         if (core.getStopFlag()) {
             final String stopReason = core.getStopReason();
             final String message;
+            final _Scenario scenario = findOriginatingScenario();
             if (null != stopReason && !stopReason.isBlank()) {
                 String clean = stopReason.trim().replace(_LFD_, _BULLT_);
                 if (!clean.startsWith("[FAILURE]") && !clean.startsWith("[ERROR]")) {
                     clean = b(s("[FAILURE]"), clean);
                 }
+                if (isNotNull(scenario)) {
+                    final String fqn = scenario.getName();
+                    if (!clean.contains(fqn)) {
+                        clean = b(clean, IN, q(fqn));
+                    }
+                }
                 message = clean;
             } else {
-                message = b(s("[FAILURE]"), TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY);
+                if (isNotNull(scenario)) {
+                    message = b(s("[FAILURE]"), TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY, IN, q(scenario.getName()));
+                } else {
+                    message = b(s("[FAILURE]"), TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY);
+                }
             }
             return generateMessage(message);
         }
@@ -66,6 +79,31 @@ record ResultMarker() {
         if (core.getResults().getFailures().isEmpty()) return null;
         final String s = core.getResults().getFailures().get(0);
         return generateMessage(s.trim().replace(_LFD_, _BULLT_));
+    }
+
+    private static _Scenario findOriginatingScenario() {
+
+        if (isNotNull(core)) {
+            if (isNotNull(core.getStopScenario())) {
+                return core.getStopScenario();
+            }
+            if (isNotNull(exec) && isNotNull(exec.scenarios()) && isNotNull(exec.scenarios().current())) {
+                return exec.scenarios().current();
+            }
+            if (isNotNull(core.getResults())) {
+                final Map<_Scenario, _Result> sorted = core.getResults().getSorted();
+                if (isNotNull(sorted)) {
+                    for (final Map.Entry<_Scenario, _Result> entry : sorted.entrySet()) {
+                        final _Scenario scen = entry.getKey();
+                        final _Result res = entry.getValue();
+                        if ((isNotNull(scen) && scen.hasFailed()) || (isNotNull(res) && res.status() == ExecutionStatus.FAILED)) {
+                            return scen;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private static int countFailedScenarios() {
