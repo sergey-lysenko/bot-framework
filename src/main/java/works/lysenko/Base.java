@@ -30,6 +30,7 @@ import static works.lysenko.util.spec.Numbers.ZERO;
  * <p>
  * Fields:
  * - stringArray: A property representing an array of strings.
+ * - test: A static variable representing the current Test instance.
  * - core: Core execution or functionality property.
  * - exec: Represents the execution context or data.
  * - properties: Configuration or properties associated with the execution.
@@ -94,9 +95,9 @@ public record Base() {
      * configuration options.
      * <p>
      * The properties of the TestProperties class are:
-     * - defaultValues: A1 LinkedHashMap representing the default values for the properties.
-     * - commonConfiguration: A1 Map representing the common configuration properties.
-     * - testProperties: A1 Properties object representing the test-specific properties.
+     * - defaultValues: A LinkedHashMap representing the default values for the properties.
+     * - commonConfiguration: A Map representing the common configuration properties.
+     * - testProperties: A Properties object representing the test-specific properties.
      * <p>
      * This class is part of the TestFramework package and can be accessed from any part of the application.
      * It implements the ProvidesTestProperties interface to provide access to the test properties.
@@ -208,7 +209,7 @@ public record Base() {
      * Returns a description of the given WebElement.
      *
      * @param element The WebElement to describe.
-     * @return A1 description of the given WebElement.
+     * @return A description of the given WebElement.
      */
     public static String describe(final WebElement element) {
 
@@ -268,7 +269,7 @@ public record Base() {
      * Finds all web elements based on the given locator.
      *
      * @param locator The locator used to identify the elements.
-     * @return A1 list of web elements matching the locator.
+     * @return A list of web elements matching the locator.
      */
     public static List<WebElement> findAll(final String locator) {
 
@@ -280,7 +281,7 @@ public record Base() {
      *
      * @param locator The locator used to identify the elements.
      * @param expose  True if the elements should be exposed, false otherwise.
-     * @return A1 list of web elements matching the locator.
+     * @return A list of web elements matching the locator.
      */
     public static List<WebElement> findAll(final String locator, final boolean expose) {
 
@@ -304,7 +305,7 @@ public record Base() {
      * Retrieves a boolean value from the execution using the specified title and booleanSupplier.
      *
      * @param title           The title for the boolean value.
-     * @param booleanSupplier A1 supplier function that provides the boolean value.
+     * @param booleanSupplier A supplier function that provides the boolean value.
      * @return The boolean value retrieved from the execution.
      */
     @SuppressWarnings("BooleanMethodNameMustStartWithQuestion")
@@ -374,7 +375,7 @@ public record Base() {
 
     /**
      * Retrieves a long value associated with the specified field.
-     * If the field is not found or cannot be converted to along,
+     * If the field is not found or cannot be converted to a long,
      * the provided default value is returned.
      *
      * @param field the field whose associated long value is to be retrieved
@@ -474,7 +475,7 @@ public record Base() {
     /**
      * Checks if all the given locators are present.
      *
-     * @param locators A1 variable number of locators to be checked.
+     * @param locators A variable number of locators to be checked.
      * @return true if all the locators are present, false otherwise.
      */
     @SuppressWarnings("WeakerAccess")
@@ -823,7 +824,7 @@ public record Base() {
      * Searches for keys in the execution using the given substrings.
      *
      * @param substrings The substrings to search for.
-     * @return A1 set of keys that contain the given substrings.
+     * @return A set of keys that contain the given substrings.
      */
     public static Set<String> searchKeys(final String... substrings) {
 
@@ -834,7 +835,7 @@ public record Base() {
      * Searches for keys in the execution based on the given value.
      *
      * @param value The value to search for in the execution.
-     * @return A1 {@code Set} containing the keys found in the execution associated with the given value.
+     * @return A {@code Set} containing the keys found in the execution associated with the given value.
      */
     public static Set<String> searchKeysByValue(final String value) {
 

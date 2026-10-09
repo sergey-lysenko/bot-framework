@@ -1,9 +1,11 @@
 package works.lysenko.base.output;
 
+import works.lysenko.base.issues.KnownIssuesStore;
 import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.spec.Level;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static works.lysenko.Base.*;
@@ -33,11 +35,24 @@ record NewIssues() {
         if (exec.issues().isLatestEmpty())
             log(Level.none, ansi(b(c(NO), NEW, c(ISSUES)), GREEN), true);
         else {
-            section(b(s1(exec.issues().latest().size(), c(EVENT)), SUMMARY));
+            final KnownIssuesStore store = new KnownIssuesStore();
+            final Map<works.lysenko.util.apis.scenario._Scenario, works.lysenko.util.apis.data._Result> sorted = core.getResults().getSorted();
+
+            int newIssuesCount = 0;
+            for (final _LogRecord lr : exec.issues().latestCopy()) {
+                if (store.getForLogRecord(sorted.keySet(), lr).isEmpty()) {
+                    newIssuesCount++;
+                }
+            }
+
+            section(b(s1(newIssuesCount, c(EVENT)), SUMMARY));
             log(Level.none, s((isDebug() ? ansi(e(b(c(NOTICES), AND), true), CYAN) : EMPTY), ansi(b(c(NEW), s(c(ISSUES),
                     _COLON_)), RED)), true);
-            for (final _LogRecord lr : exec.issues().latestCopy())
-                log(Level.none, ansi(lr.render(core.getTotalTests(), -1, null)), false);
+            for (final _LogRecord lr : exec.issues().latestCopy()) {
+                if (store.getForLogRecord(sorted.keySet(), lr).isEmpty()) {
+                    log(Level.none, ansi(lr.render(core.getTotalTests(), -1, null)), false);
+                }
+            }
         }
     }
 

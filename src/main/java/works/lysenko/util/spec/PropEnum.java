@@ -183,6 +183,7 @@ public enum PropEnum implements _PropEnum {
     _TREE_INCLUDE_DOWNSTREAM(Boolean.class, FALSE),
     _TREE_INCLUDE_UPSTREAM(Boolean.class, FALSE),
     _TREE_NOTIFY_ABOUT_EMPTY_SCENARIO_PACKAGES(Boolean.class, TRUE),
+    _TREE_PROGRESSION_OPTIMIZATION(Boolean.class, TRUE),
     _TREE_SCENARIO_DEPTH_SAFEGUARD(Integer.class, _2_, _0_),
     _TREE_SCENARIO_DOES_NOT_FIT_NOTICE(Boolean.class, TRUE),
     _TREE_SCENARIO_HISTORY_DEPTH_SAFEGUARD(Integer.class, _2_, _0_),

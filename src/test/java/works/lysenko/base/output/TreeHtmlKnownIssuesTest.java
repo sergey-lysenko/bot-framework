@@ -54,7 +54,8 @@ class TreeHtmlKnownIssuesTest {
         final String html = TreeHtml.renderHtml(List.of(node), List.of());
 
         assertNotNull(html);
-        assertTrue(html.contains("🐞"));
+        assertTrue(html.contains("known-issue"));
+        assertTrue(html.contains("url(#known-issue-hatch)"));
         assertTrue(html.contains("Known Timeout"));
         assertTrue(html.contains("Server is slow during peak hours"));
         assertTrue(html.contains("https://jira.example.com/BUG-123"));

@@ -1,5 +1,6 @@
 package works.lysenko.base.output;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import works.lysenko.base.issues.KnownIssue;
 import works.lysenko.base.issues.KnownIssuesStore;
 import works.lysenko.base.output.svg.Groups;
@@ -9,12 +10,14 @@ import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Node;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.type.Result;
+import works.lysenko.util.prop.tree.Optimization;
 import org.apache.commons.math3.fraction.Fraction;
 
 import java.util.*;
 
 import static org.apache.commons.lang3.StringUtils.SPACE;
 import static works.lysenko.Base.core;
+import static works.lysenko.Base.exec;
 import static works.lysenko.Base.logEvent;
 import static works.lysenko.util.data.enums.Severity.S2;
 import static works.lysenko.util.data.strs.Bind.b;
@@ -66,6 +69,7 @@ public final class TreeHtml {
         }
     }
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static KnownIssuesStore knownIssuesStore = null;
 
     private TreeHtml() {}
@@ -85,7 +89,7 @@ public final class TreeHtml {
         private final String id;
         private final String label;
         private final String group;
-        private final int col;
+        private int col;
         private double row;
         private final _Result result;
         private final _Scenario scenario;
@@ -111,6 +115,7 @@ public final class TreeHtml {
         public String label() { return label; }
         public String group() { return group; }
         public int col() { return col; }
+        public void setCol(final int col) { this.col = col; }
         public double row() { return row; }
         public void setRow(final double row) { this.row = row; }
         public _Result result() { return result; }
@@ -189,9 +194,21 @@ public final class TreeHtml {
 
         final KnownIssuesStore store = getKnownIssuesStore();
         if (null != store) {
-            final List<KnownIssue> matched = store.getForNode(scenario, node.result());
-            if (null != matched && !matched.isEmpty()) {
-                node.knownIssues().addAll(matched);
+            final List<KnownIssue> matchedByNode = store.getForNode(scenario, node.result());
+            if (null != matchedByNode && !matchedByNode.isEmpty()) {
+                for (final KnownIssue ki : matchedByNode) {
+                    if (!node.knownIssues().contains(ki)) node.knownIssues().add(ki);
+                }
+            }
+            if (isNotNull(exec) && isNotNull(exec.issues())) {
+                for (final _LogRecord lr : exec.issues().latestCopy()) {
+                    final List<KnownIssue> matchedByRecord = store.getForLogRecord(Collections.singletonList(scenario), lr);
+                    if (null != matchedByRecord && !matchedByRecord.isEmpty()) {
+                        for (final KnownIssue ki : matchedByRecord) {
+                            if (!node.knownIssues().contains(ki)) node.knownIssues().add(ki);
+                        }
+                    }
+                }
             }
         }
 
@@ -347,10 +364,24 @@ public final class TreeHtml {
             final NodeData nd = new NodeData(nodeId, rawKey, group.getKey(), col, myRow, entry.getValue());
 
             final KnownIssuesStore store = getKnownIssuesStore();
-            if (null != store && null != nd.result()) {
-                for (final KnownIssue ki : store.getIssues()) {
-                    if (KnownIssuesStore.matchesScenario(ki.scenario(), rawKey, shortKey)) {
-                        nd.knownIssues().add(ki);
+            if (null != store) {
+                if (isNotNull(nd.result())) {
+                    for (final KnownIssue ki : store.getIssues()) {
+                        if (KnownIssuesStore.matchesScenario(ki.scenario(), rawKey, shortKey)) {
+                            if (!nd.knownIssues().contains(ki)) nd.knownIssues().add(ki);
+                        }
+                    }
+                }
+                if (isNotNull(exec) && isNotNull(exec.issues())) {
+                    for (final _LogRecord lr : exec.issues().latestCopy()) {
+                        for (final KnownIssue ki : store.getIssues()) {
+                            if (KnownIssuesStore.matchesScenario(ki.scenario(), rawKey, shortKey)) {
+                                final List<KnownIssue> matchedByRecord = store.getForLogRecord(Collections.emptyList(), lr);
+                                if (matchedByRecord.contains(ki) && !nd.knownIssues().contains(ki)) {
+                                    nd.knownIssues().add(ki);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -378,8 +409,31 @@ public final class TreeHtml {
         return Math.pow(2.0, Math.max(0, col));
     }
 
+    private static void packLeafChildren(final List<NodeData> nodes) {
+        if (null == nodes || nodes.isEmpty()) return;
+
+        for (final NodeData parent : nodes) {
+            final List<NodeData> allChildren = parent.children();
+            if (allChildren.size() >= 6) {
+                final boolean allAreLeaves = allChildren.stream().allMatch(c -> c.children().isEmpty());
+                if (allAreLeaves) {
+                    final int perCol = (int) Math.ceil(allChildren.size() / 2.0);
+                    for (int i = 0; i < allChildren.size(); i++) {
+                        final NodeData leaf = allChildren.get(i);
+                        final int extraCol = i / perCol;
+                        leaf.setCol(parent.col() + 1 + extraCol);
+                    }
+                }
+            }
+        }
+    }
+
     static void optimizeLayout(final List<NodeData> nodes) {
         if (nodes.isEmpty()) return;
+
+        if (Optimization.enabled) {
+            packLeafChildren(nodes);
+        }
 
         final Map<Integer, List<NodeData>> colMap = new TreeMap<>();
         int maxCol = 0;
@@ -700,15 +754,6 @@ public final class TreeHtml {
                    .replace("'", "&#39;");
     }
 
-    private static String escapeJsString(final String text) {
-        if (null == text) return "";
-        return text.replace("\\", "\\\\")
-                   .replace("'", "\\'")
-                   .replace("\"", "\\\"")
-                   .replace("\n", "\\n")
-                   .replace("\r", "");
-    }
-
     static String renderHtml(final List<NodeData> nodes, final List<Edge> edges) {
         final StringBuilder svgContent = new StringBuilder();
 
@@ -757,6 +802,8 @@ public final class TreeHtml {
             ));
         }
 
+        final Map<String, Map<String, Object>> nodeDataMap = new LinkedHashMap<>();
+
         for (final NodeData n : nodes) {
             final int x = n.col() * COL_WIDTH + 40;
             final int y = (int) Math.round(n.row() * ROW_HEIGHT + 20);
@@ -786,32 +833,53 @@ public final class TreeHtml {
             final StringBuilder eventDetails = new StringBuilder();
             if (null != res && null != res.getEvents()) {
                 for (final _LogRecord lr : res.getEvents()) {
-                    eventDetails.append(lr.toString().replace("\"", "&quot;").replace("'", "&apos;")).append("\\n");
+                    eventDetails.append(lr.toString()).append("\n");
                 }
             }
 
             final boolean hasKnownIssues = !n.knownIssues().isEmpty();
             final String kiHtml = renderKnownIssuesHtml(n.knownIssues());
-            final String kiJsEscaped = escapeJsString(kiHtml);
-            final String bugIndicator = hasKnownIssues ? String.format(Locale.US, "<text x=\"%d\" y=\"26\" font-size=\"12\">🐞</text>", CARD_WIDTH - 36) : "";
+            final String hatchOverlay = hasKnownIssues ? String.format(Locale.US, "<rect width=\"%d\" height=\"%d\" fill=\"url(#known-issue-hatch)\" rx=\"8\" ry=\"8\" pointer-events=\"none\" />\n", CARD_WIDTH, CARD_HEIGHT) : "";
+            final String cardCssClass = hasKnownIssues ? nodeStyle.cssClass + " known-issue" : nodeStyle.cssClass;
+            final String cardTitle = hasKnownIssues ? nodeStyle.title + " (Known Issue)" : nodeStyle.title;
 
             final String safeLabel = n.label().replace("<", "&lt;").replace(">", "&gt;");
+
+            final Map<String, Object> nodeInfo = new LinkedHashMap<>();
+            nodeInfo.put("name", safeLabel);
+            nodeInfo.put("group", n.group());
+            nodeInfo.put("status", cardTitle);
+            nodeInfo.put("exec", execs);
+            nodeInfo.put("events", eventCount);
+            nodeInfo.put("details", eventDetails.toString());
+            nodeInfo.put("kiHtml", kiHtml);
+            nodeDataMap.put(n.id(), nodeInfo);
+
             svgContent.append(String.format(
                     Locale.US,
-                    "<g id=\"%s\" class=\"node-card %s\" transform=\"translate(%d, %d)\" onclick=\"showDetails('%s', '%s', '%s', '%d', '%d', '%s', '%s')\">\n" +
+                    "<g id=\"%s\" class=\"node-card %s\" transform=\"translate(%d, %d)\" onclick=\"showNodeDetails('%s')\">\n" +
                     "  <title>%s (%s)</title>\n" +
                     "  <rect width=\"%d\" height=\"%d\" />\n" +
+                    "  %s" +
                     "  <text x=\"14\" y=\"26\">%s</text>\n" +
-                    "  %s\n" +
                     "  <circle cx=\"%d\" cy=\"22\" r=\"6\" fill=\"%s\" />\n" +
                     "</g>\n",
-                    n.id(), nodeStyle.cssClass, x, y, safeLabel, n.group(), nodeStyle.title, execs, eventCount, eventDetails, kiJsEscaped,
-                    safeLabel, nodeStyle.title,
-                    CARD_WIDTH, CARD_HEIGHT, safeLabel, bugIndicator, CARD_WIDTH - 18, nodeStyle.border
+                    n.id(), cardCssClass, x, y, n.id(),
+                    safeLabel, cardTitle,
+                    CARD_WIDTH, CARD_HEIGHT,
+                    hatchOverlay,
+                    safeLabel,
+                    CARD_WIDTH - 18, nodeStyle.border
             ));
         }
 
         final SummaryPlaque summaryPlaque = SummaryPlaque.computeFromNodes(nodes);
+
+        String nodeDataJson = "{}";
+        try {
+            nodeDataJson = MAPPER.writeValueAsString(nodeDataMap);
+        } catch (final Exception ignored) {
+        }
 
         return "<!DOCTYPE html>\n" +
                 "<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n" +
@@ -839,6 +907,7 @@ public final class TreeHtml {
                 "  .node-card.non_executable rect { fill: #131a2a; stroke: #283548; stroke-width: 1.2; stroke-dasharray: 4 4; }\n" +
                 "  .node-card.non_executable text { fill: #475569; }\n" +
                 "  .node-card.non_executable circle { stroke: #283548; stroke-width: 1.2; stroke-dasharray: 2 2; }\n" +
+                "  .node-card.known-issue rect { stroke: #f59e0b; stroke-width: 2; }\n" +
                 "  .node-card text { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; fill: #f8fafc; }\n" +
                 "  .connector { fill: none; stroke: #475569; stroke-width: 2; transition: stroke 0.2s, stroke-width 0.2s; }\n" +
                 "  .connector.visited { stroke: #22c55e; stroke-width: 2.5; }\n" +
@@ -867,7 +936,13 @@ public final class TreeHtml {
                 "  <div id=\"tree-summary-plaque\" style=\"position: absolute; top: 16px; left: 16px; z-index: 15;\">\n" +
                 summaryPlaque.renderHtml() +
                 "  </div>\n" +
-                "  <svg id=\"tree-svg\"><g id=\"viewport\">\n" +
+                "  <svg id=\"tree-svg\">\n" +
+                "    <defs>\n" +
+                "      <pattern id=\"known-issue-hatch\" width=\"12\" height=\"12\" patternUnits=\"userSpaceOnUse\">\n" +
+                "        <path d=\"M 0 12 L 12 0 M -3 3 L 3 -3 M 9 15 L 15 9 M 0 0 L 12 12 M -3 9 L 3 15 M 9 -3 L 15 3\" stroke=\"#fbbf24\" stroke-width=\"1.8\" stroke-opacity=\"0.6\" />\n" +
+                "      </pattern>\n" +
+                "    </defs>\n" +
+                "    <g id=\"viewport\">\n" +
                 svgContent +
                 "  </g></svg>\n" +
                 "  <div id=\"details-panel\">\n" +
@@ -876,8 +951,8 @@ public final class TreeHtml {
                 "    <p>Status: <span id=\"d-status\" class=\"val\"></span></p>\n" +
                 "    <p>Executions: <span id=\"d-exec\" class=\"val\"></span></p>\n" +
                 "    <p>Events: <span id=\"d-events\" class=\"val\"></span></p>\n" +
-                "    <div id=\"d-known-issues\" style=\"display:none; margin-top:10px; padding:10px; background:rgba(192,132,252,0.12); border:1px solid rgba(192,132,252,0.3); border-radius:6px;\">\n" +
-                "      <div style=\"font-weight:600; font-size:12px; color:#c084fc; margin-bottom:6px;\">🐞 Known Issues</div>\n" +
+                "    <div id=\"d-known-issues\" style=\"display:none; margin-top:10px; padding:10px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); border-radius:6px;\">\n" +
+                "      <div style=\"font-weight:600; font-size:12px; color:#fbbf24; margin-bottom:6px;\">Known Issues</div>\n" +
                 "      <div id=\"d-ki-content\" style=\"font-size:11px; color:#f8fafc;\"></div>\n" +
                 "    </div>\n" +
                 "    <pre id=\"d-details\"></pre>\n" +
@@ -894,7 +969,23 @@ public final class TreeHtml {
                 "  container.addEventListener('wheel', (e) => { e.preventDefault(); const factor = e.deltaY < 0 ? 1.1 : 0.9; scale = Math.min(Math.max(0.2, scale * factor), 4); updateTransform(); });\n" +
                 "  function zoomIn() { scale = Math.min(scale * 1.2, 4); updateTransform(); }\n" +
                 "  function zoomOut() { scale = Math.max(scale / 1.2, 0.2); updateTransform(); }\n" +
-                "  function resetZoom() { scale = 1; panX = 40; panY = 40; updateTransform(); }\n" +
+                "  function autoFit() {\n" +
+                "    try {\n" +
+                "      const bbox = viewport.getBBox();\n" +
+                "      if (!bbox || bbox.width <= 0 || bbox.height <= 0) return;\n" +
+                "      const cW = container.clientWidth || window.innerWidth;\n" +
+                "      const cH = container.clientHeight || window.innerHeight;\n" +
+                "      const sX = (cW - 80) / bbox.width;\n" +
+                "      const sY = (cH - 80) / bbox.height;\n" +
+                "      scale = Math.min(Math.max(0.15, Math.min(sX, sY)), 1.5);\n" +
+                "      panX = (cW - bbox.width * scale) / 2 - bbox.x * scale;\n" +
+                "      panY = (cH - bbox.height * scale) / 2 - bbox.y * scale;\n" +
+                "      updateTransform();\n" +
+                "    } catch (e) {}\n" +
+                "  }\n" +
+                "  function resetZoom() {\n" +
+                "    if (" + Optimization.enabled + ") { autoFit(); } else { scale = 1; panX = 40; panY = 40; updateTransform(); }\n" +
+                "  }\n" +
                 "  document.querySelectorAll('.node-card').forEach(card => {\n" +
                 "    card.addEventListener('mouseenter', () => {\n" +
                 "      const id = card.id;\n" +
@@ -904,6 +995,12 @@ public final class TreeHtml {
                 "      document.querySelectorAll('.connector.active').forEach(c => c.classList.remove('active'));\n" +
                 "    });\n" +
                 "  });\n" +
+                "  const nodeDataMap = " + nodeDataJson + ";\n" +
+                "  function showNodeDetails(id) {\n" +
+                "    const data = nodeDataMap[id];\n" +
+                "    if (!data) return;\n" +
+                "    showDetails(data.name, data.group, data.status, data.exec, data.events, data.details, data.kiHtml);\n" +
+                "  }\n" +
                 "  function showDetails(name, group, status, exec, events, details, kiHtml) {\n" +
                 "    const p = document.getElementById('details-panel');\n" +
                 "    p.style.display = 'block';\n" +
@@ -925,7 +1022,12 @@ public final class TreeHtml {
                 "    if (details && details.trim().length > 0) { det.style.display = 'block'; det.innerText = details; }\n" +
                 "    else { det.style.display = 'none'; }\n" +
                 "  }\n" +
-                "  updateTransform();\n" +
+                "  if (" + Optimization.enabled + ") {\n" +
+                "    window.addEventListener('resize', autoFit);\n" +
+                "    setTimeout(autoFit, 100);\n" +
+                "  } else {\n" +
+                "    updateTransform();\n" +
+                "  }\n" +
                 "</script>\n" +
                 "</body></html>";
     }

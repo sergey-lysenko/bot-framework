@@ -416,6 +416,7 @@ public class TestProperties implements _TestProperties {
             }
         }
         applyUserOverrides();
+        works.lysenko.util.prop.tree.Optimization.refresh();
         works.lysenko.util.prop.tree.Scenario.refresh();
         works.lysenko.util.prop.tree.Traverse.refresh();
         logTestConfiguration(common, result.debug());
@@ -458,6 +459,7 @@ public class TestProperties implements _TestProperties {
             the.setProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(allLeafsCount));
         }
         applyUserOverrides();
+        works.lysenko.util.prop.tree.Optimization.refresh();
         works.lysenko.util.prop.tree.Scenario.refresh();
         works.lysenko.util.prop.tree.Traverse.refresh();
     }

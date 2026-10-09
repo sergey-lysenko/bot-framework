@@ -6,6 +6,8 @@ import works.lysenko.base.core.Routines;
 import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Scenario;
+import works.lysenko.base.issues.KnownIssue;
+import works.lysenko.base.issues.KnownIssuesStore;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,18 +43,40 @@ public final class Json {
         final Map<String, Object> root = new LinkedHashMap<>();
         root.put("startAt", Routines.startedAt());
 
+        final KnownIssuesStore store = new KnownIssuesStore();
+        final Map<_Scenario, _Result> sorted = core.getResults().getSorted();
+
         // Issues block
         final Map<String, Object> issues = new LinkedHashMap<>();
         final List<String> newIssues = new ArrayList<>();
+        final List<Map<String, String>> knownIssuesList = new ArrayList<>();
+
         for (final _LogRecord lr : exec.issues().latestCopy()) {
-            final String rendered = lr.render(core.getTotalTests(), core.getLogger().getSpanLength(), null);
-            newIssues.add(stripAnsi(rendered).replace("\n", " ").trim());
+            final List<KnownIssue> matched = store.getForLogRecord(sorted.keySet(), lr);
+            final boolean isKnown = !matched.isEmpty();
+
+            if (isKnown) {
+                for (final KnownIssue ki : matched) {
+                    final Map<String, String> kiMap = new LinkedHashMap<>();
+                    kiMap.put("title", ki.title());
+                    kiMap.put("link", ki.link());
+                    kiMap.put("pattern", ki.pattern());
+                    kiMap.put("scenario", ki.scenario());
+                    kiMap.put("description", ki.description());
+                    knownIssuesList.add(kiMap);
+                }
+            } else {
+                final String rendered = lr.render(core.getTotalTests(), core.getLogger().getSpanLength(), null);
+                newIssues.add(stripAnsi(rendered).replace("\n", " ").trim());
+            }
         }
         issues.put("newIssues", newIssues);
+        if (!knownIssuesList.isEmpty()) {
+            issues.put("knownIssues", knownIssuesList);
+        }
         root.put("issues", issues);
 
         // Run / scenarios block
-        final Map<_Scenario, _Result> sorted = core.getResults().getSorted();
         final List<Map<String, Object>> runList = new ArrayList<>(sorted.size());
 
         for (final Map.Entry<_Scenario, _Result> entry : sorted.entrySet()) {
