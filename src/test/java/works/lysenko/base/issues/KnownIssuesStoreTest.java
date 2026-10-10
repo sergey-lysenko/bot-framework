@@ -104,7 +104,7 @@ class KnownIssuesStoreTest {
                     "title" : "NODEJS-3010",
                     "description" : "No messages about required field after. cleanup of field text",
                     "link" : "https://biteheist.atlassian.net/browse/NODEJS-3010",
-                    "pattern" : "[FAILURE] no such element: Unable to locate element: {\\"method\\":\\"xpath\\",\\"selector\\\":\\"//input[@type='password']/ancestor::div[@class='col-md-8']//div[@style and contains(@style, 'color: red')]\\"}"
+                    "pattern" : "contains(@style, 'color: red')"
                   } ]
                 }
                 """;
@@ -162,10 +162,48 @@ class KnownIssuesStoreTest {
         };
 
         final _LogRecord lrPassword = new LogRecord(3, System.currentTimeMillis(),
-                new Event(3, EventType.FAILURE, 0, "no such element: Unable to locate element: {\"method\":\"xpath\",\"selector\":\"//input[@type='password']/ancestor::div[@class='col-md-8']//div[@style and contains(@style, 'color: red')]\"}\n  (Session info: chrome=155.0.8059.39)", null));
+                new Event(3, EventType.FAILURE, 0, "no such element: Unable to locate element: {\"method\":\"xpath\",\"selector\":\"//input[@name='password']/ancestor::div[contains(@class, 'col-')]//*[contains(@style, 'color: red') or contains(@class, 'text-danger') or contains(@class, 'invalid-feedback')]\"}\n  (Session info: chrome=155.0.8059.39)", null));
 
         final List<KnownIssue> matched3 = store.getForLogRecord(List.of(passwordScenario), lrPassword);
         assertEquals(1, matched3.size(), "Should match Password known issue");
         assertEquals("NODEJS-3010", matched3.get(0).title());
+    }
+
+    @Test
+    @DisplayName("Matches wildcard scenario pattern with getForNode andResult events")
+    void testWildcardGetForNode() {
+        final String json = """
+                {
+                  "issues" : [ {
+                    "scenario" : "signIn.correctLogin.partners.addNew.random.absentData.*",
+                    "title" : "NODEJS-3010",
+                    "description" : "No messages about required field after cleanup of field text",
+                    "link" : "https://biteheist.atlassian.net/browse/NODEJS-3010",
+                    "pattern" : "contains(@style, 'color: red')"
+                  } ]
+                }
+                """;
+
+        final KnownIssuesStore store = new KnownIssuesStore(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+
+        final _Scenario addressScenario = new Leaf(Fraction.ONE) {
+            @Override
+            public String getName() {
+                return "biteheist.tree.signIn.correctLogin.partners.addNew.random.absentData.Address";
+            }
+
+            @Override
+            public String getSimpleName() {
+                return "Address";
+            }
+        };
+
+        final Result result = new Result(addressScenario);
+        result.addEvent(new LogRecord(1, System.currentTimeMillis(),
+                new Event(1, EventType.FAILURE, 0, "no such element: Unable to locate element: {\"method\":\"xpath\",\"selector\":\"//textarea[@name='address']/ancestor::div[contains(@class, 'col-')]//*[contains(@style, 'color: red') or contains(@class, 'text-danger') or contains(@class, 'invalid-feedback')]\"}", null)));
+
+        final List<KnownIssue> matched = store.getForNode(addressScenario, result);
+        assertEquals(1, matched.size(), "Wildcard scenario with getForNode should match Address scenario result");
+        assertEquals("NODEJS-3010", matched.get(0).title());
     }
 }
