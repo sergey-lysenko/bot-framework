@@ -9,6 +9,8 @@ import works.lysenko.util.data.type.Result;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.base.output.sonifier.TreeSonifier;
 import works.lysenko.base.output.sonifier.TreeProgressionAudio;
+import works.lysenko.base.output.sonifier.TreeSonifier;
+import works.lysenko.base.output.sonifier.TreeProgressionAudio;
 import works.lysenko.util.spec.PropEnum;
 import java.awt.Stroke;
 
@@ -187,8 +189,9 @@ public final class TreeTracker {
     }
 
     static String getExecutionBadgeText(final NodeData node, final int execs, final int leafTarget) {
+        final boolean isAllLeafs = (null != works.lysenko.Base.parameters) ? works.lysenko.Base.parameters.isAllLeafs() : (null != works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS.get() && (Boolean) works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS.get());
         final ScenarioType type = getScenarioType(node);
-        if (ScenarioType.NODE == type || ScenarioType.CORE == type) {
+        if (ScenarioType.NODE == type || ScenarioType.CORE == type || !isAllLeafs) {
             return execs + ((1 == execs) ? " exec" : " execs");
         }
 
@@ -968,8 +971,9 @@ public final class TreeTracker {
             final int target,
             final double maxLeafOverRatio) {
         final int execs = (null != node.result()) ? node.result().getExecutions() : 0;
+        final boolean isAllLeafs = (null != works.lysenko.Base.parameters) ? works.lysenko.Base.parameters.isAllLeafs() : (null != works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS.get() && (Boolean) works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS.get());
         final ScenarioType type = getScenarioType(node);
-        if (ScenarioType.LEAF == type) {
+        if (ScenarioType.LEAF == type && isAllLeafs) {
             final double overRatio = getLeafOverExecutionRatio(node, target);
             return (overRatio > 0.0)
                     ? getOverExecutionColor(overRatio, maxLeafOverRatio)
