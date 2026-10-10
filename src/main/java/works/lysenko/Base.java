@@ -30,6 +30,7 @@ import static works.lysenko.util.spec.Numbers.ZERO;
  * <p>
  * Fields:
  * - stringArray: A property representing an array of strings.
+ * - tree: Static variable representing the current Tree instance.
  * - test: A static variable representing the current Test instance.
  * - core: Core execution or functionality property.
  * - exec: Represents the execution context or data.
@@ -56,7 +57,7 @@ import static works.lysenko.util.spec.Numbers.ZERO;
  * - isDebug: Determines if the application is in debug mode.
  * - isDone: Executes a Runnable task and verifies completion using a Callable verifier.
  */
-@SuppressWarnings({"ClassWithTooManyMethods", "OverlyComplexClass", "StaticMethodOnlyUsedInOneClass", "StaticNonFinalField", "StaticCollection", "WeakerAccess", "unused"})
+@SuppressWarnings({"ClassWithTooManyMethods", "OverlyComplexClass", "StaticMethodOnlyUsedInOneClass", "StaticNonFinalField", "StaticCollection", "WeakerAccess", "unused", "BooleanMethodNameMustStartWithQuestion"})
 public record Base() {
 
     /**
@@ -65,10 +66,13 @@ public record Base() {
     private static final String[] stringArray = new String[0];
 
     /**
-     * A static variable of type Test initialised to null.
-     * This variable can be accessed and modified directly as it is declared public.
+     * Static variable representing the current Tree instance.
      */
     public static works.lysenko.tree.Tree tree = null;
+
+    /**
+     * Static variable representing the current Test instance.
+     */
     public static Test test = null;
 
     /**
@@ -506,7 +510,7 @@ public record Base() {
      *
      * @param title    The title of the task.
      * @param runnable the {@link Runnable} to execute and verify
-     * @param verifier the {@link Callable<Boolean>} to verify the result of the {@link Runnable}
+     * @param verifier the {@link Callable} to verify the result of the {@link Runnable}
      * @return {@code true} if the {@link Runnable} completes successfully and the verification condition is satisfied,
      * {@code false} otherwise
      */
@@ -559,11 +563,11 @@ public record Base() {
     }
 
     /**
-     * Determines if a value identified by the given locator is present.
+     * Determines if an element identified by the given locator is visible.
      *
      * @param locator The locator used to identify the value.
      * @param silent  If true, no debugging information will be logged.
-     * @return True if the value is present, false otherwise.
+     * @return True if the element is visible, false otherwise.
      */
     public static boolean isPresent(final String locator, final boolean silent) {
 
@@ -630,9 +634,9 @@ public record Base() {
     }
 
     /**
-     * Logs a debug message.
+     * Logs multiple debug message lines.
      *
-     * @param message the debug message to be logged
+     * @param message the collection of debug message lines to be logged
      */
     @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void logDebug(final Iterable<String> message) {
@@ -918,10 +922,10 @@ public record Base() {
     }
 
     /**
-     * Executes the tick operation for a specific user and name.
+     * Executes the tick operation for a specific user and metric or event name.
      *
-     * @param user the user for which the tick operation is to be executed
-     * @param name the name for which the tick operation is to be executed
+     * @param user the user or component for which the tick operation is executed
+     * @param name the metric or event name for which the tick operation is executed
      */
     public static void tick(final String user, final String name) {
 

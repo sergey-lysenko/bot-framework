@@ -22,8 +22,10 @@ import java.awt.GridBagLayout;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.IntConsumer;
+import works.lysenko.base.TestProperties;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static works.lysenko.base.Parameters.WIDTH;
@@ -218,6 +220,7 @@ public class Gui implements _GUI {
     public void addStandardParameters() {
 
         test = addFromFiles(TEST.name(), _TESTS_, TEST_PROPERTIES_EXTENSION);
+        test.addActionListener(e -> updateTestsFromSelectedTestConfiguration());
         pool = addFromFiles(POOL.name(), ETC_, USERS_POOL_EXTENSION);
         addPlatforms();
 
@@ -235,6 +238,9 @@ public class Gui implements _GUI {
                 Objects.toString(PropEnum._TEST_TESTS.get(), EMPTY)
         );
         testsCount = new JTextField(defaultTests, WIDTH);
+        if (isNull(parameters.getTests()) || parameters.getTests().isBlank()) {
+            updateTestsFromSelectedTestConfiguration();
+        }
 
         forbidOverexecution = createCheckBox(parameters.getForbidOverexecution(), PropEnum._TREE_FORBID_OVEREXECUTION);
         resilientMode = createCheckBox(parameters.getResilientMode(), PropEnum._TEST_RESILIENT_MODE);
@@ -249,6 +255,27 @@ public class Gui implements _GUI {
 
         initCyclesComponents();
         initPropertiesComponents();
+    }
+
+    /**
+     * Updates the TESTS text field value based on the .test.tests property of the selected test configuration.
+     */
+    private void updateTestsFromSelectedTestConfiguration() {
+
+        if (isNull(test) || isNull(testsCount)) return;
+        final Object selected = test.getSelectedItem();
+        if (isNull(selected)) return;
+        final String testName = selected.toString();
+
+        final TestProperties tp = (isNotNull(works.lysenko.Base.properties))
+                ? works.lysenko.Base.properties
+                : new TestProperties();
+        final Map<String, String> configProps = tp.getOriginalConfigProperties(testName);
+        final String testsVal = (isNotNull(configProps))
+                ? configProps.get(PropEnum._TEST_TESTS.getPropertyName())
+                : null;
+
+        testsCount.setText((null == testsVal) ? EMPTY : testsVal);
     }
 
     private static JCheckBox createCheckBox(final Boolean paramValue, final works.lysenko.util.apis._PropEnum propEnum) {
@@ -412,8 +439,10 @@ public class Gui implements _GUI {
 
         // Add additional special properties
         rows = addRowOptional(TESTS.name(), testsCount, panel, rows);
-        rows = addRowOptional(ALL_LEAFS_COUNT.name(), allLeafsCount, panel, rows);
-        rows = addRowOptional(COMPLETION_WEIGHT.name(), completionWeight, panel, rows);
+        if (isNotNull(allLeafs) && allLeafs.isSelected()) {
+            rows = addRowOptional(ALL_LEAFS_COUNT.name(), allLeafsCount, panel, rows);
+            rows = addRowOptional(COMPLETION_WEIGHT.name(), completionWeight, panel, rows);
+        }
         rows = addDivider(panel, rows);
         rows = addRowOptional(ALL_LEAFS.name(), allLeafs, panel, rows);
         if (isNotNull(allLeafs) && allLeafs.isSelected()) {
@@ -474,11 +503,12 @@ public class Gui implements _GUI {
         propagatePropertyOptional(testsCount, TESTS.name());
         if (isNotNull(allLeafs) && allLeafs.isSelected()) {
             propagatePropertyOptional(forbidOverexecution, FORBID_OVEREXECUTION.name());
+            propagatePropertyOptional(completionWeight, COMPLETION_WEIGHT.name());
         } else {
             parameters.remove(FORBID_OVEREXECUTION.name());
+            parameters.remove(COMPLETION_WEIGHT.name());
         }
         propagatePropertyOptional(resilientMode, RESILIENT_MODE.name());
-        propagatePropertyOptional(completionWeight, COMPLETION_WEIGHT.name());
         propagatePropertyOptional(traverseExtensions, TRAVERSE_EXTENSIONS.name());
 
         // Additional parameters

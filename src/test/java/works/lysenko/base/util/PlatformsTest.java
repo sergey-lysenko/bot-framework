@@ -35,7 +35,6 @@ class PlatformsTest {
     }
 
     @Test
-    @Disabled("Disabled temporarily to speed up build")
     void testPlatformsScanAndSave() {
         final long start = System.currentTimeMillis();
         final List<Platform> platforms = Platforms.available();

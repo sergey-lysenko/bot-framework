@@ -201,6 +201,50 @@ class GuiTest {
     }
 
     @Test
+    void testSelectionOfTestConfigurationUpdatesTestsValue() throws Exception {
+        final File testFile = new File("src/main/resources/tests/sample_test.test");
+        try {
+            if (!testFile.getParentFile().exists()) {
+                testFile.getParentFile().mkdirs();
+            }
+            Files.writeString(testFile.toPath(), ".test.tests=15\n");
+
+            final Properties props = new Properties();
+            props.setProperty("TEST", "default");
+            props.setProperty("POOL", "");
+            props.setProperty("PLATFORM", "chrome");
+            props.setProperty("DOMAIN", "example.com");
+
+            final Parameters parameters = new Parameters(props);
+            final Gui gui = new Gui(parameters);
+            gui.addStandardParameters();
+
+            final Field testField = Gui.class.getDeclaredField("test");
+            testField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            final JComboBox<Object> testComboBox = (JComboBox<Object>) testField.get(gui);
+
+            final Field testsCountField = Gui.class.getDeclaredField("testsCount");
+            testsCountField.setAccessible(true);
+            final JTextField testsCountInput = (JTextField) testsCountField.get(gui);
+
+            assertNotNull(testComboBox);
+            assertNotNull(testsCountInput);
+
+            // Selecting sample_test in the JComboBox
+            testComboBox.addItem("sample_test");
+            testComboBox.setSelectedItem("sample_test");
+
+            // Verify that tests value was updated from .test.tests property of sample_test configuration
+            assertEquals("15", testsCountInput.getText());
+        } finally {
+            if (testFile.exists()) {
+                testFile.delete();
+            }
+        }
+    }
+
+    @Test
     void testIncludeScenarioPropEnumsPresent() {
         assertEquals(".tree.include.upstream", PropEnum._TREE_INCLUDE_UPSTREAM.getPropertyName());
         assertEquals("false", PropEnum._TREE_INCLUDE_UPSTREAM.defaultValue());
@@ -782,7 +826,7 @@ class GuiTest {
     }
 
     @Test
-    void testForbidOverexecutionHiddenWhenAllLeafsNotChecked() throws Exception {
+    void testAllLeafsDependentFieldsHiddenWhenAllLeafsNotChecked() throws Exception {
         final Properties props = new Properties();
         props.setProperty("TEST", "testSuite");
         props.setProperty("POOL", "");
@@ -797,6 +841,8 @@ class GuiTest {
         gui.addStandardParameters();
         final JPanel panel = gui.parametersPanel();
 
+        assertFalse(hasLabel(panel, "ALL_LEAFS_COUNT"), "ALL_LEAFS_COUNT should be hidden when ALL_LEAFS is unchecked");
+        assertFalse(hasLabel(panel, "COMPLETION_WEIGHT"), "COMPLETION_WEIGHT should be hidden when ALL_LEAFS is unchecked");
         assertFalse(hasLabel(panel, "FORBID_OVEREXECUTION"), "FORBID_OVEREXECUTION should be hidden when ALL_LEAFS is unchecked");
 
         final Field allLeafsField = Gui.class.getDeclaredField("allLeafs");
@@ -804,9 +850,13 @@ class GuiTest {
         final JCheckBox allLeafsCb = (JCheckBox) allLeafsField.get(gui);
         allLeafsCb.setSelected(true);
 
+        assertTrue(hasLabel(panel, "ALL_LEAFS_COUNT"), "ALL_LEAFS_COUNT should be visible when ALL_LEAFS is checked");
+        assertTrue(hasLabel(panel, "COMPLETION_WEIGHT"), "COMPLETION_WEIGHT should be visible when ALL_LEAFS is checked");
         assertTrue(hasLabel(panel, "FORBID_OVEREXECUTION"), "FORBID_OVEREXECUTION should be visible when ALL_LEAFS is checked");
 
         allLeafsCb.setSelected(false);
+        assertFalse(hasLabel(panel, "ALL_LEAFS_COUNT"), "ALL_LEAFS_COUNT should be hidden when ALL_LEAFS is unchecked again");
+        assertFalse(hasLabel(panel, "COMPLETION_WEIGHT"), "COMPLETION_WEIGHT should be hidden when ALL_LEAFS is unchecked again");
         assertFalse(hasLabel(panel, "FORBID_OVEREXECUTION"), "FORBID_OVEREXECUTION should be hidden when ALL_LEAFS is unchecked again");
     }
 
