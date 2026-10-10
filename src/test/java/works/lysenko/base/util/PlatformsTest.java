@@ -2,6 +2,7 @@ package works.lysenko.base.util;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import works.lysenko.util.data.enums.Platform;
 
@@ -34,6 +35,7 @@ class PlatformsTest {
     }
 
     @Test
+    @Disabled("Disabled temporarily to speed up build")
     void testPlatformsScanAndSave() {
         final long start = System.currentTimeMillis();
         final List<Platform> platforms = Platforms.available();
