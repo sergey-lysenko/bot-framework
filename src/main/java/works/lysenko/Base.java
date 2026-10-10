@@ -68,6 +68,7 @@ public record Base() {
      * A static variable of type Test initialised to null.
      * This variable can be accessed and modified directly as it is declared public.
      */
+    public static works.lysenko.tree.Tree tree = null;
     public static Test test = null;
 
     /**

@@ -180,7 +180,8 @@ public record Weights() {
 
     private static String getScenarioPropertyKey(final Class<?> scenario) {
 
-        return StringUtils.removeStart(scenario.getName(), s(Scenario.root, _DOT_));
+        final String root = (null != works.lysenko.Base.tree) ? works.lysenko.Base.tree.getRootPackage() : Scenario.root;
+        return StringUtils.removeStart(scenario.getName(), s(root, _DOT_));
     }
 
     /**
