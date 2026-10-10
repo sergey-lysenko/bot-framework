@@ -244,36 +244,62 @@ public final class TreeHtml {
         }
         if (null != n.parent()) {
             final boolean parentIsStructural = null == n.parent().scenario() && null == n.parent().result();
-            if (!parentIsStructural && !isTheoreticallyExecutable(n.parent(), accessibleScenarios)) {
+            final boolean parentWasExecuted = null != n.parent().result() && n.parent().result().getExecutions() > 0;
+            if (!parentIsStructural && !parentWasExecuted && !isTheoreticallyExecutable(n.parent(), accessibleScenarios)) {
+                return false;
+            }
+        }
+        if (null != n.result() && n.result().getExecutions() > 0) {
+            return true;
+        }
+        if (null != n.scenario()) {
+            final _Scenario sc = n.scenario();
+            if (sc.hasFailed() || sc.isExhausted()) {
+                return false;
+            }
+            final double cw = (sc.weightConfigured() != null) ? sc.weightConfigured().doubleValue() :
+                              ((sc.weightCoded() != null) ? sc.weightCoded().doubleValue() : 1.0);
+            final double dw = (sc.weightDownstream() != null) ? sc.weightDownstream().doubleValue() : 0.0;
+            final double uw = (sc.weightUpstream() != null) ? sc.weightUpstream().doubleValue() : 0.0;
+            if (cw <= 0.0 && dw <= 0.0 && uw <= 0.0) {
                 return false;
             }
         }
         if (null != accessibleScenarios && !accessibleScenarios.isEmpty()) {
             if (null != n.scenario()) {
-                return accessibleScenarios.contains(n.scenario())
-                        || accessibleScenarios.stream().anyMatch(s -> s.getName().equals(n.scenario().getName()));
+                final _Scenario sc = n.scenario();
+                return accessibleScenarios.contains(sc)
+                        || accessibleScenarios.stream().anyMatch(s ->
+                                s.getName().equals(sc.getName())
+                                || s.getSimpleName().equals(sc.getSimpleName())
+                                || s.getShortName().equals(sc.getShortName())
+                                || s.getClass().equals(sc.getClass().getSuperclass())
+                                || sc.getClass().equals(s.getClass().getSuperclass()));
             }
-            return accessibleScenarios.stream().anyMatch(s ->
-                    s.getSimpleName().equals(n.label())
-                            || s.getShortName().equals(n.label())
-                            || b(s.getSimpleName(), s.type().tag()).equals(n.label()));
+            final String label = n.label();
+            return accessibleScenarios.stream().anyMatch(s -> {
+                final String tag = (null != s.type()) ? s.type().tag() : "";
+                return s.getSimpleName().equals(label)
+                        || s.getShortName().equals(label)
+                        || s.getName().equals(label)
+                        || b(s.getSimpleName(), tag).equals(label)
+                        || b(s.getShortName(), tag).equals(label)
+                        || b(s.getName(), tag).equals(label);
+            });
         }
         if (null != n.scenario()) {
             final _Scenario s = n.scenario();
-            final boolean combinationsPositive = s.calculateCombinations(true) > 0;
-            final boolean executableOrConfigured = s.isExecutable() || isNotNull(s.weightConfigured());
-            return executableOrConfigured && combinationsPositive;
+            return s.calculateCombinations(false) > 0;
         }
         if (null != n.result()) {
             final Fraction cw = n.result().getConfiguredWeight();
-            if (null == cw) {
-                return false;
-            }
-            final double cwVal = cw.doubleValue();
-            final double dwVal = (null != n.result().getDownstreamWeight()) ? n.result().getDownstreamWeight().doubleValue() : 0.0;
-            final double uwVal = (null != n.result().getUpstreamWeight()) ? n.result().getUpstreamWeight().doubleValue() : 0.0;
-            if (cwVal <= 0.0 && dwVal <= 0.0 && uwVal <= 0.0) {
-                return false;
+            if (null != cw) {
+                final double cwVal = cw.doubleValue();
+                final double dwVal = (null != n.result().getDownstreamWeight()) ? n.result().getDownstreamWeight().doubleValue() : 0.0;
+                final double uwVal = (null != n.result().getUpstreamWeight()) ? n.result().getUpstreamWeight().doubleValue() : 0.0;
+                if (cwVal <= 0.0 && dwVal <= 0.0 && uwVal <= 0.0) {
+                    return false;
+                }
             }
         }
         return true;

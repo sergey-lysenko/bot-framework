@@ -327,7 +327,7 @@ class TreeHtmlTest {
         final List<Edge> edges = new ArrayList<>();
 
         final _Result rootResult = new Result(ScenarioType.NODE, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 1, 1);
-        final Result nonExecResult = new Result(ScenarioType.LEAF, null, null, null, new ArrayList<>(), 0, 0);
+        final Result nonExecResult = new Result(ScenarioType.LEAF, Fraction.ZERO, Fraction.ZERO, Fraction.ZERO, new ArrayList<>(), 0, 0);
 
         final NodeData root = new NodeData("col_0_0", "RootApp", "Root", 0, 1.0, rootResult);
         final NodeData childNonExec = new NodeData("col_1_0", "DisabledFeature", "Feature", 1, 1.0, nonExecResult);

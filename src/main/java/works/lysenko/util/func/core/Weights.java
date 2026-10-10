@@ -61,15 +61,20 @@ public record Weights() {
     public static Fraction downstreamWeight(final _Scenario scenario, final _Scenario parent) {
 
         Fraction weight = downstreamWeight(scenario);
+        if (weight.doubleValue() > 0.0) {
+            return weight;
+        }
         _Scenario ancestor = parent;
-        boolean hasExtension = false;
         while (Traverse.extensions && isNotNull(ancestor)) {
             if (isExtension(ancestor)) {
-                hasExtension = true;
-            }
-            if (hasExtension) {
-                weight = weight.add(ancestor.weightConfigured());
-                weight = weight.add(downstreamWeight(ancestor));
+                final Fraction ancConf = ancestor.weightConfigured();
+                if (isNotNull(ancConf) && ancConf.doubleValue() > 0.0) {
+                    weight = weight.add(ancConf);
+                }
+                final Fraction ancDown = downstreamWeight(ancestor);
+                if (isNotNull(ancDown) && ancDown.doubleValue() > 0.0) {
+                    weight = weight.add(ancDown);
+                }
             }
             ancestor = parentOf(ancestor);
         }
@@ -189,6 +194,45 @@ public record Weights() {
         return StringUtils.removeStart(scenario.getName(), s(root, _DOT_));
     }
 
+    private static boolean isDownstreamOf(final _Scenario scenario, final String configRecord) {
+        if (isNull(scenario) || isNull(configRecord) || configRecord.isEmpty()) return false;
+        final String rec = configRecord.toLowerCase();
+
+        // 1. Direct shortName prefix match (standard package hierarchy)
+        final String shortName = scenario.getShortName().toLowerCase();
+        if (shortName.startsWith(rec) && !rec.equals(shortName)) {
+            return true;
+        }
+
+        // 2. Ancestor / parent scenario chain match (tree hierarchy, alias nodes)
+        _Scenario ancestor = parentOf(scenario);
+        while (isNotNull(ancestor)) {
+            final String ancPropKey = getScenarioPropertyKey(ancestor).toLowerCase();
+            final String ancShort = ancestor.getShortName().toLowerCase();
+            final String ancSimple = ancestor.getSimpleName().toLowerCase();
+            final String ancName = ancestor.getName().toLowerCase();
+            if (ancPropKey.equals(rec) || ancPropKey.startsWith(rec)
+                    || ancShort.equals(rec) || ancShort.startsWith(rec)
+                    || ancSimple.equals(rec) || ancSimple.startsWith(rec)
+                    || ancName.equals(rec) || ancName.startsWith(rec)) {
+                return true;
+            }
+            if (Traverse.extensions) {
+                Class<?> supercls = ancestor.getClass().getSuperclass();
+                while (isNotNull(supercls) && supercls != Object.class && supercls != Leaf.class && supercls != Node.class && supercls != Core.class) {
+                    final String supKey = getScenarioPropertyKey(supercls).toLowerCase();
+                    if (supKey.equals(rec) || supKey.startsWith(rec)) {
+                        return true;
+                    }
+                    supercls = supercls.getSuperclass();
+                }
+            }
+            ancestor = parentOf(ancestor);
+        }
+
+        return false;
+    }
+
     /**
      * Verifies if a given scenario is a parent scenario and not itself, and calculates the cumulative weight of an entry
      * based on the downstream weight.
@@ -202,11 +246,10 @@ public record Weights() {
     private static Fraction verifyDownstream(final _Scenario scenario, final Map.Entry<Object, Object> entry,
                                              final String key, final Fraction weight) {
 
-        final String shortName = scenario.getShortName().toLowerCase();
         final String configRecord = key.toLowerCase();
-        if (shortName.startsWith(configRecord)) // config record belongs to parent of current scenario
-            if (!configRecord.equals(shortName)) // not self
-                return cumulateDownstream(entry, weight);
+        if (isDownstreamOf(scenario, configRecord)) {
+            return cumulateDownstream(entry, weight);
+        }
         return weight;
     }
 }

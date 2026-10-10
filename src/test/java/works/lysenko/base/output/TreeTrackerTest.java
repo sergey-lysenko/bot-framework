@@ -140,9 +140,9 @@ class TreeTrackerTest {
 
         final works.lysenko.base.output.tree.VisualNodeResolver nodeResolver = new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, Collections.emptySet(), true, 5, 0.0);
         
-        assertEquals("OFF", nodeResolver.resolve(mono).badgeText());
-        assertEquals("OFF", nodeResolver.resolve(node).badgeText());
-        assertEquals("OFF", nodeResolver.resolve(leaf).badgeText());
+        assertEquals("0/1", nodeResolver.resolve(mono).badgeText());
+        assertEquals("0 execs", nodeResolver.resolve(node).badgeText());
+        assertEquals("0/5", nodeResolver.resolve(leaf).badgeText());
         
         final NodeData monoExec = new NodeData("mono", "Mono", "Root", 0, 1.0, result(ScenarioType.MONO, 2));
         assertEquals("✓ 2/1", nodeResolver.resolve(monoExec).badgeText());
@@ -563,6 +563,66 @@ class TreeTrackerTest {
         final NodeData childOfDisabled = new NodeData("child", "Child", "Root", 1, 1.0, null, execLeaf);
         childOfDisabled.setParent(disabledParent);
         org.junit.jupiter.api.Assertions.assertFalse(TreeTracker.isTheoreticallyExecutable(childOfDisabled, Collections.emptySet()));
+    }
+
+    @Test
+    void testNotExecutedTreeNodesAndLeafsAreNotDisplayedAsOff() {
+        final NodeData aiWizard = new NodeData("col_0_0", "AiWizard ▷", "Root", 0, 1.0, result(ScenarioType.NODE, 0));
+        final NodeData clear = new NodeData("col_1_0", "Clear ⋄", "AiWizard", 1, 1.0, result(ScenarioType.LEAF, 0));
+        final NodeData confirm = new NodeData("col_2_0", "Confirm ⋄", "Clear", 2, 1.0, result(ScenarioType.LEAF, 0));
+        final NodeData editQuest = new NodeData("col_2_1", "EditQuestionnaire ⋄", "Clear", 2, 2.0, result(ScenarioType.LEAF, 0));
+
+        clear.setParent(aiWizard);
+        confirm.setParent(clear);
+        editQuest.setParent(clear);
+
+        assertTrue(TreeTracker.isTheoreticallyExecutable(aiWizard, Collections.emptySet()));
+        assertTrue(TreeTracker.isTheoreticallyExecutable(clear, Collections.emptySet()));
+        assertTrue(TreeTracker.isTheoreticallyExecutable(confirm, Collections.emptySet()));
+        assertTrue(TreeTracker.isTheoreticallyExecutable(editQuest, Collections.emptySet()));
+
+        final works.lysenko.base.output.tree.VisualNodeResolver resolver =
+                new works.lysenko.base.output.tree.VisualNodeResolver(
+                        works.lysenko.base.output.tree.TreeTheme.DEFAULT,
+                        Collections.emptySet(),
+                        true,
+                        1,
+                        0.0);
+
+        final works.lysenko.base.output.tree.VisualNode resolvedWizard = resolver.resolve(aiWizard);
+        final works.lysenko.base.output.tree.VisualNode resolvedClear = resolver.resolve(clear);
+        final works.lysenko.base.output.tree.VisualNode resolvedConfirm = resolver.resolve(confirm);
+        final works.lysenko.base.output.tree.VisualNode resolvedEdit = resolver.resolve(editQuest);
+
+        assertEquals("0 execs", resolvedWizard.badgeText(), "Unexecuted alias node must display '0 execs', NOT 'OFF'");
+        assertEquals("UNVISITED", resolvedWizard.statusName(), "Unexecuted alias node must have status 'UNVISITED'");
+        assertEquals("0/1", resolvedClear.badgeText(), "Unexecuted node must display '0/1' badge, NOT 'OFF'");
+        assertEquals("UNVISITED", resolvedClear.statusName(), "Unexecuted node must have status 'UNVISITED'");
+        assertEquals("0/1", resolvedConfirm.badgeText(), "Unexecuted leaf must display '0/1' badge, NOT 'OFF'");
+        assertEquals("UNVISITED", resolvedConfirm.statusName(), "Unexecuted leaf must have status 'UNVISITED'");
+        assertEquals("0/1", resolvedEdit.badgeText(), "Unexecuted leaf must display '0/1' badge, NOT 'OFF'");
+        assertEquals("UNVISITED", resolvedEdit.statusName(), "Unexecuted leaf must have status 'UNVISITED'");
+    }
+
+    @Test
+    void testWeightsPropagationAccountsForDownstreamAndUpstream() {
+        final Result propResult = new Result(ScenarioType.LEAF, fr(0.0), fr(0.0), fr(1.0), new ArrayList<>(), 0, 0);
+        final NodeData propChild = new NodeData("col_1_0", "PropagateChild ⋄", "Root", 1, 1.0, propResult);
+
+        assertTrue(TreeTracker.isTheoreticallyExecutable(propChild, Collections.emptySet()),
+                "Scenario with downstream weight propagation must be theoretically executable");
+
+        final works.lysenko.base.output.tree.VisualNodeResolver resolver =
+                new works.lysenko.base.output.tree.VisualNodeResolver(
+                        works.lysenko.base.output.tree.TreeTheme.DEFAULT,
+                        Collections.emptySet(),
+                        true,
+                        1,
+                        0.0);
+
+        final works.lysenko.base.output.tree.VisualNode resolved = resolver.resolve(propChild);
+        assertEquals("0/1", resolved.badgeText(), "Child with propagated weight must display '0/1', NOT 'OFF'");
+        assertEquals("UNVISITED", resolved.statusName(), "Child with propagated weight must have status 'UNVISITED'");
     }
 
     @org.junit.jupiter.api.Disabled("Legacy visual coordinates test")

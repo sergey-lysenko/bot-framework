@@ -165,12 +165,26 @@ public class Ctrl extends Root implements _Ctrl {
         return leafs;
     }
 
+    private static boolean isScenarioAccessible(final _Scenario s) {
+        if (isNull(s) || s.hasFailed() || s.isExhausted()) return false;
+
+        final double cw = (isNotNull(s.weightConfigured())) ? s.weightConfigured().doubleValue() :
+                          ((isNotNull(s.weightCoded())) ? s.weightCoded().doubleValue() : 1.0);
+        final double dw = (isNotNull(s.weightDownstream())) ? s.weightDownstream().doubleValue() : 0.0;
+        final double uw = (isNotNull(s.weightUpstream())) ? s.weightUpstream().doubleValue() : 0.0;
+
+        if (cw <= 0.0 && dw <= 0.0 && uw <= 0.0) {
+            return false;
+        }
+        return s.calculateCombinations(false) > 0;
+    }
+
     private static void collectAccessibleLeafs(final Iterable<KeyValue<_Scenario, Fraction>> pairs, final Set<_Scenario> leafs) {
 
         if (isNull(pairs)) return;
         for (final KeyValue<_Scenario, Fraction> pair : pairs) {
             final _Scenario s = pair.k();
-            if ((s.isExecutable() || isNotNull(s.weightConfigured())) && s.calculateCombinations(true) > 0) {
+            if (isScenarioAccessible(s)) {
                 if (s instanceof _Node node) {
                     collectAccessibleLeafs(node.getPool().getPairList(), leafs);
                 } else {
@@ -193,7 +207,7 @@ public class Ctrl extends Root implements _Ctrl {
         if (isNull(pairs)) return;
         for (final KeyValue<_Scenario, Fraction> pair : pairs) {
             final _Scenario s = pair.k();
-            if ((s.isExecutable() || isNotNull(s.weightConfigured())) && s.calculateCombinations(true) > 0) {
+            if (isScenarioAccessible(s)) {
                 if (s instanceof _Node node) {
                     nodes.add(s);
                     collectAccessibleNodes(node.getPool().getPairList(), nodes);
@@ -215,7 +229,7 @@ public class Ctrl extends Root implements _Ctrl {
         if (isNull(pairs)) return;
         for (final KeyValue<_Scenario, Fraction> pair : pairs) {
             final _Scenario s = pair.k();
-            if ((s.isExecutable() || isNotNull(s.weightConfigured())) && s.calculateCombinations(true) > 0) {
+            if (isScenarioAccessible(s)) {
                 scenarios.add(s);
                 if (s instanceof _Node node) {
                     collectAccessibleScenarios(node.getPool().getPairList(), scenarios);

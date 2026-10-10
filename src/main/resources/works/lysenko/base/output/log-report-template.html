@@ -1607,18 +1607,53 @@ a.path-step { text-decoration: none; }
     svg += `  <path d="${pathCpu}" class="res-cpu-line" fill="none" stroke="#38bdf8" stroke-width="2"/>`;
 
     if (numTests > 0) {
-      for (let k = 1; k < numTests; k++) {
-        const xBorder = ml + k * Y;
-        svg += `  <line x1="${xBorder.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xBorder.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(255,255,255,0.18)" stroke-dasharray="3 3" stroke-width="1"/>`;
+      for (let k = 0; k < numTests; k++) {
+        const xLeft = ml + k * Y;
+        const xCenter = ml + (k + 0.5) * Y;
+        const xRight = ml + (k + 1) * Y;
+
+        if (k < numTests - 1) {
+          svg += `  <line x1="${xRight.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xRight.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(255,255,255,0.18)" stroke-dasharray="3 3" stroke-width="1"/>`;
+        }
+
+        const testItem = (window.lgData && window.lgData[k]) ? window.lgData[k] : null;
+        if (testItem) {
+          const durSec = testItem.s || (testItem.ms ? testItem.ms / 1000.0 : 0);
+          if (durSec >= 1.5 && Y >= 30) {
+            const subCount = Math.min(20, Math.floor(durSec));
+            for (let s = 1; s <= subCount; s++) {
+              const xSub = xLeft + (s / durSec) * Y;
+              if (xSub < xRight - 2) {
+                svg += `  <line x1="${xSub.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xSub.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-dasharray="1 3" stroke-width="1"/>`;
+              }
+            }
+          }
+
+          if (Y >= 36 || numTests <= 15) {
+            const durStr = testItem.ms < 1000 ? Math.round(testItem.ms) + 'ms' : (durSec < 10.0 ? durSec.toFixed(2) + 's' : durSec.toFixed(1) + 's');
+            const badgeLabel = `\u0394t ${durStr}`;
+            const bw = Math.min(Y - 4, Math.max(38, badgeLabel.length * 5.8));
+            svg += `  <g class="res-scale-badge" opacity="0.85">`;
+            svg += `    <rect x="${(xCenter - bw / 2).toFixed(1)}" y="${(mt + 3).toFixed(1)}" width="${bw.toFixed(1)}" height="13" rx="3" fill="#0f172a" stroke="rgba(148,163,184,0.25)" stroke-width="0.8"/>`;
+            svg += `    <text x="${xCenter.toFixed(1)}" y="${(mt + 12.5).toFixed(1)}" text-anchor="middle" fill="#94a3b8" font-size="8" font-family="ui-monospace, monospace">${badgeLabel}</text>`;
+            svg += `  </g>`;
+          }
+        }
       }
 
       const showAllLabels = numTests <= 15;
       const step = showAllLabels ? 1 : Math.ceil(numTests / 10);
       for (let k = 0; k < numTests; k += step) {
         const xCenter = ml + (k + 0.5) * Y;
-        const testNum = window.lgData[k] ? window.lgData[k].n : (k + 1);
+        const testItem = (window.lgData && window.lgData[k]) ? window.lgData[k] : null;
+        const testNum = testItem ? testItem.n : (k + 1);
+        const durStr = testItem ? (testItem.ms < 1000 ? Math.round(testItem.ms) + 'ms' : testItem.s.toFixed(1) + 's') : '';
+
         svg += `  <line x1="${xCenter.toFixed(1)}" y1="${(mt + ph).toFixed(1)}" x2="${xCenter.toFixed(1)}" y2="${(mt + ph + 4).toFixed(1)}" stroke="rgba(255,255,255,0.15)"/>`;
-        svg += `  <text x="${xCenter.toFixed(1)}" y="${(height - 10).toFixed(1)}" text-anchor="middle" fill="#64748b" font-size="10" font-family="ui-monospace, monospace">#${testNum}</text>`;
+        svg += `  <text x="${xCenter.toFixed(1)}" y="${(height - 15).toFixed(1)}" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600" font-family="ui-monospace, monospace">#${testNum}</text>`;
+        if (durStr) {
+          svg += `  <text x="${xCenter.toFixed(1)}" y="${(height - 4).toFixed(1)}" text-anchor="middle" fill="#64748b" font-size="8.5" font-family="ui-monospace, monospace">(${durStr})</text>`;
+        }
       }
     } else {
       const tickCount = Math.min(8, N);
@@ -1689,7 +1724,13 @@ a.path-step { text-decoration: none; }
 
     const tt = document.getElementById('resTooltip');
     if (tt) {
-      const testTag = (d.t && d.t > 0) ? `Test #${d.t} &bull; ` : '';
+      const testItem = (d.t && window.lgData) ? window.lgData.find(item => item.n === d.t) : null;
+      const durText = testItem ? (testItem.s < 1.0 ? Math.round(testItem.ms) + 'ms' : testItem.s.toFixed(2) + 's') : '';
+      const msPerPx = (testItem && Y > 0) ? Math.round(testItem.ms / Y) : 0;
+      const scaleText = msPerPx > 0 ? `${msPerPx} ms/px` : '';
+      const scaleInfo = durText ? ` (${durText}${scaleText ? ' \u2022 ' + scaleText : ''})` : '';
+
+      const testTag = (d.t && d.t > 0) ? `Test #${d.t}${scaleInfo} &bull; ` : '';
       let html = `<div class="lg-tt-title"><span class="lg-tt-num">${testTag}Sample #${d.n}</span></div>`;
       const peakText = (d.cpuMax && d.cpuMax > d.cpu + 0.01) ? ` <span class="lg-tt-sub">(Peak: ${d.cpuMax.toFixed(2)}%)</span>` : '';
       html += `<div class="lg-tt-row"><span class="lg-tt-lbl" style="color:#38bdf8;">CPU Usage:</span> <b>${d.cpu.toFixed(2)}%</b>${peakText}</div>`;
