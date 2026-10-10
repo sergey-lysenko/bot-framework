@@ -98,6 +98,12 @@ public record Weights() {
 
         String weight = configuredWeightValue(scenario.getClass());
         if (isNotNull(weight)) return weight;
+        
+        final _Scenario parent = parentOf(scenario);
+        if (isNotNull(parent)) {
+            final String parentWeight = configuredWeightValue(parent);
+            if (isNotNull(parentWeight)) return parentWeight;
+        }
         if (Traverse.extensions) {
             Class<?> extension = scenario.getClass().getSuperclass();
             while (isNotNull(extension) && extension != Object.class && extension != Leaf.class && extension != Node.class && extension != Core.class) {

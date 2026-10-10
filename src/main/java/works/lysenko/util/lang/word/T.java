@@ -21,6 +21,7 @@ public record T() {
     public static final String THRESHOLD = s(TH, RE, SH, OLD);
     public static final String THROUGH = s(TH, RO, UGH);
     public static final String THUMBNAIL = s(TH, UM, B, N, AIL);
+    public static final String TIMELINE = s(TI, ME, LI, NE);
     public static final String TIMEOUT = s(TIME, OUT);
     public static final String TIMES = s(TIME, S);
     public static final String TITLE = s(TIT, LE);

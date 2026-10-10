@@ -10,6 +10,7 @@ import static works.lysenko.util.spec.Symbols.*;
 public record S() {
 
     public static final String SECOND = s(SE, COND);
+    public static final String SPECIFICS = s(S, PE, C, I, F, IC, S);
     public static final String SUCCESSFUL = s(SU, CC, ES, SF, UL);
     public static final String SUPPORT = s(SU, PP, ORT);
     public static final String SAFEGUARD = s(SA, FE, G, U, AR, D);
@@ -84,6 +85,8 @@ public record S() {
     public static final String SUBSTITUTE = s(SUB, ST, IT, U, TE);
     public static final String SUCCESSFULLY = s(SUCCESSFUL, LY);
     public static final String SUMMARY = s(SU, MM, AR, Y);
+    public static final String SEVERE = s(SE, VE, RE);
+
     public static final String SUPPORTED = s(SUPPORT, ED);
     public static final String SWIPE = s(SWIP, E);
     public static final String SWIPED = s(SWIPE, D);

@@ -37,6 +37,7 @@ public record R() {
     public static final String REMOVE = s(REMO, VE);
     public static final String REMOVED = s(REMOVE, D);
     public static final String RENDER = s(RE, ND, ER);
+    public static final String REPORT = s(RE, PO, RT);
     public static final String REPRODUCED = s(RE, PROD, UC, ED);
     public static final String REQUEST = s(REQU, ES, T);
     public static final String REQUESTED = s(REQUEST, ED);
@@ -57,5 +58,6 @@ public record R() {
     public static final String RETRY = s(RE, TRY);
     public static final String RETRYING = s(RETRY, ING);
     public static final String RETURNS = s(RE, TURN, S);
+    public static final String RUN = works.lysenko.util.chrs.___.RUN;
     public static final String RUNNING = s(RUN, N, ING);
 }

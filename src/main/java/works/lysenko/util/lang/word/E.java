@@ -24,6 +24,8 @@ public record E() {
     public static final String ERROR = s(ER, RO, R);
     public static final String EUCLIDEAN = s(E, UC, LI, DE, AN);
     public static final String EVENT = s(EV, ENT);
+    public static final String EVENTS = s(EVENT, S);
+
     public static final String EXACT = s(EX, AC, T);
     public static final String EXCEEDING = s(EX, CE, ED, ING);
     public static final String EXCEPTION = s(EX, CE, PT, ION);

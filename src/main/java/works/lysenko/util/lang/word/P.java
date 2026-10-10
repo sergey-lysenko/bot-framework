@@ -35,7 +35,9 @@ public record P() {
     public static final String POLYCHROMY = s(PO, LY, CH, RO, M, Y);
     public static final String POSITION = s(P, O, SI, TION);
     public static final String POSSIBLE = s(POSS, IBLE);
+    public static final String POSTFLIGHT = s(PO, ST, F, L, IGHT);
     public static final String PREEMPTIVELY = s(PR, EE, MP, TIVE, LY);
+    public static final String PREFLIGHT = s(P, RE, F, L, IGHT);
     public static final String PRESENCE = s(PR, ESEN, CE);
     public static final String PREVIEW = s(PREV, IE, W);
     public static final String PROBABILITY = s(PROB, ABILITY);

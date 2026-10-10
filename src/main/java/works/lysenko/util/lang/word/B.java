@@ -16,6 +16,7 @@ public record B() {
     public static final String BETTER = s(BE, TTER);
     public static final String BIGGER = s(BI, GG, ER);
     public static final String BINDING = s(BI, ND, ING);
+    public static final String BOOTING = s(BO, OT, ING);
     public static final String BORDER = s(BO, RD, ER);
     public static final String BOUNDARIES = s(BO, UN, DA, RI, ES);
     public static final String BOUNDS = s(BO, UN, DS);
