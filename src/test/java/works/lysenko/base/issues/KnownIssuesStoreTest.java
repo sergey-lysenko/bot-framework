@@ -22,18 +22,18 @@ class KnownIssuesStoreTest {
     @Test
     @DisplayName("Matches exact FQN and simple name scenarios")
     void testExactScenarioMatching() {
-        assertTrue(KnownIssuesStore.matchesScenario("com.example.scenarios.MyScenario", "com.example.scenarios.MyScenario", "MyScenario"));
-        assertTrue(KnownIssuesStore.matchesScenario("MyScenario", "com.example.scenarios.MyScenario", "MyScenario"));
-        assertFalse(KnownIssuesStore.matchesScenario("OtherScenario", "com.example.scenarios.MyScenario", "MyScenario"));
+        assertTrue(KnownIssuesMatcher.matchesScenario("com.example.scenarios.MyScenario", "com.example.scenarios.MyScenario", "MyScenario"));
+        assertTrue(KnownIssuesMatcher.matchesScenario("MyScenario", "com.example.scenarios.MyScenario", "MyScenario"));
+        assertFalse(KnownIssuesMatcher.matchesScenario("OtherScenario", "com.example.scenarios.MyScenario", "MyScenario"));
     }
 
     @Test
     @DisplayName("Matches wildcard scenario patterns")
     void testWildcardScenarioMatching() {
-        assertTrue(KnownIssuesStore.matchesScenario("com.example.*", "com.example.scenarios.MyScenario", "MyScenario"));
-        assertTrue(KnownIssuesStore.matchesScenario("*.MyScenario", "com.example.scenarios.MyScenario", "MyScenario"));
-        assertTrue(KnownIssuesStore.matchesScenario("scenarios.absentData.*", "biteheist.tree.scenarios.absentData.Password", "Password"));
-        assertFalse(KnownIssuesStore.matchesScenario("com.other.*", "com.example.scenarios.MyScenario", "MyScenario"));
+        assertTrue(KnownIssuesMatcher.matchesScenario("com.example.*", "com.example.scenarios.MyScenario", "MyScenario"));
+        assertTrue(KnownIssuesMatcher.matchesScenario("*.MyScenario", "com.example.scenarios.MyScenario", "MyScenario"));
+        assertTrue(KnownIssuesMatcher.matchesScenario("scenarios.absentData.*", "biteheist.tree.scenarios.absentData.Password", "Password"));
+        assertFalse(KnownIssuesMatcher.matchesScenario("com.other.*", "com.example.scenarios.MyScenario", "MyScenario"));
     }
 
     @Test

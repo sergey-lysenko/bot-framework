@@ -2,6 +2,7 @@ package works.lysenko.base.output;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import works.lysenko.base.output.sonifier.*;
 import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.type.Result;
 

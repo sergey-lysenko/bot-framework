@@ -346,7 +346,7 @@ class TreeHtmlTest {
         // Connector must have non_executable class
         assertTrue(html.contains("class=\"connector non_executable\" data-from=\"col_0_0\" data-to=\"col_1_0\""));
         // CSS rules must be present
-        assertTrue(html.contains(".node-card.non_executable rect { fill: #131a2a; stroke: #283548; stroke-width: 1.2; stroke-dasharray: 4 4; }"));
+        assertTrue(html.contains(".node-card.non_executable rect.card-bg { fill: #131a2a; stroke: #283548; stroke-width: 1.2; stroke-dasharray: 4 4; }"));
         assertTrue(html.contains(".connector.non_executable { stroke: #243044; stroke-width: 1.2; stroke-dasharray: 4 4; opacity: 0.6; }"));
     }
 
@@ -372,7 +372,7 @@ class TreeHtmlTest {
         assertTrue(html.contains("class=\"node-card child_failed\""));
         assertTrue(html.contains("(Upset)"));
         assertTrue(html.contains("class=\"connector child_failed\" data-from=\"col_0_0\" data-to=\"col_1_0\""));
-        assertTrue(html.contains(".node-card.child_failed rect { fill: #1e1b4b; stroke: #818cf8; stroke-width: 1.2; stroke-dasharray: 3 3; }"));
+        assertTrue(html.contains(".node-card.child_failed rect.card-bg { fill: #1e1b4b; stroke: #818cf8; stroke-width: 1.2; stroke-dasharray: 3 3; }"));
         assertTrue(html.contains(".connector.child_failed { stroke: #818cf8; stroke-width: 1.5; stroke-dasharray: 3 3; }"));
     }
 }

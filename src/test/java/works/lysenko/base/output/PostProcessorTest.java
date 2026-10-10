@@ -2,6 +2,7 @@ package works.lysenko.base.output;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import works.lysenko.base.output.sonifier.*;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
