@@ -120,6 +120,7 @@ public class Repeater implements _Repeater {
 
     public final void addToHistory(final _Scenario scenario) throws SafeguardException {
 
+        if (scenario instanceof works.lysenko.util.apis.scenario._ExceptionalExecution) return;
         final String info = scenario.info();
         final boolean isInfo = (null == info) || (info.isEmpty());
         final String entry = isInfo ? scenario.getSimpleName() : b(scenario.getSimpleName(), info);
@@ -132,6 +133,7 @@ public class Repeater implements _Repeater {
 
     public final void addToScenarios(final _Scenario scenario) {
 
+        if (scenario instanceof works.lysenko.util.apis.scenario._ExceptionalExecution) return;
         scenarios.add(scenario);
         final int size = scenarios.size();
         if (isNotNull(core.getDashboard())) core.getDashboard().setBreadcrumb(scenarios);
@@ -242,6 +244,7 @@ public class Repeater implements _Repeater {
         log(b(false, c(CLOSING), TEST, test, DOTS));
         for (final _Scenario scenario : scenarios) {
             if (isNotNull(scenario)) {
+                if (scenario instanceof works.lysenko.util.apis.scenario._ExceptionalExecution) continue;
                 final String info = scenario.info();
                 final String entry = ((null == info) || (info.isEmpty())) ? scenario.getSimpleName() :
                         b(scenario.getSimpleName(), info);

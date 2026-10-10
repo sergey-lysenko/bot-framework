@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 
 import static works.lysenko.util.func.type.Objects.isNotNull;
+import static works.lysenko.util.spec.Layout.Files.KNOWN_ISSUES;
+import static works.lysenko.util.spec.Layout.Files.KNOWN_ISSUES_;
 
 /**
  * Editor panel for managing known_issues.json within the GUI.
@@ -28,7 +30,7 @@ public class KnownIssuesPanel extends JPanel {
     }
 
     private static final ObjectMapper MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-    private static final String DEFAULT_FILE_PATH = "src/main/resources/known_issues.json";
+    private static final String DEFAULT_FILE_PATH = KNOWN_ISSUES_;
 
     private final JTable table;
     private final DefaultTableModel tableModel;
@@ -211,7 +213,7 @@ public class KnownIssuesPanel extends JPanel {
     private File resolveTargetFile() {
         final File srcFile = new File(DEFAULT_FILE_PATH);
         if (srcFile.exists()) return srcFile;
-        final File rootFile = new File("known_issues.json");
+        final File rootFile = new File(KNOWN_ISSUES);
         if (rootFile.exists()) return rootFile;
         return srcFile;
     }

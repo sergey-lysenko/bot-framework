@@ -213,8 +213,8 @@ public class Test implements _Test {
         if (null == executor.ctrl()) {
             final String pack = (null != root && !root.isEmpty()) ? root : Scenario.root;
             if (null != pack && !pack.isEmpty()) {
-                Base.tree = new works.lysenko.tree.Tree(pack);
-                executor.ctrl(new Ctrl(null, Base.tree.getBranches()));
+                works.lysenko.Base.tree = new works.lysenko.tree.Tree(pack);
+                executor.ctrl(new Ctrl(null, works.lysenko.Base.tree.getBranches()));
             }
         }
     }

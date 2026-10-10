@@ -377,6 +377,9 @@ public final class UserInterface extends JPanel implements _Dashboard {
         logScrollPane.setMinimumSize(new Dimension());
         logScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         logScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        logScrollPane.getViewport().setBackground(AnsiTextPane.DEFAULT_BACKGROUND);
+        logScrollPane.setBackground(AnsiTextPane.DEFAULT_BACKGROUND);
+        logScrollPane.setBorder(BorderFactory.createEmptyBorder());
     }
 
     /**

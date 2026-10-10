@@ -23,8 +23,8 @@ final class AnsiTextPane extends JTextPane {
             new Color(102, 102, 102), new Color(241, 76, 76), new Color(35, 209, 139), new Color(245, 245, 67),
             new Color(59, 142, 234), new Color(214, 112, 214), new Color(41, 184, 219), new Color(255, 255, 255)
     };
-    private static final Color DEFAULT_FOREGROUND = new Color(229, 229, 229);
-    private static final Color DEFAULT_BACKGROUND = new Color(30, 30, 30);
+    static final Color DEFAULT_FOREGROUND = new Color(229, 229, 229);
+    static final Color DEFAULT_BACKGROUND = new Color(30, 30, 30);
     private static final int TAB_SIZE = 8;
     private static final int MAX_SCROLLBACK_LINES = 5000;
 
@@ -38,11 +38,18 @@ final class AnsiTextPane extends JTextPane {
         setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
         setForeground(DEFAULT_FOREGROUND);
         setBackground(DEFAULT_BACKGROUND);
+        setCaretColor(DEFAULT_FOREGROUND);
         setEditable(false);
         setFocusable(false);
         setOpaque(true);
+        final javax.swing.UIDefaults defaults = new javax.swing.UIDefaults();
+        defaults.put("TextPane[Enabled].backgroundPainter", (javax.swing.Painter<javax.swing.JComponent>) (g, c, w, h) -> {
+            g.setColor(c.getBackground());
+            g.fillRect(0, 0, w, h);
+        });
+        putClientProperty("Nimbus.Overrides", defaults);
         StyleConstants.setForeground(attributes, DEFAULT_FOREGROUND);
-        StyleConstants.setBackground(attributes, DEFAULT_BACKGROUND);
+        attributes.removeAttribute(StyleConstants.Background);
     }
 
     @Override
@@ -172,7 +179,7 @@ final class AnsiTextPane extends JTextPane {
                 StyleConstants.setItalic(attributes, false);
                 StyleConstants.setUnderline(attributes, false);
                 StyleConstants.setForeground(attributes, DEFAULT_FOREGROUND);
-                StyleConstants.setBackground(attributes, DEFAULT_BACKGROUND);
+                attributes.removeAttribute(StyleConstants.Background);
             } else if (1 == parameter) {
                 bold = true;
                 StyleConstants.setBold(attributes, true);
@@ -190,7 +197,7 @@ final class AnsiTextPane extends JTextPane {
             } else if (39 == parameter) {
                 StyleConstants.setForeground(attributes, DEFAULT_FOREGROUND);
             } else if (49 == parameter) {
-                StyleConstants.setBackground(attributes, DEFAULT_BACKGROUND);
+                attributes.removeAttribute(StyleConstants.Background);
             } else if ((38 == parameter || 48 == parameter) && index + 2 < parameters.length) {
                 if (5 == parameters[index + 1]) {
                     setColor(38 == parameter, indexedColor(parameters[index + 2]));
@@ -203,11 +210,11 @@ final class AnsiTextPane extends JTextPane {
             } else if (parameter >= 30 && parameter <= 37) {
                 StyleConstants.setForeground(attributes, color(parameter - 30));
             } else if (parameter >= 40 && parameter <= 47) {
-                StyleConstants.setBackground(attributes, COLORS[parameter - 40]);
+                setColor(false, COLORS[parameter - 40]);
             } else if (parameter >= 90 && parameter <= 97) {
                 StyleConstants.setForeground(attributes, BRIGHT_COLORS[parameter - 90]);
             } else if (parameter >= 100 && parameter <= 107) {
-                StyleConstants.setBackground(attributes, BRIGHT_COLORS[parameter - 100]);
+                setColor(false, BRIGHT_COLORS[parameter - 100]);
             }
         }
     }
@@ -233,8 +240,15 @@ final class AnsiTextPane extends JTextPane {
     }
 
     private void setColor(final boolean foreground, final Color color) {
-        if (foreground) StyleConstants.setForeground(attributes, color);
-        else StyleConstants.setBackground(attributes, color);
+        if (foreground) {
+            StyleConstants.setForeground(attributes, color);
+        } else {
+            if (DEFAULT_BACKGROUND.equals(color)) {
+                attributes.removeAttribute(StyleConstants.Background);
+            } else {
+                StyleConstants.setBackground(attributes, color);
+            }
+        }
     }
 
     private Color color(final int index) {

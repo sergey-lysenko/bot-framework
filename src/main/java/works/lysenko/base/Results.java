@@ -198,17 +198,15 @@ public class Results implements _Results {
         if (isNotNull(exec)) {
             final _Scenario current = exec.scenarios().current();
             if (isNotNull(current)) {
-                final _Result result = results.getOrDefault(current, new Result(current));
-                if (isNotNull(result)) {
-                    result.addEvent(lr);
-                    if (lr.data() instanceof works.lysenko.util.apis.data._Event event) {
-                        if (event.severity() == Severity.S0 || event.severity() == Severity.S1) {
-                            if (!current.hasChildFailed()) {
-                                current.markAsFailed();
-                            }
+                final Result result = results.computeIfAbsent(current, Result::new);
+                result.addEvent(lr);
+                if (lr.data() instanceof works.lysenko.util.apis.data._Event event) {
+                    if (event.severity() == Severity.S0 || event.severity() == Severity.S1) {
+                        if (!current.hasChildFailed()) {
+                            current.markAsFailed();
                         }
                     }
-                } else throw new IllegalStateException(b(c(RESULT), IS, NULL));
+                }
             } else throw new IllegalStateException(b(c(CURRENT), SCENARIO, IS, NULL));
         } else throw new IllegalStateException(b(c(EXECUTION), IS, NULL));
     }
