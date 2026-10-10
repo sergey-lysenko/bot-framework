@@ -40,7 +40,6 @@ import static works.lysenko.util.chrs.___.SET;
 import static works.lysenko.util.chrs.____.WERE;
 import static works.lysenko.util.chrs.____.WITH;
 import static works.lysenko.util.chrs.____.PATH;
-import static works.lysenko.util.data.strs.Case.l;
 import static works.lysenko.util.data.strs.Case.u;
 import static works.lysenko.util.lang.word.A.ACTUALLY;
 import static works.lysenko.util.lang.word.A.APPLIED;
@@ -232,7 +231,7 @@ public final class LogFileParser {
                 result.pathsPossibleStr = extractBracketStr(clean);
             }
 
-            if (clean.contains(b(HAD, l(A), CHANCE, TO, BE, EXECUTED))) {
+            if (clean.contains(b(HAD, s(A), CHANCE, TO, BE, EXECUTED))) {
                 result.pathsChanceStr = extractBracketStr(clean);
             }
 

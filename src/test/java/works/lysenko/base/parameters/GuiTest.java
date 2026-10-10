@@ -780,4 +780,42 @@ class GuiTest {
     void testToolTipDismissDelayIsConfigured() {
         assertEquals(Integer.MAX_VALUE, javax.swing.ToolTipManager.sharedInstance().getDismissDelay());
     }
+
+    @Test
+    void testForbidOverexecutionHiddenWhenAllLeafsNotChecked() throws Exception {
+        final Properties props = new Properties();
+        props.setProperty("TEST", "testSuite");
+        props.setProperty("POOL", "");
+        props.setProperty("PLATFORM", "chrome");
+        props.setProperty("DOMAIN", "example.com");
+        props.setProperty("HEADLESS", "false");
+        props.setProperty("ALL_LEAFS", "false");
+
+        final Parameters parameters = new Parameters(props);
+        final Gui gui = new Gui(parameters);
+
+        gui.addStandardParameters();
+        final JPanel panel = gui.parametersPanel();
+
+        assertFalse(hasLabel(panel, "FORBID_OVEREXECUTION"), "FORBID_OVEREXECUTION should be hidden when ALL_LEAFS is unchecked");
+
+        final Field allLeafsField = Gui.class.getDeclaredField("allLeafs");
+        allLeafsField.setAccessible(true);
+        final JCheckBox allLeafsCb = (JCheckBox) allLeafsField.get(gui);
+        allLeafsCb.setSelected(true);
+
+        assertTrue(hasLabel(panel, "FORBID_OVEREXECUTION"), "FORBID_OVEREXECUTION should be visible when ALL_LEAFS is checked");
+
+        allLeafsCb.setSelected(false);
+        assertFalse(hasLabel(panel, "FORBID_OVEREXECUTION"), "FORBID_OVEREXECUTION should be hidden when ALL_LEAFS is unchecked again");
+    }
+
+    private static boolean hasLabel(final JPanel panel, final String labelText) {
+        for (final java.awt.Component c : panel.getComponents()) {
+            if (c instanceof javax.swing.JLabel label && labelText.equals(label.getText())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

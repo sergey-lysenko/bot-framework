@@ -295,6 +295,10 @@ public class Gui implements _GUI {
 
         calculateCycles.setText(b(c(REQUIRED), FOR, FULL, COVERAGE));
         calculateCycles.setEnabled(true);
+        if (isNotNull(panel)) {
+            panel.removeAll();
+            addRows();
+        }
         updateWindowLayout();
     }
 
@@ -412,7 +416,9 @@ public class Gui implements _GUI {
         rows = addRowOptional(COMPLETION_WEIGHT.name(), completionWeight, panel, rows);
         rows = addDivider(panel, rows);
         rows = addRowOptional(ALL_LEAFS.name(), allLeafs, panel, rows);
-        rows = addRowOptional(FORBID_OVEREXECUTION.name(), forbidOverexecution, panel, rows);
+        if (isNotNull(allLeafs) && allLeafs.isSelected()) {
+            rows = addRowOptional(FORBID_OVEREXECUTION.name(), forbidOverexecution, panel, rows);
+        }
         rows = addRowOptional(RESILIENT_MODE.name(), resilientMode, panel, rows);
         rows = addRowOptional(TRAVERSE_EXTENSIONS.name(), traverseExtensions, panel, rows);
         rows = addRowOptional(HEADLESS.name(), headless, panel, rows);
@@ -466,7 +472,11 @@ public class Gui implements _GUI {
             parameters.setAllLeafsCount(parameters.getAllLeafsCount());
         }
         propagatePropertyOptional(testsCount, TESTS.name());
-        propagatePropertyOptional(forbidOverexecution, FORBID_OVEREXECUTION.name());
+        if (isNotNull(allLeafs) && allLeafs.isSelected()) {
+            propagatePropertyOptional(forbidOverexecution, FORBID_OVEREXECUTION.name());
+        } else {
+            parameters.remove(FORBID_OVEREXECUTION.name());
+        }
         propagatePropertyOptional(resilientMode, RESILIENT_MODE.name());
         propagatePropertyOptional(completionWeight, COMPLETION_WEIGHT.name());
         propagatePropertyOptional(traverseExtensions, TRAVERSE_EXTENSIONS.name());

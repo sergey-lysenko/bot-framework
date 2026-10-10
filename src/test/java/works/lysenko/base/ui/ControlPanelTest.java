@@ -80,4 +80,31 @@ class ControlPanelTest {
         TreeTracker.reset();
         assertNull(TreeTracker.getLatestFrameImage());
     }
+
+    @Test
+    void startRunSwitchesToSelectedTab() throws Exception {
+        Base.properties = new works.lysenko.base.TestProperties();
+        final Properties props = new Properties();
+        props.setProperty("TEST", "test");
+        props.setProperty("PLATFORM", "chrome");
+        final Parameters parameters = new Parameters(props);
+        Base.parameters = parameters;
+        SwingUtilities.invokeAndWait(() -> {
+            final Gui gui = new Gui(parameters);
+            gui.addStandardParameters();
+            final ControlPanel controlPanel = new ControlPanel(parameters, gui);
+
+            final JTabbedPane tabbedPane = controlPanel.getTabbedPane();
+            assertEquals(0, tabbedPane.getSelectedIndex());
+
+            try {
+                final java.lang.reflect.Method startRunMethod = ControlPanel.class.getDeclaredMethod("startRun", int.class);
+                startRunMethod.setAccessible(true);
+                startRunMethod.invoke(controlPanel, 2);
+                assertEquals(2, tabbedPane.getSelectedIndex());
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
 }

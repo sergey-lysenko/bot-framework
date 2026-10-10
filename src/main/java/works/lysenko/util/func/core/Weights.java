@@ -62,8 +62,12 @@ public record Weights() {
 
         Fraction weight = downstreamWeight(scenario);
         _Scenario ancestor = parent;
+        boolean hasExtension = false;
         while (Traverse.extensions && isNotNull(ancestor)) {
             if (isExtension(ancestor)) {
+                hasExtension = true;
+            }
+            if (hasExtension) {
                 weight = weight.add(ancestor.weightConfigured());
                 weight = weight.add(downstreamWeight(ancestor));
             }
@@ -98,12 +102,7 @@ public record Weights() {
 
         String weight = configuredWeightValue(scenario.getClass());
         if (isNotNull(weight)) return weight;
-        
-        final _Scenario parent = parentOf(scenario);
-        if (isNotNull(parent)) {
-            final String parentWeight = configuredWeightValue(parent);
-            if (isNotNull(parentWeight)) return parentWeight;
-        }
+
         if (Traverse.extensions) {
             Class<?> extension = scenario.getClass().getSuperclass();
             while (isNotNull(extension) && extension != Object.class && extension != Leaf.class && extension != Node.class && extension != Core.class) {

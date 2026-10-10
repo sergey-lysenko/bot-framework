@@ -61,6 +61,7 @@ public final class CycleEstimatorPanel {
             cb.addActionListener(e -> listener.run());
         } else if (comp instanceof JCheckBox cb) {
             cb.addActionListener(e -> listener.run());
+            cb.addItemListener(e -> listener.run());
         } else if (comp instanceof JTextField tf) {
             tf.addActionListener(e -> listener.run());
             tf.getDocument().addDocumentListener(new DocumentListener() {
@@ -141,7 +142,9 @@ public final class CycleEstimatorPanel {
 
         tp.prepareTestConfiguration(testName, isHeadless, isAllLeafs, leafsCount);
         setUserOverrideOptional(tp, testsCount, PropEnum._TEST_TESTS.getPropertyName());
-        setUserOverrideOptional(tp, forbidOverexecution, PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName());
+        if (isAllLeafs) {
+            setUserOverrideOptional(tp, forbidOverexecution, PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName());
+        }
         setUserOverrideOptional(tp, resilientMode, PropEnum._TEST_RESILIENT_MODE.getPropertyName());
         setUserOverrideOptional(tp, completionWeight, PropEnum._TREE_COMPLETION_WEIGHT.getPropertyName());
         setUserOverrideOptional(tp, traverseExtensions, PropEnum._TREE_TRAVERSE_EXTENSIONS.getPropertyName());

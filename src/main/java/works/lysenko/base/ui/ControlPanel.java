@@ -128,15 +128,23 @@ public class ControlPanel extends JFrame implements _Dashboard {
         cancelButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 13));
         cancelButton.addActionListener(e -> cancelRun());
 
-        final JButton runButton = new JButton("  Start Test  ");
-        runButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
-        runButton.setBackground(new Color(0x16, 0xA3, 0x4A));
-        runButton.setForeground(Color.WHITE);
-        runButton.setFocusPainted(false);
-        runButton.addActionListener(e -> startRun());
+        final JButton startExecButton = new JButton("  Start & Exec  ");
+        startExecButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        startExecButton.setBackground(new Color(0x16, 0xA3, 0x4A));
+        startExecButton.setForeground(Color.WHITE);
+        startExecButton.setFocusPainted(false);
+        startExecButton.addActionListener(e -> startRun(1));
+
+        final JButton startTreeButton = new JButton("  Start & Tree  ");
+        startTreeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        startTreeButton.setBackground(new Color(0x16, 0xA3, 0x4A));
+        startTreeButton.setForeground(Color.WHITE);
+        startTreeButton.setFocusPainted(false);
+        startTreeButton.addActionListener(e -> startRun(2));
 
         runPanel.add(cancelButton);
-        runPanel.add(runButton);
+        runPanel.add(startExecButton);
+        runPanel.add(startTreeButton);
         configPanel.add(runPanel, BorderLayout.SOUTH);
 
         tabbedPane.addTab("Configuration", configPanel);
@@ -209,10 +217,10 @@ public class ControlPanel extends JFrame implements _Dashboard {
         works.lysenko.util.apis.test._Test.processCode(works.lysenko.util.data.enums.ExitCode.CLOSED_THROUGH_GUI);
     }
 
-    private void startRun() {
+    private void startRun(final int targetTabIndex) {
         gui.propagateUserInput();
         propertiesPanel.applyChanges();
-        tabbedPane.setSelectedIndex(1); // Switch to execution tab
+        tabbedPane.setSelectedIndex(targetTabIndex);
         tabbedPane.setEnabledAt(0, false);
         runLatch.countDown();
     }
