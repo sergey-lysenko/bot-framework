@@ -367,7 +367,7 @@ public final class TreeHtml {
             if (null != store) {
                 if (isNotNull(nd.result())) {
                     for (final KnownIssue ki : store.getIssues()) {
-                        if (KnownIssuesStore.matchesScenario(ki.scenario(), rawKey, shortKey)) {
+                        if (works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), rawKey, shortKey)) {
                             if (!nd.knownIssues().contains(ki)) nd.knownIssues().add(ki);
                         }
                     }
@@ -375,7 +375,7 @@ public final class TreeHtml {
                 if (isNotNull(exec) && isNotNull(exec.issues())) {
                     for (final _LogRecord lr : exec.issues().latestCopy()) {
                         for (final KnownIssue ki : store.getIssues()) {
-                            if (KnownIssuesStore.matchesScenario(ki.scenario(), rawKey, shortKey)) {
+                            if (works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), rawKey, shortKey)) {
                                 final List<KnownIssue> matchedByRecord = store.getForLogRecord(Collections.emptyList(), lr);
                                 if (matchedByRecord.contains(ki) && !nd.knownIssues().contains(ki)) {
                                     nd.knownIssues().add(ki);

@@ -7,6 +7,8 @@ import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.type.Result;
 import works.lysenko.util.apis.scenario._Scenario;
+import works.lysenko.base.output.sonifier.TreeSonifier;
+import works.lysenko.base.output.sonifier.TreeProgressionAudio;
 import works.lysenko.util.spec.PropEnum;
 import java.awt.Stroke;
 
