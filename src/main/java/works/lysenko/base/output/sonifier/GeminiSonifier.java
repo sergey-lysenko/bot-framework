@@ -1,5 +1,6 @@
-package works.lysenko.base.output;
+package works.lysenko.base.output.sonifier;
 
+import works.lysenko.base.output.*;
 import works.lysenko.base.output.TreeHtml.NodeData;
 import works.lysenko.base.output.TreeHtml.TreeLayout;
 import works.lysenko.util.data.enums.ScenarioType;
@@ -29,7 +30,7 @@ import java.util.TreeMap;
  * </ul>
  * Pitch is determined by column index mapped to a Lydian scale.
  */
-final class GeminiSonifier extends AbstractTreeSonifier {
+public final class GeminiSonifier extends AbstractTreeSonifier {
 
     static final String MODE = "gemini";
 
@@ -42,7 +43,7 @@ final class GeminiSonifier extends AbstractTreeSonifier {
     private static final double CHIME_AMPLITUDE = 0.15;
     private static final int FRAMES_PER_DRONE = 10;
 
-    static File snapshotFile(final File frame) {
+    public static File snapshotFile(final File frame) {
         return new File(new File(frame.getParentFile(), "gemini_events"),
                 frame.getName().replaceFirst("\\.png$", ".gemini"));
     }

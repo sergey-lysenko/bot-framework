@@ -260,6 +260,7 @@ public final class SectionRenderer {
             if ("test".equals(sec.type) && !sec.scenarios.isEmpty()) {
                 sb.append("  <div class=\"section-breadcrumb\">\n    <span class=\"breadcrumb-label\">Scenario:</span>\n");
                 for (final String sc : sec.scenarios) {
+                    if (sc.equalsIgnoreCase("Specifics") || sc.toLowerCase(java.util.Locale.ROOT).endsWith(".specifics")) continue;
                     sb.append(s("    <a class=\"pill scen-pill\" href=\"#test-", sec.testNum, "-", escapeHtml(sc),
                             "\" onclick=\"focusScenario(event, '", sec.testNum, "', '", escapeHtml(sc),
                             "')\" title=\"Jump to ", escapeHtml(sc), "\">", escapeHtml(sc), "</a>\n"));

@@ -1,4 +1,4 @@
-package works.lysenko.base.output;
+package works.lysenko.base.output.sonifier;
 
 import works.lysenko.base.output.TreeHtml.TreeLayout;
 
@@ -11,7 +11,7 @@ import java.util.List;
  * To add a new variant implement this interface (usually by extending {@link AbstractTreeSonifier})
  * and register it in {@link TreeProgressionAudio}.
  */
-interface TreeSonifier {
+public interface TreeSonifier {
 
     /**
      * @return value of the {@code .progression.tree.sonification} property activating this sonifier

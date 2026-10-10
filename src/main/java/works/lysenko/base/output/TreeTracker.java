@@ -712,11 +712,15 @@ public final class TreeTracker {
         drawEdges(g, layout.edges(), target, maxLeafOverRatio, recentNodeKeys, accessibleScenarios);
 
         // Draw nodes
-        final Font fontLabel = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
-        final Font fontBadge = new Font(Font.MONOSPACED, Font.BOLD, 10);
+        final boolean isAllLeafs = (null != works.lysenko.Base.parameters) ? works.lysenko.Base.parameters.isAllLeafs() : false;
+        final works.lysenko.base.output.tree.VisualNodeResolver nodeResolver =
+                new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, false, true);
+        final List<works.lysenko.base.output.tree.VisualNode> visualNodes = new ArrayList<>();
         for (final NodeData n : layout.nodes()) {
-            drawNode(g, n, target, maxLeafOverRatio, fontLabel, fontBadge, recentNodeKeys.contains(n.id()), accessibleScenarios);
+            visualNodes.add(nodeResolver.resolve(n, recentNodeKeys.contains(n.id())));
         }
+
+        new works.lysenko.base.output.tree.GraphicsTreeRenderer(works.lysenko.base.output.tree.TreeTheme.DEFAULT).renderNodes(g, visualNodes);
 
         // Draw header
         drawHeader(g, canvasW, badgeText, target, coveredLeafs, totalLeafs, totalExecs);

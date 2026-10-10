@@ -54,6 +54,50 @@ public class PostProcessor {
         return tasks;
     }
 
+    static String resolveClassPath() {
+        final String baseCp = System.getProperty("java.class.path");
+        final StringBuilder sb = new StringBuilder(baseCp);
+        final java.util.Set<String> paths = new java.util.HashSet<>();
+        if (null != baseCp) {
+            for (final String p : baseCp.split(File.pathSeparator)) {
+                if (!p.isBlank()) paths.add(new File(p).getAbsolutePath());
+            }
+        }
+
+        final Class<?>[] keyClasses = {
+                PostProcessor.class,
+                com.fasterxml.jackson.databind.ObjectMapper.class,
+                org.apache.commons.math3.fraction.Fraction.class,
+                org.apache.commons.lang3.StringUtils.class
+        };
+        for (final Class<?> cls : keyClasses) {
+            try {
+                final java.security.ProtectionDomain pd = cls.getProtectionDomain();
+                if (null != pd && null != pd.getCodeSource() && null != pd.getCodeSource().getLocation()) {
+                    final String locPath = new File(pd.getCodeSource().getLocation().toURI()).getAbsolutePath();
+                    if (paths.add(locPath)) {
+                        sb.append(File.pathSeparator).append(locPath);
+                    }
+                }
+            } catch (final Exception ignored) {
+            }
+        }
+
+        final ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        if (cl instanceof java.net.URLClassLoader ucl) {
+            for (final java.net.URL url : ucl.getURLs()) {
+                try {
+                    final String urlPath = new File(url.toURI()).getAbsolutePath();
+                    if (paths.add(urlPath)) {
+                        sb.append(File.pathSeparator).append(urlPath);
+                    }
+                } catch (final Exception ignored) {
+                }
+            }
+        }
+        return sb.toString();
+    }
+
     public static void launchDetached(final File runLogFile, final File outHtmlFile, final boolean openBrowser) {
         launchDetached(runLogFile, outHtmlFile, openBrowser, openBrowser);
     }
@@ -75,7 +119,7 @@ public class PostProcessor {
             final String javaBin = ProcessHandle.current().info().command().orElse(
                     System.getProperty("java.home") + File.separator + "bin" + File.separator + "java"
             );
-            final String cp = System.getProperty("java.class.path");
+            final String cp = resolveClassPath();
             final long parentPid = ProcessHandle.current().pid();
 
             final Process postProcessor = new ProcessBuilder(detachedCommand(

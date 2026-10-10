@@ -1,4 +1,4 @@
-package works.lysenko.base.output;
+package works.lysenko.base.output.sonifier;
 
 import javax.sound.sampled.AudioFormat;
 import java.io.BufferedOutputStream;

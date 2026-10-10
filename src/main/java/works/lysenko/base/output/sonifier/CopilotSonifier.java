@@ -1,5 +1,6 @@
-package works.lysenko.base.output;
+package works.lysenko.base.output.sonifier;
 
+import works.lysenko.base.output.*;
 import works.lysenko.base.output.TreeHtml.NodeData;
 import works.lysenko.base.output.TreeHtml.TreeLayout;
 import works.lysenko.util.data.enums.ScenarioType;
@@ -23,7 +24,7 @@ import java.util.TreeMap;
  * Data-driven sonifier ({@code copilot}): each new leaf execution plays a note whose pitch derives from the leaf path
  * and whose loudness reflects progress to target. Relies on per-frame leaf state snapshots written alongside frames.
  */
-final class CopilotSonifier extends AbstractTreeSonifier {
+public final class CopilotSonifier extends AbstractTreeSonifier {
 
     static final String MODE = "copilot";
 
@@ -33,7 +34,7 @@ final class CopilotSonifier extends AbstractTreeSonifier {
     private static final int[] SCALE = {0, 2, 4, 7, 9};
     private static final int[] TRIAD = {0, 2, 4};
 
-    static File eventsFile(final File frame) {
+    public static File eventsFile(final File frame) {
 
         return new File(new File(frame.getParentFile(), "events"),
                 frame.getName().replaceFirst("\\.png$", ".events"));

@@ -37,37 +37,6 @@ public final class TreeHtml {
     private static final int CARD_WIDTH = 220;
     private static final int CARD_HEIGHT = 44;
 
-    public enum NodeStyle {
-        FAILED("failed", "Failed", "#ef4444", "#450a0a", "#fca5a5"),
-        UPSET("child_failed", "Upset", "#818cf8", "#1e1b4b", "#a5b4fc"),
-        PASSED("passed", "Passed", "#22c55e", "#052e16", "#86efac"),
-        WARNING("warning", "Warning", "#f59e0b", "#451a03", "#fcd34d"),
-        NON_EXECUTABLE("non_executable", "Non-executable", "#475569", "#131a2a", "#64748b"),
-        UNVISITED("unvisited", "Unvisited", "#64748b", "#1e293b", "#94a3b8");
-
-        public final String cssClass;
-        public final String title;
-        public final String border;
-        public final String bg;
-        public final String text;
-
-        NodeStyle(final String cssClass, final String title, final String border, final String bg, final String text) {
-            this.cssClass = cssClass;
-            this.title = title;
-            this.border = border;
-            this.bg = bg;
-            this.text = text;
-        }
-
-        public static String getExecutionPathStyles() {
-            final StringBuilder sb = new StringBuilder();
-            for (final NodeStyle ns : values()) {
-                sb.append(String.format(Locale.ROOT, "  .path-step.%s { background: %s; border-color: %s; color: %s; }\n", ns.cssClass, ns.bg, ns.border, ns.text));
-                sb.append(String.format(Locale.ROOT, "  .path-step.%s:hover { background: %s; border-color: %s; color: %s; }\n", ns.cssClass, ns.border, ns.text, ns.bg));
-            }
-            return sb.toString();
-        }
-    }
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static KnownIssuesStore knownIssuesStore = null;
@@ -229,7 +198,7 @@ public final class TreeHtml {
         ancestors.remove(scenario);
     }
 
-    static boolean hasFailure(final NodeData n) {
+    public static boolean hasFailure(final NodeData n) {
 
         if (null == n) return false;
         if (null != n.scenario()) {
@@ -242,7 +211,7 @@ public final class TreeHtml {
         return false;
     }
 
-    static boolean hasChildFailure(final NodeData n) {
+    public static boolean hasChildFailure(final NodeData n) {
 
         if (null == n) return false;
         if (null != n.scenario()) {
@@ -250,7 +219,14 @@ public final class TreeHtml {
         }
         final _Result res = n.result();
         if (null != res) {
-            return res.status() == works.lysenko.util.data.enums.ExecutionStatus.CHILD_FAILED;
+            if (res.status() == works.lysenko.util.data.enums.ExecutionStatus.CHILD_FAILED) return true;
+        }
+        if (null != n.children() && !n.children().isEmpty()) {
+            for (final NodeData child : n.children()) {
+                if (hasFailure(child) || hasChildFailure(child)) {
+                    return true;
+                }
+            }
         }
         return false;
     }
@@ -804,31 +780,38 @@ public final class TreeHtml {
 
         final Map<String, Map<String, Object>> nodeDataMap = new LinkedHashMap<>();
 
-        for (final NodeData n : nodes) {
-            final int x = n.col() * COL_WIDTH + 40;
-            final int y = (int) Math.round(n.row() * ROW_HEIGHT + 20);
-            final _Result res = n.result();
+        final boolean isAllLeafs = (null != works.lysenko.Base.parameters)
+                ? works.lysenko.Base.parameters.isAllLeafs()
+                : (null != works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS.get()
+                   && Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS.get()));
 
+        final int target = (null != works.lysenko.Base.parameters)
+                ? works.lysenko.Base.parameters.getAllLeafsCount()
+                : (null != works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS_COUNT.get()
+                   ? Math.max(1, works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS_COUNT.get()) : 1);
+
+        double maxLeafOverRatio = 0.0;
+        for (final NodeData n : nodes) {
+            if (n.children().isEmpty()) {
+                final int scenarioTarget = Math.max(1, target);
+                final int execs = (null != n.result()) ? n.result().getExecutions() : 0;
+                if (execs > scenarioTarget) {
+                    maxLeafOverRatio = Math.max(maxLeafOverRatio, (double) (execs - scenarioTarget) / scenarioTarget);
+                }
+            }
+        }
+
+        final works.lysenko.base.output.tree.VisualNodeResolver nodeResolver = 
+                new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, getAccessibleScenarios(), isAllLeafs, target, maxLeafOverRatio);
+        final List<works.lysenko.base.output.tree.VisualNode> visualNodes = new ArrayList<>();
+
+        for (final NodeData n : nodes) {
+            final _Result res = n.result();
             final int execs = (null != res) ? res.getExecutions() : 0;
             final int eventCount = (null != res && null != res.getEvents()) ? res.getEvents().size() : 0;
-            final boolean failure = hasFailure(n);
-            final boolean childFailure = hasChildFailure(n);
-            final boolean theoreticallyExecutable = isTheoreticallyExecutable(n);
-
-            NodeStyle nodeStyle = NodeStyle.UNVISITED;
-            if (failure) {
-                nodeStyle = NodeStyle.FAILED;
-            } else if (childFailure) {
-                nodeStyle = NodeStyle.UPSET;
-            } else if (execs > 0) {
-                if (eventCount == 0) {
-                    nodeStyle = NodeStyle.PASSED;
-                } else {
-                    nodeStyle = NodeStyle.WARNING;
-                }
-            } else if (!theoreticallyExecutable) {
-                nodeStyle = NodeStyle.NON_EXECUTABLE;
-            }
+            
+            final works.lysenko.base.output.tree.VisualNode visualNode = nodeResolver.resolve(n);
+            visualNodes.add(visualNode);
 
             final StringBuilder eventDetails = new StringBuilder();
             if (null != res && null != res.getEvents()) {
@@ -837,41 +820,21 @@ public final class TreeHtml {
                 }
             }
 
-            final boolean hasKnownIssues = !n.knownIssues().isEmpty();
             final String kiHtml = renderKnownIssuesHtml(n.knownIssues());
-            final String hatchOverlay = hasKnownIssues ? String.format(Locale.US, "<rect width=\"%d\" height=\"%d\" fill=\"url(#known-issue-hatch)\" rx=\"8\" ry=\"8\" pointer-events=\"none\" />\n", CARD_WIDTH, CARD_HEIGHT) : "";
-            final String cardCssClass = hasKnownIssues ? nodeStyle.cssClass + " known-issue" : nodeStyle.cssClass;
-            final String cardTitle = hasKnownIssues ? nodeStyle.title + " (Known Issue)" : nodeStyle.title;
-
             final String safeLabel = n.label().replace("<", "&lt;").replace(">", "&gt;");
 
             final Map<String, Object> nodeInfo = new LinkedHashMap<>();
             nodeInfo.put("name", safeLabel);
             nodeInfo.put("group", n.group());
-            nodeInfo.put("status", cardTitle);
+            nodeInfo.put("status", visualNode.badgeText() + (visualNode.hasKnownIssues() ? " (Known Issue)" : ""));
             nodeInfo.put("exec", execs);
             nodeInfo.put("events", eventCount);
             nodeInfo.put("details", eventDetails.toString());
             nodeInfo.put("kiHtml", kiHtml);
             nodeDataMap.put(n.id(), nodeInfo);
-
-            svgContent.append(String.format(
-                    Locale.US,
-                    "<g id=\"%s\" class=\"node-card %s\" transform=\"translate(%d, %d)\" onclick=\"showNodeDetails('%s')\">\n" +
-                    "  <title>%s (%s)</title>\n" +
-                    "  <rect width=\"%d\" height=\"%d\" />\n" +
-                    "  %s" +
-                    "  <text x=\"14\" y=\"26\">%s</text>\n" +
-                    "  <circle cx=\"%d\" cy=\"22\" r=\"6\" fill=\"%s\" />\n" +
-                    "</g>\n",
-                    n.id(), cardCssClass, x, y, n.id(),
-                    safeLabel, cardTitle,
-                    CARD_WIDTH, CARD_HEIGHT,
-                    hatchOverlay,
-                    safeLabel,
-                    CARD_WIDTH - 18, nodeStyle.border
-            ));
         }
+        
+        svgContent.append(new works.lysenko.base.output.tree.HtmlTreeRenderer(works.lysenko.base.output.tree.TreeTheme.DEFAULT).renderNodes(visualNodes));
 
         final SummaryPlaque summaryPlaque = SummaryPlaque.computeFromNodes(nodes);
 
@@ -898,16 +861,12 @@ public final class TreeHtml {
                 "  svg { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }\n" +
                 "  .node-card { cursor: pointer; transition: filter 0.15s; }\n" +
                 "  .node-card:hover { filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.4)); }\n" +
-                "  .node-card rect { rx: 8; ry: 8; stroke-width: 1.5; }\n" +
-                "  .node-card.passed rect { fill: #14532d; stroke: #22c55e; }\n" +
-                "  .node-card.warning rect { fill: #713f12; stroke: #f59e0b; }\n" +
-                "  .node-card.failed rect { fill: #450a0a; stroke: #ef4444; }\n" +
-                "  .node-card.child_failed rect { fill: #1e1b4b; stroke: #818cf8; stroke-width: 1.2; stroke-dasharray: 3 3; }\n" +
-                "  .node-card.unvisited rect { fill: #1e293b; stroke: #475569; }\n" +
-                "  .node-card.non_executable rect { fill: #131a2a; stroke: #283548; stroke-width: 1.2; stroke-dasharray: 4 4; }\n" +
+                "  .node-card rect.card-bg { rx: 8; ry: 8; stroke-width: 1.5; }\n" +
+                "  .node-card.child_failed rect.card-bg { fill: #1e1b4b; stroke: #818cf8; stroke-width: 1.2; stroke-dasharray: 3 3; }\n" +
+                "  .node-card.non_executable rect.card-bg { fill: #131a2a; stroke: #283548; stroke-width: 1.2; stroke-dasharray: 4 4; }\n" +
                 "  .node-card.non_executable text { fill: #475569; }\n" +
                 "  .node-card.non_executable circle { stroke: #283548; stroke-width: 1.2; stroke-dasharray: 2 2; }\n" +
-                "  .node-card.known-issue rect { stroke: #f59e0b; stroke-width: 2; }\n" +
+                "  .node-card.known-issue rect.card-bg { stroke: #f59e0b; stroke-width: 2; }\n" +
                 "  .node-card text { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; fill: #f8fafc; }\n" +
                 "  .connector { fill: none; stroke: #475569; stroke-width: 2; transition: stroke 0.2s, stroke-width 0.2s; }\n" +
                 "  .connector.visited { stroke: #22c55e; stroke-width: 2.5; }\n" +

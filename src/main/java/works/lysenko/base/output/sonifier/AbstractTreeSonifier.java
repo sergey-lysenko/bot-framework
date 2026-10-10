@@ -1,4 +1,6 @@
-package works.lysenko.base.output;
+package works.lysenko.base.output.sonifier;
+
+import works.lysenko.base.output.*;
 
 import java.io.File;
 import java.io.IOException;

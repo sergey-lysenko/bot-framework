@@ -1,4 +1,6 @@
-package works.lysenko.base.output;
+package works.lysenko.base.output.sonifier;
+
+import works.lysenko.base.output.*;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -23,9 +25,9 @@ import java.util.Map;
  * </ul>
  * The first frame is the silent baseline. Output depends only on pixel data, hence is deterministic.
  */
-final class ClaudeSonifier extends AbstractTreeSonifier {
+public final class ClaudeSonifier extends AbstractTreeSonifier {
 
-    static final String MODE = "claude";
+    public static final String MODE = "claude";
 
     private static final int COLUMNS = 15;
     private static final int ROWS = 12;
