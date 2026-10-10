@@ -11,26 +11,42 @@ import works.lysenko.base.parameters.Gui;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static works.lysenko.util.spec.Layout.Files.PLATFORMS_;
 
 class ControlPanelTest {
 
     private Parameters previousParameters;
+    private boolean createdPlatformsFile = false;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         previousParameters = Base.parameters;
         TreeTracker.reset();
+        final File platformsFile = new File(PLATFORMS_);
+        if (!platformsFile.exists()) {
+            platformsFile.getParentFile().mkdirs();
+            Files.writeString(Paths.get(PLATFORMS_), "Android,Chrome");
+            createdPlatformsFile = true;
+        }
     }
 
     @AfterEach
     void tearDown() {
         Base.parameters = previousParameters;
         TreeTracker.reset();
+        if (createdPlatformsFile) {
+            new File(PLATFORMS_).delete();
+            new File("var").delete();
+        }
     }
 
     @Test

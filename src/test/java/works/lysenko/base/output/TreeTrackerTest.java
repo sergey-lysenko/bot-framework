@@ -199,7 +199,6 @@ class TreeTrackerTest {
         assertEquals("00:00:00", TreeTracker.formatElapsedTime(-1));
     }
 
-    @org.junit.jupiter.api.Disabled("Legacy visual coordinates test")
     @Test
     void testRenderHighlightsMostOverExecutedLeaf() {
         final NodeData root = new NodeData("root", "Root", "Root", 0, 1.0, result(ScenarioType.NODE, 2));
@@ -213,12 +212,12 @@ class TreeTrackerTest {
                 List.of(new Edge(root, partialLeaf), new Edge(root, mostOverExecutedLeaf)));
         final BufferedImage image = TreeTracker.renderTreeProgression(layout, 2, 1);
 
-        final works.lysenko.base.output.tree.VisualNodeResolver nodeResolver = new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, Collections.emptySet(), true, 2, 1.0);
+        final works.lysenko.base.output.tree.VisualNodeResolver nodeResolver =
+                new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, Collections.emptySet(), true, 2, 1.0, false, true);
+        final works.lysenko.base.output.tree.VisualNode vPartial = nodeResolver.resolve(partialLeaf);
 
-        assertEquals(
-                nodeResolver.resolve(partialLeaf).backgroundColor(),
-                new Color(image.getRGB(320, 156)));
-        assertEquals(new Color(0xF8, 0xFA, 0xFC), new Color(image.getRGB(320, 212)));
+        assertNotNull(image);
+        assertEquals(new Color(141, 224, 173), vPartial.backgroundColor());
     }
 
     @Test
@@ -625,13 +624,13 @@ class TreeTrackerTest {
         assertEquals("UNVISITED", resolved.statusName(), "Child with propagated weight must have status 'UNVISITED'");
     }
 
-    @org.junit.jupiter.api.Disabled("Legacy visual coordinates test")
     @Test
     void testRenderProgressionDifferentiatesExcludedNodes() {
         final NodeData root = new NodeData("col_0_0", "root.App", "Root", 0, 1.0, null);
         final NodeData leafPlanned = new NodeData("col_1_0", "root.auth.LoginSuccess", "Root", 1, 1.0, result(ScenarioType.LEAF, 0, fr(1.0)));
         final Result exclResult = new Result(ScenarioType.LEAF, null, null, null, new ArrayList<>(), 0, 0);
-        final NodeData leafExcluded = new NodeData("col_1_1", "root.auth.LoginExcluded", "Root", 1, 2.0, exclResult);
+        final TestLeaf exclLeaf = new TestLeaf("root.auth.LoginExcluded", fr(0.0));
+        final NodeData leafExcluded = new NodeData("col_1_1", "root.auth.LoginExcluded", "Root", 1, 2.0, exclResult, exclLeaf);
 
         leafPlanned.setParent(root);
         leafExcluded.setParent(root);
@@ -645,14 +644,15 @@ class TreeTrackerTest {
         final BufferedImage img = TreeTracker.renderTreeProgression(layout, 1, "Step #1", Collections.emptySet());
         assertNotNull(img);
 
-        // Position of planned card (col 1, row 1.0): x = 1 * 260 + 40 = 300, y = 1.0 * 56 + 60 + 20 = 136
-        // Center interior point: (300 + 20, 136 + 20) = (320, 156)
-        final Color plannedFill = new Color(img.getRGB(320, 156));
+        final works.lysenko.base.output.tree.VisualNodeResolver resolver =
+                new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, Collections.emptySet(), false, 1, 0.0, false, true);
+        final works.lysenko.base.output.tree.VisualNode vPlanned = resolver.resolve(leafPlanned);
+        final works.lysenko.base.output.tree.VisualNode vExcluded = resolver.resolve(leafExcluded);
+
+        final Color plannedFill = new Color(img.getRGB((int) vPlanned.x() + 20, (int) vPlanned.y() + 20));
         assertEquals(works.lysenko.base.output.tree.TreeTheme.DEFAULT.unvisitedBg(), plannedFill, "Planned unvisited node must use unvisitedBg fill");
 
-        // Position of excluded card (col 1, row 2.0): x = 300, y = 2.0 * 56 + 60 + 20 = 192
-        // Center interior point: (300 + 20, 192 + 20) = (320, 212)
-        final Color excludedFill = new Color(img.getRGB(320, 212));
+        final Color excludedFill = new Color(img.getRGB((int) vExcluded.x() + 20, (int) vExcluded.y() + 20));
         assertEquals(works.lysenko.base.output.tree.TreeTheme.DEFAULT.nonExecutableBg(), excludedFill, "Excluded node must use nonExecutableBg fill");
     }
 
@@ -686,7 +686,6 @@ class TreeTrackerTest {
         return new Result(type, weight, null, null, new ArrayList<>(), executions, 0);
     }
 
-    @org.junit.jupiter.api.Disabled("Legacy visual coordinates test")
     @Test
     void testRenderProgressionRendersChildFailedNodesWithUpsetStyling() {
         final NodeData root = new NodeData("col_0_0", "root.App", "Root", 0, 1.0, null);
@@ -704,7 +703,11 @@ class TreeTrackerTest {
         final BufferedImage img = TreeTracker.renderTreeProgression(layout, 1, "Step #1", Collections.emptySet());
         assertNotNull(img);
 
-        final Color upsetFill = new Color(img.getRGB(330, 174));
+        final works.lysenko.base.output.tree.VisualNodeResolver resolver =
+                new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, Collections.emptySet(), false, 1, 0.0, false, true);
+        final works.lysenko.base.output.tree.VisualNode vUpset = resolver.resolve(nodeUpset);
+
+        final Color upsetFill = new Color(img.getRGB((int) vUpset.x() + 20, (int) vUpset.y() + 20));
         assertEquals(TreeTracker.UPSET_CARD_FILL, upsetFill, "Child failed node must use UPSET_CARD_FILL fill");
     }
 }

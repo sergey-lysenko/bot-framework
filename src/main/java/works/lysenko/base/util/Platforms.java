@@ -2,6 +2,7 @@ package works.lysenko.base.util;
 
 import io.appium.java_client.service.local.AppiumDriverLocalService;
 import io.appium.java_client.service.local.AppiumServiceBuilder;
+import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.WebDriver;
 import works.lysenko.util.data.enums.Platform;
@@ -96,41 +97,25 @@ public record Platforms() {
         final List<Platform> platforms = Collections.synchronizedList(new LinkedList<>());
         Arrays.stream(Platform.values()).parallel().forEach(platform -> {
             if (Platform.ANDROID == platform) {
-                AppiumDriverLocalService service = null;
                 try {
-                    service = new AppiumServiceBuilder()
+                    final AppiumDriverLocalService service = new AppiumServiceBuilder()
                             .withArgument(() -> __BASE_PATH, WD_HUB)
                             .usingAnyFreePort()
                             .withLogFile(new File(APPIUM_LOG_))
                             .build();
-                    service.start();
-                    if (service.isRunning()) {
+                    if (null != service) {
                         platforms.add(Platform.ANDROID);
                     }
                 } catch (final Exception ignored) {
-                    // Appium service failed to start or is not available
-                } finally {
-                    if (null != service && service.isRunning()) {
-                        service.stop();
-                    }
+                    // Appium executable is not installed or available
                 }
             } else {
-                WebDriver driver = null;
                 try {
-                    driver = WebDrivers.get(platform, false, true);
-                    if (null != driver) {
+                    if (isDriverAvailable(platform)) {
                         platforms.add(platform);
                     }
                 } catch (final Exception ignored) {
                     // Driver not available or failed to initialize
-                } finally {
-                    if (null != driver) {
-                        try {
-                            driver.quit();
-                        } catch (final Exception ignored) {
-                            // Driver already terminated
-                        }
-                    }
                 }
             }
         });
@@ -141,5 +126,30 @@ public record Platforms() {
             }
         }
         return sorted;
+    }
+
+    private static boolean isDriverAvailable(final Platform platform) {
+
+        switch (platform) {
+            case CHROME -> {
+                WebDriverManager.chromedriver().setup();
+                return null != WebDriverManager.chromedriver().getDownloadedDriverPath();
+            }
+            case FIREFOX -> {
+                WebDriverManager.firefoxdriver().setup();
+                return null != WebDriverManager.firefoxdriver().getDownloadedDriverPath();
+            }
+            case EDGE -> {
+                WebDriverManager.edgedriver().setup();
+                return null != WebDriverManager.edgedriver().getDownloadedDriverPath();
+            }
+            case SAFARI -> {
+                WebDriverManager.safaridriver().setup();
+                return null != WebDriverManager.safaridriver().getDownloadedDriverPath();
+            }
+            default -> {
+                return false;
+            }
+        }
     }
 }

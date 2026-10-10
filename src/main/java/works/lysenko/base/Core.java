@@ -84,17 +84,17 @@ import static works.lysenko.util.spec.Symbols.S;
         "ClassWithTooManyMethods", "OverlyCoupledClass"})
 public final class Core extends Root implements _Core, _Tests {
 
-    private final _Test test;
+    private Boolean inJar = null;
+    private String stopReason = null;
+    private _Dashboard dashboard = null;
+    private _Logs logger = null;
+    private _Results results = null;
+    private _Scenario stopScenario = null;
+    private boolean stopFlag = false;
     private final RunLocks.RunLock runLock;
     private final String parametersList;
-    private _Results results = null;
-    private _Logs logger = null;
-    private _Dashboard dashboard = null;
+    private final _Test test;
     private long previousTickAt = System.currentTimeMillis();
-    private Boolean inJar = null;
-    private boolean stopFlag = false;
-    private String stopReason = null;
-    private _Scenario stopScenario = null;
 
     public boolean getStopFlag() {
 
