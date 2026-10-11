@@ -158,9 +158,11 @@ public final class Core extends Root implements _Core, _Tests {
             inJarOrNotInJar();
             create(additional);
             read();
+            works.lysenko.base.core.BootCapture.stop();
             startStopwatch();
             build();
         } catch (final RuntimeException | Error e) {
+            works.lysenko.base.core.BootCapture.stop();
             runLock.close();
             throw e;
         }

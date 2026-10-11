@@ -273,7 +273,7 @@ public final class LogFileParser {
                 }
             }
 
-            if ((clean.contains("Creating Test properties") || clean.contains("Reading Common Configuration") || clean.contains("Reading Parameters") || clean.contains(b(s(_NUMBR_), c(APPLIED), TEST, CONFIGURATION))) && BOOTING.equals(currentSec.type)) {
+            if ((clean.contains("Reading Common Configuration") || clean.contains("Reading Parameters") || clean.contains(b(s(_NUMBR_), c(APPLIED), TEST, CONFIGURATION))) && BOOTING.equals(currentSec.type)) {
                 if (!currentSec.lines.isEmpty()) result.sections.add(currentSec);
                 currentSec = new LogModels.LogSection(CONFIGURING, c(CONFIGURING), NEUTRAL, lineStore);
             }

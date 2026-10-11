@@ -593,4 +593,24 @@ class LogHtmlTest {
             works.lysenko.Base.properties = previousProps;
         }
     }
+
+    @Test
+    void testBootingSectionIncludesCreatingTestProperties(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("booting.run.log");
+        final Path htmlPath = tempDir.resolve("booting.run.log.html");
+
+        final List<String> logLines = List.of(
+                "Starting Bot core ...",
+                "Creating Test Results container ... ... spent 11 ms ",
+                "Creating Test properties ... ... spent 2 ms ",
+                "Reading Common Configuration ...",
+                "[ 1][1][1.000][10] Executing Scenario A"
+        );
+        Files.write(logPath, logLines);
+        LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+
+        final String html = Files.readString(htmlPath);
+        assertTrue(html.contains("Creating Test Results container"), "Should contain Results container creation");
+        assertTrue(html.contains("Creating Test properties"), "Should contain Test properties creation");
+    }
 }
