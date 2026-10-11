@@ -166,9 +166,9 @@ public class Repeater implements _Repeater {
         if (isNull(startedAt)) return null;
         if (isNull(exec) || done) return null;
         final int current = statistics.history().size() + 1;
-        final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
-                || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get())
-                || isCountAllLeafs();
+        final boolean allLeafsMode = (isNotNull(parameters))
+                ? parameters.isAllLeafs()
+                : (Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get()) || isCountAllLeafs());
         if (allLeafsMode || isNull(getTotalTests())) return current;
         return (current > getTotalTests()) ? null : current;
     }
@@ -278,9 +278,9 @@ public class Repeater implements _Repeater {
     @SuppressWarnings("NestedConditionalExpression")
     private String getTitle() {
 
-        final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
-                || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get())
-                || isCountAllLeafs();
+        final boolean allLeafsMode = (isNotNull(parameters))
+                ? parameters.isAllLeafs()
+                : (Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get()) || isCountAllLeafs());
         if (allLeafsMode) {
             final boolean multipleExecutionsPerLeaf = isNotNull(parameters) && parameters.getAllLeafsCount() > 1;
             final int executed = multipleExecutionsPerLeaf

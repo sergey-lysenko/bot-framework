@@ -180,9 +180,9 @@ public class Test implements _Test {
      */
     private boolean isNotExhausted() {
 
-        final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
-                || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get())
-                || isCountAllLeafs();
+        final boolean allLeafsMode = (isNotNull(parameters))
+                ? parameters.isAllLeafs()
+                : (Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get()) || isCountAllLeafs());
         if (allLeafsMode) {
             return !core.areAllLeafsExecuted();
         }

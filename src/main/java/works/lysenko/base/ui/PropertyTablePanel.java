@@ -299,8 +299,8 @@ public class PropertyTablePanel extends JPanel {
             propertyHintLabel.setVisible(false);
         }
 
-        if (!key.isEmpty() && !val.isEmpty()) {
-            final String err = PropertyValidator.validate(key, val);
+        if (!key.isEmpty()) {
+            final String err = PropertyValidator.validateProperty(key, val, null);
             if (isNotNull(err)) {
                 liveValidationErrorLabel.setText("⚠️ " + err);
                 liveValidationErrorLabel.setVisible(true);

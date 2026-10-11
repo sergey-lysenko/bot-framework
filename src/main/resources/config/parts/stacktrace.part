@@ -2,17 +2,17 @@
 # Stack Trace Configuration
 # ==============================================================================
 
-# Classes that will be excluded from the short stack trace (comma-separated list).
-# .logs.ignored.in.stacktrace=Ctrl,Core,Test,Exec,Base,Leaf,Logs,Node,Root,Selector,Repeater,Routines,Screenshot,Assertions,TestProperties,BotRunner,BufferedImages
+# Includes the full stack trace instead of shortening it for logs. Default: false
+# .logs.full.stacktrace=false
 
 # ------------------------------------------------------------------------------
-# Display line numbers in the shortened stack trace.
-# .logs.line.number.in.short.stacktrace=true
+# Comma-separated class names omitted from shortened stack traces. Default:
+# .logs.ignored.in.stacktrace=BotRunner,ClassLoader,Ctrl,Ctrl$Selector,Cycler,Cycles,Exec,Leaf,Logger,LoggerCore,Node,Root,ScenarioLoader
 
 # ------------------------------------------------------------------------------
-# Replace repeated stack traces with references to reduce size of log files.
-# .logs.stack.trace.references=true
+# Shows source line numbers in shortened stack traces. Default: false
+# .logs.line.number.in.short.stacktrace=false
 
 # ------------------------------------------------------------------------------
-# Whether to ignore the `.logs.ignored.in.stacktrace` list and show the full stack trace.
-# .logs.full.stacktrace=true
+# Replaces repeated stack traces in logs with references to their earlier occurrence. Default: false
+# .logs.stack.trace.references=false

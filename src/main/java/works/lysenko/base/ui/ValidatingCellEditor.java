@@ -84,7 +84,8 @@ public class ValidatingCellEditor extends AbstractCellEditor implements TableCel
             if (isNotNull(validationErrorCallback)) {
                 validationErrorCallback.accept(propertyName + ": " + error);
             }
-            return false;
+            fireEditingStopped();
+            return true;
         }
         if (null != field) {
             field.setBorder(normalBorder);

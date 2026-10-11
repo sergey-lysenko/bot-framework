@@ -536,16 +536,15 @@ public class Gui implements _GUI {
         
         if (isNotNull(allLeafs)) {
             parameters.setAllLeafs(allLeafs.isSelected());
+            if (!allLeafs.isSelected()) {
+                parameters.setAllLeafsCount(1);
+            }
         }
-        if (isNotNull(allLeafsCount)) {
+        if (isNotNull(allLeafs) && allLeafs.isSelected() && isNotNull(allLeafsCount)) {
             try {
                 parameters.setAllLeafsCount(Integer.parseInt(allLeafsCount.getText()));
             } catch (final NumberFormatException ignored) {
             }
-        }
-        if (parameters.getAllLeafsCount() > 1) {
-            parameters.setAllLeafs(true);
-            parameters.setAllLeafsCount(parameters.getAllLeafsCount());
         }
         propagatePropertyOptional(testsCount, TESTS.name());
         if (isNotNull(allLeafs) && allLeafs.isSelected()) {

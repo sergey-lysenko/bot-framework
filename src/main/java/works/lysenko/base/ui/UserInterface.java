@@ -524,8 +524,9 @@ public final class UserInterface extends JPanel implements _Dashboard {
 
         long rawEtaMs = 0L;
 
-        final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
-                || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
+        final boolean allLeafsMode = (isNotNull(parameters))
+                ? parameters.isAllLeafs()
+                : Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
 
         if (allLeafsMode) {
             final boolean multipleExecutionsPerLeaf = isNotNull(parameters) && parameters.getAllLeafsCount() > 1;
@@ -590,8 +591,9 @@ public final class UserInterface extends JPanel implements _Dashboard {
         final long elapsedMs = timer.msSinceStart();
         if (elapsedMs < 1000L) return "(ETA --:--)";
 
-        final boolean allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
-                || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
+        final boolean allLeafsMode = (isNotNull(parameters))
+                ? parameters.isAllLeafs()
+                : Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
         if (allLeafsMode) {
             final boolean multipleExecutionsPerLeaf = isNotNull(parameters) && parameters.getAllLeafsCount() > 1;
             final int executed = multipleExecutionsPerLeaf

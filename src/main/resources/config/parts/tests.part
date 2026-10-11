@@ -1,34 +1,161 @@
 # ==============================================================================
-# Test Execution Configuration
+# Test Execution & Safeguard Settings
 # ==============================================================================
 
-# Event severity level at which to stop test execution.
-# Severity levels determine how severe an event must be to halt further testing.
-# .test.fail.by.event.of.severity=s0
-
-# Enables resilient mode where execution continues after exceptions to collect all failures.
-# .test.resilient.mode=false
+# Number of retry attempts allowed for an action when it does not succeed immediately. Default: 3
+# .test.action.retries=3
 
 # ------------------------------------------------------------------------------
-# Default number of tests to perform if not explicitly specified.
-# .test.tests=99
+# Runs all leaf tests when enabled, rather than limiting execution to selected leaf tests. Default: false
+# .test.all.leafs=false
 
 # ------------------------------------------------------------------------------
-
-# Defines the minimal execution time threshold for consecutive tests.
-# Format: {number of tests}:{minimum time in milliseconds}.
-# Default: 20 tests must take at least 2000 milliseconds.
-# .tests.execution.time.safeguard=20|2000
+# Limits the number of leaf tests selected when running all leaf tests. Default: 1
+# .test.all.leafs.count=1
 
 # ------------------------------------------------------------------------------
+# Controls whether a failed assertion produces an exception. Default: true
+# .test.assertions.produce.exception=true
 
-# Number of retries for handling exceptional states during UI interactions.
+# ------------------------------------------------------------------------------
+# Severity used when logging a failed assertion (s0, s1, s2, s3). Default: s0
+# .test.assertions.severity=s0
+
+# ------------------------------------------------------------------------------
+# Number of retries after an exceptional state during UI interaction. Default: 3
 # .test.exception.retries=3
 
 # ------------------------------------------------------------------------------
+# Defines the minimal execution time threshold for consecutive tests. Format: {tests}|{ms}. Default: 20|2000
+# .test.execution.time.safeguard=20|2000
 
-# Whether to produce an exceptional state on failed assertions.
-# .test.assertions.produce.exception=true
+# ------------------------------------------------------------------------------
+# Stops test execution when an event reaches this severity level. Default: s1
+# .test.fail.by.event.of.severity=s1
 
-# Severity used when logging failed assertions (S0, S1, S2, or S3).
-# .test.assertions.severity=s0
+# ------------------------------------------------------------------------------
+# Runs browser automation without displaying a browser window when enabled. Default: false
+# .test.headless=false
+
+# ------------------------------------------------------------------------------
+# Limits known issue markers in reports to nodes that have actually executed and failed. Default: false
+# .test.known.issues.failed.only=false
+
+# ------------------------------------------------------------------------------
+# Severity assigned to an operation that exceeds the long-operation threshold. Default: s0
+# .test.long.operation.severity=s0
+
+# ------------------------------------------------------------------------------
+# Duration in milliseconds above which an operation is reported as long. Default: 9999
+# .test.long.operation.threshold=9999
+
+# ------------------------------------------------------------------------------
+# Maximum delay, in milliseconds, used when simulating typing. Default: 50
+# .test.max.typing.delay=50
+
+# ------------------------------------------------------------------------------
+# Interval in milliseconds between checks for a manual pause. Default: 5000
+# .test.pause.length=5000
+
+# ------------------------------------------------------------------------------
+# Enables resilient mode where execution continues after exceptions to collect all failures. Default: false
+# .test.resilient.mode=false
+
+# ------------------------------------------------------------------------------
+# Number of test cycles to execute; leave unset for default. Default:
+# .test.tests=99
+
+# ==============================================================================
+# Reporting & Progression Settings
+# ==============================================================================
+
+# Includes all-leaf completion time records in HTML reports and outputs. Default: true
+# .test.report.add.all.leaf=true
+
+# ------------------------------------------------------------------------------
+# Includes CPU telemetry measurements and resource charts in HTML reports. Default: true
+# .test.report.add.cpu.debug=true
+
+# ------------------------------------------------------------------------------
+# Includes ETA debug timeline charts and instability metrics in HTML reports. Default: true
+# .test.report.add.eta.debug=true
+
+# ------------------------------------------------------------------------------
+# Maximum data points density for CPU/RAM telemetry graphs in reports. Default: 5000
+# .test.report.cpu.density=5000
+
+# ------------------------------------------------------------------------------
+# Downsamples CPU/RAM telemetry data points to match test count. Default: false
+# .test.report.cpu.density.per.test=false
+
+# ------------------------------------------------------------------------------
+# Initializes the All-Leaf Completion chart scale mode to logarithmic by default. Default: false
+# .test.report.log.scale.all.leaf=false
+
+# ------------------------------------------------------------------------------
+# Initializes the System Resources chart scale mode to logarithmic by default. Default: false
+# .test.report.log.scale.cpu.debug=false
+
+# ------------------------------------------------------------------------------
+# Initializes the ETA Debug chart scale mode to logarithmic by default. Default: false
+# .test.report.log.scale.eta.debug=false
+
+# ------------------------------------------------------------------------------
+# Initializes the Test Execution Duration timeline chart scale mode to logarithmic. Default: false
+# .test.report.log.scale.timeline=false
+
+# ------------------------------------------------------------------------------
+# Executable name or path to FFmpeg, used when generating progression videos. Default: ffmpeg
+# .test.report.progression.ffmpeg=ffmpeg
+
+# ------------------------------------------------------------------------------
+# Maximum pixel count permitted for a single progression frame. Default: 167772160
+# .test.report.progression.max.frame.pixels=167772160
+
+# ------------------------------------------------------------------------------
+# Maximum number of progression frames retained and included in generated animations. Default: 5000
+# .test.report.progression.max.frames=5000
+
+# ------------------------------------------------------------------------------
+# Maximum total pixel count processed for a single progression animation. Default: 2000000000
+# .test.report.progression.max.total.pixels=2000000000
+
+# ------------------------------------------------------------------------------
+# Generates frames and animations showing scenario coverage progression. Default: true
+# .test.report.progression.scenario=true
+
+# ------------------------------------------------------------------------------
+# Generates a GIF animation of scenario coverage progression. Default: false
+# .test.report.progression.scenario.gif=false
+
+# ------------------------------------------------------------------------------
+# Generates an MP4 video of scenario coverage progression. Default: true
+# .test.report.progression.scenario.mp4=true
+
+# ------------------------------------------------------------------------------
+# Generates a WebP animation of scenario coverage progression. Default: true
+# .test.report.progression.scenario.webp=true
+
+# ------------------------------------------------------------------------------
+# Generates frames and animations showing test-tree progression. Default: true
+# .test.report.progression.tree=true
+
+# ------------------------------------------------------------------------------
+# Generates a GIF animation of test-tree progression. Default: false
+# .test.report.progression.tree.gif=false
+
+# ------------------------------------------------------------------------------
+# Generates an MP4 video of test-tree progression. Default: true
+# .test.report.progression.tree.mp4=true
+
+# ------------------------------------------------------------------------------
+# Generates a test-tree progression frame on every executed scenario node. Default: false
+# .test.report.progression.tree.per.node=false
+
+# ------------------------------------------------------------------------------
+# Adds deterministic musical sonification to tree progression MP4s (none, copilot, claude, gemini). Default: none
+# .test.report.progression.tree.sonification=none
+
+# ------------------------------------------------------------------------------
+# Generates a WebP animation of test-tree progression. Default: true
+# .test.report.progression.tree.webp=true

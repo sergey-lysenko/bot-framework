@@ -197,7 +197,7 @@ public class ControlPanel extends JFrame implements _Dashboard {
         tabbedPane.addChangeListener(e -> {
             final int selectedIndex = tabbedPane.getSelectedIndex();
             if (selectedIndex == 1) { // Switching to Run Setup tab
-                configTestsEditorPanel.saveSilentlyIfModified();
+                configTestsEditorPanel.promptToSaveIfModified();
                 if (isNotNull(gui)) {
                     gui.refreshTestDropdown();
                 }

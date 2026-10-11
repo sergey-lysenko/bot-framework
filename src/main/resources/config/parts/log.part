@@ -1,35 +1,56 @@
 # ==============================================================================
-# Sleep and Logging Settings
+# Logging & Table Formatting Settings
 # ==============================================================================
-# How short a sleep duration should be to avoid adding a log message. Default: 10 (milliseconds)
-# .logs.silent.sleeping.border=10
-# ------------------------------------------------------------------------------
-# Log table width for alignment in printed logs.
-# .logs.table.width=192
-# ------------------------------------------------------------------------------
-# Ranger-specific log width for aligned output.
-# .grid.ranger.log.width=99
 
-# ==============================================================================
-# Long Operation Settings
-# ==============================================================================
-# Maximum duration of an operation to be considered "long". Default: 9999 (milliseconds)
-# .test.long.operation.threshold=9999
+# Preferred width in characters for aligned log tables. Default: 99
+# .logs.table.width=99
+
 # ------------------------------------------------------------------------------
-# Severity level for long operations. Default: 0
-# .test.long.operation.severity=1
+# Pattern used to format fractional seconds in log timestamps. Default: .000
+# .logs.time.stamp.format=.000
+
+# ------------------------------------------------------------------------------
+# Comma-separated log types to collect from the browser, client, driver, performance, profiler, and server. Default:
+# .logs.to.read=browser,client,driver,performance,profiler,server
+
+# ------------------------------------------------------------------------------
+# Sleep durations shorter than this threshold, in milliseconds, do not produce a log message. Default: 10
+# .logs.silent.sleeping.threshold=10
 
 # ==============================================================================
 # Log Line Similarity Settings
 # ==============================================================================
-# Enable or disable log line similarity checks. Default: true
+
+# Enables detection and grouping of similar log lines. Default: true
 # .logs.lines.similarity.check=true
+
 # ------------------------------------------------------------------------------
-# Maximum allowed difference (in milliseconds) between logged operations for similarity comparison. Default: 2500
-.logs.lines.similarity.delta=2500
+# Maximum time difference, in milliseconds, considered when matching log lines as similar. Default: 3000
+# .logs.lines.similarity.delta=3000
+
 # ------------------------------------------------------------------------------
-# Number of consecutive log lines to include in similarity checks. Default: 1
-.logs.lines.similarity.depth=7
+# Number of consecutive log lines considered together when checking for similarity. Default: 1
+# .logs.lines.similarity.depth=1
+
 # ------------------------------------------------------------------------------
-# Maximum number of characters to check for similarity. Default: 5
-.logs.lines.similarity.limit=71
+# Maximum number of characters considered when comparing log lines for similarity. Default: 5
+# .logs.lines.similarity.limit=5
+
+# ==============================================================================
+# Log Rate Threshold Settings
+# ==============================================================================
+
+# Upper threshold for assigning the lowest configured log-rate colour. Default: 19
+# .logs.rate.1=19
+
+# ------------------------------------------------------------------------------
+# Upper threshold for assigning the next configured log-rate colour. Default: 49
+# .logs.rate.2=49
+
+# ------------------------------------------------------------------------------
+# Upper threshold for assigning the next configured log-rate colour. Default: 99
+# .logs.rate.3=99
+
+# ------------------------------------------------------------------------------
+# Upper threshold for assigning the highest configured log-rate colour. Default: 999
+# .logs.rate.4=999

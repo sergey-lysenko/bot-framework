@@ -2,6 +2,7 @@ package works.lysenko.base.parameters;
 
 import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.base.output.ProgressionSettings;
+import works.lysenko.base.ui.ConfigTestsEditorPanel;
 import works.lysenko.util.spec.PropEnum;
 
 import java.awt.Color;
@@ -19,9 +20,8 @@ import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.func.type.fractions.Factory.fr;
 
 /**
- * Validates property values entered in {@link PropertiesDialog} against the type declared in {@link PropEnum}
- * (plus per-property constraints). Properties unknown to {@link PropEnum} are free-form and always valid.
- * An empty value means "unset" and is always valid.
+ * Validates property keys and values entered in UI components or read from configuration files
+ * against the declared properties in {@link PropEnum}.
  */
 public final class PropertyValidator {
 
@@ -34,6 +34,82 @@ public final class PropertyValidator {
     private static List<String> cachedProperties = null;
 
     private PropertyValidator() {
+    }
+
+    /**
+     * Checks if a property key starting with '.' is a known PropEnum property.
+     *
+     * @param propertyName property key, e.g. {@code .test.tests}
+     * @return true if known or .include, false otherwise
+     */
+    public static boolean isKnownConfigProperty(final String propertyName) {
+        if (null == propertyName) return false;
+        final String trimmed = propertyName.trim();
+        if (trimmed.equalsIgnoreCase(".include") || trimmed.equalsIgnoreCase("include")) return true;
+        for (final PropEnum p : PropEnum.values()) {
+            if (p.getPropertyName().equalsIgnoreCase(trimmed)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Finds the closest known PropEnum property name for a misspelled or invalid property key.
+     *
+     * @param propertyName property key
+     * @return closest known property name, or null if no close match found
+     */
+    public static String findClosestProperty(final String propertyName) {
+        if (null == propertyName || propertyName.isEmpty()) return null;
+        String bestMatch = null;
+        int minDistance = Integer.MAX_VALUE;
+        final String lower = propertyName.toLowerCase(Locale.ROOT);
+        for (final PropEnum p : PropEnum.values()) {
+            final String propName = p.getPropertyName();
+            final int dist = org.apache.commons.lang3.StringUtils.getLevenshteinDistance(lower, propName.toLowerCase(Locale.ROOT));
+            if (dist < minDistance && dist <= 6) {
+                minDistance = dist;
+                bestMatch = propName;
+            }
+        }
+        return bestMatch;
+    }
+
+    /**
+     * Validates a property key for a given file category or context.
+     *
+     * @param key      property key
+     * @param category file category (can be null)
+     * @return human-readable error if key is invalid, or null if key is valid
+     */
+    public static String validateKey(final String key, final ConfigTestsEditorPanel.FileCategory category) {
+        if (null == key || key.isBlank()) return "Property key cannot be empty";
+        final String trimmed = key.trim();
+        if (trimmed.startsWith(".")) {
+            if (!isKnownConfigProperty(trimmed)) {
+                final String suggestion = findClosestProperty(trimmed);
+                if (isNotNull(suggestion)) {
+                    return "Unknown configuration key '" + trimmed + "'. Did you mean '" + suggestion + "'?";
+                }
+                return "Unknown configuration key '" + trimmed + "'";
+            }
+        } else if (category == ConfigTestsEditorPanel.FileCategory.GLOBAL_CONFIG || category == ConfigTestsEditorPanel.FileCategory.CONFIG_PART) {
+            return "Scenario key '" + trimmed + "' is not allowed in configuration files (keys must start with '.')";
+        }
+        return null;
+    }
+
+    /**
+     * Validates both key and value for a property in a given file category.
+     *
+     * @param key      property key
+     * @param value    property value
+     * @param category file category (can be null)
+     * @return human-readable error if invalid, or null if valid
+     */
+    public static String validateProperty(final String key, final String value, final ConfigTestsEditorPanel.FileCategory category) {
+        final String keyErr = validateKey(key, category);
+        if (isNotNull(keyErr)) return keyErr;
+        return validate(key, value);
     }
 
     /**
@@ -128,7 +204,6 @@ public final class PropertyValidator {
             final String prefixToRemove = rootPackage + ".";
             final Set<String> scenarioNames = new HashSet<>();
             
-            // 1. Traverse constructed virtual tree to resolve aliases and sub-scenarios
             try {
                 final works.lysenko.tree.Tree tree = new works.lysenko.tree.Tree(rootPackage);
                 if (isNotNull(tree.getBranches())) {
@@ -137,10 +212,8 @@ public final class PropertyValidator {
                     }
                 }
             } catch (final Exception ignored) {
-                // Ignore virtual tree resolution failures
             }
             
-            // 2. Reflectively scan rootPackage ONLY for unattached scenario classes inside rootPackage
             try {
                 final Reflections reflections = new Reflections(rootPackage);
                 
@@ -155,7 +228,6 @@ public final class PropertyValidator {
                 reflections.getSubTypesOf(works.lysenko.tree.base.Leaf.class).forEach(addStrippedName);
                 reflections.getSubTypesOf(works.lysenko.tree.base.Mono.class).forEach(addStrippedName);
             } catch (final Exception ignored) {
-                // Ignore reflections failures
             }
             
             cachedProperties.addAll(scenarioNames);
@@ -182,7 +254,7 @@ public final class PropertyValidator {
 
         if (null == propertyName) return null;
         for (final PropEnum property : PropEnum.values()) {
-            if (property.getPropertyName().equals(propertyName)) return property;
+            if (property.getPropertyName().equalsIgnoreCase(propertyName)) return property;
         }
         return null;
     }

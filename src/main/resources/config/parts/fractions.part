@@ -1,9 +1,10 @@
-# -------------------------------------------------------------------------------------------------
-# Number of decimal places to consider when converting decimal values to fractions.
-# Controls the precision of the fraction translation.
-# .math.fractions.accuracy=7
+# ==============================================================================
+# Math & Fraction Translation Settings
+# ==============================================================================
 
-# -------------------------------------------------------------------------------------------------
-# Enable or disable output of fractions in the result.
-# (true = fractions will be included in the output, false = no fractions output)
-# .math.fractions.output=true
+# Maximum decimal precision used when representing fractional values. Default: 9
+# .math.fractions.accuracy=9
+
+# ------------------------------------------------------------------------------
+# Displays fractional values in fraction form where supported instead of decimal form. Default: false
+# .math.fractions.output=false

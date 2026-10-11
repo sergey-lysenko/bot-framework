@@ -1,60 +1,68 @@
 # ==============================================================================
-# Scenario Configuration
+# Scenario & Tree Topology Configuration
 # ==============================================================================
 
-# Maximum number (or depth) of scenarios within a single case.
-# .tree.scenario.depth.safeguard=64
+# Maximum scenario-tree depth allowed before a safeguard is triggered. Default: 20
+# .tree.scenario.depth.safeguard=20
 
 # ------------------------------------------------------------------------------
-# Maximum number (or depth) of scenario history entries in a single case.
-# .tree.scenario.history.depth.safeguard=64
+# Maximum scenario history depth retained before a safeguard is triggered. Default: 20
+# .tree.scenario.history.depth.safeguard=20
 
 # ------------------------------------------------------------------------------
-# Number of attempts to fit a scenario before marking it as failed.
-# .test.scenario.fitting.attempts=5
+# Number of attempts used when retrying scenario sufficiency checks. Default: 9
+# .test.scenario.sufficiency.attempts=9
 
 # ------------------------------------------------------------------------------
-# Weight coefficient added to unexecuted scenarios.
+# Controls how strongly scenario selection favours unfinished work. Default: 4.5
 # .tree.completion.weight=4.5
 
 # ------------------------------------------------------------------------------
-# Execute tests dynamically until all accessible leafs are covered.
-# .test.all.leafs=false
-
-# ------------------------------------------------------------------------------
-# Weight coefficient assigned to scenarios that are omitted.
+# Weight assigned to scenarios when no explicit weight is configured. Default: 0.0
 # .tree.default.weight=0.0
 
 # ------------------------------------------------------------------------------
-# Whether to continue execution even if a scenario selection fails.
+# Default result used when a scenario fit cannot otherwise be determined. Default: false
+# .tree.fits.by.default=false
+
+# ------------------------------------------------------------------------------
+# Allows execution to continue when selecting scenarios fails. Default: false
 # .tree.ignore.failed.scenario.selection=false
 
 # ------------------------------------------------------------------------------
-# Forbid over-execution of leaf scenarios that have fulfilled their target goal.
+# When true, leaf scenarios that have reached their target execution count are set to weight 0 and marked non-executable. Default: false
 # .tree.forbid.overexecution=false
 
+# ------------------------------------------------------------------------------
+# Enables 16:9 layout optimization and compaction for scenario execution trees. Default: true
+# .tree.progression.optimization=true
+
 # ==============================================================================
-# Test Node Configuration
+# Test Node Weight Propagation
 # ==============================================================================
 
-# Weight propagation for test nodes.
-# .tree.include.downstream=true
-# .tree.include.upstream=true
-# .tree.traverse.extensions=true
+# Includes downstream test nodes when propagating or calculating test node weights. Default: false
+# .tree.include.downstream=false
+
+# ------------------------------------------------------------------------------
+# Includes upstream test nodes when propagating or calculating test node weights. Default: false
+# .tree.include.upstream=false
+
+# ------------------------------------------------------------------------------
+# Resolves inherited scenarios through their superclass chain when determining scenario weights. Default: false
+# .tree.traverse.extensions=false
 
 # ==============================================================================
 # Notices and Warnings
 # ==============================================================================
 
-# Display a notice if a scenario cannot be executed.
-# .tree.scenario.not.executable.notice=false
+# Displays a notice when a scenario package contains no executable scenarios. Default: true
+# .tree.notify.about.empty.scenario.packages=true
 
 # ------------------------------------------------------------------------------
-
-# Display a notice if a scenario fails to fit.
-# .tree.scenario.does.not.fit.notice=false
+# Displays a notice when a scenario does not fit the current execution conditions. Default: true
+# .tree.scenario.does.not.fit.notice=true
 
 # ------------------------------------------------------------------------------
-
-# Notify if there are empty scenario packages.
-# .tree.notify.about.empty.scenario.packages=false
+# Displays a notice when a scenario cannot be executed. Default: true
+# .tree.scenario.not.executable.notice=true

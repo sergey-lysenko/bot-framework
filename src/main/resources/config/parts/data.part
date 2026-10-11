@@ -1,9 +1,26 @@
-# -------------------------------------------------------------------------------------------------
-# Enable or disable persistence of test data between test runs.
-# (true = test data will be saved across runs)
-# .data.persist=true
+# ==============================================================================
+# Data Storage & Persistence Settings
+# ==============================================================================
 
-# -------------------------------------------------------------------------------------------------
-# Allow creating a snapshot of the current test data contents after each modification.
-# (true = snapshots allowed for storage modifications)
-# .data.snapshots.allowed=true
+# Delimiter used between top-level entries in framework-serialized values. Default: |
+# .data.delimiter.l0=|
+
+# ------------------------------------------------------------------------------
+# Delimiter used between level-one entries in framework-serialized values. Default: ,
+# .data.delimiter.l1=,
+
+# ------------------------------------------------------------------------------
+# Delimiter used between level-two entries in framework-serialized values. Default: ;
+# .data.delimiter.l2=;
+
+# ------------------------------------------------------------------------------
+# Preserves test data between test runs. Default: false
+# .data.persist=false
+
+# ------------------------------------------------------------------------------
+# Creates a snapshot of test data storage after each modification. Default: false
+# .data.snapshots.allowed=false
+
+# ------------------------------------------------------------------------------
+# Includes full test data contents in snapshots instead of only the changed data. Default: false
+# .data.snapshots.full=false

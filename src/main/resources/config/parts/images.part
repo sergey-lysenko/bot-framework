@@ -1,77 +1,216 @@
-# -------------------------------------------------------------------------------------------------
-# Grid Settings
-# -------------------------------------------------------------------------------------------------
-# Maximum length for grid log lines.
-# .grid.log.line.max.length=1000
+# ==============================================================================
+# Grid & Colour Validation Settings
+# ==============================================================================
 
-# Precision (epsilon value) for grid validation scale. Default: 0.0001
-# .grid.validation.scale.epsilon=0.002
+# RGBA colour used to draw action markers on screenshots. Default: 255,128,0,128
+# .grid.action.marker.colour=255,128,0,128
 
-# Allow validation of empty grids. Default: false
-# .grid.empty.grid.validation.allowed=true
+# ------------------------------------------------------------------------------
+# Maximum severity reduction allowed for an out-of-range result within margin. Default: 2
+# .grid.allowed.margin.severity.reduction=2
 
-# -------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Maximum severity reduction allowed for other tolerated validation differences. Default: 2
+# .grid.allowed.other.severity.reduction=2
+
+# ------------------------------------------------------------------------------
+# Threshold used when comparing colours for similarity. Default: 1
+# .grid.colour.similarity.threshold=1
+
+# ------------------------------------------------------------------------------
+# Default tolerance for ranged colour comparisons. Default: 0
+# .grid.default.colour.ranged.margin=0
+
+# ------------------------------------------------------------------------------
+# Default horizontal grid dimension or ratio. Default: 1/2
+# .grid.default.horisontal=1/2
+
+# ------------------------------------------------------------------------------
+# Default tolerance for HSV colour comparisons. Default: 0
+# .grid.default.hsv.margin=0
+
+# ------------------------------------------------------------------------------
+# Default tolerance for polychromy comparisons. Default: 0
+# .grid.default.polychromy.margin=0
+
+# ------------------------------------------------------------------------------
+# Default grid resolution. Default: 3*3
+# .grid.default.resolution=3*3
+
+# ------------------------------------------------------------------------------
+# Default scale applied to a grid. Default: 1
+# .grid.default.scale=1
+
+# ------------------------------------------------------------------------------
+# Default vertical grid dimension or ratio. Default: 1/2
+# .grid.default.vertical=1/2
+
+# ------------------------------------------------------------------------------
+# Allows colour-grid validation to proceed when the grid contains no cells. Default: false
+# .grid.empty.grid.validation.allowed=false
+
+# ------------------------------------------------------------------------------
+# Severity assigned when a validation produces an empty result. Default: false
+# .grid.empty.result.severity=false
+
+# ------------------------------------------------------------------------------
+# Maximum number of characters in a grid-related log line. Default: 999
+# .grid.log.line.max.length=999
+
+# ------------------------------------------------------------------------------
+# Severity assigned when a validation produces a null result. Default: s0
+# .grid.null.result.severity=s0
+
+# ------------------------------------------------------------------------------
+# Logs when a configured range is absent from the validation result. Default: true
+# .grid.ranger.log.absent.range=true
+
+# ------------------------------------------------------------------------------
+# Logs range boundaries while reporting range-validation results. Default: true
+# .grid.ranger.log.boundaries=true
+
+# ------------------------------------------------------------------------------
+# Logs values outside a range even when they do not fail validation. Default: true
+# .grid.ranger.log.non.failing.out.of.bounds=true
+
+# ------------------------------------------------------------------------------
+# Logs when the order of values or ranges changes. Default: true
+# .grid.ranger.log.order.change=true
+
+# ------------------------------------------------------------------------------
+# Logs when a value stretches beyond the configured range. Default: true
+# .grid.ranger.log.overstretch=true
+
+# ------------------------------------------------------------------------------
+# Logs range scale checks. Default: true
+# .grid.ranger.log.scale.check=true
+
+# ------------------------------------------------------------------------------
+# Includes detailed diagnostic information for range scale checks. Default: true
+# .grid.ranger.log.scale.debug=true
+
+# ------------------------------------------------------------------------------
+# Logs checks that verify values or ranges are sorted. Default: true
+# .grid.ranger.log.sort.check=true
+
+# ------------------------------------------------------------------------------
+# Logs when a range is considered unusually wide. Default: true
+# .grid.ranger.log.wide.range=true
+
+# ------------------------------------------------------------------------------
+# Preferred width in characters for aligned range-validation log output. Default: 96
+# .grid.ranger.log.width=96
+
+# ------------------------------------------------------------------------------
+# Allows image-based validation expectations to be reduced to fit the observed result. Default: false
+# .grid.shrink.expectations=false
+
+# ------------------------------------------------------------------------------
+# Compresses generated grid stamps before storing them. Default: true
+# .grid.stamps.compress=true
+
+# ------------------------------------------------------------------------------
+# Displays generated grid stamps in output. Default: true
+# .grid.stamps.display=true
+
+# ------------------------------------------------------------------------------
+# Processes generated grid stamps during validation and reporting. Default: true
+# .grid.stamps.process=true
+
+# ------------------------------------------------------------------------------
+# Updates stored colour expectations from the current validation result. Default: false
+# .grid.update.colour.expectations=false
+
+# ------------------------------------------------------------------------------
+# Updates stored HSV expectations from the current validation result. Default: false
+# .grid.update.hsv.expectations=false
+
+# ------------------------------------------------------------------------------
+# Updates stored expectations for validations that passed. Default: false
+# .grid.update.passed.expectations=false
+
+# ------------------------------------------------------------------------------
+# Updates stored polychromy expectations from the current validation result. Default: false
+# .grid.update.polychromy.expectations=false
+
+# ------------------------------------------------------------------------------
+# Default colour-comparison border tolerance used during grid validation. Default: 1/999
+# .grid.validation.default.border=1/999
+
+# ------------------------------------------------------------------------------
+# Default fence tolerance used when validating grid values. Default: 9
+# .grid.validation.fences=9
+
+# ------------------------------------------------------------------------------
+# Threshold used when validating hue, saturation, and brightness differences. Default: 1/99
+# .grid.validation.hsb.threshold=1/99
+
+# ------------------------------------------------------------------------------
+# Floating-point tolerance used when comparing grid scales during validation. Default: 0.0001
+# .grid.validation.scale.epsilon=0.0001
+
+# ------------------------------------------------------------------------------
+# Enables colour verification during grid validation. Default: false
+# .grid.verify.colours=false
+
+# ------------------------------------------------------------------------------
+# Fractional threshold used to classify or report a range as wide. Default: 1/22
+# .grid.wide.range.threshold=1/22
+
+# ==============================================================================
 # Screenshot Settings
-# -------------------------------------------------------------------------------------------------
-# Enable screenshots for each image region bound by color. Default: false
-# .screenshots.of.binds=true
+# ==============================================================================
 
-# Enable screenshots for all click actions. Default: false
-# .screenshots.of.clicks=true
+# Captures screenshots for image regions identified by colour-based bounds. Default: false
+# .screenshots.of.binds=false
 
-# Enable screenshots for long procedural click actions. Default: false
-# .screenshots.of.long.clicks=true
+# ------------------------------------------------------------------------------
+# Captures a screenshot after each click. Default: false
+# .screenshots.of.clicks=false
 
-# Enable screenshots for picked pixels. Default: false
-# .screenshots.of.pixels=true
+# ------------------------------------------------------------------------------
+# Captures a screenshot after each long procedural click. Default: false
+# .screenshots.of.long.clicks=false
 
-# Enable screenshots for swipe actions. Default: false
-# .screenshots.of.swipes=true
+# ------------------------------------------------------------------------------
+# Diameter in pixels of the marker shown for long procedural clicks. Default: 50
+# .screenshots.of.long.clicks.marker.diameter=50
 
-# Marker colors for swipe gesture screenshots (RGBA format).
+# ------------------------------------------------------------------------------
+# Captures screenshots for individual pixels used in image-based validation. Default: false
+# .screenshots.of.pixels=false
+
+# ------------------------------------------------------------------------------
+# Captures a screenshot after each swipe. Default: false
+# .screenshots.of.swipes=false
+
+# ==============================================================================
+# Swipe & Gesture Settings
+# ==============================================================================
+
+# Reduction factor applied to large swipes when deriving swipe coordinates. Default: -10.0
+# .swipes.big.reduction=-10.0
+
+# ------------------------------------------------------------------------------
+# Default reduction factor applied when deriving swipe coordinates. Default: -2.0
+# .swipes.default.reduction=-2.0
+
+# ------------------------------------------------------------------------------
+# Default weight assigned to swipe interactions in weighted calculations. Default: 1.0
+# .swipes.default.weight=1.0
+
+# ------------------------------------------------------------------------------
+# Reduction factor applied to medium-sized swipes when deriving swipe coordinates. Default: -4.5
+# .swipes.medium.reduction=-4.5
+
+# ------------------------------------------------------------------------------
+# RGBA colour used to draw the swipe path in screenshots. Default: 0,0,0,128
 # .swipes.marker.line.colour=0,0,0,128
+
+# ------------------------------------------------------------------------------
+# RGBA colour used to mark the start of a swipe in screenshots. Default: 0,255,0,128
 # .swipes.marker.start.colour=0,255,0,128
+
+# ------------------------------------------------------------------------------
+# RGBA colour used to mark the end of a swipe in screenshots. Default: 255,0,0,128
 # .swipes.marker.stop.colour=255,0,0,128
-
-# Marker diameter for long click actions in screenshots. Default: 50
-# .screenshots.of.clicks.marker.diameter=50
-
-# Action marker color for general highlights in screenshots (RGBA format). Default: 255,128,0,128
-# .grid.action.marker.colour=0,128,32,128
-
-# -------------------------------------------------------------------------------------------------
-# Color and Probe Settings
-# -------------------------------------------------------------------------------------------------
-# Threshold for color similarity validation. Default: 1.0 (PropEnum: _GRID_COLOUR_SIMILARITY_THRESHOLD).
-# .grid.colour.similarity.border=1
-
-# Define severity levels for null or empty results (uses default values from PropEnum if not configured):
-# Null result severity: Default 0
-# Empty result severity: Default 0
-# .grid.null.result.severity=0
-# .grid.empty.result.severity=0
-
-# -------------------------------------------------------------------------------------------------
-# Automatic Matrix/Expectations Update
-# -------------------------------------------------------------------------------------------------
-# Margins for color, HSV, and polychromy validation. Defaults are specified in `PropEnum`
-# .grid.default.colour.ranged.margin=a1/33|r1/3
-# .grid.default.hsv.margin=1/111
-# .grid.default.polychromy.margin=1/111
-
-# Shrink expectations for color-based validations.
-# .grid.shrink.expectations=true
-
-# Dynamically update expectations for:
-# Colour validations. Default: false
-# .grid.update.colour.expectations=true
-
-# HSV validations. Default: false
-# .grid.update.hsv.expectations=true
-
-# Passed test data. Default: false
-# .grid.update.passed.expectations=true
-
-# Polychromy validations. Default: false
-# .grid.update.polychromy.expectations=true
-# -------------------------------------------------------------------------------------------------

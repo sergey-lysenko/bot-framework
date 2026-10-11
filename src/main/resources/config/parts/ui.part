@@ -1,20 +1,21 @@
 # ==============================================================================
-# General Configuration
+# Dashboard & Display UI Settings
 # ==============================================================================
 
-# Time interval (in milliseconds) between checking the state of a manual pause.
-# .test.pause.length=5000
-
-# ------------------------------------------------------------------------------
-# Screen index to spawn the UI interface (dashboard).
+# Screen index on which to open the dashboard. Default: 0
 # .screen.to.spawn.dashboard=0
 
-# ------------------------------------------------------------------------------
-# Default native resolution (e.g., corresponds to Google Pixel 4).
+# ==============================================================================
+# Mobile Device Resolution & Identifier Settings
+# ==============================================================================
+
+# Native screen width in pixels used for coordinate-based mobile interactions. Default: 1080
 # .mobi.native.x.resolution=1080
+
+# ------------------------------------------------------------------------------
+# Native screen height in pixels used for coordinate-based mobile interactions. Default: 2280
 # .mobi.native.y.resolution=2280
 
 # ------------------------------------------------------------------------------
-# Number of retries allowed for various actions.
-# .test.action.retries=3
-# .test.scenario.sufficiency.attempts = 11
+# Device identifier (UDID) used to select a specific mobile device. Default:
+# .mobi.ud.id=

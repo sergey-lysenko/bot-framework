@@ -385,12 +385,12 @@ public class TestProperties implements _TestProperties {
             if (parameters.isHeadless()) {
                 the.setProperty(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(true));
             } else {
-                the.remove(PropEnum._TEST_HEADLESS.getPropertyName());
+                the.setProperty(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(false));
             }
             if (parameters.isAllLeafs()) {
                 the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(true));
             } else {
-                the.remove(PropEnum._TEST_ALL_LEAFS.getPropertyName());
+                the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(false));
             }
             if (1 < parameters.getAllLeafsCount()) {
                 the.setProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(parameters.getAllLeafsCount()));
@@ -464,12 +464,12 @@ public class TestProperties implements _TestProperties {
         if (Boolean.TRUE.equals(isHeadless)) {
             the.setProperty(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(true));
         } else if (Boolean.FALSE.equals(isHeadless)) {
-            the.remove(PropEnum._TEST_HEADLESS.getPropertyName());
+            the.setProperty(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(false));
         }
         if (Boolean.TRUE.equals(isAllLeafs) || (isNotNull(allLeafsCount) && 1 < allLeafsCount)) {
             the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(true));
         } else if (Boolean.FALSE.equals(isAllLeafs)) {
-            the.remove(PropEnum._TEST_ALL_LEAFS.getPropertyName());
+            the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(false));
         }
         if (isNotNull(allLeafsCount) && 1 < allLeafsCount) {
             the.setProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(allLeafsCount));
@@ -532,12 +532,12 @@ public class TestProperties implements _TestProperties {
         if (Boolean.TRUE.equals(isHeadless)) {
             effective.put(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(true));
         } else if (Boolean.FALSE.equals(isHeadless)) {
-            effective.put(PropEnum._TEST_HEADLESS.getPropertyName(), PropEnum._TEST_HEADLESS.defaultValue());
+            effective.put(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(false));
         }
         if (Boolean.TRUE.equals(isAllLeafs) || (isNotNull(allLeafsCount) && 1 < allLeafsCount)) {
             effective.put(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(true));
         } else if (Boolean.FALSE.equals(isAllLeafs)) {
-            effective.put(PropEnum._TEST_ALL_LEAFS.getPropertyName(), PropEnum._TEST_ALL_LEAFS.defaultValue());
+            effective.put(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(false));
         }
         if (isNotNull(allLeafsCount) && 1 < allLeafsCount) {
             effective.put(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(allLeafsCount));
