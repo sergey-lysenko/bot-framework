@@ -436,7 +436,7 @@ a.path-step { text-decoration: none; }
         const candidates = document.querySelectorAll('.log-line-entry.is-scenario[data-test="' + tNum + '"]');
         for (const el of candidates) {
           const elScen = el.getAttribute('data-scenario').toLowerCase();
-          if (elScen === sc || elScen.endsWith('.' + sc)) {
+          if (elScen === sc || elScen.startsWith(sc + '.') || elScen.endsWith('.' + sc) || elScen.includes('.' + sc + '.')) {
             target = el;
             break;
           }
@@ -504,6 +504,7 @@ a.path-step { text-decoration: none; }
     const mt = 26.0, mb = 34.0;
     const pw = width - ml - mr, ph = height - mt - mb;
     const tCeil = window.lgTCeil, lCeil = window.lgLCeil, tAvg = window.lgTAvg || 0;
+    const isLog = (window.timelineScaleMode === 'log');
 
     let svg = `<svg class="timeline-line-svg" viewBox="0 0 ${width} ${height}">
   <defs>
@@ -517,14 +518,18 @@ a.path-step { text-decoration: none; }
     </linearGradient>
   </defs>`;
 
+    const logTCeil = Math.log10(Math.max(1.0, tCeil) + 1.0);
+    const logLCeil = Math.log10(Math.max(1.0, lCeil) + 1.0);
+
     for (let k = 0; k <= 4; k++) {
       const ratio = k / 4.0;
       const y = (mt + ph) - ratio * ph;
-      const tVal = ratio * tCeil;
+      const tVal = isLog ? (ratio === 0.0 ? 0.0 : Math.pow(10, ratio * logTCeil) - 1.0) : ratio * tCeil;
+      const leftLabel = tVal < 1.0 ? Math.round(tVal * 1000) + 'ms' : (tVal < 10.0 ? tVal.toFixed(1) + 's' : Math.round(tVal) + 's');
       svg += `  <line x1="${ml.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(ml + pw).toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3,3" />
-  <text x="${(ml - 8).toFixed(1)}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" fill="#64748b" font-size="10" font-family="ui-monospace, monospace">${tVal.toFixed(1)}s</text>\n`;
+  <text x="${(ml - 8).toFixed(1)}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" fill="#64748b" font-size="10" font-family="ui-monospace, monospace">${leftLabel}</text>\n`;
       if (hasLimbo) {
-        const lVal = ratio * lCeil;
+        const lVal = isLog ? (ratio === 0.0 ? 0.0 : Math.pow(10, ratio * logLCeil) - 1.0) : ratio * lCeil;
         svg += `  <text class="lg-limbo-series" x="${(ml + pw + 8).toFixed(1)}" y="${(y + 3.5).toFixed(1)}" text-anchor="start" fill="#c084fc" font-size="10" font-family="ui-monospace, monospace">${Math.round(lVal)}ms</text>\n`;
       }
     }
@@ -548,7 +553,7 @@ a.path-step { text-decoration: none; }
     });
 
     if (tAvg > 0 && tAvg <= tCeil) {
-      const yAvg = (mt + ph) - (tAvg / tCeil) * ph;
+      const yAvg = calcY(tAvg, tCeil, mt, ph, isLog);
       svg += `  <line x1="${ml.toFixed(1)}" y1="${yAvg.toFixed(1)}" x2="${(ml + pw).toFixed(1)}" y2="${yAvg.toFixed(1)}" stroke="#0284c7" stroke-dasharray="5,4" stroke-width="1.2" opacity="0.75" />\n`;
     }
 
@@ -556,7 +561,30 @@ a.path-step { text-decoration: none; }
     for (let i = 0; i < N; i++) {
       const test = window.lgData[i];
       const x = ml + (N > 1 ? (i / (N - 1)) * pw : pw / 2.0);
-      const yT = (mt + ph) - Math.min(ph, (test.s / tCeil) * ph);
+      const yT = calcY(test.s, tCeil, mt, ph, isLog);
+
+      if (i === 0) {
+        testPath += `M ${x.toFixed(2)} ${yT.toFixed(2)}`;
+        testArea += `M ${x.toFixed(2)} ${(mt + ph).toFixed(2)} L ${x.toFixed(2)} ${yT.toFixed(2)}`;
+      } else {
+        testPath += ` L ${x.toFixed(2)} ${yT.toFixed(2)}`;
+        testArea += ` L ${x.toFixed(2)} ${yT.toFixed(2)}`;
+      }
+
+      if (hasLimbo) {
+        const lMs = test.l !== undefined && test.l !== null ? test.l : 0.0;
+        const yL = calcY(lMs / 1000.0, lCeil / 1000.0, mt, ph, isLog);
+        if (i === 0) {
+          limboPath += `M ${x.toFixed(2)} ${yL.toFixed(2)}`;
+          limboArea += `M ${x.toFixed(2)} ${(mt + ph).toFixed(2)} L ${x.toFixed(2)} ${yL.toFixed(2)}`;
+        } else {
+          limboPath += ` L ${x.toFixed(2)} ${yL.toFixed(2)}`;
+          limboArea += ` L ${x.toFixed(2)} ${yL.toFixed(2)}`;
+        }
+        if (i === N - 1) {
+          limboArea += ` L ${x.toFixed(2)} ${(mt + ph).toFixed(2)} Z`;
+        }
+      }
 
       if (i === 0) {
         testPath += `M ${x.toFixed(2)} ${yT.toFixed(2)}`;
@@ -960,20 +988,37 @@ a.path-step { text-decoration: none; }
     }
   }
 
-  window.leafLeftScaleMode = 'log';
-  window.leafRightScaleMode = 'log';
+  if (!window.timelineScaleMode) window.timelineScaleMode = 'linear';
+  if (!window.leafLeftScaleMode) window.leafLeftScaleMode = 'linear';
+  if (!window.leafRightScaleMode) window.leafRightScaleMode = 'linear';
   window.leafLeftCutoffSetting = 'auto';
   window.leafRightCutoffSetting = 'auto';
 
-  window.etaLeftScaleMode = 'log';
-  window.etaRightScaleMode = 'log';
+  if (!window.etaLeftScaleMode) window.etaLeftScaleMode = 'linear';
+  if (!window.etaRightScaleMode) window.etaRightScaleMode = 'linear';
   window.etaLeftCutoffSetting = 'auto';
   window.etaRightCutoffSetting = 'auto';
 
-  window.resLeftScaleMode = 'log';
-  window.resRightScaleMode = 'log';
+  if (!window.resLeftScaleMode) window.resLeftScaleMode = 'linear';
+  if (!window.resRightScaleMode) window.resRightScaleMode = 'linear';
   window.resLeftCutoffSetting = 'auto';
   window.resRightCutoffSetting = 'auto';
+
+  function switchTimelineScale(mode) {
+    window.timelineScaleMode = mode;
+    const btnLog = document.getElementById('btnTimelineLog');
+    const btnLinear = document.getElementById('btnTimelineLinear');
+    if (btnLog && btnLinear) {
+      if (mode === 'log') {
+        btnLog.classList.add('active');
+        btnLinear.classList.remove('active');
+      } else {
+        btnLinear.classList.add('active');
+        btnLog.classList.remove('active');
+      }
+    }
+    renderTimelineSvg();
+  }
 
   function switchLeafLeftScale(mode) {
     window.leafLeftScaleMode = mode;
@@ -1647,7 +1692,6 @@ a.path-step { text-decoration: none; }
     }
 
     svg += `  <path d="${pathRamTotal}" class="res-ram-total-line" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6"/>`;
-    svg += `  <path d="${pathRamTotal}" class="res-ram-total-line" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6"/>`;
     svg += `  <path d="${pathRamUsed}" class="res-ram-used-line" fill="none" stroke="#c084fc" stroke-width="2"/>`;
     svg += `  <path d="${pathCpu}" class="res-cpu-line" fill="none" stroke="#38bdf8" stroke-width="2"/>`;
 
@@ -1664,18 +1708,49 @@ a.path-step { text-decoration: none; }
         const testItem = (window.lgData && window.lgData[k]) ? window.lgData[k] : null;
         if (testItem) {
           const durSec = testItem.s || (testItem.ms ? testItem.ms / 1000.0 : 0);
-          if (durSec >= 1.5 && Y >= 30) {
-            const subCount = Math.min(20, Math.floor(durSec));
-            for (let s = 1; s <= subCount; s++) {
-              const xSub = xLeft + (s / durSec) * Y;
-              if (xSub < xRight - 2) {
-                svg += `  <line x1="${xSub.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xSub.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(148,163,184,0.18)" stroke-dasharray="2 2" stroke-width="1"/>`;
+          if (durSec >= 1.0 && Y >= 10) {
+            const pxPerSec = Y / durSec;
+
+            // Thin scale: 1 second interval, 30 seconds max
+            if (pxPerSec * 1.0 >= 1.5) {
+              const max1s = Math.min(Math.floor(durSec), 30);
+              for (let s = 1; s <= max1s; s++) {
+                if (s % 30 !== 0) {
+                  const xSub = xLeft + (s / durSec) * Y;
+                  if (xSub < xRight - 1) {
+                    svg += `  <line x1="${xSub.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xSub.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(148,163,184,0.18)" stroke-dasharray="2 2" stroke-width="0.8"/>`;
+                  }
+                }
+              }
+            }
+
+            // Slightly thicker scale: 30 seconds interval, 600 seconds max
+            if (pxPerSec * 30.0 >= 2.0) {
+              const max30s = Math.min(Math.floor(durSec), 600);
+              for (let s = 30; s <= max30s; s += 30) {
+                if (s % 600 !== 0) {
+                  const xSub = xLeft + (s / durSec) * Y;
+                  if (xSub < xRight - 1) {
+                    svg += `  <line x1="${xSub.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xSub.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(148,163,184,0.35)" stroke-dasharray="3 3" stroke-width="1.2"/>`;
+                  }
+                }
+              }
+            }
+
+            // Thickest scale: 600 seconds interval, 18000 seconds max
+            if (pxPerSec * 600.0 >= 2.0) {
+              const max600s = Math.min(Math.floor(durSec), 18000);
+              for (let s = 600; s <= max600s; s += 600) {
+                const xSub = xLeft + (s / durSec) * Y;
+                if (xSub < xRight - 1) {
+                  svg += `  <line x1="${xSub.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xSub.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(148,163,184,0.55)" stroke-dasharray="4 2" stroke-width="1.8"/>`;
+                }
               }
             }
           }
 
           if (Y >= 36 || numTests <= 15) {
-            const durStr = testItem.ms < 1000 ? Math.round(testItem.ms) + 'ms' : (durSec < 10.0 ? durSec.toFixed(2) + 's' : durSec.toFixed(1) + 's');
+            const durStr = testItem.ms < 1000 ? Math.round(testItem.ms) + 'ms' : (durSec < 10.0 ? durSec.toFixed(2) + 's' : (durSec < 60.0 ? durSec.toFixed(1) + 's' : (durSec < 3600.0 ? (durSec / 60.0).toFixed(1) + 'm' : (durSec / 3600.0).toFixed(1) + 'h')));
             const badgeLabel = `\u0394t ${durStr}`;
             const bw = Math.min(Y - 4, Math.max(38, badgeLabel.length * 5.8));
             svg += `  <g class="res-scale-badge" opacity="0.85">`;
@@ -1692,7 +1767,7 @@ a.path-step { text-decoration: none; }
         const xCenter = ml + (k + 0.5) * Y;
         const testItem = (window.lgData && window.lgData[k]) ? window.lgData[k] : null;
         const testNum = testItem ? testItem.n : (k + 1);
-        const durStr = testItem ? (testItem.ms < 1000 ? Math.round(testItem.ms) + 'ms' : testItem.s.toFixed(1) + 's') : '';
+        const durStr = testItem ? (testItem.ms < 1000 ? Math.round(testItem.ms) + 'ms' : (testItem.s < 60.0 ? testItem.s.toFixed(1) + 's' : (testItem.s < 3600.0 ? (testItem.s / 60.0).toFixed(1) + 'm' : (testItem.s / 3600.0).toFixed(1) + 'h'))) : '';
 
         svg += `  <line x1="${xCenter.toFixed(1)}" y1="${(mt + ph).toFixed(1)}" x2="${xCenter.toFixed(1)}" y2="${(mt + ph + 4).toFixed(1)}" stroke="rgba(255,255,255,0.15)"/>`;
         svg += `  <text x="${xCenter.toFixed(1)}" y="${(height - 15).toFixed(1)}" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600" font-family="ui-monospace, monospace">#${testNum}</text>`;

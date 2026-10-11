@@ -167,7 +167,7 @@ record Poster() {
      */
     static void logFailure(final Failure failure) {
 
-        if (Stop.atSeverity == failure.severity().ordinal() || Ranges.logNonFailingOutOfBounds) {
+        if (Stop.atSeverity == failure.severity() || Ranges.logNonFailingOutOfBounds) {
             final Collection<String> messages = new ArrayList<>(THREE);
             messages.addAll(List.of(getIntro(failure), getDescription(failure)));
             if (isNotNull(get_dVstring(failure))) messages.add(get_dVstring(failure));

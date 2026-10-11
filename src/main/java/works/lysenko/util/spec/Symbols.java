@@ -122,7 +122,5 @@ public record Symbols() {
     public static final char CHECKED_BALLOT = booleansToChar(true, false, false, false, true, false, false, false, false, true,
             true, false, false, true); // '☑'
 
-
-
     public static final char DATA_POINT = FAT_BUL;
 }

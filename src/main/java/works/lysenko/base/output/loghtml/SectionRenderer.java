@@ -181,7 +181,7 @@ public final class SectionRenderer {
                 sb.append(s("<a class=\"path-step ", nodeCssClass, "\" href=\"#test-", p.num, "-", escapeHtml(targetScen),
                         "\" onclick=\"focusScenario(event, '", p.num, "', '", escapeHtml(targetScen),
                         "')\" title=\"Jump to ", escapeHtml(targetScen), " in Test #", p.num, "\">",
-                        escapeHtml(stepName), "</a>"));
+                        escapeHtml(targetScen), "</a>"));
             }
             sb.append("</div></div>");
         }

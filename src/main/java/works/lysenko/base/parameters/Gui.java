@@ -16,9 +16,11 @@ import javax.swing.JPasswordField;
 import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.text.JTextComponent;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagLayout;
+import java.awt.KeyboardFocusManager;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
@@ -86,6 +88,7 @@ public class Gui implements _GUI {
     private JPanel cyclesPanel = null;
     private JButton properties = null;
     private List<JTextField> aParams = null;
+    private Boolean lastAllLeafsState = null;
 
     /**
      * Represents a graphical user interface for parameter input and user interaction.
@@ -337,11 +340,39 @@ public class Gui implements _GUI {
 
         calculateCycles.setText(b(c(REQUIRED), FOR, FULL, COVERAGE));
         calculateCycles.setEnabled(true);
-        if (isNotNull(panel)) {
+
+        final boolean currentAllLeafsState = isNotNull(allLeafs) && allLeafs.isSelected();
+        final boolean needRebuild = null == lastAllLeafsState || lastAllLeafsState != currentAllLeafsState;
+
+        if (needRebuild && isNotNull(panel)) {
+            lastAllLeafsState = currentAllLeafsState;
+
+            final Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+            int caretPos = -1;
+            int selStart = -1;
+            int selEnd = -1;
+            if (focusOwner instanceof JTextComponent tc) {
+                caretPos = tc.getCaretPosition();
+                selStart = tc.getSelectionStart();
+                selEnd = tc.getSelectionEnd();
+            }
+
             panel.removeAll();
             addRows();
+            updateWindowLayout();
+
+            if (isNotNull(focusOwner) && SwingUtilities.isDescendingFrom(focusOwner, panel)) {
+                focusOwner.requestFocusInWindow();
+                if (focusOwner instanceof JTextComponent tc && caretPos >= 0) {
+                    try {
+                        tc.setCaretPosition(Math.min(caretPos, tc.getText().length()));
+                        if (selStart >= 0 && selEnd >= 0 && selStart != selEnd) {
+                            tc.select(selStart, selEnd);
+                        }
+                    } catch (final Exception ignored) {}
+                }
+            }
         }
-        updateWindowLayout();
     }
 
     /**
@@ -430,6 +461,7 @@ public class Gui implements _GUI {
 
         if (test == null) addStandardParameters();
         panel = new JPanel(new GridBagLayout());
+        lastAllLeafsState = isNotNull(allLeafs) && allLeafs.isSelected();
         addRows();
 
         final Dimension pref = panel.getPreferredSize();

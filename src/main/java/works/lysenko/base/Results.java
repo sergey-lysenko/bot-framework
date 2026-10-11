@@ -79,7 +79,7 @@ public class Results implements _Results {
     @SuppressWarnings("MethodWithMultipleReturnPoints")
     public boolean areFailingEvents() {
 
-        if (isNotNull(max)) return Stop.atSeverity >= max.ordinal();
+        if (isNotNull(max)) return Stop.atSeverity.ordinal() >= max.ordinal();
         return false;
     }
 
@@ -115,12 +115,12 @@ public class Results implements _Results {
 
         final List<String> list = new ArrayList<>(0);
         for (final _LogRecord event : rootEvents) {
-            if (((_Event) event.data()).severity().ordinal() <= Stop.atSeverity)
+            if (((_Event) event.data()).severity().ordinal() <= Stop.atSeverity.ordinal())
                 list.add(event.data().message());
         }
         for (final Map.Entry<_Scenario, Result> entry : results.entrySet()) {
             for (final _LogRecord event : entry.getValue().getEvents()) {
-                if (((_Event) event.data()).severity().ordinal() <= Stop.atSeverity)
+                if (((_Event) event.data()).severity().ordinal() <= Stop.atSeverity.ordinal())
                     list.add(b(event.data().message(), IN, q(entry.getKey().getName()), SCENARIO));
             }
         }

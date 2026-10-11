@@ -111,6 +111,10 @@ The framework is configured via system properties, environment variables, or `te
 | `.test.report.add.cpu.debug` | `true` | Include CPU telemetry measurements and charts in test reports |
 | `.test.report.cpu.density` | `5000` | Maximum data points density for CPU/RAM telemetry graphs in reports |
 | `.test.report.cpu.density.per.test` | `false` | When true, matches CPU/RAM telemetry data points count to the number of tests performed |
+| `.test.report.log.scale.all.leaf` | `false` | Default All-Leaf Completion chart scale mode to logarithmic |
+| `.test.report.log.scale.cpu.debug` | `false` | Default System Resources chart scale mode to logarithmic |
+| `.test.report.log.scale.eta.debug` | `false` | Default ETA Debug chart scale mode to logarithmic |
+| `.test.report.log.scale.timeline` | `false` | Default Test Execution Duration timeline chart scale mode to logarithmic |
 | `.test.report.progression.scenario` | `true` | Enable scenario coverage progression frames and animations |
 | `.test.report.progression.scenario.gif` | `true` | Generate scenario coverage GIF animation |
 | `.test.report.progression.scenario.webp` | `true` | Generate scenario coverage WebP animation |

@@ -1,7 +1,5 @@
 package works.lysenko.util.func.core;
 
-import com.github.javafaker.Faker;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -27,17 +25,6 @@ import static works.lysenko.util.spec.Symbols._DOT_;
  */
 @SuppressWarnings("unused")
 public record Users() {
-
-    /**
-     * Generates a random business credit card number.
-     *
-     * @return the generated credit card number as a string
-     */
-    @SuppressWarnings("StaticMethodOnlyUsedInOneClass")
-    public static String code() {
-
-        return new Faker().business().creditCardNumber();
-    }
 
     /**
      * Returns a list of users.

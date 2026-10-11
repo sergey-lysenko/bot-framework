@@ -5,10 +5,10 @@
 # .logs.silent.sleeping.border=10
 # ------------------------------------------------------------------------------
 # Log table width for alignment in printed logs.
-.logs.table.width=192
+# .logs.table.width=192
 # ------------------------------------------------------------------------------
 # Ranger-specific log width for aligned output.
-.grid.ranger.log.width=99
+# .grid.ranger.log.width=99
 
 # ==============================================================================
 # Long Operation Settings
@@ -17,7 +17,7 @@
 # .test.long.operation.threshold=9999
 # ------------------------------------------------------------------------------
 # Severity level for long operations. Default: 0
-.test.long.operation.severity=1
+# .test.long.operation.severity=1
 
 # ==============================================================================
 # Log Line Similarity Settings

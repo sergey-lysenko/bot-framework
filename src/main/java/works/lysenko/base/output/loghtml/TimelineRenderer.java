@@ -16,6 +16,7 @@ import static works.lysenko.base.output.loghtml.LogFormatting.escapeJson;
 import static works.lysenko.base.output.loghtml.LogFormatting.formatCompletionDuration;
 import static works.lysenko.base.output.loghtml.LogFormatting.formatCompletionMoment;
 import static works.lysenko.base.output.loghtml.LogFormatting.getNiceCeil;
+import static works.lysenko.base.output.loghtml.LogFormatting.logScaleY;
 import static works.lysenko.util.data.strs.Swap.s;
 
 /**
@@ -153,6 +154,20 @@ public final class TimelineRenderer {
         if (testData.isEmpty() && (completions == null || completions.isEmpty()) && (etaDebugItems == null || etaDebugItems.isEmpty()) && (resourceItems == null || resourceItems.isEmpty())) return "";
 
         final StringBuilder sb = new StringBuilder();
+
+        final boolean timelineLog = Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_REPORT_LOG_SCALE_TIMELINE.get());
+        final boolean leafLog = Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_REPORT_LOG_SCALE_ALL_LEAF.get());
+        final boolean etaLog = Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_REPORT_LOG_SCALE_ETA_DEBUG.get());
+        final boolean resLog = Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_REPORT_LOG_SCALE_CPU_DEBUG.get());
+
+        sb.append(s("  window.timelineScaleMode = '", timelineLog ? "log" : "linear", "';\n"));
+        sb.append(s("  window.leafLeftScaleMode = '", leafLog ? "log" : "linear", "';\n"));
+        sb.append(s("  window.leafRightScaleMode = '", leafLog ? "log" : "linear", "';\n"));
+        sb.append(s("  window.etaLeftScaleMode = '", etaLog ? "log" : "linear", "';\n"));
+        sb.append(s("  window.etaRightScaleMode = '", etaLog ? "log" : "linear", "';\n"));
+        sb.append(s("  window.resLeftScaleMode = '", resLog ? "log" : "linear", "';\n"));
+        sb.append(s("  window.resRightScaleMode = '", resLog ? "log" : "linear", "';\n"));
+
         if (!testData.isEmpty()) {
             final Map<Integer, String> leafMap = new HashMap<>();
             if (null != completions) {
@@ -343,6 +358,10 @@ public final class TimelineRenderer {
             final double tAvg, final double tMax, final double lMax) {
         if (testData.isEmpty()) return "";
 
+        final boolean isLog = Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_REPORT_LOG_SCALE_TIMELINE.get());
+        final String activeLog = isLog ? " active" : "";
+        final String activeLinear = isLog ? "" : " active";
+
         final int N = testData.size();
         final double width = 1000.0;
         final double height = 240.0;
@@ -365,6 +384,10 @@ public final class TimelineRenderer {
         sb.append(s(
                 "<div class=\"line-graph-legend\">\n",
                 "  <span class=\"lg-legend-item\"><span class=\"lg-line-sample test-line\"></span> Test Time (s)</span>\n",
+                "  <div class=\"chart-view-toggle\">\n",
+                "    <button type=\"button\" id=\"btnTimelineLog\" class=\"chart-toggle-btn", activeLog, "\" onclick=\"switchTimelineScale('log')\">Log</button>\n",
+                "    <button type=\"button\" id=\"btnTimelineLinear\" class=\"chart-toggle-btn", activeLinear, "\" onclick=\"switchTimelineScale('linear')\">Linear</button>\n",
+                "  </div>\n",
                 hasLimbo ? "  <span class=\"lg-legend-item lg-legend-limbo\"><span class=\"lg-line-sample limbo-line\"></span> Limbo (ms)</span>\n" : "",
                 tAvg > 0 ? String.format(Locale.ROOT, "  <span class=\"lg-legend-item\"><span class=\"lg-dash-sample\"></span> Avg: %.2fs</span>\n", tAvg) : "",
                 "  <span class=\"lg-legend-item\"><span class=\"lg-dot-sample fail\"></span> Failed</span>\n",
@@ -385,10 +408,13 @@ public final class TimelineRenderer {
         ));
 
         // Horizontal grid lines and Y-axis labels
+        final double logTCeil = Math.log10(tCeil + 1.0);
+        final double logLCeil = Math.log10(lCeil + 1.0);
+
         for (int k = 0; k <= 4; k++) {
             final double ratio = (double) k / 4.0;
             final double y = (marginTop + plotH) - ratio * plotH;
-            final double tVal = ratio * tCeil;
+            final double tVal = isLog ? ((ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logTCeil) - 1.0) : ratio * tCeil;
             sb.append(String.format(Locale.ROOT,
                     "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.06)\" stroke-dasharray=\"3,3\" />\n",
                     marginLeft, y, marginLeft + plotW, y));
@@ -396,7 +422,7 @@ public final class TimelineRenderer {
                     "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"end\" fill=\"#64748b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%.1fs</text>\n",
                     marginLeft - 8, y + 3.5, tVal));
             if (hasLimbo) {
-                final double lVal = ratio * lCeil;
+                final double lVal = isLog ? ((ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logLCeil) - 1.0) : ratio * lCeil;
                 sb.append(String.format(Locale.ROOT,
                         "  <text class=\"lg-limbo-series\" x=\"%.1f\" y=\"%.1f\" text-anchor=\"start\" fill=\"#c084fc\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%dms</text>\n",
                         marginLeft + plotW + 8, y + 3.5, Math.round(lVal)));
@@ -428,7 +454,9 @@ public final class TimelineRenderer {
 
         // Average reference line
         if (tAvg > 0 && tAvg <= tCeil) {
-            final double yAvg = (marginTop + plotH) - (tAvg / tCeil) * plotH;
+            final double yAvg = isLog
+                    ? logScaleY(tAvg, tCeil, marginTop, plotH)
+                    : (marginTop + plotH) - (tAvg / tCeil) * plotH;
             sb.append(String.format(Locale.ROOT,
                     "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"#0284c7\" stroke-dasharray=\"5,4\" stroke-width=\"1.2\" opacity=\"0.75\" />\n",
                     marginLeft, yAvg, marginLeft + plotW, yAvg));
@@ -444,7 +472,9 @@ public final class TimelineRenderer {
         for (int i = 0; i < N; i++) {
             final TelemetryItem test = testData.get(i);
             final double x = marginLeft + (N > 1 ? (double) i / (N - 1) * plotW : plotW / 2.0);
-            final double yT = (marginTop + plotH) - Math.min(plotH, (test.sec / tCeil) * plotH);
+            final double yT = isLog
+                    ? logScaleY(test.sec, tCeil, marginTop, plotH)
+                    : (marginTop + plotH) - Math.min(plotH, (test.sec / tCeil) * plotH);
 
             if (i == 0) {
                 testPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yT));
@@ -457,7 +487,9 @@ public final class TimelineRenderer {
             if (hasLimbo) {
                 final TelemetryItem limbo = limboByPrevTest.get(test.testNum);
                 final double lMs = limbo != null ? limbo.ms : 0.0;
-                final double yL = (marginTop + plotH) - Math.min(plotH, (lMs / lCeil) * plotH);
+                final double yL = isLog
+                        ? logScaleY(lMs, lCeil, marginTop, plotH)
+                        : (marginTop + plotH) - Math.min(plotH, (lMs / lCeil) * plotH);
                 if (i == 0) {
                     limboPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yL));
                     limboArea.append(String.format(Locale.ROOT, "M %.2f %.2f L %.2f %.2f", x, marginTop + plotH, x, yL));

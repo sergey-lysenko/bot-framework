@@ -3,6 +3,7 @@ package works.lysenko.base.output.loghtml;
 import works.lysenko.base.output.loghtml.LogModels.EtaDebugItem;
 import works.lysenko.base.output.loghtml.LogModels.LeafCompletion;
 import works.lysenko.base.output.loghtml.LogModels.SystemResourceItem;
+import works.lysenko.util.spec.PropEnum;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,6 +31,10 @@ public final class ChartsRenderer {
      */
     public static String renderLeafCompletionGraph(final List<LeafCompletion> completions) {
         if (completions.isEmpty()) return "";
+
+        final boolean isLeafLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_ALL_LEAF.get());
+        final String activeLog = isLeafLog ? " active" : "";
+        final String activeLinear = isLeafLog ? "" : " active";
 
         final int N = completions.size();
         final double width = 1000.0;
@@ -88,8 +93,8 @@ public final class ChartsRenderer {
                 "<div class=\"series-controls left-series-controls\">",
                 "<span class=\"lg-legend-item\"><span class=\"lg-line-sample leaf-line\"></span>Leaf executions</span>",
                 "<div class=\"chart-view-toggle\">",
-                "<button type=\"button\" id=\"btnLeafLeftLog\" class=\"chart-toggle-btn active\" onclick=\"switchLeafLeftScale('log')\">Log</button>",
-                "<button type=\"button\" id=\"btnLeafLeftLinear\" class=\"chart-toggle-btn\" onclick=\"switchLeafLeftScale('linear')\">Linear</button>",
+                "<button type=\"button\" id=\"btnLeafLeftLog\" class=\"chart-toggle-btn", activeLog, "\" onclick=\"switchLeafLeftScale('log')\">Log</button>",
+                "<button type=\"button\" id=\"btnLeafLeftLinear\" class=\"chart-toggle-btn", activeLinear, "\" onclick=\"switchLeafLeftScale('linear')\">Linear</button>",
                 "</div>",
                 "<select id=\"selectLeafLeftCutoff\" class=\"chart-select\" onchange=\"setLeafLeftCutoff(this.value)\">",
                 "<option value=\"auto\" selected>Cutoff: Auto</option>",
@@ -108,8 +113,8 @@ public final class ChartsRenderer {
                 "<option value=\"max\">Cutoff: Max</option>",
                 "</select>",
                 "<div class=\"chart-view-toggle\">",
-                "<button type=\"button\" id=\"btnLeafRightLog\" class=\"chart-toggle-btn active\" onclick=\"switchLeafRightScale('log')\">Log</button>",
-                "<button type=\"button\" id=\"btnLeafRightLinear\" class=\"chart-toggle-btn\" onclick=\"switchLeafRightScale('linear')\">Linear</button>",
+                "<button type=\"button\" id=\"btnLeafRightLog\" class=\"chart-toggle-btn", activeLog, "\" onclick=\"switchLeafRightScale('log')\">Log</button>",
+                "<button type=\"button\" id=\"btnLeafRightLinear\" class=\"chart-toggle-btn", activeLinear, "\" onclick=\"switchLeafRightScale('linear')\">Linear</button>",
                 "</div>",
                 "<span class=\"lg-legend-item\"><span class=\"lg-line-sample leaf-eta-line\"></span>Projected Total (Passed + ETA)</span>",
                 hasCorrectionData ? "<span class=\"lg-legend-item\"><span class=\"lg-line-sample leaf-corr-eta-line\" style=\"background:#10b981;\"></span>Corrected Total</span>" : "",
@@ -130,8 +135,8 @@ public final class ChartsRenderer {
         for (int k = 0; k <= 4; k++) {
             final double ratio = (double) k / 4.0;
             final double y = (marginTop + plotH) - ratio * plotH;
-            final double valIntervalSec = (ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logMaxInterval) - 1.0;
-            final double valProjectedSec = (ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logMaxProjected) - 1.0;
+            final double valIntervalSec = isLeafLog ? ((ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logMaxInterval) - 1.0) : ratio * ceilIntervalSec;
+            final double valProjectedSec = isLeafLog ? ((ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logMaxProjected) - 1.0) : ratio * ceilProjectedSec;
             sb.append(String.format(Locale.ROOT,
                     "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.06)\" stroke-dasharray=\"3,3\" />\n",
                     marginLeft, y, marginLeft + plotW, y));
@@ -185,10 +190,14 @@ public final class ChartsRenderer {
         for (int i = 0; i < N; i++) {
             final double x = marginLeft + (N > 1 ? (double) i / (N - 1) * plotW : plotW / 2.0);
             final double projSec = projectedTotals[i] / 1000.0;
-            final double yEta = logScaleY(projSec, ceilProjectedSec, marginTop, plotH);
+            final double yEta = isLeafLog
+                    ? logScaleY(projSec, ceilProjectedSec, marginTop, plotH)
+                    : (marginTop + plotH) - Math.min(plotH, (projSec / ceilProjectedSec) * plotH);
 
             final double corrProjSec = correctedTotals[i] / 1000.0;
-            final double yCorrEta = logScaleY(corrProjSec, ceilProjectedSec, marginTop, plotH);
+            final double yCorrEta = isLeafLog
+                    ? logScaleY(corrProjSec, ceilProjectedSec, marginTop, plotH)
+                    : (marginTop + plotH) - Math.min(plotH, (corrProjSec / ceilProjectedSec) * plotH);
 
             if (i == 0) {
                 etaPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yEta));
@@ -200,7 +209,9 @@ public final class ChartsRenderer {
 
             if (roundIntervals[i] >= 0L) {
                 final double intervalSec = roundIntervals[i] / 1000.0;
-                final double yInterval = logScaleY(intervalSec, ceilIntervalSec, marginTop, plotH);
+                final double yInterval = isLeafLog
+                        ? logScaleY(intervalSec, ceilIntervalSec, marginTop, plotH)
+                        : (marginTop + plotH) - Math.min(plotH, (intervalSec / ceilIntervalSec) * plotH);
                 if (firstRoundPt) {
                     leafPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yInterval));
                     firstRoundPt = false;
@@ -253,6 +264,10 @@ public final class ChartsRenderer {
     public static String renderEtaDebugGraph(final List<EtaDebugItem> items) {
         if (items.isEmpty()) return "";
 
+        final boolean isEtaLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_ETA_DEBUG.get());
+        final String activeLog = isEtaLog ? " active" : "";
+        final String activeLinear = isEtaLog ? "" : " active";
+
         final int N = items.size();
         final double width = 1000.0;
         final double height = 240.0;
@@ -287,8 +302,8 @@ public final class ChartsRenderer {
                 "<div class=\"series-controls left-series-controls\">",
                 "<span class=\"lg-legend-item\"><span class=\"lg-line-sample eta-instability-line\"></span>Instability (sample deviation)</span>",
                 "<div class=\"chart-view-toggle\">",
-                "<button type=\"button\" id=\"btnEtaLeftLog\" class=\"chart-toggle-btn active\" onclick=\"switchEtaLeftScale('log')\">Log</button>",
-                "<button type=\"button\" id=\"btnEtaLeftLinear\" class=\"chart-toggle-btn\" onclick=\"switchEtaLeftScale('linear')\">Linear</button>",
+                "<button type=\"button\" id=\"btnEtaLeftLog\" class=\"chart-toggle-btn", activeLog, "\" onclick=\"switchEtaLeftScale('log')\">Log</button>",
+                "<button type=\"button\" id=\"btnEtaLeftLinear\" class=\"chart-toggle-btn", activeLinear, "\" onclick=\"switchEtaLeftScale('linear')\">Linear</button>",
                 "</div>",
                 "<select id=\"selectEtaLeftCutoff\" class=\"chart-select\" onchange=\"setEtaLeftCutoff(this.value)\">",
                 "<option value=\"auto\" selected>Cutoff: Auto</option>",
@@ -313,8 +328,8 @@ public final class ChartsRenderer {
                 "<option value=\"max\">Cutoff: Max</option>",
                 "</select>",
                 "<div class=\"chart-view-toggle\">",
-                "<button type=\"button\" id=\"btnEtaRightLog\" class=\"chart-toggle-btn active\" onclick=\"switchEtaRightScale('log')\">Log</button>",
-                "<button type=\"button\" id=\"btnEtaRightLinear\" class=\"chart-toggle-btn\" onclick=\"switchEtaRightScale('linear')\">Linear</button>",
+                "<button type=\"button\" id=\"btnEtaRightLog\" class=\"chart-toggle-btn", activeLog, "\" onclick=\"switchEtaRightScale('log')\">Log</button>",
+                "<button type=\"button\" id=\"btnEtaRightLinear\" class=\"chart-toggle-btn", activeLinear, "\" onclick=\"switchEtaRightScale('linear')\">Linear</button>",
                 "</div>",
                 "<span class=\"lg-legend-item\"><span class=\"lg-line-sample eta-error-line\"></span>Prediction Error (vs real time)</span>",
                 "</div>",
@@ -328,8 +343,8 @@ public final class ChartsRenderer {
         for (int k = 0; k <= 4; k++) {
             final double ratio = (double) k / 4.0;
             final double y = (marginTop + plotH) - ratio * plotH;
-            final double instPct = (ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logMaxInst) - 1.0;
-            final double errPct = (ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logMaxErr) - 1.0;
+            final double instPct = isEtaLog ? ((ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logMaxInst) - 1.0) : ratio * ceilInstabilityPct;
+            final double errPct = isEtaLog ? ((ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logMaxErr) - 1.0) : ratio * ceilErrorPct;
 
             sb.append(String.format(Locale.ROOT,
                     "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.06)\" stroke-dasharray=\"3,3\" />\n",
@@ -378,8 +393,12 @@ public final class ChartsRenderer {
         for (int i = 0; i < N; i++) {
             final EtaDebugItem item = items.get(i);
             final double x = marginLeft + (N > 1 ? (double) i / (N - 1) * plotW : plotW / 2.0);
-            final double yInst = logScaleY(item.instabilityPct(), ceilInstabilityPct, marginTop, plotH);
-            final double yErr = logScaleY(item.errorPct(), ceilErrorPct, marginTop, plotH);
+            final double yInst = isEtaLog
+                    ? logScaleY(item.instabilityPct(), ceilInstabilityPct, marginTop, plotH)
+                    : (marginTop + plotH) - Math.min(plotH, (item.instabilityPct() / ceilInstabilityPct) * plotH);
+            final double yErr = isEtaLog
+                    ? logScaleY(item.errorPct(), ceilErrorPct, marginTop, plotH)
+                    : (marginTop + plotH) - Math.min(plotH, (item.errorPct() / ceilErrorPct) * plotH);
 
             if (i == 0) {
                 instabilityPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yInst));
@@ -418,6 +437,10 @@ public final class ChartsRenderer {
     public static String renderResourceStatsGraph(final List<SystemResourceItem> items) {
         if (null == items || items.isEmpty()) return "";
 
+        final boolean isResLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_CPU_DEBUG.get());
+        final String activeLog = isResLog ? " active" : "";
+        final String activeLinear = isResLog ? "" : " active";
+
         final StringBuilder sb = new StringBuilder();
         sb.append(s(
                 "<section id=\"resourceStatsChart\" class=\"resource-stats-chart\"><div class=\"chart-card\">",
@@ -427,8 +450,8 @@ public final class ChartsRenderer {
                 "<div class=\"series-controls left-series-controls\">",
                 "<span class=\"lg-legend-item\"><span class=\"lg-line-sample res-cpu-line\"></span>CPU Usage (%)</span>",
                 "<div class=\"chart-view-toggle\">",
-                "<button type=\"button\" id=\"btnResLeftLog\" class=\"chart-toggle-btn active\" onclick=\"switchResLeftScale('log')\">Log</button>",
-                "<button type=\"button\" id=\"btnResLeftLinear\" class=\"chart-toggle-btn\" onclick=\"switchResLeftScale('linear')\">Linear</button>",
+                "<button type=\"button\" id=\"btnResLeftLog\" class=\"chart-toggle-btn", activeLog, "\" onclick=\"switchResLeftScale('log')\">Log</button>",
+                "<button type=\"button\" id=\"btnResLeftLinear\" class=\"chart-toggle-btn", activeLinear, "\" onclick=\"switchResLeftScale('linear')\">Linear</button>",
                 "</div>",
                 "<select id=\"selectResLeftCutoff\" class=\"chart-select\" onchange=\"setResLeftCutoff(this.value)\">",
                 "<option value=\"auto\" selected>Cutoff: Auto</option>",
@@ -447,8 +470,8 @@ public final class ChartsRenderer {
                 "<option value=\"max\">Cutoff: Max</option>",
                 "</select>",
                 "<div class=\"chart-view-toggle\">",
-                "<button type=\"button\" id=\"btnResRightLog\" class=\"chart-toggle-btn active\" onclick=\"switchResRightScale('log')\">Log</button>",
-                "<button type=\"button\" id=\"btnResRightLinear\" class=\"chart-toggle-btn\" onclick=\"switchResRightScale('linear')\">Linear</button>",
+                "<button type=\"button\" id=\"btnResRightLog\" class=\"chart-toggle-btn", activeLog, "\" onclick=\"switchResRightScale('log')\">Log</button>",
+                "<button type=\"button\" id=\"btnResRightLinear\" class=\"chart-toggle-btn", activeLinear, "\" onclick=\"switchResRightScale('linear')\">Linear</button>",
                 "</div>",
                 "<span class=\"lg-legend-item\"><span class=\"lg-line-sample res-ram-line\"></span>Used Heap RAM (MB)</span>",
                 "<span class=\"lg-legend-item\"><span class=\"lg-line-sample res-total-ram-line\"></span>Total Heap RAM (MB)</span>",

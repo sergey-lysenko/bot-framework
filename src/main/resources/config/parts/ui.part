@@ -17,4 +17,4 @@
 # ------------------------------------------------------------------------------
 # Number of retries allowed for various actions.
 # .test.action.retries=3
-.test.scenario.sufficiency.attempts = 11
+# .test.scenario.sufficiency.attempts = 11

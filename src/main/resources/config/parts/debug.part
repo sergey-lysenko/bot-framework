@@ -6,7 +6,7 @@
 # -------------------------------------------------------------------------------------------------
 # Enable or disable additional debugging output in the log to assist with debugging and test analysis.
 # (true = additional debug logs will be generated, false = minimal logs)
-.logs.debug=true
+# .logs.debug=true
 
 # -------------------------------------------------------------------------------------------------
 # Enable or disable tracing of additional mathod names and variable values.

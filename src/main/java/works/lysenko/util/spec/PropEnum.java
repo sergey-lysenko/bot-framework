@@ -11,6 +11,7 @@ import java.util.Locale;
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static works.lysenko.Base.properties;
+import static works.lysenko.util.Constants.*;
 import static works.lysenko.util.chrs.___._128;
 import static works.lysenko.util.chrs.___._255;
 import static works.lysenko.util.chrs.____.TRUE;
@@ -72,7 +73,7 @@ public enum PropEnum implements _PropEnum {
     _GRID_EMPTY_GRID_VALIDATION_ALLOWED(Boolean.class, FALSE),
     _GRID_EMPTY_RESULT_SEVERITY(Boolean.class, FALSE),
     _GRID_LOG_LINE_MAX_LENGTH(Integer.class, _9_, _9_, _9_),
-    _GRID_NULL_RESULT_SEVERITY(Integer.class, _0_),
+    _GRID_NULL_RESULT_SEVERITY(Severity.class, _S0_),
     _GRID_RANGER_LOG_ABSENT_RANGE(Boolean.class, TRUE),
     _GRID_RANGER_LOG_BOUNDARIES(Boolean.class, TRUE),
     _GRID_RANGER_LOG_NON_FAILING_OUT_OF_BOUNDS(Boolean.class, TRUE),
@@ -142,15 +143,15 @@ public enum PropEnum implements _PropEnum {
     _TEST_ALL_LEAFS_COUNT(Integer.class, _1_, true, true),
     _TEST_APP(String.class, EMPTY),
     _TEST_ASSERTIONS_PRODUCE_EXCEPTION(Boolean.class, TRUE),
-    _TEST_ASSERTIONS_SEVERITY(Severity.class, s(S, _0_)),
+    _TEST_ASSERTIONS_SEVERITY(Severity.class, _S0_),
     _TEST_BUNDLE_ID(String.class, NULL),
     _TEST_EWAIT(Integer.class, _3_, _0_),
     _TEST_EXCEPTION_RETRIES(Integer.class, _3_),
     _TEST_EXECUTION_TIME_SAFEGUARD(String.class, _2_, _0_, VRT_BAR, _2_, _0_, _0_, _0_),
-    _TEST_FAIL_BY_EVENT_OF_SEVERITY(Integer.class, s(S1.ordinal()), true),
+    _TEST_FAIL_BY_EVENT_OF_SEVERITY(Severity.class, _S1_, true),
     _TEST_HEADLESS(Boolean.class, FALSE, false, true),
     _TEST_KNOWN_ISSUES_FAILED_ONLY(Boolean.class, FALSE),
-    _TEST_LONG_OPERATION_SEVERITY(Integer.class, _0_),
+    _TEST_LONG_OPERATION_SEVERITY(Severity.class, _S0_),
     _TEST_LONG_OPERATION_THRESHOLD(Integer.class, _9_, _9_, _9_, _9_),
     _TEST_MAX_TYPING_DELAY(Integer.class, _5_, _0_),
     _TEST_PAUSE_LENGTH(Integer.class, _5_, _0_, _0_, _0_),
@@ -159,6 +160,10 @@ public enum PropEnum implements _PropEnum {
     _TEST_REPORT_ADD_ETA_DEBUG(Boolean.class, TRUE),
     _TEST_REPORT_CPU_DENSITY(Integer.class, _5_, _0_, _0_, _0_),
     _TEST_REPORT_CPU_DENSITY_PER_TEST(Boolean.class, FALSE),
+    _TEST_REPORT_LOG_SCALE_ALL_LEAF(Boolean.class, FALSE),
+    _TEST_REPORT_LOG_SCALE_CPU_DEBUG(Boolean.class, FALSE),
+    _TEST_REPORT_LOG_SCALE_ETA_DEBUG(Boolean.class, FALSE),
+    _TEST_REPORT_LOG_SCALE_TIMELINE(Boolean.class, FALSE),
     _TEST_REPORT_PROGRESSION_FFMPEG(String.class, FFMPEG),
     _TEST_REPORT_PROGRESSION_MAX_FRAMES(Integer.class, _5_, _0_, _0_, _0_),
     _TEST_REPORT_PROGRESSION_MAX_FRAME_PIXELS(Integer.class, _1_, _6_, _7_, _7_, _7_, _2_, _1_, _6_, _0_),
@@ -357,9 +362,5 @@ public enum PropEnum implements _PropEnum {
     public Class<?> type() {
 
         return type;
-    }
-
-    private static class Constants {
-
     }
 }

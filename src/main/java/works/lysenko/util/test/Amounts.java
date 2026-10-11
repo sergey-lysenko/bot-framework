@@ -1,5 +1,6 @@
 package works.lysenko.util.test;
 
+import java.util.List;
 import java.util.Properties;
 
 import static java.util.Objects.isNull;
@@ -25,48 +26,41 @@ import static works.lysenko.util.spec.Layout.Parts.GRID_EXTENSION;
 import static works.lysenko.util.spec.Layout.Paths._GRIDS_;
 
 /**
- * The Amounts class contains methods and constants related to the management,
- * verification, and logging of redefined colour properties in a grid file system.
- * It provides functionality to process a predefined directory of grid files and
- * validate specific colour-related properties.
+ * The Amounts record provides methods for verifying and logging redefined colour
+ * properties across grid files.
  */
-@SuppressWarnings({"BooleanVariableAlwaysNegated", "WeakerAccess"})
+@SuppressWarnings("WeakerAccess")
 public record Amounts() {
 
     /**
-     * Verifies redefined amounts for colour properties across all grid files in a specified directory.
+     * Verifies redefined amounts for colour properties across all grid files in the directory defined by {@code _GRIDS_}.
      * <p>
-     * This method processes grid files in the directory defined by the `_GRIDS_` constant,
-     * filtering for files that use the specified grid file extension (`GRID_EXTENSION`).
-     * Each file is checked to validate redefinitions of colour amounts.
      * A titled section is added to the execution output to indicate the verification process.
-     * If an error occurs while accessing the files, the exception stack trace is printed.
-     * <p>
-     * The verification logic for colour properties is delegated to
-     * {@link Amounts#verifyRedefinedColoursAmounts(String)} for individual grid files.
+     * Each file matching the {@code GRID_EXTENSION} extension is processed by
+     * {@link Amounts#verifyRedefinedColoursAmounts(String)}.
      */
     public static void verifyRedefinedAmounts() {
 
         section(b(c(VERIFYING), REDEFINED, COLOUR, AMOUNTS));
-        getFilesList(_GRIDS_, GRID_EXTENSION).forEach(Amounts::verifyRedefinedColoursAmounts);
+        final List<String> files = getFilesList(_GRIDS_, GRID_EXTENSION);
+        if (isNotNull(files)) files.forEach(Amounts::verifyRedefinedColoursAmounts);
     }
 
     /**
      * Verifies and processes redefined colour amounts from the specified properties file.
      * If the property associated with CDA is defined and the value linked to CDI does not
-     * contain the IGNORE keyword, an event is logged.
+     * contain the ORDER keyword, an event is logged.
      *
-     * @param s the file path of the properties file to be processed
+     * @param path the file path of the properties file to be processed
      */
-    private static void verifyRedefinedColoursAmounts(final String s) {
+    private static void verifyRedefinedColoursAmounts(final String path) {
 
-        final Properties file = getPropertiesFromFile(s, true);
+        final Properties file = getPropertiesFromFile(path, true);
 
-        if (!isNull(file.getProperty(CDA))) {
+        if (isNotNull(file) && isNotNull(file.getProperty(CDA))) {
             final String cdi = file.getProperty(CDI);
-            final boolean alreadyIgnored = isNotNull(cdi) && cdi.contains(ORDER);
-            if (!alreadyIgnored) {
-                logEvent(S2, b(ALLOWED___, q(s), BUT___, q(CDI)));
+            if (isNull(cdi) || !cdi.contains(ORDER)) {
+                logEvent(S2, b(ALLOWED___, q(path), BUT___, q(CDI)));
             }
         }
     }

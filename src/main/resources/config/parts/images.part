@@ -5,28 +5,28 @@
 # .grid.log.line.max.length=1000
 
 # Precision (epsilon value) for grid validation scale. Default: 0.0001
-.grid.validation.scale.epsilon=0.002
+# .grid.validation.scale.epsilon=0.002
 
 # Allow validation of empty grids. Default: false
-.grid.empty.grid.validation.allowed=true
+# .grid.empty.grid.validation.allowed=true
 
 # -------------------------------------------------------------------------------------------------
 # Screenshot Settings
 # -------------------------------------------------------------------------------------------------
 # Enable screenshots for each image region bound by color. Default: false
-.screenshots.of.binds=true
+# .screenshots.of.binds=true
 
 # Enable screenshots for all click actions. Default: false
-.screenshots.of.clicks=true
+# .screenshots.of.clicks=true
 
 # Enable screenshots for long procedural click actions. Default: false
-.screenshots.of.long.clicks=true
+# .screenshots.of.long.clicks=true
 
 # Enable screenshots for picked pixels. Default: false
-.screenshots.of.pixels=true
+# .screenshots.of.pixels=true
 
 # Enable screenshots for swipe actions. Default: false
-.screenshots.of.swipes=true
+# .screenshots.of.swipes=true
 
 # Marker colors for swipe gesture screenshots (RGBA format).
 # .swipes.marker.line.colour=0,0,0,128
@@ -37,7 +37,7 @@
 # .screenshots.of.clicks.marker.diameter=50
 
 # Action marker color for general highlights in screenshots (RGBA format). Default: 255,128,0,128
-.grid.action.marker.colour=0,128,32,128
+# .grid.action.marker.colour=0,128,32,128
 
 # -------------------------------------------------------------------------------------------------
 # Color and Probe Settings
@@ -55,12 +55,12 @@
 # Automatic Matrix/Expectations Update
 # -------------------------------------------------------------------------------------------------
 # Margins for color, HSV, and polychromy validation. Defaults are specified in `PropEnum`
-.grid.default.colour.ranged.margin=a1/33|r1/3
-.grid.default.hsv.margin=1/111
-.grid.default.polychromy.margin=1/111
+# .grid.default.colour.ranged.margin=a1/33|r1/3
+# .grid.default.hsv.margin=1/111
+# .grid.default.polychromy.margin=1/111
 
 # Shrink expectations for color-based validations.
-.grid.shrink.expectations=true
+# .grid.shrink.expectations=true
 
 # Dynamically update expectations for:
 # Colour validations. Default: false

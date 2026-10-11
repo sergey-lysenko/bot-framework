@@ -64,4 +64,8 @@ public record Constants() {
     public static final String _ANDROID_WIDGET_BUTTON = s(__ANDROID_WIDGET, c(BUTTON));
     public static final String _ANDROID_WIDGET_SCROLLVIEW = s(__ANDROID_WIDGET, SCROLL_VIEW);
     public static final String _ANDROID_WIDGET_TEXTVIEW = s(__ANDROID_WIDGET, TEXT_VIEW);
+
+    public static final String _S0_ = s(S, _0_);
+    public static final String _S1_ = s(S, _1_);
+    public static final String _S2_ = s(S, _2_);
 }

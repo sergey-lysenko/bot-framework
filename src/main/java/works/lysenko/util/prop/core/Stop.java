@@ -1,5 +1,7 @@
 package works.lysenko.util.prop.core;
 
+import works.lysenko.util.data.enums.Severity;
+
 import static works.lysenko.util.spec.PropEnum._TEST_FAIL_BY_EVENT_OF_SEVERITY;
 
 /**
@@ -10,5 +12,5 @@ import static works.lysenko.util.spec.PropEnum._TEST_FAIL_BY_EVENT_OF_SEVERITY;
 @SuppressWarnings({"NonFinalStaticVariableUsedInClassInitialization", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass"})
 public record Stop() {
 
-    public static final Integer atSeverity = _TEST_FAIL_BY_EVENT_OF_SEVERITY.get();
+    public static final Severity atSeverity = _TEST_FAIL_BY_EVENT_OF_SEVERITY.get();
 }

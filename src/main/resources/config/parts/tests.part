@@ -4,7 +4,7 @@
 
 # Event severity level at which to stop test execution.
 # Severity levels determine how severe an event must be to halt further testing.
-.test.fail.by.event.of.severity=0
+# .test.fail.by.event.of.severity=s0
 
 # Enables resilient mode where execution continues after exceptions to collect all failures.
 # .test.resilient.mode=false
