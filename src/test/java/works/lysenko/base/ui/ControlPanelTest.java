@@ -62,11 +62,13 @@ class ControlPanelTest {
 
             final JTabbedPane tabbedPane = controlPanel.getTabbedPane();
             assertNotNull(tabbedPane);
-            assertEquals(4, tabbedPane.getTabCount());
-            assertEquals("Configuration", tabbedPane.getTitleAt(0));
-            assertEquals("Execution", tabbedPane.getTitleAt(1));
-            assertEquals("Tree Progression", tabbedPane.getTitleAt(2));
-            assertEquals("Known Issues", tabbedPane.getTitleAt(3));
+            assertEquals(5, tabbedPane.getTabCount());
+            assertEquals("Config & Tests", tabbedPane.getTitleAt(0));
+            assertEquals("Run Setup", tabbedPane.getTitleAt(1));
+            assertEquals("Execution", tabbedPane.getTitleAt(2));
+            assertEquals("Tree Progression", tabbedPane.getTitleAt(3));
+            assertEquals("Known Issues", tabbedPane.getTitleAt(4));
+            assertEquals(0, tabbedPane.getSelectedIndex());
         });
     }
 

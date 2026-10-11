@@ -48,6 +48,7 @@ import static works.lysenko.util.lang.word.U.UNDEFINED;
 import static works.lysenko.util.spec.Layout.Files.COMMON_CONFIGURATION;
 import static works.lysenko.util.spec.Layout.Parts.TEST_PROPERTIES_EXTENSION;
 import static works.lysenko.util.spec.Layout.Parts._DOT_PROPERTIES;
+import static works.lysenko.util.spec.Layout.Paths._CONFIG_;
 import static works.lysenko.util.spec.Layout.Paths._RESOURCES_;
 import static works.lysenko.util.spec.Layout.Paths._TESTS_;
 import static works.lysenko.util.spec.Symbols.*;
@@ -335,6 +336,19 @@ public class TestProperties implements _TestProperties {
         }
     }
 
+    private static void validateCommonConfigurationScope(final Map<?, ?> config) {
+
+        for (final Object k : config.keySet()) {
+            final String key = k.toString().trim();
+            if (!key.startsWith(".") && !key.equalsIgnoreCase("include")) {
+                throw new IllegalStateException(b(
+                        "Invalid key", key, "in common.configuration.properties:",
+                        "Common configuration must only contain configuration keys starting with '.' (e.g., '.key'). Scenario references and bare properties are disallowed in common configuration."
+                ));
+            }
+        }
+    }
+
     @SuppressWarnings("UseOfPropertiesAsHashtable")
     public final String readCommonConfiguration() {
 
@@ -343,9 +357,10 @@ public class TestProperties implements _TestProperties {
             the = new Properties();
         }
         final works.lysenko.util.func.core.TestProperties.Result result;
-        result = readTestPropertiesFromFile(new TestPropertiesDescriptor(_RESOURCES_, COMMON_CONFIGURATION, _DOT_PROPERTIES));
+        result = readTestPropertiesFromFile(new TestPropertiesDescriptor(_CONFIG_, COMMON_CONFIGURATION, _DOT_PROPERTIES));
         if (isNotNull(result) && isNotNull(result.properties())) {
             commonConfiguration = result.properties();
+            validateCommonConfigurationScope(commonConfiguration);
             the.putAll(commonConfiguration);
         }
         applyUserOverrides();

@@ -75,6 +75,7 @@ public record Layout() {
         static final String TARGET_ = s(TARGET, s);
         static final String TESTS_ = s(TESTS, s);
         static final String GRIDS_ = s(GRIDS, s);
+        static final String CONFIG_ = s(CONFIG, s);
     }
 
     /**
@@ -88,6 +89,7 @@ public record Layout() {
 
         public static final String _TARGET_DASH_ = s(TARGET_, DASH_);
         public static final String _RESOURCES_ = s(SRC_, MAIN_, RESOURCES_);
+        public static final String _CONFIG_ = s(_RESOURCES_, CONFIG_);
         public static final String _TESTS_ = s(_RESOURCES_, TESTS_);
         public static final String _GRIDS_ = s(_RESOURCES_, GRIDS_);
         public static final String _RUNS_ = s(TARGET_, RUNS_);

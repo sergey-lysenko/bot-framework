@@ -14,7 +14,7 @@ import static works.lysenko.util.func.type.Objects.isNotNull;
 
 final class PropertyHelp {
 
-    private static final String RESOURCE = "/property-help.properties";
+    private static final String RESOURCE = "/config/property-help.properties";
     private static final Properties DESCRIPTIONS = loadDescriptions();
 
     private PropertyHelp() {

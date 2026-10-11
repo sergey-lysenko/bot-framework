@@ -37,18 +37,33 @@ public final class GuiParameters {
         }
 
         final File dir = new File(directory);
-        final File[] files = dir.listFiles((dir1, name) -> name.endsWith(filter));
-        if (isNotNull(files)) {
-            for (final File file : files) {
-                final String entity = org.apache.commons.lang3.StringUtils.removeEnd(file.getName(), filter);
-                if (!entityList.contains(entity)) entityList.add(entity);
-            }
-            entityList.sort(null);
-        }
+        scanDirectoryFiles(dir, "", filter, entityList);
+        entityList.sort(null);
 
         final JComboBox<Object> comboBox = new JComboBox<>(entityList.toArray());
         comboBox.setSelectedItem(parameters.getProperty(type));
         return comboBox;
+    }
+
+    private static void scanDirectoryFiles(final File dir, final String prefix, final String filter, final List<String> entityList) {
+
+        if (!dir.exists() || !dir.isDirectory()) return;
+
+        final File[] files = dir.listFiles();
+        if (isNotNull(files)) {
+            for (final File file : files) {
+                if (file.isDirectory()) {
+                    scanDirectoryFiles(file, prefix + file.getName() + "/", filter, entityList);
+                } else if (file.getName().endsWith(filter) || file.getName().endsWith(".part")) {
+                    final String rawName = file.getName();
+                    final String entityName = rawName.contains(".") ? rawName.substring(0, rawName.lastIndexOf('.')) : rawName;
+                    final String fullEntity = prefix + entityName;
+                    if (!entityList.contains(fullEntity)) {
+                        entityList.add(fullEntity);
+                    }
+                }
+            }
+        }
     }
 
     /**

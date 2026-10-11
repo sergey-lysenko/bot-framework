@@ -10,7 +10,7 @@ import static works.lysenko.util.spec.Symbols.*;
 @SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "unused"})
 public record C() {
 
-    private static final String CONFIG = s(CONF, IG);
+    public static final String CONFIG = s(CONF, IG);
     public static final String CONFIRM = s(CONF, IR, M);
     public static final String CALCULATE = s(CA, LC, UL, AT, E);
     public static final String CALCULATED = s(CA, LC, ULAT, ED);

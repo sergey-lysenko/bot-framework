@@ -214,6 +214,21 @@ public class Gui implements _GUI {
         });
     }
 
+    public void refreshTestDropdown() {
+
+        if (isNotNull(test)) {
+            final Object selected = test.getSelectedItem();
+            final JComboBox<Object> newCombo = GuiParameters.addFromFiles(TEST.name(), _TESTS_, TEST_PROPERTIES_EXTENSION, parameters);
+            test.removeAllItems();
+            for (int i = 0; i < newCombo.getItemCount(); i++) {
+                test.addItem(newCombo.getItemAt(i));
+            }
+            if (isNotNull(selected)) {
+                test.setSelectedItem(selected);
+            }
+        }
+    }
+
     /**
      * Adds the standard parameters to the Parameters object.
      */

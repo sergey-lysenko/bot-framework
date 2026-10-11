@@ -28,6 +28,19 @@ public record TestProperties() {
 
     private static final String include = s(_DOT_, INCLUDE);
 
+    private static void validatePartScope(final String filename, final Properties target) {
+
+        for (final Object k : target.keySet()) {
+            final String key = k.toString().trim();
+            if (!key.startsWith(".") && !key.equalsIgnoreCase("include")) {
+                throw new IllegalStateException(b(
+                        "Invalid key", key, "in part file", filename + ":",
+                        "Part files must only contain configuration keys starting with '.' (e.g., '.key'). Bare scenario references are disallowed in part files."
+                ));
+            }
+        }
+    }
+
     @SuppressWarnings({"AssignmentToMethodParameter", "ObjectAllocationInLoop", "CallToSuspiciousStringMethod",
             "CollectionDeclaredAsConcreteClass"})
     private static String loadIncluded(final String include, final String directory, String debug, final Properties target) {
@@ -36,6 +49,7 @@ public record TestProperties() {
         for (final String file : files) {
             final Result result = readTestPropertiesFromFile(new TestPropertiesDescriptor(directory, file.trim(),
                     TEST_PROPERTIES_PARTS_EXTENSION));
+            validatePartScope(file.trim(), result.properties());
             debug = s(debug, _LFD_, a(INCLUDE, result.debug()));
             target.putAll(result.properties());
         }

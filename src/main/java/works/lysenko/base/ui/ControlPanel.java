@@ -8,6 +8,8 @@ import works.lysenko.util.apis.util._Dashboard;
 import works.lysenko.base.util.Telemetry;
 import works.lysenko.util.apis.scenario._Scenario;
 
+import static works.lysenko.util.func.type.Objects.isNotNull;
+
 import javax.swing.*;
 import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.JTextComponent;
@@ -104,7 +106,11 @@ public class ControlPanel extends JFrame implements _Dashboard {
 
         tabbedPane = new JTabbedPane();
 
-        // 1. Configuration Tab
+        // 1. Config & Tests Tab (Micro-IDE)
+        final ConfigTestsEditorPanel configTestsEditorPanel = new ConfigTestsEditorPanel();
+        tabbedPane.addTab("Config & Tests", configTestsEditorPanel);
+
+        // 2. Configuration Tab (Run Preparation)
         this.gui = guiInstance;
         final JPanel configPanel = new JPanel(new BorderLayout());
         
@@ -133,27 +139,27 @@ public class ControlPanel extends JFrame implements _Dashboard {
         startExecButton.setBackground(new Color(0x16, 0xA3, 0x4A));
         startExecButton.setForeground(Color.WHITE);
         startExecButton.setFocusPainted(false);
-        startExecButton.addActionListener(e -> startRun(1));
+        startExecButton.addActionListener(e -> startRun(2));
 
         final JButton startTreeButton = new JButton("  Start & Tree  ");
         startTreeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
         startTreeButton.setBackground(new Color(0x16, 0xA3, 0x4A));
         startTreeButton.setForeground(Color.WHITE);
         startTreeButton.setFocusPainted(false);
-        startTreeButton.addActionListener(e -> startRun(2));
+        startTreeButton.addActionListener(e -> startRun(3));
 
         runPanel.add(cancelButton);
         runPanel.add(startExecButton);
         runPanel.add(startTreeButton);
         configPanel.add(runPanel, BorderLayout.SOUTH);
 
-        tabbedPane.addTab("Configuration", configPanel);
+        tabbedPane.addTab("Run Setup", configPanel);
 
-        // 2. Execution Tab (Dashboard)
+        // 3. Execution Tab (Dashboard)
         dashboardPanel = new UserInterface(null); // will be refactored to JPanel
         tabbedPane.addTab("Execution", dashboardPanel);
 
-        // 3. Tree Progression Tab
+        // 4. Tree Progression Tab
         treeProgressionLayout = new CardLayout();
         treeProgressionPanel = new JPanel(treeProgressionLayout);
 
@@ -182,9 +188,29 @@ public class ControlPanel extends JFrame implements _Dashboard {
 
         tabbedPane.addTab("Tree Progression", treeProgressionPanel);
 
-        // 4. Known Issues Tab
+        // 5. Known Issues Tab
         final KnownIssuesPanel knownIssuesPanel = new KnownIssuesPanel();
         tabbedPane.addTab("Known Issues", knownIssuesPanel);
+
+        tabbedPane.setSelectedIndex(0); // Config & Tests tab is default on launch
+
+        tabbedPane.addChangeListener(e -> {
+            final int selectedIndex = tabbedPane.getSelectedIndex();
+            if (selectedIndex == 1) { // Switching to Run Setup tab
+                configTestsEditorPanel.saveSilentlyIfModified();
+                if (isNotNull(gui)) {
+                    gui.refreshTestDropdown();
+                }
+                if (isNotNull(propertiesPanel) && isNotNull(parameters)) {
+                    propertiesPanel.reloadFromDisk(
+                            parameters.getTest(),
+                            parameters.isHeadless(),
+                            parameters.isAllLeafs(),
+                            parameters.getAllLeafsCount()
+                    );
+                }
+            }
+        });
 
         final Image initialFrame = TreeTracker.getLatestFrameImage();
         if (null != initialFrame) {

@@ -157,13 +157,20 @@ public class PropertiesPanel extends JPanel {
             public boolean isCellEditable(final int r, final int c) {
                 return 1 == c;
             }
+
+            @Override
+            public void setValueAt(final Object aValue, final int r, final int c) {
+                if (r >= 0 && r < getRowCount() && c >= 0 && c < getColumnCount()) {
+                    super.setValueAt(aValue, r, c);
+                }
+            }
         };
 
         populateProperties(testName, isHeadless, isAllLeafs, allLeafsCount);
 
         table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setRowHeight(22);
+        table.setRowHeight(26);
         table.getTableHeader().setReorderingAllowed(false);
 
         sorter = new TableRowSorter<>(model);
@@ -275,6 +282,18 @@ public class PropertiesPanel extends JPanel {
 
         final boolean isDefaultKnown = isNotNull(defaultValue);
         return calculateStatus(key, value, defaultValue, isDefaultKnown, baseVal);
+    }
+
+    public void reloadFromDisk(final String testName, final boolean isHeadless, final boolean isAllLeafs,
+                               final int allLeafsCount) {
+
+        if (isNotNull(testProperties)) {
+            testProperties.readCommonConfiguration();
+            testProperties.readTestConfiguration();
+        }
+        baseline.clear();
+        model.setRowCount(0);
+        populateProperties(testName, isHeadless, isAllLeafs, allLeafsCount);
     }
 
     private void populateProperties(final String testName, final boolean isHeadless, final boolean isAllLeafs,
@@ -577,6 +596,8 @@ public class PropertiesPanel extends JPanel {
                             validValues.stream().anyMatch(option -> option.equalsIgnoreCase(currentValue)))) {
                 comboBox = new JComboBox<>(validValues.toArray(new String[0]));
                 comboBox.putClientProperty("JComboBox.isTableCellEditor", Boolean.TRUE);
+                comboBox.setForeground(Color.BLACK);
+                comboBox.setBackground(Color.WHITE);
                 comboBox.setSelectedItem(validValues.stream()
                         .filter(option -> option.equalsIgnoreCase(currentValue))
                         .findFirst()
@@ -586,6 +607,9 @@ public class PropertiesPanel extends JPanel {
                 return comboBox;
             }
             field = new JTextField(currentValue);
+            field.setForeground(Color.BLACK);
+            field.setBackground(Color.WHITE);
+            field.setCaretColor(Color.BLACK);
             normalBorder = field.getBorder();
             comboBox = null;
             return field;
