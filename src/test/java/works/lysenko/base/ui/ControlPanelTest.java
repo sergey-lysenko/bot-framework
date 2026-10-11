@@ -68,7 +68,7 @@ class ControlPanelTest {
             assertEquals("Execution", tabbedPane.getTitleAt(2));
             assertEquals("Tree Progression", tabbedPane.getTitleAt(3));
             assertEquals("Known Issues", tabbedPane.getTitleAt(4));
-            assertEquals(0, tabbedPane.getSelectedIndex());
+            assertEquals(1, tabbedPane.getSelectedIndex());
         });
     }
 
@@ -113,13 +113,15 @@ class ControlPanelTest {
             final ControlPanel controlPanel = new ControlPanel(parameters, gui);
 
             final JTabbedPane tabbedPane = controlPanel.getTabbedPane();
-            assertEquals(0, tabbedPane.getSelectedIndex());
+            assertEquals(1, tabbedPane.getSelectedIndex());
 
             try {
                 final java.lang.reflect.Method startRunMethod = ControlPanel.class.getDeclaredMethod("startRun", int.class);
                 startRunMethod.setAccessible(true);
                 startRunMethod.invoke(controlPanel, 2);
                 assertEquals(2, tabbedPane.getSelectedIndex());
+                org.junit.jupiter.api.Assertions.assertFalse(tabbedPane.isEnabledAt(0));
+                org.junit.jupiter.api.Assertions.assertFalse(tabbedPane.isEnabledAt(1));
             } catch (final Exception e) {
                 throw new RuntimeException(e);
             }

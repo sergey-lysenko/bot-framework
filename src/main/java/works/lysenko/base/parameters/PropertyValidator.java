@@ -8,7 +8,14 @@ import java.awt.Color;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
+import java.util.Arrays;
+import org.reflections.Reflections;
 
+import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.func.type.fractions.Factory.fr;
 
 /**
@@ -23,6 +30,8 @@ public final class PropertyValidator {
      */
     private static final Map<PropEnum, List<String>> ALLOWED_VALUES = Map.of(
             PropEnum._TEST_REPORT_PROGRESSION_TREE_SONIFICATION, ProgressionSettings.treeSonificationValues());
+
+    private static List<String> cachedProperties = null;
 
     private PropertyValidator() {
     }
@@ -102,6 +111,71 @@ public final class PropertyValidator {
                     .toList();
         }
         return ALLOWED_VALUES.getOrDefault(property, List.of());
+    }
+
+    public static synchronized List<String> getAllKnownProperties() {
+        if (cachedProperties == null) {
+            cachedProperties = new ArrayList<>();
+            cachedProperties.addAll(Arrays.stream(PropEnum.values())
+                    .map(PropEnum::getPropertyName)
+                    .collect(Collectors.toList()));
+            
+            String rootPackage = PropEnum._TEST_ROOT.get();
+            if (rootPackage == null || rootPackage.isEmpty() || rootPackage.equals(".")) {
+                rootPackage = "works.lysenko";
+            }
+            
+            final String prefixToRemove = rootPackage + ".";
+            final Set<String> scenarioNames = new HashSet<>();
+            
+            // 1. Traverse constructed virtual tree to resolve aliases and sub-scenarios
+            try {
+                final works.lysenko.tree.Tree tree = new works.lysenko.tree.Tree(rootPackage);
+                if (isNotNull(tree.getBranches())) {
+                    for (final var branch : tree.getBranches()) {
+                        collectVirtualScenarioNames(branch, scenarioNames);
+                    }
+                }
+            } catch (final Exception ignored) {
+                // Ignore virtual tree resolution failures
+            }
+            
+            // 2. Reflectively scan rootPackage ONLY for unattached scenario classes inside rootPackage
+            try {
+                final Reflections reflections = new Reflections(rootPackage);
+                
+                final java.util.function.Consumer<Class<?>> addStrippedName = c -> {
+                    final String name = c.getName();
+                    if (name.startsWith(prefixToRemove)) {
+                        scenarioNames.add(name.substring(prefixToRemove.length()));
+                    }
+                };
+                
+                reflections.getSubTypesOf(works.lysenko.tree.base.Node.class).forEach(addStrippedName);
+                reflections.getSubTypesOf(works.lysenko.tree.base.Leaf.class).forEach(addStrippedName);
+                reflections.getSubTypesOf(works.lysenko.tree.base.Mono.class).forEach(addStrippedName);
+            } catch (final Exception ignored) {
+                // Ignore reflections failures
+            }
+            
+            cachedProperties.addAll(scenarioNames);
+            cachedProperties = cachedProperties.stream().distinct().sorted().collect(Collectors.toList());
+        }
+        return cachedProperties;
+    }
+
+    private static void collectVirtualScenarioNames(final works.lysenko.util.apis.scenario._Scenario scenario, final Set<String> names) {
+        if (null == scenario) return;
+        names.add(scenario.getShortName());
+        if (scenario instanceof works.lysenko.util.apis.scenario._Node node) {
+            if (isNotNull(node.getPool()) && isNotNull(node.getPool().getPairList())) {
+                for (final var kv : node.getPool().getPairList()) {
+                    if (isNotNull(kv) && isNotNull(kv.k())) {
+                        collectVirtualScenarioNames(kv.k(), names);
+                    }
+                }
+            }
+        }
     }
 
     private static PropEnum find(final String propertyName) {

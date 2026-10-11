@@ -53,8 +53,10 @@ public final class GuiParameters {
         if (isNotNull(files)) {
             for (final File file : files) {
                 if (file.isDirectory()) {
-                    scanDirectoryFiles(file, prefix + file.getName() + "/", filter, entityList);
-                } else if (file.getName().endsWith(filter) || file.getName().endsWith(".part")) {
+                    if (!"parts".equalsIgnoreCase(file.getName())) {
+                        scanDirectoryFiles(file, prefix + file.getName() + "/", filter, entityList);
+                    }
+                } else if (file.getName().endsWith(filter) && !file.getName().endsWith(".part")) {
                     final String rawName = file.getName();
                     final String entityName = rawName.contains(".") ? rawName.substring(0, rawName.lastIndexOf('.')) : rawName;
                     final String fullEntity = prefix + entityName;

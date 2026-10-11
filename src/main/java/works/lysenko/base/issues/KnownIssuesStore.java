@@ -114,7 +114,6 @@ public final class KnownIssuesStore {
                     if (null == scenarioTarget || scenarioTarget.isBlank()) matches.add(ki);
                     else if (null != scenarios && !scenarios.isEmpty()) {
                         if (KnownIssuesMatcher.matchesAnyScenario(scenarioTarget, scenarios)) matches.add(ki);
-                        else if (KnownIssuesMatcher.matchesScenarioInText(scenarioTarget, logRecord.text())) matches.add(ki);
                     } else if (KnownIssuesMatcher.matchesScenarioInText(scenarioTarget, logRecord.text())) matches.add(ki);
                 }
             }

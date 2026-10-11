@@ -18,7 +18,8 @@ import static works.lysenko.util.data.enums.Severity.S1;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Strings.NULL;
-import static works.lysenko.util.lang.word.F.FALSE;
+import static works.lysenko.util.lang.word.F.*;
+import static works.lysenko.util.lang.word.N.*;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
@@ -148,6 +149,7 @@ public enum PropEnum implements _PropEnum {
     _TEST_EXECUTION_TIME_SAFEGUARD(String.class, _2_, _0_, VRT_BAR, _2_, _0_, _0_, _0_),
     _TEST_FAIL_BY_EVENT_OF_SEVERITY(Integer.class, s(S1.ordinal()), true),
     _TEST_HEADLESS(Boolean.class, FALSE, false, true),
+    _TEST_KNOWN_ISSUES_FAILED_ONLY(Boolean.class, FALSE),
     _TEST_LONG_OPERATION_SEVERITY(Integer.class, _0_),
     _TEST_LONG_OPERATION_THRESHOLD(Integer.class, _9_, _9_, _9_, _9_),
     _TEST_MAX_TYPING_DELAY(Integer.class, _5_, _0_),
@@ -157,7 +159,7 @@ public enum PropEnum implements _PropEnum {
     _TEST_REPORT_ADD_ETA_DEBUG(Boolean.class, TRUE),
     _TEST_REPORT_CPU_DENSITY(Integer.class, _5_, _0_, _0_, _0_),
     _TEST_REPORT_CPU_DENSITY_PER_TEST(Boolean.class, FALSE),
-    _TEST_REPORT_PROGRESSION_FFMPEG(String.class, "ffmpeg"),
+    _TEST_REPORT_PROGRESSION_FFMPEG(String.class, FFMPEG),
     _TEST_REPORT_PROGRESSION_MAX_FRAMES(Integer.class, _5_, _0_, _0_, _0_),
     _TEST_REPORT_PROGRESSION_MAX_FRAME_PIXELS(Integer.class, _1_, _6_, _7_, _7_, _7_, _2_, _1_, _6_, _0_),
     _TEST_REPORT_PROGRESSION_MAX_TOTAL_PIXELS(Integer.class, _2_, _0_, _0_, _0_, _0_, _0_, _0_, _0_, _0_, _0_),
@@ -169,7 +171,7 @@ public enum PropEnum implements _PropEnum {
     _TEST_REPORT_PROGRESSION_TREE_GIF(Boolean.class, FALSE),
     _TEST_REPORT_PROGRESSION_TREE_MP4(Boolean.class, TRUE),
     _TEST_REPORT_PROGRESSION_TREE_PER_NODE(Boolean.class, FALSE),
-    _TEST_REPORT_PROGRESSION_TREE_SONIFICATION(String.class, "none"),
+    _TEST_REPORT_PROGRESSION_TREE_SONIFICATION(String.class, NONE),
     _TEST_REPORT_PROGRESSION_TREE_WEBP(Boolean.class, TRUE),
     _TEST_RESILIENT_MODE(Boolean.class, FALSE, true, true),
     _TEST_ROOT(String.class, EMPTY),
@@ -355,5 +357,9 @@ public enum PropEnum implements _PropEnum {
     public Class<?> type() {
 
         return type;
+    }
+
+    private static class Constants {
+
     }
 }

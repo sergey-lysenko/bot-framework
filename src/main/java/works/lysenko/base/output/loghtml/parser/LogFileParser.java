@@ -91,8 +91,7 @@ public final class LogFileParser {
     private static final Pattern LINE_NO_TEST_RE = Pattern.compile("^(?:\\[\\s*\\])?\\[\\s*(\\d+)\\s*\\]\\[([^\\]]+)\\](?:\\[([^\\]]*)\\])?(.*)$");
     @SuppressWarnings("HardcodedFileSeparator")
     private static final Pattern PATH_LINE_RE = Pattern.compile(s("\\[\\s*(\\d+)\\s*\\]\\s*\\[\\s*([\\d,]+)\\s*\\]\\s*", RHT_ARR, "\\s*(.*)"));
-    @SuppressWarnings("HardcodedFileSeparator")
-    private static final Pattern SCEN_LINE_RE = Pattern.compile(s("([▷◼◆●])\\\\s*([a-zA-Z0-9_]+(?:\\\\.[a-zA-Z0-9_]+)*)[.\\\\s]+(\\[[^\\]]+\\]|\\\\([^)]+\\\\)\\\\s*", RHT_ARR, "\\\\s*\\[[^\\]]+\\])\\\\s*(\\\\d+(?::\\\\d+)?)(?:\\\\s*\\\\(([^)]+)\\\\))?"));
+    private static final Pattern SCEN_LINE_RE = Pattern.compile("([▷◼◆●])\\s+([a-zA-Z0-9_]+(?:\\.[a-zA-Z0-9_]+)*)[.\\s]+(.+?)\\s+(\\d+)(?:\\s*\\(([^)]+)\\))?$");
     private static final Pattern TEST_RUN_SUMMARY_RE = Pattern.compile(".*\\b\\d+\\s+tests?\\s+of\\s+.+\\s+done\\s+in\\s+.*");
     private static final Pattern DIGITS_RE = Pattern.compile("\\d+");
     private static final Pattern DOT_END_RE = Pattern.compile("\\.+$");
@@ -168,6 +167,7 @@ public final class LogFileParser {
 
         int prevTestNum = 0;
         boolean inPostflight = false;
+        boolean inScenStats = false;
 
 
         final Matcher mAnsi = ANSI_PATTERN.matcher("");
@@ -212,14 +212,22 @@ public final class LogFileParser {
                 result.testPaths.add(new LogModels.PathEntry(tNum, String.format(Locale.ROOT, "%.3fs", durSec), steps));
             }
 
-            mScen.reset(clean);
-            if (mScen.find()) {
-                final String sym = mScen.group(1);
-                final String name = mDotEnd.reset(mScen.group(2)).replaceAll("").trim();
-                final String weight = mScen.group(3).trim();
-                final String count = mScen.group(4);
-                final String events = null != mScen.group(5) ? mScen.group(5).trim() : EMPTY;
-                result.scenStats.add(new LogModels.ScenEntry(sym, name, weight, count, events));
+            if (clean.contains("Scenarios statistics") || clean.contains("Scenario statistics")) {
+                inScenStats = true;
+            }
+
+            if (inScenStats) {
+                mScen.reset(clean);
+                if (mScen.find()) {
+                    final String sym = mScen.group(1);
+                    final String name = mDotEnd.reset(mScen.group(2)).replaceAll("").trim();
+                    final String weight = mScen.group(3).trim();
+                    final String count = mScen.group(4);
+                    final String events = null != mScen.group(5) ? mScen.group(5).trim() : EMPTY;
+                    result.scenStats.add(new LogModels.ScenEntry(sym, name, weight, count, events));
+                } else if ((clean.startsWith("=") || clean.contains("screenshot") || isPostflightEvent(clean)) && !clean.contains("Scenarios statistics")) {
+                    inScenStats = false;
+                }
             }
 
             if (clean.contains(s(c(EXECUTING), _SPACE_)) && clean.contains(s(_SPACE_, OF, _SPACE_))) {
@@ -265,7 +273,7 @@ public final class LogFileParser {
                 }
             }
 
-            if (clean.contains(b(s(_NUMBR_), c(APPLIED), TEST, CONFIGURATION)) && BOOTING.equals(currentSec.type)) {
+            if ((clean.contains("Creating Test properties") || clean.contains("Reading Common Configuration") || clean.contains("Reading Parameters") || clean.contains(b(s(_NUMBR_), c(APPLIED), TEST, CONFIGURATION))) && BOOTING.equals(currentSec.type)) {
                 if (!currentSec.lines.isEmpty()) result.sections.add(currentSec);
                 currentSec = new LogModels.LogSection(CONFIGURING, c(CONFIGURING), NEUTRAL, lineStore);
             }

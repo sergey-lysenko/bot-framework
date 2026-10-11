@@ -9,9 +9,12 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.text.JTextComponent;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
+import org.reflections.Reflections;
+import java.util.Set;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -53,13 +56,9 @@ public class ConfigTestsEditorPanel extends JPanel {
     private final JLabel activeFileLabel = new JLabel("No file selected");
     private final JLabel activeFileBadge = new JLabel();
 
-    private final JTable table;
     private final DefaultTableModel tableModel;
-    private final JTextField keyField = new JTextField();
-    private final JTextField valueField = new JTextField();
+    private final PropertyTablePanel propertyTablePanel;
     private final JLabel scopeWarningLabel = new JLabel();
-    private final JLabel liveValidationErrorLabel = new JLabel();
-    private final JLabel propertyHintLabel = new JLabel();
 
     private final JTextArea rawTextArea = new JTextArea();
     private final CardLayout cardLayout = new CardLayout();
@@ -175,39 +174,38 @@ public class ConfigTestsEditorPanel extends JPanel {
                 }
             }
         };
-        table = new JTable(tableModel);
-        table.setRowHeight(26);
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        propertyTablePanel = new PropertyTablePanel(tableModel, 1, 2, false, null);
+        propertyTablePanel.setSearchAndFiltersVisible(false);
+        
+        final JTable table = propertyTablePanel.getTable();
         table.getColumnModel().getColumn(0).setMaxWidth(110);
         table.getColumnModel().getColumn(0).setCellRenderer(new ScopeCellRenderer());
-        table.getColumnModel().getColumn(2).setCellEditor(new ValidatingCellEditor());
-
-        table.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                populateFormFromSelectedRow();
+        table.getColumnModel().getColumn(2).setCellEditor(new ValidatingCellEditor(1, msg -> {
+            if (msg != null) {
+                scopeWarningLabel.setText("⚠️ " + msg);
+                scopeWarningLabel.setVisible(true);
+            } else {
+                scopeWarningLabel.setVisible(false);
             }
-        });
+        }));
 
         tableModel.addTableModelListener(e -> {
             if (isUpdatingForm) return;
-            final int row = e.getFirstRow();
+            final int r = e.getFirstRow();
             final int col = e.getColumn();
-            if (row >= 0 && row < tableModel.getRowCount()) {
+            if (r >= 0 && r < tableModel.getRowCount()) {
                 isUpdatingForm = true;
                 try {
                     if (col == 1) {
-                        final String k = (String) tableModel.getValueAt(row, 1);
-                        tableModel.setValueAt(determineScope(k), row, 0);
+                        final String k = (String) tableModel.getValueAt(r, 1);
+                        tableModel.setValueAt(determineScope(k), r, 0);
                     }
-                    populateFormFromSelectedRow();
                     validateContainerScope();
                 } finally {
                     isUpdatingForm = false;
                 }
             }
         });
-
-        final JScrollPane tableScrollPane = new JScrollPane(table);
 
         // Scope / Value warning banner
         scopeWarningLabel.setOpaque(true);
@@ -220,70 +218,15 @@ public class ConfigTestsEditorPanel extends JPanel {
         scopeWarningLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         scopeWarningLabel.setVisible(false);
 
-        // Live Validation & Hint Labels
-        liveValidationErrorLabel.setForeground(new Color(0xDC, 0x26, 0x26));
-        liveValidationErrorLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
-        liveValidationErrorLabel.setVisible(false);
-
-        propertyHintLabel.setForeground(new Color(0x25, 0x63, 0xEB));
-        propertyHintLabel.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 11));
-        propertyHintLabel.setVisible(false);
-
-        // Property entry details form
-        final JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(BorderFactory.createTitledBorder("Property Details"));
-        final GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 4, 4, 4);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        int row = 0;
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.0;
-        formPanel.add(new JLabel("Key / Property:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1.0;
-        formPanel.add(keyField, gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.0;
-        formPanel.add(new JLabel("Value / Weight:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1.0;
-        formPanel.add(valueField, gbc);
-        row++;
-
-        // Live validation & hint row
-        gbc.gridx = 1; gbc.gridy = row; gbc.weightx = 1.0;
-        final JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        infoPanel.add(liveValidationErrorLabel);
-        infoPanel.add(propertyHintLabel);
-        formPanel.add(infoPanel, gbc);
-        row++;
-
-        final JPanel formButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
-        final JButton newEntryBtn = new JButton("New Entry");
-        newEntryBtn.addActionListener(e -> clearForm());
-
-        final JButton saveEntryBtn = new JButton("Save Entry");
-        saveEntryBtn.addActionListener(e -> saveCurrentFormEntry());
-
-        final JButton deleteEntryBtn = new JButton("Delete Entry");
-        deleteEntryBtn.addActionListener(e -> deleteSelectedEntry());
-
-        formButtons.add(newEntryBtn);
-        formButtons.add(saveEntryBtn);
-        formButtons.add(deleteEntryBtn);
-
-        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
-        formPanel.add(formButtons, gbc);
-
-        // Setup real-time DocumentListener for validation
-        setupLiveFieldValidation();
+        propertyTablePanel.setFormSaveAction(e -> saveCurrentFormEntry());
+        propertyTablePanel.setFormDeleteAction(e -> deleteSelectedEntry());
 
         final JPanel formViewPanel = new JPanel(new BorderLayout(0, 8));
         formViewPanel.add(scopeWarningLabel, BorderLayout.NORTH);
-        formViewPanel.add(tableScrollPane, BorderLayout.CENTER);
-        formViewPanel.add(formPanel, BorderLayout.SOUTH);
+        formViewPanel.add(propertyTablePanel, BorderLayout.CENTER);
 
         // Attach context menu
-        ContextMenu.attach(keyField, valueField, rawTextArea);
+        ContextMenu.attach((JTextComponent) propertyTablePanel.getKeyField().getEditor().getEditorComponent(), propertyTablePanel.getValueField(), rawTextArea);
 
         rawTextArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         final JScrollPane rawScrollPane = new JScrollPane(rawTextArea);
@@ -308,56 +251,6 @@ public class ConfigTestsEditorPanel extends JPanel {
 
         refreshTreeFromDisk();
         selectDefaultFileNode();
-    }
-
-    private void setupLiveFieldValidation() {
-        final DocumentListener listener = new DocumentListener() {
-            @Override
-            public void insertUpdate(final DocumentEvent e) {
-                performLiveValidation();
-            }
-
-            @Override
-            public void removeUpdate(final DocumentEvent e) {
-                performLiveValidation();
-            }
-
-            @Override
-            public void changedUpdate(final DocumentEvent e) {
-                performLiveValidation();
-            }
-        };
-
-        keyField.getDocument().addDocumentListener(listener);
-        valueField.getDocument().addDocumentListener(listener);
-    }
-
-    private void performLiveValidation() {
-        final String key = keyField.getText().trim();
-        final String val = valueField.getText().trim();
-
-        // 1. Check known allowed choices
-        final List<String> allowedValues = PropertyValidator.validValues(key);
-        if (!allowedValues.isEmpty()) {
-            propertyHintLabel.setText(" Allowed: " + String.join(", ", allowedValues));
-            propertyHintLabel.setVisible(true);
-        } else {
-            propertyHintLabel.setVisible(false);
-        }
-
-        // 2. Validate value against type
-        if (!key.isEmpty() && !val.isEmpty()) {
-            final String err = PropertyValidator.validate(key, val);
-            if (isNotNull(err)) {
-                liveValidationErrorLabel.setText("⚠️ " + err);
-                liveValidationErrorLabel.setVisible(true);
-                valueField.setBackground(new Color(0xFE, 0xF2, 0xF2));
-                return;
-            }
-        }
-
-        liveValidationErrorLabel.setVisible(false);
-        valueField.setBackground(UIManager.getColor("TextField.background"));
     }
 
     private void setupSaveKeyboardShortcut() {
@@ -452,6 +345,7 @@ public class ConfigTestsEditorPanel extends JPanel {
 
         treeModel.reload();
 
+
         // Expand all root nodes
         for (int i = 0; i < fileTree.getRowCount(); i++) {
             fileTree.expandRow(i);
@@ -487,11 +381,11 @@ public class ConfigTestsEditorPanel extends JPanel {
     }
 
     public void stopOrCancelTableEditing() {
-        if (isNotNull(table) && table.isEditing()) {
-            final TableCellEditor editor = table.getCellEditor();
+        if (isNotNull(propertyTablePanel) && isNotNull(propertyTablePanel.getTable()) && propertyTablePanel.getTable().isEditing()) {
+            final TableCellEditor editor = propertyTablePanel.getTable().getCellEditor();
             if (isNotNull(editor)) {
                 editor.stopCellEditing();
-                if (table.isEditing()) {
+                if (propertyTablePanel.getTable().isEditing()) {
                     editor.cancelCellEditing();
                 }
             }
@@ -522,54 +416,38 @@ public class ConfigTestsEditorPanel extends JPanel {
                 activeFileBadge.setText("GLOBAL CONFIG");
                 activeFileBadge.setBackground(new Color(0xDB, 0xEA, 0xFE));
                 activeFileBadge.setForeground(new Color(0x1E, 0x40, 0xAF));
+                propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);
             }
             case CONFIG_PART -> {
                 activeFileBadge.setText("CONFIG PARTIAL");
                 activeFileBadge.setBackground(new Color(0xDC, 0xFC, 0xE7));
                 activeFileBadge.setForeground(new Color(0x16, 0x65, 0x34));
+                propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);
             }
             case TEST_SUITE -> {
                 activeFileBadge.setText("TEST SUITE");
                 activeFileBadge.setBackground(new Color(0xFE, 0xF3, 0xC7));
                 activeFileBadge.setForeground(new Color(0x92, 0x40, 0x0E));
+                propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.TESTS_ONLY);
             }
             case TEST_PART -> {
                 activeFileBadge.setText("TEST PARTIAL");
                 activeFileBadge.setBackground(new Color(0xF3, 0xE8, 0xFF));
                 activeFileBadge.setForeground(new Color(0x6B, 0x21, 0xA8));
+                propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.TESTS_ONLY);
             }
             default -> {
                 activeFileBadge.setText("FILE");
                 activeFileBadge.setBackground(Color.LIGHT_GRAY);
                 activeFileBadge.setForeground(Color.BLACK);
+                propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.BOTH);
             }
-        }
-    }
-
-    private void clearForm() {
-        table.clearSelection();
-        keyField.setText("");
-        valueField.setText("");
-        performLiveValidation();
-    }
-
-    private void populateFormFromSelectedRow() {
-        final int row = table.getSelectedRow();
-        if (row >= 0 && row < tableModel.getRowCount()) {
-            isUpdatingForm = true;
-            try {
-                keyField.setText((String) tableModel.getValueAt(row, 1));
-                valueField.setText((String) tableModel.getValueAt(row, 2));
-            } finally {
-                isUpdatingForm = false;
-            }
-            performLiveValidation();
         }
     }
 
     private void saveCurrentFormEntry() {
-        final String key = keyField.getText().trim();
-        final String val = valueField.getText().trim();
+        final String key = propertyTablePanel.getKeyField().getText().trim();
+        final String val = propertyTablePanel.getValueField().getText().trim();
         if (key.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Key / Property name cannot be empty.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return;
@@ -592,24 +470,30 @@ public class ConfigTestsEditorPanel extends JPanel {
         final String scope = determineScope(key);
         final Object[] rowData = {scope, key, val};
 
+        final JTable table = propertyTablePanel.getTable();
         final int selectedRow = table.getSelectedRow();
         if (selectedRow >= 0 && selectedRow < tableModel.getRowCount()) {
             for (int col = 0; col < rowData.length; col++) {
-                tableModel.setValueAt(rowData[col], selectedRow, col);
+                tableModel.setValueAt(rowData[col], table.convertRowIndexToModel(selectedRow), col);
             }
         } else {
             tableModel.addRow(rowData);
-            table.setRowSelectionInterval(tableModel.getRowCount() - 1, tableModel.getRowCount() - 1);
+            final int modelRow = tableModel.getRowCount() - 1;
+            final int viewRow = table.convertRowIndexToView(modelRow);
+            if (viewRow >= 0) {
+                table.setRowSelectionInterval(viewRow, viewRow);
+            }
         }
 
         validateContainerScope();
     }
 
     private void deleteSelectedEntry() {
+        final JTable table = propertyTablePanel.getTable();
         final int selectedRow = table.getSelectedRow();
         if (selectedRow >= 0 && selectedRow < tableModel.getRowCount()) {
-            tableModel.removeRow(selectedRow);
-            clearForm();
+            tableModel.removeRow(table.convertRowIndexToModel(selectedRow));
+            propertyTablePanel.clearForm();
             validateContainerScope();
         }
     }
@@ -670,7 +554,7 @@ public class ConfigTestsEditorPanel extends JPanel {
         isUpdatingForm = true;
         try {
             tableModel.setRowCount(0);
-            clearForm();
+            propertyTablePanel.clearForm();
 
             if (Files.exists(currentSelectedNode.path())) {
                 final List<String> lines = Files.readAllLines(currentSelectedNode.path(), StandardCharsets.UTF_8);
@@ -869,79 +753,6 @@ public class ConfigTestsEditorPanel extends JPanel {
 
     // --- Validating Cell Editor for JTable Inline Editing ---
 
-    private final class ValidatingCellEditor extends AbstractCellEditor implements TableCellEditor {
-
-        private JTextField field;
-        private JComboBox<String> comboBox;
-        private String propertyName;
-
-        @Override
-        public Component getTableCellEditorComponent(final JTable tbl, final Object value, final boolean isSelected,
-                                                     final int row, final int column) {
-            final int modelRow = tbl.convertRowIndexToModel(row);
-            propertyName = (modelRow >= 0 && modelRow < tableModel.getRowCount()) ? (String) tableModel.getValueAt(modelRow, 1) : "";
-            final String currentValue = null == value ? "" : value.toString();
-            final List<String> validValues = PropertyValidator.validValues(propertyName);
-
-            if (!validValues.isEmpty() &&
-                    (currentValue.isEmpty() || validValues.stream().anyMatch(option -> option.equalsIgnoreCase(currentValue)))) {
-                comboBox = new JComboBox<>(validValues.toArray(new String[0]));
-                comboBox.putClientProperty("JComboBox.isTableCellEditor", Boolean.TRUE);
-                comboBox.setForeground(Color.BLACK);
-                comboBox.setBackground(Color.WHITE);
-                comboBox.setSelectedItem(validValues.stream()
-                        .filter(option -> option.equalsIgnoreCase(currentValue))
-                        .findFirst()
-                        .orElse(validValues.get(0)));
-                field = null;
-                return comboBox;
-            }
-
-            field = new JTextField(currentValue);
-            field.setFont(tbl.getFont());
-            field.setForeground(Color.BLACK);
-            field.setBackground(Color.WHITE);
-            field.setCaretColor(Color.BLACK);
-            field.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(new Color(0x3B, 0x82, 0xF6), 1),
-                    BorderFactory.createEmptyBorder(2, 4, 2, 4)
-            ));
-            comboBox = null;
-            return field;
-        }
-
-        @Override
-        public Object getCellEditorValue() {
-            return null != comboBox ? comboBox.getSelectedItem() : field.getText();
-        }
-
-        @Override
-        public boolean stopCellEditing() {
-            final int editingRow = table.getEditingRow();
-            if (editingRow < 0 || editingRow >= tableModel.getRowCount()) {
-                fireEditingStopped();
-                return true;
-            }
-            final String value = String.valueOf(getCellEditorValue());
-            final String error = PropertyValidator.validate(propertyName, value);
-            if (isNotNull(error)) {
-                if (null != field) {
-                    field.setBorder(BorderFactory.createLineBorder(new Color(190, 0, 0), 2));
-                    field.setToolTipText(error);
-                }
-                scopeWarningLabel.setText("⚠️ " + propertyName + ": " + error);
-                scopeWarningLabel.setVisible(true);
-                return false;
-            }
-            if (null != field) {
-                field.setBorder(UIManager.getBorder("TextField.border"));
-                field.setToolTipText(null);
-            }
-            scopeWarningLabel.setVisible(false);
-            fireEditingStopped();
-            return true;
-        }
-    }
 
     // --- Cell Renderers ---
 

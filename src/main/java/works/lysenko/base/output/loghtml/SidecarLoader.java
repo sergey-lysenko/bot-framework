@@ -296,7 +296,27 @@ public final class SidecarLoader {
         } catch (final IOException ignored) {
         }
 
-        final List<SystemResourceItem> trimmedItems = trimTelemetryToTestPeriod(items, minTestOp, maxTestOp);
+        List<SystemResourceItem> trimmedItems = trimTelemetryToTestPeriod(items, minTestOp, maxTestOp);
+
+        if (testCount > 0 && !trimmedItems.isEmpty()) {
+            final List<int[]> perTestBounds = findTestOpBoundsPerTest(runLogFile, testCount);
+            if (!perTestBounds.isEmpty()) {
+                final List<SystemResourceItem> taggedItems = new ArrayList<>(trimmedItems.size());
+                for (final SystemResourceItem item : trimmedItems) {
+                    int testNum = 0;
+                    for (int k = 0; k < perTestBounds.size(); k++) {
+                        final int[] bounds = perTestBounds.get(k);
+                        if (item.sampleNum >= bounds[0] && item.sampleNum <= bounds[1]) {
+                            testNum = k + 1;
+                            break;
+                        }
+                    }
+                    taggedItems.add(new SystemResourceItem(item.sampleNum, item.cpuPct, item.maxCpuPct,
+                            item.usedRamMb, item.totalRamMb, item.threads, testNum));
+                }
+                trimmedItems = taggedItems;
+            }
+        }
 
         if (Boolean.TRUE.equals(PropEnum._TEST_REPORT_CPU_DENSITY_PER_TEST.get()) && testCount > 0) {
             final int totalSamples = trimmedItems.size();
@@ -597,13 +617,15 @@ public final class SidecarLoader {
                 sumThreads += item.threads;
             }
 
-            final int midSampleNum = rawItems.get((startIndex + endIndex) / 2).sampleNum;
+            final SystemResourceItem midItem = rawItems.get((startIndex + endIndex) / 2);
+            final int midSampleNum = midItem.sampleNum;
+            final int midTestNum = midItem.testNum;
             final double avgCpu = sumCpu / count;
             final double avgUsedRam = sumUsedRam / count;
             final double avgTotalRam = sumTotalRam / count;
             final int avgThreads = (int) Math.round((double) sumThreads / count);
 
-            downsampled.add(new SystemResourceItem(midSampleNum, avgCpu, maxCpu, avgUsedRam, avgTotalRam, avgThreads));
+            downsampled.add(new SystemResourceItem(midSampleNum, avgCpu, maxCpu, avgUsedRam, avgTotalRam, avgThreads, midTestNum));
         }
 
         return downsampled;

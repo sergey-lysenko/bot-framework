@@ -4,9 +4,13 @@ import works.lysenko.Base;
 import works.lysenko.base.TestProperties;
 import works.lysenko.util.apis.properties._TestProperties;
 import works.lysenko.util.spec.PropEnum;
+import works.lysenko.base.ui.PropertyTablePanel;
+
+import works.lysenko.base.ui.ValidatingCellEditor;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
@@ -58,14 +62,9 @@ public class PropertiesPanel extends JPanel {
     private final Map<String, String> baseline = new LinkedHashMap<>();
     private final Map<String, String> overrides = new LinkedHashMap<>();
     private final DefaultTableModel model;
-    private final JTable table;
-    private final TableRowSorter<DefaultTableModel> sorter;
-    private final JTextField searchField;
-    private final JTextArea helpText;
-    private final JLabel helpTitle;
+    private final PropertyTablePanel propertyTablePanel;
     private final JButton resetSelectedBtn;
     private final JButton resetAllBtn;
-    private final JButton addPropertyBtn;
     private final JButton copyPropertyNameBtn;
     private final JButton okBtn;
     private JButton cancelBtn; // Keeping variable around just in case to not break test, but we'll remove it from the panel
@@ -119,37 +118,6 @@ public class PropertiesPanel extends JPanel {
 
         setLayout(new BorderLayout(8, 8));
 
-        // 1. Top Panel (Search/Filter & Quick Filters)
-        final JPanel topContainer = new JPanel(new BorderLayout());
-
-        final JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
-        searchPanel.add(new JLabel(b(c(SEARCH), s(_COLON_))));
-        searchField = new JTextField(12);
-        final JButton clearBtn = new JButton(c(CLEAR));
-        clearBtn.setMargin(new Insets(2, 6, 2, 6));
-        clearBtn.addActionListener(e -> searchField.setText(""));
-        searchPanel.add(searchField);
-        searchPanel.add(clearBtn);
-
-        if (null != extraSearchComponent) {
-            searchPanel.add(Box.createHorizontalStrut(12));
-            searchPanel.add(extraSearchComponent);
-        }
-
-        topContainer.add(searchPanel, BorderLayout.NORTH);
-
-        final JPanel quickFiltersPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
-        final String[] quickFilters = {".data", ".grid", ".logs", ".math", ".test", ".tree", ".webd", ".mobi", ".swipes", ".progression", ".screenshots"};
-        for (final String filter : quickFilters) {
-            final JButton filterBtn = new JButton(filter);
-            filterBtn.setMargin(new Insets(2, 6, 2, 6));
-            filterBtn.addActionListener(e -> searchField.setText(filter));
-            quickFiltersPanel.add(filterBtn);
-        }
-        topContainer.add(quickFiltersPanel, BorderLayout.SOUTH);
-
-        add(topContainer, BorderLayout.NORTH);
-
         // 2. Table and Model
         final String[] columns = {c(PROPERTY), c(VALUE), c(DEFAULT), c(STATUS), "Execution parameter"};
         model = new DefaultTableModel(columns, 0) {
@@ -168,40 +136,13 @@ public class PropertiesPanel extends JPanel {
 
         populateProperties(testName, isHeadless, isAllLeafs, allLeafsCount);
 
-        table = new JTable(model);
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setRowHeight(26);
-        table.getTableHeader().setReorderingAllowed(false);
-
-        sorter = new TableRowSorter<>(model);
-        table.setRowSorter(sorter);
+        propertyTablePanel = new PropertyTablePanel(model, 0, 1, true, extraSearchComponent);
+        propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);
 
         setupTableRenderingAndEditing();
-        setupSearchFiltering();
 
-        final JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(new EmptyBorder(0, 8, 0, 8));
-
-        helpTitle = new JLabel("Select a property to see help.");
-        helpText = new JTextArea();
-        helpText.setEditable(false);
-        helpText.setLineWrap(true);
-        helpText.setWrapStyleWord(true);
-        helpText.setFocusable(false);
-        helpText.setOpaque(false);
-        final JPanel helpPanel = new JPanel(new BorderLayout(4, 4));
-        helpPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createTitledBorder("Help"),
-                new EmptyBorder(4, 8, 8, 8)));
-        helpPanel.add(helpTitle, BorderLayout.NORTH);
-        helpPanel.add(new JScrollPane(helpText), BorderLayout.CENTER);
-
-        final JSplitPane content = new JSplitPane(JSplitPane.VERTICAL_SPLIT, scrollPane, helpPanel);
-        content.setResizeWeight(0.78);
-        content.setDividerLocation(0.78);
-        content.setBorder(null);
-        add(content, BorderLayout.CENTER);
-        table.getSelectionModel().addListSelectionListener(this::onPropertySelected);
+        add(propertyTablePanel, BorderLayout.CENTER);
+        propertyTablePanel.getTable().getSelectionModel().addListSelectionListener(this::onPropertySelected);
 
         // 3. Bottom Panel (Actions)
         final JPanel bottomPanel = new JPanel(new BorderLayout(8, 8));
@@ -216,12 +157,9 @@ public class PropertiesPanel extends JPanel {
         resetSelectedBtn.addActionListener(e -> onResetSelected());
         resetAllBtn = new JButton(b(c(RESET), "All"));
         resetAllBtn.addActionListener(e -> onResetAll());
-        addPropertyBtn = new JButton("+ " + c(PROPERTY));
-        addPropertyBtn.addActionListener(e -> onAddProperty());
         leftActions.add(copyPropertyNameBtn);
         leftActions.add(resetSelectedBtn);
         leftActions.add(resetAllBtn);
-        leftActions.add(addPropertyBtn);
 
         final JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         // cancelBtn = new JButton("Cancel");
@@ -369,10 +307,17 @@ public class PropertiesPanel extends JPanel {
             }
         };
 
+        final JTable table = propertyTablePanel.getTable();
         for (int i = 0; i < table.getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
         }
-        table.getColumnModel().getColumn(1).setCellEditor(new ValidatingCellEditor());
+        table.getColumnModel().getColumn(1).setCellEditor(new ValidatingCellEditor(0, msg -> {
+            if (msg != null) {
+                validationLabel.setText(msg);
+            } else {
+                validationLabel.setText(" ");
+            }
+        }));
 
         model.addTableModelListener(e -> {
             if (isUpdating) return;
@@ -397,71 +342,18 @@ public class PropertiesPanel extends JPanel {
         });
     }
 
-    private void setupSearchFiltering() {
-
-        searchField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(final DocumentEvent e) {
-                filter();
-            }
-
-            @Override
-            public void removeUpdate(final DocumentEvent e) {
-                filter();
-            }
-
-            @Override
-            public void changedUpdate(final DocumentEvent e) {
-                filter();
-            }
-
-            private void filter() {
-                final String text = searchField.getText().trim();
-                if (text.isEmpty()) {
-                    sorter.setRowFilter(null);
-                } else {
-                    final Pattern pattern = Pattern.compile("(?i)" + Pattern.quote(text));
-                    final RowFilter<DefaultTableModel, Integer> rowFilter = new RowFilter<>() {
-                        @Override
-                        public boolean include(final Entry<? extends DefaultTableModel, ? extends Integer> entry) {
-                            for (int column = 0; column < entry.getValueCount(); column++) {
-                                if (pattern.matcher(String.valueOf(entry.getValue(column))).find()) {
-                                    return true;
-                                }
-                            }
-                            final String key = String.valueOf(entry.getValue(0));
-                            final String description = PropertyHelp.getDescription(key);
-                            return null != description && pattern.matcher(description).find();
-                        }
-                    };
-                    sorter.setRowFilter(rowFilter);
-                }
-            }
-        });
-    }
 
     private void onPropertySelected(final ListSelectionEvent event) {
 
         if (event.getValueIsAdjusting()) return;
+        final JTable table = propertyTablePanel.getTable();
         final int viewRow = table.getSelectedRow();
         copyPropertyNameBtn.setEnabled(viewRow >= 0);
-        if (viewRow < 0) {
-            helpTitle.setText("Select a property to see help.");
-            helpText.setText("");
-            return;
-        }
-        final int modelRow = table.convertRowIndexToModel(viewRow);
-        final String key = (String) model.getValueAt(modelRow, 0);
-        final String description = PropertyHelp.getDescription(key);
-        helpTitle.setText(key);
-        helpText.setText((null == description || description.isBlank())
-                ? "No help is available for this property."
-                : description);
-        helpText.setCaretPosition(0);
     }
 
     private void copySelectedPropertyName() {
 
+        final JTable table = propertyTablePanel.getTable();
         final int viewRow = table.getSelectedRow();
         if (viewRow < 0) return;
         final int modelRow = table.convertRowIndexToModel(viewRow);
@@ -476,6 +368,7 @@ public class PropertiesPanel extends JPanel {
 
     private void onResetSelected() {
 
+        final JTable table = propertyTablePanel.getTable();
         final int viewRow = table.getSelectedRow();
         if (viewRow < 0) return;
         final int modelRow = table.convertRowIndexToModel(viewRow);
@@ -509,42 +402,6 @@ public class PropertiesPanel extends JPanel {
         }
     }
 
-    private void onAddProperty() {
-
-        final JTextField propNameField = new JTextField(20);
-        final JTextField propValueField = new JTextField(20);
-        final JPanel addPanel = new JPanel(new GridLayout(2, 2, 5, 5));
-        addPanel.add(new JLabel(b(c(PROPERTY), s(_COLON_))));
-        addPanel.add(propNameField);
-        addPanel.add(new JLabel(b(c(VALUE), s(_COLON_))));
-        addPanel.add(propValueField);
-
-        while (true) {
-            final int res = JOptionPane.showConfirmDialog(this, addPanel, "Add Custom Property",
-                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-            if (JOptionPane.OK_OPTION != res) return;
-            final String name = propNameField.getText().trim();
-            final String value = propValueField.getText().trim();
-            if (name.isEmpty()) return;
-            final String error = PropertyValidator.validate(name, value);
-            if (null != error) {
-                JOptionPane.showMessageDialog(this, error, "Invalid value for " + name, JOptionPane.ERROR_MESSAGE);
-                continue;
-            }
-            boolean found = false;
-            for (int r = 0; r < model.getRowCount(); r++) {
-                if (name.equals(model.getValueAt(r, 0))) {
-                    model.setValueAt(value, r, 1);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                model.addRow(new Object[]{name, value, "", STATUS_CUSTOM, ""});
-            }
-            return;
-        }
-    }
 
     /**
      * Checks all modified values; selects the first invalid row and reports the problem.
@@ -561,6 +418,7 @@ public class PropertiesPanel extends JPanel {
             final boolean changed = (null == baseVal) ? !val.isEmpty() : !val.equals(baseVal);
             final String error = changed ? PropertyValidator.validate(k, val) : null;
             if (null != error) {
+                final JTable table = propertyTablePanel.getTable();
                 final int viewRow = table.convertRowIndexToView(r);
                 if (viewRow >= 0) {
                     table.setRowSelectionInterval(viewRow, viewRow);
@@ -577,83 +435,10 @@ public class PropertiesPanel extends JPanel {
     /**
      * Text cell editor that refuses to commit a value failing {@link PropertyValidator}.
      */
-    private final class ValidatingCellEditor extends AbstractCellEditor implements TableCellEditor {
-
-        private JTextField field;
-        private JComboBox<String> comboBox;
-        private javax.swing.border.Border normalBorder;
-        private String propertyName;
-
-        @Override
-        public Component getTableCellEditorComponent(final JTable tbl, final Object value, final boolean isSelected,
-                                                     final int row, final int column) {
-            final int modelRow = tbl.convertRowIndexToModel(row);
-            propertyName = (String) model.getValueAt(modelRow, 0);
-            final String currentValue = null == value ? "" : value.toString();
-            final List<String> validValues = PropertyValidator.validValues(propertyName);
-            if (!validValues.isEmpty() &&
-                    (currentValue.isEmpty() ||
-                            validValues.stream().anyMatch(option -> option.equalsIgnoreCase(currentValue)))) {
-                comboBox = new JComboBox<>(validValues.toArray(new String[0]));
-                comboBox.putClientProperty("JComboBox.isTableCellEditor", Boolean.TRUE);
-                comboBox.setForeground(Color.BLACK);
-                comboBox.setBackground(Color.WHITE);
-                comboBox.setSelectedItem(validValues.stream()
-                        .filter(option -> option.equalsIgnoreCase(currentValue))
-                        .findFirst()
-                        .orElse(validValues.get(0)));
-                field = null;
-                normalBorder = null;
-                return comboBox;
-            }
-            field = new JTextField(currentValue);
-            field.setForeground(Color.BLACK);
-            field.setBackground(Color.WHITE);
-            field.setCaretColor(Color.BLACK);
-            normalBorder = field.getBorder();
-            comboBox = null;
-            return field;
-        }
-
-        @Override
-        public Object getCellEditorValue() {
-            return null != comboBox ? comboBox.getSelectedItem() : field.getText();
-        }
-
-        @Override
-        public boolean stopCellEditing() {
-            final String value = String.valueOf(getCellEditorValue());
-            final String error = PropertyValidator.validate(propertyName, value);
-            if (null != error) {
-                if (null != field) {
-                    field.setBorder(BorderFactory.createLineBorder(new Color(190, 0, 0), 2));
-                    field.setToolTipText(error);
-                }
-                validationLabel.setText(propertyName + ": " + error);
-                return false;
-            }
-            if (null != field) {
-                field.setBorder(normalBorder);
-                field.setToolTipText(null);
-            }
-            validationLabel.setText(" ");
-            fireEditingStopped();
-            return true;
-        }
-
-        @Override
-        public void cancelCellEditing() {
-            if (null != field) {
-                field.setBorder(normalBorder);
-                field.setToolTipText(null);
-            }
-            validationLabel.setText(" ");
-            fireEditingCanceled();
-        }
-    }
 
     public void applyChanges() {
 
+        final JTable table = propertyTablePanel.getTable();
         if (table.isEditing() && !table.getCellEditor().stopCellEditing()) {
             return;
         }
@@ -706,22 +491,22 @@ public class PropertiesPanel extends JPanel {
 
     public JTable getTable() {
 
-        return table;
+        return propertyTablePanel.getTable();
     }
 
     public JTextField getSearchField() {
 
-        return searchField;
+        return propertyTablePanel.getSearchField();
     }
 
     public JTextArea getHelpText() {
 
-        return helpText;
+        return propertyTablePanel.getHelpText();
     }
 
     public JLabel getHelpTitle() {
 
-        return helpTitle;
+        return propertyTablePanel.getHelpTitle();
     }
 
     public JButton getResetSelectedButton() {

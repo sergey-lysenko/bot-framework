@@ -12,7 +12,7 @@ import java.util.Set;
 
 import static works.lysenko.util.func.type.Objects.isNotNull;
 
-final class PropertyHelp {
+final public class PropertyHelp {
 
     private static final String RESOURCE = "/config/property-help.properties";
     private static final Properties DESCRIPTIONS = loadDescriptions();
@@ -20,7 +20,7 @@ final class PropertyHelp {
     private PropertyHelp() {
     }
 
-    static String getDescription(final String propertyName) {
+    public static String getDescription(final String propertyName) {
 
         return DESCRIPTIONS.getProperty(propertyName);
     }

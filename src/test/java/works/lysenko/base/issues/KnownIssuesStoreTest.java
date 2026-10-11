@@ -206,4 +206,41 @@ class KnownIssuesStoreTest {
         assertEquals(1, matched.size(), "Wildcard scenario with getForNode should match Address scenario result");
         assertEquals("NODEJS-3010", matched.get(0).title());
     }
+
+    @Test
+    @DisplayName("Log record with scenario text should not cross-contaminate unrelated scenarios")
+    void testLogRecordDoesNotCrossContaminateUnrelatedScenarios() {
+        final String json = """
+                {
+                  "issues" : [ {
+                    "scenario" : "signIn.correctLogin.partners.addNew.random.absentData.*",
+                    "title" : "NODEJS-3010",
+                    "description" : "No messages about required field after cleanup of field text",
+                    "link" : "https://biteheist.atlassian.net/browse/NODEJS-3010",
+                    "pattern" : "contains(@style, 'color: red')"
+                  } ]
+                }
+                """;
+
+        final KnownIssuesStore store = new KnownIssuesStore(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+
+        final _Scenario billingScenario = new Leaf(Fraction.ONE) {
+            @Override
+            public String getName() {
+                return "biteheist.tree.signIn.correctLogin.billing.Billing";
+            }
+
+            @Override
+            public String getSimpleName() {
+                return "Billing";
+            }
+        };
+
+        // Log record from another scenario failure mentioning absentData
+        final _LogRecord lrOtherScenario = new LogRecord(1, System.currentTimeMillis(),
+                new Event(1, EventType.SEVERE, 0, "ScenarioRuntimeException: ◼ 'SignIn.CorrectLogin.Partners.AddNew.Random.AbsentData.Password' Scenario execution failed due to contains(@style, 'color: red')", null));
+
+        final List<KnownIssue> matchedForBilling = store.getForLogRecord(List.of(billingScenario), lrOtherScenario);
+        assertTrue(matchedForBilling.isEmpty(), "Known issue for absentData should NOT be attached to unrelated Billing scenario");
+    }
 }

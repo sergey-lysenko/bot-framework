@@ -173,6 +173,9 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     @Override
     public String getShortName() {
 
+        if (isNotNull(parentScenario)) {
+            return s(parentScenario.getShortName(), _DOT_, getSimpleName());
+        }
         if (!isFromMainTree()) return getClass().getName();
         return getClass().getName().replace(s(root, _DOT_), EMPTY);
     }

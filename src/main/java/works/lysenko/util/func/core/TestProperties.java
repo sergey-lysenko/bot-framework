@@ -17,6 +17,7 @@ import static works.lysenko.util.lang.word.D.DIRECTORY;
 import static works.lysenko.util.lang.word.E.EXTENSION;
 import static works.lysenko.util.lang.word.I.INCLUDE;
 import static works.lysenko.util.prop.data.Delimeters.L1;
+import static works.lysenko.util.spec.Layout.Paths._CONFIG_;
 import static works.lysenko.util.spec.Layout.Parts.TEST_PROPERTIES_PARTS_EXTENSION;
 import static works.lysenko.util.spec.Symbols._DOT_;
 import static works.lysenko.util.spec.Symbols._LFD_;
@@ -28,28 +29,33 @@ public record TestProperties() {
 
     private static final String include = s(_DOT_, INCLUDE);
 
-    private static void validatePartScope(final String filename, final Properties target) {
+    private static void validatePartScope(final TestPropertiesDescriptor location, final String filename, final Properties target) {
 
-        for (final Object k : target.keySet()) {
-            final String key = k.toString().trim();
-            if (!key.startsWith(".") && !key.equalsIgnoreCase("include")) {
-                throw new IllegalStateException(b(
-                        "Invalid key", key, "in part file", filename + ":",
-                        "Part files must only contain configuration keys starting with '.' (e.g., '.key'). Bare scenario references are disallowed in part files."
-                ));
+        final boolean isConfig = (isNotNull(location.extension()) && ".properties".equalsIgnoreCase(location.extension())) ||
+                (isNotNull(location.directory()) && (location.directory().contains("config") || location.directory().contains(_CONFIG_)));
+
+        if (isConfig) {
+            for (final Object k : target.keySet()) {
+                final String key = k.toString().trim();
+                if (!key.startsWith(".") && !key.equalsIgnoreCase("include")) {
+                    throw new IllegalStateException(b(
+                            "Invalid key", key, "in part file", filename + ":",
+                            "Part files must only contain configuration keys starting with '.' (e.g., '.key'). Bare scenario references are disallowed in part files."
+                    ));
+                }
             }
         }
     }
 
     @SuppressWarnings({"AssignmentToMethodParameter", "ObjectAllocationInLoop", "CallToSuspiciousStringMethod",
             "CollectionDeclaredAsConcreteClass"})
-    private static String loadIncluded(final String include, final String directory, String debug, final Properties target) {
+    private static String loadIncluded(final String include, final TestPropertiesDescriptor parentLocation, String debug, final Properties target) {
 
         final String[] files = include.split(s(L1));
         for (final String file : files) {
-            final Result result = readTestPropertiesFromFile(new TestPropertiesDescriptor(directory, file.trim(),
+            final Result result = readTestPropertiesFromFile(new TestPropertiesDescriptor(parentLocation.directory(), file.trim(),
                     TEST_PROPERTIES_PARTS_EXTENSION));
-            validatePartScope(file.trim(), result.properties());
+            validatePartScope(parentLocation, file.trim(), result.properties());
             debug = s(debug, _LFD_, a(INCLUDE, result.debug()));
             target.putAll(result.properties());
         }
@@ -74,7 +80,7 @@ public record TestProperties() {
         final String include = source.getProperty(TestProperties.include);
         source.remove(TestProperties.include);
         final Properties target = new Properties();
-        if (isNotNull(include)) debug = loadIncluded(include, directory, debug, target);
+        if (isNotNull(include)) debug = loadIncluded(include, location, debug, target);
         target.putAll(source); // Defined values have bigger priority then included ones
         return new Result(target, debug);
     }

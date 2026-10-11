@@ -20,6 +20,7 @@ public record N() {
     public static final String NEITHER = s(NE, IT, HER);
     public static final String NESTED = s(NE, ST, ED);
     public static final String NEUTRAL = s(NE, UT, R, AL);
+    public static final String NONE = s(NO, NE);
     public static final String NOTHING = s(NOT, H, ING);
     public static final String NOTICE = s(NOTI, CE);
     public static final String NOTICES = s(NOTICE, S);

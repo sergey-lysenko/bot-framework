@@ -4,6 +4,8 @@ import works.lysenko.util.apis.data.*;
 import works.lysenko.util.apis.log.*;
 import works.lysenko.util.apis.scenario.*;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -16,6 +18,7 @@ import static works.lysenko.util.func.type.Objects.*;
 @SuppressWarnings("all")
 public final class KnownIssuesMatcher {
 
+    private static final Map<String, Pattern> PATTERN_CACHE = new ConcurrentHashMap<>();
     private static final Pattern NON_ALPHANUMERIC = Pattern.compile("[^a-z0-9]");
     private static final String EMPTY = "";
     private static final String ASTERISK = "*";
@@ -28,6 +31,11 @@ public final class KnownIssuesMatcher {
 
     private KnownIssuesMatcher() {
         // Utility class
+    }
+
+    private static Pattern getCompiledPattern(final String regex, final int flags) {
+        final String key = flags + ":" + regex;
+        return PATTERN_CACHE.computeIfAbsent(key, k -> Pattern.compile(regex, flags));
     }
 
     /**
@@ -56,8 +64,12 @@ public final class KnownIssuesMatcher {
                 String patternStr = trimmed.replace(DOT, DOT_ESCAPED).replace(ASTERISK, DOT_STAR);
                 if (!patternStr.startsWith(DOT_STAR)) patternStr = String.format(FORMAT_CONCAT, DOT_STAR, patternStr);
                 final String regex = String.format(FORMAT_REGEX_EXACT, patternStr);
-                if (isNotNull(fqn) && fqn.matches(regex)) match = true;
-                else if (isNotNull(simpleName) && simpleName.matches(regex)) match = true;
+                try {
+                    final Pattern pattern = getCompiledPattern(regex, 0);
+                    if (isNotNull(fqn) && pattern.matcher(fqn).matches()) match = true;
+                    else if (isNotNull(simpleName) && pattern.matcher(simpleName).matches()) match = true;
+                } catch (final PatternSyntaxException ignored) {
+                }
             }
         }
         return match;
@@ -102,9 +114,10 @@ public final class KnownIssuesMatcher {
             else if (trimmed.contains(ASTERISK)) {
                 String patternStr = trimmed.replace(DOT, DOT_ESCAPED).replace(ASTERISK, DOT_STAR);
                 if (!patternStr.startsWith(DOT_STAR)) patternStr = String.format(FORMAT_CONCAT, DOT_STAR, patternStr);
-                final String regex = String.format(FORMAT_REGEX, patternStr);
+                final String regex = String.format(FORMAT_REGEX);
                 try {
-                    if (Pattern.compile(regex).matcher(text).find()) {
+                    final Pattern pattern = getCompiledPattern(regex, 0);
+                    if (pattern.matcher(text).find()) {
                         match = true;
                     }
                 } catch (final PatternSyntaxException e) {
@@ -154,7 +167,7 @@ public final class KnownIssuesMatcher {
 
             // 1. Direct Regex match
             try {
-                final Pattern pattern = Pattern.compile(patternStr, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+                final Pattern pattern = getCompiledPattern(patternStr, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
                 if (pattern.matcher(text).find()) match = true;
             } catch (final PatternSyntaxException ignored) {
             }

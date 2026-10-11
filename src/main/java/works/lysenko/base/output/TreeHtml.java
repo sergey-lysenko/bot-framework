@@ -110,9 +110,12 @@ public final class TreeHtml {
         final int[] dy = new int[100];
         Arrays.fill(dy, 1);
 
+        final List<_LogRecord> logRecords = (!works.lysenko.util.prop.issues.KnownIssues.failedOnly && isNotNull(exec) && isNotNull(exec.issues()))
+                ? exec.issues().latest() : Collections.emptyList();
+
         final SortedMap<String, TreeMap<String, Result>> t = new Groups(TESTS, sorted);
         for (final Map.Entry<String, TreeMap<String, Result>> group : t.entrySet()) {
-            processGroup(group, null, 0, dy, nodes, edges);
+            processGroup(group, null, 0, dy, nodes, edges, logRecords);
         }
 
         optimizeLayout(nodes);
@@ -145,15 +148,20 @@ public final class TreeHtml {
             }
             sortedRoots.sort(Comparator.comparing(_Scenario::getSimpleName).thenComparing(_Scenario::getName));
         }
+
+        final List<_LogRecord> logRecords = (!works.lysenko.util.prop.issues.KnownIssues.failedOnly && isNotNull(exec) && isNotNull(exec.issues()))
+                ? exec.issues().latest() : Collections.emptyList();
+
         for (final _Scenario root : sortedRoots)
-            processScenario(root, null, 0, rows, ancestors, sorted, nodes, edges);
+            processScenario(root, null, 0, rows, ancestors, sorted, nodes, edges, logRecords);
         optimizeLayout(nodes);
         return new TreeLayout(nodes, edges);
     }
 
     private static void processScenario(final _Scenario scenario, final NodeData parent, final int col, final int[] rows,
                                         final Set<_Scenario> ancestors, final TreeMap<String, Result> sorted,
-                                        final List<NodeData> nodes, final List<Edge> edges) {
+                                        final List<NodeData> nodes, final List<Edge> edges,
+                                        final List<_LogRecord> logRecords) {
 
         if (null == scenario || !ancestors.add(scenario)) return;
         final String label = b(scenario.getSimpleName(), scenario.type().tag());
@@ -169,12 +177,18 @@ public final class TreeHtml {
                     if (!node.knownIssues().contains(ki)) node.knownIssues().add(ki);
                 }
             }
-            if (isNotNull(exec) && isNotNull(exec.issues())) {
-                for (final _LogRecord lr : exec.issues().latestCopy()) {
-                    final List<KnownIssue> matchedByRecord = store.getForLogRecord(Collections.singletonList(scenario), lr);
-                    if (null != matchedByRecord && !matchedByRecord.isEmpty()) {
-                        for (final KnownIssue ki : matchedByRecord) {
-                            if (!node.knownIssues().contains(ki)) node.knownIssues().add(ki);
+            if (!works.lysenko.util.prop.issues.KnownIssues.failedOnly && null != logRecords && !logRecords.isEmpty()) {
+                for (final KnownIssue ki : store.getIssues()) {
+                    if (node.knownIssues().contains(ki)) continue;
+                    final String scenarioTarget = ki.scenario();
+                    final boolean scenarioMatches = (null == scenarioTarget || scenarioTarget.isBlank())
+                            || works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(scenarioTarget, scenario.getName(), scenario.getSimpleName());
+                    if (scenarioMatches) {
+                        for (final _LogRecord lr : logRecords) {
+                            if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
+                                node.knownIssues().add(ki);
+                                break;
+                            }
                         }
                     }
                 }
@@ -193,7 +207,7 @@ public final class TreeHtml {
             pairs.sort(Comparator.comparing((works.lysenko.util.data.records.KeyValue<_Scenario, org.apache.commons.math3.fraction.Fraction> p) -> p.k().getSimpleName())
                     .thenComparing(p -> p.k().getName()));
             for (final var child : pairs)
-                processScenario(child.k(), node, col + 1, rows, ancestors, sorted, nodes, edges);
+                processScenario(child.k(), node, col + 1, rows, ancestors, sorted, nodes, edges, logRecords);
         }
         ancestors.remove(scenario);
     }
@@ -354,7 +368,8 @@ public final class TreeHtml {
     private static void processGroup(final Map.Entry<String, ? extends TreeMap<String, Result>> group,
                                      final NodeData parentNode,
                                      final int col, final int[] dy,
-                                     final List<NodeData> nodes, final List<Edge> edges) {
+                                     final List<NodeData> nodes, final List<Edge> edges,
+                                     final List<_LogRecord> logRecords) {
         final Map<String, NodeData> myNodes = new HashMap<>();
         final Parts parts = Parts.process(group.getValue());
 
@@ -370,17 +385,20 @@ public final class TreeHtml {
                 if (isNotNull(nd.result())) {
                     for (final KnownIssue ki : store.getIssues()) {
                         if (works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), rawKey, shortKey)) {
-                            if (!nd.knownIssues().contains(ki)) nd.knownIssues().add(ki);
+                            if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPattern(ki.pattern(), nd.result())) {
+                                if (!nd.knownIssues().contains(ki)) nd.knownIssues().add(ki);
+                            }
                         }
                     }
                 }
-                if (isNotNull(exec) && isNotNull(exec.issues())) {
-                    for (final _LogRecord lr : exec.issues().latestCopy()) {
-                        for (final KnownIssue ki : store.getIssues()) {
-                            if (works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), rawKey, shortKey)) {
-                                final List<KnownIssue> matchedByRecord = store.getForLogRecord(Collections.emptyList(), lr);
-                                if (matchedByRecord.contains(ki) && !nd.knownIssues().contains(ki)) {
+                if (!works.lysenko.util.prop.issues.KnownIssues.failedOnly && null != logRecords && !logRecords.isEmpty()) {
+                    for (final KnownIssue ki : store.getIssues()) {
+                        if (nd.knownIssues().contains(ki)) continue;
+                        if (works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), rawKey, shortKey)) {
+                            for (final _LogRecord lr : logRecords) {
+                                if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
                                     nd.knownIssues().add(ki);
+                                    break;
                                 }
                             }
                         }
@@ -403,7 +421,7 @@ public final class TreeHtml {
             final String subKey = subgroup.getKey().toLowerCase();
             final NodeData subParent = myNodes.get(subKey);
             final NodeData nextParent = (null != subParent) ? subParent : parentNode;
-            processGroup(subgroup, nextParent, col + 1, dy, nodes, edges);
+            processGroup(subgroup, nextParent, col + 1, dy, nodes, edges, logRecords);
         }
     }
 

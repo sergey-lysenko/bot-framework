@@ -17,6 +17,7 @@ public record F() {
     public static final String FALSE = s(FA, L, SE);
     public static final String FENCE = s(FE, N, CE);
     public static final String FENCES = s(FE, NC, ES);
+    public static final String FFMPEG = s(FF, MP, EG);
     public static final String FILTER = s(FI, LT, ER);
     public static final String FINAL = s(F, IN, AL);
     public static final String FINDING = s(FIND, ING);

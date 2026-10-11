@@ -100,7 +100,7 @@ public class ControlPanel extends JFrame implements _Dashboard {
         applyMenuShortcutKeyMask();
         instance = this;
         setTitle("Control Panel");
-        setSize(1200, 800);
+        setSize(1600, 900);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -192,7 +192,7 @@ public class ControlPanel extends JFrame implements _Dashboard {
         final KnownIssuesPanel knownIssuesPanel = new KnownIssuesPanel();
         tabbedPane.addTab("Known Issues", knownIssuesPanel);
 
-        tabbedPane.setSelectedIndex(0); // Config & Tests tab is default on launch
+        tabbedPane.setSelectedIndex(1); // Run Setup (2nd tab) is default on launch
 
         tabbedPane.addChangeListener(e -> {
             final int selectedIndex = tabbedPane.getSelectedIndex();
@@ -248,6 +248,7 @@ public class ControlPanel extends JFrame implements _Dashboard {
         propertiesPanel.applyChanges();
         tabbedPane.setSelectedIndex(targetTabIndex);
         tabbedPane.setEnabledAt(0, false);
+        tabbedPane.setEnabledAt(1, false);
         runLatch.countDown();
     }
 

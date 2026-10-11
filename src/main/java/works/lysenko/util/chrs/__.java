@@ -61,6 +61,7 @@ public record __() {
     public static final String ED = "ed"; //NON-NLS
     public static final String EE = "ee"; //NON-NLS
     public static final String EF = "ef"; //NON-NLS
+    public static final String EG = "eg"; //NON-NLS
     public static final String EL = "el"; //NON-NLS
     public static final String EM = "em"; //NON-NLS
     public static final String EN = "en"; //NON-NLS

@@ -105,7 +105,11 @@ public record Weights() {
      */
     public static String configuredWeightValue(final _Scenario scenario) {
 
-        String weight = configuredWeightValue(scenario.getClass());
+        if (isNull(scenario)) return Scenario.defaultWeight;
+        String weight = configuredWeightValue(scenario.getShortName());
+        if (isNotNull(weight)) return weight;
+
+        weight = configuredWeightValue(scenario.getClass());
         if (isNotNull(weight)) return weight;
 
         if (Traverse.extensions) {
@@ -160,10 +164,16 @@ public record Weights() {
      * @param key The key for which to retrieve the weight value
      * @return The raw weight value corresponding to the key
      */
+    private static String configuredWeightValue(final String key) {
+
+        if (isNull(properties) || isNull(key)) return null;
+        return (String) properties.getProperty(key, null);
+    }
+
     private static String configuredWeightValue(final Class<?> scenario) {
 
-        if (isNull(properties)) return null;
-        return (String) properties.getProperty(getScenarioPropertyKey(scenario), null);
+        if (isNull(scenario)) return null;
+        return configuredWeightValue(getScenarioPropertyKey(scenario));
     }
 
     private static boolean isExtension(final _Scenario scenario) {
@@ -185,7 +195,7 @@ public record Weights() {
      */
     private static String getScenarioPropertyKey(final _Scenario scenario) {
 
-        return getScenarioPropertyKey(scenario.getClass());
+        return isNotNull(scenario) ? scenario.getShortName() : "";
     }
 
     private static String getScenarioPropertyKey(final Class<?> scenario) {
