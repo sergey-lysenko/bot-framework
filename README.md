@@ -28,14 +28,15 @@ A single, consistent interaction layer that abstracts both **Web** (Selenium) an
 - **Polymorphic UI Operations**: Methods like `clickOnButton()`, `waitForVisibilityOf()`, and `waitThenClickOn()` transparently resolve whether the underlying target is an Android Native View (`android.widget.Button`) or a Web DOM node.
 - **Atomic State Transitions**: Every user action is verified against wait predicates before and after execution to prevent race conditions.
 
-### 2. Autonomous Bot & State Modeling (`works.lysenko.base`)
+### 2. Autonomous Bot & Scenario State Modeling (`works.lysenko.base`)
 - **State Discovery**: UI elements and interaction targets are dynamically collected and evaluated based on visibility, depth, and accessibility.
 - **Exploratory & Scenario Modes**: Supports both deterministic goal-driven scenario execution and autonomous tree-exploration bots designed to stress-test complex workflows.
+- **`ALL_LEAFS` Coverage Engine**: Goal-driven execution algorithm that dynamically calculates completion deficits across scenario branches, applies branch completion weights (`.tree.completion.weight`), and continues execution until 100% of accessible leaf scenarios are covered.
 
 ### 3. Fail-Safe Runtime & Self-Healing
 - **Automatic Port & Resource Recovery**: Intelligently handles driver port collisions (such as recovering busy Appium instances on the fly) and restarts dead sessions cleanly.
 - **Deterministic Wait Machinery**: Eliminates arbitrary `sleep` calls with adaptive expected-condition cycles (`wdw().until(...)`).
-- **Telemetry & Artifact Capture**: Automated full-screen and cropped screenshot generation, bounding-box geometry logging, and color-cutoff analysis.
+- **Telemetry & Artifact Capture**: Automated full-screen and cropped screenshot generation, bounding-box geometry logging, color-cutoff analysis, and CPU/RAM telemetry sampling.
 
 ### 4. Zero-Compromise Purity
 - **Bit-Level String Synthesis (`works.lysenko.util.spec.Symbols`)**: Internal strings, control characters, and symbols are constructed bit-by-bit from boolean matrices to avoid external encoding dependencies.
@@ -43,18 +44,61 @@ A single, consistent interaction layer that abstracts both **Web** (Selenium) an
 
 ---
 
+## 🛠️ Control Panel & Embedded Micro-IDE
+
+The framework features a built-in Swing-based **Control Panel** (`works.lysenko.base.ui.ControlPanel`) providing interactive management across five primary tabs:
+
+1. **Config & Tests (Micro-IDE)**:
+   - **Project Explorer**: Tree-based navigation for test suites (`*.test`), test partials (`*.part`), and global configuration files.
+   - **Real-Time Property Validation**: Highlights invalid property keys (`⚠️ INVALID`), detects container scope violations, and suggests corrections for misspelled keys (e.g., suggesting `.test.tests` for `.test.test`).
+   - **Unsaved Changes Tracking**: Prompts users to save modifications upon losing focus, switching files, or switching tabs.
+   - **Preservation Assurance**: Invalid or custom properties are clearly flagged while guaranteeing they are preserved on disk when saved.
+2. **Run Setup**:
+   - Graphical controls for selecting test targets, user pools, domains, platforms (Web/Android/iOS), headless execution, and execution parameters (`TESTS`, `ALL_LEAFS`, `ALL_LEAFS_COUNT`, `RESILIENT_MODE`, `COMPLETION_WEIGHT`, `TRAVERSE_EXTENSIONS`).
+   - Live status tracking (`Default`, `Configured`, `Modified`) for every property against default baselines.
+3. **Execution Dashboard**:
+   - Live controls (`Pause`, `Resume`, `Stop`, `Halt`, `Step`), real-time CPU/RAM meters, execution duration counters, and active scenario breadcrumb trails.
+4. **Tree Progression**:
+   - Interactive zoomable/pannable rendering of the live scenario execution tree with SVG card visualizers.
+5. **Known Issues**:
+   - GUI editor for `known/issues.json` to configure expected defects, regular expression failure patterns, and bug tracker links.
+
+---
+
 ## 📁 Repository Structure
 
 ```
+src/main/resources/
+├── config/                 # Modular configuration directory
+│   ├── common.configuration.properties # Master config include file
+│   ├── property-help.properties       # Complete property documentation dictionary
+│   └── parts/              # Categorized configuration partials (.part)
+│       ├── data.part       # Data storage & serialization delimiters
+│       ├── debug.part      # Appium diagnostics, debug logs, and tracing
+│       ├── fractions.part  # Math precision and fraction formatting
+│       ├── images.part     # Color grid, screenshot triggers, and swipe markers
+│       ├── log.part        # Log formatting, similarity matching, and rates
+│       ├── project.part    # Scenario root package and application paths
+│       ├── scenarios.part  # Tree safeguards, sufficiency, and weights
+│       ├── stacktrace.part # Stack trace shortening and exclusions
+│       ├── tests.part      # Execution controls, progression, and sonification
+│       ├── ui.part         # Dashboard display and mobile native resolutions
+│       └── webdriver.part  # WebDriver wait timeouts and platform options
+├── known/
+│   └── issues.json         # Per-scenario known issues and defect mapping
+└── tests/                  # Test suite definitions (*.test) and suite parts
+    └── parts/
+
 src/main/java/works/lysenko/
 ├── Base.java               # Global execution context, property lookups, and utilities
 ├── base/                   # Core runtime machinery
-│   ├── core/               # Engine execution loop and lifecycles
+│   ├── core/               # Engine execution loop and lifecycles (BootCapture)
 │   ├── exec/               # Driver executors (Web, Android) and session managers
 │   ├── logger/             # Structured ANSI logging and reporting
-│   ├── parameters/         # Execution parameters and CLI flags
+│   ├── parameters/         # Execution parameters, CLI flags, and property validation
 │   ├── properties/         # Runtime properties loader
-│   └── telemetry/          # Screenshots, diffing, and visual telemetry
+│   ├── telemetry/          # Screenshots, diffing, and visual telemetry
+│   └── ui/                 # Control Panel GUI & Micro-IDE components
 ├── tree/                   # State-tree navigation and Root action dispatch
 │   ├── Root.java           # Primary interaction API (clicks, waits, scrolls, types)
 │   └── base/               # Tree node abstractions
@@ -70,11 +114,12 @@ src/main/java/works/lysenko/
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **Java**: OpenJDK 17 or higher
+- **Java**: OpenJDK 17 or higher (Java 21 supported)
 - **Maven**: 3.8+
 - **Platform Drivers**:
   - *Web*: ChromeDriver / GeckoDriver (or Selenium Manager managed)
   - *Android*: Android SDK (`adb`), Appium 2.x server running locally or remotely
+  - *Media Processing (Optional)*: FFmpeg (for MP4 scenario progression videos)
 
 ### Building
 
@@ -90,7 +135,7 @@ To consume `bot-framework` in your test suite, include it in your `pom.xml`:
 <dependency>
   <groupId>works.lysenko</groupId>
   <artifactId>framework</artifactId>
-  <version>0.26.40.5</version>
+  <version>0.26.43.23</version>
 </dependency>
 ```
 
@@ -98,38 +143,49 @@ To consume `bot-framework` in your test suite, include it in your `pom.xml`:
 
 ## ⚙️ Configuration & Execution
 
-The framework is configured via system properties, environment variables, or `test.properties`:
+Configuration is organized into 11 specialized partial files included via `src/main/resources/config/common.configuration.properties`:
 
-| Property | Default | Description |
-|---|---|---|
-| `platform` | `web` | Target platform (`web`, `android`) |
-| `debug` | `false` | Enable verbose debug logging and telemetry |
-| `retries` | `3` | Max retry attempts for state transitions |
-| `colours.cutoff` | `0` | Visual comparison tolerance threshold |
-| `.test.report.add.all.leaf` | `true` | Include all-leaf completion records in test reports |
-| `.test.report.add.eta.debug` | `true` | Include ETA debug timeline charts and metrics in test reports |
-| `.test.report.add.cpu.debug` | `true` | Include CPU telemetry measurements and charts in test reports |
-| `.test.report.cpu.density` | `5000` | Maximum data points density for CPU/RAM telemetry graphs in reports |
-| `.test.report.cpu.density.per.test` | `false` | When true, matches CPU/RAM telemetry data points count to the number of tests performed |
-| `.test.report.log.scale.all.leaf` | `false` | Default All-Leaf Completion chart scale mode to logarithmic |
-| `.test.report.log.scale.cpu.debug` | `false` | Default System Resources chart scale mode to logarithmic |
-| `.test.report.log.scale.eta.debug` | `false` | Default ETA Debug chart scale mode to logarithmic |
-| `.test.report.log.scale.timeline` | `false` | Default Test Execution Duration timeline chart scale mode to logarithmic |
-| `.test.report.progression.scenario` | `true` | Enable scenario coverage progression frames and animations |
-| `.test.report.progression.scenario.gif` | `true` | Generate scenario coverage GIF animation |
-| `.test.report.progression.scenario.webp` | `true` | Generate scenario coverage WebP animation |
-| `.test.report.progression.scenario.mp4` | `true` | Generate scenario coverage MP4 video (requires FFmpeg) |
-| `.test.report.progression.tree` | `true` | Enable scenario tree progression frames and animations |
-| `.test.report.progression.tree.gif` | `true` | Generate scenario tree GIF animation |
-| `.test.report.progression.tree.webp` | `true` | Generate scenario tree WebP animation |
-| `.test.report.progression.tree.mp4` | `true` | Generate scenario tree MP4 video (requires FFmpeg) |
-| `.test.report.progression.tree.per.node` | `false` | Generate test-tree progression frame on every executed scenario node |
-| `.test.report.progression.ffmpeg` | `ffmpeg` | FFmpeg executable name or absolute path |
-| `.test.report.progression.max.frames` | `500` | Maximum progression snapshots and animation frames; later cycles replace the last snapshot (hard-capped at 10,000) |
-| `.test.report.progression.max.frame.pixels` | `16777216` | Maximum pixel count for a frame; oversized tree progression frames are skipped (hard-capped at 33,554,432) |
-| `.test.report.progression.max.total.pixels` | `1000000000` | Animation pixel-work budget; large frames automatically reduce the sampled frame count (hard-capped at 2,000,000,000) |
+| Category | Key / Property | Default | Description |
+|---|---|---|---|
+| **Data** | `.data.delimiter.l0` | `\|` | Top-level entry delimiter for framework serialization |
+| **Data** | `.data.persist` | `false` | Preserves test data across test runs |
+| **Debug** | `.logs.adebug` | `false` | Enables verbose Appium diagnostic logging |
+| **Debug** | `.logs.debug` | `false` | Enables additional framework diagnostic output |
+| **Images** | `.grid.colour.similarity.threshold` | `1.0` | Color similarity comparison threshold |
+| **Images** | `.screenshots.of.clicks` | `false` | Captures screenshots after every click action |
+| **Images** | `.swipes.marker.line.colour` | `0,0,0,128` | RGBA color for drawing swipe paths on screenshots |
+| **Log** | `.logs.lines.similarity.check` | `true` | Enables grouping and deduplication of similar log lines |
+| **Log** | `.logs.silent.sleeping.threshold` | `10` | Sleep durations under this ms threshold do not log messages |
+| **Project** | `.test.root` | `link.tree` | Root package for scenario tree discovery |
+| **Project** | `.test.app` | `""` | Path to target Android APK file |
+| **Scenarios** | `.tree.completion.weight` | `4.5` | Weight boosting unfinished scenario branches |
+| **Scenarios** | `.tree.scenario.depth.safeguard` | `20` | Maximum scenario tree depth safeguard threshold |
+| **Stacktrace**| `.logs.full.stacktrace` | `false` | Includes unshortened stacktraces in log output |
+| **Tests** | `.test.action.retries` | `3` | Maximum retry attempts for UI state actions |
+| **Tests** | `.test.all.leafs` | `false` | Enables ALL_LEAFS coverage mode |
+| **Tests** | `.test.all.leafs.count` | `1` | Target execution count for each leaf scenario in ALL_LEAFS mode |
+| **Tests** | `.test.fail.by.event.of.severity` | `s1` | Event severity level that halts test execution |
+| **Tests** | `.test.resilient.mode` | `false` | Enables resilient mode (executes full suite despite failures) |
+| **Tests** | `.test.report.progression.tree.mp4` | `true` | Generates MP4 video of scenario tree progression (FFmpeg) |
+| **Tests** | `.test.report.progression.tree.sonification` | `none` | Adds deterministic musical audio to progression MP4 (`none`, `copilot`, `claude`, `gemini`) |
+| **UI** | `.screen.to.spawn.dashboard` | `0` | Screen index on which to open the dashboard |
+| **UI** | `.mobi.native.x.resolution` | `1080` | Mobile native screen width in pixels |
+| **WebDriver**| `.test.ewait` | `30` | Explicit wait timeout in seconds |
+| **WebDriver**| `.webd.iwait` | `1000` | Implicit WebDriver element location wait in milliseconds |
 
-The framework uses OS-backed `run/.run.lock` and `run/.postprocess.lock` files to prevent a new test run from starting while a test or its detached post-processor is active. The lock files remain in place; the OS lock state determines whether either process is still running.
+The framework uses OS-backed `run/.run.lock` and `run/.postprocess.lock` files to prevent a new test run from starting while a test or its detached post-processor is active.
+
+---
+
+## 🎬 Progression Videos & Deterministic Sonification
+
+When `.test.report.progression.tree.mp4 = true`, the framework uses FFmpeg to compile frame-by-frame animations of the scenario tree evolution during test runs.
+
+### Deterministic Audio Sonification Modes (`.test.report.progression.tree.sonification`)
+- **`none`** *(Default)*: Silent video generation.
+- **`copilot`**: Leaf-driven audio tracks where scenario tree path depth determines pitch and target execution progress drives dynamics.
+- **`claude`**: Visual diff-driven audio tracks where image changes between frames control note selection and volume.
+- **`gemini`**: Ambient structural cascade reflecting macro-level scenario tree layout transformations.
 
 ---
 
