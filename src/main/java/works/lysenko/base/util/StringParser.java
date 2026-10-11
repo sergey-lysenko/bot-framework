@@ -2,6 +2,7 @@ package works.lysenko.base.util;
 
 import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.util.apis.properties._Result;
+import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.data.records.RelativeOrAbsoluteFraction;
 import works.lysenko.util.lang.word.P;
 
@@ -84,23 +85,51 @@ public final class StringParser<T> implements _Result<T> {
     public T result() {
 
         if (isNull(source)) return null;
-        if (aType.getSimpleName().equals(Boolean.class.getSimpleName())) return (T) ((Boolean) Boolean.parseBoolean(source));
-        if (aType.getSimpleName().equals(Character.class.getSimpleName())) return (T) source;
-        if (aType.getSimpleName().equals(Color.class.getSimpleName())) return (T) (getColor(source));
-        if (aType.getSimpleName().equals(Double.class.getSimpleName())) return (T) ((Double) Double.parseDouble(source));
-        if (aType.getSimpleName().equals(Float.class.getSimpleName())) return (T) ((Float) Float.parseFloat(source));
-        if (aType.getSimpleName().equals(Fraction.class.getSimpleName())) return (T) fr(source);
-        if (aType.getSimpleName().equals(Integer.class.getSimpleName())) return (T) ((Integer) Integer.parseInt(source));
-        if (aType.getSimpleName().equals(Long.class.getSimpleName())) return (T) ((Long) Long.parseLong(source));
+        final String trimmed = source.trim();
+        if (aType.getSimpleName().equals(Boolean.class.getSimpleName())) return (T) ((Boolean) Boolean.parseBoolean(trimmed));
+        if (aType.getSimpleName().equals(Character.class.getSimpleName())) return (T) trimmed;
+        if (aType.getSimpleName().equals(Color.class.getSimpleName())) return (T) (getColor(trimmed));
+        if (aType.getSimpleName().equals(Double.class.getSimpleName())) return (T) ((Double) Double.parseDouble(trimmed));
+        if (aType.getSimpleName().equals(Float.class.getSimpleName())) return (T) ((Float) Float.parseFloat(trimmed));
+        if (aType.getSimpleName().equals(Fraction.class.getSimpleName())) return (T) fr(trimmed);
+        if (aType.getSimpleName().equals(Integer.class.getSimpleName())) {
+            try {
+                return (T) ((Integer) Integer.parseInt(trimmed));
+            } catch (final NumberFormatException e) {
+                if (trimmed.length() > 1 && (trimmed.startsWith("s") || trimmed.startsWith("S"))) {
+                    try {
+                        return (T) ((Integer) Integer.parseInt(trimmed.substring(1)));
+                    } catch (final NumberFormatException ignored) {
+                    }
+                }
+                logEvent(S0, b(c(TYPE), aType.getName(), OF, q(source), IS, NOT, SUPPORTED, BY, STRING, P.PARSER));
+                return null;
+            }
+        }
+        if (aType.getSimpleName().equals(Long.class.getSimpleName())) return (T) ((Long) Long.parseLong(trimmed));
         if (aType.getSimpleName().equals(RelativeOrAbsoluteFraction.class.getSimpleName()))
-            return (T) RelativeOrAbsoluteFraction.raf(source);
+            return (T) RelativeOrAbsoluteFraction.raf(trimmed);
         if (aType.getSimpleName().equals(String.class.getSimpleName())) return (T) source;
         if (aType.isEnum()) {
             for (final Object value : aType.getEnumConstants()) {
                 final Enum<?> enumValue = (Enum<?>) value;
-                if (enumValue.name().equalsIgnoreCase(source)) return (T) enumValue;
+                if (enumValue.name().equalsIgnoreCase(trimmed)) return (T) enumValue;
             }
-            return (T) Enum.valueOf((Class) aType, source);
+            if (aType == Severity.class) {
+                try {
+                    final int code = Integer.parseInt(trimmed);
+                    if (code >= 0 && code < Severity.values().length) {
+                        return (T) Severity.byCode(code);
+                    }
+                } catch (final NumberFormatException ignored) {
+                }
+            }
+            try {
+                return (T) Enum.valueOf((Class) aType, trimmed);
+            } catch (final IllegalArgumentException e) {
+                logEvent(S0, b(c(TYPE), aType.getName(), OF, q(source), IS, NOT, SUPPORTED, BY, STRING, P.PARSER));
+                return null;
+            }
         }
         logEvent(S0, b(c(TYPE), aType.getName(), OF, q(source), IS, NOT, SUPPORTED, BY, STRING, P.PARSER));
         return null;
