@@ -6,7 +6,7 @@
 [![Maven](https://img.shields.io/badge/Maven-Build-green.svg)](https://maven.apache.org/)
 [![Selenium](https://img.shields.io/badge/Selenium-4.30.0-orange.svg)](https://www.selenium.dev/)
 [![Appium](https://img.shields.io/badge/Appium-9.4.0-purple.svg)](https://appium.io/)
-[![Upwork](https://img.shields.io/badge/Upwork-Verified%20Top%20Rated%20Plus-14a800.svg)](https://www.upwork.com/freelancers/alasan)
+[![Upwork]([[https://img.shields.io/badge/Upwork-Verified%20Top%20Rated%20Plus-14a800.svg](https://img.shields.io/badge/Upwork-Expert%20Vetted-14a800.svg)](https://img.shields.io/badge/Upwork-Expert%20Vetted-14a800.svg))](https://www.upwork.com/freelancers/alasan)
 
 ---
 
