@@ -133,9 +133,9 @@ The framework uses OS-backed `run/.run.lock` and `run/.postprocess.lock` files t
 
 The framework supports per-node Known Issues mapping. This allows test runs to track expected failures, staging defects, or known environment issues directly against specific scenarios in the interactive `TreeHtml` report.
 
-### `known_issues.json` Schema
+### `known/issues.json` Schema
 
-Known issues are configured in `src/main/resources/known_issues.json`:
+Known issues are configured in `src/main/resources/known/issues.json`:
 
 ```json
 {

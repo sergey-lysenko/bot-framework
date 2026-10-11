@@ -232,7 +232,7 @@ public final class LogParser {
 
         final String lgScriptData = renderLgScriptData(mRes.testData, mRes.limboByPrevTest, completions, etaDebugItems, resourceItems, mRes.tAvg, mRes.tMax, mRes.lMax);
         final String commonPath = renderCommonPath(pRes.commonPathSteps);
-        final String pathsRows = renderPathsRows(pRes.testPaths, pRes.sections);
+        final String pathsRows = renderPathsRows(pRes.testPaths, pRes.sections, pRes.commonPathSteps);
         final String scenSubtitle = buildScenSubtitle(pRes.pathsPossibleStr, pRes.pathsChanceStr, pRes.pathsExecutedStr);
         final String scenRows = renderScenRows(pRes.scenStats);
         final String sectionsHtml = renderSections(pRes.sections, runArtifacts, telemetryCpuList, 0); // Note: currOpGlobalIdx is 0 in original too

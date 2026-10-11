@@ -101,6 +101,13 @@ public final class SectionRenderer {
         return sb.toString();
     }
 
+    private static boolean isStandIn(final String step) {
+        if (null == step) return false;
+        final String t = step.trim();
+        return "-".equals(t) || "[-]".equals(t) || "–".equals(t) || "—".equals(t)
+                || (t.startsWith("[") && t.endsWith("]") && "-".equals(t.substring(1, t.length() - 1).trim()));
+    }
+
     /**
      * Renders the common execution path breadcrumb element.
      *
@@ -113,10 +120,7 @@ public final class SectionRenderer {
         sb.append("    <div class=\"common-path-box\"><span class=\"common-path-label\">Common path:</span><div class=\"path-chain\">");
         for (final String step : commonPathSteps) {
             sb.append(s(" <span class=\"step-arrow\">→</span> ",
-                    "<a class=\"path-step common\" href=\"#", escapeHtml(step),
-                    "\" onclick=\"focusScenario(event, null, '", escapeHtml(step),
-                    "')\" title=\"Jump to ", escapeHtml(step), " in log\">",
-                    escapeHtml(step), "</a>"));
+                    "<span class=\"path-step common\">", escapeHtml(step), "</span>"));
         }
         sb.append("</div></div>\n");
         return sb.toString();
@@ -130,6 +134,18 @@ public final class SectionRenderer {
      * @return HTML snippet containing path rows
      */
     public static String renderPathsRows(final List<PathEntry> testPaths, final List<LogSection> sections) {
+        return renderPathsRows(testPaths, sections, List.of());
+    }
+
+    /**
+     * Renders HTML rows for recorded test paths with common path resolution.
+     *
+     * @param testPaths       recorded test paths with execution steps
+     * @param sections        parsed log sections for status lookup
+     * @param commonPathSteps common path scenario step names
+     * @return HTML snippet containing path rows
+     */
+    public static String renderPathsRows(final List<PathEntry> testPaths, final List<LogSection> sections, final List<String> commonPathSteps) {
         final StringBuilder sb = new StringBuilder();
         for (final PathEntry p : testPaths) {
             String testStatus = "neutral";
@@ -148,7 +164,10 @@ public final class SectionRenderer {
             for (int sIdx = 0; sIdx < p.steps.size(); sIdx++) {
                 if (sIdx > 0) sb.append(" <span class=\"step-arrow\">→</span> ");
                 final String stepName = p.steps.get(sIdx);
-                
+                final String targetScen = (null != commonPathSteps && sIdx < commonPathSteps.size() && isStandIn(stepName))
+                        ? commonPathSteps.get(sIdx)
+                        : stepName;
+
                 String nodeCssClass = "passed";
                 if (sIdx == p.steps.size() - 1) {
                     if ("failed".equals(testStatus)) nodeCssClass = "failed";
@@ -159,9 +178,9 @@ public final class SectionRenderer {
                     }
                 }
 
-                sb.append(s("<a class=\"path-step ", nodeCssClass, "\" href=\"#test-", p.num, "-", escapeHtml(stepName),
-                        "\" onclick=\"focusScenario(event, '", p.num, "', '", escapeHtml(stepName),
-                        "')\" title=\"Jump to ", escapeHtml(stepName), " in Test #", p.num, "\">",
+                sb.append(s("<a class=\"path-step ", nodeCssClass, "\" href=\"#test-", p.num, "-", escapeHtml(targetScen),
+                        "\" onclick=\"focusScenario(event, '", p.num, "', '", escapeHtml(targetScen),
+                        "')\" title=\"Jump to ", escapeHtml(targetScen), " in Test #", p.num, "\">",
                         escapeHtml(stepName), "</a>"));
             }
             sb.append("</div></div>");

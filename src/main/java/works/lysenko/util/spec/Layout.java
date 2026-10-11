@@ -123,7 +123,7 @@ public record Layout() {
         public static final String LOCATORS_ = s(_RESOURCES_, LOCATORS);
         public static final String PARAMETERS_ = s(VAR_, PARAMETERS);
         public static final String PLATFORMS_ = s(VAR_, PLATFORMS);
-        public static final String KNOWN_ISSUES = s(b(UND_SCR, KNOWN, ISSUES), _DOT_, JSON);
+        public static final String KNOWN_ISSUES = s(KNOWN, _SLASH_, ISSUES, _DOT_, JSON);
         public static final String KNOWN_ISSUES_ = s(_RESOURCES_, KNOWN_ISSUES);
         static final String KNOWN_COLOURS_ = s(_RESOURCES_, KNOWN, _SLASH_, COLOURS);
         // Containers

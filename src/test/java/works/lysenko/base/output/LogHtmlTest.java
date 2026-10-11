@@ -521,8 +521,12 @@ class LogHtmlTest {
         // Verify breadcrumbs in section header
         assertTrue(html.contains("class=\"pill scen-pill\""), "Breadcrumb scenario pill should be hyperlinked");
 
-        // Verify execution paths step link
+        // Verify common path pills are non-interactive spans
+        assertTrue(html.contains("<span class=\"path-step common\">signIn.correctLogin.Settings</span>"), "Common path steps should be non-interactive spans");
+
+        // Verify execution paths step link including stand-in mapping
         assertTrue(html.contains("onclick=\"focusScenario(event, '25', 'signIn.correctLogin.Settings')\""), "Execution paths step should have scenario focus handler");
+        assertTrue(html.contains("title=\"Jump to signIn.correctLogin.Settings in Test #25\""), "Stand-in step should point to resolved common scenario in title");
 
         // Verify JS handlers and hash listener exist in HTML report
         assertTrue(html.contains("function focusScenario("), "Should contain focusScenario JS function");

@@ -2,9 +2,9 @@ package works.lysenko.util.test;
 
 import works.lysenko.util.grid.record.gsrc.Resolution;
 
+import java.util.List;
 import java.util.Properties;
 
-import static java.util.Objects.isNull;
 import static works.lysenko.Base.section;
 import static works.lysenko.util.apis.grid.d._Resolution.readResolution;
 import static works.lysenko.util.chrs.____.DATA;
@@ -12,9 +12,9 @@ import static works.lysenko.util.data.enums.PolychromyMethod.EUCLIDEAN_DISTANCE;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.inn;
-import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.imgs.Analyser.getMaximumEuclideanDispersion;
 import static works.lysenko.util.func.type.Files.getFilesList;
+import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.func.type.Properties.getPropertiesFromFile;
 import static works.lysenko.util.grid.Fields.PDM;
 import static works.lysenko.util.lang.word.P.POLYCHROMY;
@@ -31,20 +31,17 @@ import static works.lysenko.util.spec.Layout.Paths._GRIDS_;
 public record Polychromy() {
 
     /**
-     * Calculates the maximum polychromies.
+     * Calculates the maximum polychromies across all grid files in the directory defined by {@code _GRIDS_}.
      * <p>
-     * This method walks through the files in the '_MATRICES_' directory (recursively), filters the files to include only
-     * regular files with the
-     * extension '.grid', and calculates the maximum polychromy for each file.
-     * To perform this calculation, it first adds a section to the execution output using the 'section' method. Then, it
-     * iterates over each file
-     * path and calls the 'calculateMaxPolychromy' method of the 'Polychromy' class.
-     * If an IOException occurs during the process, it prints the stack trace.
+     * A titled section is added to the execution output to indicate the calculation process.
+     * Each file matching the {@code GRID_EXTENSION} extension is processed by
+     * {@link Polychromy#calculateMaxPolychromy(String)}.
      */
     public static void calculateMaxPolychromies() {
 
         section(b(c(UPDATING), POLYCHROMY, DATA));
-        getFilesList(_GRIDS_, GRID_EXTENSION).forEach(Polychromy::calculateMaxPolychromy);
+        final List<String> files = getFilesList(_GRIDS_, GRID_EXTENSION);
+        if (isNotNull(files)) files.forEach(Polychromy::calculateMaxPolychromy);
     }
 
     /**
@@ -52,18 +49,18 @@ public record Polychromy() {
      * This method reads the properties from the given file, checks the polychromy and method,
      * and if applicable, computes the maximum Euclidean dispersion.
      *
-     * @param s the file path as a String from which to read properties and calculate the maximum polychromy
+     * @param path the file path as a String from which to read properties and calculate the maximum polychromy
      */
-    private static void calculateMaxPolychromy(final String s) {
+    private static void calculateMaxPolychromy(final String path) {
 
-        final Properties file = getPropertiesFromFile(s, true);
+        final Properties file = getPropertiesFromFile(path, true);
         final String polychromy = file.getProperty(POLYCHROMY);
-        final String method = file.getProperty(s(PDM));
+        final String method = file.getProperty(PDM);
 
-        if (!isNull(polychromy) && !isNull(method) && (EUCLIDEAN_DISTANCE.ordinal() == inn(method))) {
-            final String rawText = getPropertiesFromFile(s, true).getProperty(RESOLUTION);
+        if (isNotNull(polychromy) && isNotNull(method) && (EUCLIDEAN_DISTANCE.ordinal() == inn(method))) {
+            final String rawText = file.getProperty(RESOLUTION);
             final Resolution resolution = readResolution(rawText, true);
-            if (null != resolution) getMaximumEuclideanDispersion(resolution.size(), true);
+            if (isNotNull(resolution)) getMaximumEuclideanDispersion(resolution.size(), true);
         }
     }
 }

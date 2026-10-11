@@ -890,6 +890,7 @@ public final class TreeHtml {
 
         return "<!DOCTYPE html>\n" +
                 "<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n" +
+                "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
                 "<title>Scenario Execution Tree</title>\n" +
                 "<style>\n" +
                 "  :root { --bg: #0f172a; --panel-bg: #1e293b; --border: #334155; --text: #f8fafc; --text-muted: #94a3b8; --accent: #38bdf8; }\n" +

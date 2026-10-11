@@ -21,7 +21,7 @@ import static works.lysenko.util.spec.Layout.Files.KNOWN_ISSUES;
 import static works.lysenko.util.spec.Layout.Files.KNOWN_ISSUES_;
 
 /**
- * Editor panel for managing known_issues.json within the GUI.
+ * Editor panel for managing known/issues.json within the GUI.
  */
 public class KnownIssuesPanel extends JPanel {
 

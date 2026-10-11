@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Execution Timeline &amp; Telemetry</title>
 <style>
 :root { --bg: #090d16; --card-bg: #111827; --limbo-bg: #0d121f; --border: #1e293b; --text: #e2e8f0; --accent: #38bdf8; }
@@ -17,7 +18,7 @@ button.active { background: #0284c7; border-color: #38bdf8; }
 input[type="text"] { background: #1e293b; color: #f8fafc; border: 1px solid #334155; padding: 6px 12px; border-radius: 6px; font-size: 13px; outline: none; width: 220px; }
 input[type="text"]:focus { border-color: var(--accent); }
 #charts-container { display: flex; margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-#summary-cards-container { display: flex; gap: 20px; margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+#summary-cards-container { display: flex; gap: 20px; margin-bottom: 20px; align-items: start; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 .chart-card { position: relative; flex: 1; min-width: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; }
 .summary-card { flex: 1; min-width: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; }
 .card-title { font-size: 14px; font-weight: 600; color: #f8fafc; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
@@ -112,11 +113,11 @@ a.log-artifact-link:hover { color: #7dd3fc; background: rgba(56, 189, 248, 0.18)
 .step-arrow { color: #64748b; font-size: 11px; }
 .common-path-box { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 12px; margin-bottom: 12px; background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; font-family: ui-monospace, monospace; }
 .common-path-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; white-space: nowrap; }
-.path-step.common { background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35); color: #38bdf8; font-weight: 500; }
-.path-step.common:hover { background: rgba(56, 189, 248, 0.25); border-color: #38bdf8; color: #f8fafc; }
+.path-step.common { background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35); color: #38bdf8; font-weight: 500; cursor: default; }
+.path-step.common:hover { background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35); color: #38bdf8; transform: none; box-shadow: none; }
 .scen-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .scen-table th { text-align: left; padding: 6px 8px; color: #64748b; font-weight: 500; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; }
-.scen-table td { padding: 6px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
+.scen-table td { padding: 6px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); word-break: break-word; vertical-align: top; }
 .cell-mono { font-family: ui-monospace, monospace; }
 .text-right { text-align: right; }
 .text-muted { color: #64748b; }
@@ -159,8 +160,14 @@ summary::-webkit-details-marker { display: none; }
 .section-breadcrumb { display: flex; align-items: center; gap: 8px; padding: 7px 16px; background: #080c14; border-top: 1px solid var(--border); font-size: 12px; font-family: ui-monospace, monospace; flex-wrap: wrap; }
 .breadcrumb-label { color: #475569; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 .pill { background: #1e293b; padding: 1px 7px; border-radius: 4px; color: #cbd5e1; font-size: 11px; white-space: nowrap; border: 1px solid #334155; }
-@media (max-width: 960px) { #sectionsContainer { grid-template-columns: 1fr; } }
-@media (max-width: 600px) { .time-range { display: none; } }
+@media (max-width: 960px) {
+  #summary-cards-container { flex-direction: column; }
+  #sectionsContainer { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  body { padding: 16px 12px; }
+  .time-range { display: none; }
+}
 .log-section-body { display: flex; flex-direction: row; border-top: 1px solid var(--border); background: #070a10; }
 .soundtrack-column { width: 56px; flex-shrink: 0; background: #05070c; border-right: 1px solid #1a2234; padding: 12px 0; user-select: none; display: flex; flex-direction: column; position: relative; }
 .soundtrack-column::before { content: ''; position: absolute; top: 0; bottom: 0; left: 8px; width: 6px; background-image: radial-gradient(circle, #334155 35%, transparent 40%); background-size: 6px 19.2px; opacity: 0.5; }
@@ -1651,7 +1658,7 @@ a.path-step { text-decoration: none; }
         const xRight = ml + (k + 1) * Y;
 
         if (k < numTests - 1) {
-          svg += `  <line x1="${xRight.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xRight.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(255,255,255,0.18)" stroke-dasharray="3 3" stroke-width="1"/>`;
+          svg += `  <line x1="${xRight.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xRight.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(255,255,255,0.28)" stroke-dasharray="3 3" stroke-width="1"/>`;
         }
 
         const testItem = (window.lgData && window.lgData[k]) ? window.lgData[k] : null;
@@ -1662,7 +1669,7 @@ a.path-step { text-decoration: none; }
             for (let s = 1; s <= subCount; s++) {
               const xSub = xLeft + (s / durSec) * Y;
               if (xSub < xRight - 2) {
-                svg += `  <line x1="${xSub.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xSub.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-dasharray="1 3" stroke-width="1"/>`;
+                svg += `  <line x1="${xSub.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xSub.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(148,163,184,0.18)" stroke-dasharray="2 2" stroke-width="1"/>`;
               }
             }
           }
