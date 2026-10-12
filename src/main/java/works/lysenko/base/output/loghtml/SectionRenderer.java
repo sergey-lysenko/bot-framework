@@ -7,6 +7,7 @@ import works.lysenko.base.output.loghtml.LogModels.ScenEntry;
 import works.lysenko.base.output.loghtml.LogModels.TelemetryItem;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -247,7 +248,51 @@ public final class SectionRenderer {
             final List<ArtifactItem> runArtifacts,
             final List<Double> telemetryCpu,
             int currOpGlobalIdx) {
+        return renderSections(sections, runArtifacts, Map.of(), telemetryCpu, currOpGlobalIdx);
+    }
+
+    /**
+     * Renders HTML collapsible sections for all log sections, including inline artifacts and soundtrack optical tracks.
+     *
+     * @param sections        parsed log sections
+     * @param runArtifacts    list of run artifact items
+     * @param telemetryCpuMap map of operation number to CPU telemetry measurement
+     * @param telemetryCpuList list of CPU telemetry measurements
+     * @param currOpGlobalIdx global operation index for CPU telemetry alignment
+     * @return HTML snippet containing log sections
+     */
+    public static String renderSections(
+            final List<LogSection> sections,
+            final List<ArtifactItem> runArtifacts,
+            final Map<Integer, Double> telemetryCpuMap,
+            final List<Double> telemetryCpuList,
+            int currOpGlobalIdx) {
+        double minCpu = Double.MAX_VALUE;
+        double maxCpu = -Double.MAX_VALUE;
+        final List<Double> allCpuVals = new ArrayList<>();
+        if (null != telemetryCpuMap && !telemetryCpuMap.isEmpty()) {
+            for (final Double val : telemetryCpuMap.values()) {
+                if (null != val && val > 0.0 && val <= 100.0) {
+                    allCpuVals.add(val);
+                    if (val < minCpu) minCpu = val;
+                    if (val > maxCpu) maxCpu = val;
+                }
+            }
+        } else if (null != telemetryCpuList) {
+            for (final Double val : telemetryCpuList) {
+                if (null != val && val > 0.0 && val <= 100.0) {
+                    allCpuVals.add(val);
+                    if (val < minCpu) minCpu = val;
+                    if (val > maxCpu) maxCpu = val;
+                }
+            }
+        }
+        Collections.sort(allCpuVals);
+        final boolean hasCpuRange = (minCpu < maxCpu) && (maxCpu > 0.0);
+
+        double lastSeenCpu = 0.0;
         final StringBuilder sb = new StringBuilder();
+        sb.append(renderLegendSection());
         for (final LogSection sec : sections) {
             final boolean isTest = "test".equals(sec.type);
             final boolean isLimbo = "limbo".equals(sec.type) || "configuring".equals(sec.type);
@@ -381,17 +426,39 @@ public final class SectionRenderer {
 
                     final String lineText = sec.lines.get(lIdx);
                     final String cleanL = ANSI_PATTERN.matcher(lineText).replaceAll("").trim();
-                    final boolean isOpLine = LINE_WITH_TEST_RE.matcher(cleanL).matches() || LINE_NO_TEST_RE.matcher(cleanL).matches();
-                    if (isOpLine && currOpGlobalIdx < telemetryCpu.size()) {
-                        final double cpuVal = telemetryCpu.get(currOpGlobalIdx++);
-                        if (cpuVal <= 0.0 || cpuVal > 100.0) {
-                            cpuRows.append("<div class=\"st-row rate-white\" title=\"-\"><div class=\"st-wave\" style=\"width: 1px; opacity: 0.15;\"></div></div>");
+                    final Matcher mTest = LINE_WITH_TEST_RE.matcher(cleanL);
+                    final Matcher mNoTest = mTest.matches() ? null : LINE_NO_TEST_RE.matcher(cleanL);
+                    final boolean isOpLine = mTest.matches() || (null != mNoTest && mNoTest.matches());
+
+                    Integer opNum = null;
+                    if (mTest.matches()) {
+                        try { opNum = Integer.parseInt(mTest.group(2).trim()); } catch (final NumberFormatException ignored) {}
+                    } else if (null != mNoTest && mNoTest.matches()) {
+                        try { opNum = Integer.parseInt(mNoTest.group(1).trim()); } catch (final NumberFormatException ignored) {}
+                    }
+
+                    if (null != opNum && null != telemetryCpuMap && telemetryCpuMap.containsKey(opNum)) {
+                        lastSeenCpu = telemetryCpuMap.get(opNum);
+                    } else if (isOpLine && null != telemetryCpuList && currOpGlobalIdx < telemetryCpuList.size()) {
+                        lastSeenCpu = telemetryCpuList.get(currOpGlobalIdx++);
+                    }
+
+                    if (isOpLine && lastSeenCpu > 0.0 && lastSeenCpu <= 100.0) {
+                        final double cpuVal = lastSeenCpu;
+                        final double rel;
+                        if (hasCpuRange && (maxCpu - minCpu) > 0.001) {
+                            final double valRel = Math.min(1.0, Math.max(0.0, (cpuVal - minCpu) / (maxCpu - minCpu)));
+                            final double rankRel = getPercentileRank(allCpuVals, cpuVal);
+                            rel = Math.min(1.0, Math.max(0.0, 0.5 * valRel + 0.5 * rankRel));
                         } else {
-                            final String cClass = (cpuVal > 47.0) ? " rate-red" : (cpuVal > 44.0) ? " rate-yellow" : (cpuVal > 38.0) ? " rate-green" : (cpuVal > 25.0) ? " rate-blue" : " rate-white";
-                            final double cpuPct = Math.min(1.0, Math.max(0.0, cpuVal / 50.0));
-                            final int cpuW = Math.max(2, Math.min(32, (int) Math.round(cpuPct * 32)));
-                            cpuRows.append(String.format(Locale.ROOT, s("<div class=\"st-row%s\" title=\"%.2f%%\\\"><div class=\"st-wave\" style=\"width: %dpx;\"></div></div>"), cClass, cpuVal, cpuW));
+                            rel = Math.min(1.0, Math.max(0.0, cpuVal / 50.0));
                         }
+                        final String cClass = (rel > 0.80) ? " rate-red" : (rel > 0.60) ? " rate-yellow" : (rel > 0.40) ? " rate-green" : (rel > 0.20) ? " rate-blue" : " rate-white";
+                        final int cpuW = Math.max(2, Math.min(32, (int) Math.round(rel * 32)));
+                        final String tooltip = hasCpuRange
+                                ? String.format(Locale.ROOT, "%.2f%% (range: %.1f%%-%.1f%%)", cpuVal, minCpu, maxCpu)
+                                : String.format(Locale.ROOT, "%.2f%%", cpuVal);
+                        cpuRows.append(String.format(Locale.ROOT, s("<div class=\"st-row%s\" title=\"%s\"><div class=\"st-wave\" style=\"width: %dpx;\"></div></div>"), cClass, tooltip, cpuW));
                     } else {
                         cpuRows.append("<div class=\"st-row rate-white\" title=\"-\"><div class=\"st-wave\" style=\"width: 1px; opacity: 0.15;\"></div></div>");
                     }
@@ -559,5 +626,90 @@ public final class SectionRenderer {
             if (badgeHtml.length() > 0) parsedLine = s(parsedLine, "  ", badgeHtml);
             output.append(divOpen).append(anchorsHtml).append(parsedLine).append("</div>");
         }
+    }
+
+    /**
+     * Calculates the percentile rank (0.0 to 1.0) of a value within a sorted list.
+     * If the value appears multiple times, the average rank of those occurrences is used.
+     *
+     * @param sortedValues non-null sorted list of values
+     * @param val          value to search for
+     * @return percentile rank between 0.0 and 1.0
+     */
+    private static double getPercentileRank(final List<Double> sortedValues, final double val) {
+        if (null == sortedValues || sortedValues.isEmpty()) return 0.5;
+        final int n = sortedValues.size();
+        if (n <= 1) return 0.5;
+        int first = -1;
+        int last = -1;
+        for (int i = 0; i < n; i++) {
+            if (Math.abs(sortedValues.get(i) - val) < 1e-6) {
+                if (first == -1) first = i;
+                last = i;
+            }
+        }
+        if (first == -1) {
+            int pos = Collections.binarySearch(sortedValues, val);
+            if (pos < 0) pos = -pos - 1;
+            return Math.min(1.0, Math.max(0.0, (double) pos / (n - 1)));
+        }
+        final double avgIdx = (first + last) / 2.0;
+        return Math.min(1.0, Math.max(0.0, avgIdx / (n - 1)));
+    }
+
+    /**
+     * Renders the soundtrack optical track legend header section.
+     *
+     * @return HTML snippet for the soundtrack legend header
+     */
+    public static String renderLegendSection() {
+        return s(
+                "  <div class=\"log-legend-section\">\n",
+                "    <div class=\"lg-title-group\">\n",
+                "      <span class=\"badge neutral lg-badge\">LEGEND</span>\n",
+                "    </div>\n",
+                "    <div class=\"lg-items-group\">\n",
+                "      <div class=\"lg-item\">\n",
+                "        <span class=\"lg-st-sample rate-white\"></span>\n",
+                "        <div class=\"lg-item-text\">\n",
+                "          <span class=\"lg-val rate-white\">&lt;20 ms</span>\n",
+                "          <span class=\"lg-sub rate-white\">0–20% CPU</span>\n",
+                "        </div>\n",
+                "      </div>\n",
+                "      <div class=\"lg-item\">\n",
+                "        <span class=\"lg-st-sample rate-blue\"></span>\n",
+                "        <div class=\"lg-item-text\">\n",
+                "          <span class=\"lg-val rate-blue\">20–49 ms</span>\n",
+                "          <span class=\"lg-sub rate-blue\">20–40% CPU</span>\n",
+                "        </div>\n",
+                "      </div>\n",
+                "      <div class=\"lg-item\">\n",
+                "        <span class=\"lg-st-sample rate-green\"></span>\n",
+                "        <div class=\"lg-item-text\">\n",
+                "          <span class=\"lg-val rate-green\">50–99 ms</span>\n",
+                "          <span class=\"lg-sub rate-green\">40–60% CPU</span>\n",
+                "        </div>\n",
+                "      </div>\n",
+                "      <div class=\"lg-item\">\n",
+                "        <span class=\"lg-st-sample rate-yellow\"></span>\n",
+                "        <div class=\"lg-item-text\">\n",
+                "          <span class=\"lg-val rate-yellow\">100–999 ms</span>\n",
+                "          <span class=\"lg-sub rate-yellow\">60–80% CPU</span>\n",
+                "        </div>\n",
+                "      </div>\n",
+                "      <div class=\"lg-item\">\n",
+                "        <span class=\"lg-st-sample rate-red\"></span>\n",
+                "        <div class=\"lg-item-text\">\n",
+                "          <span class=\"lg-val rate-red\">≥1000 ms</span>\n",
+                "          <span class=\"lg-sub rate-red\">80–100% CPU</span>\n",
+                "        </div>\n",
+                "      </div>\n",
+                "    </div>\n",
+                "    <div class=\"lg-track-labels\">\n",
+                "      <span class=\"lg-track-tag\">Left: Duration</span>\n",
+                "      <span class=\"lg-track-tag\">Right: CPU Load</span>\n",
+                "    </div>\n",
+                "  </div>\n"
+        );
     }
 }

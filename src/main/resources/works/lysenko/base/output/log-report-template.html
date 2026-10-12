@@ -125,21 +125,20 @@ a.log-artifact-link:hover { color: #7dd3fc; background: rgba(56, 189, 248, 0.18)
 .sym-leaf { color: #a855f7; }
 .sym-fork { color: #22c55e; }
 .sym-other { color: #f59e0b; }
-#sectionsContainer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: start; }
+#sectionsContainer { position: relative; display: grid; grid-template-columns: minmax(0, 1.618fr) minmax(0, 1fr); gap: 10px; align-items: start; }
 details.log-section { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: all 0.15s ease-out; }
 details.log-section.preflight, details.log-section.postflight { grid-column: 1 / -1; background: var(--card-bg); border-left: 4px solid #38bdf8; }
-details.log-section.test { grid-column: 1; background: var(--card-bg); border-left: 4px solid #22c55e; }
 details.log-section.booting { grid-column: 1; background: var(--card-bg); border-left: 4px solid #38bdf8; }
-details.log-section.configuring { grid-column: 2; background: var(--limbo-bg); border-left: 4px solid #475569; opacity: 0.85; font-size: 0.92em; }
+details.log-section.configuring { grid-column: 2; background: var(--limbo-bg); border-left: 4px solid #475569; opacity: 0.85; }
 details.log-section.configuring:hover { opacity: 1; }
-body.hide-limbo details.log-section.test { grid-column: 1 / -1; }
-body.hide-limbo details.log-section.booting { grid-column: 1 / -1; }
-body.hide-limbo details.log-section.configuring { display: none !important; }
+details.log-section.test { grid-column: 1; background: var(--card-bg); border-left: 4px solid #22c55e; }
 details.log-section.test.warning { border-left-color: #f59e0b; }
 details.log-section.test.failed { border-left-color: #ef4444; }
 details.log-section.limbo { grid-column: 2; background: var(--limbo-bg); border-left: 4px solid #475569; opacity: 0.85; }
 details.log-section.limbo:hover { opacity: 1; }
-details.log-section[open] { grid-column: 1 / -1 !important; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); z-index: 2; }
+body.hide-limbo details.log-section.limbo { display: none !important; }
+details.log-section[open] { grid-column: 1 / -1; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); z-index: 2; }
+details.log-section.has-image-preview[open] { grid-column: 1 !important; }
 summary { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; cursor: pointer; user-select: none; background: rgba(30, 41, 59, 0.4); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 500; font-size: 13px; }
 summary:hover { background: rgba(51, 65, 85, 0.5); }
 summary::-webkit-details-marker { display: none; }
@@ -169,7 +168,13 @@ summary::-webkit-details-marker { display: none; }
   .time-range { display: none; }
 }
 .log-section-body { display: flex; flex-direction: row; border-top: 1px solid var(--border); background: #070a10; }
+details.log-section.test .log-section-body { background: #06110a; }
+details.log-section.test.warning .log-section-body { background: #121005; }
+details.log-section.test.failed .log-section-body { background: #170808; }
 .soundtrack-column { width: 56px; flex-shrink: 0; background: #05070c; border-right: 1px solid #1a2234; padding: 12px 0; user-select: none; display: flex; flex-direction: column; position: relative; }
+details.log-section.test .soundtrack-column { background: #040c07; border-color: #0b2413; }
+details.log-section.test.warning .soundtrack-column { background: #0c0a03; border-color: #24200b; }
+details.log-section.test.failed .soundtrack-column { background: #120505; border-color: #2b1111; }
 .soundtrack-column::before { content: ''; position: absolute; top: 0; bottom: 0; left: 8px; width: 6px; background-image: radial-gradient(circle, #334155 35%, transparent 40%); background-size: 6px 19.2px; opacity: 0.5; }
 .soundtrack-track { margin-left: 18px; width: 34px; height: 100%; display: flex; flex-direction: column; }
 .soundtrack-column.right-track { border-right: none; border-left: 1px solid #1a2234; }
@@ -183,6 +188,32 @@ summary::-webkit-details-marker { display: none; }
 .st-row.rate-green .st-wave { background: #22c55e; box-shadow: 0 0 7px rgba(34, 197, 94, 0.7); }
 .st-row.rate-yellow .st-wave { background: #eab308; box-shadow: 0 0 8px rgba(234, 179, 8, 0.8); }
 .st-row.rate-red .st-wave { background: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.9); }
+.log-legend-section { grid-column: 1 / -1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; border-left: 4px solid #38bdf8; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; }
+.lg-title-group { display: flex; align-items: center; flex-shrink: 0; }
+.lg-badge { border-color: #38bdf8 !important; color: #38bdf8 !important; background: rgba(56, 189, 248, 0.1) !important; letter-spacing: 0.04em; }
+.lg-items-group { display: flex; align-items: center; justify-content: space-around; flex: 1; gap: 12px; min-width: 0; }
+.lg-item { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.lg-st-sample { width: 14px; height: 14px; border-radius: 2px; flex-shrink: 0; }
+.lg-st-sample.rate-white { background: #cbd5e1; box-shadow: 0 0 4px rgba(203, 213, 225, 0.4); }
+.lg-st-sample.rate-blue { background: #38bdf8; box-shadow: 0 0 6px rgba(56, 189, 248, 0.6); }
+.lg-st-sample.rate-green { background: #22c55e; box-shadow: 0 0 7px rgba(34, 197, 94, 0.7); }
+.lg-st-sample.rate-yellow { background: #eab308; box-shadow: 0 0 8px rgba(234, 179, 8, 0.8); }
+.lg-st-sample.rate-red { background: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.9); }
+.lg-item-text { display: flex; flex-direction: column; line-height: 1.2; }
+.lg-val { font-weight: 600; font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+.lg-val.rate-white { color: #cbd5e1; }
+.lg-val.rate-blue { color: #38bdf8; }
+.lg-val.rate-green { color: #4ade80; }
+.lg-val.rate-yellow { color: #fde047; }
+.lg-val.rate-red { color: #fca5a5; }
+.lg-sub { font-size: 10px; font-weight: 500; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+.lg-sub.rate-white { color: #cbd5e1; opacity: 0.85; }
+.lg-sub.rate-blue { color: #38bdf8; opacity: 0.85; }
+.lg-sub.rate-green { color: #4ade80; opacity: 0.85; }
+.lg-sub.rate-yellow { color: #fde047; opacity: 0.85; }
+.lg-sub.rate-red { color: #fca5a5; opacity: 0.85; }
+.lg-track-labels { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.lg-track-tag { font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: #64748b; background: rgba(15, 23, 42, 0.6); padding: 2px 6px; border-radius: 4px; border: 1px solid #1e293b; white-space: nowrap; }
 .log-content { flex: 1; padding: 12px 18px; overflow-x: auto; background: transparent; font-size: 12px; line-height: 19.2px; white-space: pre; word-break: normal; border-top: none; }
 a.path-step { text-decoration: none; }
 .scenario-anchor { position: absolute; pointer-events: none; width: 0; height: 0; }
@@ -213,6 +244,75 @@ a.path-step { text-decoration: none; }
 .right-series-controls { justify-content: flex-end; margin-left: auto; }
 .chart-select { background: #0f172a; border: 1px solid var(--border); color: #38bdf8; font-size: 11px; padding: 2px 6px; border-radius: 4px; cursor: pointer; font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; outline: none; }
 .chart-select:hover { background: #1e293b; border-color: #38bdf8; color: #f8fafc; }
+.right-col-img-preview {
+  position: absolute;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  transition: top 0.12s ease-out;
+}
+.right-col-img-preview img {
+  width: 100%;
+  height: auto;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 4px;
+  display: block;
+}
+.right-col-img-preview .preview-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 11px;
+}
+.right-col-img-preview .preview-filename {
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: ui-monospace, monospace;
+}
+.right-col-img-preview .preview-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.right-col-img-preview .preview-btn {
+  background: #1e293b;
+  color: #f8fafc;
+  border: 1px solid #334155;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  text-decoration: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  transition: all 0.15s;
+}
+.right-col-img-preview .preview-btn:hover {
+  background: #334155;
+  border-color: #475569;
+  color: #38bdf8;
+}
+@media (max-width: 960px) {
+  .right-col-img-preview {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    width: 100% !important;
+    margin-top: 10px;
+  }
+}
 {{PATH_STYLES}}
 {{SUMMARY_PLAQUE_CSS}}
 </style>
@@ -240,6 +340,7 @@ a.path-step { text-decoration: none; }
       <a class="btn-link" href="{{JSON_LINK}}" target="_blank" title="Standard Indented JSON Report"><button type="button">JSON</button></a>
       <a class="btn-link" href="{{RAW_LINK}}" target="_blank" title="Unprocessed ANSI Log"><button type="button">Raw Log</button></a>
       <a class="btn-link" href="{{TELEM_LINK}}" target="_blank" title="System CPU/Memory Telemetry"><button type="button">Telemetry</button></a>
+      <a class="btn-link" href="{{STACKTRACES_LINK}}" target="_blank" title="Stacktrace References Directory"><button type="button">Stacktraces</button></a>
     </div>
   </div>
 </header>
@@ -1915,6 +2016,154 @@ a.path-step { text-decoration: none; }
   window.addEventListener('resize', renderAllCharts);
   renderAllCharts();
   setTimeout(handleHashLink, 100);
+
+  document.addEventListener('DOMContentLoaded', () => {
+    let activePreviewEl = null;
+    let activePreviewLink = null;
+    let activePreviewSec = null;
+
+    function closeRightColPreview() {
+      if (activePreviewSec) {
+        activePreviewSec.classList.remove('has-image-preview');
+      }
+      if (activePreviewEl) {
+        activePreviewEl.remove();
+        activePreviewEl = null;
+        activePreviewLink = null;
+        activePreviewSec = null;
+      }
+    }
+
+    function positionRightColPreview() {
+      if (!activePreviewEl || !activePreviewLink || !activePreviewSec) return;
+      const container = document.getElementById('sectionsContainer');
+      if (!container || !container.contains(activePreviewEl)) return;
+
+      const img = activePreviewEl.querySelector('img');
+      const containerRect = container.getBoundingClientRect();
+      const secRect = activePreviewSec.getBoundingClientRect();
+      const linkRect = activePreviewLink.getBoundingClientRect();
+
+      const secTopInContainer = secRect.top - containerRect.top;
+      const secHeight = activePreviewSec.offsetHeight;
+
+      // Link vertical center relative to section top
+      const linkCenterYInSec = (linkRect.top + linkRect.height / 2) - secRect.top;
+
+      const previewHeight = activePreviewEl.offsetHeight;
+
+      // Ideal top position inside section so preview vertical center matches link vertical center
+      let topPosInSec = linkCenterYInSec - (previewHeight / 2);
+
+      // Clamping constraints: do not go beyond test's vertical dimensions
+      if (topPosInSec < 0) {
+        topPosInSec = 0;
+      }
+      if (topPosInSec + previewHeight > secHeight) {
+        topPosInSec = secHeight - previewHeight;
+      }
+
+      // If preview is taller than section itself, cap max-height and set top = 0
+      if (previewHeight > secHeight) {
+        topPosInSec = 0;
+        if (img) {
+          img.style.maxHeight = Math.max(50, secHeight - 50) + 'px';
+        }
+      } else if (img) {
+        img.style.maxHeight = '';
+      }
+
+      const finalTop = secTopInContainer + Math.max(0, topPosInSec);
+      const finalLeft = (secRect.right - containerRect.left) + 10;
+      const finalWidth = secRect.width / 1.618;
+
+      activePreviewEl.style.top = finalTop + 'px';
+      activePreviewEl.style.left = finalLeft + 'px';
+      activePreviewEl.style.width = finalWidth + 'px';
+    }
+
+    function openRightColPreview(link, href) {
+      closeRightColPreview();
+
+      const sec = link.closest('details.log-section');
+      const container = document.getElementById('sectionsContainer');
+      if (!sec || !container) return;
+
+      sec.classList.add('has-image-preview');
+
+      activePreviewLink = link;
+      activePreviewSec = sec;
+
+      const preview = document.createElement('div');
+      preview.className = 'right-col-img-preview';
+
+      const filename = href.split('/').pop() || href;
+
+      function esc(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      preview.innerHTML = `
+        <div class="preview-controls">
+          <span class="preview-filename" title="${esc(href)}">${esc(filename)}</span>
+          <div class="preview-btns">
+            <a class="preview-btn" href="${esc(href)}" target="_blank" title="Open in New Tab">↗</a>
+            <button type="button" class="preview-btn close-preview-btn" title="Close">✕</button>
+          </div>
+        </div>
+        <img src="${esc(href)}" alt="Preview">
+      `;
+
+      container.appendChild(preview);
+      activePreviewEl = preview;
+
+      const closeBtn = preview.querySelector('.close-preview-btn');
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeRightColPreview();
+      });
+
+      const img = preview.querySelector('img');
+
+      requestAnimationFrame(() => {
+        positionRightColPreview();
+      });
+
+      if (img) {
+        img.addEventListener('load', () => {
+          positionRightColPreview();
+        });
+      }
+    }
+
+    window.addEventListener('resize', positionRightColPreview);
+    window.addEventListener('scroll', positionRightColPreview, { passive: true });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        closeRightColPreview();
+      }
+    });
+
+    document.addEventListener('toggle', e => {
+      if (e.target && e.target.classList && e.target.classList.contains('log-section') && !e.target.open) {
+        if (activePreviewSec === e.target) {
+          closeRightColPreview();
+        }
+      }
+    }, true);
+
+    document.addEventListener('click', e => {
+      const link = e.target.closest('a.log-artifact-link') || e.target.closest('a.gutter-artifact-badge');
+      if (link) {
+        const href = link.getAttribute('href');
+        if (href && (href.endsWith('.png') || href.endsWith('.jpg') || href.endsWith('.jpeg') || href.endsWith('.webp') || href.endsWith('.gif'))) {
+          e.preventDefault();
+          openRightColPreview(link, href);
+        }
+      }
+    });
+  });
 </script>
 </body>
 </html>
