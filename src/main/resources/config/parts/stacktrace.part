@@ -14,5 +14,5 @@
 # .logs.line.number.in.short.stacktrace=false
 
 # ------------------------------------------------------------------------------
-# Replaces repeated stack traces in logs with references to their earlier occurrence. Default: false
-# .logs.stack.trace.references=false
+# Replaces repeated stack traces in logs with references to their earlier occurrence. Default: true
+# .logs.stack.trace.references=true

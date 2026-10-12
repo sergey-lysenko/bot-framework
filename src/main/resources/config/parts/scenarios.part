@@ -34,6 +34,10 @@
 # .tree.forbid.overexecution=false
 
 # ------------------------------------------------------------------------------
+# Hides branches of the test tree which are entirely OFF to reduce wasted space on partial test executions. Default: false
+# .tree.hide.off.branches=false
+
+# ------------------------------------------------------------------------------
 # Enables 16:9 layout optimization and compaction for scenario execution trees. Default: true
 # .tree.progression.optimization=true
 

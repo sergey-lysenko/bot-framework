@@ -3,6 +3,7 @@ package works.lysenko.util.func.core;
 import org.apache.commons.lang3.StringUtils;
 import works.lysenko.util.prop.core.StackTrace;
 import works.lysenko.util.prop.tree.Scenario;
+import works.lysenko.util.spec.Layout;
 
 import java.security.CodeSource;
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.func.data.Regexes.dot;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.prop.data.Delimeters.L1;
+import static works.lysenko.util.spec.Layout.*;
 import static works.lysenko.util.spec.Numbers.ZERO;
 import static works.lysenko.util.spec.Symbols._COLON_;
 import static works.lysenko.util.spec.Symbols._DOT_;
@@ -59,7 +61,7 @@ public record Stacktrace() {
     private static void saveStacktraceReference(final int index, final String stacktrace) {
 
         try {
-            final String filePath = works.lysenko.util.spec.Layout.Files.name(works.lysenko.util.spec.Layout.Templates.RUN_STACKTRACES_);
+            final String filePath = works.lysenko.util.spec.Layout.Files.name(Layout.Templates.RUN_STACKTRACES_);
             final java.io.File file = new java.io.File(filePath);
             if (null != file.getParentFile() && !file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();

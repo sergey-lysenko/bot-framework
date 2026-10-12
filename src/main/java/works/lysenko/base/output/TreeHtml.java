@@ -118,6 +118,7 @@ public final class TreeHtml {
             processGroup(group, null, 0, dy, nodes, edges, logRecords);
         }
 
+        pruneOffBranches(nodes, edges);
         optimizeLayout(nodes);
         return new TreeLayout(nodes, edges);
     }
@@ -154,6 +155,7 @@ public final class TreeHtml {
 
         for (final _Scenario root : sortedRoots)
             processScenario(root, null, 0, rows, ancestors, sorted, nodes, edges, logRecords);
+        pruneOffBranches(nodes, edges);
         optimizeLayout(nodes);
         return new TreeLayout(nodes, edges);
     }
@@ -1034,5 +1036,26 @@ public final class TreeHtml {
                 "  }\n" +
                 "</script>\n" +
                 "</body></html>";
+    }
+
+    private static void pruneOffBranches(final List<NodeData> nodes, final List<Edge> edges) {
+        if (!works.lysenko.util.prop.tree.HideOffBranches.b()) return;
+
+        final Set<NodeData> toRemove = new HashSet<>();
+        for (final NodeData n : nodes) {
+            if (!isTheoreticallyExecutable(n)) {
+                toRemove.add(n);
+            }
+        }
+
+        if (toRemove.isEmpty()) return;
+
+        nodes.removeAll(toRemove);
+
+        edges.removeIf(e -> toRemove.contains(e.from()) || toRemove.contains(e.to()));
+
+        for (final NodeData n : nodes) {
+            n.children().removeAll(toRemove);
+        }
     }
 }

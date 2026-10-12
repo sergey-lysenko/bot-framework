@@ -292,7 +292,7 @@ public final class SectionRenderer {
 
         double lastSeenCpu = 0.0;
         final StringBuilder sb = new StringBuilder();
-        sb.append(renderLegendSection());
+        sb.append(renderLegendSection(hasCpuRange, minCpu, maxCpu));
         for (final LogSection sec : sections) {
             final boolean isTest = "test".equals(sec.type);
             final boolean isLimbo = "limbo".equals(sec.type) || "configuring".equals(sec.type);
@@ -662,7 +662,26 @@ public final class SectionRenderer {
      *
      * @return HTML snippet for the soundtrack legend header
      */
-    public static String renderLegendSection() {
+    public static String renderLegendSection(final boolean hasCpuRange, final double minCpu, final double maxCpu) {
+        final String cpu0, cpu20, cpu40, cpu60, cpu80, cpu100;
+        if (hasCpuRange && (maxCpu - minCpu) > 0.001) {
+            final double range = maxCpu - minCpu;
+            cpu0 = String.format(Locale.ROOT, "%.1f", minCpu);
+            cpu20 = String.format(Locale.ROOT, "%.1f", minCpu + 0.2 * range);
+            cpu40 = String.format(Locale.ROOT, "%.1f", minCpu + 0.4 * range);
+            cpu60 = String.format(Locale.ROOT, "%.1f", minCpu + 0.6 * range);
+            cpu80 = String.format(Locale.ROOT, "%.1f", minCpu + 0.8 * range);
+            cpu100 = String.format(Locale.ROOT, "%.1f", maxCpu);
+        } else {
+            // When no valid range, rel = cpuVal / 50.0 (maxes at 50%)
+            cpu0 = "0";
+            cpu20 = "10";
+            cpu40 = "20";
+            cpu60 = "30";
+            cpu80 = "40";
+            cpu100 = "≥50";
+        }
+
         return s(
                 "  <div class=\"log-legend-section\">\n",
                 "    <div class=\"lg-title-group\">\n",
@@ -673,35 +692,35 @@ public final class SectionRenderer {
                 "        <span class=\"lg-st-sample rate-white\"></span>\n",
                 "        <div class=\"lg-item-text\">\n",
                 "          <span class=\"lg-val rate-white\">&lt;20 ms</span>\n",
-                "          <span class=\"lg-sub rate-white\">0–20% CPU</span>\n",
+                "          <span class=\"lg-sub rate-white\">", cpu0, "–", cpu20, "% CPU</span>\n",
                 "        </div>\n",
                 "      </div>\n",
                 "      <div class=\"lg-item\">\n",
                 "        <span class=\"lg-st-sample rate-blue\"></span>\n",
                 "        <div class=\"lg-item-text\">\n",
                 "          <span class=\"lg-val rate-blue\">20–49 ms</span>\n",
-                "          <span class=\"lg-sub rate-blue\">20–40% CPU</span>\n",
+                "          <span class=\"lg-sub rate-blue\">", cpu20, "–", cpu40, "% CPU</span>\n",
                 "        </div>\n",
                 "      </div>\n",
                 "      <div class=\"lg-item\">\n",
                 "        <span class=\"lg-st-sample rate-green\"></span>\n",
                 "        <div class=\"lg-item-text\">\n",
                 "          <span class=\"lg-val rate-green\">50–99 ms</span>\n",
-                "          <span class=\"lg-sub rate-green\">40–60% CPU</span>\n",
+                "          <span class=\"lg-sub rate-green\">", cpu40, "–", cpu60, "% CPU</span>\n",
                 "        </div>\n",
                 "      </div>\n",
                 "      <div class=\"lg-item\">\n",
                 "        <span class=\"lg-st-sample rate-yellow\"></span>\n",
                 "        <div class=\"lg-item-text\">\n",
                 "          <span class=\"lg-val rate-yellow\">100–999 ms</span>\n",
-                "          <span class=\"lg-sub rate-yellow\">60–80% CPU</span>\n",
+                "          <span class=\"lg-sub rate-yellow\">", cpu60, "–", cpu80, "% CPU</span>\n",
                 "        </div>\n",
                 "      </div>\n",
                 "      <div class=\"lg-item\">\n",
                 "        <span class=\"lg-st-sample rate-red\"></span>\n",
                 "        <div class=\"lg-item-text\">\n",
                 "          <span class=\"lg-val rate-red\">≥1000 ms</span>\n",
-                "          <span class=\"lg-sub rate-red\">80–100% CPU</span>\n",
+                "          <span class=\"lg-sub rate-red\">", cpu80, "–", cpu100, "% CPU</span>\n",
                 "        </div>\n",
                 "      </div>\n",
                 "    </div>\n",
