@@ -23,6 +23,7 @@ import static works.lysenko.util.prop.data.Delimeters.L1;
 import static works.lysenko.util.spec.Numbers.ZERO;
 import static works.lysenko.util.spec.Symbols._COLON_;
 import static works.lysenko.util.spec.Symbols._DOT_;
+import static works.lysenko.util.spec.Symbols._EQUAL_;
 import static works.lysenko.util.spec.Symbols._SPACE_;
 
 /**
@@ -50,6 +51,26 @@ public record Stacktrace() {
         return s(shortClassName, _DOT_, method, line);
     }
 
+    private static void saveStacktraceReference(final int index, final String stacktrace) {
+
+        try {
+            final String filePath = works.lysenko.util.spec.Layout.Files.name(works.lysenko.util.spec.Layout.Templates.RUN_STACKTRACES_);
+            final java.io.File file = new java.io.File(filePath);
+            if (null != file.getParentFile() && !file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+            final String entry = s(index, _EQUAL_, stacktrace, System.lineSeparator());
+            java.nio.file.Files.writeString(
+                    file.toPath(),
+                    entry,
+                    java.nio.charset.StandardCharsets.UTF_8,
+                    java.nio.file.StandardOpenOption.CREATE,
+                    java.nio.file.StandardOpenOption.APPEND);
+        } catch (final Exception ignored) {
+            // Suppressed to prevent failure during stacktrace formatting
+        }
+    }
+
     /**
      * Formats the output by enclosing the callers in brackets.
      *
@@ -60,10 +81,16 @@ public record Stacktrace() {
 
         if (callers.isEmpty()) return EMPTY;
         final String stacktrace = e(SQUARE, StringUtils.join(callers, _SPACE_));
-        if (!StackTrace.references) return stacktrace;
+        final boolean useReferences = Boolean.TRUE.equals(StackTrace.references)
+                || Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._LOGS_STACK_TRACE_REFERENCES.get());
+        if (!useReferences) return stacktrace;
         if (references.contains(stacktrace)) return e(SQUARE, references.indexOf(stacktrace));
-        else references.add(stacktrace);
-        return s(references.indexOf(stacktrace), _COLON_, stacktrace);
+        else {
+            references.add(stacktrace);
+            final int index = references.indexOf(stacktrace);
+            saveStacktraceReference(index, stacktrace);
+            return s(index, _COLON_, stacktrace);
+        }
     }
 
     /**

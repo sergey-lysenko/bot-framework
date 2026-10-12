@@ -138,14 +138,16 @@ public record Layout() {
          */
         public static String name(final String template, final String... values) {
 
-            final String rootPath = s(_RUNS_, parameters.getTest(), _SLASH_);
+            final String rootPath = s(_RUNS_, (isNull(parameters)) ? "null" : n("null", parameters.getTest()), _SLASH_);
             final String testsFormat = s($0, s((isNull(core)) ? 1 : n(1, core.getTotalTests())).length(), s(D));
             final int currentTest = (isNull(core)) ? 0 : n(0, core.getCurrentTestNumber());
             final List<String> rawList =
                     (null == values) ? (new ArrayList<>(0)) : (new ArrayList<>(Arrays.asList(values)));
-            rawList.add(0, s(timer.startedAt()));
+            final long startTs = (isNull(timer)) ? System.currentTimeMillis() : timer.startedAt();
+            final long elapsedMs = (isNull(timer)) ? 0L : timer.msSinceStart();
+            rawList.add(0, s(startTs));
             rawList.add(1, String.format(testsFormat, currentTest));
-            rawList.add(2, String.format(s($0, _9_, D), timer.msSinceStart()));
+            rawList.add(2, String.format(s($0, _9_, D), elapsedMs));
 
             final Collection<String> list = new ArrayList<>(rawList.size());
             for (final String raw : rawList) {
@@ -189,6 +191,7 @@ public record Layout() {
         public static final String SCREENSHOT_ = s($1_S, s, SNAPSHOTS, s, $1_S, _DOT_, $2_S, _DOT_, $3_S, _DOT_, $4_S, _DOT_
                 , $5_S);
         public static final String TELEMETRY_ = s($1_S, s, $1_S, _DOT_, TELEMETRY, _DOT_, LOG);
+        public static final String RUN_STACKTRACES_ = s($1_S, s, $1_S, _DOT_, "stacktraces", _DOT_, PROPERTIES);
         public static final String USERS_POOL_ = s(ETC, s, d(USERS, POOL));
         public static final String VERSION_ = s($1_S, s, $1_S, _DOT_, VERSION);
     }
