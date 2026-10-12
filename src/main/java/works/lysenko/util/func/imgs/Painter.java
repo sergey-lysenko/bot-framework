@@ -14,6 +14,8 @@ import works.lysenko.util.grid.record.Request;
 import works.lysenko.util.grid.record.misc.DrawGridResult;
 import works.lysenko.util.prop.grid.Marker;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Point;
@@ -99,6 +101,38 @@ public record Painter() {
         g2d.fillRect(rect.x, rect.y, rect.width, rect.height);
         g2d.dispose();
         return image;
+    }
+
+    /**
+     * Draws a cross-hatch (diagonal mesh) overlay over the specified rectangular region.
+     *
+     * @param g2d         Graphics2D context
+     * @param rect        rectangular region to cross-hatch
+     * @param colour      colour of the hatch lines
+     * @param spacing     pixel spacing between parallel hatch lines
+     * @param strokeWidth stroke thickness of hatch lines
+     */
+    public static void drawCrossHatch(final Graphics2D g2d, final Rectangle rect, final Color colour,
+                                     final int spacing, final float strokeWidth) {
+        if (null == g2d || null == rect || rect.width <= 0 || rect.height <= 0) return;
+
+        final java.awt.Shape oldClip = g2d.getClip();
+        g2d.clip(new java.awt.Rectangle(rect.x, rect.y, rect.width, rect.height));
+
+        g2d.setColor(colour);
+        g2d.setStroke(new BasicStroke(strokeWidth));
+
+        final int x = rect.x;
+        final int y = rect.y;
+        final int w = rect.width;
+        final int h = rect.height;
+
+        for (int offset = -h; offset < w + h; offset += spacing) {
+            g2d.drawLine(x + offset, y, x + offset + h, y + h);
+            g2d.drawLine(x + offset, y + h, x + offset + h, y);
+        }
+
+        g2d.setClip(oldClip);
     }
 
     private static BufferedImage drawDraft(final BufferedImage image, final Paint color, final Location... points) {

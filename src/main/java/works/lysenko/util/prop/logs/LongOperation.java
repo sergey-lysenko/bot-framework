@@ -22,5 +22,5 @@ import static works.lysenko.util.spec.PropEnum._TEST_LONG_OPERATION_THRESHOLD;
 public record LongOperation() {
 
     public static final int threshold = _TEST_LONG_OPERATION_THRESHOLD.get();
-    public static final Severity severity = Severity.values()[(int) _TEST_LONG_OPERATION_SEVERITY.get()];
+    public static final Severity severity = _TEST_LONG_OPERATION_SEVERITY.get();
 }

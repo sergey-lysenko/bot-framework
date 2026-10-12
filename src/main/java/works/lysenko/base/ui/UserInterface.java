@@ -84,11 +84,15 @@ public final class UserInterface extends JPanel implements _Dashboard {
     private final JPanel switchboard = new JPanel();
     private final AnsiTextPane log = new AnsiTextPane();
     private final JScrollPane logScrollPane = new JScrollPane(log);
+    private final java.util.concurrent.ConcurrentLinkedQueue<LogUpdate> logQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    private final java.util.concurrent.atomic.AtomicBoolean logFlushScheduled = new java.util.concurrent.atomic.AtomicBoolean(false);
     private double previous = 0.0;
     private JBotButton debug;
     private JBotButton pause;
     private JBotButton halt;
     private JBotButton stop;
+
+    private record LogUpdate(String message, Telemetry telemetry) {}
 
     /**
      * Initializes and builds a Dashboard with various components such as Breadcrumbs, Statusboard, Switchboard, and Log.
@@ -306,6 +310,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
 
     /**
      * Sets the information message and refreshes the status board with the provided telemetry data.
+     * Messages are enqueued and flushed to the Event Dispatch Thread (EDT) in batches to prevent UI lag.
      *
      * @param message   The information message to be displayed.
      * @param telemetry The telemetry data used to refresh the status board.
@@ -314,13 +319,51 @@ public final class UserInterface extends JPanel implements _Dashboard {
 
         final int depth = works.lysenko.Base.exec == null ? 0 : works.lysenko.Base.exec.scenarios().depth();
         final String indent = "  ".repeat(Math.max(0, depth));
-        SwingUtilities.invokeLater(() -> {
-            final JScrollBar scrollBar = logScrollPane.getVerticalScrollBar();
-            final boolean followOutput = scrollBar.getValue() + scrollBar.getVisibleAmount() >= scrollBar.getMaximum() - 2;
-            refreshStatusBoard(telemetry);
-            log.appendOutput(indent + message);
-            if (followOutput) SwingUtilities.invokeLater(() -> scrollBar.setValue(scrollBar.getMaximum()));
-        });
+        logQueue.add(new LogUpdate(indent + message, telemetry));
+
+        if (logFlushScheduled.compareAndSet(false, true)) {
+            SwingUtilities.invokeLater(this::flushLogQueue);
+        }
+    }
+
+    /**
+     * Flushes enqueued log updates and telemetry refreshes to the Swing EDT in a single batch.
+     */
+    private void flushLogQueue() {
+
+        logFlushScheduled.set(false);
+        final JScrollBar scrollBar = logScrollPane.getVerticalScrollBar();
+        final boolean followOutput = scrollBar.getValue() + scrollBar.getVisibleAmount() >= scrollBar.getMaximum() - 2;
+
+        LogUpdate item;
+        Telemetry lastTelemetry = null;
+        final StringBuilder batchText = new StringBuilder();
+
+        while (null != (item = logQueue.poll())) {
+            batchText.append(item.message());
+            if (!item.message().endsWith("\n") && !item.message().endsWith("\r")) {
+                batchText.append("\n");
+            }
+            if (null != item.telemetry()) {
+                lastTelemetry = item.telemetry();
+            }
+        }
+
+        if (null != lastTelemetry) {
+            refreshStatusBoard(lastTelemetry);
+        }
+
+        if (batchText.length() > 0) {
+            log.appendOutput(batchText.toString());
+        }
+
+        if (followOutput) {
+            scrollBar.setValue(scrollBar.getMaximum());
+        }
+
+        if (!logQueue.isEmpty() && logFlushScheduled.compareAndSet(false, true)) {
+            SwingUtilities.invokeLater(this::flushLogQueue);
+        }
     }
 
     /**

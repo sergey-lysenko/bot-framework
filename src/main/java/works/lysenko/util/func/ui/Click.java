@@ -7,6 +7,7 @@ import org.openqa.selenium.interactions.Interactive;
 import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
 import works.lysenko.util.data.records.Location;
+import works.lysenko.util.func.imgs.OperationMarkers;
 import works.lysenko.util.prop.core.Screenshot;
 import works.lysenko.util.prop.core.Size;
 import works.lysenko.util.prop.grid.Marker;
@@ -124,7 +125,7 @@ public record Click() {
 
         if (Screenshot.longClicks) {
             final BufferedImage image = getBufferedImage();
-            drawPointOn(image, Marker.colour, new Location(x1, y1), Size.longClicksMarker);
+            OperationMarkers.markPoint(image, new java.awt.Point(x1, y1), b(LONG, CLICK));
             writeScreenshot(image, false, b(name, LONG, CLICK, AT, s(X, x1), s(Y, y1), s(duration, MS)));
         }
     }

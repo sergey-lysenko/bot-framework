@@ -158,9 +158,9 @@ public final class Core extends Root implements _Core, _Tests {
             inJarOrNotInJar();
             create(additional);
             read();
-            works.lysenko.base.core.BootCapture.stop();
             startStopwatch();
             build();
+            works.lysenko.base.core.BootCapture.stop();
         } catch (final RuntimeException | Error e) {
             works.lysenko.base.core.BootCapture.stop();
             runLock.close();
@@ -397,10 +397,10 @@ public final class Core extends Root implements _Core, _Tests {
             log(Level.none, b(c(CLOSING), c(DASHBOARD)), false);
             disposeDashboardIfExist();
             final boolean isSuccess = results.getFailures().isEmpty();
-            final boolean isHeadless = (isNotNull(parameters) && parameters.isHeadless()) || GraphicsEnvironment.isHeadless();
             final boolean shouldShowPostProcessorWindow =
                     !GraphicsEnvironment.isHeadless() && !Routines.isInsideCI() && !Routines.isInsideDocker();
-            final boolean shouldOpenBrowser = shouldShowPostProcessorWindow && !isHeadless;
+            final boolean openReport = Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_REPORT_OPEN_HTML.get());
+            final boolean shouldOpenBrowser = shouldShowPostProcessorWindow && openReport;
             final File logFile = new File(name(RUN_LOG_));
             final File htmlFile = new File(name(RUN_LOG_HTML_));
             log(Level.none, b(c(CLOSING), LOG, AND, TELEMETRY, s(WRITER, S)), false);

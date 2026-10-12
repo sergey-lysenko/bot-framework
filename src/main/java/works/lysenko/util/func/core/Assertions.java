@@ -51,7 +51,6 @@ import static works.lysenko.util.lang.word.I.INDUCED;
 import static works.lysenko.util.lang.T.TODO_;
 import static works.lysenko.util.lang.word.V.VALUES;
 import static works.lysenko.util.spec.Symbols._COLON_;
-import static works.lysenko.util.spec.Symbols._LFD_;
 import static works.lysenko.util.spec.Symbols._SPACE_;
 
 /**
@@ -358,7 +357,7 @@ public record Assertions() {
 
         final String s = b(message,
                 e(CURLY,
-                        e(_LFD_,
+                        e(_SPACE_,
                                 (null == problem) ? EMPTY : (0 < values.length) ? b(s(problem, _COLON_),
                                         s(_COLON_, _SPACE_,
                                                 StringUtils.join(

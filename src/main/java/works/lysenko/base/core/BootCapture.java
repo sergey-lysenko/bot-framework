@@ -29,36 +29,39 @@ public final class BootCapture {
             @Override
             public void write(final int b) {
                 if (null != originalOut) originalOut.write(b);
-                BUFFER.write(b);
                 if (null != attachedWriter) {
                     try {
                         attachedWriter.write(b);
                     } catch (final IOException ignored) {
                     }
+                } else {
+                    BUFFER.write(b);
                 }
             }
 
             @Override
             public void write(final byte[] b, final int off, final int len) {
                 if (null != originalOut) originalOut.write(b, off, len);
-                BUFFER.write(b, off, len);
                 if (null != attachedWriter) {
                     try {
                         attachedWriter.write(new String(b, off, len, StandardCharsets.UTF_8));
                     } catch (final IOException ignored) {
                     }
+                } else {
+                    BUFFER.write(b, off, len);
                 }
             }
 
             @Override
             public void flush() throws IOException {
                 if (null != originalOut) originalOut.flush();
-                BUFFER.flush();
                 if (null != attachedWriter) {
                     try {
                         attachedWriter.flush();
                     } catch (final IOException ignored) {
                     }
+                } else {
+                    BUFFER.flush();
                 }
             }
         };

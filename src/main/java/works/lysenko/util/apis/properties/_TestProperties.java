@@ -2,6 +2,7 @@ package works.lysenko.util.apis.properties;
 
 import works.lysenko.util.apis._PropEnum;
 
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -14,6 +15,13 @@ public interface _TestProperties {
      * @return true if test properties are accessible
      */
     boolean areTestPropertiesReady();
+
+    /**
+     * Retrieves the compendium collection of property enum classes registered in test properties.
+     *
+     * @return collection of _PropEnum classes
+     */
+    Collection<Class<? extends _PropEnum>> getCompendium();
 
     /**
      * Retrieves the value of a test property of the specified type and name.

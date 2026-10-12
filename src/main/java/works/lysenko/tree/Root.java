@@ -1391,8 +1391,9 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
 
         if (Screenshot.clicks) {
             final BufferedImage image = getBufferedImage();
-            final BufferedImage img = drawArea(image, Marker.colour, element.getRect());
-            writeScreenshot(img, false, b(CLICK, ON, describe(element)));
+            final String desc = describe(element);
+            final BufferedImage img = works.lysenko.util.func.imgs.OperationMarkers.markElement(image, element.getRect(), desc, CLICK);
+            writeScreenshot(img, false, b(CLICK, ON, desc));
         }
         element.click();
     }

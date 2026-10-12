@@ -311,7 +311,7 @@ public record Screenshot() {
         try {
             final BufferedImage prune = getCropped(image, rect, settings.silent());
             if (isNotNull(prune)) {
-                image = drawArea(image, Marker.colour, rect);
+                image = OperationMarkers.markElement(image, rect, null, "SCREENSHOT");
                 if (settings.storeFullscreen() && (isNotNull(fullPath))) storeFullscreen(image, fullPath);
                 if (settings.storeCropped()) storeCropped(prune, croppedPath);
             }

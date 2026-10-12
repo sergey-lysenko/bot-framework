@@ -93,9 +93,7 @@ public record Data(WebElement scroller, int height, int width, PointerInput fing
 
         final BufferedImage image = getBufferedImage();
         if (Screenshot.swipes) {
-            drawPointOn(image, Swipe.start, new Location(s.x, s.y), Size.longClicksMarker);
-            drawPointOn(image, Swipe.stop, new Location(t.x, t.y), Size.longClicksMarker);
-            drawLineOn(image, Swipe.line, new Location(s.x, s.y), new Location(t.x, t.y));
+            works.lysenko.util.func.imgs.OperationMarkers.markSwipe(image, s, t);
             writeScreenshot(image, false, b(S3, s(X, s.x), s(Y, s.y), TO, s(X, t.x), s(Y, t.y), s(duration, MS)));
         }
         return image;

@@ -42,4 +42,38 @@ class InvalidPropertyHandlingTest {
         assertNull(PropertyValidator.validateProperty(".test.tests", "999", ConfigTestsEditorPanel.FileCategory.CONFIG_PART));
         assertNull(PropertyValidator.validateProperty(".test.headless", "true", ConfigTestsEditorPanel.FileCategory.CONFIG_PART));
     }
+
+    @Test
+    void testProjectScopedPropEnumIsNotMarkedAsInvalid() {
+        PropertyValidator.resetCache();
+        assertTrue(PropertyValidator.isKnownConfigProperty(".login.rate.limit.test"));
+        assertTrue(PropertyValidator.isKnownConfigProperty(".login.rate.limit.test.retry"));
+        assertNull(PropertyValidator.validateKey(".login.rate.limit.test", ConfigTestsEditorPanel.FileCategory.CONFIG_PART));
+        assertNull(PropertyValidator.validateKey(".login.rate.limit.test.retry", ConfigTestsEditorPanel.FileCategory.CONFIG_PART));
+        assertNull(PropertyValidator.validateProperty(".login.rate.limit.test", "true", ConfigTestsEditorPanel.FileCategory.CONFIG_PART));
+        assertNull(PropertyValidator.validateProperty(".login.rate.limit.test.retry", "true", ConfigTestsEditorPanel.FileCategory.CONFIG_PART));
+    }
+}
+
+enum DummyBiteheistPropEnum implements works.lysenko.util.apis._PropEnum {
+    _LOGIN_RATE_LIMIT_TEST(Boolean.class, "true"),
+    _LOGIN_RATE_LIMIT_TEST_RETRY(Boolean.class, "true");
+
+    private final Class<?> type;
+    private final String defaultValue;
+
+    DummyBiteheistPropEnum(final Class<?> type, final String defaultValue) {
+        this.type = type;
+        this.defaultValue = defaultValue;
+    }
+
+    @Override
+    public String defaultValue() {
+        return defaultValue;
+    }
+
+    @Override
+    public Class<?> type() {
+        return type;
+    }
 }

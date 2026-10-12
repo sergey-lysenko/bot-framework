@@ -1,5 +1,6 @@
 package works.lysenko.base.parameters;
 
+import works.lysenko.util.apis._PropEnum;
 import works.lysenko.util.spec.PropEnum;
 
 import java.io.IOException;
@@ -47,7 +48,7 @@ final public class PropertyHelp {
             return direct;
         }
 
-        for (final PropEnum prop : PropEnum.values()) {
+        for (final _PropEnum prop : PropertyValidator.getAllPropEnumConstants()) {
             final String name = prop.name();
             final String subName = name.startsWith("_") ? name.substring(1) : name;
 

@@ -38,6 +38,10 @@
 # .test.headless=false
 
 # ------------------------------------------------------------------------------
+# Automatically opens the HTML report in the default browser after the test run. Default: true
+# .test.report.open.html=true
+
+# ------------------------------------------------------------------------------
 # Limits known issue markers in reports to nodes that have actually executed and failed. Default: false
 # .test.known.issues.failed.only=false
 
@@ -85,8 +89,8 @@
 # .test.report.cpu.density=5000
 
 # ------------------------------------------------------------------------------
-# Downsamples CPU/RAM telemetry data points to match test count. Default: false
-# .test.report.cpu.density.per.test=false
+# Downsamples CPU/RAM telemetry data points to match test count. Default: true
+# .test.report.cpu.density.per.test=true
 
 # ------------------------------------------------------------------------------
 # Initializes the All-Leaf Completion chart scale mode to logarithmic by default. Default: false

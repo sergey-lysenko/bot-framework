@@ -80,10 +80,10 @@ public record Telemetry(Data data, String rendered) {
      */
     private static long getSpentTime() {
 
-        final ThreadInfo[] threadInfos = threadsMX.dumpAllThreads(false, false);
+        final long[] ids = threadsMX.getAllThreadIds();
         long time = 0;
-        for (final ThreadInfo threadInfo : threadInfos) {
-            final long thisTime = threadsMX.getThreadCpuTime(threadInfo.getThreadId());
+        for (final long id : ids) {
+            final long thisTime = threadsMX.getThreadCpuTime(id);
             if (-1 != thisTime) time += thisTime;
         }
         return (time / 1000);
@@ -109,7 +109,7 @@ public record Telemetry(Data data, String rendered) {
         final long totalM = env.totalMemory();
         final long our = Routines.msSinceStart();
         final double rawSpent = (0 < our) ? ((getSpentTime() / 10.0) / our) : 0.0;
-        final double spent = (our < 1000 || rawSpent > (cores * 100.0)) ? 0.0 : rawSpent;
+        final double spent = (our < 1000 || rawSpent > (cores * 100.0)) ? 0.0 : (cores > 0 ? rawSpent / cores : rawSpent);
         final int timeShift = (int) (our - time);
         final long runTime = System.nanoTime() - start;
         return new Data(time, cores, threads, spent, load, unload, totalC, free, totalM, max, timeShift, runTime, comment);

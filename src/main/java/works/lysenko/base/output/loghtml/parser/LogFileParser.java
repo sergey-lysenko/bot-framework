@@ -273,9 +273,14 @@ public final class LogFileParser {
                 }
             }
 
-            if ((clean.contains("Reading Common Configuration") || clean.contains("Reading Parameters") || clean.contains(b(s(_NUMBR_), c(APPLIED), TEST, CONFIGURATION))) && BOOTING.equals(currentSec.type)) {
+            final boolean isConfigEvent = clean.contains("Reading Common Configuration") || clean.contains("Reading Parameters") || clean.startsWith("# Applied test configuration");
+
+            if (isConfigEvent && BOOTING.equals(currentSec.type)) {
+                currentSec.lines.add(line);
                 if (!currentSec.lines.isEmpty()) result.sections.add(currentSec);
                 currentSec = new LogModels.LogSection(CONFIGURING, c(CONFIGURING), NEUTRAL, lineStore);
+                line = reader.readLine();
+                continue;
             }
 
             if (!inPostflight && isPostflightEvent(clean)) {
@@ -325,7 +330,7 @@ public final class LogFileParser {
                         currentSec = new LogModels.LogSection(PREFLIGHT, c(PREFLIGHT), NEUTRAL, lineStore);
                         currentSec.startOp = opNum;
                         currentSec.startTime = ts;
-                    } else if (0 < prevTestNum && !LIMBO.equals(currentSec.type)) {
+                    } else if (0 < prevTestNum && !LIMBO.equals(currentSec.type) && !POSTFLIGHT.equals(currentSec.type)) {
                         if (!currentSec.lines.isEmpty()) result.sections.add(currentSec);
                         currentSec = new LogModels.LogSection(LIMBO, c(LIMBO), NEUTRAL, lineStore);
                         currentSec.prevTestNum = prevTestNum;

@@ -177,6 +177,10 @@
 # .screenshots.of.long.clicks.marker.diameter=50
 
 # ------------------------------------------------------------------------------
+# Screenshot operation marker style variant ("neutral", "military", "classic"). Default: neutral
+# .screenshots.marker.variant=neutral
+
+# ------------------------------------------------------------------------------
 # Captures screenshots for individual pixels used in image-based validation. Default: false
 # .screenshots.of.pixels=false
 

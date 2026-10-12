@@ -2,6 +2,7 @@ package works.lysenko.base.parameters;
 
 import works.lysenko.Base;
 import works.lysenko.base.TestProperties;
+import works.lysenko.util.apis._PropEnum;
 import works.lysenko.util.apis.properties._TestProperties;
 import works.lysenko.util.spec.PropEnum;
 import works.lysenko.base.ui.PropertyTablePanel;
@@ -267,9 +268,9 @@ public class PropertiesPanel extends JPanel {
 
     private static String executionParameterName(final String propertyName) {
 
-        for (final PropEnum property : PropEnum.values()) {
-            if (property.executionParameter() && property.getPropertyName().equals(propertyName)) {
-                return property.name().substring(1);
+        for (final _PropEnum property : PropertyValidator.getAllPropEnumConstants()) {
+            if (property.executionParameter() && property.getPropertyName().equalsIgnoreCase(propertyName)) {
+                return property.name().startsWith("_") ? property.name().substring(1) : property.name();
             }
         }
         return "";

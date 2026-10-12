@@ -5,6 +5,10 @@ import works.lysenko.base.parameters.PropertyValidator;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
@@ -83,6 +87,62 @@ public class ConfigTestsEditorPanel extends JPanel {
         fileTree.getSelectionModel().addTreeSelectionListener(e -> {
             if (!isUpdatingTree) {
                 onTreeSelectionChanged();
+            }
+        });
+
+        final JPopupMenu treePopupMenu = new JPopupMenu();
+        final JMenuItem renameItem = new JMenuItem("Rename...");
+        final JMenuItem duplicateItem = new JMenuItem("Duplicate...");
+        final JMenuItem deleteItem = new JMenuItem("Delete");
+
+        renameItem.addActionListener(e -> renameSelectedFile());
+        duplicateItem.addActionListener(e -> duplicateSelectedFile());
+        deleteItem.addActionListener(e -> deleteSelectedFile());
+
+        treePopupMenu.add(renameItem);
+        treePopupMenu.add(duplicateItem);
+        treePopupMenu.addSeparator();
+        treePopupMenu.add(deleteItem);
+
+        treePopupMenu.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(final PopupMenuEvent e) {
+                final DefaultMutableTreeNode node = (DefaultMutableTreeNode) fileTree.getLastSelectedPathComponent();
+                boolean allow = false;
+                if (node != null && node.getUserObject() instanceof FileNodeObject fileObj) {
+                    if (fileObj.category() != FileCategory.CATEGORY_DIR && fileObj.category() != FileCategory.ROOT_DIR
+                            && !fileObj.displayName().equals("common.configuration.properties")) {
+                        allow = true;
+                    }
+                }
+                renameItem.setEnabled(allow);
+                duplicateItem.setEnabled(allow);
+                deleteItem.setEnabled(allow);
+            }
+
+            @Override public void popupMenuWillBecomeInvisible(final PopupMenuEvent e) {}
+            @Override public void popupMenuCanceled(final PopupMenuEvent e) {}
+        });
+
+        fileTree.setComponentPopupMenu(treePopupMenu);
+        fileTree.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(final MouseEvent e) {
+                maybeSelectOnRightClick(e);
+            }
+
+            @Override
+            public void mouseReleased(final MouseEvent e) {
+                maybeSelectOnRightClick(e);
+            }
+
+            private void maybeSelectOnRightClick(final MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    final TreePath path = fileTree.getClosestPathForLocation(e.getX(), e.getY());
+                    if (path != null) {
+                        fileTree.setSelectionPath(path);
+                    }
+                }
             }
         });
 
@@ -850,6 +910,108 @@ public class ConfigTestsEditorPanel extends JPanel {
             } catch (final Exception e) {
                 JOptionPane.showMessageDialog(this, "Error deleting file: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+    }
+
+    private void renameSelectedFile() {
+        if (null == currentSelectedNode) return;
+        if (currentSelectedNode.displayName().equals("common.configuration.properties")) {
+            JOptionPane.showMessageDialog(this, "Cannot rename the common configuration file.", "Protected File", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        if (!promptToSaveIfModified()) return;
+
+        final String oldName = currentSelectedNode.displayName();
+        final String baseName = oldName.contains(".") ? oldName.substring(0, oldName.lastIndexOf('.')) : oldName;
+        final String extension = oldName.contains(".") ? oldName.substring(oldName.lastIndexOf('.')) : "";
+
+        final String rawName = (String) JOptionPane.showInputDialog(
+                this,
+                "Enter new file name (without extension):",
+                "Rename File",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                null,
+                baseName
+        );
+
+        if (null == rawName || rawName.isBlank()) return;
+
+        final String cleanName = rawName.trim().replaceAll("[^a-zA-Z0-9_\\-]", "");
+        if (cleanName.isBlank()) {
+            JOptionPane.showMessageDialog(this, "Invalid file name.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        final String newFileName = cleanName + extension;
+        final Path oldPath = currentSelectedNode.path();
+        final Path newPath = oldPath.resolveSibling(newFileName);
+
+        if (Files.exists(newPath)) {
+            JOptionPane.showMessageDialog(this, "File already exists: " + newFileName, "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try {
+            Files.move(oldPath, newPath);
+            refreshTreeFromDisk();
+            findAndSelectNodeByFileName(newFileName);
+            JOptionPane.showMessageDialog(this, "File renamed successfully to " + newFileName, "Renamed", JOptionPane.INFORMATION_MESSAGE);
+        } catch (final Exception e) {
+            JOptionPane.showMessageDialog(this, "Error renaming file: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void duplicateSelectedFile() {
+        if (null == currentSelectedNode) return;
+        if (currentSelectedNode.displayName().equals("common.configuration.properties")) {
+            JOptionPane.showMessageDialog(this, "Cannot duplicate the common configuration file.", "Protected File", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        if (isModified()) {
+            saveSelectedFile();
+        }
+
+        final String oldName = currentSelectedNode.displayName();
+        final String baseName = oldName.contains(".") ? oldName.substring(0, oldName.lastIndexOf('.')) : oldName;
+        final String extension = oldName.contains(".") ? oldName.substring(oldName.lastIndexOf('.')) : "";
+
+        final String rawName = (String) JOptionPane.showInputDialog(
+                this,
+                "Enter name for duplicate file (without extension):",
+                "Duplicate File",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                null,
+                baseName + "_copy"
+        );
+
+        if (null == rawName || rawName.isBlank()) return;
+
+        final String cleanName = rawName.trim().replaceAll("[^a-zA-Z0-9_\\-]", "");
+        if (cleanName.isBlank()) {
+            JOptionPane.showMessageDialog(this, "Invalid file name.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        final String newFileName = cleanName + extension;
+        final Path oldPath = currentSelectedNode.path();
+        final Path newPath = oldPath.resolveSibling(newFileName);
+
+        if (Files.exists(newPath)) {
+            JOptionPane.showMessageDialog(this, "File already exists: " + newFileName, "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try {
+            Files.copy(oldPath, newPath);
+            refreshTreeFromDisk();
+            findAndSelectNodeByFileName(newFileName);
+            JOptionPane.showMessageDialog(this, "File duplicated successfully as " + newFileName, "Duplicated", JOptionPane.INFORMATION_MESSAGE);
+        } catch (final Exception e) {
+            JOptionPane.showMessageDialog(this, "Error duplicating file: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
