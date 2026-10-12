@@ -18,7 +18,7 @@ public class Stopwatch implements _Timer {
      * current system time in milliseconds.
      */
 
-    Stopwatch() {
+    public Stopwatch() {
 
         start = System.currentTimeMillis();
     }

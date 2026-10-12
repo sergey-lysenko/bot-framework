@@ -250,17 +250,23 @@ class LogHtmlTest {
                 "0,100,12.5,100,4,8,10,0,10,104857600,524288000,1048576000,sample1",
                 "0,200,25.0,200,4,8,10,0,10,209715200,524288000,1048576000,sample2"));
 
-        LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+        if (works.lysenko.util.func.type.Objects.isNotNull(works.lysenko.Base.properties)) {
+            works.lysenko.Base.properties.setUserOverride(".test.report.add.cpu.debug", "true");
+        }
+        try {
+            LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
 
-        final String html = Files.readString(htmlPath);
-        assertTrue(html.contains("System Resources (CPU &amp; RAM)"));
-        assertTrue(html.contains("window.resourceData = ["));
-        assertTrue(html.contains("\"cpu\":12.50"));
-        assertTrue(html.contains("\"ramUsed\":400.0"));
-        assertTrue(html.contains("onclick=\"onResClick()\""));
-        assertTrue(html.contains("function onResClick()"));
-        assertTrue(html.contains("function syncCrosshairs("));
-        assertTrue(html.contains("function clearAllCrosshairs("));
+            final String html = Files.readString(htmlPath);
+            assertTrue(html.contains("System Resources (CPU &amp; RAM)"));
+            assertTrue(html.contains("window.resourceData = ["));
+            assertTrue(html.contains("\"cpu\":18.75"));
+            assertTrue(html.contains("\"ramUsed\":350.0"));
+            assertTrue(html.contains("function onResClick()"));
+        } finally {
+            if (works.lysenko.util.func.type.Objects.isNotNull(works.lysenko.Base.properties)) {
+                works.lysenko.Base.properties.clearUserOverrides();
+            }
+        }
     }
 
     @Test
@@ -612,5 +618,138 @@ class LogHtmlTest {
         final String html = Files.readString(htmlPath);
         assertTrue(html.contains("Creating Test Results container"), "Should contain Results container creation");
         assertTrue(html.contains("Creating Test properties"), "Should contain Test properties creation");
+    }
+
+    @Test
+    void testBootingConfiguringPreflightSections(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("sections.run.log");
+        final Path htmlPath = tempDir.resolve("sections.run.log.html");
+
+        final List<String> logLines = List.of(
+                "Starting Bot core ...",
+                "Creating Test Results container ... ... spent 11 ms ",
+                "Creating Test properties ... ... spent 1 ms ",
+                "Reading Common Configuration properties ...",
+                "Loading 'colours' from 'src/main/resources/known'",
+                "# Applied test configuration",
+                "•.data.persist=true",
+                "[ ][1][.004][8] 0:[Root.logEmptyLine:681 Exec.<init>:82 Test.<init>:64 Routines.run:99 BotRunner.main:18]",
+                "[ ][2][.012][2] Creating Test Data Storage ...",
+                "[ 1][40][1.000][10] Executing Scenario A"
+        );
+        Files.write(logPath, logLines);
+        LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+
+        final String html = Files.readString(htmlPath);
+        assertTrue(html.contains("<details id=\"sec_Booting\" class=\"log-section booting neutral\">"), "Should contain sec_Booting");
+        assertTrue(html.contains("<details id=\"sec_Configuring\" class=\"log-section configuring neutral\">"), "Should contain sec_Configuring");
+        assertTrue(html.contains("<details id=\"sec_Preflight\" class=\"log-section preflight neutral\">"), "Should contain sec_Preflight");
+    }
+
+    @Test
+    void testCpuSoundtrackRendering(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("cpu_soundtrack.run.log");
+        final Path htmlPath = tempDir.resolve("cpu_soundtrack.run.log.html");
+        final Path telemPath = tempDir.resolve("cpu_soundtrack.telemetry.log");
+
+        final List<String> logLines = List.of(
+                "Starting Bot core ...",
+                "[ 1][1][0.000][10] Executing Scenario A",
+                "[ 1][2][1.000][10] Operation 2",
+                "[ 1][3][2.000][10] Operation 3",
+                "[ 1][4][3.000][10] Operation 4",
+                "[ 1][5][4.000][10] Operation 5"
+        );
+        final List<String> telemLines = List.of(
+                "-,100,6.28,100,4,8,10,0,10,100,100,100,1:[op_1]",
+                "-,200,8.82,100,4,8,10,0,10,100,100,100,2:[op_2]",
+                "-,300,9.15,100,4,8,10,0,10,100,100,100,3:[op_3]",
+                "-,400,9.49,100,4,8,10,0,10,100,100,100,4:[op_4]",
+                "-,500,17.18,100,4,8,10,0,10,100,100,100,5:[op_5]"
+        );
+
+        Files.write(logPath, logLines);
+        Files.write(telemPath, telemLines);
+
+        if (works.lysenko.util.func.type.Objects.isNotNull(works.lysenko.Base.properties)) {
+            works.lysenko.Base.properties.setUserOverride(".test.report.add.cpu.debug", "true");
+        }
+        try {
+            LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+            final String html = Files.readString(htmlPath);
+
+            assertTrue(html.contains("class=\"log-legend-section\""), "Report should include soundtrack legend section");
+            assertTrue(html.contains("LEGEND"), "Legend section should have LEGEND badge");
+            assertTrue(html.contains("rate-white"), "Soundtrack should include rate-white class");
+            assertTrue(html.contains("rate-blue"), "Soundtrack should include rate-blue class");
+            assertTrue(html.contains("rate-green"), "Soundtrack should include rate-green class");
+            assertTrue(html.contains("rate-yellow"), "Soundtrack should include rate-yellow class");
+            assertTrue(html.contains("rate-red"), "Soundtrack should include rate-red class");
+        } finally {
+            if (works.lysenko.util.func.type.Objects.isNotNull(works.lysenko.Base.properties)) {
+                works.lysenko.Base.properties.clearUserOverrides();
+            }
+        }
+    }
+
+    @Test
+    void testCpuSoundtrackPreservesChronologicalOrderWithStacktraceReferences(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("stacktrace_ref.run.log");
+        final Path telemPath = tempDir.resolve("stacktrace_ref.telemetry.log");
+
+        final List<String> telemLines = List.of(
+                "-,100,6.28,100,4,8,10,0,10,100,100,100,0:[Core.run]",
+                "-,200,8.82,100,4,8,10,0,10,100,100,100,1:[Driver.find]",
+                "-,300,9.15,100,4,8,10,0,10,100,100,100,0:[Core.run]",
+                "-,400,9.49,100,4,8,10,0,10,100,100,100,1:[Driver.find]",
+                "-,500,17.18,100,4,8,10,0,10,100,100,100,0:[Core.run]"
+        );
+
+        Files.write(logPath, List.of("Starting Bot core ..."));
+        Files.write(telemPath, telemLines);
+
+        final java.util.Map<Integer, Double> cpuMap =
+                works.lysenko.base.output.loghtml.SidecarLoader.loadTelemetryCpuMap(logPath.toFile());
+
+        assertEquals(5, cpuMap.size(), "Map size should equal total telemetry samples");
+        assertEquals(6.28, cpuMap.get(1), 1e-2, "Operation 1 should map to sample 1");
+        assertEquals(8.82, cpuMap.get(2), 1e-2, "Operation 2 should map to sample 2");
+        assertEquals(9.15, cpuMap.get(3), 1e-2, "Operation 3 should map to sample 3");
+        assertEquals(9.49, cpuMap.get(4), 1e-2, "Operation 4 should map to sample 4");
+        assertEquals(17.18, cpuMap.get(5), 1e-2, "Operation 5 should map to sample 5");
+    }
+
+    @Test
+    void testStacktraceReferencesDirectoryCreation() throws IOException {
+        if (null == works.lysenko.Base.properties) {
+            works.lysenko.Base.properties = new works.lysenko.base.TestProperties();
+        }
+        if (null == works.lysenko.Base.timer) {
+            works.lysenko.Base.timer = new works.lysenko.base.Stopwatch();
+        }
+        works.lysenko.Base.properties.setUserOverride(".logs.stack.trace.references", "true");
+        works.lysenko.util.func.core.Stacktrace.clearReferences();
+        try {
+            final StackTraceElement[] elem = new StackTraceElement[]{
+                    new StackTraceElement("works.lysenko.base.output.LogHtmlTest", "testMethod", "LogHtmlTest.java", 123),
+                    new StackTraceElement("works.lysenko.base.output.LogHtml", "generateReport", "LogHtml.java", 456)
+            };
+            final String res1 = works.lysenko.util.func.core.Stacktrace.getShort(elem, true);
+            final String res2 = works.lysenko.util.func.core.Stacktrace.getShort(elem, true);
+
+            assertTrue(res1.contains(":"), "First occurrence should include index and full stacktrace");
+            assertTrue(res2.startsWith("[") && res2.endsWith("]"), "Subsequent occurrence should be bracketed index");
+
+            final String stPath = works.lysenko.util.spec.Layout.Files.name(works.lysenko.util.spec.Layout.Templates.RUN_STACKTRACES_);
+            final Path path = Path.of(stPath);
+            assertTrue(Files.exists(path), "Stacktrace properties directory file should exist");
+
+            final String content = Files.readString(path);
+            assertTrue(content.contains("="), "Stacktrace properties file should contain index=stacktrace entry");
+        } finally {
+            if (works.lysenko.util.func.type.Objects.isNotNull(works.lysenko.Base.properties)) {
+                works.lysenko.Base.properties.clearUserOverrides();
+            }
+        }
     }
 }

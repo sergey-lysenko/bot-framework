@@ -1,6 +1,7 @@
 package works.lysenko.base;
 
 import works.lysenko.Base;
+import works.lysenko.base.parameters.PropertyValidator;
 import works.lysenko.base.properties.Renderer;
 import works.lysenko.base.util.StringParser;
 import works.lysenko.util.apis._PropEnum;
@@ -67,6 +68,7 @@ public class TestProperties implements _TestProperties {
     private final Map<String, String> configFileDefaults = new LinkedHashMap<>();
     private Map commonConfiguration = null;
     private Properties the = null;
+    private boolean readingCommonConfiguration = false;
 
     /**
      * Constructs a new instance of TestProperties.
@@ -89,7 +91,17 @@ public class TestProperties implements _TestProperties {
     public TestProperties(final Collection<Class<? extends _PropEnum>> additional) {
 
         this();
-        compendium.addAll(additional);
+        if (isNotNull(additional)) {
+            for (final Class<? extends _PropEnum> c : additional) {
+                if (!compendium.contains(c)) compendium.add(c);
+            }
+        }
+    }
+
+    @Override
+    public Collection<Class<? extends _PropEnum>> getCompendium() {
+
+        return Collections.unmodifiableCollection(compendium);
     }
 
     private static void add(final _PropEnum p, final Map<? super String, ? super String> into) {
@@ -139,10 +151,15 @@ public class TestProperties implements _TestProperties {
     @SuppressWarnings("MethodWithMultipleLoops")
     public final Map<String, String> getDefaults() {
 
-        final Map<String, String> def = new HashMap<>(PropEnum.values().length);
-        for (final Class<? extends _PropEnum> co : compendium)
-            for (final _PropEnum p : co.getEnumConstants())
-                add(p, def);
+        final Map<String, String> def = new LinkedHashMap<>();
+        for (final Class<? extends _PropEnum> co : compendium) {
+            final _PropEnum[] constants = co.getEnumConstants();
+            if (isNotNull(constants)) {
+                for (final _PropEnum p : constants) {
+                    add(p, def);
+                }
+            }
+        }
         return def;
     }
 
@@ -254,15 +271,18 @@ public class TestProperties implements _TestProperties {
     @Override
     public final String getEnumTestPropertySource(final _PropEnum p) {
 
-        if (isNull(the)) readCommonConfiguration();
-        final String def = p.defaultValue();
         final String key = p.getPropertyName();
-        String source = isNull(the) ? null : the.getProperty(key);
-        if (isNull(source) && isNotNull(the) && key.startsWith(".")) {
-            source = the.getProperty(key.substring(1));
-        }
-        if (isNull(source) && isNotNull(the) && !key.startsWith(".")) {
-            source = the.getProperty("." + key);
+        final String def = p.defaultValue();
+        String source = userOverrides.get(key);
+        if (isNull(source) && isNull(the) && !readingCommonConfiguration) readCommonConfiguration();
+        if (isNull(source) && isNotNull(the)) {
+            source = the.getProperty(key);
+            if (isNull(source) && key.startsWith(".")) {
+                source = the.getProperty(key.substring(1));
+            }
+            if (isNull(source) && !key.startsWith(".")) {
+                source = the.getProperty("." + key);
+            }
         }
         if (isNull(source)) source = def;
         if (isNotNull(exec) && !IN_GET_LOG.get()) {
@@ -352,20 +372,27 @@ public class TestProperties implements _TestProperties {
     @SuppressWarnings("UseOfPropertiesAsHashtable")
     public final String readCommonConfiguration() {
 
+        if (readingCommonConfiguration) return "";
         if (isNotNull(commonConfiguration) && isNotNull(the) && !the.isEmpty()) return "";
-        if (isNull(the)) {
-            the = new Properties();
+        readingCommonConfiguration = true;
+        try {
+            if (isNull(the)) {
+                the = new Properties();
+            }
+            final works.lysenko.util.func.core.TestProperties.Result result;
+            result = readTestPropertiesFromFile(new TestPropertiesDescriptor(_CONFIG_, COMMON_CONFIGURATION, _DOT_PROPERTIES));
+            if (isNotNull(result) && isNotNull(result.properties())) {
+                commonConfiguration = result.properties();
+                validateCommonConfigurationScope(commonConfiguration);
+                the.putAll(commonConfiguration);
+            }
+            applyUserOverrides();
+            updateConfigFileDefaults(null);
+            works.lysenko.base.parameters.PropertyValidator.resetCache();
+            return (isNotNull(result)) ? result.debug() : "";
+        } finally {
+            readingCommonConfiguration = false;
         }
-        final works.lysenko.util.func.core.TestProperties.Result result;
-        result = readTestPropertiesFromFile(new TestPropertiesDescriptor(_CONFIG_, COMMON_CONFIGURATION, _DOT_PROPERTIES));
-        if (isNotNull(result) && isNotNull(result.properties())) {
-            commonConfiguration = result.properties();
-            validateCommonConfigurationScope(commonConfiguration);
-            the.putAll(commonConfiguration);
-        }
-        applyUserOverrides();
-        updateConfigFileDefaults(null);
-        return (isNotNull(result)) ? result.debug() : "";
     }
 
     @SuppressWarnings("UseOfPropertiesAsHashtable")

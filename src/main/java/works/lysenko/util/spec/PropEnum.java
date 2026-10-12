@@ -1,21 +1,19 @@
 package works.lysenko.util.spec;
 
 import org.apache.commons.math3.fraction.Fraction;
-import works.lysenko.base.util.StringParser;
 import works.lysenko.util.apis._PropEnum;
 import works.lysenko.util.data.enums.*;
 
 import java.awt.Color;
-import java.util.Locale;
 
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static works.lysenko.Base.properties;
+import static works.lysenko.base.util.StringParser.create;
 import static works.lysenko.util.Constants.*;
 import static works.lysenko.util.chrs.___._128;
 import static works.lysenko.util.chrs.___._255;
 import static works.lysenko.util.chrs.____.TRUE;
-import static works.lysenko.util.data.enums.Severity.S1;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Strings.NULL;
@@ -38,6 +36,8 @@ import static works.lysenko.util.spec.Symbols.*;
  * <li>A default value represented as a {@code String}.</li>
  * <li>(Optionally) A silent flag indicating if the property is quiet in its
  * behaviour.</li>
+ * <li>(Optionally) An execution-parameter flag indicating if the property is
+ * exposed as an execution parameter.</li>
  * </ul>
  *
  * The {@code PropEnum} class provides utility methods to retrieve property
@@ -50,7 +50,7 @@ import static works.lysenko.util.spec.Symbols.*;
  * configuration properties
  * in a structured and type-safe manner.
  */
-@SuppressWarnings({ "MissingJavadoc", "OverloadedVarargsMethod" })
+@SuppressWarnings("MissingJavadoc")
 public enum PropEnum implements _PropEnum {
 
     _DATA_DELIMITER_L0(String.class, VRT_BAR),
@@ -130,6 +130,7 @@ public enum PropEnum implements _PropEnum {
     _SCREENSHOTS_OF_LONG_CLICKS_MARKER_DIAMETER(Integer.class, _5_, _0_),
     _SCREENSHOTS_OF_PIXELS(Boolean.class, FALSE),
     _SCREENSHOTS_OF_SWIPES(Boolean.class, FALSE),
+    _SCREENSHOTS_MARKER_VARIANT(String.class, "neutral"),
     _SCREEN_TO_SPAWN_DASHBOARD(Integer.class, _0_),
     _SWIPES_BIG_REDUCTION(Float.class, _DASH_, _1_, _0_, _DOT_, _0_),
     _SWIPES_DEFAULT_REDUCTION(Float.class, _DASH_, _2_, _DOT_, _0_),
@@ -140,7 +141,7 @@ public enum PropEnum implements _PropEnum {
     _SWIPE_STOP_MARKER_COLOUR(Color.class, b(_COMMA_, _255, _0_, _0_, _128)),
     _TEST_ACTION_RETRIES(Integer.class, _3_),
     _TEST_ALL_LEAFS(Boolean.class, FALSE, true, true),
-    _TEST_ALL_LEAFS_COUNT(Integer.class, _1_, true, true),
+    _TEST_ALL_LEAFS_COUNT(Integer.class, s(_1_), true, true),
     _TEST_APP(String.class, EMPTY),
     _TEST_ASSERTIONS_PRODUCE_EXCEPTION(Boolean.class, TRUE),
     _TEST_ASSERTIONS_SEVERITY(Severity.class, _S0_),
@@ -159,11 +160,12 @@ public enum PropEnum implements _PropEnum {
     _TEST_REPORT_ADD_CPU_DEBUG(Boolean.class, TRUE),
     _TEST_REPORT_ADD_ETA_DEBUG(Boolean.class, TRUE),
     _TEST_REPORT_CPU_DENSITY(Integer.class, _5_, _0_, _0_, _0_),
-    _TEST_REPORT_CPU_DENSITY_PER_TEST(Boolean.class, FALSE),
+    _TEST_REPORT_CPU_DENSITY_PER_TEST(Boolean.class, TRUE),
     _TEST_REPORT_LOG_SCALE_ALL_LEAF(Boolean.class, FALSE),
     _TEST_REPORT_LOG_SCALE_CPU_DEBUG(Boolean.class, FALSE),
     _TEST_REPORT_LOG_SCALE_ETA_DEBUG(Boolean.class, FALSE),
     _TEST_REPORT_LOG_SCALE_TIMELINE(Boolean.class, FALSE),
+    _TEST_REPORT_OPEN_HTML(Boolean.class, TRUE),
     _TEST_REPORT_PROGRESSION_FFMPEG(String.class, FFMPEG),
     _TEST_REPORT_PROGRESSION_MAX_FRAMES(Integer.class, _5_, _0_, _0_, _0_),
     _TEST_REPORT_PROGRESSION_MAX_FRAME_PIXELS(Integer.class, _1_, _6_, _7_, _7_, _7_, _2_, _1_, _6_, _0_),
@@ -206,144 +208,79 @@ public enum PropEnum implements _PropEnum {
     private final boolean executionParameter;
 
     /**
-     * Initialises a new instance of the PropEnum class with the specified type and
-     * default string value.
+     * Initialises a property with all attributes.
      *
      * @param type               the class type which the property corresponds to
-     * @param defaultStringValue the default string value for the property
+     * @param defaultValue       the default value for the property
+     * @param silent             true if operations related to the property should be silent
+     * @param executionParameter true if the property is also an execution parameter
      */
-    PropEnum(final Class<?> type, final String defaultStringValue) {
+    PropEnum(final Class<?> type, final String defaultValue, final boolean silent,
+            final boolean executionParameter) {
 
         this.type = type;
-        defaultValue = defaultStringValue;
-        silent = false;
-        executionParameter = false;
+        this.defaultValue = defaultValue;
+        this.silent = silent;
+        this.executionParameter = executionParameter;
     }
 
     /**
-     * Initialises a new instance of the PropEnum class with the specified type and
-     * default character value.
+     * Initialises a property with silent behaviour metadata.
      *
-     * @param type             the class type which the property corresponds to
-     * @param defaultCharValue the default character value for the property
+     * @param type         the class type which the property corresponds to
+     * @param defaultValue the default value for the property
+     * @param silent       true if operations related to the property should be silent
      */
-    PropEnum(final Class<?> type, final char defaultCharValue) {
+    PropEnum(final Class<?> type, final String defaultValue, final boolean silent) {
 
-        this.type = type;
-        defaultValue = s(defaultCharValue);
-        silent = false;
-        executionParameter = false;
+        this(type, defaultValue, silent, false);
     }
 
     /**
-     * Initialises a new instance of the PropEnum class with the specified type and
-     * default characters.
+     * Initialises a property with the specified type and default string value.
+     *
+     * @param type         the class type which the property corresponds to
+     * @param defaultValue the default value for the property
+     */
+    PropEnum(final Class<?> type, final String defaultValue) {
+
+        this(type, defaultValue, false);
+    }
+
+    /**
+     * Initialises a property with the specified type and default character values.
      *
      * @param type         the class type which the property corresponds to
      * @param defaultChars the default character values for the property
      */
     PropEnum(final Class<?> type, final char... defaultChars) {
 
-        this.type = type;
-        defaultValue = new String(defaultChars);
-        silent = false;
-        executionParameter = false;
+        this(type, new String(defaultChars));
     }
 
-    /**
-     * Initialises a new instance of the PropEnum class with the specified type,
-     * default string value,
-     * and a flag indicating whether the operation is performed silently.
-     *
-     * @param type               the class type which the property corresponds to
-     * @param defaultStringValue the default string value for the property
-     * @param silent             a boolean flag indicating if the property should
-     *                           operate in silent mode
-     */
-    PropEnum(final Class<?> type, final String defaultStringValue, final boolean silent) {
-
-        this.type = type;
-        defaultValue = defaultStringValue;
-        this.silent = silent;
-        executionParameter = false;
-    }
-
-    /**
-     * Initialises a property with silent behaviour and execution-parameter
-     * metadata.
-     *
-     * @param type               the class type which the property corresponds to
-     * @param defaultStringValue the default string value for the property
-     * @param silent             true if operations related to the property should
-     *                           be silent
-     * @param executionParameter true if the property is also an execution parameter
-     */
-    PropEnum(final Class<?> type, final String defaultStringValue, final boolean silent,
-            final boolean executionParameter) {
-
-        this.type = type;
-        defaultValue = defaultStringValue;
-        this.silent = silent;
-        this.executionParameter = executionParameter;
-
-    }
-
-    /**
-     * Initialises a property with a character default, silent behaviour, and
-     * execution-parameter metadata.
-     *
-     * @param type               the class type which the property corresponds to
-     * @param defaultCharValue   the default character value for the property
-     * @param silent             true if operations related to the property should
-     *                           be silent
-     * @param executionParameter true if the property is also an execution parameter
-     */
-    PropEnum(final Class<?> type, final char defaultCharValue, final boolean silent,
-            final boolean executionParameter) {
-
-        this.type = type;
-        defaultValue = s(defaultCharValue);
-        this.silent = silent;
-        this.executionParameter = executionParameter;
-    }
-
-    /**
-     * Initialises a new instance of the PropEnum class with the specified type,
-     * default character value,
-     * and a flag indicating whether the operation is performed silently.
-     *
-     * @param type             the class type which the property corresponds to
-     * @param defaultCharValue the default character value for the property
-     * @param silent           a boolean flag indicating if the property should
-     *                         operate in silent mode
-     */
-    PropEnum(final Class<?> type, final char defaultCharValue, final boolean silent) {
-
-        this.type = type;
-        defaultValue = s(defaultCharValue);
-        this.silent = silent;
-        executionParameter = false;
-    }
-
+    @Override
     public String defaultValue() {
 
         return defaultValue;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T get() {
 
-        return (isNull(properties)) ? (T) StringParser.create(defaultValue, type).result()
-                : (T) properties.getEnum(this);
+        if (isNull(properties)) return (T) create(defaultValue, type).result();
+        final T val = (T) properties.getEnum(this);
+        return isNull(val) ? (T) create(defaultValue, type).result() : val;
     }
 
+    @Override
     public String getPropertyName() {
 
         return switch (this) {
             case _SWIPE_LINE_MARKER_COLOUR -> ".swipes.marker.line.colour";
             case _SWIPE_START_MARKER_COLOUR -> ".swipes.marker.start.colour";
             case _SWIPE_STOP_MARKER_COLOUR -> ".swipes.marker.stop.colour";
-            default -> s(name().toLowerCase(Locale.ROOT).replace('_', '.'));
+            default -> _PropEnum.super.getPropertyName();
         };
     }
 
@@ -359,6 +296,7 @@ public enum PropEnum implements _PropEnum {
         return executionParameter;
     }
 
+    @Override
     public Class<?> type() {
 
         return type;

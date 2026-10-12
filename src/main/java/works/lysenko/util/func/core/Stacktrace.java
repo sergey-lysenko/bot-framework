@@ -37,6 +37,11 @@ public record Stacktrace() {
 
     private static final List<String> references = new ArrayList<>(0);
 
+    public static void clearReferences() {
+
+        references.clear();
+    }
+
     /**
      * Formats the method name based on the stack trace element and the short class name.
      *
@@ -83,6 +88,7 @@ public record Stacktrace() {
         final String stacktrace = e(SQUARE, StringUtils.join(callers, _SPACE_));
         final boolean useReferences = Boolean.TRUE.equals(StackTrace.references)
                 || Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._LOGS_STACK_TRACE_REFERENCES.get());
+        System.out.println("DEBUG USE REF: ST=" + StackTrace.references + " PROP=" + works.lysenko.util.spec.PropEnum._LOGS_STACK_TRACE_REFERENCES.get());
         if (!useReferences) return stacktrace;
         if (references.contains(stacktrace)) return e(SQUARE, references.indexOf(stacktrace));
         else {
