@@ -86,9 +86,7 @@ public record Stacktrace() {
 
         if (callers.isEmpty()) return EMPTY;
         final String stacktrace = e(SQUARE, StringUtils.join(callers, _SPACE_));
-        final boolean useReferences = Boolean.TRUE.equals(StackTrace.references)
-                || Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._LOGS_STACK_TRACE_REFERENCES.get());
-        System.out.println("DEBUG USE REF: ST=" + StackTrace.references + " PROP=" + works.lysenko.util.spec.PropEnum._LOGS_STACK_TRACE_REFERENCES.get());
+        final boolean useReferences = Boolean.TRUE.equals(StackTrace.references);
         if (!useReferences) return stacktrace;
         if (references.contains(stacktrace)) return e(SQUARE, references.indexOf(stacktrace));
         else {
