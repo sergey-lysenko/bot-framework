@@ -14,8 +14,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -178,6 +180,61 @@ public final class SidecarLoader {
     }
 
     /**
+     * Reads CPU load telemetry mapped by operation index from the sibling telemetry log file.
+     *
+     * @param runLogFile input run log file
+     * @return map of operation number to normalized CPU load percentage
+     */
+    public static Map<Integer, Double> loadTelemetryCpuMap(final File runLogFile) {
+        final Map<Integer, Double> cpuMap = new HashMap<>();
+        if (null == runLogFile || null == runLogFile.getParentFile()) return cpuMap;
+        final String runLogName = runLogFile.getName();
+        final String telemName = runLogName.replace(".run.log", ".telemetry.log");
+        final File telemFile = new File(runLogFile.getParentFile(), telemName);
+        if (!telemFile.exists()) return cpuMap;
+
+        double lastVal = 0.0;
+        int lastCores = Runtime.getRuntime().availableProcessors();
+        int sampleNum = 0;
+        try (final BufferedReader br = new BufferedReader(new FileReader(telemFile))) {
+            String line;
+            while (null != (line = br.readLine())) {
+                final String trimmed = line.trim();
+                if (trimmed.isEmpty()) continue;
+                final String[] parts = trimmed.split(",");
+                if (parts.length >= 3) {
+                    sampleNum++;
+                    final String valStr = parts[2].trim();
+                    if (!"-".equals(valStr)) {
+                        try {
+                            lastVal = Double.parseDouble(valStr);
+                        } catch (final NumberFormatException ignored) {
+                        }
+                    }
+                    if (parts.length >= 5) {
+                        final String coresStr = parts[4].trim();
+                        if (!"-".equals(coresStr)) {
+                            try {
+                                final int parsedCores = Integer.parseInt(coresStr);
+                                if (parsedCores > 0) lastCores = parsedCores;
+                            } catch (final NumberFormatException ignored) {
+                            }
+                        }
+                    }
+                    double normalizedVal = lastVal;
+                    if (normalizedVal > 100.0 && lastCores > 0) {
+                        normalizedVal /= lastCores;
+                    }
+
+                    cpuMap.put(sampleNum, normalizedVal);
+                }
+            }
+        } catch (final IOException ignored) {
+        }
+        return cpuMap;
+    }
+
+    /**
      * Reads CPU load telemetry samples from the sibling telemetry log file.
      *
      * @param runLogFile input run log file
@@ -192,6 +249,7 @@ public final class SidecarLoader {
         if (!telemFile.exists()) return cpuLoads;
 
         double lastVal = 0.0;
+        int lastCores = Runtime.getRuntime().availableProcessors();
         try (final BufferedReader br = new BufferedReader(new FileReader(telemFile))) {
             String line;
             while (null != (line = br.readLine())) {
@@ -206,7 +264,21 @@ public final class SidecarLoader {
                         } catch (final NumberFormatException ignored) {
                         }
                     }
-                    cpuLoads.add(lastVal);
+                    if (parts.length >= 5) {
+                        final String coresStr = parts[4].trim();
+                        if (!"-".equals(coresStr)) {
+                            try {
+                                final int parsedCores = Integer.parseInt(coresStr);
+                                if (parsedCores > 0) lastCores = parsedCores;
+                            } catch (final NumberFormatException ignored) {
+                            }
+                        }
+                    }
+                    double normalizedVal = lastVal;
+                    if (normalizedVal > 100.0 && lastCores > 0) {
+                        normalizedVal /= lastCores;
+                    }
+                    cpuLoads.add(normalizedVal);
                 }
             }
         } catch (final IOException ignored) {
@@ -258,6 +330,7 @@ public final class SidecarLoader {
 
         int sampleNum = 0;
         double lastCpu = 0.0;
+        int lastCores = Runtime.getRuntime().availableProcessors();
         double lastFreeM = 0.0;
         double lastTotalM = 0.0;
         int lastThreads = 0;
@@ -271,10 +344,17 @@ public final class SidecarLoader {
                 if (parts.length >= 11) {
                     sampleNum++;
                     final String cpuStr = parts[2].trim();
+                    final String coresStr = parts.length >= 5 ? parts[4].trim() : "-";
                     final String threadsStr = parts[5].trim();
                     final String freeStr = parts[9].trim();
                     final String totalStr = parts[10].trim();
 
+                    if (!"-".equals(coresStr)) {
+                        try {
+                            final int parsedCores = Integer.parseInt(coresStr);
+                            if (parsedCores > 0) lastCores = parsedCores;
+                        } catch (final NumberFormatException ignored) {}
+                    }
                     if (!"-".equals(cpuStr)) {
                         try { lastCpu = Double.parseDouble(cpuStr); } catch (final NumberFormatException ignored) {}
                     }
@@ -288,9 +368,14 @@ public final class SidecarLoader {
                         try { lastTotalM = Double.parseDouble(totalStr); } catch (final NumberFormatException ignored) {}
                     }
 
+                    double normalizedCpu = lastCpu;
+                    if (normalizedCpu > 100.0 && lastCores > 0) {
+                        normalizedCpu /= lastCores;
+                    }
+
                     final double usedMb = Math.max(0.0, (lastTotalM - lastFreeM) / (1024.0 * 1024.0));
                     final double totalMb = Math.max(0.0, lastTotalM / (1024.0 * 1024.0));
-                    items.add(new SystemResourceItem(sampleNum, lastCpu, usedMb, totalMb, lastThreads));
+                    items.add(new SystemResourceItem(sampleNum, normalizedCpu, usedMb, totalMb, lastThreads));
                 }
             }
         } catch (final IOException ignored) {

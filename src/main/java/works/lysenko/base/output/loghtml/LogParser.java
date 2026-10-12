@@ -135,6 +135,7 @@ public final class LogParser {
         final MediaLinksResult mlRes = LogMediaLinks.build(logFile, config);
 
         final List<ArtifactItem> runArtifacts = SidecarLoader.loadRunArtifacts(logFile);
+        final Map<Integer, Double> telemetryCpuMap = SidecarLoader.loadTelemetryCpuMap(logFile);
         final List<Double> telemetryCpu = SidecarLoader.loadTelemetryCpu(logFile);
 
         if (null == pRes.plaqueStatus) {
@@ -229,13 +230,14 @@ public final class LogParser {
                 ? SidecarLoader.loadTelemetryResources(logFile, mRes.testData.size(), mRes.minTestOp, mRes.maxTestOp)
                 : List.of();
         final List<Double> telemetryCpuList = addCpuDebug ? telemetryCpu : List.of();
+        final Map<Integer, Double> activeCpuMap = addCpuDebug ? telemetryCpuMap : Map.of();
 
         final String lgScriptData = renderLgScriptData(mRes.testData, mRes.limboByPrevTest, completions, etaDebugItems, resourceItems, mRes.tAvg, mRes.tMax, mRes.lMax);
         final String commonPath = renderCommonPath(pRes.commonPathSteps);
         final String pathsRows = renderPathsRows(pRes.testPaths, pRes.sections, pRes.commonPathSteps);
         final String scenSubtitle = buildScenSubtitle(pRes.pathsPossibleStr, pRes.pathsChanceStr, pRes.pathsExecutedStr);
         final String scenRows = renderScenRows(pRes.scenStats);
-        final String sectionsHtml = renderSections(pRes.sections, runArtifacts, telemetryCpuList, 0); // Note: currOpGlobalIdx is 0 in original too
+        final String sectionsHtml = renderSections(pRes.sections, runArtifacts, activeCpuMap, telemetryCpuList, 0);
         final String leafCompletionGraph = addAllLeaf ? ChartsRenderer.renderLeafCompletionGraph(completions) : "";
         final String etaDebugGraph = addEtaDebug ? ChartsRenderer.renderEtaDebugGraph(etaDebugItems) : "";
         final String systemResourcesGraph = addCpuDebug ? ChartsRenderer.renderResourceStatsGraph(resourceItems) : "";
@@ -260,6 +262,7 @@ public final class LogParser {
         replacements.put("{{JSON_LINK}}", escapeHtml(s(mlRes.getBasePrefix(), ".run.json")));
         replacements.put("{{RAW_LINK}}", escapeHtml(s(mlRes.getBasePrefix(), ".run.log")));
         replacements.put("{{TELEM_LINK}}", escapeHtml(s(mlRes.getBasePrefix(), ".telemetry.log")));
+        replacements.put("{{STACKTRACES_LINK}}", escapeHtml(s(mlRes.getBasePrefix(), ".stacktraces.properties")));
         replacements.put("{{TIMELINE_TOGGLE}}", timelineToggle);
         replacements.put("{{STATS_STRIP}}", statsStrip);
         replacements.put("{{LINE_HIDDEN}}", lineHidden);
