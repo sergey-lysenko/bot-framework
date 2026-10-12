@@ -7,6 +7,7 @@ import sun.misc.Unsafe;
 import works.lysenko.Base;
 import works.lysenko.base.Core;
 import works.lysenko.base.Results;
+import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.enums.ExecutionStatus;
 import works.lysenko.util.data.enums.ScenarioType;
@@ -211,6 +212,49 @@ class ResultMarkerTest {
 
         final String message = invokeGenerateFailureMessage();
         assertEquals(String.format(" = [FAILURE] Not implemented in '%s' = ", dummyScenario.getName()), message);
+    }
+
+    @Test
+    void testGenericStopReasonPrefersSpecificFailureEvent() throws Exception {
+        Base.core.setStopFlag(true);
+        Base.core.setStopReason("due to [FAILURE] event");
+
+        final Field resultsField = Core.class.getDeclaredField("results");
+        resultsField.setAccessible(true);
+        final Results results = (Results) resultsField.get(Base.core);
+
+        final _Scenario dummyScenario = new works.lysenko.tree.base.Leaf() {
+            @Override
+            public boolean fits() { return true; }
+            @Override
+            public void action() {}
+            @Override
+            public boolean verify() { return true; }
+            @Override
+            public boolean hasFailed() { return true; }
+        };
+
+        final Result res = new Result(dummyScenario);
+        res.updateStatus(ExecutionStatus.FAILED);
+        final works.lysenko.util.data.type.logr.type.Event event =
+                new works.lysenko.util.data.type.logr.type.Event(1L, works.lysenko.util.data.enums.Severity.S0.type(), 1,
+                        "no such element: Unable to locate element: {\"method\":\"xpath\",\"selector\":\"//input[@name='ip']\"}", "");
+        
+        final Field eventsField = Result.class.getDeclaredField("events");
+        eventsField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        final java.util.List<_LogRecord> eventsList = (java.util.List<_LogRecord>) eventsField.get(res);
+        eventsList.add(new works.lysenko.util.data.type.LogRecord(1, System.currentTimeMillis(), event));
+
+        final Field mapField = Results.class.getDeclaredField("results");
+        mapField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        final java.util.Map<_Scenario, Result> map = (java.util.Map<_Scenario, Result>) mapField.get(results);
+        map.put(dummyScenario, res);
+
+        final String message = invokeGenerateFailureMessage();
+        assertTrue(message.contains("no such element: Unable to locate element"), "Message must contain the specific exception message");
+        assertTrue(message.contains(dummyScenario.getName()), "Message must contain the originating scenario name");
     }
 
     @Test

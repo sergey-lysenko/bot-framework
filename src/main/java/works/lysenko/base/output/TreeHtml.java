@@ -18,6 +18,7 @@ import java.util.*;
 import static org.apache.commons.lang3.StringUtils.SPACE;
 import static works.lysenko.Base.core;
 import static works.lysenko.Base.exec;
+import static works.lysenko.Base.logDebug;
 import static works.lysenko.Base.logEvent;
 import static works.lysenko.util.data.enums.Severity.S2;
 import static works.lysenko.util.data.strs.Bind.b;
@@ -105,6 +106,7 @@ public final class TreeHtml {
             final Set<_Scenario> roots = rootsOf(core.getRootScenarios());
             if (null != roots && !roots.isEmpty()) return computeLayout(roots, sorted);
         }
+        final long tStart = System.currentTimeMillis();
         final List<NodeData> nodes = new ArrayList<>();
         final List<Edge> edges = new ArrayList<>();
         final int[] dy = new int[100];
@@ -117,9 +119,17 @@ public final class TreeHtml {
         for (final Map.Entry<String, TreeMap<String, Result>> group : t.entrySet()) {
             processGroup(group, null, 0, dy, nodes, edges, logRecords);
         }
+        final long tProc = System.currentTimeMillis();
 
+        final long tPruneStart = System.currentTimeMillis();
         pruneOffBranches(nodes, edges);
+        final long tPrune = System.currentTimeMillis();
+
+        final long tOptStart = System.currentTimeMillis();
         optimizeLayout(nodes);
+        final long tOpt = System.currentTimeMillis();
+
+        logDebug(s("Tree layout timing (groups): process = ", tProc - tStart, " ms (known issues checked against ", logRecords.size(), " logs), prune = ", tPrune - tPruneStart, " ms, optimize = ", tOpt - tOptStart, " ms"));
         return new TreeLayout(nodes, edges);
     }
 
@@ -138,6 +148,7 @@ public final class TreeHtml {
 
     static TreeLayout computeLayout(final Iterable<? extends _Scenario> roots, final TreeMap<String, Result> sorted) {
 
+        final long tStart = System.currentTimeMillis();
         final List<NodeData> nodes = new ArrayList<>();
         final List<Edge> edges = new ArrayList<>();
         final int[] rows = {1};
@@ -155,8 +166,17 @@ public final class TreeHtml {
 
         for (final _Scenario root : sortedRoots)
             processScenario(root, null, 0, rows, ancestors, sorted, nodes, edges, logRecords);
+        final long tProc = System.currentTimeMillis();
+
+        final long tPruneStart = System.currentTimeMillis();
         pruneOffBranches(nodes, edges);
+        final long tPrune = System.currentTimeMillis();
+
+        final long tOptStart = System.currentTimeMillis();
         optimizeLayout(nodes);
+        final long tOpt = System.currentTimeMillis();
+
+        logDebug(s("Tree layout timing (scenarios): process = ", tProc - tStart, " ms (known issues checked against ", logRecords.size(), " logs), prune = ", tPrune - tPruneStart, " ms, optimize = ", tOpt - tOptStart, " ms"));
         return new TreeLayout(nodes, edges);
     }
 
@@ -186,7 +206,9 @@ public final class TreeHtml {
                     final boolean scenarioMatches = (null == scenarioTarget || scenarioTarget.isBlank())
                             || works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(scenarioTarget, scenario.getName(), scenario.getSimpleName());
                     if (scenarioMatches) {
-                        for (final _LogRecord lr : logRecords) {
+                        for (int i = 0; i < logRecords.size(); i++) {
+                            final _LogRecord lr = logRecords.get(i);
+                            logProgressIfNeeded(s("checking known issues for scenario ", scenario.getSimpleName()), i + 1, logRecords.size());
                             if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
                                 node.knownIssues().add(ki);
                                 break;
@@ -355,13 +377,51 @@ public final class TreeHtml {
         return (null != result) ? result : new Result(scenario);
     }
 
+    private static long lastProgressLogTimestamp = 0;
+    private static final long PROGRESS_LOG_INTERVAL_MS = 5000;
+
+    private static void resetProgressTimer() {
+        lastProgressLogTimestamp = System.currentTimeMillis();
+    }
+
+    private static void logProgressIfNeeded(final String phase, final int current, final int total) {
+        final long now = System.currentTimeMillis();
+        if (0 == lastProgressLogTimestamp) {
+            lastProgressLogTimestamp = now;
+            return;
+        }
+        if (now - lastProgressLogTimestamp >= PROGRESS_LOG_INTERVAL_MS) {
+            lastProgressLogTimestamp = now;
+            if (total > 0) {
+                logDebug(s("Tree HTML generation in progress... ", phase, ": ", current, "/", total, " (", (current * 100 / total), "%)"));
+            } else {
+                logDebug(s("Tree HTML generation in progress... ", phase, ": ", current, " processed"));
+            }
+        }
+    }
+
     public static void treeStats() {
         try {
+            resetProgressTimer();
+            final long tStart = System.currentTimeMillis();
+            logDebug("Generating tree.html report...");
+
             final TreeMap<String, Result> sorted = core.getResults().getSortedStrings(false);
+
+            final long tLayoutStart = System.currentTimeMillis();
             final TreeLayout layout = computeLayout(sorted);
+            final long tLayout = System.currentTimeMillis();
+
+            final long tRenderStart = System.currentTimeMillis();
             final String html = renderHtml(layout.nodes(), layout.edges());
+            final long tRender = System.currentTimeMillis();
+
+            final long tWriteStart = System.currentTimeMillis();
             final String fileName = name(RUN_TREE_HTML_);
             writeToFile(html, fileName);
+            final long tWrite = System.currentTimeMillis();
+
+            logDebug(s("tree.html generated in ", tWrite - tStart, " ms (layout: ", tLayout - tLayoutStart, " ms, render: ", tRender - tRenderStart, " ms, write: ", tWrite - tWriteStart, " ms)"));
         } catch (final Throwable t) {
             logEvent(S2, s("Failed to generate tree.html: ", t.getMessage()));
         }
@@ -397,7 +457,9 @@ public final class TreeHtml {
                     for (final KnownIssue ki : store.getIssues()) {
                         if (nd.knownIssues().contains(ki)) continue;
                         if (works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), rawKey, shortKey)) {
-                            for (final _LogRecord lr : logRecords) {
+                            for (int i = 0; i < logRecords.size(); i++) {
+                                final _LogRecord lr = logRecords.get(i);
+                                logProgressIfNeeded(s("checking known issues for ", shortKey), i + 1, logRecords.size());
                                 if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
                                     nd.knownIssues().add(ki);
                                     break;
@@ -431,15 +493,31 @@ public final class TreeHtml {
         return Math.pow(2.0, Math.max(0, col));
     }
 
+    private static boolean isShallowWideTree(final List<NodeData> nodes) {
+        if (null == nodes || nodes.size() < 10) return false;
+        int maxCol = 0;
+        for (final NodeData n : nodes) {
+            if (n.col() > maxCol) {
+                maxCol = n.col();
+            }
+        }
+        final int depth = maxCol + 1;
+        return depth <= Optimization.shallowMaxDepth && (nodes.size() / (double) depth) >= Optimization.shallowMinRatio;
+    }
+
     private static void packLeafChildren(final List<NodeData> nodes) {
         if (null == nodes || nodes.isEmpty()) return;
 
+        final boolean shallowWide = isShallowWideTree(nodes);
+        final int threshold = shallowWide ? Optimization.shallowThreshold : Optimization.standardThreshold;
+        final int numCols = Math.max(1, Optimization.packColumns);
+
         for (final NodeData parent : nodes) {
             final List<NodeData> allChildren = parent.children();
-            if (allChildren.size() >= 6) {
+            if (allChildren.size() >= threshold) {
                 final boolean allAreLeaves = allChildren.stream().allMatch(c -> c.children().isEmpty());
                 if (allAreLeaves) {
-                    final int perCol = (int) Math.ceil(allChildren.size() / 2.0);
+                    final int perCol = (int) Math.ceil(allChildren.size() / (double) numCols);
                     for (int i = 0; i < allChildren.size(); i++) {
                         final NodeData leaf = allChildren.get(i);
                         final int extraCol = i / perCol;
@@ -449,6 +527,8 @@ public final class TreeHtml {
             }
         }
     }
+
+    public static final double GOLDEN_RATIO = (Math.sqrt(5.0) - 1.0) / 2.0;
 
     static void optimizeLayout(final List<NodeData> nodes) {
         if (nodes.isEmpty()) return;
@@ -476,10 +556,18 @@ public final class TreeHtml {
                 if (lCmp != 0) return lCmp;
                 return n1.id().compareTo(n2.id());
             });
+
             final double[] targets = new double[colNodes.size()];
             for (int i = 0; i < colNodes.size(); i++) {
                 final NodeData n = colNodes.get(i);
-                targets[i] = (null != n.parent()) ? n.parent().row() : (i + 1.0);
+                double t = (null != n.parent()) ? n.parent().row() : (i + 1.0);
+                if (null != n.parent() && n.children().isEmpty()) {
+                    final int extraCol = n.col() - (n.parent().col() + 1);
+                    if (extraCol > 0) {
+                        t += extraCol * GOLDEN_RATIO * 0.382;
+                    }
+                }
+                targets[i] = t;
             }
             final double[] resolved = solveColumn1D(targets);
             for (int i = 0; i < colNodes.size(); i++) {
@@ -489,6 +577,7 @@ public final class TreeHtml {
 
         final int iterations = 32;
         for (int iter = 0; iter < iterations; iter++) {
+            logProgressIfNeeded("optimizing tree layout", iter + 1, iterations);
             final boolean backward = (1 == iter % 2);
             final int startCol = backward ? maxCol : 0;
             final int endCol = backward ? 0 : maxCol;
@@ -528,7 +617,7 @@ public final class TreeHtml {
                         childrenRowMap.put(n, childSum / childWeight);
                     }
 
-                    final double target;
+                    double target;
                     if (parentWeight > 0.0 && childWeight > 0.0) {
                         target = (parentSum + childSum) / (parentWeight + childWeight);
                     } else if (parentWeight > 0.0) {
@@ -537,6 +626,12 @@ public final class TreeHtml {
                         target = childSum / childWeight;
                     } else {
                         target = n.row();
+                    }
+                    if (null != n.parent() && n.children().isEmpty()) {
+                        final int extraCol = n.col() - (n.parent().col() + 1);
+                        if (extraCol > 0) {
+                            target += extraCol * GOLDEN_RATIO * 0.382;
+                        }
                     }
                     targetMap.put(n, target);
                 }
@@ -851,7 +946,9 @@ public final class TreeHtml {
                 new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, getAccessibleScenarios(), isAllLeafs, target, maxLeafOverRatio);
         final List<works.lysenko.base.output.tree.VisualNode> visualNodes = new ArrayList<>();
 
-        for (final NodeData n : nodes) {
+        for (int i = 0; i < nodes.size(); i++) {
+            final NodeData n = nodes.get(i);
+            logProgressIfNeeded("rendering visual nodes", i + 1, nodes.size());
             final _Result res = n.result();
             final int execs = (null != res) ? res.getExecutions() : 0;
             final int eventCount = (null != res && null != res.getEvents()) ? res.getEvents().size() : 0;

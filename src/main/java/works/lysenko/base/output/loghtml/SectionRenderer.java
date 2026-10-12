@@ -462,6 +462,12 @@ public final class SectionRenderer {
                     } else {
                         cpuRows.append("<div class=\"st-row rate-white\" title=\"-\"><div class=\"st-wave\" style=\"width: 1px; opacity: 0.15;\"></div></div>");
                     }
+
+                    final int extraLines = countExtraNewlines(lineText);
+                    for (int k = 0; k < extraLines; k++) {
+                        stRows.append("<div class=\"st-row rate-white\" title=\"(multiline continuation)\"><div class=\"st-wave\" style=\"width: 1px; opacity: 0.15;\"></div></div>");
+                        cpuRows.append("<div class=\"st-row rate-white\" title=\"(multiline continuation)\"><div class=\"st-wave\" style=\"width: 1px; opacity: 0.15;\"></div></div>");
+                    }
                 }
 
                 sb.append(s(
@@ -730,5 +736,16 @@ public final class SectionRenderer {
                 "    </div>\n",
                 "  </div>\n"
         );
+    }
+
+    private static int countExtraNewlines(final String text) {
+        if (null == text || text.isEmpty()) return 0;
+        int count = 0;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) == '\n') {
+                count++;
+            }
+        }
+        return count;
     }
 }

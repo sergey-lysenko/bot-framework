@@ -31,6 +31,7 @@ public enum ExecutionParameter implements _Default {
     DOMAIN(EMPTY),
     FORBID_OVEREXECUTION(Boolean.FALSE.toString()),
     HEADLESS(Boolean.FALSE.toString()),
+    HIDE_OFF_BRANCHES(Boolean.FALSE.toString()),
     PLATFORM(Platform.CHROME.getString()),
     POOL(EMPTY),
     RESILIENT_MODE(Boolean.FALSE.toString()),

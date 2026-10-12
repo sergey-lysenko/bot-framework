@@ -41,6 +41,26 @@
 # Enables 16:9 layout optimization and compaction for scenario execution trees. Default: true
 # .tree.progression.optimization=true
 
+# ------------------------------------------------------------------------------
+# Number of columns to split leaf children into during packing. Default: 2
+# .tree.progression.optimization.pack.columns=2
+
+# ------------------------------------------------------------------------------
+# Maximum depth (columns) for a tree to be classified as shallow for layout packing. Default: 12
+# .tree.progression.optimization.shallow.max.depth=12
+
+# ------------------------------------------------------------------------------
+# Minimum node-to-depth ratio for a tree to be classified as wide for layout packing. Default: 2.0
+# .tree.progression.optimization.shallow.min.ratio=2.0
+
+# ------------------------------------------------------------------------------
+# Minimum leaf children count required to force multi-column packing in shallow-wide trees. Default: 2
+# .tree.progression.optimization.shallow.threshold=2
+
+# ------------------------------------------------------------------------------
+# Minimum leaf children count required to force multi-column packing in standard trees. Default: 6
+# .tree.progression.optimization.standard.threshold=6
+
 # ==============================================================================
 # Test Node Weight Propagation
 # ==============================================================================

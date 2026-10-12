@@ -375,4 +375,33 @@ class TreeHtmlTest {
         assertTrue(html.contains(".node-card.child_failed rect.card-bg { fill: #1e1b4b; stroke: #818cf8; stroke-width: 1.2; stroke-dasharray: 3 3; }"));
         assertTrue(html.contains(".connector.child_failed { stroke: #818cf8; stroke-width: 1.5; stroke-dasharray: 3 3; }"));
     }
+
+    @Test
+    void testShallowWideTreeForcesMultiColumnForTwoSiblings() {
+        final List<NodeData> nodes = new ArrayList<>();
+        final NodeData root = new NodeData("col_0_0", "RootApp", "Root", 0, 1.0, null);
+        nodes.add(root);
+
+        for (int i = 0; i < 9; i++) {
+            final NodeData child = new NodeData("col_1_" + i, "Child" + i, "Main", 1, i + 1.0, null);
+            child.setParent(root);
+            root.children().add(child);
+            nodes.add(child);
+        }
+
+        final NodeData parentWith2 = nodes.get(1);
+        final NodeData leaf1 = new NodeData("col_2_0", "Leaf1", "LeafGroup", 2, 1.0, null);
+        final NodeData leaf2 = new NodeData("col_2_1", "Leaf2", "LeafGroup", 2, 2.0, null);
+        leaf1.setParent(parentWith2);
+        leaf2.setParent(parentWith2);
+        parentWith2.children().add(leaf1);
+        parentWith2.children().add(leaf2);
+        nodes.add(leaf1);
+        nodes.add(leaf2);
+
+        TreeHtml.optimizeLayout(nodes);
+
+        assertEquals(2, leaf1.col());
+        assertEquals(3, leaf2.col());
+    }
 }

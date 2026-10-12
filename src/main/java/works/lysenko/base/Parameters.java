@@ -69,6 +69,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         read(PLATFORM);
         readDeviceOrDomain();
         read(HEADLESS);
+        read(HIDE_OFF_BRANCHES);
         read(ALL_LEAFS.name()); // empty default: allows fallback to properties / count inference
         read(ALL_LEAFS_COUNT.name());
         read(TESTS.name());
@@ -126,6 +127,11 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         put(HEADLESS.name(), String.valueOf(value));
     }
 
+    public void setHideOffBranches(final boolean value) {
+        
+        put(HIDE_OFF_BRANCHES.name(), String.valueOf(value));
+    }
+
     public String getValue(final ExecutionParameter parameter) {
 
         return getPropertyString(parameter.name());
@@ -180,6 +186,15 @@ public final class Parameters extends Properties implements _ExecutionParameterV
             return Boolean.parseBoolean(val);
         }
         return Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_HEADLESS.get());
+    }
+
+    public boolean isHideOffBranches() {
+
+        final String val = getValue(HIDE_OFF_BRANCHES);
+        if (isNotNull(val) && !val.isEmpty()) {
+            return Boolean.parseBoolean(val);
+        }
+        return Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TREE_HIDE_OFF_BRANCHES.get());
     }
 
     /**

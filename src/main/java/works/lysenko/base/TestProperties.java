@@ -414,6 +414,11 @@ public class TestProperties implements _TestProperties {
             } else {
                 the.setProperty(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(false));
             }
+            if (parameters.isHideOffBranches()) {
+                the.setProperty(PropEnum._TREE_HIDE_OFF_BRANCHES.getPropertyName(), String.valueOf(true));
+            } else {
+                the.setProperty(PropEnum._TREE_HIDE_OFF_BRANCHES.getPropertyName(), String.valueOf(false));
+            }
             if (parameters.isAllLeafs()) {
                 the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(true));
             } else {

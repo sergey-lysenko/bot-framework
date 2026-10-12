@@ -7,6 +7,7 @@ import works.lysenko.util.data.enums.ExecutionStatus;
 import works.lysenko.util.spec.Level;
 
 import java.util.Map;
+import static java.util.Objects.isNull;
 
 import static org.apache.commons.lang3.StringUtils.SPACE;
 import static works.lysenko.Base.core;
@@ -36,6 +37,16 @@ import static works.lysenko.util.spec.Symbols.*;
 @SuppressWarnings({"NestedMethodCall", "FeatureEnvy", "AutoBoxing"})
 record ResultMarker() {
 
+    private static boolean isGenericStopReason(final String stopReason) {
+        if (isNull(stopReason) || stopReason.isBlank()) return true;
+        final String clean = stopReason.trim();
+        return clean.equals(TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY)
+                || clean.startsWith("due to ")
+                || clean.startsWith("due to [")
+                || clean.equalsIgnoreCase("due to [FAILURE] event")
+                || clean.equalsIgnoreCase("due to [ERROR] event");
+    }
+
     /**
      * Generates a failure message using the core's stoppage reason or failure summary.
      *
@@ -44,11 +55,11 @@ record ResultMarker() {
     @SuppressWarnings({"MethodWithMultipleReturnPoints", "CallToSuspiciousStringMethod"})
     private static String generateFailureMessage() {
 
+        final _Scenario scenario = findOriginatingScenario();
+
         if (core.getStopFlag()) {
             final String stopReason = core.getStopReason();
-            final String message;
-            final _Scenario scenario = findOriginatingScenario();
-            if (null != stopReason && !stopReason.isBlank()) {
+            if (!isGenericStopReason(stopReason)) {
                 String clean = stopReason.trim().replace(_LFD_, _BULLT_);
                 if (!clean.startsWith("[FAILURE]") && !clean.startsWith("[ERROR]")) {
                     clean = b(s("[FAILURE]"), clean);
@@ -59,13 +70,30 @@ record ResultMarker() {
                         clean = b(clean, IN, q(fqn));
                     }
                 }
-                message = clean;
-            } else {
-                if (isNotNull(scenario)) {
-                    message = b(s("[FAILURE]"), TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY, IN, q(scenario.getName()));
-                } else {
-                    message = b(s("[FAILURE]"), TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY);
+                return generateMessage(clean);
+            }
+        }
+
+        if (isNotNull(core) && isNotNull(core.getResults()) && !core.getResults().getFailures().isEmpty()) {
+            String clean = core.getResults().getFailures().get(0).trim().replace(_LFD_, _BULLT_);
+            if (!clean.startsWith("[FAILURE]") && !clean.startsWith("[ERROR]")) {
+                clean = b(s("[FAILURE]"), clean);
+            }
+            if (isNotNull(scenario)) {
+                final String fqn = scenario.getName();
+                if (!clean.contains(fqn)) {
+                    clean = b(clean, IN, q(fqn));
                 }
+            }
+            return generateMessage(clean);
+        }
+
+        if (core.getStopFlag()) {
+            final String message;
+            if (isNotNull(scenario)) {
+                message = b(s("[FAILURE]"), TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY, IN, q(scenario.getName()));
+            } else {
+                message = b(s("[FAILURE]"), TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY);
             }
             return generateMessage(message);
         }
@@ -76,9 +104,7 @@ record ResultMarker() {
                     failedCount, (1 == failedCount) ? "" : "s")));
         }
 
-        if (core.getResults().getFailures().isEmpty()) return null;
-        final String s = core.getResults().getFailures().get(0);
-        return generateMessage(s.trim().replace(_LFD_, _BULLT_));
+        return null;
     }
 
     private static _Scenario findOriginatingScenario() {

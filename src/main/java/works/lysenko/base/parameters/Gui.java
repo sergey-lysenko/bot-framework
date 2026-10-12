@@ -71,6 +71,7 @@ public class Gui implements _GUI {
     private JPanel panel = null;
     private JTextField domain = null;
     private JCheckBox headless = null;
+    private JCheckBox hideOffBranches = null;
     private JCheckBox allLeafs = null;
     private JTextField allLeafsCount = null;
     private JTextField testsCount = null;
@@ -247,6 +248,8 @@ public class Gui implements _GUI {
             headless = new JCheckBox();
             headless.setSelected(Boolean.parseBoolean(parameters.getProperty(HEADLESS.name())));
         }
+        hideOffBranches = new JCheckBox();
+        hideOffBranches.setSelected(Boolean.parseBoolean(parameters.getProperty(HIDE_OFF_BRANCHES.name())));
         allLeafs = new JCheckBox();
         allLeafs.setSelected(parameters.isAllLeafs());
         allLeafsCount = new JTextField(String.valueOf(parameters.getAllLeafsCount()), WIDTH);
@@ -498,6 +501,7 @@ public class Gui implements _GUI {
         rows = addRowOptional(RESILIENT_MODE.name(), resilientMode, panel, rows);
         rows = addRowOptional(TRAVERSE_EXTENSIONS.name(), traverseExtensions, panel, rows);
         rows = addRowOptional(HEADLESS.name(), headless, panel, rows);
+        rows = addRowOptional(HIDE_OFF_BRANCHES.name(), hideOffBranches, panel, rows);
 
         // Additional parameters
         rows = addRowsAdditional(rows);
@@ -531,6 +535,9 @@ public class Gui implements _GUI {
             }
             if (isNotNull(headless)) {
                 parameters.setHeadless(headless.isSelected());
+            }
+            if (isNotNull(hideOffBranches)) {
+                parameters.setHideOffBranches(hideOffBranches.isSelected());
             }
         }
         
