@@ -247,11 +247,13 @@ public record SummaryPlaque(
         int failed = 0;
         int knownIssues = 0;
 
+        final java.util.Set<works.lysenko.util.apis.scenario._Scenario> accessible = TreeHtml.getAccessibleScenarios();
+
         for (final TreeHtml.NodeData n : nodes) {
             if (!n.knownIssues().isEmpty()) {
                 knownIssues++;
             }
-            final boolean isExec = TreeHtml.isTheoreticallyExecutable(n);
+            final boolean isExec = TreeHtml.isTheoreticallyExecutable(n, accessible);
             if (isExec) executable++;
 
             final _Result res = n.result();

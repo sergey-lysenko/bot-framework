@@ -378,7 +378,7 @@ public final class TreeHtml {
     }
 
     private static long lastProgressLogTimestamp = 0;
-    private static final long PROGRESS_LOG_INTERVAL_MS = 5000;
+    private static final long PROGRESS_LOG_INTERVAL_MS = 2000;
 
     private static void resetProgressTimer() {
         lastProgressLogTimestamp = System.currentTimeMillis();
@@ -873,6 +873,7 @@ public final class TreeHtml {
 
     static String renderHtml(final List<NodeData> nodes, final List<Edge> edges) {
         final StringBuilder svgContent = new StringBuilder();
+        final Set<_Scenario> accessibleScenarios = getAccessibleScenarios();
 
         final List<Edge> sortedEdges = new ArrayList<>(edges);
         sortedEdges.sort(Comparator.comparingInt(e -> {
@@ -881,7 +882,9 @@ public final class TreeHtml {
             return (toExecs > 0 && fromExecs > 0) ? 1 : 0;
         }));
 
-        for (final Edge e : sortedEdges) {
+        for (int i = 0; i < sortedEdges.size(); i++) {
+            final Edge e = sortedEdges.get(i);
+            logProgressIfNeeded("rendering SVG edges", i + 1, sortedEdges.size());
             final int startX = e.from().col() * COL_WIDTH + CARD_WIDTH + 40;
             final int startY = (int) Math.round(e.from().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + 20);
             final int endX = e.to().col() * COL_WIDTH + 40;
@@ -893,7 +896,7 @@ public final class TreeHtml {
             final int toEvents = (null != e.to().result() && null != e.to().result().getEvents()) ? e.to().result().getEvents().size() : 0;
             final boolean toFailure = hasFailure(e.to());
             final boolean toChildFailure = hasChildFailure(e.to());
-            final boolean toTheoreticallyExecutable = isTheoreticallyExecutable(e.to());
+            final boolean toTheoreticallyExecutable = isTheoreticallyExecutable(e.to(), accessibleScenarios);
 
             final String edgeClass;
             if (toExecs > 0 && fromExecs > 0) {
@@ -943,7 +946,7 @@ public final class TreeHtml {
         }
 
         final works.lysenko.base.output.tree.VisualNodeResolver nodeResolver = 
-                new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, getAccessibleScenarios(), isAllLeafs, target, maxLeafOverRatio);
+                new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio);
         final List<works.lysenko.base.output.tree.VisualNode> visualNodes = new ArrayList<>();
 
         for (int i = 0; i < nodes.size(); i++) {
