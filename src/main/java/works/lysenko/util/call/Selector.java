@@ -125,9 +125,19 @@ public final class Selector implements Callable<_Scenario> {
             if (isNotNull(ctrl.getParent())) {
                 ctrl.getParent().markAsExhausted();
             }
-            selectionFailed(s(b(c(UNABLE), TO, FIT, ANY, SCENARIO, AMONG,
+            final String message = s(b(c(UNABLE), TO, FIT, ANY, SCENARIO, AMONG,
                     Utils.createReadableScenariosList(ctrl.getWeightedList(), false, isDebug()), s(_COLON_), ALL, SCENARIOS,
-                    HAVE, UNMET, REQUIREMENTS, OR, ARE, NOT, EXECUTABLE)));
+                    HAVE, UNMET, REQUIREMENTS, OR, ARE, NOT, EXECUTABLE));
+            final boolean isAllLeafs = (isNotNull(works.lysenko.Base.parameters) && works.lysenko.Base.parameters.isAllLeafs()) 
+                || Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS.get());
+            if (isAllLeafs || works.lysenko.util.prop.core.Resilient.mode()) {
+                Utils.logAccounting();
+                Utils.logDebug(a(kv(s(IGNORE, c(FAILED), c(SELECTION)), String.valueOf(true))));
+                logEvent(S3, message);
+                logEvent(S3, b(c(TESTS), WILL, GO, ON, AS, REQUESTED));
+            } else {
+                selectionFailed(message);
+            }
         }
         if (!(0 < attemptsLeft)) logEvent(S2, b(c(SCENARIO), SELECTION, EXHAUSTED, AFTER, s1(ctrl.getAttempts(), ATTEMPT)));
         return null;

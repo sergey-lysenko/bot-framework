@@ -46,8 +46,8 @@
 # .test.known.issues.failed.only=false
 
 # ------------------------------------------------------------------------------
-# Severity assigned to an operation that exceeds the long-operation threshold. Default: s0
-# .test.long.operation.severity=s0
+# Severity assigned to an operation that exceeds the long-operation threshold. Default: s2
+# .test.long.operation.severity=s2
 
 # ------------------------------------------------------------------------------
 # Duration in milliseconds above which an operation is reported as long. Default: 9999
