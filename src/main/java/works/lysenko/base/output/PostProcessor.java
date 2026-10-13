@@ -132,7 +132,7 @@ public class PostProcessor {
                     openBrowser)).redirectErrorStream(true)
                     .redirectOutput(ProcessBuilder.Redirect.appendTo(postProcessorLog))
                     .start();
-            final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+            final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(60);
             while (System.nanoTime() < deadline) {
                 if (RunLocks.isPostprocessLockHeld()) return;
                 if (!postProcessor.isAlive()) return;
@@ -219,7 +219,7 @@ public class PostProcessor {
             try (RunLocks.LockHandle ignored = RunLocks.acquirePostprocessLock()) {
                 ProcessHandle.of(parentPid).ifPresent(handle -> {
                     try {
-                        handle.onExit().get(20, TimeUnit.SECONDS);
+                        handle.onExit().get(60, TimeUnit.SECONDS);
                     } catch (final Exception e) {
                         System.err.println("Timed out waiting for test process to exit: " + e.getMessage());
                     }
