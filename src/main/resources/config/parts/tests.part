@@ -163,3 +163,8 @@
 # ------------------------------------------------------------------------------
 # Generates a WebP animation of test-tree progression. Default: true
 # .test.report.progression.tree.webp=true
+
+# ------------------------------------------------------------------------------
+# Automatically updates parameter fields to match suite defaults when changing test suite. Default: true
+# .test.suite.change.updates.parameters=true
+
