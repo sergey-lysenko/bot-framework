@@ -57,16 +57,34 @@ public final class RunLocks {
         return lock;
     }
 
-    static boolean isPostprocessLockHeld() throws IOException {
+    public static boolean isPostprocessLockHeld() throws IOException {
         return isPostprocessLockHeld(Path.of(RUN_DIRECTORY).toAbsolutePath().normalize());
     }
 
-    static boolean isPostprocessLockHeld(final Path directory) throws IOException {
+    public static boolean isPostprocessLockHeld(final Path directory) throws IOException {
         Files.createDirectories(directory);
         final LockHandle lock = tryAcquire(directory.resolve(POSTPROCESS_LOCK));
         if (null == lock) return true;
         lock.close();
         return false;
+    }
+
+    public static void waitForPostprocess(final long timeoutSeconds) {
+        final long deadline = System.currentTimeMillis() + (timeoutSeconds * 1000);
+        try {
+            while (System.currentTimeMillis() < deadline) {
+                if (!isPostprocessLockHeld()) return;
+                Thread.sleep(500);
+            }
+        } catch (final Exception ignored) {
+        }
+    }
+
+    public static void main(final String[] args) {
+        final long timeout = (args.length > 0) ? Long.parseLong(args[0]) : 300;
+        System.out.println("⏳ Waiting for postprocessing lock (run/.postprocess.lock)...");
+        waitForPostprocess(timeout);
+        System.out.println("✅ Postprocessing lock released!");
     }
 
     private static LockHandle tryAcquire(final Path path) throws IOException {
