@@ -82,6 +82,7 @@ public final class ScenarioTracker {
      * Clears tracked frames list.
      */
     public static void reset() {
+        ProgressionFrames.awaitCompletion();
         capturedFrames.clear();
         customOutputDir = null;
     }
@@ -92,6 +93,7 @@ public final class ScenarioTracker {
      * @return list of captured frame files
      */
     public static List<File> getCapturedFrames() {
+        ProgressionFrames.awaitCompletion();
         return new ArrayList<>(capturedFrames);
     }
 
@@ -109,6 +111,7 @@ public final class ScenarioTracker {
         if (leafs.isEmpty())
             return;
 
+        final long t0 = System.currentTimeMillis();
         final List<_Scenario> scenarios = new ArrayList<>(leafs);
         scenarios.sort(Comparator.comparing(_Scenario::getShortName).thenComparing(_Scenario::getName));
 
@@ -116,6 +119,7 @@ public final class ScenarioTracker {
                 : (isNotNull(PropEnum._TEST_ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_COUNT.get()) : 1);
         final int currentCycle = isNotNull(testNumber) ? testNumber : capturedFrames.size() + 1;
 
+        logDebug(String.format("Rendering scenario progression graph (%d scenarios)...", scenarios.size()));
         final BufferedImage image = renderProgressionGraph(scenarios, target, currentCycle);
         final File runDir = resolveRunDirectory();
         if (isNull(runDir))
@@ -125,21 +129,15 @@ public final class ScenarioTracker {
         if (!progressionDir.exists() && !progressionDir.mkdirs())
             return;
 
-        final int maxFrames = ProgressionFrames.frameLimit(
-                ProgressionSettings.current().maxFrames(),
-                ProgressionSettings.current().maxTotalPixels(),
-                WIDTH,
-                HEIGHT);
-        final int frameIndex = Math.min(currentCycle, maxFrames);
+        final int frameIndex = currentCycle;
         final File frameFile = new File(progressionDir, String.format("frame_%04d.png", frameIndex));
-        try {
-            ImageIO.write(image, "png", frameFile);
-            if (!capturedFrames.contains(frameFile) && capturedFrames.size() < maxFrames) {
-                capturedFrames.add(frameFile);
-            }
-        } catch (final IOException e) {
-            System.err.println("Failed to save progression frame: " + e.getMessage());
+        if (!capturedFrames.contains(frameFile)) {
+            capturedFrames.add(frameFile);
         }
+        ProgressionFrames.saveFrameAsync(image, frameFile, () -> {
+            final long duration = System.currentTimeMillis() - t0;
+            logDebug(String.format("Captured scenario progression frame #%d (%dx%d) in %d ms", frameIndex, image.getWidth(), image.getHeight(), duration));
+        });
     }
 
     /**
@@ -147,6 +145,7 @@ public final class ScenarioTracker {
      * GIF and WebP.
      */
     public static void onComplete() {
+        ProgressionFrames.awaitCompletion();
         final String prefix = (isNotNull(timer)) ? String.valueOf(timer.startedAt()) : "run";
         processFrames(resolveRunDirectory(), prefix, ProcessingProgress.NONE);
     }

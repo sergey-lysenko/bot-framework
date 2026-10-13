@@ -14,6 +14,9 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,8 +26,60 @@ final class ProgressionFrames {
     static final int MAX_DIMENSION = (1 << 14) - 2;
     private static final int MAX_FRAMES = 10_000;
     private static final int MAX_FRAME_PIXELS = 33_554_432;
+    private static final int MAX_PENDING_FRAMES = 4;
+    private static final Semaphore WRITER_SEMAPHORE = new Semaphore(MAX_PENDING_FRAMES);
+    private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+        final Thread t = new Thread(r, "progression-frame-writer");
+        t.setDaemon(true);
+        return t;
+    });
 
     private ProgressionFrames() {
+    }
+
+    static void saveFrameAsync(final BufferedImage image, final File frameFile, final Runnable postSave) {
+        try {
+            WRITER_SEMAPHORE.acquire();
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        }
+        EXECUTOR.submit(() -> {
+            try {
+                ImageIO.write(image, "png", frameFile);
+                if (null != postSave) {
+                    try {
+                        postSave.run();
+                    } catch (final Exception e) {
+                        System.err.println("Failed post-save hook: " + e.getMessage());
+                    }
+                }
+            } catch (final IOException e) {
+                System.err.println("Failed to save progression frame: " + e.getMessage());
+            } finally {
+                WRITER_SEMAPHORE.release();
+            }
+        });
+    }
+
+    static void awaitCompletion() {
+        try {
+            WRITER_SEMAPHORE.acquire(MAX_PENDING_FRAMES);
+            WRITER_SEMAPHORE.release(MAX_PENDING_FRAMES);
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private static long parseFrameNumber(final File file) {
+        final Matcher matcher = FRAME_NAME.matcher(file.getName());
+        if (matcher.matches()) {
+            try {
+                return Long.parseLong(matcher.group(1));
+            } catch (final NumberFormatException ignored) {
+            }
+        }
+        return Long.MAX_VALUE;
     }
 
     static List<File> select(final File directory, final int configuredMaxFrames) throws IOException {
@@ -38,79 +93,41 @@ final class ProgressionFrames {
             final int configuredMaxTotalPixels) throws IOException {
         if (!directory.isDirectory()) return List.of();
         final int maxFrames = maxFrames(configuredMaxFrames);
-        long frameCount = 0;
-        long minFrame = Long.MAX_VALUE;
-        long maxFrame = Long.MIN_VALUE;
-        File firstFrame = null;
-        File lastFrame = null;
+
+        final List<File> allFrames = new ArrayList<>();
         try (DirectoryStream<Path> paths = Files.newDirectoryStream(directory.toPath(), "*.png")) {
             for (final Path path : paths) {
                 final Matcher matcher = FRAME_NAME.matcher(path.getFileName().toString());
-                if (!matcher.matches()) continue;
-                final long frameNumber = Long.parseLong(matcher.group(1));
-                frameCount++;
-                if (frameNumber < minFrame) {
-                    minFrame = frameNumber;
-                    firstFrame = path.toFile();
-                }
-                if (frameNumber > maxFrame) {
-                    maxFrame = frameNumber;
-                    lastFrame = path.toFile();
+                if (matcher.matches()) {
+                    allFrames.add(path.toFile());
                 }
             }
         }
-        if (frameCount == 0) return List.of();
-        final List<File> selected = new ArrayList<>(Math.min(maxFrames, (int) Math.min(frameCount, Integer.MAX_VALUE)));
-        if (frameCount > maxFrames && maxFrames == 1) {
-            selected.add(lastFrame);
-        } else if (frameCount > maxFrames) {
-            selected.add(firstFrame);
-        }
-        final int interiorLimit = frameCount > maxFrames && maxFrames > 2 ? maxFrames - 2 : 0;
-        final List<File> interiorSample = new ArrayList<>(Math.max(0, interiorLimit));
-        final Random random = new Random(0x5EEDL);
-        long interiorCount = 0;
-        try (DirectoryStream<Path> paths = Files.newDirectoryStream(directory.toPath(), "*.png")) {
-            for (final Path path : paths) {
-                final Matcher matcher = FRAME_NAME.matcher(path.getFileName().toString());
-                if (!matcher.matches()) continue;
-                final File frame = path.toFile();
-                if (frameCount <= maxFrames) {
-                    selected.add(frame);
-                } else if (!frame.equals(firstFrame) && !frame.equals(lastFrame) && interiorLimit > 0) {
-                    interiorCount++;
-                    if (interiorSample.size() < interiorLimit) {
-                        interiorSample.add(frame);
-                    } else {
-                        final long replacement = random.nextLong(interiorCount);
-                        if (replacement < interiorLimit) interiorSample.set((int) replacement, frame);
-                    }
-                }
-            }
-        }
-        if (frameCount > maxFrames) {
-            selected.addAll(interiorSample);
-            if (maxFrames > 1) selected.add(lastFrame);
-        }
-        selected.sort(Comparator.comparing(File::getName));
+        if (allFrames.isEmpty()) return List.of();
+
+        allFrames.sort(Comparator.comparingLong(ProgressionFrames::parseFrameNumber));
+
         int maxWidth = 0;
         int maxHeight = 0;
-        for (final File frame : selected) {
+        for (final File frame : allFrames) {
             final int[] dimensions = dimensions(frame, configuredMaxFramePixels);
             maxWidth = Math.max(maxWidth, dimensions[0]);
             maxHeight = Math.max(maxHeight, dimensions[1]);
         }
+
         final int frameLimit = frameLimit(
                 maxFrames,
                 configuredMaxTotalPixels,
                 maxWidth,
                 maxHeight);
-        if (selected.size() <= frameLimit) return selected;
-        if (frameLimit == 1) return List.of(selected.get(selected.size() - 1));
+
+        if (allFrames.size() <= frameLimit) return allFrames;
+        if (frameLimit == 1) return List.of(allFrames.get(allFrames.size() - 1));
+
         final List<File> sampled = new ArrayList<>(frameLimit);
         for (int i = 0; i < frameLimit; i++) {
-            final int selectedIndex = (int) ((long) i * (selected.size() - 1) / (frameLimit - 1));
-            sampled.add(selected.get(selectedIndex));
+            final int selectedIndex = (int) ((long) i * (allFrames.size() - 1) / (frameLimit - 1));
+            sampled.add(allFrames.get(selectedIndex));
         }
         return sampled;
     }

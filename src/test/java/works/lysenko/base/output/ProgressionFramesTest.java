@@ -52,4 +52,20 @@ class ProgressionFramesTest {
 
         assertEquals(6, frames.size());
     }
+
+    @Test
+    void sortsNumericalFrameIndexesAboveFourDigits(@TempDir final Path tempDir) throws IOException {
+        final int[] frameIndexes = {1, 9999, 10000};
+        for (final int idx : frameIndexes) {
+            final Path frame = tempDir.resolve("frame_%d.png".formatted(idx));
+            ImageIO.write(new BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB), "png", frame.toFile());
+        }
+
+        final List<java.io.File> frames = ProgressionFrames.select(tempDir.toFile(), 10);
+
+        assertEquals(3, frames.size());
+        assertEquals("frame_1.png", frames.get(0).getName());
+        assertEquals("frame_9999.png", frames.get(1).getName());
+        assertEquals("frame_10000.png", frames.get(2).getName());
+    }
 }

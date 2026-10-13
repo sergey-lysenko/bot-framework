@@ -3,6 +3,8 @@ package works.lysenko.base.output.tree;
 import works.lysenko.base.output.TreeHtml;
 import works.lysenko.base.output.TreeHtml.NodeData;
 import java.awt.Color;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.enums.ScenarioType;
@@ -39,7 +41,14 @@ public class VisualNodeResolver {
         return resolve(node, this.isRecent);
     }
 
+    private final Map<NodeData, Boolean> childFailureCache = new HashMap<>();
+    private final Map<NodeData, Boolean> executableCache = new HashMap<>();
+
     public VisualNode resolve(NodeData node, boolean isRecentNode) {
+        return resolve(node, isRecentNode, this.childFailureCache, this.executableCache);
+    }
+
+    public VisualNode resolve(NodeData node, boolean isRecentNode, Map<NodeData, Boolean> childFailureCache, Map<NodeData, Boolean> executableCache) {
         final int execs = (node.result() != null) ? node.result().getExecutions() : 0;
         final int eventCount = (node.result() != null && node.result().getEvents() != null) ? node.result().getEvents().size() : 0;
         final int scenarioTarget = getTargetExecutions(node, target);
@@ -48,9 +57,9 @@ public class VisualNodeResolver {
         final double overRatio = (ScenarioType.LEAF == type) ? getLeafOverExecutionRatio(node, target) : 0.0;
 
         final boolean failure = TreeHtml.hasFailure(node);
-        final boolean childFailure = !failure && TreeHtml.hasChildFailure(node);
+        final boolean childFailure = !failure && TreeHtml.hasChildFailure(node, childFailureCache);
         final Color progressColor = failure ? theme.failedBorder() : (childFailure ? theme.upsetBorder() : getScenarioProgressColor(node, target, maxLeafOverRatio));
-        boolean executable = TreeHtml.isTheoreticallyExecutable(node, accessibleScenarios);
+        boolean executable = TreeHtml.isTheoreticallyExecutable(node, accessibleScenarios, executableCache);
 
         Color cardFill;
         Color borderColor;

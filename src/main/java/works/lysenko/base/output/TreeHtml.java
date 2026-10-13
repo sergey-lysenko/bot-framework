@@ -250,23 +250,72 @@ public final class TreeHtml {
     }
 
     public static boolean hasChildFailure(final NodeData n) {
+        return hasChildFailure(n, new HashMap<>());
+    }
 
+    public static boolean hasChildFailure(final NodeData n, final Map<NodeData, Boolean> cache) {
         if (null == n) return false;
+        final Boolean cached = cache.get(n);
+        if (null != cached) return cached;
+
+        boolean result = false;
         if (null != n.scenario()) {
-            if (n.scenario().hasChildFailed() || n.scenario().getExecutionStatus() == works.lysenko.util.data.enums.ExecutionStatus.CHILD_FAILED) return true;
+            if (n.scenario().hasChildFailed() || n.scenario().getExecutionStatus() == works.lysenko.util.data.enums.ExecutionStatus.CHILD_FAILED) {
+                result = true;
+            }
         }
-        final _Result res = n.result();
-        if (null != res) {
-            if (res.status() == works.lysenko.util.data.enums.ExecutionStatus.CHILD_FAILED) return true;
+        if (!result && null != n.result()) {
+            if (n.result().status() == works.lysenko.util.data.enums.ExecutionStatus.CHILD_FAILED) {
+                result = true;
+            }
         }
-        if (null != n.children() && !n.children().isEmpty()) {
+        if (!result && null != n.children() && !n.children().isEmpty()) {
             for (final NodeData child : n.children()) {
-                if (hasFailure(child) || hasChildFailure(child)) {
-                    return true;
+                if (hasFailure(child) || hasChildFailure(child, cache)) {
+                    result = true;
+                    break;
                 }
             }
         }
-        return false;
+        cache.put(n, result);
+        return result;
+    }
+
+    /**
+     * Determines whether a scenario node is theoretically executable in the current run configuration.
+     *
+     * @param n                   node to evaluate
+     * @param accessibleScenarios set of scenarios accessible in the current session
+     * @return true if theoretically executable, false if excluded by configuration or saturation
+     */
+    public static final class AccessibleContext {
+        public final Set<_Scenario> scenarios;
+        public final Set<String> names;
+        public final Set<Class<?>> classes;
+
+        public AccessibleContext(final Set<_Scenario> scenarios) {
+            this.scenarios = scenarios;
+            this.names = new HashSet<>();
+            this.classes = new HashSet<>();
+            if (null != scenarios && !scenarios.isEmpty()) {
+                for (final _Scenario s : scenarios) {
+                    if (null == s) continue;
+                    names.add(s.getName());
+                    names.add(s.getSimpleName());
+                    names.add(s.getShortName());
+                    if (null != s.type()) {
+                        final String tag = s.type().tag();
+                        names.add(b(s.getSimpleName(), tag));
+                        names.add(b(s.getShortName(), tag));
+                        names.add(b(s.getName(), tag));
+                    }
+                    classes.add(s.getClass());
+                    if (null != s.getClass().getSuperclass()) {
+                        classes.add(s.getClass().getSuperclass());
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -277,13 +326,37 @@ public final class TreeHtml {
      * @return true if theoretically executable, false if excluded by configuration or saturation
      */
     public static boolean isTheoreticallyExecutable(final NodeData n, final Set<_Scenario> accessibleScenarios) {
-        if (null == n) {
-            return false;
-        }
+        return isTheoreticallyExecutable(n, accessibleScenarios, new HashMap<>());
+    }
+
+    public static boolean isTheoreticallyExecutable(
+            final NodeData n,
+            final Set<_Scenario> accessibleScenarios,
+            final Map<NodeData, Boolean> cache) {
+        return isTheoreticallyExecutable(n, new AccessibleContext(accessibleScenarios), cache);
+    }
+
+    public static boolean isTheoreticallyExecutable(
+            final NodeData n,
+            final AccessibleContext ctx,
+            final Map<NodeData, Boolean> cache) {
+        if (null == n) return false;
+        final Boolean cached = cache.get(n);
+        if (null != cached) return cached;
+
+        final boolean res = computeIsTheoreticallyExecutable(n, ctx, cache);
+        cache.put(n, res);
+        return res;
+    }
+
+    private static boolean computeIsTheoreticallyExecutable(
+            final NodeData n,
+            final AccessibleContext ctx,
+            final Map<NodeData, Boolean> cache) {
         if (null != n.parent()) {
             final boolean parentIsStructural = null == n.parent().scenario() && null == n.parent().result();
             final boolean parentWasExecuted = null != n.parent().result() && n.parent().result().getExecutions() > 0;
-            if (!parentIsStructural && !parentWasExecuted && !isTheoreticallyExecutable(n.parent(), accessibleScenarios)) {
+            if (!parentIsStructural && !parentWasExecuted && !computeIsTheoreticallyExecutable(n.parent(), ctx, cache)) {
                 return false;
             }
         }
@@ -303,27 +376,17 @@ public final class TreeHtml {
                 return false;
             }
         }
-        if (null != accessibleScenarios && !accessibleScenarios.isEmpty()) {
+        if (null != ctx.scenarios && !ctx.scenarios.isEmpty()) {
             if (null != n.scenario()) {
                 final _Scenario sc = n.scenario();
-                return accessibleScenarios.contains(sc)
-                        || accessibleScenarios.stream().anyMatch(s ->
-                                s.getName().equals(sc.getName())
-                                || s.getSimpleName().equals(sc.getSimpleName())
-                                || s.getShortName().equals(sc.getShortName())
-                                || s.getClass().equals(sc.getClass().getSuperclass())
-                                || sc.getClass().equals(s.getClass().getSuperclass()));
+                if (ctx.scenarios.contains(sc)) return true;
+                return ctx.names.contains(sc.getName())
+                        || ctx.names.contains(sc.getSimpleName())
+                        || ctx.names.contains(sc.getShortName())
+                        || ctx.classes.contains(sc.getClass())
+                        || ctx.classes.contains(sc.getClass().getSuperclass());
             }
-            final String label = n.label();
-            return accessibleScenarios.stream().anyMatch(s -> {
-                final String tag = (null != s.type()) ? s.type().tag() : "";
-                return s.getSimpleName().equals(label)
-                        || s.getShortName().equals(label)
-                        || s.getName().equals(label)
-                        || b(s.getSimpleName(), tag).equals(label)
-                        || b(s.getShortName(), tag).equals(label)
-                        || b(s.getName(), tag).equals(label);
-            });
+            return ctx.names.contains(n.label());
         }
         if (null != n.scenario()) {
             final _Scenario s = n.scenario();

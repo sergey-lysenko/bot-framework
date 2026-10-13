@@ -99,6 +99,8 @@ public final class TreeTracker {
     private static File customOutputDir = null;
     private static volatile BufferedImage latestFrameImage = null;
     private static final Map<String, Integer> previousExecutions = new HashMap<>();
+    private static volatile Set<_Scenario> cachedAccessibleScenarios = null;
+    private static volatile TreeHtml.AccessibleContext cachedAccessibleContext = null;
 
     private TreeTracker() {
     }
@@ -107,10 +109,17 @@ public final class TreeTracker {
      * Resets internal state for tests.
      */
     public static void reset() {
+        ProgressionFrames.awaitCompletion();
         capturedFrames.clear();
         customOutputDir = null;
         latestFrameImage = null;
         previousExecutions.clear();
+        invalidateCache();
+    }
+
+    public static void invalidateCache() {
+        cachedAccessibleScenarios = null;
+        cachedAccessibleContext = null;
     }
 
     /**
@@ -137,6 +146,7 @@ public final class TreeTracker {
      * @return list of captured frame files
      */
     public static List<File> getCapturedFrames() {
+        ProgressionFrames.awaitCompletion();
         return new ArrayList<>(capturedFrames);
     }
 
@@ -226,16 +236,18 @@ public final class TreeTracker {
     }
 
     private static synchronized void captureFrame(final Integer testNumber) {
+
+        logDebug("captureFrame start");
+
         if (isNull(core) || isNull(core.getResults()))
             return;
         final TreeMap<String, Result> sorted = core.getResults().getSortedStrings(false);
         if (sorted.isEmpty())
             return;
-
+        final long t0 = System.currentTimeMillis();
         final TreeLayout layout = TreeHtml.computeLayout(sorted);
         if (layout.nodes().isEmpty())
             return;
-
         final int target = (isNotNull(parameters)) ? parameters.getAllLeafsCount()
                 : (isNotNull(PropEnum._TEST_ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_COUNT.get()) : 1);
         final String badgeText = isNotNull(testNumber)
@@ -249,12 +261,25 @@ public final class TreeTracker {
         final BufferedImage image;
         try {
             final Set<String> recentNodeKeys = computeRecentNodeKeys(layout);
-            image = renderTreeProgression(layout, target, badgeText, recentNodeKeys);
+            logDebug(String.format("Rendering tree progression canvas (%d nodes, %d edges)...", layout.nodes().size(), layout.edges().size()));
+            final boolean isCold = (null == cachedAccessibleScenarios);
+            final long tAccStart = System.currentTimeMillis();
+            if (isCold) {
+                logDebug("Collecting accessible scenarios...");
+            }
+            final Set<_Scenario> accessibleScenarios = getAccessibleScenarios();
+            final TreeHtml.AccessibleContext accessibleCtx = cachedAccessibleContext;
+            if (isCold) {
+                logDebug(String.format("Collected %d accessible scenarios in %d ms", accessibleScenarios.size(), System.currentTimeMillis() - tAccStart));
+            }
+
+            image = renderTreeProgression(layout, target, badgeText, recentNodeKeys, accessibleScenarios, accessibleCtx);
             updatePreviousExecutions(layout);
         } catch (final IllegalArgumentException e) {
             System.err.println("Skipped tree progression frame: " + e.getMessage());
             return;
         }
+
         latestFrameImage = image;
         if (isNotNull(core) && isNotNull(core.getDashboard())) {
             core.getDashboard().setTreeProgression(image);
@@ -264,27 +289,26 @@ public final class TreeTracker {
         if (!progressionDir.exists() && !progressionDir.mkdirs())
             return;
 
-        final int maxFrames = ProgressionFrames.frameLimit(
-                ProgressionSettings.current().maxFrames(),
-                ProgressionSettings.current().maxTotalPixels(),
-                image.getWidth(),
-                image.getHeight());
-        final int frameIndex = Math.min(capturedFrames.size() + 1, maxFrames);
+        final int frameIndex = capturedFrames.size() + 1;
         final File frameFile = new File(progressionDir, String.format(Locale.US, "frame_%04d.png", frameIndex));
-        try {
-            ImageIO.write(image, "png", frameFile);
+        if (!capturedFrames.contains(frameFile)) {
+            capturedFrames.add(frameFile);
+        }
+
+        ProgressionFrames.saveFrameAsync(image, frameFile, () -> {
             if (ProgressionSettings.current().treeMp4Enabled()) {
                 final java.util.Optional<TreeSonifier> sonifier = ProgressionSettings.current().treeSonifier();
                 if (sonifier.isPresent()) {
-                    sonifier.get().capture(frameFile, layout, target);
+                    try {
+                        sonifier.get().capture(frameFile, layout, target);
+                    } catch (final IOException e) {
+                        System.err.println("Failed tree sonification: " + e.getMessage());
+                    }
                 }
             }
-            if (!capturedFrames.contains(frameFile) && capturedFrames.size() < maxFrames) {
-                capturedFrames.add(frameFile);
-            }
-        } catch (final IOException e) {
-            System.err.println("Failed to save tree progression frame: " + e.getMessage());
-        }
+            final long duration = System.currentTimeMillis() - t0;
+            logDebug(String.format("Captured tree progression frame #%d (%dx%d) in %d ms", frameIndex, image.getWidth(), image.getHeight(), duration));
+        });
     }
 
     private static Set<String> computeRecentNodeKeys(final TreeLayout layout) {
@@ -311,6 +335,7 @@ public final class TreeTracker {
      * GIF and WebP.
      */
     public static void onComplete() {
+        ProgressionFrames.awaitCompletion();
         final String prefix = (isNotNull(timer)) ? String.valueOf(timer.startedAt()) : "run";
         processFrames(resolveRunDirectory(), prefix, ProcessingProgress.NONE);
     }
@@ -569,7 +594,13 @@ public final class TreeTracker {
      * @return rendered BufferedImage
      */
     static Set<_Scenario> getAccessibleScenarios() {
-        return TreeHtml.getAccessibleScenarios();
+        Set<_Scenario> scenarios = cachedAccessibleScenarios;
+        if (null == scenarios) {
+            scenarios = TreeHtml.getAccessibleScenarios();
+            cachedAccessibleScenarios = scenarios;
+            cachedAccessibleContext = new TreeHtml.AccessibleContext(scenarios);
+        }
+        return scenarios;
     }
 
     /**
@@ -581,6 +612,10 @@ public final class TreeTracker {
      */
     static boolean isTheoreticallyExecutable(final NodeData n, final Set<_Scenario> accessibleScenarios) {
         return TreeHtml.isTheoreticallyExecutable(n, accessibleScenarios);
+    }
+
+    static boolean isTheoreticallyExecutable(final NodeData n, final Set<_Scenario> accessibleScenarios, final Map<NodeData, Boolean> cache) {
+        return TreeHtml.isTheoreticallyExecutable(n, accessibleScenarios, cache);
     }
 
     static boolean isTheoreticallyExecutable(final NodeData n) {
@@ -650,6 +685,34 @@ public final class TreeTracker {
             final Set<String> recentNodeKeys,
             final Set<_Scenario> accessibleScenarios) {
 
+        return renderTreeProgression(layout, target, badgeText, recentNodeKeys, accessibleScenarios, (null != cachedAccessibleContext) ? cachedAccessibleContext : new TreeHtml.AccessibleContext(accessibleScenarios));
+    }
+
+    /**
+     * Renders scenario tree progression layout as a BufferedImage with a custom badge label,
+     * highlighting recently changed nodes and differentiating executable vs excluded nodes.
+     *
+     * @param layout              computed tree layout
+     * @param target              target executions count
+     * @param badgeText           text for the frame badge (e.g. "Cycle #1", "Step #42")
+     * @param recentNodeKeys      set of node keys recently traversed or changed
+     * @param accessibleScenarios set of scenarios accessible in the current session
+     * @param accessibleCtx       cached accessible scenarios context
+     * @return rendered BufferedImage
+     */
+    public static BufferedImage renderTreeProgression(
+            final TreeLayout layout,
+            final int target,
+            final String badgeText,
+            final Set<String> recentNodeKeys,
+            final Set<_Scenario> accessibleScenarios,
+            final TreeHtml.AccessibleContext accessibleCtx) {
+
+        final long tRenderStart = System.currentTimeMillis();
+        final TreeHtml.AccessibleContext ctx = (null != accessibleCtx) ? accessibleCtx : new TreeHtml.AccessibleContext(accessibleScenarios);
+        final Map<NodeData, Boolean> executableCache = new HashMap<>();
+        final Map<NodeData, Boolean> childFailureCache = new HashMap<>();
+
         int maxCol = 0;
         double maxRow = 0.0;
         int totalLeafs = 0;
@@ -657,7 +720,17 @@ public final class TreeTracker {
         int totalExecs = 0;
         double maxLeafOverRatio = 0.0;
 
-        for (final NodeData n : layout.nodes()) {
+        final int totalStatsNodes = layout.nodes().size();
+        final Set<Integer> statsMilestones = new HashSet<>();
+        if (totalStatsNodes > 0) {
+            statsMilestones.add(Math.max(1, (int) Math.round(totalStatsNodes * 0.25)));
+            statsMilestones.add(Math.max(1, (int) Math.round(totalStatsNodes * 0.50)));
+            statsMilestones.add(Math.max(1, (int) Math.round(totalStatsNodes * 0.75)));
+            statsMilestones.add(totalStatsNodes);
+        }
+
+        for (int i = 0; i < totalStatsNodes; i++) {
+            final NodeData n = layout.nodes().get(i);
             if (n.col() > maxCol)
                 maxCol = n.col();
             if (n.row() > maxRow)
@@ -668,11 +741,16 @@ public final class TreeTracker {
                 maxLeafOverRatio = Math.max(maxLeafOverRatio, getLeafOverExecutionRatio(n, target));
             }
             if (n.children().isEmpty() && isTerminalScenario(n)) {
-                if (isTheoreticallyExecutable(n, accessibleScenarios) || execs > 0) {
+                if (TreeHtml.isTheoreticallyExecutable(n, ctx, executableCache) || execs > 0) {
                     totalLeafs++;
                     if (execs >= getTargetExecutions(n, target))
                         coveredLeafs++;
                 }
+            }
+            final int current = i + 1;
+            if (statsMilestones.contains(current)) {
+                final int percent = (int) Math.round((current * 100.0) / totalStatsNodes);
+                logTrace(String.format("stats: %d/%d (%d%%)", current, totalStatsNodes, percent));
             }
         }
 
@@ -700,32 +778,62 @@ public final class TreeTracker {
         g.setColor(BG_COLOR);
         g.fillRect(0, 0, canvasW, canvasH);
 
-        // Dot grid pattern
-        g.setColor(GRID_DOT);
-        for (int x = 0; x < canvasW; x += 24) {
-            for (int y = HEADER_HEIGHT; y < canvasH; y += 24) {
-                g.fillRect(x, y, 1, 1);
-            }
-        }
+        // Dot grid pattern using TexturePaint tile
+        final BufferedImage dotTile = new BufferedImage(24, 24, BufferedImage.TYPE_INT_RGB);
+        final Graphics2D tileG = dotTile.createGraphics();
+        tileG.setColor(BG_COLOR);
+        tileG.fillRect(0, 0, 24, 24);
+        tileG.setColor(GRID_DOT);
+        tileG.fillRect(0, 0, 1, 1);
+        tileG.dispose();
+
+        final java.awt.TexturePaint dotPaint = new java.awt.TexturePaint(dotTile,
+                new java.awt.geom.Rectangle2D.Double(0, HEADER_HEIGHT, 24, 24));
+        g.setPaint(dotPaint);
+        g.fillRect(0, HEADER_HEIGHT, canvasW, canvasH - HEADER_HEIGHT);
+
+        final long tInit = System.currentTimeMillis() - tRenderStart;
 
         // Draw edges
-        drawEdges(g, layout.edges(), target, maxLeafOverRatio, recentNodeKeys, accessibleScenarios);
+        final long tEdgeStart = System.currentTimeMillis();
+        drawEdges(g, layout.edges(), target, maxLeafOverRatio, recentNodeKeys, accessibleScenarios, childFailureCache);
+        final long tEdges = System.currentTimeMillis() - tEdgeStart;
 
         // Draw nodes
+        final long tNodeStart = System.currentTimeMillis();
         final boolean isAllLeafs = (null != works.lysenko.Base.parameters) ? works.lysenko.Base.parameters.isAllLeafs() : false;
         final works.lysenko.base.output.tree.VisualNodeResolver nodeResolver =
                 new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, false, true);
         final List<works.lysenko.base.output.tree.VisualNode> visualNodes = new ArrayList<>();
-        for (final NodeData n : layout.nodes()) {
-            visualNodes.add(nodeResolver.resolve(n, recentNodeKeys.contains(n.id())));
+        final int totalNodes = layout.nodes().size();
+        final Set<Integer> nodeMilestones = new HashSet<>();
+        if (totalNodes > 0) {
+            nodeMilestones.add(Math.max(1, (int) Math.round(totalNodes * 0.25)));
+            nodeMilestones.add(Math.max(1, (int) Math.round(totalNodes * 0.50)));
+            nodeMilestones.add(Math.max(1, (int) Math.round(totalNodes * 0.75)));
+            nodeMilestones.add(totalNodes);
+        }
+
+        for (int i = 0; i < totalNodes; i++) {
+            final NodeData n = layout.nodes().get(i);
+            visualNodes.add(nodeResolver.resolve(n, recentNodeKeys.contains(n.id()), childFailureCache, executableCache));
+            final int current = i + 1;
+            if (nodeMilestones.contains(current)) {
+                final int percent = (int) Math.round((current * 100.0) / totalNodes);
+                logTrace(String.format("nodes: %d/%d (%d%%)", current, totalNodes, percent));
+            }
         }
 
         new works.lysenko.base.output.tree.GraphicsTreeRenderer(works.lysenko.base.output.tree.TreeTheme.DEFAULT).renderNodes(g, visualNodes);
+        final long tNodes = System.currentTimeMillis() - tNodeStart;
 
         // Draw header
         drawHeader(g, canvasW, badgeText, target, coveredLeafs, totalLeafs, totalExecs);
 
         g.dispose();
+        final long tTotal = System.currentTimeMillis() - tRenderStart;
+        logDebug(String.format("Rendered tree progression canvas (%dx%d) in %d ms (init: %d ms, edges: %d ms, nodes: %d ms)",
+                canvasW, canvasH, tTotal, tInit, tEdges, tNodes));
         return img;
     }
 
@@ -735,7 +843,8 @@ public final class TreeTracker {
             final int target,
             final double maxLeafOverRatio,
             final Set<String> recentNodeKeys,
-            final Set<_Scenario> accessibleScenarios) {
+            final Set<_Scenario> accessibleScenarios,
+            final Map<NodeData, Boolean> childFailureCache) {
 
         final List<Edge> sortedEdges = new ArrayList<>(edges);
         sortedEdges.sort(Comparator.comparingInt(e -> {
@@ -744,7 +853,22 @@ public final class TreeTracker {
             return (toExecs > 0 && fromExecs > 0) ? 1 : 0;
         }));
 
-        for (final Edge e : sortedEdges) {
+        final int totalEdges = sortedEdges.size();
+        final Set<Integer> edgeMilestones = new HashSet<>();
+        if (totalEdges > 0) {
+            edgeMilestones.add(Math.max(1, (int) Math.round(totalEdges * 0.25)));
+            edgeMilestones.add(Math.max(1, (int) Math.round(totalEdges * 0.50)));
+            edgeMilestones.add(Math.max(1, (int) Math.round(totalEdges * 0.75)));
+            edgeMilestones.add(totalEdges);
+        }
+
+        for (int i = 0; i < totalEdges; i++) {
+            final Edge e = sortedEdges.get(i);
+            final int current = i + 1;
+            if (edgeMilestones.contains(current)) {
+                final int percent = (int) Math.round((current * 100.0) / totalEdges);
+                logTrace(String.format("edges: %d/%d (%d%%)", current, totalEdges, percent));
+            }
             final int startX = e.from().col() * COL_WIDTH + CARD_WIDTH + PADDING_X;
             final int startY = (int) Math
                     .round(e.from().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + HEADER_HEIGHT + PADDING_Y);
@@ -778,7 +902,7 @@ public final class TreeTracker {
                 g.setColor(RED_FAILED);
                 g.setStroke(new BasicStroke(2.2f));
                 g.draw(path);
-            } else if (TreeHtml.hasChildFailure(e.to())) {
+            } else if (TreeHtml.hasChildFailure(e.to(), childFailureCache)) {
                 g.setColor(INDIGO_UPSET);
                 g.setStroke(DASHED_UPSET_STROKE);
                 g.draw(path);
