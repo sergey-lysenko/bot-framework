@@ -74,6 +74,7 @@ public record Layout() {
         static final String SRC_ = s(SRC, s);
         static final String TARGET_ = s(TARGET, s);
         static final String TESTS_ = s(TESTS, s);
+        static final String SUITES_ = s("suites", s);
         static final String GRIDS_ = s(GRIDS, s);
         static final String CONFIG_ = s(CONFIG, s);
     }
@@ -90,6 +91,7 @@ public record Layout() {
         public static final String _TARGET_DASH_ = s(TARGET_, DASH_);
         public static final String _RESOURCES_ = s(SRC_, MAIN_, RESOURCES_);
         public static final String _CONFIG_ = s(_RESOURCES_, CONFIG_);
+        public static final String _SUITES_ = s(_RESOURCES_, SUITES_);
         public static final String _TESTS_ = s(_RESOURCES_, TESTS_);
         public static final String _GRIDS_ = s(_RESOURCES_, GRIDS_);
         public static final String _RUNS_ = s(TARGET_, RUNS_);
@@ -102,6 +104,7 @@ public record Layout() {
     @SuppressWarnings({"PublicInnerClass", "MissingJavadoc"})
     public record Parts() {
 
+        public static final String SUITE_PROPERTIES_EXTENSION = ".suite";
         public static final String TEST_PROPERTIES_EXTENSION = s(_DOT_, TEST);
         public static final String GRID_EXTENSION = s(_DOT_, GRID);
         public static final String TEST_PROPERTIES_PARTS_EXTENSION = s(_DOT_, PART);

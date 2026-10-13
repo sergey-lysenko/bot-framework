@@ -47,10 +47,12 @@ import static works.lysenko.util.lang.word.P.PARAMETER;
 import static works.lysenko.util.lang.word.P.PROPERTY;
 import static works.lysenko.util.lang.word.U.UNDEFINED;
 import static works.lysenko.util.spec.Layout.Files.COMMON_CONFIGURATION;
+import static works.lysenko.util.spec.Layout.Parts.SUITE_PROPERTIES_EXTENSION;
 import static works.lysenko.util.spec.Layout.Parts.TEST_PROPERTIES_EXTENSION;
 import static works.lysenko.util.spec.Layout.Parts._DOT_PROPERTIES;
 import static works.lysenko.util.spec.Layout.Paths._CONFIG_;
 import static works.lysenko.util.spec.Layout.Paths._RESOURCES_;
+import static works.lysenko.util.spec.Layout.Paths._SUITES_;
 import static works.lysenko.util.spec.Layout.Paths._TESTS_;
 import static works.lysenko.util.spec.Symbols.*;
 
@@ -191,6 +193,22 @@ public class TestProperties implements _TestProperties {
         return getConfigFileDefaults(testName);
     }
 
+    private static works.lysenko.util.func.core.TestProperties.Result readSuiteProperties(final String suiteName) {
+
+        if (isNull(suiteName) || suiteName.isBlank()) {
+            return new works.lysenko.util.func.core.TestProperties.Result(new Properties(), "");
+        }
+        try {
+            final works.lysenko.util.func.core.TestProperties.Result suiteRes =
+                    readTestPropertiesFromFile(new TestPropertiesDescriptor(_SUITES_, suiteName, SUITE_PROPERTIES_EXTENSION));
+            if (isNotNull(suiteRes) && isNotNull(suiteRes.properties()) && !suiteRes.properties().isEmpty()) {
+                return suiteRes;
+            }
+        } catch (final Exception ignored) {
+        }
+        return readTestPropertiesFromFile(new TestPropertiesDescriptor(_TESTS_, suiteName, TEST_PROPERTIES_EXTENSION));
+    }
+
     private void updateConfigFileDefaults(final String testName) {
 
         if (isNull(commonConfiguration)) readCommonConfiguration();
@@ -203,8 +221,7 @@ public class TestProperties implements _TestProperties {
         }
         if (isNotNull(testName) && !testName.isBlank()) {
             try {
-                final works.lysenko.util.func.core.TestProperties.Result res =
-                        readTestPropertiesFromFile(new TestPropertiesDescriptor(_TESTS_, testName, TEST_PROPERTIES_EXTENSION));
+                final works.lysenko.util.func.core.TestProperties.Result res = readSuiteProperties(testName);
                 if (isNotNull(res) && isNotNull(res.properties())) {
                     for (final String k : res.properties().stringPropertyNames()) {
                         configFileDefaults.put(k, res.properties().getProperty(k));
@@ -403,8 +420,7 @@ public class TestProperties implements _TestProperties {
         if (isNull(commonConfiguration)) common = readCommonConfiguration();
         the = new Properties(); // reset
         the.putAll(commonConfiguration);
-        result = readTestPropertiesFromFile(new TestPropertiesDescriptor(_TESTS_, parameters.getTest(),
-                TEST_PROPERTIES_EXTENSION));
+        result = readSuiteProperties(parameters.getTest());
         the.putAll(result.properties());
         updateConfigFileDefaults(parameters.getTest());
         applyUserOverrides();
@@ -484,8 +500,7 @@ public class TestProperties implements _TestProperties {
         }
         if (isNotNull(testName) && !testName.isBlank()) {
             try {
-                final works.lysenko.util.func.core.TestProperties.Result res =
-                        readTestPropertiesFromFile(new TestPropertiesDescriptor(_TESTS_, testName, TEST_PROPERTIES_EXTENSION));
+                final works.lysenko.util.func.core.TestProperties.Result res = readSuiteProperties(testName);
                 if (isNotNull(res) && isNotNull(res.properties())) {
                     the.putAll(res.properties());
                 }
@@ -551,8 +566,7 @@ public class TestProperties implements _TestProperties {
         }
         if (isNotNull(testName) && !testName.isBlank()) {
             try {
-                final works.lysenko.util.func.core.TestProperties.Result res =
-                        readTestPropertiesFromFile(new TestPropertiesDescriptor(_TESTS_, testName, TEST_PROPERTIES_EXTENSION));
+                final works.lysenko.util.func.core.TestProperties.Result res = readSuiteProperties(testName);
                 if (isNotNull(res) && isNotNull(res.properties())) {
                     for (final String k : res.properties().stringPropertyNames()) {
                         effective.put(k, res.properties().getProperty(k));
