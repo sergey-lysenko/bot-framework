@@ -285,11 +285,11 @@ public class Gui implements _GUI {
     }
 
     /**
-     * Updates the TESTS text field value based on the .test.tests property of the selected test configuration.
+     * Updates the GUI parameter input fields based on properties of the selected test/suite configuration.
      */
-    private void updateTestsFromSelectedTestConfiguration() {
+    private void updateParametersFromSelectedTestConfiguration() {
 
-        if (isNull(test) || isNull(testsCount)) return;
+        if (isNull(test)) return;
         final Object selected = test.getSelectedItem();
         if (isNull(selected)) return;
         final String testName = selected.toString();
@@ -298,11 +298,92 @@ public class Gui implements _GUI {
                 ? works.lysenko.Base.properties
                 : new TestProperties();
         final Map<String, String> configProps = tp.getOriginalConfigProperties(testName);
-        final String testsVal = (isNotNull(configProps))
-                ? configProps.get(PropEnum._TEST_TESTS.getPropertyName())
-                : null;
 
-        testsCount.setText((null == testsVal) ? EMPTY : testsVal);
+        if (isNotNull(testsCount)) {
+            final String testsVal = (isNotNull(configProps))
+                    ? configProps.get(PropEnum._TEST_TESTS.getPropertyName())
+                    : null;
+            testsCount.setText((null == testsVal) ? EMPTY : testsVal);
+        }
+
+        if (isNotNull(headless)) {
+            final String val = (isNotNull(configProps)) ? configProps.get(PropEnum._TEST_HEADLESS.getPropertyName()) : null;
+            if (isNotNull(val)) {
+                headless.setSelected(Boolean.parseBoolean(val));
+            } else {
+                headless.setSelected(Boolean.parseBoolean(parameters.getProperty(HEADLESS.name())));
+            }
+        }
+
+        if (isNotNull(hideOffBranches)) {
+            final String val = (isNotNull(configProps)) ? configProps.get(PropEnum._TREE_HIDE_OFF_BRANCHES.getPropertyName()) : null;
+            if (isNotNull(val)) {
+                hideOffBranches.setSelected(Boolean.parseBoolean(val));
+            } else {
+                hideOffBranches.setSelected(Boolean.parseBoolean(parameters.getProperty(HIDE_OFF_BRANCHES.name())));
+            }
+        }
+
+        if (isNotNull(allLeafs)) {
+            final String val = (isNotNull(configProps)) ? configProps.get(PropEnum._TEST_ALL_LEAFS.getPropertyName()) : null;
+            if (isNotNull(val)) {
+                allLeafs.setSelected(Boolean.parseBoolean(val));
+            } else {
+                allLeafs.setSelected(parameters.isAllLeafs());
+            }
+        }
+
+        if (isNotNull(allLeafsCount)) {
+            final String val = (isNotNull(configProps)) ? configProps.get(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName()) : null;
+            if (isNotNull(val)) {
+                allLeafsCount.setText(val);
+            } else {
+                allLeafsCount.setText(String.valueOf(parameters.getAllLeafsCount()));
+            }
+        }
+
+        if (isNotNull(forbidOverexecution)) {
+            final String val = (isNotNull(configProps)) ? configProps.get(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName()) : null;
+            if (isNotNull(val)) {
+                forbidOverexecution.setSelected(Boolean.parseBoolean(val));
+            } else {
+                final Boolean pVal = parameters.getForbidOverexecution();
+                forbidOverexecution.setSelected((pVal != null) ? pVal : Boolean.TRUE.equals(PropEnum._TREE_FORBID_OVEREXECUTION.get()));
+            }
+        }
+
+        if (isNotNull(resilientMode)) {
+            final String val = (isNotNull(configProps)) ? configProps.get(PropEnum._TEST_RESILIENT_MODE.getPropertyName()) : null;
+            if (isNotNull(val)) {
+                resilientMode.setSelected(Boolean.parseBoolean(val));
+            } else {
+                final Boolean pVal = parameters.getResilientMode();
+                resilientMode.setSelected((pVal != null) ? pVal : Boolean.TRUE.equals(PropEnum._TEST_RESILIENT_MODE.get()));
+            }
+        }
+
+        if (isNotNull(completionWeight)) {
+            final String val = (isNotNull(configProps)) ? configProps.get(PropEnum._TREE_COMPLETION_WEIGHT.getPropertyName()) : null;
+            if (isNotNull(val)) {
+                completionWeight.setText(val);
+            } else {
+                completionWeight.setText(defaultIfEmpty(parameters.getCompletionWeight(), PropEnum._TREE_COMPLETION_WEIGHT.defaultValue()));
+            }
+        }
+
+        if (isNotNull(traverseExtensions)) {
+            final String val = (isNotNull(configProps)) ? configProps.get(PropEnum._TREE_TRAVERSE_EXTENSIONS.getPropertyName()) : null;
+            if (isNotNull(val)) {
+                traverseExtensions.setSelected(Boolean.parseBoolean(val));
+            } else {
+                final Boolean pVal = parameters.getTraverseExtensions();
+                traverseExtensions.setSelected((pVal != null) ? pVal : Boolean.TRUE.equals(PropEnum._TREE_TRAVERSE_EXTENSIONS.get()));
+            }
+        }
+    }
+
+    private void updateTestsFromSelectedTestConfiguration() {
+        updateParametersFromSelectedTestConfiguration();
     }
 
     private static JCheckBox createCheckBox(final Boolean paramValue, final works.lysenko.util.apis._PropEnum propEnum) {

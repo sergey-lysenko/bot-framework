@@ -58,6 +58,17 @@ class ConfigTestsEditorPanelTest {
         });
     }
 
+    @Test
+    void testRefreshTreeWithSuites() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            assertDoesNotThrow(() -> {
+                final ConfigTestsEditorPanel panel = new ConfigTestsEditorPanel();
+                panel.refreshTreeFromDisk();
+                assertNotNull(panel);
+            });
+        });
+    }
+
     private static PropertyTablePanel findPropertyTablePanel(final JComponent comp) {
         for (final java.awt.Component child : comp.getComponents()) {
             if (child instanceof PropertyTablePanel p) {

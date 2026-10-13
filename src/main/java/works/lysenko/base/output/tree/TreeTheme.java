@@ -32,10 +32,10 @@ public record TreeTheme(
         44,  // cardHeight
         10,  // padding
         8,   // cornerRadius
-        Color.decode("#052e16"), // passedBg
-        Color.decode("#450a0a"), // failedBg
+        Color.decode("#14532d"), // passedBg
+        Color.decode("#7f1d1d"), // failedBg
         Color.decode("#1e1b4b"), // upsetBg
-        Color.decode("#451a03"), // warningBg
+        Color.decode("#713f12"), // warningBg
         Color.decode("#131a2a"), // nonExecutableBg
         Color.decode("#1e293b"), // unvisitedBg
         Color.decode("#22c55e"), // passedBorder
@@ -44,10 +44,10 @@ public record TreeTheme(
         Color.decode("#f59e0b"), // warningBorder
         Color.decode("#475569"), // nonExecutableBorder
         Color.decode("#64748b"), // unvisitedBorder
-        Color.decode("#86efac"), // passedText
+        Color.decode("#4ade80"), // passedText
         Color.decode("#fca5a5"), // failedText
         Color.decode("#a5b4fc"), // upsetText
-        Color.decode("#fcd34d"), // warningText
+        Color.decode("#fde047"), // warningText
         Color.decode("#64748b"), // nonExecutableText
         Color.decode("#94a3b8")  // unvisitedText
     );

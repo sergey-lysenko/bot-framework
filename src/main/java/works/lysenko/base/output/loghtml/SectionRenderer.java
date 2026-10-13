@@ -173,10 +173,6 @@ public final class SectionRenderer {
                 if (sIdx == p.steps.size() - 1) {
                     if ("failed".equals(testStatus)) nodeCssClass = "failed";
                     else if ("warning".equals(testStatus)) nodeCssClass = "warning";
-                } else {
-                    if ("failed".equals(testStatus) || "warning".equals(testStatus)) {
-                        nodeCssClass = "child_failed";
-                    }
                 }
 
                 sb.append(s("<a class=\"path-step ", nodeCssClass, "\" href=\"#test-", p.num, "-", escapeHtml(targetScen),

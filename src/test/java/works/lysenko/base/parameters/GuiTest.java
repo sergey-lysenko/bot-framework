@@ -860,6 +860,22 @@ class GuiTest {
         assertFalse(hasLabel(panel, "FORBID_OVEREXECUTION"), "FORBID_OVEREXECUTION should be hidden when ALL_LEAFS is unchecked again");
     }
 
+    @Test
+    void testUpdateParametersFromSelectedTestConfiguration() throws Exception {
+        final Properties props = new Properties();
+        props.setProperty("TEST", "sample_test");
+        props.setProperty("POOL", "");
+        props.setProperty("PLATFORM", "chrome");
+
+        final Parameters parameters = new Parameters(props);
+        final Gui gui = new Gui(parameters);
+        gui.addStandardParameters();
+
+        final Method updateMethod = Gui.class.getDeclaredMethod("updateParametersFromSelectedTestConfiguration");
+        updateMethod.setAccessible(true);
+        assertDoesNotThrow(() -> updateMethod.invoke(gui));
+    }
+
     private static boolean hasLabel(final JPanel panel, final String labelText) {
         for (final java.awt.Component c : panel.getComponents()) {
             if (c instanceof javax.swing.JLabel label && labelText.equals(label.getText())) {

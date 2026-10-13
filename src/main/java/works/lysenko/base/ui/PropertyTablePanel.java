@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import static java.util.Objects.isNull;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.spec.Layout.Paths._CONFIG_;
+import static works.lysenko.util.spec.Layout.Paths._SUITES_;
 import static works.lysenko.util.spec.Layout.Paths._TESTS_;
 
 public class PropertyTablePanel extends JPanel {
@@ -340,8 +341,12 @@ public class PropertyTablePanel extends JPanel {
 
         final Set<String> testParts = new TreeSet<>();
         if (partsMode == PartsMode.TESTS_ONLY || partsMode == PartsMode.BOTH) {
+            scanPartFiles(Path.of(_SUITES_), testParts);
             scanPartFiles(Path.of(_TESTS_), testParts);
-            if (testParts.isEmpty()) scanPartFiles(Path.of("tests"), testParts);
+            if (testParts.isEmpty()) {
+                scanPartFiles(Path.of("suites"), testParts);
+                scanPartFiles(Path.of("tests"), testParts);
+            }
         }
 
         if (configParts.isEmpty() && testParts.isEmpty()) {

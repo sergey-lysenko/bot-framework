@@ -28,7 +28,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static works.lysenko.util.func.type.Objects.isNotNull;
+import static works.lysenko.util.spec.Layout.Parts.SUITE_PROPERTIES_EXTENSION;
+import static works.lysenko.util.spec.Layout.Parts.TEST_PROPERTIES_EXTENSION;
 import static works.lysenko.util.spec.Layout.Paths._CONFIG_;
+import static works.lysenko.util.spec.Layout.Paths._SUITES_;
 import static works.lysenko.util.spec.Layout.Paths._TESTS_;
 
 /**
@@ -155,7 +158,7 @@ public class ConfigTestsEditorPanel extends JPanel {
 
         final JButton newFileBtn = new JButton("+ New File...");
         newFileBtn.setFont(btnFont);
-        newFileBtn.setToolTipText("Create a new .test suite or .part file");
+        newFileBtn.setToolTipText("Create a new .suite, .test, or .part file");
         newFileBtn.addActionListener(e -> createNewFile());
 
         final JButton deleteFileBtn = new JButton("Delete File");
@@ -440,14 +443,47 @@ public class ConfigTestsEditorPanel extends JPanel {
 
         treeRootNode.add(configFolder);
 
-        // 2. tests/
+        // 2. suites/
+        final Path suitesDir = Path.of(_SUITES_);
+        if (Files.exists(suitesDir) && Files.isDirectory(suitesDir)) {
+            final DefaultMutableTreeNode suitesFolder = new DefaultMutableTreeNode(
+                    new FileNodeObject("suites", suitesDir, FileCategory.CATEGORY_DIR, false)
+            );
+            try (final var stream = Files.list(suitesDir)) {
+                stream.filter(p -> p.toString().endsWith(SUITE_PROPERTIES_EXTENSION) || p.toString().endsWith(TEST_PROPERTIES_EXTENSION))
+                        .sorted()
+                        .forEach(p -> suitesFolder.add(new DefaultMutableTreeNode(
+                                new FileNodeObject(p.getFileName().toString(), p, FileCategory.TEST_SUITE, true)
+                        )));
+            } catch (final Exception ignored) {}
+
+            // parts/ inside suites/
+            final Path suitePartsDir = Path.of(_SUITES_, "parts");
+            if (Files.exists(suitePartsDir) && Files.isDirectory(suitePartsDir)) {
+                final DefaultMutableTreeNode suitePartsFolder = new DefaultMutableTreeNode(
+                        new FileNodeObject("parts", suitePartsDir, FileCategory.CATEGORY_DIR, false)
+                );
+                try (final var stream = Files.list(suitePartsDir)) {
+                    stream.filter(p -> p.toString().endsWith(".part") || p.toString().endsWith(SUITE_PROPERTIES_EXTENSION) || p.toString().endsWith(TEST_PROPERTIES_EXTENSION))
+                            .sorted()
+                            .forEach(p -> suitePartsFolder.add(new DefaultMutableTreeNode(
+                                    new FileNodeObject(p.getFileName().toString(), p, FileCategory.TEST_PART, true)
+                            )));
+                } catch (final Exception ignored) {}
+                suitesFolder.add(suitePartsFolder);
+            }
+
+            treeRootNode.add(suitesFolder);
+        }
+
+        // 3. tests/
         final Path testsDir = Path.of(_TESTS_);
         if (Files.exists(testsDir) && Files.isDirectory(testsDir)) {
             final DefaultMutableTreeNode testsFolder = new DefaultMutableTreeNode(
                     new FileNodeObject("tests", testsDir, FileCategory.CATEGORY_DIR, false)
             );
             try (final var stream = Files.list(testsDir)) {
-                stream.filter(p -> p.toString().endsWith(".test"))
+                stream.filter(p -> p.toString().endsWith(TEST_PROPERTIES_EXTENSION) || p.toString().endsWith(SUITE_PROPERTIES_EXTENSION))
                         .sorted()
                         .forEach(p -> testsFolder.add(new DefaultMutableTreeNode(
                                 new FileNodeObject(p.getFileName().toString(), p, FileCategory.TEST_SUITE, true)
@@ -461,7 +497,7 @@ public class ConfigTestsEditorPanel extends JPanel {
                         new FileNodeObject("parts", testPartsDir, FileCategory.CATEGORY_DIR, false)
                 );
                 try (final var stream = Files.list(testPartsDir)) {
-                    stream.filter(p -> p.toString().endsWith(".part") || p.toString().endsWith(".test"))
+                    stream.filter(p -> p.toString().endsWith(".part") || p.toString().endsWith(TEST_PROPERTIES_EXTENSION) || p.toString().endsWith(SUITE_PROPERTIES_EXTENSION))
                             .sorted()
                             .forEach(p -> testPartsFolder.add(new DefaultMutableTreeNode(
                                     new FileNodeObject(p.getFileName().toString(), p, FileCategory.TEST_PART, true)
@@ -836,7 +872,9 @@ public class ConfigTestsEditorPanel extends JPanel {
         if (!promptToSaveIfModified()) return;
 
         final String[] types = {
+                "Test Suite (*.suite in suites/)",
                 "Test Suite (*.test in tests/)",
+                "Suite Part (*.part in suites/parts/)",
                 "Test Part (*.part in tests/parts/)",
                 "Config Part (*.part in config/parts/)"
         };
@@ -858,11 +896,17 @@ public class ConfigTestsEditorPanel extends JPanel {
         final String cleanName = rawName.trim().replaceAll("[^a-zA-Z0-9_\\-]", "");
         final Path targetPath;
         final String extension;
-        if (selectedType.contains("tests/parts/")) {
+        if (selectedType.contains("suites/parts/")) {
+            extension = ".part";
+            targetPath = Path.of(_SUITES_, "parts", cleanName + extension);
+        } else if (selectedType.contains("suites/")) {
+            extension = SUITE_PROPERTIES_EXTENSION;
+            targetPath = Path.of(_SUITES_, cleanName + extension);
+        } else if (selectedType.contains("tests/parts/")) {
             extension = ".part";
             targetPath = Path.of(_TESTS_, "parts", cleanName + extension);
         } else if (selectedType.contains("tests/")) {
-            extension = ".test";
+            extension = TEST_PROPERTIES_EXTENSION;
             targetPath = Path.of(_TESTS_, cleanName + extension);
         } else {
             extension = ".part";
