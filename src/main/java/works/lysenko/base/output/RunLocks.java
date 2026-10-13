@@ -63,7 +63,9 @@ public final class RunLocks {
 
     public static boolean isPostprocessLockHeld(final Path directory) throws IOException {
         Files.createDirectories(directory);
-        final LockHandle lock = tryAcquire(directory.resolve(POSTPROCESS_LOCK));
+        final Path lockPath = directory.resolve(POSTPROCESS_LOCK);
+        if (!Files.exists(lockPath)) return false;
+        final LockHandle lock = tryAcquire(lockPath);
         if (null == lock) return true;
         lock.close();
         return false;
@@ -74,7 +76,7 @@ public final class RunLocks {
         try {
             while (System.currentTimeMillis() < deadline) {
                 if (!isPostprocessLockHeld()) return;
-                Thread.sleep(500);
+                Thread.sleep(250);
             }
         } catch (final Exception ignored) {
         }
