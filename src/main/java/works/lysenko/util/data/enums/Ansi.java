@@ -113,7 +113,15 @@ public enum Ansi {
      */
     public static String ansi(final String s, final Ansi ansi) {
 
-        return null == ansi ? s : s(ansi.code(), s, RESET.code());
+        if (null == ansi || null == s) return s;
+        if (s.contains("\n")) {
+            final String ansiCode = ansi.code();
+            final String resetCode = RESET.code();
+            final String replacement = s(resetCode, "\n", ansiCode);
+            final String sanitized = s.replace("\r\n", "\n").replace("\n", replacement);
+            return s(ansiCode, sanitized, resetCode);
+        }
+        return s(ansi.code(), s, RESET.code());
     }
 
     /**
