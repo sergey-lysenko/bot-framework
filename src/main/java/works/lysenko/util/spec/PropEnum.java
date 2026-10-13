@@ -183,6 +183,7 @@ public enum PropEnum implements _PropEnum {
     _TEST_RESILIENT_MODE(Boolean.class, FALSE, true, true),
     _TEST_ROOT(String.class, EMPTY),
     _TEST_SCENARIO_SUFFICIENCY_ATTEMPTS(Integer.class, _9_),
+    _TEST_SUITE_CHANGE_UPDATES_PARAMETERS(Boolean.class, TRUE),
     _TEST_TESTS(Integer.class, NULL, false, true),
     _TREE_COMPLETION_WEIGHT(Fraction.class, s(_4_, _DOT_, _5_), false, true),
     _TREE_DEFAULT_WEIGHT(String.class, _0_, _DOT_, _0_),

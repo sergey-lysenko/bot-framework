@@ -35,6 +35,7 @@ public enum ExecutionParameter implements _Default {
     PLATFORM(Platform.CHROME.getString()),
     POOL(EMPTY),
     RESILIENT_MODE(Boolean.FALSE.toString()),
+    SUITE(EMPTY),
     TEST(EMPTY),
     TESTS(EMPTY),
     TRAVERSE_EXTENSIONS(Boolean.FALSE.toString());
@@ -55,6 +56,8 @@ public enum ExecutionParameter implements _Default {
     @SuppressWarnings("MethodWithMultipleReturnPoints")
     public static ExecutionParameter byName(final String s) {
 
+        if (null == s) return null;
+        if ("TEST".equalsIgnoreCase(s)) return SUITE;
         for (final ExecutionParameter e : values())
             if (e.name().equalsIgnoreCase(s)) return e;
         return null;

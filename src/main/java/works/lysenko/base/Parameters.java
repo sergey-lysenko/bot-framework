@@ -93,13 +93,26 @@ public final class Parameters extends Properties implements _ExecutionParameterV
 
     public String getTest() {
 
+        final String suiteVal = getValue(SUITE);
+        if (isNotNull(suiteVal) && !suiteVal.isBlank()) return suiteVal;
         return getValue(TEST);
     }
 
     public void setTest(final String name) {
 
+        put(SUITE.name(), name);
         put(TEST.name(), name);
         properties.readTestConfiguration();
+    }
+
+    public String getSuite() {
+
+        return getTest();
+    }
+
+    public void setSuite(final String name) {
+
+        setTest(name);
     }
 
     public void setPool(final String name) {

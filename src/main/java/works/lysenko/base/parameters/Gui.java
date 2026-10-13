@@ -222,7 +222,7 @@ public class Gui implements _GUI {
 
         if (isNotNull(test)) {
             final Object selected = test.getSelectedItem();
-            final JComboBox<Object> newCombo = GuiParameters.addFromFiles(TEST.name(), _TESTS_, TEST_PROPERTIES_EXTENSION, parameters);
+            final JComboBox<Object> newCombo = GuiParameters.addFromFiles(SUITE.name(), _TESTS_, TEST_PROPERTIES_EXTENSION, parameters);
             test.removeAllItems();
             for (int i = 0; i < newCombo.getItemCount(); i++) {
                 test.addItem(newCombo.getItemAt(i));
@@ -238,7 +238,13 @@ public class Gui implements _GUI {
      */
     public void addStandardParameters() {
 
-        test = addFromFiles(TEST.name(), _TESTS_, TEST_PROPERTIES_EXTENSION);
+        test = addFromFiles(SUITE.name(), _TESTS_, TEST_PROPERTIES_EXTENSION);
+        if (isNull(test.getSelectedItem())) {
+            final JComboBox<Object> testFallback = addFromFiles(TEST.name(), _TESTS_, TEST_PROPERTIES_EXTENSION);
+            if (isNotNull(testFallback.getSelectedItem())) {
+                test.setSelectedItem(testFallback.getSelectedItem());
+            }
+        }
         test.addActionListener(e -> updateTestsFromSelectedTestConfiguration());
         pool = addFromFiles(POOL.name(), ETC_, USERS_POOL_EXTENSION);
         addPlatforms();
@@ -477,7 +483,7 @@ public class Gui implements _GUI {
 
         int rows = 0;
 
-        rows = addRowOptional(TEST.name(), test, panel, rows);
+        rows = addRowOptional(SUITE.name(), test, panel, rows);
         rows = addRowOptional(POOL.name(), pool, panel, rows);
         rows = addRowOptional(DOMAIN.name(), domain, panel, rows);
         // Add platform with reset button
@@ -525,7 +531,9 @@ public class Gui implements _GUI {
     @SuppressWarnings("ValueOfIncrementOrDecrementUsed")
     public void propagateUserInput() {
 
-        parameters.setTest(null == test.getSelectedItem() ? EMPTY : test.getSelectedItem().toString());
+        final String selectedSuite = (null == test.getSelectedItem()) ? EMPTY : test.getSelectedItem().toString();
+        parameters.setSuite(selectedSuite);
+        parameters.setTest(selectedSuite);
         parameters.setPool(null == pool.getSelectedItem() ? EMPTY : pool.getSelectedItem().toString());
         parameters.setPlatform(null == platform.getSelectedItem() ? EMPTY : platform.getSelectedItem().toString());
         
