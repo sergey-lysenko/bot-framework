@@ -131,6 +131,19 @@ a.scen-stat-link:hover { color: #38bdf8; text-decoration: underline; }
 .scen-table tr.scen-row-special { outline: 1px solid #f59e0b; outline-offset: -1px; background: rgba(245, 158, 11, 0.18); }
 .scen-table tr.scen-row-special td { color: #fde047; }
 .scen-table tr.scen-row-special a.scen-stat-link { color: #fef08a; }
+.scen-popup-menu { position: absolute; z-index: 10000; background: #0f172a; border: 1px solid #334155; border-radius: 8px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75); min-width: 280px; max-width: 380px; font-family: ui-monospace, monospace; font-size: 12px; overflow: hidden; animation: scenPopupFade 0.12s ease-out; }
+@keyframes scenPopupFade { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.scen-popup-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #1e293b; border-bottom: 1px solid #334155; }
+.scen-popup-title { color: #cbd5e1; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 210px; }
+.scen-popup-title b { color: #38bdf8; }
+.scen-popup-count { font-size: 10px; color: #94a3b8; background: rgba(15, 23, 42, 0.6); padding: 2px 6px; border-radius: 4px; }
+.scen-popup-body { max-height: 260px; overflow-y: auto; padding: 4px 0; }
+.scen-popup-body::-webkit-scrollbar { width: 5px; }
+.scen-popup-body::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+.scen-popup-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; cursor: pointer; transition: background 0.12s; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
+.scen-popup-item:last-child { border-bottom: none; }
+.scen-popup-item:hover { background: rgba(56, 189, 248, 0.18); }
+.scen-popup-item-test { color: #f8fafc; font-weight: 500; }
 .cell-mono { font-family: ui-monospace, monospace; }
 .text-right { text-align: right; }
 .text-muted { color: #64748b; }
@@ -483,6 +496,161 @@ a.path-step { text-decoration: none; }
     }
     scrollToScenarioOrElement(hash);
   }
+  function closeScenarioPopup() {
+    const existing = document.getElementById('scenario-executions-popup');
+    if (existing) existing.remove();
+  }
+
+  function jumpToScenarioCandidate(idx) {
+    const candidates = window._currentScenCandidates;
+    if (!candidates || !candidates[idx]) return;
+    const c = candidates[idx];
+    closeScenarioPopup();
+
+    if (c.element) {
+      const section = c.element.closest('details.log-section');
+      if (section) section.open = true;
+      c.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      highlightScenarioStep(c.element);
+    } else if (c.testNum) {
+      focusScenario(null, c.testNum, c.scenName);
+    }
+  }
+
+  function showScenarioExecutionsMenu(e, scenName) {
+    if (e) {
+      if (e.preventDefault) e.preventDefault();
+      if (e.stopPropagation) e.stopPropagation();
+    }
+    closeScenarioPopup();
+
+    const candidates = [];
+    const scenLower = scenName.toLowerCase();
+    const seenTests = new Set();
+
+    const scenarioLines = document.querySelectorAll('.log-line-entry.is-scenario');
+    scenarioLines.forEach(el => {
+      const elScen = (el.getAttribute('data-scenario') || '').toLowerCase();
+      if (elScen === scenLower || elScen.endsWith('.' + scenLower) || elScen.startsWith(scenLower + '.')) {
+        const section = el.closest('details.log-section');
+        let testNum = el.getAttribute('data-test') || '';
+        let sectionName = testNum ? ('Test #' + testNum) : 'Log Entry';
+        let status = 'passed';
+        if (section) {
+          const titleEl = section.querySelector('.sec-title');
+          if (titleEl && titleEl.innerText) sectionName = titleEl.innerText.trim();
+          const badgeEl = section.querySelector('.badge');
+          if (badgeEl) {
+            if (badgeEl.classList.contains('failed')) status = 'failed';
+            else if (badgeEl.classList.contains('warning')) status = 'warning';
+            else if (badgeEl.classList.contains('passed')) status = 'passed';
+          }
+        }
+        candidates.push({
+          element: el,
+          testNum: testNum,
+          scenName: scenName,
+          sectionName: sectionName,
+          status: status
+        });
+        if (testNum) seenTests.add(testNum);
+      }
+    });
+
+    if (candidates.length === 0) {
+      const pathRows = document.querySelectorAll('.path-row');
+      pathRows.forEach(row => {
+        const steps = row.querySelectorAll('.path-step');
+        steps.forEach(step => {
+          const title = step.getAttribute('title') || '';
+          const text = step.innerText.trim();
+          if (title.toLowerCase().includes(scenLower) || text.toLowerCase() === scenLower) {
+            const numEl = row.querySelector('.path-num');
+            const tNum = numEl ? numEl.innerText.replace(/[^\d]/g, '') : '';
+            if (tNum && !seenTests.has(tNum)) {
+              seenTests.add(tNum);
+              candidates.push({
+                element: null,
+                testNum: tNum,
+                scenName: scenName,
+                sectionName: 'Test #' + tNum,
+                status: 'passed'
+              });
+            }
+          }
+        });
+      });
+    }
+
+    if (candidates.length === 0) {
+      focusScenario(e, null, scenName);
+      return;
+    }
+
+    if (candidates.length === 1) {
+      if (candidates[0].element) {
+        const section = candidates[0].element.closest('details.log-section');
+        if (section) section.open = true;
+        candidates[0].element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        highlightScenarioStep(candidates[0].element);
+      } else {
+        focusScenario(e, candidates[0].testNum, scenName);
+      }
+      return;
+    }
+
+    const popup = document.createElement('div');
+    popup.id = 'scenario-executions-popup';
+    popup.className = 'scen-popup-menu';
+
+    let html = `<div class="scen-popup-header">` +
+      `<span class="scen-popup-title">Executions of <b>${escapeHtmlStr(scenName)}</b></span>` +
+      `<span class="scen-popup-count">${candidates.length} Executions</span>` +
+      `</div><div class="scen-popup-body">`;
+
+    candidates.forEach((c, idx) => {
+      html += `<div class="scen-popup-item" onclick="jumpToScenarioCandidate(${idx})">` +
+        `<span class="scen-popup-item-test">${escapeHtmlStr(c.sectionName)}</span>` +
+        `<span class="badge ${c.status}">${c.status}</span>` +
+        `</div>`;
+    });
+
+    html += `</div>`;
+    popup.innerHTML = html;
+
+    window._currentScenCandidates = candidates;
+    document.body.appendChild(popup);
+
+    const clickX = e ? e.clientX : 100;
+    const clickY = e ? e.clientY : 100;
+    const scrollX = window.scrollX || window.pageXOffset;
+    const scrollY = window.scrollY || window.pageYOffset;
+
+    let popupLeft = clickX + scrollX;
+    let popupTop = clickY + scrollY + 8;
+
+    if (clickX + 320 > window.innerWidth) {
+      popupLeft = Math.max(10, window.innerWidth - 330 + scrollX);
+    }
+
+    popup.style.top = popupTop + 'px';
+    popup.style.left = popupLeft + 'px';
+  }
+
+  function escapeHtmlStr(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#scenario-executions-popup') && !e.target.closest('.scen-stat-link')) {
+      closeScenarioPopup();
+    }
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeScenarioPopup();
+  });
+
   function focusScenario(e, testNum, scenName) {
     if (e) {
       if (e.preventDefault) e.preventDefault();
