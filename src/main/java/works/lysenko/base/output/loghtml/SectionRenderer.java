@@ -148,6 +148,8 @@ public final class SectionRenderer {
      */
     public static String renderPathsRows(final List<PathEntry> testPaths, final List<LogSection> sections, final List<String> commonPathSteps) {
         final StringBuilder sb = new StringBuilder();
+        final int commonCount = (null != commonPathSteps) ? commonPathSteps.size() : 0;
+
         for (final PathEntry p : testPaths) {
             String testStatus = "neutral";
             for (final LogSection sec : sections) {
@@ -162,6 +164,20 @@ public final class SectionRenderer {
                     "<span class=\"path-num\">Test #", p.num, "</span>",
                     "<span class=\"path-dur\">⏱ ", p.durStr, "</span>",
                     "</div><div class=\"path-chain\">"));
+
+            int matchedCommon = 0;
+            if (commonCount > 0) {
+                for (int i = 0; i < commonCount && i < p.steps.size(); i++) {
+                    final String stepName = p.steps.get(i);
+                    final String commonName = commonPathSteps.get(i);
+                    if (stepName.equals(commonName) || isStandIn(stepName)) {
+                        matchedCommon++;
+                    } else {
+                        break;
+                    }
+                }
+            }
+
             for (int sIdx = 0; sIdx < p.steps.size(); sIdx++) {
                 if (sIdx > 0) sb.append(" <span class=\"step-arrow\">→</span> ");
                 final String stepName = p.steps.get(sIdx);
@@ -169,16 +185,22 @@ public final class SectionRenderer {
                         ? commonPathSteps.get(sIdx)
                         : stepName;
 
-                String nodeCssClass = "passed";
-                if (sIdx == p.steps.size() - 1) {
-                    if ("failed".equals(testStatus)) nodeCssClass = "failed";
-                    else if ("warning".equals(testStatus)) nodeCssClass = "warning";
-                }
+                if (sIdx < matchedCommon) {
+                    sb.append(s("<a class=\"path-step common-dash\" href=\"#test-", p.num, "-", escapeHtml(targetScen),
+                            "\" onclick=\"focusScenario(event, '", p.num, "', '", escapeHtml(targetScen),
+                            "')\" title=\"Jump to ", escapeHtml(targetScen), " in Test #", p.num, "\">-</a>"));
+                } else {
+                    String nodeCssClass = "passed";
+                    if (sIdx == p.steps.size() - 1) {
+                        if ("failed".equals(testStatus)) nodeCssClass = "failed";
+                        else if ("warning".equals(testStatus)) nodeCssClass = "warning";
+                    }
 
-                sb.append(s("<a class=\"path-step ", nodeCssClass, "\" href=\"#test-", p.num, "-", escapeHtml(targetScen),
-                        "\" onclick=\"focusScenario(event, '", p.num, "', '", escapeHtml(targetScen),
-                        "')\" title=\"Jump to ", escapeHtml(targetScen), " in Test #", p.num, "\">",
-                        escapeHtml(targetScen), "</a>"));
+                    sb.append(s("<a class=\"path-step ", nodeCssClass, "\" href=\"#test-", p.num, "-", escapeHtml(targetScen),
+                            "\" onclick=\"focusScenario(event, '", p.num, "', '", escapeHtml(targetScen),
+                            "')\" title=\"Jump to ", escapeHtml(targetScen), " in Test #", p.num, "\">",
+                            escapeHtml(targetScen), "</a>"));
+                }
             }
             sb.append("</div></div>");
         }
@@ -214,17 +236,33 @@ public final class SectionRenderer {
                     : "◼".equals(sc.sym) ? "sym-leaf"
                     : "◆".equals(sc.sym) ? "sym-fork"
                     : "sym-other";
-            final String evtBadge = !sc.events.isEmpty()
-                    ? s("<span class=\"badge warning\" style=\"margin-left: 8px;\">", escapeHtml(sc.events), "</span>")
-                    : "";
-            sb.append(s("<tr>",
+
+            final String ev = (null != sc.events) ? sc.events.toLowerCase(Locale.ROOT) : "";
+            final boolean isFail = ev.contains("fail") || ev.contains("error") || ev.contains("exception") || ev.contains("child_failed");
+            final boolean isWarn = !isFail && (ev.contains("event") || ev.contains("warn") || ev.contains("issue") || !ev.isEmpty());
+
+            String rowCssClass = "";
+            if (isFail) {
+                rowCssClass = " class=\"scen-row-failed\"";
+            } else if (isWarn) {
+                rowCssClass = " class=\"scen-row-warning\"";
+            }
+
+            String eventsCountStr = "0";
+            if (!ev.isEmpty()) {
+                final String digits = sc.events.replaceAll("[^0-9]", "");
+                eventsCountStr = !digits.isEmpty() ? digits : "1";
+            }
+
+            sb.append(s("<tr", rowCssClass, ">",
                     "<td><span class=\"", symClass, "\">", sc.sym,
                     "</span> <a class=\"scen-stat-link\" href=\"#", escapeHtml(sc.name),
                     "\" onclick=\"focusScenario(event, null, '", escapeHtml(sc.name),
                     "')\" title=\"Jump to ", escapeHtml(sc.name), " in log\"><b>",
                     escapeHtml(sc.name), "</b></a></td>",
                     "<td class=\"cell-mono text-muted\">", escapeHtml(sc.weight), "</td>",
-                    "<td class=\"cell-mono text-right\"><b>", sc.count, "</b>", evtBadge, "</td>",
+                    "<td class=\"cell-mono text-right\"><b>", sc.count, "</b></td>",
+                    "<td class=\"cell-mono text-right\"><b>", eventsCountStr, "</b></td>",
                     "</tr>"));
         }
         return sb.toString();

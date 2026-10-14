@@ -18,9 +18,13 @@ button.active { background: #0284c7; border-color: #38bdf8; }
 input[type="text"] { background: #1e293b; color: #f8fafc; border: 1px solid #334155; padding: 6px 12px; border-radius: 6px; font-size: 13px; outline: none; width: 220px; }
 input[type="text"]:focus { border-color: var(--accent); }
 #charts-container { display: flex; margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-#summary-cards-container { display: flex; gap: 20px; margin-bottom: 20px; align-items: start; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+#summary-cards-container { display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-start; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 .chart-card { position: relative; flex: 1; min-width: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; }
-.summary-card { flex: 1; min-width: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; }
+.summary-card { flex: 1; min-width: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; position: sticky; top: 20px; align-self: flex-start; max-height: calc(100vh - 40px); overflow-y: auto; }
+.summary-card::-webkit-scrollbar { width: 6px; height: 6px; }
+.summary-card::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); border-radius: 3px; }
+.summary-card::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+.summary-card::-webkit-scrollbar-thumb:hover { background: #475569; }
 .card-title { font-size: 14px; font-weight: 600; color: #f8fafc; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .card-subtitle { font-size: 12px; color: #94a3b8; font-weight: normal; text-align: right; line-height: 1.4; }
 .stats-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-family: ui-monospace, monospace; font-size: 11px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
@@ -115,9 +119,19 @@ a.log-artifact-link:hover { color: #7dd3fc; background: rgba(56, 189, 248, 0.18)
 .common-path-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; white-space: nowrap; }
 .path-step.common { background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35); color: #38bdf8; font-weight: 500; cursor: default; }
 .path-step.common:hover { background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35); color: #38bdf8; transform: none; box-shadow: none; }
-.scen-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.scen-table th { text-align: left; padding: 6px 8px; color: #64748b; font-weight: 500; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; }
-.scen-table td { padding: 6px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); word-break: break-word; vertical-align: top; }
+.path-step.common-dash { background: rgba(30, 41, 59, 0.4); color: #64748b; border: 1px dashed #334155; padding: 2px 8px; font-weight: bold; }
+.path-step.common-dash:hover { background: #334155; border-color: #38bdf8; color: #38bdf8; transform: translateY(-1px); box-shadow: 0 0 8px rgba(56, 189, 248, 0.4); }
+.scen-table { width: 100%; border-collapse: collapse; font-family: ui-monospace, monospace; font-size: 11px; }
+.scen-table th { text-align: left; padding: 6px 8px; color: #64748b; font-weight: 500; border-bottom: 1px solid var(--border); font-size: 10px; text-transform: uppercase; font-family: ui-monospace, monospace; }
+.scen-table td { padding: 6px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); word-break: break-word; vertical-align: top; font-family: ui-monospace, monospace; }
+a.scen-stat-link { color: #e2e8f0; text-decoration: none; font-family: ui-monospace, monospace; }
+a.scen-stat-link:hover { color: #38bdf8; text-decoration: underline; }
+.scen-table tr.scen-row-warning { background: rgba(113, 63, 18, 0.35); }
+.scen-table tr.scen-row-warning td { color: #fde047; }
+.scen-table tr.scen-row-warning a.scen-stat-link { color: #fef08a; }
+.scen-table tr.scen-row-failed { background: rgba(127, 29, 29, 0.35); }
+.scen-table tr.scen-row-failed td { color: #fca5a5; }
+.scen-table tr.scen-row-failed a.scen-stat-link { color: #fecdd3; }
 .cell-mono { font-family: ui-monospace, monospace; }
 .text-right { text-align: right; }
 .text-muted { color: #64748b; }
@@ -381,7 +395,7 @@ a.path-step { text-decoration: none; }
   </div>
   <div class="summary-card">
     <div class="card-title">Scenario Statistics <span class="card-subtitle">{{SCEN_SUBTITLE}}</span></div>
-    <table class="scen-table"><thead><tr><th>Scenario</th><th>Weight Flow</th><th class="text-right">Hits</th></tr></thead><tbody>{{SCEN_ROWS}}</tbody></table>
+    <table class="scen-table"><thead><tr><th>Scenario</th><th>Weight Flow</th><th class="text-right">Hits</th><th class="text-right">Events</th></tr></thead><tbody>{{SCEN_ROWS}}</tbody></table>
   </div>
 </div>
 
