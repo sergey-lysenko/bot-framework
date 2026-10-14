@@ -241,12 +241,33 @@ public final class SectionRenderer {
             final boolean isFail = ev.contains("fail") || ev.contains("error") || ev.contains("exception") || ev.contains("child_failed");
             final boolean isWarn = !isFail && (ev.contains("event") || ev.contains("warn") || ev.contains("issue") || !ev.isEmpty());
 
-            String rowCssClass = "";
-            if (isFail) {
-                rowCssClass = " class=\"scen-row-failed\"";
-            } else if (isWarn) {
-                rowCssClass = " class=\"scen-row-warning\"";
+            final String countRaw = (null != sc.count) ? sc.count.trim() : "";
+            final String hitsStr;
+            final String instancesStr;
+            final boolean isSpecial;
+
+            if (countRaw.contains(":")) {
+                final String[] parts = countRaw.split(":");
+                hitsStr = parts[0];
+                instancesStr = (parts.length > 1) ? parts[1] : "";
+                isSpecial = true;
+            } else {
+                hitsStr = countRaw;
+                instancesStr = "";
+                isSpecial = false;
             }
+
+            final List<String> classes = new ArrayList<>(2);
+            if (isFail) {
+                classes.add("scen-row-failed");
+            } else if (isWarn) {
+                classes.add("scen-row-warning");
+            }
+            if (isSpecial) {
+                classes.add("scen-row-special");
+            }
+
+            final String rowCssClass = !classes.isEmpty() ? s(" class=\"", String.join(" ", classes), "\"") : "";
 
             String eventsCountStr = "";
             if (!ev.isEmpty()) {
@@ -264,7 +285,10 @@ public final class SectionRenderer {
                     "')\" title=\"Jump to ", escapeHtml(sc.name), " in log\"><b>",
                     escapeHtml(sc.name), "</b></a></td>",
                     "<td class=\"cell-mono text-muted\">", escapeHtml(sc.weight), "</td>",
-                    "<td class=\"cell-mono text-right\"><b>", sc.count, "</b></td>",
+                    "<td class=\"cell-mono text-right\"><b>", hitsStr, "</b></td>",
+                    "<td class=\"cell-mono text-right\">",
+                    instancesStr.isEmpty() ? "" : s("<b>", instancesStr, "</b>"),
+                    "</td>",
                     "<td class=\"cell-mono text-right\">",
                     eventsCountStr.isEmpty() ? "" : s("<b>", eventsCountStr, "</b>"),
                     "</td>",

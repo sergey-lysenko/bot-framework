@@ -91,7 +91,7 @@ public final class LogFileParser {
     private static final Pattern LINE_NO_TEST_RE = Pattern.compile("^(?:\\[\\s*\\])?\\[\\s*(\\d+)\\s*\\]\\[([^\\]]+)\\](?:\\[([^\\]]*)\\])?(.*)$");
     @SuppressWarnings("HardcodedFileSeparator")
     private static final Pattern PATH_LINE_RE = Pattern.compile(s("\\[\\s*(\\d+)\\s*\\]\\s*\\[\\s*([\\d,]+)\\s*\\]\\s*", RHT_ARR, "\\s*(.*)"));
-    private static final Pattern SCEN_LINE_RE = Pattern.compile("([▷◼◆●])\\s+([a-zA-Z0-9_]+(?:\\.[a-zA-Z0-9_]+)*)[.\\s]+(.+?)\\s+(\\d+)(?:\\s*\\(([^)]+)\\))?$");
+    private static final Pattern SCEN_LINE_RE = Pattern.compile("([▷◼◆●])\\s+([a-zA-Z0-9_]+(?:\\.[a-zA-Z0-9_]+)*)[.\\s]+(.+?)\\s+([\\d:]+)(?:\\s*\\(([^)]+)\\))?$");
     private static final Pattern TEST_RUN_SUMMARY_RE = Pattern.compile(".*\\b\\d+\\s+tests?\\s+of\\s+.+\\s+done\\s+in\\s+.*");
     private static final Pattern DIGITS_RE = Pattern.compile("\\d+");
     private static final Pattern DOT_END_RE = Pattern.compile("\\.+$");

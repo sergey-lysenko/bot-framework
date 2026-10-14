@@ -128,6 +128,9 @@ a.scen-stat-link:hover { color: #38bdf8; text-decoration: underline; }
 .scen-table tr.scen-row-failed { background: rgba(127, 29, 29, 0.35); }
 .scen-table tr.scen-row-failed td { color: #fca5a5; }
 .scen-table tr.scen-row-failed a.scen-stat-link { color: #fecdd3; }
+.scen-table tr.scen-row-special { outline: 1px solid #f59e0b; outline-offset: -1px; background: rgba(245, 158, 11, 0.18); }
+.scen-table tr.scen-row-special td { color: #fde047; }
+.scen-table tr.scen-row-special a.scen-stat-link { color: #fef08a; }
 .cell-mono { font-family: ui-monospace, monospace; }
 .text-right { text-align: right; }
 .text-muted { color: #64748b; }
@@ -391,7 +394,7 @@ a.path-step { text-decoration: none; }
   </div>
   <div class="summary-card">
     <div class="card-title">Scenario Statistics <span class="card-subtitle">{{SCEN_SUBTITLE}}</span></div>
-    <table class="scen-table"><thead><tr><th>Scenario</th><th>Weight Flow</th><th class="text-right">Hits</th><th class="text-right">Events</th></tr></thead><tbody>{{SCEN_ROWS}}</tbody></table>
+    <table class="scen-table"><thead><tr><th>Scenario</th><th>Weight Flow</th><th class="text-right">Hits</th><th class="text-right">Instances</th><th class="text-right">Events</th></tr></thead><tbody>{{SCEN_ROWS}}</tbody></table>
   </div>
 </div>
 
