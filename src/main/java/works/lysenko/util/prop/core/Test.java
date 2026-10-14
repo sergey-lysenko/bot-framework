@@ -2,16 +2,16 @@ package works.lysenko.util.prop.core;
 
 import works.lysenko.util.data.records.test.TestSafeguard;
 
-import static works.lysenko.util.spec.PropEnum._TEST_EXECUTION_TIME_SAFEGUARD;
+import static works.lysenko.util.prop.PropEnum._TEST_EXECUTION_TIME_SAFEGUARD;
 
 /**
- * Represents a Test object for handling execution time safeguard.
+ * Test execution safeguards configuration.
  */
-@SuppressWarnings("NonFinalStaticVariableUsedInClassInitialization")
+@SuppressWarnings("StaticMethodOnlyUsedInOneClass")
 public record Test() {
 
     /**
-     * Represents a TestSafeguard object which contains the number of tests and milliseconds.
+     * Test safeguard defining the maximum permissible test count and execution time in milliseconds.
      */
     public static final TestSafeguard timeSafeguard = new TestSafeguard(_TEST_EXECUTION_TIME_SAFEGUARD.get());
 }

@@ -1,11 +1,11 @@
 package works.lysenko.util.prop.data;
 
 import static java.util.Objects.isNull;
-import static works.lysenko.util.spec.PropEnum._MATH_FRACTIONS_ACCURACY;
-import static works.lysenko.util.spec.PropEnum._MATH_FRACTIONS_OUTPUT;
+import static works.lysenko.util.prop.PropEnum._MATH_FRACTIONS_ACCURACY;
+import static works.lysenko.util.prop.PropEnum._MATH_FRACTIONS_OUTPUT;
 
 /**
- * Represents a utility class for working with fractions.
+ * Configuration and caching for fraction mathematical operations and output formatting.
  */
 public record Fractions() {
 
@@ -13,11 +13,11 @@ public record Fractions() {
     private static Boolean output = null;
 
     /**
-     * Returns the accuracy level for fraction operations. If the properties are not
-     * initialized, it defaults to a predefined value. Otherwise, it retrieves the
-     * accuracy setting from the properties.
+     * Returns the accuracy level for fraction operations.
+     * <p>
+     * Lazily retrieves the accuracy setting from test properties, caching the result.
      *
-     * @return the accuracy level as an integer. Defaults to a predefined constant if properties are not set.
+     * @return the accuracy level as an integer
      */
     @SuppressWarnings("StaticMethodOnlyUsedInOneClass")
     public static int accuracy() {
@@ -27,10 +27,11 @@ public record Fractions() {
     }
 
     /**
-     * Determines if fractions should be output based on the application properties.
+     * Determines if fractions should be output based on application properties.
+     * <p>
+     * Lazily retrieves the output setting from test properties, caching the result.
      *
-     * @return true if the properties are null or if the property associated with
-     * the key for fractions output is set to true; false otherwise.
+     * @return true if fractions output is enabled, false otherwise
      */
     @SuppressWarnings("BooleanMethodNameMustStartWithQuestion")
     public static boolean output() {

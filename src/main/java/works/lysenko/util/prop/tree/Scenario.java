@@ -2,7 +2,7 @@ package works.lysenko.util.prop.tree;
 
 import org.apache.commons.math3.fraction.Fraction;
 import static works.lysenko.util.func.data.Regexes.l1;
-import static works.lysenko.util.spec.PropEnum.*;
+import static works.lysenko.util.prop.PropEnum.*;
 
 /**
  * Represents a Scenario used in a system.
@@ -14,26 +14,32 @@ public record Scenario() {
      * Represents a list of ignored items.
      */
     public static final String ignoredList = getIgnoredList();
+
     /**
      * Represents the completion weight for a scenario.
      */
     public static Fraction completionWeight = _TREE_COMPLETION_WEIGHT.get();
+
     /**
      * Represents the default weight for a scenario.
      */
     public static String defaultWeight = _TREE_DEFAULT_WEIGHT.get();
+
     /**
      * Represents the number of retries for selecting a scenario.
      */
     public static Integer selectionRetries = _TEST_SCENARIO_SUFFICIENCY_ATTEMPTS.get();
+
     /**
      * Indicates whether failed scenario selection should be ignored.
      */
-    public static boolean ignoreFailedSelection = Boolean.TRUE.equals(_TREE_IGNORE_FAILED_SCENARIO_SELECTION.get());
+    public static boolean ignoreFailedSelection = _TREE_IGNORE_FAILED_SCENARIO_SELECTION.get();
+
     /**
      * Indicates whether over-execution of fulfilled leaf scenarios is forbidden.
      */
-    public static boolean forbidOverexecution = Boolean.TRUE.equals(_TREE_FORBID_OVEREXECUTION.get());
+    public static boolean forbidOverexecution = _TREE_FORBID_OVEREXECUTION.get();
+
     /**
      * Represents the root identifier or path for a scenario within the system.
      */
@@ -47,8 +53,8 @@ public record Scenario() {
         completionWeight = _TREE_COMPLETION_WEIGHT.get();
         defaultWeight = _TREE_DEFAULT_WEIGHT.get();
         selectionRetries = _TEST_SCENARIO_SUFFICIENCY_ATTEMPTS.get();
-        ignoreFailedSelection = Boolean.TRUE.equals(_TREE_IGNORE_FAILED_SCENARIO_SELECTION.get());
-        forbidOverexecution = Boolean.TRUE.equals(_TREE_FORBID_OVEREXECUTION.get());
+        ignoreFailedSelection = _TREE_IGNORE_FAILED_SCENARIO_SELECTION.get();
+        forbidOverexecution = _TREE_FORBID_OVEREXECUTION.get();
         root = _TEST_ROOT.get();
     }
 

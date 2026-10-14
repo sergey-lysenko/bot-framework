@@ -1,7 +1,7 @@
 package works.lysenko.base.output;
 
 import works.lysenko.base.output.sonifier.*;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 /**
  * Run-scoped snapshot of progression configuration.

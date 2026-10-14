@@ -8,7 +8,7 @@ import works.lysenko.util.apis.util._BotButton;
 import works.lysenko.util.apis.util._Dashboard;
 import works.lysenko.util.data.enums.Brackets;
 
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import javax.swing.*;
 import java.awt.*;

@@ -1,15 +1,15 @@
 package works.lysenko.util.prop.core;
 
-import static works.lysenko.util.spec.PropEnum._SCREENSHOTS_OF_LONG_CLICKS_MARKER_DIAMETER;
+import static works.lysenko.util.prop.PropEnum._SCREENSHOTS_OF_LONG_CLICKS_MARKER_DIAMETER;
 
 /**
- * Represents the size of an object or element.
+ * Size configurations for UI markers and overlays.
  */
-@SuppressWarnings("NonFinalStaticVariableUsedInClassInitialization")
+@SuppressWarnings("StaticMethodOnlyUsedInOneClass")
 public record Size() {
 
     /**
-     * Represents a marker for long clicks.
+     * Diameter (in pixels) of the marker rendered on screenshots for long click actions.
      */
     public static final int longClicksMarker = _SCREENSHOTS_OF_LONG_CLICKS_MARKER_DIAMETER.get();
 }

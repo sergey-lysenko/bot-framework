@@ -1,7 +1,6 @@
 package works.lysenko.base.parameters;
 
 import works.lysenko.util.apis._PropEnum;
-import works.lysenko.util.spec.PropEnum;
 
 import java.io.IOException;
 import java.io.InputStream;

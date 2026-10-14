@@ -10,7 +10,7 @@ import works.lysenko.util.grid.expected.ColoursQuotas;
 import works.lysenko.util.grid.record.Request;
 import works.lysenko.util.grid.record.gsrc.ColourSearchRequest;
 import works.lysenko.util.grid.record.gsrc.Resolution;
-import works.lysenko.util.prop.grid.Background;
+import works.lysenko.util.spec.Background;
 
 import java.awt.image.BufferedImage;
 import java.util.Collection;

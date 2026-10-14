@@ -4,7 +4,7 @@ import works.lysenko.Base;
 import works.lysenko.base.ui.UserInterface;
 import works.lysenko.tree.base.Mono;
 import works.lysenko.util.apis.scenario._Scenario;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

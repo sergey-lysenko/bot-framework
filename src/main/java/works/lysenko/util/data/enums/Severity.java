@@ -12,7 +12,7 @@ import static works.lysenko.util.data.enums.EventType.*;
  * @author Sergii Lysenko
  */
 @SuppressWarnings("EnumClass")
-public enum Severity implements _Severity {
+public enum         Severity implements _Severity {
 
     /**
      * FAILURE

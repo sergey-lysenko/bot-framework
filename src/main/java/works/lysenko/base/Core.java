@@ -11,7 +11,6 @@ import static works.lysenko.util.spec.Layout.Files.name;
 import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_;
 import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_HTML_;
 import works.lysenko.base.ui.Directory;
-import works.lysenko.base.ui.UserInterface;
 import works.lysenko.tree.Root;
 import works.lysenko.tree.base.Mono;
 import works.lysenko.util.apis._PropEnum;
@@ -20,15 +19,13 @@ import works.lysenko.util.apis.core._Results;
 import works.lysenko.util.apis.core._Tests;
 import works.lysenko.util.apis.log._Logs;
 import works.lysenko.util.apis.scenario._Scenario;
-import works.lysenko.util.prop.tree.Scenario;
+import works.lysenko.util.prop.*;
 import works.lysenko.util.apis.test._Test;
 import works.lysenko.util.apis.util._Dashboard;
 import works.lysenko.util.prop.core.Is;
-import works.lysenko.util.prop.core.Start;
 import works.lysenko.util.prop.logs.To;
 import works.lysenko.util.spec.Level;
 
-import javax.swing.SwingUtilities;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -211,7 +208,7 @@ public final class Core extends Root implements _Core, _Tests {
         if (isNotNull(parameters)) {
             return parameters.getAllLeafsCount();
         }
-        final Integer prop = works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS_COUNT.get();
+        final Integer prop = PropEnum._TEST_ALL_LEAFS_COUNT.get();
         return isNotNull(prop) ? Math.max(1, prop) : 1;
     }
 
@@ -399,7 +396,7 @@ public final class Core extends Root implements _Core, _Tests {
             final boolean isSuccess = results.getFailures().isEmpty();
             final boolean shouldShowPostProcessorWindow =
                     !GraphicsEnvironment.isHeadless() && !Routines.isInsideCI() && !Routines.isInsideDocker();
-            final boolean openReport = Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_REPORT_OPEN_HTML.get());
+            final boolean openReport = Boolean.TRUE.equals(PropEnum._TEST_REPORT_OPEN_HTML.get());
             final boolean shouldOpenBrowser = shouldShowPostProcessorWindow && openReport;
             final File logFile = new File(name(RUN_LOG_));
             final File htmlFile = new File(name(RUN_LOG_HTML_));

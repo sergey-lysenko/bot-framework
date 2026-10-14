@@ -14,12 +14,12 @@ import java.util.Set;
 import static java.util.Objects.isNull;
 import works.lysenko.util.call.selector.Utils;
 import works.lysenko.util.data.records.KeyValue;
-import works.lysenko.util.prop.core.Resilient;
+import works.lysenko.util.prop.core.*;
 import works.lysenko.util.prop.tree.Include;
 import works.lysenko.util.prop.tree.Notify;
 import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.spec.Numbers;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,7 +32,7 @@ import static works.lysenko.Base.core;
 import static works.lysenko.Base.parameters;
 import static works.lysenko.Base.isDebug;
 import static works.lysenko.Base.isTrace;
-import static works.lysenko.util.call.selector.Utils.logEvent;
+import static works.lysenko.util.call.selector.Utils.*;
 import static works.lysenko.util.chrs.__.*;
 import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.____.*;
@@ -69,6 +69,7 @@ import static works.lysenko.util.lang.word.T.TESTS;
 import static works.lysenko.util.lang.word.U.UNABLE;
 import static works.lysenko.util.lang.word.U.UNMET;
 import static works.lysenko.util.lang.word.W.WEIGHTS;
+import static works.lysenko.util.prop.core.Mode.*;
 import static works.lysenko.util.prop.data.Delimeters.L0;
 import static works.lysenko.util.spec.Symbols._COLON_;
 
@@ -118,21 +119,21 @@ public final class Selector implements Callable<_Scenario> {
                 }
             }
             logStateDebug(fits, candidates);
-        } while (Utils.isStillSelectable(fits, attemptsLeft, candidates));
+        } while (isStillSelectable(fits, attemptsLeft, candidates));
         ctrl.sleep(1L, true);
-        if (fits) return Utils.verifyScenarioSelection(scenario);
+        if (fits) return verifyScenarioSelection(scenario);
         if (candidates.isEmpty()) {
             if (isNotNull(ctrl.getParent())) {
                 ctrl.getParent().markAsExhausted();
             }
             final String message = s(b(c(UNABLE), TO, FIT, ANY, SCENARIO, AMONG,
-                    Utils.createReadableScenariosList(ctrl.getWeightedList(), false, isDebug()), s(_COLON_), ALL, SCENARIOS,
+                    createReadableScenariosList(ctrl.getWeightedList(), false, isDebug()), s(_COLON_), ALL, SCENARIOS,
                     HAVE, UNMET, REQUIREMENTS, OR, ARE, NOT, EXECUTABLE));
             final boolean isAllLeafs = (isNotNull(works.lysenko.Base.parameters) && works.lysenko.Base.parameters.isAllLeafs()) 
-                || Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS.get());
-            if (isAllLeafs || works.lysenko.util.prop.core.Resilient.mode()) {
-                Utils.logAccounting();
-                Utils.logDebug(a(kv(s(IGNORE, c(FAILED), c(SELECTION)), String.valueOf(true))));
+                || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
+            if (isAllLeafs || resilient) {
+                logAccounting();
+                logDebug(a(kv(s(IGNORE, c(FAILED), c(SELECTION)), String.valueOf(true))));
                 logEvent(S3, message);
                 logEvent(S3, b(c(TESTS), WILL, GO, ON, AS, REQUESTED));
             } else {
@@ -273,7 +274,7 @@ public final class Selector implements Callable<_Scenario> {
      */
     private void selectionFailed(final String message) {
 
-        Utils.logAccounting();
+        logAccounting();
         Utils.logDebug(a(kv(s(IGNORE, c(FAILED), c(SELECTION)), s(Scenario.ignoreFailedSelection))));
 
         if (Scenario.ignoreFailedSelection) {

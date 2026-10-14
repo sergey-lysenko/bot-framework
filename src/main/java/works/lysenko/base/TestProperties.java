@@ -1,7 +1,6 @@
 package works.lysenko.base;
 
 import works.lysenko.Base;
-import works.lysenko.base.parameters.PropertyValidator;
 import works.lysenko.base.properties.Renderer;
 import works.lysenko.base.util.StringParser;
 import works.lysenko.util.apis._PropEnum;
@@ -12,7 +11,7 @@ import works.lysenko.util.data.type.maps.SortedString;
 import works.lysenko.util.func.core.Assertions;
 import works.lysenko.util.func.type.Collector;
 import works.lysenko.util.spec.Level;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import java.util.*;
 
@@ -51,7 +50,6 @@ import static works.lysenko.util.spec.Layout.Parts.SUITE_PROPERTIES_EXTENSION;
 import static works.lysenko.util.spec.Layout.Parts.TEST_PROPERTIES_EXTENSION;
 import static works.lysenko.util.spec.Layout.Parts._DOT_PROPERTIES;
 import static works.lysenko.util.spec.Layout.Paths._CONFIG_;
-import static works.lysenko.util.spec.Layout.Paths._RESOURCES_;
 import static works.lysenko.util.spec.Layout.Paths._SUITES_;
 import static works.lysenko.util.spec.Layout.Paths._TESTS_;
 import static works.lysenko.util.spec.Symbols.*;

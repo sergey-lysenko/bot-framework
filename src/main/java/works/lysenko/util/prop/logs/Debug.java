@@ -1,8 +1,8 @@
 package works.lysenko.util.prop.logs;
 
-import static works.lysenko.util.spec.PropEnum._LOGS_ADEBUG;
-import static works.lysenko.util.spec.PropEnum._LOGS_DEBUG;
-import static works.lysenko.util.spec.PropEnum._LOGS_TRACE;
+import static works.lysenko.util.prop.PropEnum._LOGS_ADEBUG;
+import static works.lysenko.util.prop.PropEnum._LOGS_DEBUG;
+import static works.lysenko.util.prop.PropEnum._LOGS_TRACE;
 
 /**
  * Represents a class for debugging purposes.

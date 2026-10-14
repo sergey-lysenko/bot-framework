@@ -32,10 +32,10 @@ public record TreeTheme(
         44,  // cardHeight
         10,  // padding
         8,   // cornerRadius
-        Color.decode("#14532d"), // passedBg
-        Color.decode("#7f1d1d"), // failedBg
+        Color.decode("#052e16"), // passedBg
+        Color.decode("#450a0a"), // failedBg
         Color.decode("#1e1b4b"), // upsetBg
-        Color.decode("#713f12"), // warningBg
+        Color.decode("#422006"), // warningBg
         Color.decode("#131a2a"), // nonExecutableBg
         Color.decode("#1e293b"), // unvisitedBg
         Color.decode("#22c55e"), // passedBorder

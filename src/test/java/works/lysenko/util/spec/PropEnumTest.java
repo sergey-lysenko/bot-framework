@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import works.lysenko.Base;
 import works.lysenko.base.TestProperties;
+import works.lysenko.util.prop.*;
 
 import java.lang.reflect.Field;
 import java.util.Properties;

@@ -4,6 +4,7 @@ import works.lysenko.base.output.loghtml.LogModels.EtaDebugItem;
 import works.lysenko.base.output.loghtml.LogModels.LeafCompletion;
 import works.lysenko.base.output.loghtml.LogModels.SystemResourceItem;
 import works.lysenko.base.output.loghtml.LogModels.TelemetryItem;
+import works.lysenko.util.prop.*;
 
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -155,10 +156,10 @@ public final class TimelineRenderer {
 
         final StringBuilder sb = new StringBuilder();
 
-        final boolean timelineLog = Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_REPORT_LOG_SCALE_TIMELINE.get());
-        final boolean leafLog = Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_REPORT_LOG_SCALE_ALL_LEAF.get());
-        final boolean etaLog = Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_REPORT_LOG_SCALE_ETA_DEBUG.get());
-        final boolean resLog = Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_REPORT_LOG_SCALE_CPU_DEBUG.get());
+        final boolean timelineLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_TIMELINE.get());
+        final boolean leafLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_ALL_LEAF.get());
+        final boolean etaLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_ETA_DEBUG.get());
+        final boolean resLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_CPU_DEBUG.get());
 
         sb.append(s("  window.timelineScaleMode = '", timelineLog ? "log" : "linear", "';\n"));
         sb.append(s("  window.leafLeftScaleMode = '", leafLog ? "log" : "linear", "';\n"));
@@ -358,7 +359,7 @@ public final class TimelineRenderer {
             final double tAvg, final double tMax, final double lMax) {
         if (testData.isEmpty()) return "";
 
-        final boolean isLog = Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_REPORT_LOG_SCALE_TIMELINE.get());
+        final boolean isLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_TIMELINE.get());
         final String activeLog = isLog ? " active" : "";
         final String activeLinear = isLog ? "" : " active";
 

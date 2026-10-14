@@ -2,7 +2,7 @@ package works.lysenko.base.parameters;
 
 import org.junit.jupiter.api.Test;
 import works.lysenko.util.data.enums.Severity;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;

@@ -1,31 +1,33 @@
 package works.lysenko.util.prop.tree;
 
-import static works.lysenko.util.spec.PropEnum._TREE_INCLUDE_DOWNSTREAM;
-import static works.lysenko.util.spec.PropEnum._TREE_INCLUDE_UPSTREAM;
+import static works.lysenko.util.prop.PropEnum._TREE_INCLUDE_DOWNSTREAM;
+import static works.lysenko.util.prop.PropEnum._TREE_INCLUDE_UPSTREAM;
 
 /**
- * Represents an Include class which provides static boolean properties
- * for enabling upstream and downstream inclusions.
+ * Provides configuration flags for tree execution weighting.
  * <p>
- * The class includes the following static properties:
- * - upstream: Indicates whether upstream inclusion is enabled.
- * - downstream: Indicates whether downstream inclusion is enabled.
- * <p>
- * This class interacts with a properties instance to retrieve boolean
- * values based on predefined keys.
+ * Controls whether upstream and downstream scenario weights are factored into
+ * scenario selection and coverage estimation during tree traversal.
  */
-@SuppressWarnings({"MissingJavadoc", "NonFinalStaticVariableUsedInClassInitialization"})
+@SuppressWarnings({"NonFinalStaticVariableUsedInClassInitialization", "StaticNonFinalField"})
 public record Include() {
 
-    public static boolean upstream = Boolean.TRUE.equals(_TREE_INCLUDE_UPSTREAM.get());
-    public static boolean downstream = Boolean.TRUE.equals(_TREE_INCLUDE_DOWNSTREAM.get());
+    /**
+     * Indicates whether upstream scenario weights are included in scenario selection and calculations.
+     */
+    public static boolean upstream = _TREE_INCLUDE_UPSTREAM.get();
+
+    /**
+     * Indicates whether downstream scenario weights are included in scenario selection and calculations.
+     */
+    public static boolean downstream = _TREE_INCLUDE_DOWNSTREAM.get();
 
     /**
      * Refreshes upstream and downstream flags from current test properties.
      */
     public static void refresh() {
 
-        upstream = Boolean.TRUE.equals(_TREE_INCLUDE_UPSTREAM.get());
-        downstream = Boolean.TRUE.equals(_TREE_INCLUDE_DOWNSTREAM.get());
+        upstream = _TREE_INCLUDE_UPSTREAM.get();
+        downstream = _TREE_INCLUDE_DOWNSTREAM.get();
     }
 }

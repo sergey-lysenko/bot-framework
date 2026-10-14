@@ -1,6 +1,6 @@
 package works.lysenko.util.prop.grid;
 
-import static works.lysenko.util.spec.PropEnum._GRID_LOG_LINE_MAX_LENGTH;
+import static works.lysenko.util.prop.PropEnum._GRID_LOG_LINE_MAX_LENGTH;
 
 /**
  * Represents a logging entity with a maximum line length limit.

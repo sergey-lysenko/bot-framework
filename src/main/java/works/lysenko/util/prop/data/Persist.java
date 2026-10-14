@@ -1,16 +1,14 @@
 package works.lysenko.util.prop.data;
 
-import static works.lysenko.util.spec.PropEnum._DATA_PERSIST;
+import static works.lysenko.util.prop.PropEnum._DATA_PERSIST;
 
 /**
- * Represents a persistence setting for the application.
- * <p>
- * This class provides a static boolean property which indicates if data persistence is enabled.
- * <p>
- * The static property is retrieved from the application properties using the predefined key.
+ * Configuration for data persistence settings.
  */
-@SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "MissingJavadoc", "NonFinalStaticVariableUsedInClassInitialization"})
 public record Persist() {
 
+    /**
+     * Indicates whether data snapshots and execution data should be persisted to disk.
+     */
     public static final Boolean data = _DATA_PERSIST.get();
 }

@@ -13,11 +13,10 @@ import works.lysenko.util.data.enums.ExecutionStatus;
 import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.data.type.sets.SortedScenario;
-import works.lysenko.util.prop.core.Fits;
-import works.lysenko.util.prop.core.Resilient;
+import works.lysenko.util.prop.core.*;
 import works.lysenko.util.prop.tree.Include;
 import works.lysenko.util.prop.tree.Scenario;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 import works.lysenko.util.spec.Level;
 
 import java.awt.image.BufferedImage;
@@ -53,6 +52,7 @@ import static works.lysenko.util.lang.U.UI_VERIFICATION_FAILED_IN;
 import static works.lysenko.util.lang.word.C.CONTENT;
 import static works.lysenko.util.lang.word.E.EVENT;
 import static works.lysenko.util.lang.word.S.STOPPING;
+import static works.lysenko.util.prop.core.Mode.*;
 import static works.lysenko.util.prop.tree.Scenario.root;
 import static works.lysenko.util.spec.Numbers.ONE;
 import static works.lysenko.util.spec.Numbers.ZERO;
@@ -323,8 +323,8 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     @SuppressWarnings("WeakerAccess")
     protected boolean areFailingEvents() {
 
-        if (!Resilient.mode() && !core.getStopFlag() && core.getResults().areFailingEvents()) stopTest(core.getResults().getGreatestSeverity());
-        return !Resilient.mode() && core.getResults().areFailingEvents();
+        if (!resilient && !core.getStopFlag() && core.getResults().areFailingEvents()) stopTest(core.getResults().getGreatestSeverity());
+        return !resilient && core.getResults().areFailingEvents();
     }
 
     /**

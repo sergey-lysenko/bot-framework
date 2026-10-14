@@ -4,7 +4,7 @@ import org.openqa.selenium.WebElement;
 import works.lysenko.tree.base.exceptional.Core;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
 import works.lysenko.util.prop.core.Recreate;
-import works.lysenko.util.prop.core.Resilient;
+import works.lysenko.util.prop.core.Mode;
 
 import java.util.List;
 
@@ -53,6 +53,7 @@ import static works.lysenko.util.lang.word.R.RESOLVE;
 import static works.lysenko.util.lang.word.S.SELENIUM;
 import static works.lysenko.util.lang.word.U.ULTIMATE;
 import static works.lysenko.util.lang.word.V.VERIFYING;
+import static works.lysenko.util.prop.core.Mode.*;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
@@ -167,7 +168,7 @@ public abstract class Exceptional extends Core {
                 ? triplet().ultimate().getMessage()
                 : (isNotNull(exception()) ? exception().getMessage() : UNRESOLVED___);
         logEvent(S0, detail);
-        if (!Resilient.mode()) stopTests();
+        if (!resilient) stopTests();
     }
 
     /**
@@ -220,7 +221,7 @@ public abstract class Exceptional extends Core {
         if (in(ANDROID) && isPresent(ANDROID_LAUNCHER)) restartOrStop();
         else {
             determineTimeoutResolvingAction(cause.getMessage());
-            if (!Resilient.mode()) stopTests();
+            if (!resilient) stopTests();
         }
         markAsResolved();
     }
@@ -252,6 +253,6 @@ public abstract class Exceptional extends Core {
     private void restartOrStop() {
 
         if (Recreate.driver) exec.createDriver();
-        else if (!Resilient.mode()) stopTests();
+        else if (!resilient) stopTests();
     }
 }

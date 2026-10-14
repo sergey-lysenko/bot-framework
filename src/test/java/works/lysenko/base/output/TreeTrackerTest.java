@@ -23,7 +23,7 @@ import works.lysenko.util.apis.test._Exec;
 import works.lysenko.util.apis.test._Test;
 import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.type.Result;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;

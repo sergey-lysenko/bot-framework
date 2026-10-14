@@ -1,7 +1,7 @@
 package works.lysenko.util.prop.tree;
 
-import static works.lysenko.util.spec.PropEnum._TEST_ACTION_RETRIES;
-import static works.lysenko.util.spec.PropEnum._TEST_SCENARIO_SUFFICIENCY_ATTEMPTS;
+import static works.lysenko.util.prop.PropEnum._TEST_ACTION_RETRIES;
+import static works.lysenko.util.prop.PropEnum._TEST_SCENARIO_SUFFICIENCY_ATTEMPTS;
 
 /**
  * Represents a Scenario used in a system.

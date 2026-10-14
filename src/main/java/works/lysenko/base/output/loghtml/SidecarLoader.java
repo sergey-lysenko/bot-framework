@@ -4,7 +4,7 @@ import works.lysenko.base.output.loghtml.LogModels.ArtifactItem;
 import works.lysenko.base.output.loghtml.LogModels.EtaDebugItem;
 import works.lysenko.base.output.loghtml.LogModels.LeafCompletion;
 import works.lysenko.base.output.loghtml.LogModels.SystemResourceItem;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import java.io.BufferedReader;
 import java.io.File;

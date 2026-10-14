@@ -3,7 +3,7 @@ package works.lysenko.base.output.loghtml;
 import works.lysenko.base.output.loghtml.LogModels.EtaDebugItem;
 import works.lysenko.base.output.loghtml.LogModels.LeafCompletion;
 import works.lysenko.base.output.loghtml.LogModels.SystemResourceItem;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import java.util.LinkedHashSet;
 import java.util.List;

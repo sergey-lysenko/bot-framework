@@ -16,7 +16,7 @@ import works.lysenko.tree.base.Leaf;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.test._Exec;
 import works.lysenko.util.apis.test._Test;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;

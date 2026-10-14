@@ -16,7 +16,7 @@ import works.lysenko.tree.base.Mono;
 import works.lysenko.tree.base.Node;
 import works.lysenko.util.data.records.KeyValue;
 import works.lysenko.util.prop.tree.Scenario;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import java.lang.reflect.Field;
 import java.util.List;

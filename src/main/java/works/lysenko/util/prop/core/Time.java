@@ -1,13 +1,14 @@
 package works.lysenko.util.prop.core;
 
-import static works.lysenko.util.spec.PropEnum._TEST_PAUSE_LENGTH;
+import static works.lysenko.util.prop.PropEnum._TEST_PAUSE_LENGTH;
 
 /**
- * Represents a class to manage time properties for the application.
- * It provides static properties related to pause length and timestamp format.
+ * Timing configuration for test execution pacing.
  */
-@SuppressWarnings({"MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "NonFinalStaticVariableUsedInClassInitialization"})
 public record Time() {
 
+    /**
+     * Default duration (in milliseconds) used for intentional pauses between test actions.
+     */
     public static final int pauseLength = _TEST_PAUSE_LENGTH.get();
 }

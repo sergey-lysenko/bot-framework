@@ -1,14 +1,15 @@
 package works.lysenko.util.prop.logs;
 
-import static works.lysenko.util.spec.PropEnum._LOGS_TABLE_WIDTH;
+import static works.lysenko.util.prop.PropEnum._LOGS_TABLE_WIDTH;
 
 /**
- * Represents a class to manage table properties for the application.
- * Provides the width of the table.
+ * Provides formatting configuration for tabular log outputs.
  */
-@SuppressWarnings({"MissingJavadoc", "NonFinalStaticVariableUsedInClassInitialization"})
 public record Table() {
 
+    /**
+     * Width limit used for rendering formatted tables in logs.
+     */
     public static final Integer width = _LOGS_TABLE_WIDTH.get();
 
 }

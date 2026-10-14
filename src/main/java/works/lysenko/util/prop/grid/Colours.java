@@ -1,22 +1,18 @@
 package works.lysenko.util.prop.grid;
 
-import static works.lysenko.util.spec.PropEnum._GRID_COLOUR_SIMILARITY_THRESHOLD;
+import static works.lysenko.util.prop.PropEnum._GRID_COLOUR_SIMILARITY_THRESHOLD;
 
 /**
- * Represents a record for storing colour threshold value.
+ * Configuration for grid colour similarity evaluation.
  */
 public record Colours() {
 
     /**
-     * Represents the similarity threshold value for known colours.
+     * Similarity threshold value for known colours.
      * <p>
-     * The threshold value is used to determine the level of similarity required for two colours to be indicated as too
-     * similar.
-     * Value itself is a calculated "distance" between colours in three-dimensional space with colour RGB values used as XYZ
-     * coordinates.
-     * A1 threshold value of 1.0 indicates that no check is necessary for colour matching.
+     * Used to determine the level of similarity required for two colours to be indicated as too similar.
+     * The value represents calculated distance between colours in 3D RGB colour space.
+     * A threshold value of 1.0 indicates that no similarity check is performed.
      */
-    @SuppressWarnings("StaticMethodOnlyUsedInOneClass")
     public static final Double threshold = _GRID_COLOUR_SIMILARITY_THRESHOLD.get();
-    // 1.0 means no check
 }

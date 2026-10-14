@@ -9,7 +9,7 @@ import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.records.KeyValue;
 import works.lysenko.util.prop.tree.Include;
 import works.lysenko.util.prop.tree.Scenario;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import java.util.*;
 import java.util.function.IntConsumer;

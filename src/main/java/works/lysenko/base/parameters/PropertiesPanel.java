@@ -4,7 +4,6 @@ import works.lysenko.Base;
 import works.lysenko.base.TestProperties;
 import works.lysenko.util.apis._PropEnum;
 import works.lysenko.util.apis.properties._TestProperties;
-import works.lysenko.util.spec.PropEnum;
 import works.lysenko.base.ui.PropertyTablePanel;
 
 import works.lysenko.base.ui.ValidatingCellEditor;
@@ -12,36 +11,26 @@ import works.lysenko.base.ui.ValidatingCellEditor;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.util.*;
-import java.util.List;
-import java.util.regex.Pattern;
 
 import static works.lysenko.util.chrs._____.VALUE;
-import static works.lysenko.util.data.enums.Brackets.ROUND;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.func.type.Objects.isNotNull;
-import static works.lysenko.util.lang.word.C.CLEAR;
 import static works.lysenko.util.lang.word.C.CONFIGURED;
 import static works.lysenko.util.lang.word.D.DEFAULT;
 import static works.lysenko.util.lang.word.M.MODIFIED;
 import static works.lysenko.util.lang.word.P.PROPERTY;
 import static works.lysenko.util.lang.word.R.RESET;
-import static works.lysenko.util.lang.word.S.SEARCH;
 import static works.lysenko.util.lang.word.S.SELECTED;
 import static works.lysenko.util.lang.word.S.STATUS;
-import static works.lysenko.util.spec.Symbols._COLON_;
 
 /**
  * Dialog for previewing and modifying test configuration properties before test execution.

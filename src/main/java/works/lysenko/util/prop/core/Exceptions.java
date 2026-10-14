@@ -1,14 +1,14 @@
 package works.lysenko.util.prop.core;
 
-import static works.lysenko.util.spec.PropEnum._TEST_EXCEPTION_RETRIES;
+import static works.lysenko.util.prop.PropEnum._TEST_EXCEPTION_RETRIES;
 
 /**
- * Record class for handling exceptions and assertions.
+ * Configuration for exception retry handling in tests.
  */
 public record Exceptions() {
 
     /**
-     * Represents the number of retries for a specific operation.
+     * Number of allowed retries when an exception occurs during test operations.
      */
     public static final Integer retries = _TEST_EXCEPTION_RETRIES.get();
 }

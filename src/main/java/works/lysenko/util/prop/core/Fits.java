@@ -1,23 +1,15 @@
 package works.lysenko.util.prop.core;
 
-import static works.lysenko.util.spec.PropEnum._TREE_FITS_BY_DEFAULT;
+import static works.lysenko.util.prop.PropEnum._TREE_FITS_BY_DEFAULT;
 
 /**
- * Represents a configuration setting for determining whether certain
- * behavior should be enabled by default.
- * <p>
- * This class provides a static property fetched from an application property
- * instance, typically used to configure default states or toggles within the application.
+ * Configuration for default tree node fitting behavior.
  */
 @SuppressWarnings("StaticMethodOnlyUsedInOneClass")
 public record Fits() {
 
     /**
-     * Represents a boolean configuration property indicating whether a particular feature
-     * or behavior should be enabled by default.
-     * <p>
-     * The value is fetched dynamically through the `_TREE_FITS_BY_DEFAULT` property, linking
-     * the system's runtime or application configuration to the property.
+     * Indicates whether tree nodes should be fitted by default during layout calculation.
      */
     public static final boolean byDefault = _TREE_FITS_BY_DEFAULT.get();
 }

@@ -10,7 +10,8 @@ import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Node;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.type.Result;
-import works.lysenko.util.prop.tree.Optimization;
+import works.lysenko.util.prop.*;
+import works.lysenko.util.prop.tree.*;
 import org.apache.commons.math3.fraction.Fraction;
 
 import java.util.*;
@@ -596,7 +597,7 @@ public final class TreeHtml {
     static void optimizeLayout(final List<NodeData> nodes) {
         if (nodes.isEmpty()) return;
 
-        if (Optimization.enabled) {
+        if (Optimization.progression) {
             packLeafChildren(nodes);
         }
 
@@ -989,13 +990,13 @@ public final class TreeHtml {
 
         final boolean isAllLeafs = (null != works.lysenko.Base.parameters)
                 ? works.lysenko.Base.parameters.isAllLeafs()
-                : (null != works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS.get()
-                   && Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS.get()));
+                : (null != PropEnum._TEST_ALL_LEAFS.get()
+                   && Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get()));
 
         final int target = (null != works.lysenko.Base.parameters)
                 ? works.lysenko.Base.parameters.getAllLeafsCount()
-                : (null != works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS_COUNT.get()
-                   ? Math.max(1, works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS_COUNT.get()) : 1);
+                : (null != PropEnum._TEST_ALL_LEAFS_COUNT.get()
+                   ? Math.max(1, PropEnum._TEST_ALL_LEAFS_COUNT.get()) : 1);
 
         double maxLeafOverRatio = 0.0;
         for (final NodeData n : nodes) {
@@ -1153,7 +1154,7 @@ public final class TreeHtml {
                 "    } catch (e) {}\n" +
                 "  }\n" +
                 "  function resetZoom() {\n" +
-                "    if (" + Optimization.enabled + ") { autoFit(); } else { scale = 1; panX = 40; panY = 40; updateTransform(); }\n" +
+                "    if (" + Optimization.progression + ") { autoFit(); } else { scale = 1; panX = 40; panY = 40; updateTransform(); }\n" +
                 "  }\n" +
                 "  document.querySelectorAll('.node-card').forEach(card => {\n" +
                 "    card.addEventListener('mouseenter', () => {\n" +
@@ -1191,7 +1192,7 @@ public final class TreeHtml {
                 "    if (details && details.trim().length > 0) { det.style.display = 'block'; det.innerText = details; }\n" +
                 "    else { det.style.display = 'none'; }\n" +
                 "  }\n" +
-                "  if (" + Optimization.enabled + ") {\n" +
+                "  if (" + Optimization.progression + ") {\n" +
                 "    window.addEventListener('resize', autoFit);\n" +
                 "    setTimeout(autoFit, 100);\n" +
                 "  } else {\n" +
@@ -1202,7 +1203,7 @@ public final class TreeHtml {
     }
 
     private static void pruneOffBranches(final List<NodeData> nodes, final List<Edge> edges) {
-        if (!works.lysenko.util.prop.tree.HideOffBranches.b()) return;
+        if (!HideOff.branches) return;
 
         final Set<NodeData> toRemove = new HashSet<>();
         for (final NodeData n : nodes) {

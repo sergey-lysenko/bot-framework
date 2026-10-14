@@ -11,7 +11,7 @@ import works.lysenko.util.apis.exception.unchecked.ScenarioRuntimeException;
 import works.lysenko.util.apis.scenario._Node;
 import works.lysenko.util.apis.scenario._Pool;
 import works.lysenko.util.apis.scenario._Scenario;
-import works.lysenko.util.prop.core.Resilient;
+import works.lysenko.util.prop.core.Mode;
 import works.lysenko.util.data.enums.Brackets;
 import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.enums.Severity;
@@ -41,6 +41,7 @@ import static works.lysenko.util.lang.word.A.ASSIGNING;
 import static works.lysenko.util.lang.word.H.HALTED;
 import static works.lysenko.util.lang.word.S.SCENARIO;
 import static works.lysenko.util.lang.word.S.SESSION;
+import static works.lysenko.util.prop.core.Mode.*;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
@@ -209,7 +210,7 @@ public abstract class Node extends Core implements _Node {
                 return ok;
             } catch (final NoSuchSessionException e) {
                 fail(b(c(SESSION), LOST));
-                if (!Resilient.mode()) stopTests();
+                if (!resilient) stopTests();
                 return false;
             } catch (final RuntimeException e) {
                 if (actionSucceeded) {

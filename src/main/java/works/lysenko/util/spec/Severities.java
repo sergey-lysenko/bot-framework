@@ -1,4 +1,4 @@
-package works.lysenko.util.prop.logs;
+package works.lysenko.util.spec;
 
 import works.lysenko.util.apis.util._Severity;
 

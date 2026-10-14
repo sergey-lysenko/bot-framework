@@ -1,14 +1,14 @@
 package works.lysenko.util.prop.core;
 
-import static works.lysenko.util.spec.PropEnum._LOGS_DEBUG;
+import static works.lysenko.util.prop.PropEnum._LOGS_DEBUG;
 
 /**
- * Record class for handling exceptions and assertions.
+ * Diagnostic and execution mode flags.
  */
 public record Is() {
 
     /**
-     * Represents the number of retries for a specific operation.
+     * Indicates whether debug logging mode is enabled.
      */
     public static final boolean debug = _LOGS_DEBUG.get();
 }

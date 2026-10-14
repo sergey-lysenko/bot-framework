@@ -1,39 +1,21 @@
 package works.lysenko.util.prop.core;
 
-import static works.lysenko.util.spec.PropEnum._LOGS_SILENT_SLEEPING_THRESHOLD;
-import static works.lysenko.util.spec.PropEnum._TEST_MAX_TYPING_DELAY;
+import static works.lysenko.util.prop.PropEnum._LOGS_SILENT_SLEEPING_THRESHOLD;
+import static works.lysenko.util.prop.PropEnum._TEST_MAX_TYPING_DELAY;
 
 /**
- * Represents configuration settings related to the sleeping mechanism in the application.
- * <p>
- * This class contains static properties used to manage thresholds and delays for sleeping states.
+ * Configuration settings related to pauses and sleeping mechanisms in the application.
  */
 @SuppressWarnings("StaticMethodOnlyUsedInOneClass")
 public record Sleeping() {
 
     /**
-     * Represents the threshold for activating silent sleeping modes.
-     *
-     * <p>
-     * This value is retrieved from the application properties using the
-     * class type {@code Integer} and the key defined by the constant
-     * {@code _SILENT_SLEEPING_THRESHOLD}.
-     * </p>
-     *
-     * <p>
-     * The {@code threshold} specifies the point at which the application
-     * decides to enter a silent sleeping state, helping to manage resource
-     * usage and performance.
-     * </p>
+     * Threshold (in milliseconds) below which pauses/sleeps are suppressed from logging.
      */
-
     public static final int threshold = _LOGS_SILENT_SLEEPING_THRESHOLD.get();
+
     /**
-     * Represents the maximum delay allowed between typing actions in milliseconds.
-     * <p>
-     * This variable helps manage the typing speed by setting an upper limit on the delay
-     * between keystrokes, ensuring consistency and preventing excessive delay that could
-     * degrade user experience.
+     * Maximum delay allowed between simulated keystrokes (in milliseconds).
      */
     public static final int maxTypingDelay = _TEST_MAX_TYPING_DELAY.get();
 }

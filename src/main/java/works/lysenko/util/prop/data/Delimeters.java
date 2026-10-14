@@ -1,11 +1,11 @@
 package works.lysenko.util.prop.data;
 
-import static works.lysenko.util.spec.PropEnum._DATA_DELIMITER_L0;
-import static works.lysenko.util.spec.PropEnum._DATA_DELIMITER_L1;
-import static works.lysenko.util.spec.PropEnum._DATA_DELIMITER_L2;
+import static works.lysenko.util.prop.PropEnum._DATA_DELIMITER_L0;
+import static works.lysenko.util.prop.PropEnum._DATA_DELIMITER_L1;
+import static works.lysenko.util.prop.PropEnum._DATA_DELIMITER_L2;
 
 /**
- * Represents a class for defining delimiters used in text processing.
+ * Defines hierarchical delimiter characters used for data parsing and text formatting.
  */
 public record Delimeters() {
 
@@ -20,15 +20,17 @@ public record Delimeters() {
     }
 
     /**
-     * Represents the first level delimiter character used in text processing.
+     * Level 0 (top-level) delimiter character used in data parsing and text formatting.
      */
     public static final char L0 = getChar(_DATA_DELIMITER_L0, '|');
+
     /**
-     * Represents the second-level delimiter character used in text processing.
+     * Level 1 (secondary) delimiter character used in data parsing and text formatting.
      */
     public static final char L1 = getChar(_DATA_DELIMITER_L1, ',');
+
     /**
-     * Represents the third-level delimiter character used in text processing.
+     * Level 2 (tertiary) delimiter character used in data parsing and text formatting.
      */
     public static final char L2 = getChar(_DATA_DELIMITER_L2, ';');
 }

@@ -1,7 +1,7 @@
 package works.lysenko.base.parameters;
 
 import org.junit.jupiter.api.Test;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import java.io.File;
 import java.io.FileInputStream;

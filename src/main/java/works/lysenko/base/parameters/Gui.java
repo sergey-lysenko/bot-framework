@@ -5,7 +5,7 @@ import works.lysenko.base.util.Platforms;
 import works.lysenko.util.apis.parameters._GUI;
 import works.lysenko.util.apis.test._Test;
 import works.lysenko.util.data.enums.Platform;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;

@@ -1,4 +1,4 @@
-package works.lysenko.util.prop.grid;
+package works.lysenko.util.spec;
 
 /**
  * The Centering class represents a centering operation. It calculates the distance between the center point and a given point,

@@ -2,7 +2,7 @@ package works.lysenko.base.output;
 
 import works.lysenko.Base;
 import works.lysenko.base.ui.UserInterface;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -12,7 +12,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.Objects.isNull;
 import static works.lysenko.Base.logEvent;
 import static works.lysenko.util.data.enums.Severity.S2;
 import static works.lysenko.util.func.type.Objects.isNotNull;

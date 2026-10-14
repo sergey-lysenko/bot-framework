@@ -21,7 +21,7 @@
     <selenium.version>4.18.1</selenium.version>
     <webdrivermanager.version>6.1.0</webdrivermanager.version>
     <appium.version>9.2.0</appium.version>
-    <aspectj.version>1.9.21.2</aspectj.version>
+    <aspectj.version>1.9.25.1</aspectj.version>
     <commons-lang3.version>3.18.0</commons-lang3.version>
     <reflections.version>0.10.2</reflections.version>
     <bcprov-jdk18on.version>1.80</bcprov-jdk18on.version>

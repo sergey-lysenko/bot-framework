@@ -4,9 +4,8 @@ import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.base.output.ProgressionSettings;
 import works.lysenko.base.ui.ConfigTestsEditorPanel;
 import works.lysenko.util.apis._PropEnum;
-import works.lysenko.util.apis.properties._TestProperties;
 import works.lysenko.util.func.imgs.OperationMarkers;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import java.awt.Color;
 import java.util.Collection;

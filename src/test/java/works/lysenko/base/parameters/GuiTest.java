@@ -8,7 +8,7 @@ import works.lysenko.base.Parameters;
 import works.lysenko.base.TestProperties;
 import works.lysenko.base.properties.Renderer;
 import works.lysenko.util.data.records.PropertiesMeta;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;

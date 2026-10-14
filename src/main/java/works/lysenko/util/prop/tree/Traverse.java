@@ -1,6 +1,6 @@
 package works.lysenko.util.prop.tree;
 
-import static works.lysenko.util.spec.PropEnum._TREE_TRAVERSE_EXTENSIONS;
+import static works.lysenko.util.prop.PropEnum._TREE_TRAVERSE_EXTENSIONS;
 
 /**
  * Provides cached tree traversal configuration for a test execution.

@@ -26,7 +26,7 @@ import works.lysenko.util.data.type.logr.type.LineFeed;
 import works.lysenko.util.data.type.logr.type.Log;
 import works.lysenko.util.func.core.Stacktrace;
 import works.lysenko.util.prop.core.Similarity;
-import works.lysenko.util.prop.logs.Severities;
+import works.lysenko.util.spec.Severities;
 
 import java.io.Closeable;
 import java.io.IOException;

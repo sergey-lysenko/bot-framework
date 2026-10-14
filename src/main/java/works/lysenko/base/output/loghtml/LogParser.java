@@ -14,7 +14,7 @@ import works.lysenko.base.output.loghtml.LogModels.LineStore;
 import works.lysenko.base.output.loghtml.LogModels.LogSection;
 import works.lysenko.base.output.loghtml.LogModels.TelemetryItem;
 import works.lysenko.util.func.type.Files;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import java.io.BufferedReader;
 import java.io.File;

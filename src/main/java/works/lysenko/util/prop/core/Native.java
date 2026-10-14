@@ -1,15 +1,20 @@
 package works.lysenko.util.prop.core;
 
-import static works.lysenko.util.spec.PropEnum._MOBI_NATIVE_X_RESOLUTION;
-import static works.lysenko.util.spec.PropEnum._MOBI_NATIVE_Y_RESOLUTION;
+import static works.lysenko.util.prop.PropEnum._MOBI_NATIVE_X_RESOLUTION;
+import static works.lysenko.util.prop.PropEnum._MOBI_NATIVE_Y_RESOLUTION;
 
 /**
- * Represents the native resolution properties for an unspecified component.
- * Provides static properties for the native X and Y resolutions.
+ * Native device screen resolution configuration.
  */
-@SuppressWarnings("MissingJavadoc")
 public record Native() {
 
+    /**
+     * Native screen resolution along the X (horizontal) axis.
+     */
     public static final int x = _MOBI_NATIVE_X_RESOLUTION.get();
+
+    /**
+     * Native screen resolution along the Y (vertical) axis.
+     */
     public static final int y = _MOBI_NATIVE_Y_RESOLUTION.get();
 }

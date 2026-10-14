@@ -2,7 +2,7 @@ package works.lysenko.util.prop.grid;
 
 import java.awt.Color;
 
-import static works.lysenko.util.spec.PropEnum._GRID_ACTION_MARKER_COLOUR;
+import static works.lysenko.util.prop.PropEnum._GRID_ACTION_MARKER_COLOUR;
 
 /**
  * Represents a marker with a specific colour.
@@ -10,8 +10,10 @@ import static works.lysenko.util.spec.PropEnum._GRID_ACTION_MARKER_COLOUR;
  * The colour of the marker is defined by the application properties, and defaults to a semi-transparent green if not
  * specified.
  */
-@SuppressWarnings({"MissingJavadoc", "NonFinalStaticVariableUsedInClassInitialization"})
 public record Marker() {
 
+    /**
+     * Colour used to highlight actions on grid images or screenshots.
+     */
     public static final Color colour = _GRID_ACTION_MARKER_COLOUR.get();
 }

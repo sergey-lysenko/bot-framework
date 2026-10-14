@@ -1,18 +1,26 @@
 package works.lysenko.util.prop.core;
 
-import static works.lysenko.util.spec.PropEnum._SCREEN_TO_SPAWN_DASHBOARD;
-import static works.lysenko.util.spec.PropEnum._TEST_BUNDLE_ID;
-import static works.lysenko.util.spec.PropEnum._WEBD_FORCED_PLATFORM;
+import static works.lysenko.util.prop.PropEnum._SCREEN_TO_SPAWN_DASHBOARD;
+import static works.lysenko.util.prop.PropEnum._TEST_BUNDLE_ID;
+import static works.lysenko.util.prop.PropEnum._WEBD_FORCED_PLATFORM;
 
 /**
- * Represents a class to manage start properties for the application.
- * <p>
- * Provides information about the bundle ID, forced platform, location, and dashboard screen.
+ * Startup and environment configurations for test runs.
  */
-@SuppressWarnings({"MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "NonFinalStaticVariableUsedInClassInitialization"})
 public record Start() {
 
+    /**
+     * Target application bundle identifier (e.g. for mobile testing).
+     */
     public static final String bundleId = _TEST_BUNDLE_ID.get();
-    public static final String forcedPlatform = _WEBD_FORCED_PLATFORM.get(); // Silent as null is passable
+
+    /**
+     * Override platform identifier to force (or {@code null} if default detection is used).
+     */
+    public static final String forcedPlatform = _WEBD_FORCED_PLATFORM.get();
+
+    /**
+     * Screen/monitor index on which to spawn the dashboard UI.
+     */
     public static final int dashboardScreen = _SCREEN_TO_SPAWN_DASHBOARD.get();
 }

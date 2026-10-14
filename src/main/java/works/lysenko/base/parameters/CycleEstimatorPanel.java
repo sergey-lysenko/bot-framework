@@ -12,7 +12,7 @@ import works.lysenko.util.func.core.ClassLoader;
 import works.lysenko.util.prop.tree.Include;
 import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.prop.tree.Traverse;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;

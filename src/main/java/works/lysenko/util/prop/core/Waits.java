@@ -1,17 +1,22 @@
 package works.lysenko.util.prop.core;
 
-import static works.lysenko.util.spec.PropEnum._TEST_EWAIT;
-import static works.lysenko.util.spec.PropEnum._WEBD_IWAIT;
+import static works.lysenko.util.prop.PropEnum._TEST_EWAIT;
+import static works.lysenko.util.prop.PropEnum._WEBD_IWAIT;
 
 /**
- * A1 class to manage wait properties for the application.
+ * Manages wait timeout properties for the application.
  * <p>
- * This class provides static properties for implicit and explicit wait times.
- * The wait times are retrieved from a properties instance based on specific keys.
+ * Provides implicit and explicit wait timeout durations (in seconds).
  */
-@SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "NonFinalStaticVariableUsedInClassInitialization", "MissingJavadoc"})
 public record Waits() {
 
+    /**
+     * Implicit wait timeout duration (in seconds) applied to WebDriver lookups.
+     */
     public static final int implicit = _WEBD_IWAIT.get();
+
+    /**
+     * Explicit wait timeout duration (in seconds) used for expected condition evaluations.
+     */
     public static final int explicit = _TEST_EWAIT.get();
 }

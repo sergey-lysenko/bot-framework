@@ -3,18 +3,14 @@ package works.lysenko.base.output;
 import works.lysenko.base.output.TreeHtml.Edge;
 import works.lysenko.base.output.TreeHtml.NodeData;
 import works.lysenko.base.output.TreeHtml.TreeLayout;
-import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.type.Result;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.base.output.sonifier.TreeSonifier;
 import works.lysenko.base.output.sonifier.TreeProgressionAudio;
-import works.lysenko.base.output.sonifier.TreeSonifier;
-import works.lysenko.base.output.sonifier.TreeProgressionAudio;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 import java.awt.Stroke;
 
-import javax.imageio.ImageIO;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -22,7 +18,6 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Path2D;
-import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -101,6 +96,9 @@ public final class TreeTracker {
     private static final Map<String, Integer> previousExecutions = new HashMap<>();
     private static volatile Set<_Scenario> cachedAccessibleScenarios = null;
     private static volatile TreeHtml.AccessibleContext cachedAccessibleContext = null;
+    private static volatile Map<TreeHtml.NodeData, Boolean> cachedExecutable = null;
+
+    private static volatile java.awt.TexturePaint cachedDotPaint = null;
 
     private TreeTracker() {
     }
@@ -120,6 +118,8 @@ public final class TreeTracker {
     public static void invalidateCache() {
         cachedAccessibleScenarios = null;
         cachedAccessibleContext = null;
+        cachedExecutable = null;
+        cachedDotPaint = null;
     }
 
     /**
@@ -199,7 +199,7 @@ public final class TreeTracker {
     }
 
     static String getExecutionBadgeText(final NodeData node, final int execs, final int leafTarget) {
-        final boolean isAllLeafs = (null != works.lysenko.Base.parameters) ? works.lysenko.Base.parameters.isAllLeafs() : (null != works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS.get() && (Boolean) works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS.get());
+        final boolean isAllLeafs = (null != works.lysenko.Base.parameters) ? works.lysenko.Base.parameters.isAllLeafs() : (null != PropEnum._TEST_ALL_LEAFS.get() && (Boolean) PropEnum._TEST_ALL_LEAFS.get());
         final ScenarioType type = getScenarioType(node);
         if (ScenarioType.NODE == type || ScenarioType.CORE == type || !isAllLeafs) {
             return execs + ((1 == execs) ? " exec" : " execs");
@@ -261,7 +261,7 @@ public final class TreeTracker {
         final BufferedImage image;
         try {
             final Set<String> recentNodeKeys = computeRecentNodeKeys(layout);
-            logDebug(String.format("Rendering tree progression canvas (%d nodes, %d edges)...", layout.nodes().size(), layout.edges().size()));
+            logDebug(String.format("Canvas (%d nodes, %d edges)...", layout.nodes().size(), layout.edges().size()));
             final boolean isCold = (null == cachedAccessibleScenarios);
             final long tAccStart = System.currentTimeMillis();
             if (isCold) {
@@ -307,7 +307,7 @@ public final class TreeTracker {
                 }
             }
             final long duration = System.currentTimeMillis() - t0;
-            logDebug(String.format("Captured tree progression frame #%d (%dx%d) in %d ms", frameIndex, image.getWidth(), image.getHeight(), duration));
+            logDebug(String.format("Frame #%d (%dx%d) in %d ms", frameIndex, image.getWidth(), image.getHeight(), duration));
         });
     }
 
@@ -710,7 +710,14 @@ public final class TreeTracker {
 
         final long tRenderStart = System.currentTimeMillis();
         final TreeHtml.AccessibleContext ctx = (null != accessibleCtx) ? accessibleCtx : new TreeHtml.AccessibleContext(accessibleScenarios);
-        final Map<NodeData, Boolean> executableCache = new HashMap<>();
+        
+        Map<NodeData, Boolean> execCache = cachedExecutable;
+        if (execCache == null) {
+            execCache = new HashMap<>();
+            cachedExecutable = execCache;
+        }
+        final Map<NodeData, Boolean> executableCache = execCache;
+        
         final Map<NodeData, Boolean> childFailureCache = new HashMap<>();
 
         int maxCol = 0;
@@ -778,17 +785,21 @@ public final class TreeTracker {
         g.setColor(BG_COLOR);
         g.fillRect(0, 0, canvasW, canvasH);
 
-        // Dot grid pattern using TexturePaint tile
-        final BufferedImage dotTile = new BufferedImage(24, 24, BufferedImage.TYPE_INT_RGB);
-        final Graphics2D tileG = dotTile.createGraphics();
-        tileG.setColor(BG_COLOR);
-        tileG.fillRect(0, 0, 24, 24);
-        tileG.setColor(GRID_DOT);
-        tileG.fillRect(0, 0, 1, 1);
-        tileG.dispose();
+        java.awt.TexturePaint dotPaint = cachedDotPaint;
+        if (dotPaint == null) {
+            // Dot grid pattern using TexturePaint tile
+            final BufferedImage dotTile = new BufferedImage(24, 24, BufferedImage.TYPE_INT_RGB);
+            final Graphics2D tileG = dotTile.createGraphics();
+            tileG.setColor(BG_COLOR);
+            tileG.fillRect(0, 0, 24, 24);
+            tileG.setColor(GRID_DOT);
+            tileG.fillRect(0, 0, 1, 1);
+            tileG.dispose();
 
-        final java.awt.TexturePaint dotPaint = new java.awt.TexturePaint(dotTile,
-                new java.awt.geom.Rectangle2D.Double(0, HEADER_HEIGHT, 24, 24));
+            dotPaint = new java.awt.TexturePaint(dotTile,
+                    new java.awt.geom.Rectangle2D.Double(0, HEADER_HEIGHT, 24, 24));
+            cachedDotPaint = dotPaint;
+        }
         g.setPaint(dotPaint);
         g.fillRect(0, HEADER_HEIGHT, canvasW, canvasH - HEADER_HEIGHT);
 
@@ -832,7 +843,7 @@ public final class TreeTracker {
 
         g.dispose();
         final long tTotal = System.currentTimeMillis() - tRenderStart;
-        logDebug(String.format("Rendered tree progression canvas (%dx%d) in %d ms (init: %d ms, edges: %d ms, nodes: %d ms)",
+        logDebug(String.format("Canvas (%dx%d) in %d ms (init: %d ms, edges: %d ms, nodes: %d ms)",
                 canvasW, canvasH, tTotal, tInit, tEdges, tNodes));
         return img;
     }
@@ -926,156 +937,6 @@ public final class TreeTracker {
         }
     }
 
-    private static void drawNode(
-            final Graphics2D g,
-            final NodeData n,
-            final int target,
-            final double maxLeafOverRatio,
-            final Font fontLabel,
-            final Font fontBadge,
-            final boolean isRecent,
-            final Set<_Scenario> accessibleScenarios) {
-
-        final int x = n.col() * COL_WIDTH + PADDING_X;
-        final int y = (int) Math.round(n.row() * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y);
-        final _Result res = n.result();
-        final int execs = (null != res) ? res.getExecutions() : 0;
-        final int eventCount = (null != res && null != res.getEvents()) ? res.getEvents().size() : 0;
-        final int scenarioTarget = getTargetExecutions(n, target);
-        final int safeTarget = Math.max(1, scenarioTarget);
-        final double overRatio = (ScenarioType.LEAF == getScenarioType(n))
-                ? getLeafOverExecutionRatio(n, target)
-                : 0.0;
-
-        final boolean failure = TreeHtml.hasFailure(n);
-        final boolean childFailure = !failure && TreeHtml.hasChildFailure(n);
-        final Color progressColor = failure ? RED_FAILED : (childFailure ? INDIGO_UPSET : getScenarioProgressColor(n, target, maxLeafOverRatio));
-        final boolean theoreticallyExecutable = isTheoreticallyExecutable(n, accessibleScenarios);
-        final Color cardFill;
-        final Color borderColor;
-        final Stroke borderStroke;
-
-        if (failure) {
-            cardFill = RED_CARD_FILL;
-            borderColor = RED_FAILED;
-            borderStroke = new BasicStroke(2.2f);
-        } else if (isRecent) {
-            cardFill = (overRatio > 0.0) ? progressColor : new Color(0x16, 0x3A, 0x58);
-            borderColor = ACCENT_CYAN;
-            borderStroke = new BasicStroke(2.8f);
-        } else if (childFailure) {
-            cardFill = UPSET_CARD_FILL;
-            borderColor = INDIGO_UPSET;
-            borderStroke = DASHED_UPSET_STROKE;
-        } else if (execs == 0) {
-            if (!theoreticallyExecutable) {
-                cardFill = EXCLUDED_CARD;
-                borderColor = EXCLUDED_BORDER;
-                borderStroke = DASHED_BORDER_STROKE;
-            } else {
-                cardFill = UNVISITED_CARD;
-                borderColor = UNVISITED_BORDER;
-                borderStroke = new BasicStroke(1.2f);
-            }
-        } else if (overRatio > 0.0) {
-            cardFill = progressColor;
-            borderColor = (eventCount > 0) ? WARNING_AMBER : progressColor;
-            borderStroke = new BasicStroke(1.8f);
-        } else {
-            final int r = (int) (UNVISITED_CARD.getRed() * 0.7 + progressColor.getRed() * 0.3);
-            final int gr = (int) (UNVISITED_CARD.getGreen() * 0.7 + progressColor.getGreen() * 0.3);
-            final int b = (int) (UNVISITED_CARD.getBlue() * 0.7 + progressColor.getBlue() * 0.3);
-            cardFill = new Color(r, gr, b);
-            borderColor = (eventCount > 0) ? WARNING_AMBER : progressColor;
-            borderStroke = new BasicStroke(1.8f);
-        }
-
-        // Draw card background
-        final RoundRectangle2D.Float rect = new RoundRectangle2D.Float(x, y, CARD_WIDTH, CARD_HEIGHT, 10, 10);
-        g.setColor(cardFill);
-        g.fill(rect);
-
-        // Draw card border
-        g.setStroke(borderStroke);
-        g.setColor(borderColor);
-        g.draw(rect);
-
-        // Progress bar along bottom of card (if visited)
-        if (execs > 0) {
-            final int barX = x + 8;
-            final int barY = y + CARD_HEIGHT - 6;
-            final int barW = CARD_WIDTH - 16;
-            final int barH = 3;
-
-            // Track background
-            g.setColor(new Color(51, 65, 85, 160));
-            g.fillRoundRect(barX, barY, barW, barH, 2, 2);
-
-            // Fill
-            final double fillRatio = (0 == scenarioTarget)
-                    ? 1.0
-                    : Math.min(1.0, (double) execs / (double) safeTarget);
-            final int filledW = Math.max(4, (int) Math.round(barW * fillRatio));
-            g.setColor(progressColor);
-            g.fillRoundRect(barX, barY, filledW, barH, 2, 2);
-        }
-
-        // Right pill badge: e.g. "0/5", "3/5", "✓ 5/5", "OFF"
-        g.setFont(fontBadge);
-        final FontMetrics fmBadge = g.getFontMetrics();
-        final String badgeText = (execs == 0 && !theoreticallyExecutable)
-                ? "OFF"
-                : getExecutionBadgeText(n, execs, target);
-        final Color badgeFg = (execs == 0 && !theoreticallyExecutable)
-                ? TEXT_EXCLUDED
-                : (childFailure)
-                        ? INDIGO_UPSET
-                        : (execs == 0) ? TEXT_MUTED : progressColor;
-
-        final int badgeTextW = fmBadge.stringWidth(badgeText);
-        final int pillW = badgeTextW + 12;
-        final int pillH = 18;
-        final int pillX = x + CARD_WIDTH - pillW - 8;
-        final int pillY = y + 10;
-
-        // Pill bg
-        g.setColor(new Color(15, 23, 42, (execs == 0 && !theoreticallyExecutable) ? 140 : 220));
-        g.fillRoundRect(pillX, pillY, pillW, pillH, 6, 6);
-        g.setStroke((execs == 0 && !theoreticallyExecutable) ? DASHED_BORDER_STROKE : (childFailure ? DASHED_UPSET_STROKE : new BasicStroke(1.0f)));
-        g.setColor(borderColor);
-        g.drawRoundRect(pillX, pillY, pillW, pillH, 6, 6);
-
-        // Pill text
-        g.setColor(badgeFg);
-        g.drawString(badgeText, pillX + 6, pillY + 13);
-
-        // Warning or failure indicator
-        if (failure) {
-            g.setColor(RED_FAILED);
-            g.fillOval(pillX - 10, y + 15, 6, 6);
-        } else if (childFailure) {
-            g.setColor(INDIGO_UPSET);
-            g.fillOval(pillX - 10, y + 15, 6, 6);
-        } else if (eventCount > 0) {
-            g.setColor(WARNING_AMBER);
-            g.fillOval(pillX - 10, y + 15, 6, 6);
-        }
-
-        // Node label
-        g.setFont(fontLabel);
-        final FontMetrics fmLabel = g.getFontMetrics();
-        final int maxLabelW = pillX - x - 18;
-        String label = n.label();
-        if (fmLabel.stringWidth(label) > maxLabelW) {
-            while (label.length() > 3 && fmLabel.stringWidth(label + "...") > maxLabelW) {
-                label = label.substring(0, label.length() - 1);
-            }
-            label = label + "...";
-        }
-        g.setColor((overRatio > 0.0) ? TEXT_DARK : (execs > 0) ? TEXT_WHITE : (!theoreticallyExecutable ? TEXT_EXCLUDED : TEXT_MUTED));
-        g.drawString(label, x + 12, y + 24);
-    }
-
     private static ScenarioType getScenarioType(final NodeData node) {
         if (null != node.result() && null != node.result().getScenarioType()) {
             return node.result().getScenarioType();
@@ -1099,7 +960,7 @@ public final class TreeTracker {
             final int target,
             final double maxLeafOverRatio) {
         final int execs = (null != node.result()) ? node.result().getExecutions() : 0;
-        final boolean isAllLeafs = (null != works.lysenko.Base.parameters) ? works.lysenko.Base.parameters.isAllLeafs() : (null != works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS.get() && (Boolean) works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS.get());
+        final boolean isAllLeafs = (null != works.lysenko.Base.parameters) ? works.lysenko.Base.parameters.isAllLeafs() : (null != PropEnum._TEST_ALL_LEAFS.get() && (Boolean) PropEnum._TEST_ALL_LEAFS.get());
         final ScenarioType type = getScenarioType(node);
         if (ScenarioType.LEAF == type && isAllLeafs) {
             final double overRatio = getLeafOverExecutionRatio(node, target);

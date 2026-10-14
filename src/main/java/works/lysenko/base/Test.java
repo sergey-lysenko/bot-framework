@@ -6,12 +6,11 @@ import works.lysenko.util.apis.core._Status;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
 import works.lysenko.util.apis.test.*;
 import works.lysenko.util.data.records.test.Workflow;
-import works.lysenko.util.func.core.ClassLoader;
-import works.lysenko.util.prop.core.Resilient;
+import works.lysenko.util.prop.core.Mode;
 import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.prop.tree.Traverse;
 import works.lysenko.util.spec.Level;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import static works.lysenko.Base.*;
 import static works.lysenko.util.chrs.__.IN;
@@ -234,9 +233,9 @@ public class Test implements _Test {
     @SuppressWarnings({"MethodCallInLoopCondition", "ErrorNotRethrown"})
     private void repeat() throws SafeguardException {
 
-        if (Resilient.mode() || !core.getResults().areFailingEvents()) {
+        if (Mode.resilient || !core.getResults().areFailingEvents()) {
             try {
-                while (!core.getStopFlag() && (Resilient.mode() || !core.getResults().areFailingEvents()) && isNotExhausted() && !wasStopRequestedAndPerformed())
+                while (!core.getStopFlag() && (Mode.resilient || !core.getResults().areFailingEvents()) && isNotExhausted() && !wasStopRequestedAndPerformed())
                     repeater.run();
             } catch (final Error e) { // Failed assertions, no rethrow
                 _Test.printThrowable(e);

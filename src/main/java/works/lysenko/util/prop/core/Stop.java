@@ -2,15 +2,15 @@ package works.lysenko.util.prop.core;
 
 import works.lysenko.util.data.enums.Severity;
 
-import static works.lysenko.util.spec.PropEnum._TEST_FAIL_BY_EVENT_OF_SEVERITY;
+import static works.lysenko.util.prop.PropEnum._TEST_FAIL_BY_EVENT_OF_SEVERITY;
 
 /**
- * Represents a class to manage stop properties for the application.
- * <p>
- * Provides the severity level at which the application should stop.
+ * Execution termination threshold configuration.
  */
-@SuppressWarnings({"NonFinalStaticVariableUsedInClassInitialization", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass"})
 public record Stop() {
 
+    /**
+     * Minimum event severity level that will trigger immediate termination of the test run.
+     */
     public static final Severity atSeverity = _TEST_FAIL_BY_EVENT_OF_SEVERITY.get();
 }

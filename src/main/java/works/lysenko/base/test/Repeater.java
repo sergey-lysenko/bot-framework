@@ -13,12 +13,10 @@ import works.lysenko.util.apis.test._Repeater;
 import works.lysenko.util.apis.test._Stat;
 import works.lysenko.util.data.enums.Ansi;
 import works.lysenko.util.data.enums.Severity;
-import works.lysenko.util.prop.core.Recreate;
-import works.lysenko.util.prop.core.Resilient;
-import works.lysenko.util.prop.core.Test;
+import works.lysenko.util.prop.core.*;
 import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.spec.Level;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,8 +61,9 @@ import static works.lysenko.util.lang.word.P.PERSISTING;
 import static works.lysenko.util.lang.word.S.*;
 import static works.lysenko.util.lang.word.T.TESTS;
 import static works.lysenko.util.lang.word.T.TOOK;
+import static works.lysenko.util.prop.core.Mode.*;
 import static works.lysenko.util.prop.core.Safeguard.historyDepth;
-import static works.lysenko.util.spec.PropEnum._TEST_TESTS;
+import static works.lysenko.util.prop.PropEnum._TEST_TESTS;
 import static works.lysenko.util.spec.Symbols._BULLT_;
 import static works.lysenko.util.spec.Symbols._COMMA_;
 import static works.lysenko.util.spec.Symbols._SLASH_;
@@ -400,7 +399,7 @@ public class Repeater implements _Repeater {
      */
     private void stopIfFailingEvents() {
 
-        if (!Resilient.mode() && !core.getStopFlag() && core.getResults().areFailingEvents()) {
+        if (!resilient && !core.getStopFlag() && core.getResults().areFailingEvents()) {
             final Severity severity = core.getResults().getGreatestSeverity();
             final String explanation = (null == severity) ? DOTS : b(DUE_TO, severity.type().getString(), EVENT);
             log(rb(b(c(STOPPING), explanation)));

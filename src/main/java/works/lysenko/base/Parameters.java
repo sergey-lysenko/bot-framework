@@ -7,6 +7,7 @@ import works.lysenko.util.apis.parameters._GUI;
 import works.lysenko.util.apis.parameters._TestParameters;
 import works.lysenko.util.data.enums.ExecutionParameter;
 import works.lysenko.util.data.enums.Platform;
+import works.lysenko.util.prop.*;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -174,7 +175,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         if (getAllLeafsCount() > 1) {
             return true;
         }
-        return Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS.get());
+        return Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
     }
 
     @Override
@@ -187,7 +188,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
             } catch (final NumberFormatException ignored) {
             }
         }
-        final Integer prop = works.lysenko.util.spec.PropEnum._TEST_ALL_LEAFS_COUNT.get();
+        final Integer prop = PropEnum._TEST_ALL_LEAFS_COUNT.get();
         return isNotNull(prop) ? Math.max(1, prop) : 1;
     }
 
@@ -198,7 +199,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         if (isNotNull(val) && !val.isEmpty()) {
             return Boolean.parseBoolean(val);
         }
-        return Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TEST_HEADLESS.get());
+        return Boolean.TRUE.equals(PropEnum._TEST_HEADLESS.get());
     }
 
     public boolean isHideOffBranches() {
@@ -207,7 +208,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         if (isNotNull(val) && !val.isEmpty()) {
             return Boolean.parseBoolean(val);
         }
-        return Boolean.TRUE.equals(works.lysenko.util.spec.PropEnum._TREE_HIDE_OFF_BRANCHES.get());
+        return Boolean.TRUE.equals(PropEnum._TREE_HIDE_OFF_BRANCHES.get());
     }
 
     /**

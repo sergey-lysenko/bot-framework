@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import works.lysenko.Base;
 import works.lysenko.util.spec.Layout;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import java.io.File;
 import java.io.IOException;

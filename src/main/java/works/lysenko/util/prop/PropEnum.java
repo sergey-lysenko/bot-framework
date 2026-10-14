@@ -1,4 +1,4 @@
-package works.lysenko.util.spec;
+package works.lysenko.util.prop;
 
 import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.util.apis._PropEnum;

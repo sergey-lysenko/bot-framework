@@ -3,7 +3,7 @@ package works.lysenko.base.output;
 import org.w3c.dom.NodeList;
 import works.lysenko.tree.base.Mono;
 import works.lysenko.util.apis.scenario._Scenario;
-import works.lysenko.util.spec.PropEnum;
+import works.lysenko.util.prop.PropEnum;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;

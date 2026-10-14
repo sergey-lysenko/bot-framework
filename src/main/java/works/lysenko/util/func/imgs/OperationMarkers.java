@@ -1,14 +1,12 @@
 package works.lysenko.util.func.imgs;
 
 import org.openqa.selenium.Rectangle;
+import works.lysenko.util.prop.*;
 
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.Optional;
-
-import static works.lysenko.Base.parameters;
-import static works.lysenko.util.func.type.Objects.isNotNull;
 
 /**
  * Registry and selector for operation marker variants (similar to TreeProgressionAudio / Sonifier).
@@ -50,7 +48,7 @@ public record OperationMarkers() {
      * @return the active OperationMarker instance
      */
     public static OperationMarker current() {
-        final String mode = works.lysenko.util.spec.PropEnum._SCREENSHOTS_MARKER_VARIANT.get();
+        final String mode = PropEnum._SCREENSHOTS_MARKER_VARIANT.get();
         return find(mode).orElse(DEFAULT_MARKER);
     }
 

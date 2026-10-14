@@ -4,12 +4,17 @@ import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.util.data.records.RangedMargin;
 
 import static works.lysenko.util.data.records.RangedMargin.rm;
-import static works.lysenko.util.spec.PropEnum.*;
+import static works.lysenko.util.prop.PropEnum._GRID_ALLOWED_MARGIN_SEVERITY_REDUCTION;
+import static works.lysenko.util.prop.PropEnum._GRID_ALLOWED_OTHER_SEVERITY_REDUCTION;
+import static works.lysenko.util.prop.PropEnum._GRID_DEFAULT_COLOUR_RANGED_MARGIN;
+import static works.lysenko.util.prop.PropEnum._GRID_DEFAULT_HSV_MARGIN;
+import static works.lysenko.util.prop.PropEnum._GRID_DEFAULT_POLYCHROMY_MARGIN;
+import static works.lysenko.util.prop.PropEnum._GRID_EMPTY_GRID_VALIDATION_ALLOWED;
 
 /**
- * Representation of the allowed deviation for colour values during grid image validation
+ * Representation of the allowed deviation for colour values during grid image validation.
  */
-@SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "NonFinalStaticVariableUsedInClassInitialization"})
+@SuppressWarnings("StaticMethodOnlyUsedInOneClass")
 public record Allowed() {
 
     /**
@@ -38,7 +43,7 @@ public record Allowed() {
     public static final Fraction defaultHSVmargin = _GRID_DEFAULT_HSV_MARGIN.get();
 
     /**
-     * A1 boolean flag indicating whether empty grid validation is allowed.
+     * A boolean flag indicating whether empty grid validation is allowed.
      * <p>
      * This static final field retrieves its value from the application properties
      * and is used to determine if grid validation should be bypassed. When set
