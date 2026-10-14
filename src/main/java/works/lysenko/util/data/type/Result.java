@@ -90,7 +90,7 @@ public class Result implements _Result {
                     final works.lysenko.util.data.enums.Severity sev = event.severity();
                     if (sev == works.lysenko.util.data.enums.Severity.S0 || sev == works.lysenko.util.data.enums.Severity.S1) {
                         updateStatus(ExecutionStatus.FAILED);
-                    } else if (sev == works.lysenko.util.data.enums.Severity.S2 || sev == works.lysenko.util.data.enums.Severity.S3) {
+                    } else if (sev == works.lysenko.util.data.enums.Severity.S2) {
                         updateStatus(ExecutionStatus.WARNING);
                     }
                 }
@@ -122,7 +122,7 @@ public class Result implements _Result {
             final works.lysenko.util.data.enums.Severity sev = event.severity();
             if (sev == works.lysenko.util.data.enums.Severity.S0 || sev == works.lysenko.util.data.enums.Severity.S1) {
                 updateStatus(ExecutionStatus.FAILED);
-            } else if (sev == works.lysenko.util.data.enums.Severity.S2 || sev == works.lysenko.util.data.enums.Severity.S3) {
+            } else if (sev == works.lysenko.util.data.enums.Severity.S2) {
                 updateStatus(ExecutionStatus.WARNING);
             }
         }

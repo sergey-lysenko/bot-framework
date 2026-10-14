@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import works.lysenko.util.apis.scenario._Scenario;
+import works.lysenko.util.data.enums.ExecutionStatus;
 import works.lysenko.util.data.enums.ScenarioType;
 
 public class VisualNodeResolver {
@@ -67,6 +68,8 @@ public class VisualNodeResolver {
         boolean isDashed = false;
         String statusName;
 
+        final boolean warning = (node.result() != null && node.result().status() == ExecutionStatus.WARNING);
+
         if (failure) {
             cardFill = theme.failedBg();
             borderColor = theme.failedBorder();
@@ -76,7 +79,7 @@ public class VisualNodeResolver {
             cardFill = (overRatio > 0.0) ? progressColor : new Color(0x16, 0x3A, 0x58);
             borderColor = new Color(0x38, 0xBD, 0xF8); // ACCENT_CYAN
             strokeWidth = 2.8f;
-            statusName = childFailure ? "UPSET" : ((execs > 0) ? ((eventCount > 0) ? "WARNING" : "PASSED") : (executable ? "UNVISITED" : "NON_EXECUTABLE"));
+            statusName = childFailure ? "UPSET" : ((execs > 0) ? (warning ? "WARNING" : "PASSED") : (executable ? "UNVISITED" : "NON_EXECUTABLE"));
         } else if (childFailure) {
             cardFill = theme.upsetBg();
             borderColor = theme.upsetBorder();
@@ -96,17 +99,17 @@ public class VisualNodeResolver {
             }
         } else if (overRatio > 0.0) {
             cardFill = progressColor;
-            borderColor = (eventCount > 0) ? theme.warningBorder() : progressColor;
+            borderColor = warning ? theme.warningBorder() : progressColor;
             strokeWidth = 1.8f;
-            statusName = (eventCount > 0) ? "WARNING" : "PASSED";
+            statusName = warning ? "WARNING" : "PASSED";
         } else {
             final int r = (int) (theme.unvisitedBg().getRed() * 0.7 + progressColor.getRed() * 0.3);
             final int gr = (int) (theme.unvisitedBg().getGreen() * 0.7 + progressColor.getGreen() * 0.3);
             final int b = (int) (theme.unvisitedBg().getBlue() * 0.7 + progressColor.getBlue() * 0.3);
             cardFill = new Color(r, gr, b);
-            borderColor = (eventCount > 0) ? theme.warningBorder() : progressColor;
+            borderColor = warning ? theme.warningBorder() : progressColor;
             strokeWidth = 1.8f;
-            statusName = (eventCount > 0) ? "WARNING" : "PASSED";
+            statusName = warning ? "WARNING" : "PASSED";
         }
 
         boolean hasKnownIssues = node.knownIssues() != null && !node.knownIssues().isEmpty();

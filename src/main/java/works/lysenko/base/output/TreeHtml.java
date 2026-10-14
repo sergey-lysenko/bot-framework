@@ -9,6 +9,7 @@ import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Node;
 import works.lysenko.util.apis.scenario._Scenario;
+import works.lysenko.util.data.enums.ExecutionStatus;
 import works.lysenko.util.data.type.Result;
 import works.lysenko.util.prop.*;
 import works.lysenko.util.prop.tree.*;
@@ -957,7 +958,7 @@ public final class TreeHtml {
 
             final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
             final int fromExecs = (null != e.from().result()) ? e.from().result().getExecutions() : 0;
-            final int toEvents = (null != e.to().result() && null != e.to().result().getEvents()) ? e.to().result().getEvents().size() : 0;
+            final boolean toWarning = (null != e.to().result() && e.to().result().status() == ExecutionStatus.WARNING);
             final boolean toFailure = hasFailure(e.to());
             final boolean toChildFailure = hasChildFailure(e.to());
             final boolean toTheoreticallyExecutable = isTheoreticallyExecutable(e.to(), accessibleScenarios);
@@ -968,7 +969,7 @@ public final class TreeHtml {
                     edgeClass = "connector failed";
                 } else if (toChildFailure) {
                     edgeClass = "connector child_failed";
-                } else if (toEvents > 0) {
+                } else if (toWarning) {
                     edgeClass = "connector warning";
                 } else {
                     edgeClass = "connector visited";

@@ -3,6 +3,7 @@ package works.lysenko.base.output;
 import works.lysenko.base.output.TreeHtml.Edge;
 import works.lysenko.base.output.TreeHtml.NodeData;
 import works.lysenko.base.output.TreeHtml.TreeLayout;
+import works.lysenko.util.data.enums.ExecutionStatus;
 import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.type.Result;
 import works.lysenko.util.apis.scenario._Scenario;
@@ -890,9 +891,7 @@ public final class TreeTracker {
 
             final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
             final int fromExecs = (null != e.from().result()) ? e.from().result().getExecutions() : 0;
-            final int toEvents = (null != e.to().result() && null != e.to().result().getEvents())
-                    ? e.to().result().getEvents().size()
-                    : 0;
+            final boolean toWarning = (null != e.to().result() && e.to().result().status() == ExecutionStatus.WARNING);
 
             final Path2D.Double path = new Path2D.Double();
             path.moveTo(startX, startY);
@@ -918,7 +917,7 @@ public final class TreeTracker {
                 g.setStroke(DASHED_UPSET_STROKE);
                 g.draw(path);
             } else if (toExecs > 0 && fromExecs > 0) {
-                if (toEvents > 0) {
+                if (toWarning) {
                     g.setColor(WARNING_AMBER);
                 } else {
                     g.setColor(getScenarioProgressColor(e.to(), target, maxLeafOverRatio));
