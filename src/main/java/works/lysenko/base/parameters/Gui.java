@@ -90,6 +90,8 @@ public class Gui implements _GUI {
     private JButton properties = null;
     private List<JTextField> aParams = null;
     private Boolean lastAllLeafsState = null;
+    private boolean isInitializingGui = false;
+    private String lastSelectedSuite = null;
 
     /**
      * Represents a graphical user interface for parameter input and user interaction.
@@ -237,6 +239,7 @@ public class Gui implements _GUI {
      * Adds the standard parameters to the Parameters object.
      */
     public void addStandardParameters() {
+        isInitializingGui = true;
 
         test = addFromFiles(SUITE.name(), _TESTS_, TEST_PROPERTIES_EXTENSION);
         if (isNull(test.getSelectedItem())) {
@@ -265,9 +268,6 @@ public class Gui implements _GUI {
                 Objects.toString(PropEnum._TEST_TESTS.get(), EMPTY)
         );
         testsCount = new JTextField(defaultTests, WIDTH);
-        if (isNull(parameters.getTests()) || parameters.getTests().isBlank()) {
-            updateTestsFromSelectedTestConfiguration();
-        }
 
         forbidOverexecution = createCheckBox(parameters.getForbidOverexecution(), PropEnum._TREE_FORBID_OVEREXECUTION);
         resilientMode = createCheckBox(parameters.getResilientMode(), PropEnum._TEST_RESILIENT_MODE);
@@ -282,6 +282,9 @@ public class Gui implements _GUI {
 
         initCyclesComponents();
         initPropertiesComponents();
+
+        lastSelectedSuite = (null != test && null != test.getSelectedItem()) ? test.getSelectedItem().toString() : null;
+        isInitializingGui = false;
     }
 
     /**
@@ -298,91 +301,81 @@ public class Gui implements _GUI {
                 ? works.lysenko.Base.properties
                 : new TestProperties();
         final Map<String, String> configProps = tp.getOriginalConfigProperties(testName);
+        if (isNull(configProps) || configProps.isEmpty()) return;
 
         if (isNotNull(testsCount)) {
-            final String testsVal = (isNotNull(configProps))
-                    ? configProps.get(PropEnum._TEST_TESTS.getPropertyName())
-                    : null;
-            testsCount.setText((null == testsVal) ? EMPTY : testsVal);
+            final String testsVal = configProps.get(PropEnum._TEST_TESTS.getPropertyName());
+            if (isNotNull(testsVal) && !testsVal.isBlank()) {
+                testsCount.setText(testsVal.trim());
+            }
         }
 
         if (isNotNull(headless)) {
-            final String val = (isNotNull(configProps)) ? configProps.get(PropEnum._TEST_HEADLESS.getPropertyName()) : null;
-            if (isNotNull(val)) {
-                headless.setSelected(Boolean.parseBoolean(val));
-            } else {
-                headless.setSelected(Boolean.parseBoolean(parameters.getProperty(HEADLESS.name())));
+            final String val = configProps.get(PropEnum._TEST_HEADLESS.getPropertyName());
+            if (isNotNull(val) && !val.isBlank()) {
+                headless.setSelected(Boolean.parseBoolean(val.trim()));
             }
         }
 
         if (isNotNull(hideOffBranches)) {
-            final String val = (isNotNull(configProps)) ? configProps.get(PropEnum._TREE_HIDE_OFF_BRANCHES.getPropertyName()) : null;
-            if (isNotNull(val)) {
-                hideOffBranches.setSelected(Boolean.parseBoolean(val));
-            } else {
-                hideOffBranches.setSelected(Boolean.parseBoolean(parameters.getProperty(HIDE_OFF_BRANCHES.name())));
+            final String val = configProps.get(PropEnum._TREE_HIDE_OFF_BRANCHES.getPropertyName());
+            if (isNotNull(val) && !val.isBlank()) {
+                hideOffBranches.setSelected(Boolean.parseBoolean(val.trim()));
             }
         }
 
         if (isNotNull(allLeafs)) {
-            final String val = (isNotNull(configProps)) ? configProps.get(PropEnum._TEST_ALL_LEAFS.getPropertyName()) : null;
-            if (isNotNull(val)) {
-                allLeafs.setSelected(Boolean.parseBoolean(val));
-            } else {
-                allLeafs.setSelected(parameters.isAllLeafs());
+            final String val = configProps.get(PropEnum._TEST_ALL_LEAFS.getPropertyName());
+            if (isNotNull(val) && !val.isBlank()) {
+                allLeafs.setSelected(Boolean.parseBoolean(val.trim()));
             }
         }
 
         if (isNotNull(allLeafsCount)) {
-            final String val = (isNotNull(configProps)) ? configProps.get(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName()) : null;
-            if (isNotNull(val)) {
-                allLeafsCount.setText(val);
-            } else {
-                allLeafsCount.setText(String.valueOf(parameters.getAllLeafsCount()));
+            final String val = configProps.get(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName());
+            if (isNotNull(val) && !val.isBlank()) {
+                allLeafsCount.setText(val.trim());
             }
         }
 
         if (isNotNull(forbidOverexecution)) {
-            final String val = (isNotNull(configProps)) ? configProps.get(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName()) : null;
-            if (isNotNull(val)) {
-                forbidOverexecution.setSelected(Boolean.parseBoolean(val));
-            } else {
-                final Boolean pVal = parameters.getForbidOverexecution();
-                forbidOverexecution.setSelected((pVal != null) ? pVal : Boolean.TRUE.equals(PropEnum._TREE_FORBID_OVEREXECUTION.get()));
+            final String val = configProps.get(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName());
+            if (isNotNull(val) && !val.isBlank()) {
+                forbidOverexecution.setSelected(Boolean.parseBoolean(val.trim()));
             }
         }
 
         if (isNotNull(resilientMode)) {
-            final String val = (isNotNull(configProps)) ? configProps.get(PropEnum._TEST_RESILIENT_MODE.getPropertyName()) : null;
-            if (isNotNull(val)) {
-                resilientMode.setSelected(Boolean.parseBoolean(val));
-            } else {
-                final Boolean pVal = parameters.getResilientMode();
-                resilientMode.setSelected((pVal != null) ? pVal : Boolean.TRUE.equals(PropEnum._TEST_RESILIENT_MODE.get()));
+            final String val = configProps.get(PropEnum._TEST_RESILIENT_MODE.getPropertyName());
+            if (isNotNull(val) && !val.isBlank()) {
+                resilientMode.setSelected(Boolean.parseBoolean(val.trim()));
             }
         }
 
         if (isNotNull(completionWeight)) {
-            final String val = (isNotNull(configProps)) ? configProps.get(PropEnum._TREE_COMPLETION_WEIGHT.getPropertyName()) : null;
-            if (isNotNull(val)) {
-                completionWeight.setText(val);
-            } else {
-                completionWeight.setText(defaultIfEmpty(parameters.getCompletionWeight(), PropEnum._TREE_COMPLETION_WEIGHT.defaultValue()));
+            final String val = configProps.get(PropEnum._TREE_COMPLETION_WEIGHT.getPropertyName());
+            if (isNotNull(val) && !val.isBlank()) {
+                completionWeight.setText(val.trim());
             }
         }
 
         if (isNotNull(traverseExtensions)) {
-            final String val = (isNotNull(configProps)) ? configProps.get(PropEnum._TREE_TRAVERSE_EXTENSIONS.getPropertyName()) : null;
-            if (isNotNull(val)) {
-                traverseExtensions.setSelected(Boolean.parseBoolean(val));
-            } else {
-                final Boolean pVal = parameters.getTraverseExtensions();
-                traverseExtensions.setSelected((pVal != null) ? pVal : Boolean.TRUE.equals(PropEnum._TREE_TRAVERSE_EXTENSIONS.get()));
+            final String val = configProps.get(PropEnum._TREE_TRAVERSE_EXTENSIONS.getPropertyName());
+            if (isNotNull(val) && !val.isBlank()) {
+                traverseExtensions.setSelected(Boolean.parseBoolean(val.trim()));
             }
         }
     }
 
     private void updateTestsFromSelectedTestConfiguration() {
+        if (isInitializingGui) return;
+        if (isNull(test)) return;
+        final Object selected = test.getSelectedItem();
+        if (isNull(selected)) return;
+        final String currentSuite = selected.toString();
+        if (Objects.equals(currentSuite, lastSelectedSuite)) return;
+        lastSelectedSuite = currentSuite;
+
         updateParametersFromSelectedTestConfiguration();
     }
 
