@@ -46,7 +46,7 @@ public class ConfigTestsEditorPanel extends JPanel {
     }
 
     public enum FileCategory {
-        ROOT_DIR, CATEGORY_DIR, GLOBAL_CONFIG, CONFIG_PART, TEST_SUITE, TEST_PART
+        ROOT_DIR, CATEGORY_DIR, GLOBAL_CONFIG, CONFIG_PART, TEST_SUITE, SUITE_PART, TEST_PART
     }
 
     public record FileNodeObject(String displayName, Path path, FileCategory category, boolean deletable) {
@@ -467,7 +467,7 @@ public class ConfigTestsEditorPanel extends JPanel {
                     stream.filter(p -> p.toString().endsWith(".part") || p.toString().endsWith(SUITE_PROPERTIES_EXTENSION) || p.toString().endsWith(TEST_PROPERTIES_EXTENSION))
                             .sorted()
                             .forEach(p -> suitePartsFolder.add(new DefaultMutableTreeNode(
-                                    new FileNodeObject(p.getFileName().toString(), p, FileCategory.TEST_PART, true)
+                                    new FileNodeObject(p.getFileName().toString(), p, FileCategory.SUITE_PART, true)
                             )));
                 } catch (final Exception ignored) {}
                 suitesFolder.add(suitePartsFolder);
@@ -615,6 +615,12 @@ public class ConfigTestsEditorPanel extends JPanel {
                 baseBadge = "TEST SUITE";
                 activeFileBadge.setBackground(new Color(0xFE, 0xF3, 0xC7));
                 activeFileBadge.setForeground(new Color(0x92, 0x40, 0x0E));
+            }
+            case SUITE_PART -> {
+                activeFileBadge.setText("SUITE PARTIAL");
+                activeFileBadge.setBackground(modified ? new Color(0xFE, 0xF3, 0xC7) : new Color(0xEE, 0xF2, 0xFF));
+                activeFileBadge.setForeground(modified ? new Color(0x92, 0x40, 0x0E) : new Color(0x37, 0x30, 0xA3));
+                baseBadge = "SUITE PARTIAL";
             }
             case TEST_PART -> {
                 activeFileBadge.setText("TEST PARTIAL");
@@ -1072,9 +1078,8 @@ public class ConfigTestsEditorPanel extends JPanel {
                     label.setText(fileObj.displayName());
                     switch (fileObj.category()) {
                         case GLOBAL_CONFIG -> label.setText("⚙️ " + fileObj.displayName());
-                        case CONFIG_PART -> label.setText("🧩 " + fileObj.displayName());
+                        case CONFIG_PART, SUITE_PART, TEST_PART -> label.setText("🧩 " + fileObj.displayName());
                         case TEST_SUITE -> label.setText("🧪 " + fileObj.displayName());
-                        case TEST_PART -> label.setText("🧩 " + fileObj.displayName());
                         case CATEGORY_DIR -> label.setText("📁 " + fileObj.displayName());
                         default -> {}
                     }
