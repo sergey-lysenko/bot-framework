@@ -385,6 +385,26 @@ public final class PropertyValidator {
         return null;
     }
 
+    /**
+     * Determines the scope of a property ("Framework" vs "Project").
+     *
+     * @param propertyName property key, e.g. {@code .test.tests}
+     * @return "Framework" if declared in a framework _PropEnum, "Project" otherwise
+     */
+    public static String determinePropertyScope(final String propertyName) {
+
+        final _PropEnum prop = find(propertyName);
+        if (isNotNull(prop)) {
+            final String className = prop.getClass().getName();
+            if (className.startsWith("works.lysenko.")) {
+                return "Framework";
+            } else {
+                return "Project";
+            }
+        }
+        return "Project";
+    }
+
     private static void finite(final double d) {
 
         if (Double.isNaN(d) || Double.isInfinite(d)) throw new NumberFormatException("not finite");

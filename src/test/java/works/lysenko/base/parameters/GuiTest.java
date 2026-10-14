@@ -282,13 +282,13 @@ class GuiTest {
         for (int row = 0; row < model.getRowCount(); row++) {
             final String name = (String) model.getValueAt(row, 0);
             if (PropEnum._TEST_HEADLESS.getPropertyName().equals(name)) {
-                assertEquals("TEST_HEADLESS", model.getValueAt(row, 4));
+                assertEquals("TEST_HEADLESS", model.getValueAt(row, 5));
                 headlessMarked = true;
             } else if (PropEnum._TEST_ALL_LEAFS.getPropertyName().equals(name)) {
-                assertEquals("TEST_ALL_LEAFS", model.getValueAt(row, 4));
+                assertEquals("TEST_ALL_LEAFS", model.getValueAt(row, 5));
                 allLeafsMarked = true;
             } else if (PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName().equals(name)) {
-                assertEquals("TEST_ALL_LEAFS_COUNT", model.getValueAt(row, 4));
+                assertEquals("TEST_ALL_LEAFS_COUNT", model.getValueAt(row, 5));
                 allLeafsCountMarked = true;
             }
         }
@@ -400,10 +400,10 @@ class GuiTest {
         for (int r = 0; r < model.getRowCount(); r++) {
             final String name = (String) model.getValueAt(r, 0);
             if (PropEnum._TEST_APP.getPropertyName().equals(name)) {
-                assertEquals(STATUS_DEFAULT, model.getValueAt(r, 3), name + " should have status Default");
+                assertEquals(STATUS_DEFAULT, model.getValueAt(r, 4), name + " should have status Default");
             }
             if (PropEnum._TEST_ROOT.getPropertyName().equals(name)) {
-                assertEquals(STATUS_CONFIGURED, model.getValueAt(r, 3), name + " should have status Configured");
+                assertEquals(STATUS_CONFIGURED, model.getValueAt(r, 4), name + " should have status Configured");
             }
         }
 
@@ -439,7 +439,7 @@ class GuiTest {
 
         assertTrue(sonificationRow >= 0);
         final int sonificationViewRow = table.convertRowIndexToView(sonificationRow);
-        assertTrue(table.editCellAt(sonificationViewRow, 1));
+        assertTrue(table.editCellAt(sonificationViewRow, 2));
         assertInstanceOf(JComboBox.class, table.getEditorComponent());
         final JComboBox<?> choices = (JComboBox<?>) table.getEditorComponent();
         assertEquals(4, choices.getItemCount());
@@ -452,7 +452,7 @@ class GuiTest {
 
         assertTrue(booleanRow >= 0);
         final int booleanViewRow = table.convertRowIndexToView(booleanRow);
-        assertTrue(table.editCellAt(booleanViewRow, 1));
+        assertTrue(table.editCellAt(booleanViewRow, 2));
         assertInstanceOf(JComboBox.class, table.getEditorComponent());
         final JComboBox<?> booleanChoices = (JComboBox<?>) table.getEditorComponent();
         assertEquals(2, booleanChoices.getItemCount());
@@ -463,7 +463,7 @@ class GuiTest {
 
         assertTrue(freeFormRow >= 0);
         final int freeFormViewRow = table.convertRowIndexToView(freeFormRow);
-        assertTrue(table.editCellAt(freeFormViewRow, 1));
+        assertTrue(table.editCellAt(freeFormViewRow, 2));
         assertInstanceOf(JTextField.class, table.getEditorComponent());
         table.getCellEditor().cancelCellEditing();
     }
@@ -559,8 +559,8 @@ class GuiTest {
         assertTrue(pauseRow >= 0);
 
         // Edit value in model
-        model.setValueAt("1234", pauseRow, 1);
-        assertEquals(STATUS_MODIFIED, model.getValueAt(pauseRow, 3));
+        model.setValueAt("1234", pauseRow, 2);
+        assertEquals(STATUS_MODIFIED, model.getValueAt(pauseRow, 4));
 
         // Click OK button
         final JButton okBtn = dialog.getOkButton();
@@ -589,8 +589,8 @@ class GuiTest {
         assertTrue(pauseRow >= 0);
 
         // Modify value
-        model.setValueAt("9999", pauseRow, 1);
-        assertEquals(STATUS_MODIFIED, model.getValueAt(pauseRow, 3));
+        model.setValueAt("9999", pauseRow, 2);
+        assertEquals(STATUS_MODIFIED, model.getValueAt(pauseRow, 4));
 
         // Select that row in table
         final int viewRow = table.convertRowIndexToView(pauseRow);
@@ -598,8 +598,8 @@ class GuiTest {
 
         // Click Reset Selected
         dialog.getResetSelectedButton().doClick();
-        assertEquals(PropEnum._TEST_PAUSE_LENGTH.defaultValue(), model.getValueAt(pauseRow, 1));
-        assertEquals(STATUS_DEFAULT, model.getValueAt(pauseRow, 3));
+        assertEquals(PropEnum._TEST_PAUSE_LENGTH.defaultValue(), model.getValueAt(pauseRow, 2));
+        assertEquals(STATUS_DEFAULT, model.getValueAt(pauseRow, 4));
     }
 
     @Test
@@ -675,18 +675,18 @@ class GuiTest {
             }
         }
         assertTrue(targetRow1 >= 0);
-        assertEquals("1", model1.getValueAt(targetRow1, 1));
         assertEquals("1", model1.getValueAt(targetRow1, 2));
-        assertEquals(STATUS_DEFAULT, model1.getValueAt(targetRow1, 3));
+        assertEquals("1", model1.getValueAt(targetRow1, 3));
+        assertEquals(STATUS_DEFAULT, model1.getValueAt(targetRow1, 4));
 
         if (rootRow1 >= 0) {
             // .test.root is configured in common config
-            assertEquals(STATUS_CONFIGURED, model1.getValueAt(rootRow1, 3));
+            assertEquals(STATUS_CONFIGURED, model1.getValueAt(rootRow1, 4));
         }
 
         // Change value to 2 and click OK
-        model1.setValueAt("2", targetRow1, 1);
-        assertEquals(STATUS_MODIFIED, model1.getValueAt(targetRow1, 3));
+        model1.setValueAt("2", targetRow1, 2);
+        assertEquals(STATUS_MODIFIED, model1.getValueAt(targetRow1, 4));
         dialog1.getOkButton().doClick();
         assertTrue(dialog1.isConfirmed());
         assertEquals("2", tp.getUserOverrides().get(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName()));
@@ -706,12 +706,12 @@ class GuiTest {
             }
         }
         assertTrue(targetRow2 >= 0);
-        assertEquals("2", model2.getValueAt(targetRow2, 1), "Value must remain 2 on reopen, not revert to default");
-        assertEquals("1", model2.getValueAt(targetRow2, 2), "Default must remain 1 from enum default");
-        assertEquals(STATUS_MODIFIED, model2.getValueAt(targetRow2, 3), "Status must remain Modified, not Default");
+        assertEquals("2", model2.getValueAt(targetRow2, 2), "Value must remain 2 on reopen, not revert to default");
+        assertEquals("1", model2.getValueAt(targetRow2, 3), "Default must remain 1 from enum default");
+        assertEquals(STATUS_MODIFIED, model2.getValueAt(targetRow2, 4), "Status must remain Modified, not Default");
 
         if (rootRow2 >= 0) {
-            assertEquals(STATUS_CONFIGURED, model2.getValueAt(rootRow2, 3), ".root must remain Configured, not Default");
+            assertEquals(STATUS_CONFIGURED, model2.getValueAt(rootRow2, 4), ".root must remain Configured, not Default");
         }
 
         // Click OK on second opening without editing
@@ -735,8 +735,8 @@ class GuiTest {
         dialog3.getTable().setRowSelectionInterval(viewRow, viewRow);
         dialog3.getResetSelectedButton().doClick();
 
-        assertEquals("1", model3.getValueAt(targetRow3, 1), "Value should be reset to default 1");
-        assertEquals(STATUS_DEFAULT, model3.getValueAt(targetRow3, 3), "Status should be Default");
+        assertEquals("1", model3.getValueAt(targetRow3, 2), "Value should be reset to default 1");
+        assertEquals(STATUS_DEFAULT, model3.getValueAt(targetRow3, 4), "Status should be Default");
 
         dialog3.getOkButton().doClick();
         assertTrue(dialog3.isConfirmed());

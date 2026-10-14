@@ -109,11 +109,11 @@ public class PropertiesPanel extends JPanel {
         setLayout(new BorderLayout(8, 8));
 
         // 2. Table and Model
-        final String[] columns = {c(PROPERTY), c(VALUE), c(DEFAULT), c(STATUS), "Execution parameter"};
+        final String[] columns = {c(PROPERTY), "Scope", c(VALUE), c(DEFAULT), c(STATUS), "Execution parameter"};
         model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(final int r, final int c) {
-                return 1 == c;
+                return 2 == c;
             }
 
             @Override
@@ -126,7 +126,7 @@ public class PropertiesPanel extends JPanel {
 
         populateProperties(testName, isHeadless, isAllLeafs, allLeafsCount);
 
-        propertyTablePanel = new PropertyTablePanel(model, 0, 1, true, extraSearchComponent);
+        propertyTablePanel = new PropertyTablePanel(model, 0, 2, true, extraSearchComponent);
         propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);
 
         setupTableRenderingAndEditing();
@@ -250,7 +250,8 @@ public class PropertiesPanel extends JPanel {
                 final String safeDef = (null == def) ? "" : def;
                 final String baseVal = baseline.get(key);
                 final String st = calculateStatus(key, safeVal, safeDef, isDefaultKnown, baseVal);
-                model.addRow(new Object[]{key, safeVal, safeDef, st, executionParameterName(key)});
+                final String scope = PropertyValidator.determinePropertyScope(key);
+                model.addRow(new Object[]{key, scope, safeVal, safeDef, st, executionParameterName(key)});
             }
         }
     }
@@ -275,7 +276,7 @@ public class PropertiesPanel extends JPanel {
                 final Component comp = super.getTableCellRendererComponent(tbl, val, isSelected, hasFocus, r, c);
                 if (!isSelected) {
                     final int modelRow = tbl.convertRowIndexToModel(r);
-                    final String st = (String) model.getValueAt(modelRow, 3);
+                    final String st = (String) model.getValueAt(modelRow, 4);
                     if (STATUS_MODIFIED.equals(st)) {
                         comp.setFont(comp.getFont().deriveFont(Font.BOLD));
                         comp.setForeground(new Color(180, 80, 0));
@@ -292,6 +293,16 @@ public class PropertiesPanel extends JPanel {
                         comp.setFont(comp.getFont().deriveFont(Font.PLAIN));
                         comp.setForeground(tbl.getForeground());
                     }
+
+                    if (1 == c) {
+                        final String scope = (String) model.getValueAt(modelRow, 1);
+                        if ("Project".equals(scope)) {
+                            comp.setForeground(new Color(130, 0, 150));
+                            comp.setFont(comp.getFont().deriveFont(Font.BOLD));
+                        } else {
+                            comp.setForeground(new Color(0, 100, 180));
+                        }
+                    }
                 }
                 return comp;
             }
@@ -301,7 +312,8 @@ public class PropertiesPanel extends JPanel {
         for (int i = 0; i < table.getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
         }
-        table.getColumnModel().getColumn(1).setCellEditor(new ValidatingCellEditor(0, msg -> {
+        table.getColumnModel().getColumn(1).setMaxWidth(100);
+        table.getColumnModel().getColumn(2).setCellEditor(new ValidatingCellEditor(0, msg -> {
             if (msg != null) {
                 validationLabel.setText(msg);
             } else {
@@ -313,18 +325,18 @@ public class PropertiesPanel extends JPanel {
             if (isUpdating) return;
             final int col = e.getColumn();
             final int row = e.getFirstRow();
-            if (1 == col && row >= 0 && row < model.getRowCount()) {
+            if (2 == col && row >= 0 && row < model.getRowCount()) {
                 isUpdating = true;
                 try {
                     final String k = (String) model.getValueAt(row, 0);
-                    final String v = (String) model.getValueAt(row, 1);
-                    final String d = (String) model.getValueAt(row, 2);
+                    final String v = (String) model.getValueAt(row, 2);
+                    final String d = (String) model.getValueAt(row, 3);
                     final boolean isDefaultKnown = isNotNull(testProperties) && isNotNull(testProperties.getDefaults()) &&
                             testProperties.getDefaults().containsKey(k);
                     final String baseVal = baseline.get(k);
                     final String st = calculateStatus(k, (null == v) ? "" : v, (null == d) ? "" : d,
                             isDefaultKnown, baseVal);
-                    model.setValueAt(st, row, 3);
+                    model.setValueAt(st, row, 4);
                 } finally {
                     isUpdating = false;
                 }
@@ -365,13 +377,13 @@ public class PropertiesPanel extends JPanel {
         final String k = (String) model.getValueAt(modelRow, 0);
         if (baseline.containsKey(k)) {
             final String base = baseline.get(k);
-            model.setValueAt((null == base) ? "" : base, modelRow, 1);
+            model.setValueAt((null == base) ? "" : base, modelRow, 2);
         } else if (isNotNull(testProperties) && isNotNull(testProperties.getDefaults()) &&
                 testProperties.getDefaults().containsKey(k)) {
             final String def = testProperties.getDefaults().get(k);
-            model.setValueAt((null == def) ? "" : def, modelRow, 1);
+            model.setValueAt((null == def) ? "" : def, modelRow, 2);
         } else {
-            model.setValueAt("", modelRow, 1);
+            model.setValueAt("", modelRow, 2);
         }
     }
 
@@ -381,13 +393,13 @@ public class PropertiesPanel extends JPanel {
             final String k = (String) model.getValueAt(r, 0);
             if (baseline.containsKey(k)) {
                 final String base = baseline.get(k);
-                model.setValueAt((null == base) ? "" : base, r, 1);
+                model.setValueAt((null == base) ? "" : base, r, 2);
             } else if (isNotNull(testProperties) && isNotNull(testProperties.getDefaults()) &&
                     testProperties.getDefaults().containsKey(k)) {
                 final String def = testProperties.getDefaults().get(k);
-                model.setValueAt((null == def) ? "" : def, r, 1);
+                model.setValueAt((null == def) ? "" : def, r, 2);
             } else {
-                model.setValueAt("", r, 1);
+                model.setValueAt("", r, 2);
             }
         }
     }
@@ -402,7 +414,7 @@ public class PropertiesPanel extends JPanel {
 
         for (int r = 0; r < model.getRowCount(); r++) {
             final String k = (String) model.getValueAt(r, 0);
-            final String v = (String) model.getValueAt(r, 1);
+            final String v = (String) model.getValueAt(r, 2);
             final String val = (null == v) ? "" : v;
             final String baseVal = baseline.get(k);
             final boolean changed = (null == baseVal) ? !val.isEmpty() : !val.equals(baseVal);
@@ -412,7 +424,7 @@ public class PropertiesPanel extends JPanel {
                 final int viewRow = table.convertRowIndexToView(r);
                 if (viewRow >= 0) {
                     table.setRowSelectionInterval(viewRow, viewRow);
-                    table.scrollRectToVisible(table.getCellRect(viewRow, 1, true));
+                    table.scrollRectToVisible(table.getCellRect(viewRow, 2, true));
                 }
                 validationLabel.setText(k + ": " + error);
                 JOptionPane.showMessageDialog(this, error, "Invalid value for " + k, JOptionPane.ERROR_MESSAGE);
@@ -438,7 +450,7 @@ public class PropertiesPanel extends JPanel {
         overrides.clear();
         for (int r = 0; r < model.getRowCount(); r++) {
             final String k = (String) model.getValueAt(r, 0);
-            final String v = (String) model.getValueAt(r, 1);
+            final String v = (String) model.getValueAt(r, 2);
             final String val = (null == v) ? "" : v;
             final String baseVal = baseline.get(k);
             final boolean changed = (null == baseVal) ? !val.isEmpty() : !val.equals(baseVal);
