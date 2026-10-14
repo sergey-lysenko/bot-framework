@@ -248,10 +248,13 @@ public final class SectionRenderer {
                 rowCssClass = " class=\"scen-row-warning\"";
             }
 
-            String eventsCountStr = "0";
+            String eventsCountStr = "";
             if (!ev.isEmpty()) {
                 final String digits = sc.events.replaceAll("[^0-9]", "");
-                eventsCountStr = !digits.isEmpty() ? digits : "1";
+                final String val = !digits.isEmpty() ? digits : "1";
+                if (!"0".equals(val)) {
+                    eventsCountStr = val;
+                }
             }
 
             sb.append(s("<tr", rowCssClass, ">",
@@ -262,7 +265,9 @@ public final class SectionRenderer {
                     escapeHtml(sc.name), "</b></a></td>",
                     "<td class=\"cell-mono text-muted\">", escapeHtml(sc.weight), "</td>",
                     "<td class=\"cell-mono text-right\"><b>", sc.count, "</b></td>",
-                    "<td class=\"cell-mono text-right\"><b>", eventsCountStr, "</b></td>",
+                    "<td class=\"cell-mono text-right\">",
+                    eventsCountStr.isEmpty() ? "" : s("<b>", eventsCountStr, "</b>"),
+                    "</td>",
                     "</tr>"));
         }
         return sb.toString();
