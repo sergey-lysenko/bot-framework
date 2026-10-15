@@ -4,6 +4,7 @@ package works.lysenko.util.data.enums;
 import works.lysenko.util.apis.execution._Default;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static works.lysenko.util.lang.word.F.*;
 
 /**
  * Enum class representing different execution parameters.
@@ -24,21 +25,21 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 @SuppressWarnings({"unused", "EnumClass", "MissingJavadoc", "CallToSuspiciousStringMethod"})
 public enum ExecutionParameter implements _Default {
 
-    ALL_LEAFS(Boolean.FALSE.toString()),
+    ALL_LEAFS(FALSE),
     ALL_LEAFS_COUNT(EMPTY),
     COMPLETION_WEIGHT(EMPTY),
     DEVICE(EMPTY),
     DOMAIN(EMPTY),
-    FORBID_OVEREXECUTION(Boolean.FALSE.toString()),
-    HEADLESS(Boolean.FALSE.toString()),
-    HIDE_OFF_BRANCHES(Boolean.FALSE.toString()),
+    FORBID_OVEREXECUTION(FALSE),
+    HEADLESS(FALSE),
+    HIDE_OFF_BRANCHES(FALSE),
     PLATFORM(Platform.CHROME.getString()),
     POOL(EMPTY),
-    RESILIENT_MODE(Boolean.FALSE.toString()),
+    RESILIENT_MODE(FALSE),
     SUITE(EMPTY),
     TEST(EMPTY),
     TESTS(EMPTY),
-    TRAVERSE_EXTENSIONS(Boolean.FALSE.toString());
+    TRAVERSE_EXTENSIONS(FALSE);
 
     private final String def;
 

@@ -30,10 +30,10 @@ import static works.lysenko.util.spec.Layout.Paths._TESTS_;
 public class PropertyTablePanel extends JPanel {
 
     public enum PartsMode {
-        CONFIG_ONLY, TESTS_ONLY, BOTH
+        CONFIG_ONLY, SUITES_ONLY
     }
 
-    private PartsMode partsMode = PartsMode.BOTH;
+    private PartsMode partsMode = PartsMode.CONFIG_ONLY;
 
     private final JTable table;
     private final DefaultTableModel tableModel;
@@ -329,27 +329,30 @@ public class PropertyTablePanel extends JPanel {
     }
 
     public void setPartsMode(final PartsMode mode) {
-        this.partsMode = isNotNull(mode) ? mode : PartsMode.BOTH;
+        this.partsMode = isNotNull(mode) ? mode : PartsMode.CONFIG_ONLY;
+    }
+
+    public PartsMode getPartsMode() {
+        return partsMode;
     }
 
     private void showPartsSelectionDialog() {
-        final Set<String> configParts = new TreeSet<>();
-        if (partsMode == PartsMode.CONFIG_ONLY || partsMode == PartsMode.BOTH) {
-            scanPartFiles(Path.of(_CONFIG_), configParts);
-            if (configParts.isEmpty()) scanPartFiles(Path.of("config"), configParts);
-        }
-
-        final Set<String> testParts = new TreeSet<>();
-        if (partsMode == PartsMode.TESTS_ONLY || partsMode == PartsMode.BOTH) {
-            scanPartFiles(Path.of(_SUITES_), testParts);
-            scanPartFiles(Path.of(_TESTS_), testParts);
-            if (testParts.isEmpty()) {
-                scanPartFiles(Path.of("suites"), testParts);
-                scanPartFiles(Path.of("tests"), testParts);
+        final Set<String> relevantParts = new TreeSet<>();
+        if (partsMode == PartsMode.CONFIG_ONLY) {
+            scanPartFiles(Path.of(_CONFIG_), relevantParts);
+            if (relevantParts.isEmpty()) {
+                scanPartFiles(Path.of("config"), relevantParts);
+            }
+        } else {
+            scanPartFiles(Path.of(_SUITES_), relevantParts);
+            scanPartFiles(Path.of(_TESTS_), relevantParts);
+            if (relevantParts.isEmpty()) {
+                scanPartFiles(Path.of("suites"), relevantParts);
+                scanPartFiles(Path.of("tests"), relevantParts);
             }
         }
 
-        if (configParts.isEmpty() && testParts.isEmpty()) {
+        if (relevantParts.isEmpty()) {
             JOptionPane.showMessageDialog(this, "No .part files found.", "No Parts Found", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
@@ -363,25 +366,8 @@ public class PropertyTablePanel extends JPanel {
         }
 
         final List<JCheckBox> allCheckBoxes = new ArrayList<>();
-        final JComponent contentComponent;
-
-        if (partsMode == PartsMode.CONFIG_ONLY) {
-            contentComponent = createTabPanel(configParts, currentlySelected, allCheckBoxes);
-            contentComponent.setPreferredSize(new Dimension(380, 240));
-        } else if (partsMode == PartsMode.TESTS_ONLY) {
-            contentComponent = createTabPanel(testParts, currentlySelected, allCheckBoxes);
-            contentComponent.setPreferredSize(new Dimension(380, 240));
-        } else {
-            final JTabbedPane tabbedPane = new JTabbedPane();
-            if (!configParts.isEmpty()) {
-                tabbedPane.addTab("⚙️ Config Parts", createTabPanel(configParts, currentlySelected, allCheckBoxes));
-            }
-            if (!testParts.isEmpty()) {
-                tabbedPane.addTab("🧪 Test Parts", createTabPanel(testParts, currentlySelected, allCheckBoxes));
-            }
-            tabbedPane.setPreferredSize(new Dimension(380, 260));
-            contentComponent = tabbedPane;
-        }
+        final JComponent contentComponent = createTabPanel(relevantParts, currentlySelected, allCheckBoxes);
+        contentComponent.setPreferredSize(new Dimension(380, 240));
 
         final int res = JOptionPane.showConfirmDialog(
                 this,

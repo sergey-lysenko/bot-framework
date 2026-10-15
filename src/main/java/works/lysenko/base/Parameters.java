@@ -35,7 +35,6 @@ import static works.lysenko.util.lang.word.S.STORE;
 import static works.lysenko.util.lang.word.U.UNABLE;
 import static works.lysenko.util.spec.Layout.Files.PARAMETERS_;
 import static works.lysenko.util.spec.Symbols.SEM_CLN;
-import static works.lysenko.util.spec.Symbols._DOT_;
 
 /**
  * Represents a class that holds and manages various parameters for execution.
@@ -294,18 +293,9 @@ public final class Parameters extends Properties implements _ExecutionParameterV
     @SuppressWarnings("CallToSystemGetenv")
     private void read(final String name, final String def) {
 
-        final String dotted = name.toLowerCase(java.util.Locale.ROOT).replace('_', '.');
-        if (isNotNull(System.getenv(name))) put(name, System.getenv(name)); // prio0: Environment variable
-        else if (isNotNull(System.getenv("TEST_" + name))) put(name, System.getenv("TEST_" + name)); // prio0: Environment variable with TEST_ prefix
-        else if (isNotNull(System.getenv("TREE_" + name))) put(name, System.getenv("TREE_" + name)); // prio0: Environment variable with TREE_ prefix
-        else if (isNotNull(System.getProperty(name))) put(name, System.getProperty(name)); // prio0.5: System property
-        else if (isNotNull(System.getProperty("TEST_" + name))) put(name, System.getProperty("TEST_" + name));
-        else if (isNotNull(System.getProperty("TREE_" + name))) put(name, System.getProperty("TREE_" + name));
-        else if (isNotNull(System.getProperty(name.toLowerCase(java.util.Locale.ROOT)))) put(name, System.getProperty(name.toLowerCase(java.util.Locale.ROOT)));
-        else if (isNotNull(System.getProperty(s(_DOT_, dotted)))) put(name, System.getProperty(s(_DOT_, dotted)));
-        else if (isNotNull(System.getProperty(dotted))) put(name, System.getProperty(dotted));
-        else if (!containsKey(name)) put(name, def); // prio2: Default value
-        // NOP: prio1: Value from cache already loaded
+        if (isNotNull(System.getenv(name))) put(name, System.getenv(name));
+        else if (isNotNull(System.getProperty(name))) put(name, System.getProperty(name));
+        else if (!containsKey(name)) put(name, def);
     }
 
     /**

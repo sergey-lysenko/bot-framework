@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -66,6 +67,32 @@ class ConfigTestsEditorPanelTest {
                 panel.refreshTreeFromDisk();
                 assertNotNull(panel);
             });
+        });
+    }
+
+    @Test
+    void testInitialPartsModeIsConfigOnly() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            final ConfigTestsEditorPanel panel = new ConfigTestsEditorPanel();
+            final PropertyTablePanel tablePanel = panel.getPropertyTablePanel();
+            assertNotNull(tablePanel);
+            assertEquals(PropertyTablePanel.PartsMode.CONFIG_ONLY, tablePanel.getPartsMode());
+        });
+    }
+
+    @Test
+    void testPartsModeSelectionByNodeCategory() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            final ConfigTestsEditorPanel panel = new ConfigTestsEditorPanel();
+            final PropertyTablePanel tablePanel = panel.getPropertyTablePanel();
+
+            // Config
+            tablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);
+            assertEquals(PropertyTablePanel.PartsMode.CONFIG_ONLY, tablePanel.getPartsMode());
+
+            // Suites
+            tablePanel.setPartsMode(PropertyTablePanel.PartsMode.SUITES_ONLY);
+            assertEquals(PropertyTablePanel.PartsMode.SUITES_ONLY, tablePanel.getPartsMode());
         });
     }
 

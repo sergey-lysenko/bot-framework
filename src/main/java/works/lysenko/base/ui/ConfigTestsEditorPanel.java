@@ -248,6 +248,7 @@ public class ConfigTestsEditorPanel extends JPanel {
         };
         propertyTablePanel = new PropertyTablePanel(tableModel, 1, 2, false, null);
         propertyTablePanel.setSearchAndFiltersVisible(false);
+        propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);
         
         final JTable table = propertyTablePanel.getTable();
         table.getColumnModel().getColumn(0).setMaxWidth(110);
@@ -752,6 +753,7 @@ public class ConfigTestsEditorPanel extends JPanel {
         if (null == currentSelectedNode) return;
 
         stopOrCancelTableEditing();
+        updatePartsModeForCurrentNode();
         isUpdatingForm = true;
         try {
             tableModel.setRowCount(0);
@@ -1155,6 +1157,32 @@ public class ConfigTestsEditorPanel extends JPanel {
                 }
             }
             return label;
+        }
+    }
+
+    public PropertyTablePanel getPropertyTablePanel() {
+        return propertyTablePanel;
+    }
+
+    public void updatePartsModeForCurrentNode() {
+        if (null == currentSelectedNode) {
+            propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);
+            return;
+        }
+
+        switch (currentSelectedNode.category()) {
+            case GLOBAL_CONFIG, CONFIG_PART ->
+                    propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);
+            case TEST_SUITE, SUITE_PART, TEST_PART ->
+                    propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.SUITES_ONLY);
+            default -> {
+                final String pathStr = currentSelectedNode.path().toString().replace('\\', '/');
+                if (pathStr.contains("/config/") || pathStr.endsWith("/config") || currentSelectedNode.path().startsWith(Path.of(_CONFIG_))) {
+                    propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);
+                } else {
+                    propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.SUITES_ONLY);
+                }
+            }
         }
     }
 }
