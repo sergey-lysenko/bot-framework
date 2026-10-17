@@ -32,6 +32,7 @@ import static works.lysenko.util.lang.word.P.PARAMETERS;
 import static works.lysenko.util.lang.word.P.PLATFORMS;
 import static works.lysenko.util.lang.word.P.PROPERTIES;
 import static works.lysenko.util.lang.word.R.RESOURCES;
+import static works.lysenko.util.lang.word.R.RESULT;
 import static works.lysenko.util.lang.word.S.SCENARIOS;
 import static works.lysenko.util.lang.word.S.SNAPSHOTS;
 import static works.lysenko.util.lang.word.T.TARGET;
@@ -70,6 +71,7 @@ public record Layout() {
         static final String DASH_ = s(s(DA, SH), s);
         static final String MAIN_ = s(MAIN, s);
         static final String RESOURCES_ = s(RESOURCES, s);
+        static final String RESULT_ = s(RESULT, s);
         static final String RUNS_ = s(RUNS, s);
         static final String SRC_ = s(SRC, s);
         static final String TARGET_ = s(TARGET, s);
@@ -88,13 +90,14 @@ public record Layout() {
     @SuppressWarnings({"PublicInnerClass", "MissingJavadoc"})
     public record Paths() {
 
-        public static final String _TARGET_DASH_ = s(TARGET_, DASH_);
+        public static final String _RESULT_DASH_ = s(RESULT_, DASH_);
+        public static final String _TARGET_DASH_ = _RESULT_DASH_;
         public static final String _RESOURCES_ = s(SRC_, MAIN_, RESOURCES_);
         public static final String _CONFIG_ = s(_RESOURCES_, CONFIG_);
         public static final String _SUITES_ = s(_RESOURCES_, SUITES_);
         public static final String _TESTS_ = s(_RESOURCES_, TESTS_);
         public static final String _GRIDS_ = s(_RESOURCES_, GRIDS_);
-        public static final String _RUNS_ = s(TARGET_, RUNS_);
+        public static final String _RUNS_ = s(RESULT_, RUNS_);
     }
 
     /**
@@ -120,7 +123,7 @@ public record Layout() {
             "MissingJavadoc", "StaticCollection"})
     public record Files() {
 
-        public static final String APPIUM_LOG_ = s(TARGET_, APPIUM, _DOT_, LOG);
+        public static final String APPIUM_LOG_ = s(RESULT_, APPIUM, _DOT_, LOG);
         public static final String COMMON_CONFIGURATION = b(_DOT_, COMMON, CONFIGURATION);
         public static final String DEFAULT_ANDROID_APPLICATION_ = s(BIN_, ANFANG, _DOT_, APK);
         public static final String LOCATORS_ = s(_RESOURCES_, LOCATORS);
