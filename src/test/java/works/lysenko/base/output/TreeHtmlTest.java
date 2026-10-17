@@ -156,6 +156,100 @@ class TreeHtmlTest {
     }
 
     @Test
+    void multiColumnBankLayoutBalancesTallNarrowForest() {
+        final List<NodeData> nodes = new ArrayList<>();
+
+        // Component 1: Large tree with 1 root and 10 children (11 rows total)
+        final NodeData settingsRoot = new NodeData("settings", "Settings", "Root", 0, 1.0, null);
+        nodes.add(settingsRoot);
+        for (int i = 0; i < 10; i++) {
+            final NodeData child = new NodeData("settings_" + i, "Settings_" + i, "Settings", 1, i + 2.0, null);
+            child.setParent(settingsRoot);
+            settingsRoot.children().add(child);
+            nodes.add(child);
+        }
+
+        // Component 2: Small tree (root + 1 child)
+        final NodeData aiRoot = new NodeData("ai", "AIWizard", "Root", 0, 13.0, null);
+        final NodeData aiChild = new NodeData("ai_child", "AIClear", "AIWizard", 1, 14.0, null);
+        aiChild.setParent(aiRoot);
+        aiRoot.children().add(aiChild);
+        nodes.add(aiRoot);
+        nodes.add(aiChild);
+
+        // Component 3: Small tree (root + 1 child)
+        final NodeData signRoot = new NodeData("signin", "SignIn", "Root", 0, 16.0, null);
+        final NodeData signChild = new NodeData("signin_child", "SignNo", "SignIn", 1, 17.0, null);
+        signChild.setParent(signRoot);
+        signRoot.children().add(signChild);
+        nodes.add(signRoot);
+        nodes.add(signChild);
+
+        // Component 4: Small tree (root + 1 child)
+        final NodeData tasksRoot = new NodeData("tasks", "Tasks", "Root", 0, 19.0, null);
+        final NodeData tasksChild = new NodeData("tasks_child", "TasksMenu", "Tasks", 1, 20.0, null);
+        tasksChild.setParent(tasksRoot);
+        tasksRoot.children().add(tasksChild);
+        nodes.add(tasksRoot);
+        nodes.add(tasksChild);
+
+        // Run compaction
+        TreeHtml.compactDisconnectedTrees(nodes);
+
+        // Verify that multi-column bank layout was applied:
+        final int aiCol = aiRoot.col();
+        final int settingsCol = settingsRoot.col();
+        assertTrue(aiCol != settingsCol, "AIWizard and Settings should be placed into different column banks");
+
+        // The bank starting at col 0 and the bank starting at col 2 each have depth 2
+        assertTrue(aiCol == 0 || settingsCol == 0);
+        assertTrue(aiCol == 2 || settingsCol == 2);
+
+        // The children stay 1 column to the right of their respective roots
+        assertEquals(aiCol + 1, aiChild.col());
+        assertEquals(settingsCol + 1, settingsRoot.children().get(0).col());
+
+        // Maximum row across all nodes should be reduced from ~20 rows down to max bank height (around 11.0)
+        final double maxRow = nodes.stream().mapToDouble(NodeData::row).max().orElse(0.0);
+        assertTrue(maxRow <= 12.0, "Multi-column banking should reduce max row from ~20 to <= 12, but was " + maxRow);
+    }
+
+    @Test
+    void multiColumnBankLayoutDisabledWhenBankColumnsIsOne() {
+        final int originalBankCols = works.lysenko.util.prop.tree.Optimization.bankColumns;
+        try {
+            works.lysenko.util.prop.tree.Optimization.bankColumns = 1;
+            final List<NodeData> nodes = new ArrayList<>();
+
+            final NodeData root1 = new NodeData("r1", "Root1", "Root", 0, 1.0, null);
+            nodes.add(root1);
+            for (int i = 0; i < 10; i++) {
+                final NodeData child = new NodeData("r1_" + i, "Child_" + i, "Root1", 1, i + 2.0, null);
+                child.setParent(root1);
+                root1.children().add(child);
+                nodes.add(child);
+            }
+
+            final NodeData root2 = new NodeData("r2", "Root2", "Root", 0, 13.0, null);
+            final NodeData child2 = new NodeData("r2_c", "Child2", "Root2", 1, 14.0, null);
+            child2.setParent(root2);
+            root2.children().add(child2);
+            nodes.add(root2);
+            nodes.add(child2);
+
+            TreeHtml.compactDisconnectedTrees(nodes);
+
+            // Both roots must remain at col 0
+            assertEquals(0, root1.col());
+            assertEquals(0, root2.col());
+            // Stacked sequentially
+            assertTrue(root2.row() > root1.children().get(9).row());
+        } finally {
+            works.lysenko.util.prop.tree.Optimization.bankColumns = originalBankCols;
+        }
+    }
+
+    @Test
     void testVisitedAndUnvisitedEdgesRendering() {
         final List<NodeData> nodes = new ArrayList<>();
         final List<Edge> edges = new ArrayList<>();

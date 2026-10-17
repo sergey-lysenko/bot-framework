@@ -42,6 +42,14 @@
 # .tree.progression.optimization=true
 
 # ------------------------------------------------------------------------------
+# Number of horizontal column banks to split independent scenario trees into when aspect ratio is narrow. Default: 2
+# .tree.progression.optimization.bank.columns=2
+
+# ------------------------------------------------------------------------------
+# Aspect ratio threshold (width/height) below which multi-bank tree layout is activated. Default: 0.85
+# .tree.progression.optimization.max.aspect.ratio=0.85
+
+# ------------------------------------------------------------------------------
 # Number of columns to split leaf children into during packing. Default: 2
 # .tree.progression.optimization.pack.columns=2
 

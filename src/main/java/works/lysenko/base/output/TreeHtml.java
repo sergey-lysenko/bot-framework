@@ -148,7 +148,7 @@ public final class TreeHtml {
         return roots;
     }
 
-    static TreeLayout computeLayout(final Iterable<? extends _Scenario> roots, final TreeMap<String, Result> sorted) {
+    public static TreeLayout computeLayout(final Iterable<? extends _Scenario> roots, final TreeMap<String, Result> sorted) {
 
         final long tStart = System.currentTimeMillis();
         final List<NodeData> nodes = new ArrayList<>();
@@ -823,6 +823,31 @@ public final class TreeHtml {
             return id1.compareTo(id2);
         });
 
+        if (ordered.isEmpty()) return;
+
+        if (Optimization.progression && ordered.size() >= 2 && Optimization.bankColumns >= 2) {
+            int maxDepth = 0;
+            double totalStackedRows = 0.0;
+            for (int i = 0; i < ordered.size(); i++) {
+                final List<NodeData> comp = ordered.get(i);
+                final int minC = minimumCol(comp);
+                final int maxC = maximumCol(comp);
+                final int d = maxC - minC + 1;
+                if (d > maxDepth) maxDepth = d;
+                final double h = maximumRow(comp) - minimumRow(comp) + 1.0;
+                totalStackedRows += h;
+                if (i > 0) totalStackedRows += 1.0;
+            }
+            final double naturalWidth = maxDepth * COL_WIDTH;
+            final double naturalHeight = totalStackedRows * ROW_HEIGHT;
+            final double naturalAspectRatio = (naturalHeight > 0.0) ? (naturalWidth / naturalHeight) : 1.0;
+
+            if (naturalAspectRatio < Optimization.maxAspectRatio) {
+                layoutMultiColumnBanks(ordered);
+                return;
+            }
+        }
+
         double nextRow = 1.0;
         for (final List<NodeData> component : ordered) {
             final double minimum = minimumRow(component);
@@ -832,6 +857,98 @@ public final class TreeHtml {
                     node.setRow(node.row() + shift);
             nextRow = maximumRow(component) + 1.0;
         }
+    }
+
+    private static void layoutMultiColumnBanks(final List<List<NodeData>> ordered) {
+
+        final int numBanks = Math.max(1, Math.min(Optimization.bankColumns, ordered.size()));
+        if (numBanks <= 1) {
+            double nextRow = 1.0;
+            for (final List<NodeData> component : ordered) {
+                final double minimum = minimumRow(component);
+                final double shift = nextRow - minimum;
+                if (0.0 != shift)
+                    for (final NodeData node : component)
+                        node.setRow(node.row() + shift);
+                nextRow = maximumRow(component) + 1.0;
+            }
+            return;
+        }
+
+        final List<List<NodeData>> sortedByHeight = new ArrayList<>(ordered);
+        sortedByHeight.sort((c1, c2) -> {
+            final double h1 = maximumRow(c1) - minimumRow(c1) + 1.0;
+            final double h2 = maximumRow(c2) - minimumRow(c2) + 1.0;
+            final int hCmp = Double.compare(h2, h1);
+            if (hCmp != 0) return hCmp;
+            final String l1 = c1.isEmpty() ? "" : c1.get(0).label();
+            final String l2 = c2.isEmpty() ? "" : c2.get(0).label();
+            final int lCmp = l1.compareTo(l2);
+            if (lCmp != 0) return lCmp;
+            final String id1 = c1.isEmpty() ? "" : c1.get(0).id();
+            final String id2 = c2.isEmpty() ? "" : c2.get(0).id();
+            return id1.compareTo(id2);
+        });
+
+        final List<List<List<NodeData>>> banks = new ArrayList<>();
+        for (int i = 0; i < numBanks; i++) {
+            banks.add(new ArrayList<>());
+        }
+        final double[] bankHeights = new double[numBanks];
+
+        for (final List<NodeData> component : sortedByHeight) {
+            int bestBank = 0;
+            double minHeight = bankHeights[0];
+            for (int b = 1; b < numBanks; b++) {
+                if (bankHeights[b] < minHeight) {
+                    minHeight = bankHeights[b];
+                    bestBank = b;
+                }
+            }
+            banks.get(bestBank).add(component);
+            final double compH = maximumRow(component) - minimumRow(component) + 1.0;
+            bankHeights[bestBank] += compH + 1.0;
+        }
+
+        banks.removeIf(List::isEmpty);
+
+        banks.sort(Comparator.comparingInt(bank -> bank.stream().mapToInt(ordered::indexOf).min().orElse(0)));
+
+        for (final List<List<NodeData>> bank : banks) {
+            bank.sort(Comparator.comparingInt(ordered::indexOf));
+        }
+
+        int currentColOffset = 0;
+        for (final List<List<NodeData>> bank : banks) {
+            double nextRow = 1.0;
+            int bankMaxDepth = 0;
+            for (final List<NodeData> component : bank) {
+                final double minR = minimumRow(component);
+                final double shiftR = nextRow - minR;
+                final int minC = minimumCol(component);
+                final int shiftC = currentColOffset - minC;
+
+                final int depth = maximumCol(component) - minC + 1;
+                if (depth > bankMaxDepth) bankMaxDepth = depth;
+
+                for (final NodeData node : component) {
+                    if (0.0 != shiftR) node.setRow(node.row() + shiftR);
+                    if (0 != shiftC) node.setCol(node.col() + shiftC);
+                }
+                nextRow = maximumRow(component) + 1.0;
+            }
+            currentColOffset += bankMaxDepth;
+        }
+    }
+
+    private static int minimumCol(final List<NodeData> nodes) {
+
+        return nodes.stream().mapToInt(NodeData::col).min().orElse(0);
+    }
+
+    private static int maximumCol(final List<NodeData> nodes) {
+
+        return nodes.stream().mapToInt(NodeData::col).max().orElse(0);
     }
 
     private static NodeData rootOf(final NodeData node) {

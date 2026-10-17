@@ -1,6 +1,8 @@
 package works.lysenko.util.prop.tree;
 
 import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION;
+import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION_BANK_COLUMNS;
+import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION_MAX_ASPECT_RATIO;
 import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION_PACK_COLUMNS;
 import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION_SHALLOW_MAX_DEPTH;
 import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION_SHALLOW_MIN_RATIO;
@@ -21,6 +23,16 @@ public record Optimization() {
      * Indicates whether tree layout progression optimization is enabled.
      */
     public static boolean progression = _TREE_PROGRESSION_OPTIMIZATION.get();
+
+    /**
+     * Number of horizontal column banks to partition independent scenario trees into when aspect ratio is narrow.
+     */
+    public static int bankColumns = _TREE_PROGRESSION_OPTIMIZATION_BANK_COLUMNS.get();
+
+    /**
+     * Aspect ratio threshold (width/height) below which multi-bank tree layout is activated.
+     */
+    public static double maxAspectRatio = _TREE_PROGRESSION_OPTIMIZATION_MAX_ASPECT_RATIO.get();
 
     /**
      * Number of columns to pack leaf children into when layout optimization is active.
@@ -52,6 +64,8 @@ public record Optimization() {
      */
     public static void refresh() {
         progression = _TREE_PROGRESSION_OPTIMIZATION.get();
+        bankColumns = _TREE_PROGRESSION_OPTIMIZATION_BANK_COLUMNS.get();
+        maxAspectRatio = _TREE_PROGRESSION_OPTIMIZATION_MAX_ASPECT_RATIO.get();
         packColumns = _TREE_PROGRESSION_OPTIMIZATION_PACK_COLUMNS.get();
         shallowMaxDepth = _TREE_PROGRESSION_OPTIMIZATION_SHALLOW_MAX_DEPTH.get();
         shallowMinRatio = _TREE_PROGRESSION_OPTIMIZATION_SHALLOW_MIN_RATIO.get();
