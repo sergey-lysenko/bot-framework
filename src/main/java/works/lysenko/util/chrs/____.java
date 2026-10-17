@@ -103,6 +103,7 @@ public record ____() {
     public static final String HAVE = "have";
     public static final String HEAD = "head";
     public static final String HERE = "here";
+    public static final String HOST = "host";
     public static final String HTML = "html";
     public static final String IBLE = "ible";
     public static final String ICON = "icon";
@@ -119,7 +120,6 @@ public record ____() {
     public static final String IOUS = "ious";
     public static final String ITEM = "item";
     public static final String JSON = "json";
-    public static final String HOST = "host";
     public static final String KONS = "kons";
     public static final String LAST = "last";
     public static final String LEAF = "leaf";
@@ -247,9 +247,9 @@ public record ____() {
     public static final String VISI = "visi";
     public static final String WAIT = "wait";
     public static final String WARN = "warn";
+    public static final String WEEK = "week";
     public static final String WERE = "were";
     public static final String WILL = "will";
     public static final String WITH = "with";
     public static final String WRIT = "writ";
-    public static final String WEEK = "week";
 }

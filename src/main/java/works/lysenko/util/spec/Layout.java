@@ -22,7 +22,7 @@ import static works.lysenko.util.func.type.Properties.getStore;
 import static works.lysenko.util.lang.word.A.ANFANG;
 import static works.lysenko.util.lang.word.A.APPIUM;
 import static works.lysenko.util.lang.word.C.*;
-import static works.lysenko.util.lang.word.D.DIRECTORIES;
+import static works.lysenko.util.lang.word.D.*;
 import static works.lysenko.util.lang.word.G.GRIDS;
 import static works.lysenko.util.lang.word.I.ISSUES;
 import static works.lysenko.util.lang.word.K.KNOWN;
@@ -33,8 +33,7 @@ import static works.lysenko.util.lang.word.P.PLATFORMS;
 import static works.lysenko.util.lang.word.P.PROPERTIES;
 import static works.lysenko.util.lang.word.R.RESOURCES;
 import static works.lysenko.util.lang.word.R.RESULT;
-import static works.lysenko.util.lang.word.S.SCENARIOS;
-import static works.lysenko.util.lang.word.S.SNAPSHOTS;
+import static works.lysenko.util.lang.word.S.*;
 import static works.lysenko.util.lang.word.T.TARGET;
 import static works.lysenko.util.lang.word.T.TELEMETRY;
 import static works.lysenko.util.lang.word.T.TESTS;
@@ -75,8 +74,7 @@ public record Layout() {
         static final String RUNS_ = s(RUNS, s);
         static final String SRC_ = s(SRC, s);
         static final String TARGET_ = s(TARGET, s);
-        static final String TESTS_ = s(TESTS, s);
-        static final String SUITES_ = s("suites", s);
+        static final String SUITES_ = s(SUITES, s);
         static final String GRIDS_ = s(GRIDS, s);
         static final String CONFIG_ = s(CONFIG, s);
     }
@@ -95,7 +93,6 @@ public record Layout() {
         public static final String _RESOURCES_ = s(SRC_, MAIN_, RESOURCES_);
         public static final String _CONFIG_ = s(_RESOURCES_, CONFIG_);
         public static final String _SUITES_ = s(_RESOURCES_, SUITES_);
-        public static final String _TESTS_ = s(_RESOURCES_, TESTS_);
         public static final String _GRIDS_ = s(_RESOURCES_, GRIDS_);
         public static final String _RUNS_ = s(RESULT_, RUNS_);
     }
@@ -107,8 +104,7 @@ public record Layout() {
     @SuppressWarnings({"PublicInnerClass", "MissingJavadoc"})
     public record Parts() {
 
-        public static final String SUITE_PROPERTIES_EXTENSION = ".suite";
-        public static final String TEST_PROPERTIES_EXTENSION = s(_DOT_, TEST);
+        public static final String SUITE_PROPERTIES_EXTENSION = s(_DOT_, SUITE);
         public static final String GRID_EXTENSION = s(_DOT_, GRID);
         public static final String TEST_PROPERTIES_PARTS_EXTENSION = s(_DOT_, PART);
         public static final String USERS_POOL_EXTENSION = s(_DOT_, USERS);
@@ -188,7 +184,7 @@ public record Layout() {
         public static final String RUN_JSON_ = s($1_S, s, $1_S, _DOT_, RUN, _DOT_, JSON);
         public static final String RUN_ALL_LEAF_COMPLETIONS_ = s($1_S, s, $1_S, _DOT_, ALL, _DASH_, LEAF, _DASH_,
                 "completions", _DOT_, LOG);
-        public static final String RUN_ETA_DEBUG_ = s($1_S, s, $1_S, _DOT_, "eta", _DASH_, "debug", _DOT_, LOG);
+        public static final String RUN_ETA_DEBUG_ = s($1_S, s, $1_S, _DOT_, ETA, _DASH_, DEBUG, _DOT_, LOG);
         public static final String RUN_LOG_ = s($1_S, s, $1_S, _DOT_, RUN, _DOT_, LOG);
         public static final String RUN_ROOT_ = s($1_S, s, $1_S, _DOT_, $2_S, _DOT_, $3_S, _DOT_, $4_S, _DOT_, $5_S);
         public static final String RUN_TREE_HTML_ = s($1_S, s, $1_S, _DOT_, works.lysenko.util.lang.word.T.TREE, _DOT_, HTML);
@@ -197,8 +193,9 @@ public record Layout() {
         public static final String SCREENSHOT_ = s($1_S, s, SNAPSHOTS, s, $1_S, _DOT_, $2_S, _DOT_, $3_S, _DOT_, $4_S, _DOT_
                 , $5_S);
         public static final String TELEMETRY_ = s($1_S, s, $1_S, _DOT_, TELEMETRY, _DOT_, LOG);
-        public static final String RUN_STACKTRACES_ = s($1_S, s, $1_S, _DOT_, "stacktraces", _DOT_, PROPERTIES);
+        public static final String RUN_STACKTRACES_ = s($1_S, s, $1_S, _DOT_, STACKTRACES, _DOT_, PROPERTIES);
         public static final String USERS_POOL_ = s(ETC, s, d(USERS, POOL));
-        public static final String VERSION_ = s($1_S, s, $1_S, _DOT_, VERSION);
+        public static final String VERSION_ = s($1_S, _DOT_, VERSION);
+        public static final String WARP_ = s($1_S, _DOT_, $2_S);
     }
 }

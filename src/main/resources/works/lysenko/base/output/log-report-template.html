@@ -151,7 +151,7 @@ a.scen-stat-link:hover { color: #38bdf8; text-decoration: underline; }
 .sym-leaf { color: #a855f7; }
 .sym-fork { color: #22c55e; }
 .sym-other { color: #f59e0b; }
-#sectionsContainer { position: relative; display: grid; grid-template-columns: minmax(0, 1.618fr) minmax(0, 1fr); gap: 10px; align-items: start; }
+#sectionsContainer { position: relative; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 10px; align-items: start; }
 details.log-section { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: all 0.15s ease-out; }
 details.log-section.preflight, details.log-section.postflight { grid-column: 1 / -1; background: var(--card-bg); border-left: 4px solid #38bdf8; }
 details.log-section.booting { grid-column: 1; background: var(--card-bg); border-left: 4px solid #38bdf8; }
@@ -163,6 +163,9 @@ details.log-section.test.failed { border-left-color: #ef4444; }
 details.log-section.limbo { grid-column: 2; background: var(--limbo-bg); border-left: 4px solid #475569; opacity: 0.85; }
 details.log-section.limbo:hover { opacity: 1; }
 body.hide-limbo details.log-section.limbo { display: none !important; }
+body.hide-limbo details.log-section.test { grid-column: 1 / -1; }
+details.log-section.limbo .summary-right { gap: 6px; font-size: 10.5px; }
+details.log-section.limbo .sec-title { color: #94a3b8; }
 details.log-section[open] { grid-column: 1 / -1; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); z-index: 2; }
 details.log-section.has-image-preview[open] { grid-column: 1 !important; }
 summary { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; cursor: pointer; user-select: none; background: rgba(30, 41, 59, 0.4); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 500; font-size: 13px; }

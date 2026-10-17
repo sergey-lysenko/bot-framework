@@ -79,10 +79,10 @@ public final class LogMetrics {
                 final LogSection nextSec = (i + 1 < sections.size()) ? sections.get(i + 1) : null;
                 final String chartLabel;
                 if (null != nextSec && "test".equals(nextSec.type)) {
-                    sec.title = s("Test #", sec.prevTestNum, " ➔ #", nextSec.testNum);
+                    sec.title = s("#", sec.prevTestNum, " ➔ #", nextSec.testNum);
                     chartLabel = s(sec.prevTestNum, "➔", nextSec.testNum);
                 } else {
-                    sec.title = s("Test #", sec.prevTestNum, " ➔ Teardown");
+                    sec.title = s("#", sec.prevTestNum, " ➔ Teardown");
                     chartLabel = s(sec.prevTestNum, "➔End");
                 }
                 final double t0 = toSeconds(sec.startTime);

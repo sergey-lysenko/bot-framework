@@ -273,13 +273,18 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         if (isNotNull(core) && core.getStopFlag()) return false;
         if (areFailingEvents()) return false;
         startedAt = msSinceStart();
-        exec.scenarios().push(this);
-        exec.logEmptyLine();
+        if (isNotNull(exec)) {
+            exec.logEmptyLine();
+            exec.scenarios().push(this);
+        }
         if (ScenarioType.LEAF == type() || ScenarioType.MONO == type()) {
             EtaDebug.startCycle(getShortName());
         }
         log(Level.none, s(ansi(b(s(type().tag()), getShortName()), BLUE_BOLD_BRIGHT), e(s(_COLON_)),
                 core.getResults().count(this)), false);
+        if (isNotNull(core) && isNotNull(core.getTest()) && isNotNull(core.getTest().repeater())) {
+            core.getTest().repeater().addToScenarios(this);
+        }
         TreeTracker.onNode();
         return true;
     }

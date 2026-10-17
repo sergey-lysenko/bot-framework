@@ -38,10 +38,6 @@ public final class GuiParameters {
 
         final File dir = new File(directory);
         scanDirectoryFiles(dir, "", filter, entityList);
-        final File suitesDir = new File(works.lysenko.util.spec.Layout.Paths._SUITES_);
-        if (suitesDir.exists() && suitesDir.isDirectory()) {
-            scanDirectoryFiles(suitesDir, "", ".suite", entityList);
-        }
         entityList.sort(null);
 
         final JComboBox<Object> comboBox = new JComboBox<>(entityList.toArray());

@@ -18,7 +18,7 @@ import static works.lysenko.util.func.type.Files.writeToFile;
 import static works.lysenko.util.lang.word.D.DEBUG;
 import static works.lysenko.util.lang.word.P.PAUSE;
 import static works.lysenko.util.lang.word.T.TITLE;
-import static works.lysenko.util.spec.Layout.Paths._TARGET_DASH_;
+import static works.lysenko.util.spec.Layout.Paths._RESULT_DASH_;
 import static works.lysenko.util.spec.Symbols.QUS_MRK;
 
 /**
@@ -31,11 +31,11 @@ import static works.lysenko.util.spec.Symbols.QUS_MRK;
         "ClassUnconnectedToPackage", "MismatchedQueryAndUpdateOfCollection", "BooleanParameter"})
 public final class Directory implements _Dashboard {
 
-    private static final String TITLE_PATH = s(_TARGET_DASH_, TITLE);
-    private static final String DEBUG_PATH = s(_TARGET_DASH_, DEBUG);
-    private static final String HALT_PATH = s(_TARGET_DASH_, HALT);
-    private static final String STOP_PATH = s(_TARGET_DASH_, STOP);
-    private static final String PAUSE_PATH = s(_TARGET_DASH_, PAUSE);
+    private static final String TITLE_PATH = s(_RESULT_DASH_, TITLE);
+    private static final String DEBUG_PATH = s(_RESULT_DASH_, DEBUG);
+    private static final String HALT_PATH = s(_RESULT_DASH_, HALT);
+    private static final String STOP_PATH = s(_RESULT_DASH_, STOP);
+    private static final String PAUSE_PATH = s(_RESULT_DASH_, PAUSE);
 
     /**
      * Instantiates a new Directory object.

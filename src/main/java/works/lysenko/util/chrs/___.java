@@ -30,10 +30,12 @@ public record ___() {
     public static final String COL = "col";
     public static final String COM = "com";
     public static final String DEN = "den";
+    public static final String DOTS = "...";
     public static final String DUE = "due";
     public static final String END = "end";
     public static final String ENT = "ent";
     public static final String EQU = "equ";
+    public static final String ETA = "eta";
     public static final String ETC = "etc";
     public static final String FAU = "fau";
     public static final String FEW = "few";
@@ -127,8 +129,7 @@ public record ___() {
     public static final String WEB = "web";
     public static final String XML = "xml";
     public static final String YES = "yes";
-
-    public static final String DOTS = "...";
     public static final String _128 = "128";
     public static final String _255 = "255";
+
 }

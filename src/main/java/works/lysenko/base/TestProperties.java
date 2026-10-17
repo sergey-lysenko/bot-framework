@@ -47,11 +47,9 @@ import static works.lysenko.util.lang.word.P.PROPERTY;
 import static works.lysenko.util.lang.word.U.UNDEFINED;
 import static works.lysenko.util.spec.Layout.Files.COMMON_CONFIGURATION;
 import static works.lysenko.util.spec.Layout.Parts.SUITE_PROPERTIES_EXTENSION;
-import static works.lysenko.util.spec.Layout.Parts.TEST_PROPERTIES_EXTENSION;
 import static works.lysenko.util.spec.Layout.Parts._DOT_PROPERTIES;
 import static works.lysenko.util.spec.Layout.Paths._CONFIG_;
 import static works.lysenko.util.spec.Layout.Paths._SUITES_;
-import static works.lysenko.util.spec.Layout.Paths._TESTS_;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
@@ -115,8 +113,7 @@ public class TestProperties implements _TestProperties {
      * Retrieves the log message for a given field and object and logs it at the DEBUG level.
      *
      * @param field The field associated with the log message.
-     * @param o     The object associated with the log message.
-     */
+     * @param o     The object associated with the log message.\n     */
     private static void getLog(final Object field, final Object o, final Object def) {
 
         if (IN_GET_LOG.get()) return;
@@ -196,15 +193,7 @@ public class TestProperties implements _TestProperties {
         if (isNull(suiteName) || suiteName.isBlank()) {
             return new works.lysenko.util.func.core.TestProperties.Result(new Properties(), "");
         }
-        try {
-            final works.lysenko.util.func.core.TestProperties.Result suiteRes =
-                    readTestPropertiesFromFile(new TestPropertiesDescriptor(_SUITES_, suiteName, SUITE_PROPERTIES_EXTENSION));
-            if (isNotNull(suiteRes) && isNotNull(suiteRes.properties()) && !suiteRes.properties().isEmpty()) {
-                return suiteRes;
-            }
-        } catch (final Exception ignored) {
-        }
-        return readTestPropertiesFromFile(new TestPropertiesDescriptor(_TESTS_, suiteName, TEST_PROPERTIES_EXTENSION));
+        return readTestPropertiesFromFile(new TestPropertiesDescriptor(_SUITES_, suiteName, SUITE_PROPERTIES_EXTENSION));
     }
 
     private void updateConfigFileDefaults(final String testName) {

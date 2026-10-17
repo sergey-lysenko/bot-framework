@@ -1,2 +1,0 @@
-# Reusable test suite partial (tests/parts/sample_suite.part)
-# Include this in a test file via .include=parts/sample_suite

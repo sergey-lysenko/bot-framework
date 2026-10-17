@@ -202,7 +202,7 @@ class GuiTest {
 
     @Test
     void testSelectionOfTestConfigurationUpdatesTestsValue() throws Exception {
-        final File testFile = new File("src/main/resources/tests/sample_test.test");
+        final File testFile = new File("src/main/resources/suites/sample_test.suite");
         try {
             if (!testFile.getParentFile().exists()) {
                 testFile.getParentFile().mkdirs();

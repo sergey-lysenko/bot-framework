@@ -17,7 +17,6 @@ import javax.swing.text.JTextComponent;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
-import java.util.Set;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -29,10 +28,8 @@ import java.util.List;
 
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.spec.Layout.Parts.SUITE_PROPERTIES_EXTENSION;
-import static works.lysenko.util.spec.Layout.Parts.TEST_PROPERTIES_EXTENSION;
 import static works.lysenko.util.spec.Layout.Paths._CONFIG_;
 import static works.lysenko.util.spec.Layout.Paths._SUITES_;
-import static works.lysenko.util.spec.Layout.Paths._TESTS_;
 
 /**
  * Embedded Micro-IDE style panel for managing configuration files, parts, and test suites.
@@ -46,7 +43,7 @@ public class ConfigTestsEditorPanel extends JPanel {
     }
 
     public enum FileCategory {
-        ROOT_DIR, CATEGORY_DIR, GLOBAL_CONFIG, CONFIG_PART, TEST_SUITE, SUITE_PART, TEST_PART
+        ROOT_DIR, CATEGORY_DIR, GLOBAL_CONFIG, CONFIG_PART, TEST_SUITE, SUITE_PART
     }
 
     public record FileNodeObject(String displayName, Path path, FileCategory category, boolean deletable) {
@@ -158,7 +155,7 @@ public class ConfigTestsEditorPanel extends JPanel {
 
         final JButton newFileBtn = new JButton("+ New File...");
         newFileBtn.setFont(btnFont);
-        newFileBtn.setToolTipText("Create a new .suite, .test, or .part file");
+        newFileBtn.setToolTipText("Create a new .suite or .part file");
         newFileBtn.addActionListener(e -> createNewFile());
 
         final JButton deleteFileBtn = new JButton("Delete File");
@@ -259,7 +256,7 @@ public class ConfigTestsEditorPanel extends JPanel {
 
         table.getColumnModel().getColumn(2).setCellEditor(new ValidatingCellEditor(1, msg -> {
             if (msg != null) {
-                scopeWarningLabel.setText("⚠️ " + msg);
+                scopeWarningLabel.setText("\u26a0\ufe0f " + msg);
                 scopeWarningLabel.setVisible(true);
             } else {
                 validateContainerScope();
@@ -451,7 +448,7 @@ public class ConfigTestsEditorPanel extends JPanel {
                     new FileNodeObject("suites", suitesDir, FileCategory.CATEGORY_DIR, false)
             );
             try (final var stream = Files.list(suitesDir)) {
-                stream.filter(p -> p.toString().endsWith(SUITE_PROPERTIES_EXTENSION) || p.toString().endsWith(TEST_PROPERTIES_EXTENSION))
+                stream.filter(p -> p.toString().endsWith(SUITE_PROPERTIES_EXTENSION))
                         .sorted()
                         .forEach(p -> suitesFolder.add(new DefaultMutableTreeNode(
                                 new FileNodeObject(p.getFileName().toString(), p, FileCategory.TEST_SUITE, true)
@@ -465,7 +462,7 @@ public class ConfigTestsEditorPanel extends JPanel {
                         new FileNodeObject("parts", suitePartsDir, FileCategory.CATEGORY_DIR, false)
                 );
                 try (final var stream = Files.list(suitePartsDir)) {
-                    stream.filter(p -> p.toString().endsWith(".part") || p.toString().endsWith(SUITE_PROPERTIES_EXTENSION) || p.toString().endsWith(TEST_PROPERTIES_EXTENSION))
+                    stream.filter(p -> p.toString().endsWith(".part") || p.toString().endsWith(SUITE_PROPERTIES_EXTENSION))
                             .sorted()
                             .forEach(p -> suitePartsFolder.add(new DefaultMutableTreeNode(
                                     new FileNodeObject(p.getFileName().toString(), p, FileCategory.SUITE_PART, true)
@@ -475,39 +472,6 @@ public class ConfigTestsEditorPanel extends JPanel {
             }
 
             treeRootNode.add(suitesFolder);
-        }
-
-        // 3. tests/
-        final Path testsDir = Path.of(_TESTS_);
-        if (Files.exists(testsDir) && Files.isDirectory(testsDir)) {
-            final DefaultMutableTreeNode testsFolder = new DefaultMutableTreeNode(
-                    new FileNodeObject("tests", testsDir, FileCategory.CATEGORY_DIR, false)
-            );
-            try (final var stream = Files.list(testsDir)) {
-                stream.filter(p -> p.toString().endsWith(TEST_PROPERTIES_EXTENSION) || p.toString().endsWith(SUITE_PROPERTIES_EXTENSION))
-                        .sorted()
-                        .forEach(p -> testsFolder.add(new DefaultMutableTreeNode(
-                                new FileNodeObject(p.getFileName().toString(), p, FileCategory.TEST_SUITE, true)
-                        )));
-            } catch (final Exception ignored) {}
-
-            // parts/ inside tests/ ("parts of tests")
-            final Path testPartsDir = Path.of(_TESTS_, "parts");
-            if (Files.exists(testPartsDir) && Files.isDirectory(testPartsDir)) {
-                final DefaultMutableTreeNode testPartsFolder = new DefaultMutableTreeNode(
-                        new FileNodeObject("parts", testPartsDir, FileCategory.CATEGORY_DIR, false)
-                );
-                try (final var stream = Files.list(testPartsDir)) {
-                    stream.filter(p -> p.toString().endsWith(".part") || p.toString().endsWith(TEST_PROPERTIES_EXTENSION) || p.toString().endsWith(SUITE_PROPERTIES_EXTENSION))
-                            .sorted()
-                            .forEach(p -> testPartsFolder.add(new DefaultMutableTreeNode(
-                                    new FileNodeObject(p.getFileName().toString(), p, FileCategory.TEST_PART, true)
-                            )));
-                } catch (final Exception ignored) {}
-                testsFolder.add(testPartsFolder);
-            }
-
-            treeRootNode.add(testsFolder);
         }
 
         treeModel.reload();
@@ -623,12 +587,6 @@ public class ConfigTestsEditorPanel extends JPanel {
                 activeFileBadge.setForeground(modified ? new Color(0x92, 0x40, 0x0E) : new Color(0x37, 0x30, 0xA3));
                 baseBadge = "SUITE PARTIAL";
             }
-            case TEST_PART -> {
-                activeFileBadge.setText("TEST PARTIAL");
-                activeFileBadge.setBackground(modified ? new Color(0xFE, 0xF3, 0xC7) : new Color(0xF3, 0xE8, 0xFF));
-                activeFileBadge.setForeground(modified ? new Color(0x92, 0x40, 0x0E) : new Color(0x6B, 0x21, 0xA8));
-                baseBadge = "TEST PARTIAL";
-            }
             default -> {
                 baseBadge = "FILE";
                 activeFileBadge.setBackground(Color.LIGHT_GRAY);
@@ -741,7 +699,7 @@ public class ConfigTestsEditorPanel extends JPanel {
 
         if (!invalidDetails.isEmpty()) {
             final String countStr = invalidDetails.size() == 1 ? "1 invalid property" : invalidDetails.size() + " invalid properties";
-            scopeWarningLabel.setText("⚠️ " + countStr + " found in " + currentSelectedNode.displayName() +
+            scopeWarningLabel.setText("\u26a0\ufe0f " + countStr + " found in " + currentSelectedNode.displayName() +
                     ": " + invalidDetails.get(0) + ". Invalid properties are preserved when saving.");
             scopeWarningLabel.setVisible(true);
         } else {
@@ -881,9 +839,7 @@ public class ConfigTestsEditorPanel extends JPanel {
 
         final String[] types = {
                 "Test Suite (*.suite in suites/)",
-                "Test Suite (*.test in tests/)",
                 "Suite Part (*.part in suites/parts/)",
-                "Test Part (*.part in tests/parts/)",
                 "Config Part (*.part in config/parts/)"
         };
         final String selectedType = (String) JOptionPane.showInputDialog(
@@ -910,12 +866,6 @@ public class ConfigTestsEditorPanel extends JPanel {
         } else if (selectedType.contains("suites/")) {
             extension = SUITE_PROPERTIES_EXTENSION;
             targetPath = Path.of(_SUITES_, cleanName + extension);
-        } else if (selectedType.contains("tests/parts/")) {
-            extension = ".part";
-            targetPath = Path.of(_TESTS_, "parts", cleanName + extension);
-        } else if (selectedType.contains("tests/")) {
-            extension = TEST_PROPERTIES_EXTENSION;
-            targetPath = Path.of(_TESTS_, cleanName + extension);
         } else {
             extension = ".part";
             targetPath = Path.of(_CONFIG_, "parts", cleanName + extension);
@@ -1079,10 +1029,10 @@ public class ConfigTestsEditorPanel extends JPanel {
                 if (obj instanceof FileNodeObject fileObj) {
                     label.setText(fileObj.displayName());
                     switch (fileObj.category()) {
-                        case GLOBAL_CONFIG -> label.setText("⚙️ " + fileObj.displayName());
-                        case CONFIG_PART, SUITE_PART, TEST_PART -> label.setText("🧩 " + fileObj.displayName());
-                        case TEST_SUITE -> label.setText("🧪 " + fileObj.displayName());
-                        case CATEGORY_DIR -> label.setText("📁 " + fileObj.displayName());
+                        case GLOBAL_CONFIG -> label.setText("\u2699\ufe0f " + fileObj.displayName());
+                        case CONFIG_PART, SUITE_PART -> label.setText("\ud83e\udde9 " + fileObj.displayName());
+                        case TEST_SUITE -> label.setText("\ud83e\uddea " + fileObj.displayName());
+                        case CATEGORY_DIR -> label.setText("\ud83d\udcc1 " + fileObj.displayName());
                         default -> {}
                     }
                 }
@@ -1100,7 +1050,7 @@ public class ConfigTestsEditorPanel extends JPanel {
             label.setHorizontalAlignment(CENTER);
 
             if ("INVALID".equals(str)) {
-                label.setText("⚠️ INVALID");
+                label.setText("\u26a0\ufe0f INVALID");
                 label.setBackground(new Color(0xFE, 0xF2, 0xF2));
                 label.setForeground(new Color(0x99, 0x1B, 0x1B));
                 label.setBorder(BorderFactory.createLineBorder(new Color(0xF8, 0x71, 0x71)));
@@ -1147,7 +1097,7 @@ public class ConfigTestsEditorPanel extends JPanel {
                         label.setBackground(new Color(0xFF, 0xF1, 0xF1));
                         label.setForeground(new Color(0x99, 0x1B, 0x1B));
                     }
-                    label.setToolTipText("⚠️ " + error);
+                    label.setToolTipText("\u26a0\ufe0f " + error);
                 } else {
                     if (!sel) {
                         label.setBackground(t.getBackground());
@@ -1173,7 +1123,7 @@ public class ConfigTestsEditorPanel extends JPanel {
         switch (currentSelectedNode.category()) {
             case GLOBAL_CONFIG, CONFIG_PART ->
                     propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);
-            case TEST_SUITE, SUITE_PART, TEST_PART ->
+            case TEST_SUITE, SUITE_PART ->
                     propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.SUITES_ONLY);
             default -> {
                 final String pathStr = currentSelectedNode.path().toString().replace('\\', '/');

@@ -81,7 +81,9 @@ public class Scenarios implements _Scenarios {
             // Validates a scenario; adds to history; removes from stack
             if (isNotNull(currentArray[0])) {
                 assertEqualsSilent(currentArray[0].getName(), scenario.getName(), b(c(UNEXPECTED), SCENARIO));
-                core.getTest().repeater().addToHistory(scenario);
+                if (isNotNull(core) && isNotNull(core.getTest()) && isNotNull(core.getTest().repeater())) {
+                    core.getTest().repeater().addToHistory(scenario);
+                }
                 stack.pop();
             } else {
                 // exec.logEvent(S2, b(c(NO), SCENARIOS, IN, STACK));
@@ -92,6 +94,5 @@ public class Scenarios implements _Scenarios {
     public final void push(final _Scenario scenario) {
 
         stack.push(scenario);
-        core.getTest().repeater().addToScenarios(scenario);
     }
 }

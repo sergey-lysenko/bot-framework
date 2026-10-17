@@ -37,6 +37,7 @@ import static java.util.Objects.isNull;
 import static works.lysenko.Base.*;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.spec.Layout.Files.name;
+import static works.lysenko.util.spec.Layout.Paths._RUNS_;
 import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_;
 
 /**
@@ -1065,6 +1066,6 @@ public final class TreeTracker {
             } catch (final Exception ignored) {
             }
         }
-        return new File("target/runs");
+        return new File(_RUNS_);
     }
 }

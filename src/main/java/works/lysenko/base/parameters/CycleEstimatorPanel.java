@@ -38,9 +38,7 @@ import static java.util.Objects.isNull;
 import static works.lysenko.util.lang.word.C.COVERAGE;
 import static works.lysenko.util.lang.word.R.REQUIRED;
 import static works.lysenko.util.spec.Layout.Parts.SUITE_PROPERTIES_EXTENSION;
-import static works.lysenko.util.spec.Layout.Parts.TEST_PROPERTIES_EXTENSION;
 import static works.lysenko.util.spec.Layout.Paths._SUITES_;
-import static works.lysenko.util.spec.Layout.Paths._TESTS_;
 
 /**
  * Handles coverage cycle estimations and cycle controls panel initialization.
@@ -122,11 +120,7 @@ public final class CycleEstimatorPanel {
         try {
             readTestPropertiesFromFile(new TestPropertiesDescriptor(_SUITES_, testName, SUITE_PROPERTIES_EXTENSION));
         } catch (final RuntimeException e) {
-            try {
-                readTestPropertiesFromFile(new TestPropertiesDescriptor(_TESTS_, testName, TEST_PROPERTIES_EXTENSION));
-            } catch (final RuntimeException e2) {
-                return "Test configuration not found";
-            }
+            return "Test configuration not found";
         }
 
         final TestProperties tp = (isNotNull(Base.properties)) ? Base.properties : new TestProperties();

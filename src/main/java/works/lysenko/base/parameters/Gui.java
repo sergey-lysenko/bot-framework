@@ -57,9 +57,9 @@ import static works.lysenko.util.lang.word.U.UNABLE;
 import static works.lysenko.util.prop.core.Start.forcedPlatform;
 import static works.lysenko.util.spec.Layout.Directories.ETC_;
 import static works.lysenko.util.spec.Layout.Files.PLATFORMS_;
-import static works.lysenko.util.spec.Layout.Parts.TEST_PROPERTIES_EXTENSION;
+import static works.lysenko.util.spec.Layout.Parts.SUITE_PROPERTIES_EXTENSION;
 import static works.lysenko.util.spec.Layout.Parts.USERS_POOL_EXTENSION;
-import static works.lysenko.util.spec.Layout.Paths._TESTS_;
+import static works.lysenko.util.spec.Layout.Paths._SUITES_;
 
 /**
  * Represents a Graphical User Interface (GUI) for parameter input and user interaction.
@@ -224,7 +224,7 @@ public class Gui implements _GUI {
 
         if (isNotNull(test)) {
             final Object selected = test.getSelectedItem();
-            final JComboBox<Object> newCombo = GuiParameters.addFromFiles(SUITE.name(), _TESTS_, TEST_PROPERTIES_EXTENSION, parameters);
+            final JComboBox<Object> newCombo = GuiParameters.addFromFiles(SUITE.name(), _SUITES_, SUITE_PROPERTIES_EXTENSION, parameters);
             test.removeAllItems();
             for (int i = 0; i < newCombo.getItemCount(); i++) {
                 test.addItem(newCombo.getItemAt(i));
@@ -241,9 +241,9 @@ public class Gui implements _GUI {
     public void addStandardParameters() {
         isInitializingGui = true;
 
-        test = addFromFiles(SUITE.name(), _TESTS_, TEST_PROPERTIES_EXTENSION);
+        test = addFromFiles(SUITE.name(), _SUITES_, SUITE_PROPERTIES_EXTENSION);
         if (isNull(test.getSelectedItem())) {
-            final JComboBox<Object> testFallback = addFromFiles(TEST.name(), _TESTS_, TEST_PROPERTIES_EXTENSION);
+            final JComboBox<Object> testFallback = addFromFiles(TEST.name(), _SUITES_, SUITE_PROPERTIES_EXTENSION);
             if (isNotNull(testFallback.getSelectedItem())) {
                 test.setSelectedItem(testFallback.getSelectedItem());
             }

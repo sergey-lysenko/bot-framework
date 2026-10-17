@@ -25,7 +25,6 @@ import static java.util.Objects.isNull;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.spec.Layout.Paths._CONFIG_;
 import static works.lysenko.util.spec.Layout.Paths._SUITES_;
-import static works.lysenko.util.spec.Layout.Paths._TESTS_;
 
 public class PropertyTablePanel extends JPanel {
 
@@ -303,7 +302,7 @@ public class PropertyTablePanel extends JPanel {
         if (!key.isEmpty()) {
             final String err = PropertyValidator.validateProperty(key, val, null);
             if (isNotNull(err)) {
-                liveValidationErrorLabel.setText("⚠️ " + err);
+                liveValidationErrorLabel.setText("\u26a0\ufe0f " + err);
                 liveValidationErrorLabel.setVisible(true);
                 valueField.setBackground(new Color(0xFE, 0xF2, 0xF2));
                 return;
@@ -345,10 +344,8 @@ public class PropertyTablePanel extends JPanel {
             }
         } else {
             scanPartFiles(Path.of(_SUITES_), relevantParts);
-            scanPartFiles(Path.of(_TESTS_), relevantParts);
             if (relevantParts.isEmpty()) {
                 scanPartFiles(Path.of("suites"), relevantParts);
-                scanPartFiles(Path.of("tests"), relevantParts);
             }
         }
 

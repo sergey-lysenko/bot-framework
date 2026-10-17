@@ -4,15 +4,12 @@ import static works.lysenko.util.chrs.__.*;
 import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.____.*;
 import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.lang.word.T.*;
 import static works.lysenko.util.spec.Symbols.*;
 
 @SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "unused"})
 public record S() {
 
-    public static final String SECOND = s(SE, COND);
-    public static final String SPECIFICS = s(S, PE, C, I, F, IC, S);
-    public static final String SUCCESSFUL = s(SU, CC, ES, SF, UL);
-    public static final String SUPPORT = s(SU, PP, ORT);
     public static final String SAFEGUARD = s(SA, FE, G, U, AR, D);
     public static final String SAMPLED = s(SA, MP, L, ED);
     public static final String SAMPLES = s(SA, MP, L, ES);
@@ -30,6 +27,7 @@ public record S() {
     public static final String SCROLLER = s(SCROLL, ER);
     public static final String SCROLLING = s(SCROLL, ING);
     public static final String SEARCH = s(SE, ARCH);
+    public static final String SECOND = s(SE, COND);
     public static final String SECONDS = s(SECOND, S);
     public static final String SELECT = s(SELE, CT);
     public static final String SELECTED = s(SELECT, ED);
@@ -38,6 +36,7 @@ public record S() {
     public static final String SELENIUM = s(SELE, NI, UM);
     public static final String SERVICE = s(SERV, I, CE);
     public static final String SESSION = s(SE, SS, ION);
+    public static final String SEVERE = s(SE, VE, RE);
     public static final String SEVERITY = s(SE, VE, RI, TY);
     public static final String SHARE = s(SH, ARE);
     public static final String SHARES = s(SHARE, S);
@@ -61,9 +60,12 @@ public record S() {
     public static final String SPACE = s(SP, AC, E);
     public static final String SPAN = s(SP, AN);
     public static final String SPANNING = s(SPA, NN, ING);
+    public static final String SPECIFICS = s(S, PE, C, I, F, IC, S);
     public static final String SPENT = s(SP, ENT);
     public static final String SPINNER = s(SP, IN, N, ER);
     public static final String STACK = s(STA, CK);
+    public static final String STACKTRACE = s(STACK, TRACE);
+    public static final String STACKTRACES = s(STACKTRACE, S);
     public static final String STALE = s(STA, LE);
     public static final String STAMP = s(STA, MP);
     public static final String START = s(ST, ART);
@@ -83,10 +85,12 @@ public record S() {
     public static final String STRING = s(STRI, NG);
     public static final String STUCK = s(ST, U, CK);
     public static final String SUBSTITUTE = s(SUB, ST, IT, U, TE);
+    public static final String SUCCESSFUL = s(SU, CC, ES, SF, UL);
     public static final String SUCCESSFULLY = s(SUCCESSFUL, LY);
+    public static final String SUITE = s(SU, IT, E);
+    public static final String SUITES = s(SUITE, S);
     public static final String SUMMARY = s(SU, MM, AR, Y);
-    public static final String SEVERE = s(SE, VE, RE);
-
+    public static final String SUPPORT = s(SU, PP, ORT);
     public static final String SUPPORTED = s(SUPPORT, ED);
     public static final String SWIPE = s(SWIP, E);
     public static final String SWIPED = s(SWIPE, D);

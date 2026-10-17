@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static works.lysenko.base.output.loghtml.LogFormatting.toSeconds;
 import static works.lysenko.base.output.loghtml.LogFormatting.SCEN_TOKEN_RE;
 import static works.lysenko.base.output.loghtml.LogFormatting.escapeHtml;
 import static works.lysenko.base.output.loghtml.LogFormatting.extractLineSpan;
@@ -369,7 +370,13 @@ public final class SectionRenderer {
                     : "booting".equals(sec.type) ? "boot"
                     : sec.type;
             final String opRange = sec.startOp != null ? s("[", sec.startOp, "..", sec.endOp, "]") : "";
-            final String timeRange = (sec.startTime != null && sec.endTime != null) ? s(sec.startTime, "s ➔ ", sec.endTime, "s") : "";
+            final String fullTimeRange = (sec.startTime != null && sec.endTime != null) ? s(sec.startTime, "s ➔ ", sec.endTime, "s") : "";
+            final String timeRange;
+            if (isLimbo && sec.startTime != null && sec.endTime != null) {
+                timeRange = String.format(Locale.ROOT, "%.1fs ➔ %.1fs", toSeconds(sec.startTime), toSeconds(sec.endTime));
+            } else {
+                timeRange = fullTimeRange;
+            }
             final String secId = s("sec_", sec.title.replace(" ", "_").replace("#", "").replace("➔", "to"));
 
             sb.append(s(
@@ -380,7 +387,7 @@ public final class SectionRenderer {
                     "      <span class=\"badge ", badgeClass, "\">", badgeText, "</span>\n",
                     (sec.durationStr != null && !sec.durationStr.isEmpty()) ? s("      <span class=\"duration", isLimbo ? " limbo-duration" : "", "\">", sec.durationStr, "</span>\n") : "",
                     "    </div>\n    <div class=\"summary-right\">\n",
-                    timeRange.isEmpty() ? "" : s("      <span class=\"time-range\">", timeRange, "</span>\n"),
+                    timeRange.isEmpty() ? "" : s("      <span class=\"time-range\" title=\"", fullTimeRange, "\">", timeRange, "</span>\n"),
                     "      <span class=\"line-count\">", sec.lines.size(), " lines</span>\n    </div>\n  </summary>\n"
             ));
 

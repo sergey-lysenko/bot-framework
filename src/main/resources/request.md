@@ -9,7 +9,7 @@ Locate and verify the target scenario from the latest test execution before proc
 1. **Locate Latest Run, Snapshots & Failure Line**:
    Run the consolidated discovery command:
    ```bash
-   LATEST_RUN=$(ls -td target/runs/*/* 2>/dev/null | head -1)
+   LATEST_RUN=$(ls -td result/runs/*/* target/runs/*/* 2>/dev/null | head -1)
    echo "RUN: $LATEST_RUN"
    find "$LATEST_RUN" -maxdepth 1 \( -name "*EXIT*.*" -o -name "*[EXIT]*.*" \) 2>/dev/null
    grep -m 1 -E "\[FAILURE\] Not implemented.*in '.*'" "$LATEST_RUN"/*.run.log 2>/dev/null

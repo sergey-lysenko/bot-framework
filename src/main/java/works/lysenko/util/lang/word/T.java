@@ -28,6 +28,7 @@ public record T() {
     public static final String TOOK = s(TO, OK);
     public static final String TOOLBAR = s(TOO, L, BAR);
     public static final String TOUCHING = s(TO, UCH, ING);
+    public static final String TRACE = s(TR, AC, E);
     public static final String TRANSFORM = s(TR, ANS, FORM);
     public static final String TREE = s(TR, EE);
     public static final String TRYING = s(TRY, ING);
