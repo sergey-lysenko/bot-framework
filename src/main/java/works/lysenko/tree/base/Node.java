@@ -29,6 +29,7 @@ import static works.lysenko.util.chrs.____.LOST;
 import static works.lysenko.util.data.enums.ScenarioType.NODE;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
+import static works.lysenko.util.data.strs.Null.n;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.data.strs.Wrap.q;
@@ -213,14 +214,15 @@ public abstract class Node extends Core implements _Node {
                 if (!resilient) stopTests();
                 return false;
             } catch (final RuntimeException e) {
+                final String message = n(e.toString(), e.getMessage());
                 if (actionSucceeded) {
                     markAsChildFailed();
                 } else {
                     markAsFailed();
-                    logEvent(works.lysenko.util.data.enums.Severity.S0, e.getMessage());
+                    logEvent(works.lysenko.util.data.enums.Severity.S0, message);
                 }
                 throw new ScenarioRuntimeException(b(type().tag(), q(getShortName()), SCENARIO_EXECUTION_FAILED_DUE_TO,
-                        e(Brackets.CURLY, e.getMessage())), e, this);
+                        e(Brackets.CURLY, message)), e, this);
             } finally {
                 done();
             }

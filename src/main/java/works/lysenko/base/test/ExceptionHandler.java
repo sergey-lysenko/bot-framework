@@ -15,6 +15,7 @@ import static works.lysenko.util.data.enums.Severity.S0;
 import static works.lysenko.util.data.enums.Severity.S1;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
+import static works.lysenko.util.data.strs.Null.n;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.lang.A.ATTEMPTING_COUNTER_ACTION;
@@ -82,7 +83,7 @@ public class ExceptionHandler implements _ExceptionsHandler {
     private void action(final RuntimeException exception, final String scenarioTitle) throws SafeguardException {
 
         if (isNull(exceptional)) {
-            logEvent(S1, b(UNCAUGHT_EXCEPTION, exception.getMessage()));
+            logEvent(S1, b(UNCAUGHT_EXCEPTION, n(exception.toString(), exception.getMessage())));
             throw exception;
         } else handleExceptionalScenario(this.exception, scenarioTitle);
     }

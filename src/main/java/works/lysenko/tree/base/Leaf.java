@@ -17,6 +17,7 @@ import java.util.Set;
 import static java.util.Objects.isNull;
 import static works.lysenko.util.data.enums.ScenarioType.LEAF;
 import static works.lysenko.util.data.strs.Bind.b;
+import static works.lysenko.util.data.strs.Null.n;
 import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.lang.S.SCENARIO_EXECUTION_FAILED_DUE_TO;
@@ -95,10 +96,11 @@ public abstract class Leaf extends Core {
                 finals();
                 return true;
             } catch (final RuntimeException e) {
+                final String message = n(e.toString(), e.getMessage());
                 markAsFailed();
-                logEvent(works.lysenko.util.data.enums.Severity.S0, e.getMessage());
+                logEvent(works.lysenko.util.data.enums.Severity.S0, message);
                 throw new ScenarioRuntimeException(b(type().tag(), q(getShortName()), SCENARIO_EXECUTION_FAILED_DUE_TO,
-                        e(Brackets.CURLY, e.getMessage())), e, this);
+                        e(Brackets.CURLY, message)), e, this);
             } finally {
                 done();
             }

@@ -7,6 +7,8 @@ import works.lysenko.util.data.type.LogRecord;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
+import static works.lysenko.util.func.type.Objects.isNotNull;
+
 /**
  * Queue class represents a priority queue for LogRecord objects.
  */
@@ -24,19 +26,19 @@ public class Queue implements _Queue {
     }
 
     @Override
-    public final void add(final LogRecord logRecord) {
+    public synchronized final void add(final LogRecord logRecord) {
 
-        queue.add(logRecord);
+        if (isNotNull(logRecord)) queue.add(logRecord);
     }
 
     @Override
-    public final boolean isEmpty() {
+    public synchronized final boolean isEmpty() {
 
         return queue.isEmpty();
     }
 
     @Override
-    public final _LogRecord poll() {
+    public synchronized final _LogRecord poll() {
 
         return queue.poll();
     }

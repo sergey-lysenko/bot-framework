@@ -39,6 +39,7 @@ import static works.lysenko.Base.exec;
 import static works.lysenko.base.core.Routines.msSinceStart;
 import static works.lysenko.util.chrs.__.IN;
 import static works.lysenko.util.chrs.___.AND;
+import static works.lysenko.util.chrs.____.NULL;
 import static works.lysenko.util.data.enums.Ansi.removeANSICodes;
 import static works.lysenko.util.data.enums.Brackets.SQUARE;
 import static works.lysenko.util.data.enums.Platform.CHROME;
@@ -121,12 +122,13 @@ public class Processor implements _LogsProcessor {
     private static LogRecord createEvent(final long time, final int depth, final _Severity severity, final String text,
                                          final String stacktrace) {
 
+        final String safeText = n(NULL, text);
         final LogRecord newLogRecord;
         final Integer test = core.getCurrentTestNumber();
         if (isNotNull(severity)) {
-            newLogRecord = new LogRecord(test, time, new Event(++counter, severity.type(), depth, text, stacktrace));
+            newLogRecord = new LogRecord(test, time, new Event(++counter, severity.type(), depth, safeText, stacktrace));
             if (isNotNull(exec)) exec.issues().add(newLogRecord);
-        } else newLogRecord = new LogRecord(test, time, new Event(++counter, EventType.UNDEFINED, depth, text, stacktrace));
+        } else newLogRecord = new LogRecord(test, time, new Event(++counter, EventType.UNDEFINED, depth, safeText, stacktrace));
         core.getResults().addEvent(newLogRecord);
         return newLogRecord;
     }
@@ -201,7 +203,7 @@ public class Processor implements _LogsProcessor {
         System.out.println(s);
     }
 
-    public final void getAllDriverLogs(final int depth, final Long redefinedTime) {
+    public synchronized final void getAllDriverLogs(final int depth, final Long redefinedTime) {
 
         if (isNotNull(exec)) {
             if (isNotNull(exec.wd())) {
@@ -221,7 +223,7 @@ public class Processor implements _LogsProcessor {
     }
 
     @Override
-    public final int getSpanLength() {
+    public synchronized final int getSpanLength() {
 
         return spanLength;
     }
@@ -240,13 +242,13 @@ public class Processor implements _LogsProcessor {
      * @param redefinedTime The optional redefined time for the log.
      */
     @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "AssignmentToStaticFieldFromInstanceMethod"})
-    public final void log(final int level, final String message, final Long redefinedTime) {
+    public synchronized final void log(final int level, final String message, final Long redefinedTime) {
 
         final int depth = getDepth(); // indentation of text
         getAllDriverLogs(depth, redefinedTime); // external logs
 
         final long time = defineTime(redefinedTime); // time for this record
-        final AbstractLogData data = new Log(++counter, depth, level, message); // data for this log record
+        final AbstractLogData data = new Log(++counter, depth, level, n(NULL, message)); // data for this log record
         final LogRecord logRecord = createLogRecord(time, data);
         final Telemetry telemetry = Telemetry.getNewTelemetry(time, (isNull(exec)) ? StringUtils.EMPTY :
                 Stacktrace.getShort(Thread.currentThread().getStackTrace()));
@@ -259,7 +261,7 @@ public class Processor implements _LogsProcessor {
     }
 
     @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "AssignmentToStaticFieldFromInstanceMethod"})
-    public final void logEmptyLine() {
+    public synchronized final void logEmptyLine() {
 
         core.sleep(1L, true);
         queue.add(new LogRecord(core.getCurrentTestNumber(), msSinceStart(), new LineFeed(++counter)));
@@ -267,7 +269,7 @@ public class Processor implements _LogsProcessor {
     }
 
     @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "AssignmentToStaticFieldFromInstanceMethod"})
-    public final void logEmptyLine(final String shortStackTrace) {
+    public synchronized final void logEmptyLine(final String shortStackTrace) {
 
         core.sleep(1L, true);
         final int depth = getDepth();
@@ -276,7 +278,7 @@ public class Processor implements _LogsProcessor {
         core.sleep(1L, true);
     }
 
-    public final void logEvent(final Severity severity, final String message, final String shortStackTrace) {
+    public synchronized final void logEvent(final Severity severity, final String message, final String shortStackTrace) {
 
         final int depth = getDepth();
         queue.add(createEvent(msSinceStart(), depth, severity, message, shortStackTrace));
@@ -287,10 +289,11 @@ public class Processor implements _LogsProcessor {
      *
      * @param telemetry The telemetry object to be logged along with the log records.
      */
-    public final void process(final Telemetry telemetry) {
+    public synchronized final void process(final Telemetry telemetry) {
 
         while (!queue.isEmpty()) {
             final _LogRecord r = queue.poll();
+            if (r == null) continue;
             final long previousId = isNull(upperLogRecord) ? ZERO : upperLogRecord.data().id();
             final String line = r.render(core.getTotalTests(), spanLength, previousId);
             logConsole(line); // render to Console
