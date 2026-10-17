@@ -63,4 +63,22 @@ public interface _TestParameters {
      * @return A string representing the complete test description.
      */
     String testDescription();
+
+    /**
+     * Retrieves the origin IP or client descriptor.
+     *
+     * @return the origin string, or null
+     */
+    default String getOrigin() {
+        return null;
+    }
+
+    /**
+     * Retrieves the freeform tag descriptor.
+     *
+     * @return the tag string, or null
+     */
+    default String getTag() {
+        return null;
+    }
 }

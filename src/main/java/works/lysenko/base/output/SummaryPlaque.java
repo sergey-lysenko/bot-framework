@@ -23,6 +23,8 @@ public record SummaryPlaque(
         String domain,
         String mode,
         String pathsSummary,
+        String origin,
+        String tag,
         int total,
         int executable,
         int executed,
@@ -42,7 +44,7 @@ public record SummaryPlaque(
             final int warning,
             final int failed
     ) {
-        this(null, null, null, null, null, total, executable, executed, passed, warning, 0, failed, 0, false);
+        this(null, null, null, null, null, null, null, total, executable, executed, passed, warning, 0, failed, 0, false);
     }
 
     public SummaryPlaque(
@@ -54,7 +56,7 @@ public record SummaryPlaque(
             final int upset,
             final int failed
     ) {
-        this(null, null, null, null, null, total, executable, executed, passed, warning, upset, failed, 0, true);
+        this(null, null, null, null, null, null, null, total, executable, executed, passed, warning, upset, failed, 0, true);
     }
 
     public SummaryPlaque(
@@ -70,7 +72,7 @@ public record SummaryPlaque(
             final int warning,
             final int failed
     ) {
-        this(suite, pool, domain, mode, pathsSummary, total, executable, executed, passed, warning, 0, failed, 0, false);
+        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, 0, failed, 0, false);
     }
 
     public SummaryPlaque(
@@ -87,7 +89,7 @@ public record SummaryPlaque(
             final int failed,
             final int knownIssues
     ) {
-        this(suite, pool, domain, mode, pathsSummary, total, executable, executed, passed, warning, 0, failed, knownIssues, false);
+        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, 0, failed, knownIssues, false);
     }
 
     public SummaryPlaque(
@@ -105,13 +107,17 @@ public record SummaryPlaque(
             final int failed,
             final int knownIssues
     ) {
-        this(suite, pool, domain, mode, pathsSummary, total, executable, executed, passed, warning, upset, failed, knownIssues, true);
+        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, upset, failed, knownIssues, true);
     }
 
     /**
      * Run configuration descriptor extracted from execution parameter settings or log messages.
      */
-    public record RunConfig(String suite, String pool, String domain, String mode, String pathsSummary) {
+    public record RunConfig(String suite, String pool, String domain, String mode, String pathsSummary, String origin, String tag) {
+
+        public RunConfig(final String suite, final String pool, final String domain, final String mode, final String pathsSummary) {
+            this(suite, pool, domain, mode, pathsSummary, null, null);
+        }
 
         public RunConfig(final String suite, final String pool, final String domain, final String mode) {
             this(suite, pool, domain, mode, null);
@@ -119,10 +125,12 @@ public record SummaryPlaque(
 
         public static RunConfig fromParameters(final Parameters parameters) {
 
-            if (isNull(parameters)) return new RunConfig(null, null, null, null, null);
+            if (isNull(parameters)) return new RunConfig(null, null, null, null, null, null, null);
             final String suite = (null != parameters.getTest() && !parameters.getTest().isBlank()) ? parameters.getTest() : null;
             final String pool = (null != parameters.getPool() && !parameters.getPool().isBlank()) ? parameters.getPool() : null;
             final String domain = (null != parameters.getDomain() && !parameters.getDomain().isBlank()) ? parameters.getDomain() : null;
+            final String origin = (null != parameters.getOrigin() && !parameters.getOrigin().isBlank()) ? parameters.getOrigin() : null;
+            final String tag = (null != parameters.getTag() && !parameters.getTag().isBlank()) ? parameters.getTag() : null;
             final String mode = parameters.isAllLeafs() ? "ALL_LEAFS" : null;
             String pathsSummary = null;
             if (isNotNull(Base.core)) {
@@ -131,23 +139,37 @@ public record SummaryPlaque(
                 } catch (final Exception ignored) {
                 }
             }
-            return new RunConfig(suite, pool, domain, mode, pathsSummary);
+            return new RunConfig(suite, pool, domain, mode, pathsSummary, origin, tag);
         }
 
         public static RunConfig parse(final String logLine, final String pathsSummary) {
 
             final RunConfig base = parse(logLine);
-            return new RunConfig(base.suite(), base.pool(), base.domain(), base.mode(), pathsSummary);
+            return new RunConfig(base.suite(), base.pool(), base.domain(), base.mode(), pathsSummary, base.origin(), base.tag());
         }
 
         public static RunConfig parse(final String logLine) {
 
-            if (isNull(logLine) || logLine.isBlank()) return new RunConfig(null, null, null, null, null);
+            if (isNull(logLine) || logLine.isBlank()) return new RunConfig(null, null, null, null, null, null, null);
 
             String text = logLine;
             int ofIdx = text.indexOf(" of ");
             if (ofIdx >= 0) {
                 text = text.substring(ofIdx + 4).trim();
+            }
+
+            String tag = null;
+            if (text.endsWith("]") && text.contains("[")) {
+                int tagOpen = text.lastIndexOf("[");
+                tag = text.substring(tagOpen + 1, text.length() - 1).trim();
+                text = text.substring(0, tagOpen).trim();
+            }
+
+            String origin = null;
+            if (text.contains(" from ")) {
+                int fromIdx = text.indexOf(" from ");
+                origin = text.substring(fromIdx + 6).trim();
+                text = text.substring(0, fromIdx).trim();
             }
 
             String mode = null;
@@ -175,7 +197,7 @@ public record SummaryPlaque(
             }
 
             String suite = text.isBlank() ? null : text.trim();
-            return new RunConfig(suite, pool, domain, mode, null);
+            return new RunConfig(suite, pool, domain, mode, null, origin, tag);
         }
     }
 
@@ -279,7 +301,7 @@ public record SummaryPlaque(
         }
 
         return new SummaryPlaque(
-                config.suite(), config.pool(), config.domain(), config.mode(), config.pathsSummary(),
+                config.suite(), config.pool(), config.domain(), config.mode(), config.pathsSummary(), config.origin(), config.tag(),
                 total, executable, executed, passed, warning, upset, failed, knownIssues, true);
     }
 
@@ -322,8 +344,8 @@ public record SummaryPlaque(
         }
 
         return new SummaryPlaque(
-                config.suite(), config.pool(), config.domain(), config.mode(), config.pathsSummary(),
-                total, executable, executed, passed, warning, failed);
+                config.suite(), config.pool(), config.domain(), config.mode(), config.pathsSummary(), config.origin(), config.tag(),
+                total, executable, executed, passed, warning, 0, failed, 0, false);
     }
 
     public static SummaryPlaque computeFromScenEntries(final List<ScenEntry> entries) {
@@ -383,8 +405,8 @@ public record SummaryPlaque(
         }
 
         return new SummaryPlaque(
-                config.suite(), config.pool(), config.domain(), config.mode(), config.pathsSummary(),
-                total, executable, executed, passed, warning, failed);
+                config.suite(), config.pool(), config.domain(), config.mode(), config.pathsSummary(), config.origin(), config.tag(),
+                total, executable, executed, passed, warning, 0, failed, 0, false);
     }
 
     /**
@@ -405,6 +427,12 @@ public record SummaryPlaque(
             }
             if (isNotNull(domain)) {
                 configHtml.append("      <span class=\"config-item\"><span class=\"config-label\">Domain:</span> <b class=\"config-val\">").append(domain).append("</b></span>\n");
+            }
+            if (isNotNull(origin)) {
+                configHtml.append("      <span class=\"config-item\"><span class=\"config-label\">Origin:</span> <b class=\"config-val\">").append(origin).append("</b></span>\n");
+            }
+            if (isNotNull(tag)) {
+                configHtml.append("      <span class=\"config-item\"><span class=\"config-label\">Tag:</span> <b class=\"config-val\">").append(tag).append("</b></span>\n");
             }
             if (isNotNull(pathsSummary)) {
                 configHtml.append("      <span class=\"config-item\"><span class=\"config-label\">Paths:</span> <b class=\"config-val\">").append(pathsSummary).append("</b></span>\n");

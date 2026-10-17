@@ -20,6 +20,7 @@ import static works.lysenko.base.core.Routines.isInsideDocker;
 import static works.lysenko.util.chrs.__.ON;
 import static works.lysenko.util.chrs.__.TO;
 import static works.lysenko.util.chrs.____.FILE;
+import static works.lysenko.util.chrs.____.FROM;
 import static works.lysenko.util.chrs.____.WITH;
 import static works.lysenko.util.data.enums.Ansi.yb;
 import static works.lysenko.util.data.enums.ExecutionParameter.*;
@@ -77,6 +78,8 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         read(RESILIENT_MODE.name());
         read(COMPLETION_WEIGHT.name());
         read(TRAVERSE_EXTENSIONS.name());
+        read(ORIGIN.name());
+        read(TAG.name());
         readAdditionalParameters(list);
         showOptionalGui();
     }
@@ -153,6 +156,18 @@ public final class Parameters extends Properties implements _ExecutionParameterV
     public String getDomain() {
 
         return getValue(DOMAIN);
+    }
+
+    @Override
+    public String getOrigin() {
+
+        return getValue(ORIGIN);
+    }
+
+    @Override
+    public String getTag() {
+
+        return getValue(TAG);
     }
 
     @Override
@@ -294,7 +309,6 @@ public final class Parameters extends Properties implements _ExecutionParameterV
     private void read(final String name, final String def) {
 
         if (isNotNull(System.getenv(name))) put(name, System.getenv(name));
-        else if (isNotNull(System.getProperty(name))) put(name, System.getProperty(name));
         else if (!containsKey(name)) put(name, def);
     }
 
@@ -372,7 +386,9 @@ public final class Parameters extends Properties implements _ExecutionParameterV
 
         return s(yb(getTest()),
                 (getPool().isBlank()) ? EMPTY : s(e(WITH), yb(getPool())),
-                (getDomain().isBlank()) ? EMPTY : s(e(ON), yb(getDomain()))
+                (getDomain().isBlank()) ? EMPTY : s(e(ON), yb(getDomain())),
+                (null == getOrigin() || getOrigin().isBlank()) ? EMPTY : s(e(FROM), yb(getOrigin())),
+                (null == getTag() || getTag().isBlank()) ? EMPTY : s("[", yb(getTag()), "]")
         );
     }
 }
