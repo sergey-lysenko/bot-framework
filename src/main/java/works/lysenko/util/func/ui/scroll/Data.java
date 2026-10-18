@@ -168,7 +168,7 @@ public record Data(WebElement scroller, int height, int width, PointerInput fing
         final WebDriver wd = exec.wd();
         if (isNull(wd)) return;
         d.q().addAction(d.finger().createPointerMove(Duration.ofMillis(duration),
-                PointerInput.Origin.viewport(), s.x, t.y));
+                PointerInput.Origin.viewport(), t.x, t.y));
         d.q().addAction(d.finger().createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
         ((Interactive) wd).perform(List.of(d.q()));
         logDebug(S7);
