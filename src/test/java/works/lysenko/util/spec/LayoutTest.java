@@ -12,9 +12,7 @@ import static works.lysenko.util.spec.Layout.Directories.DASH_;
 import static works.lysenko.util.spec.Layout.Directories.RESULT_;
 import static works.lysenko.util.spec.Layout.Files.APPIUM_LOG_;
 import static works.lysenko.util.spec.Layout.Paths._DASH_;
-import static works.lysenko.util.spec.Layout.Paths._RESULT_DASH_;
 import static works.lysenko.util.spec.Layout.Paths._RUNS_;
-import static works.lysenko.util.spec.Layout.Paths._TARGET_DASH_;
 
 class LayoutTest {
 
@@ -25,8 +23,6 @@ class LayoutTest {
         assertEquals("result" + s + "runs" + s, _RUNS_);
         assertEquals("dash" + s, DASH_);
         assertEquals("dash" + s, _DASH_);
-        assertEquals(_DASH_, _RESULT_DASH_);
-        assertEquals(_DASH_, _TARGET_DASH_);
         assertEquals("result" + s + "appium.log", APPIUM_LOG_);
     }
 

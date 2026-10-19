@@ -89,8 +89,6 @@ public record Layout() {
     public record Paths() {
 
         public static final String _DASH_ = DASH_;
-        public static final String _RESULT_DASH_ = _DASH_;
-        public static final String _TARGET_DASH_ = _DASH_;
         public static final String _RESOURCES_ = s(SRC_, MAIN_, RESOURCES_);
         public static final String _CONFIG_ = s(_RESOURCES_, CONFIG_);
         public static final String _SUITES_ = s(_RESOURCES_, SUITES_);
