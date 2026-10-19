@@ -323,9 +323,9 @@ class TreeTrackerTest {
         assertEquals(3, TreeTracker.getCapturedFrames().size());
 
         final File treeProgressionDir = new File(customRunDir, "tree_progression");
-        assertTrue(new File(treeProgressionDir, "frame_0001.png").exists());
-        assertTrue(new File(treeProgressionDir, "frame_0002.png").exists());
-        assertTrue(new File(treeProgressionDir, "frame_0003.png").exists());
+        assertTrue(new File(treeProgressionDir, "frame_0001.svg").exists());
+        assertTrue(new File(treeProgressionDir, "frame_0002.svg").exists());
+        assertTrue(new File(treeProgressionDir, "frame_0003.svg").exists());
 
         // Complete tests -> animated GIF should be produced
         TreeTracker.onComplete();

@@ -199,9 +199,9 @@ class ScenarioTrackerTest {
         assertEquals(3, ScenarioTracker.getCapturedFrames().size());
 
         final File progressionDir = new File(customRunDir, "progression");
-        assertTrue(new File(progressionDir, "frame_0001.png").exists());
-        assertTrue(new File(progressionDir, "frame_0002.png").exists());
-        assertTrue(new File(progressionDir, "frame_0003.png").exists());
+        assertTrue(new File(progressionDir, "frame_0001.svg").exists());
+        assertTrue(new File(progressionDir, "frame_0002.svg").exists());
+        assertTrue(new File(progressionDir, "frame_0003.svg").exists());
 
         // Complete tests
         ScenarioTracker.onComplete();

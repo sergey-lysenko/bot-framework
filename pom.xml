@@ -38,6 +38,7 @@
     <commons-collections4.version>4.4</commons-collections4.version>
     <webp-imageio.version>0.10.0</webp-imageio.version>
     <jgrapht.version>1.5.2</jgrapht.version>
+    <jsvg.version>1.6.1</jsvg.version>
 
     <!-- Maven plugins versions -->
     <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
@@ -84,6 +85,11 @@
       <groupId>com.github.usefulness</groupId>
       <artifactId>webp-imageio</artifactId>
       <version>${webp-imageio.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.weisj</groupId>
+      <artifactId>jsvg</artifactId>
+      <version>${jsvg.version}</version>
     </dependency>
     <dependency>
       <groupId>org.reflections</groupId>

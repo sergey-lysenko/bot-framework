@@ -45,7 +45,7 @@ public final class GeminiSonifier extends AbstractTreeSonifier {
 
     public static File snapshotFile(final File frame) {
         return new File(new File(frame.getParentFile(), "gemini_events"),
-                frame.getName().replaceFirst("\\.png$", ".gemini"));
+                frame.getName().replaceFirst("\\.(png|svg)$", ".gemini"));
     }
 
     @Override

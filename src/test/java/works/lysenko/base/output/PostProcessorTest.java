@@ -193,9 +193,11 @@ class PostProcessorTest {
                 true, true, true, true);
         assertEquals(List.of(
                 "Run timeline report",
+                "Scenario progression PNG frames",
                 "Scenario progression GIF",
                 "Scenario progression WebP",
                 "Scenario progression MP4",
+                "Tree progression PNG frames",
                 "Tree progression GIF",
                 "Tree progression WebP",
                 "Tree progression MP4"), allTasks);
@@ -205,8 +207,10 @@ class PostProcessorTest {
                 true, false, true, true);
         assertEquals(List.of(
                 "Run timeline report",
+                "Scenario progression PNG frames",
                 "Scenario progression WebP",
                 "Scenario progression MP4",
+                "Tree progression PNG frames",
                 "Tree progression WebP",
                 "Tree progression MP4"), defaultTasks);
 
@@ -215,6 +219,7 @@ class PostProcessorTest {
                 true, false, true, true);
         assertEquals(List.of(
                 "Run timeline report",
+                "Tree progression PNG frames",
                 "Tree progression WebP",
                 "Tree progression MP4"), noScenarioTasks);
 

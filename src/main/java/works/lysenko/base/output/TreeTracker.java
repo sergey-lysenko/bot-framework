@@ -261,6 +261,7 @@ public final class TreeTracker {
             return;
 
         final BufferedImage image;
+        final String svgContent;
         try {
             final Set<String> recentNodeKeys = computeRecentNodeKeys(layout);
             logDebug(String.format("Canvas (%d nodes, %d edges)...", layout.nodes().size(), layout.edges().size()));
@@ -276,6 +277,7 @@ public final class TreeTracker {
             }
 
             image = renderTreeProgression(layout, target, badgeText, recentNodeKeys, accessibleScenarios, accessibleCtx);
+            svgContent = renderTreeProgressionSvg(layout, target, badgeText, recentNodeKeys, accessibleScenarios, accessibleCtx);
             updatePreviousExecutions(layout);
         } catch (final IllegalArgumentException e) {
             System.err.println("Skipped tree progression frame: " + e.getMessage());
@@ -292,12 +294,12 @@ public final class TreeTracker {
             return;
 
         final int frameIndex = capturedFrames.size() + 1;
-        final File frameFile = new File(progressionDir, String.format(Locale.US, "frame_%04d.png", frameIndex));
+        final File frameFile = new File(progressionDir, String.format(Locale.US, "frame_%04d.svg", frameIndex));
         if (!capturedFrames.contains(frameFile)) {
             capturedFrames.add(frameFile);
         }
 
-        ProgressionFrames.saveFrameAsync(image, frameFile, () -> {
+        ProgressionFrames.saveFrameSvgAsync(svgContent, frameFile, () -> {
             if (ProgressionSettings.current().treeMp4Enabled()) {
                 final java.util.Optional<TreeSonifier> sonifier = ProgressionSettings.current().treeSonifier();
                 if (sonifier.isPresent()) {
@@ -495,6 +497,7 @@ public final class TreeTracker {
             progress.skipped("Tree progression MP4");
             return;
         }
+        final String pngTask = PostProcessor.TREE_PNG_TASK;
         final String gifTask = "Tree progression GIF";
         final String webpTask = "Tree progression WebP";
         final String mp4Task = "Tree progression MP4";
@@ -507,83 +510,101 @@ public final class TreeTracker {
                     maxFramePixels,
                     maxTotalPixels);
         } catch (final Exception e) {
+            progress.failed(pngTask, e);
             progress.failed(gifTask, e);
             progress.failed(webpTask, e);
             progress.failed(mp4Task, e);
             return;
         }
         if (framesToProcess.isEmpty()) {
+            progress.skipped(pngTask);
             progress.skipped(gifTask);
             progress.skipped(webpTask);
             progress.skipped(mp4Task);
             return;
         }
 
-        if (gifEnabled) {
-            final File gifFile = new File(runDir, prefix + ".tree.progression.gif");
-            try {
-                ScenarioTracker.writeAnimatedGifFiles(
-                        framesToProcess,
-                        gifFile,
-                        DELAY_CENTISECONDS,
-                        FINAL_FRAME_DELAY_CENTISECONDS,
-                        maxFramePixels,
-                        percentage -> progress.update(gifTask, 10 + (percentage * 45 / 100)));
-                progress.complete(gifTask);
-                log("Tree progression GIF generated: " + gifFile.getAbsolutePath());
-            } catch (final Exception e) {
-                progress.failed(gifTask, e);
-            }
-        } else {
-            progress.skipped(gifTask);
-        }
-
-        if (webpEnabled) {
-            final File webpFile = new File(runDir, prefix + ".tree.progression.webp");
-            try {
-                AnimatedWebP.write(
-                        framesToProcess,
-                        webpFile,
-                        DELAY_CENTISECONDS * 10,
-                        FINAL_FRAME_DELAY_CENTISECONDS * 10,
-                        maxFramePixels,
-                        percentage -> progress.update(webpTask, 10 + (percentage * 90 / 100)));
-                progress.complete(webpTask);
-                log("Tree progression WebP generated: " + webpFile.getAbsolutePath());
-            } catch (final Exception e) {
-                progress.failed(webpTask, e);
-            }
-        } else {
-            progress.skipped(webpTask);
-        }
-        if (!mp4Enabled) {
-            progress.skipped(mp4Task);
-            return;
-        }
-        final File mp4File = new File(runDir, prefix + ".tree.progression.mp4");
-        File audioFile = null;
+        final boolean needsRaster = gifEnabled || webpEnabled || mp4Enabled;
+        final File tmpDir = new File(runDir, ".tmp_raster_tree");
+        final List<File> rasterizedFrames;
         try {
-            final java.util.Optional<TreeSonifier> sonifier = TreeProgressionAudio.find(treeSonification);
-            if (sonifier.isPresent() && sonifier.get().canSonify(framesToProcess)) {
-                audioFile = File.createTempFile("tree-progression-audio-", ".wav", runDir);
-                sonifier.get().writeWav(framesToProcess, audioFile, FPS);
+            if (needsRaster) {
+                rasterizedFrames = ProgressionFrames.rasterize(framesToProcess, tmpDir, pngTask, progress, maxFramePixels);
+            } else {
+                progress.skipped(pngTask);
+                rasterizedFrames = framesToProcess;
             }
-            ProgressionMp4.write(
-                    framesToProcess,
-                    mp4File,
-                    ffmpeg,
-                    FPS,
-                    maxFramePixels,
-                    audioFile,
-                    percentage -> progress.update(mp4Task, percentage));
-            progress.complete(mp4Task);
-            log("Tree progression MP4 generated: " + mp4File.getAbsolutePath());
+
+            if (gifEnabled) {
+                final File gifFile = new File(runDir, prefix + ".tree.progression.gif");
+                try {
+                    ScenarioTracker.writeAnimatedGifFiles(
+                            rasterizedFrames,
+                            gifFile,
+                            DELAY_CENTISECONDS,
+                            FINAL_FRAME_DELAY_CENTISECONDS,
+                            maxFramePixels,
+                            percentage -> progress.update(gifTask, 10 + (percentage * 45 / 100)));
+                    progress.complete(gifTask);
+                    log("Tree progression GIF generated: " + gifFile.getAbsolutePath());
+                } catch (final Exception e) {
+                    progress.failed(gifTask, e);
+                }
+            } else {
+                progress.skipped(gifTask);
+            }
+
+            if (webpEnabled) {
+                final File webpFile = new File(runDir, prefix + ".tree.progression.webp");
+                try {
+                    AnimatedWebP.write(
+                            rasterizedFrames,
+                            webpFile,
+                            DELAY_CENTISECONDS * 10,
+                            FINAL_FRAME_DELAY_CENTISECONDS * 10,
+                            maxFramePixels,
+                            percentage -> progress.update(webpTask, 10 + (percentage * 90 / 100)));
+                    progress.complete(webpTask);
+                    log("Tree progression WebP generated: " + webpFile.getAbsolutePath());
+                } catch (final Exception e) {
+                    progress.failed(webpTask, e);
+                }
+            } else {
+                progress.skipped(webpTask);
+            }
+            if (!mp4Enabled) {
+                progress.skipped(mp4Task);
+                return;
+            }
+            final File mp4File = new File(runDir, prefix + ".tree.progression.mp4");
+            File audioFile = null;
+            try {
+                final java.util.Optional<TreeSonifier> sonifier = TreeProgressionAudio.find(treeSonification);
+                if (sonifier.isPresent() && sonifier.get().canSonify(framesToProcess)) {
+                    audioFile = File.createTempFile("tree-progression-audio-", ".wav", runDir);
+                    sonifier.get().writeWav(framesToProcess, audioFile, FPS);
+                }
+                ProgressionMp4.write(
+                        rasterizedFrames,
+                        mp4File,
+                        ffmpeg,
+                        FPS,
+                        maxFramePixels,
+                        audioFile,
+                        percentage -> progress.update(mp4Task, percentage));
+                progress.complete(mp4Task);
+                log("Tree progression MP4 generated: " + mp4File.getAbsolutePath());
+            } catch (final Exception e) {
+                progress.failed(mp4Task, e);
+            } finally {
+                if (null != audioFile && !audioFile.delete()) {
+                    log("Unable to remove temporary tree progression audio: " + audioFile.getAbsolutePath());
+                }
+            }
         } catch (final Exception e) {
-            progress.failed(mp4Task, e);
+            progress.failed(pngTask, e);
         } finally {
-            if (null != audioFile && !audioFile.delete()) {
-                log("Unable to remove temporary tree progression audio: " + audioFile.getAbsolutePath());
-            }
+            ProgressionFrames.cleanup(tmpDir);
         }
     }
 
@@ -622,6 +643,212 @@ public final class TreeTracker {
 
     static boolean isTheoreticallyExecutable(final NodeData n) {
         return TreeHtml.isTheoreticallyExecutable(n);
+    }
+
+    public static String renderTreeProgressionSvg(
+            final TreeLayout layout,
+            final int target,
+            final int currentCycle) {
+        return renderTreeProgressionSvg(layout, target, "Cycle #" + currentCycle, Collections.emptySet(), getAccessibleScenarios());
+    }
+
+    public static String renderTreeProgressionSvg(
+            final TreeLayout layout,
+            final int target,
+            final int currentCycle,
+            final Set<String> recentNodeKeys) {
+        return renderTreeProgressionSvg(layout, target, "Cycle #" + currentCycle, recentNodeKeys);
+    }
+
+    public static String renderTreeProgressionSvg(
+            final TreeLayout layout,
+            final int target,
+            final String badgeText,
+            final Set<String> recentNodeKeys) {
+        return renderTreeProgressionSvg(layout, target, badgeText, recentNodeKeys, getAccessibleScenarios());
+    }
+
+    public static String renderTreeProgressionSvg(
+            final TreeLayout layout,
+            final int target,
+            final String badgeText,
+            final Set<String> recentNodeKeys,
+            final Set<_Scenario> accessibleScenarios) {
+        return renderTreeProgressionSvg(layout, target, badgeText, recentNodeKeys, accessibleScenarios, (null != cachedAccessibleContext) ? cachedAccessibleContext : new TreeHtml.AccessibleContext(accessibleScenarios));
+    }
+
+    public static String renderTreeProgressionSvg(
+            final TreeLayout layout,
+            final int target,
+            final String badgeText,
+            final Set<String> recentNodeKeys,
+            final Set<_Scenario> accessibleScenarios,
+            final TreeHtml.AccessibleContext accessibleCtx) {
+
+        final TreeHtml.AccessibleContext ctx = (null != accessibleCtx) ? accessibleCtx : new TreeHtml.AccessibleContext(accessibleScenarios);
+        Map<NodeData, Boolean> execCache = cachedExecutable;
+        if (execCache == null) {
+            execCache = new HashMap<>();
+            cachedExecutable = execCache;
+        }
+        final Map<NodeData, Boolean> executableCache = execCache;
+        final Map<NodeData, Boolean> childFailureCache = new HashMap<>();
+
+        int maxCol = 0;
+        double maxRow = 0.0;
+        int totalLeafs = 0;
+        int coveredLeafs = 0;
+        int totalExecs = 0;
+        double maxLeafOverRatio = 0.0;
+
+        final int totalStatsNodes = layout.nodes().size();
+        for (int i = 0; i < totalStatsNodes; i++) {
+            final NodeData n = layout.nodes().get(i);
+            if (n.col() > maxCol) maxCol = n.col();
+            if (n.row() > maxRow) maxRow = n.row();
+            final int execs = (null != n.result()) ? n.result().getExecutions() : 0;
+            totalExecs += execs;
+            if (ScenarioType.LEAF == getScenarioType(n)) {
+                maxLeafOverRatio = Math.max(maxLeafOverRatio, getLeafOverExecutionRatio(n, target));
+            }
+            if (n.children().isEmpty() && isTerminalScenario(n)) {
+                if (TreeHtml.isTheoreticallyExecutable(n, ctx, executableCache) || execs > 0) {
+                    totalLeafs++;
+                    if (execs >= getTargetExecutions(n, target)) coveredLeafs++;
+                }
+            }
+        }
+
+        final long canvasWidth = evenDimension(Math.max(1280L, ((long) maxCol + 1L) * COL_WIDTH + PADDING_X * 2L));
+        final long canvasHeight = evenDimension(Math.max(
+                720L,
+                (long) Math.ceil((maxRow + 1.0) * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y + BOTTOM_PADDING)));
+        final int canvasW = (int) canvasWidth;
+        final int canvasH = (int) canvasHeight;
+
+        final StringBuilder sb = new StringBuilder();
+        sb.append(String.format(Locale.US,
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%d\" height=\"%d\" viewBox=\"0 0 %d %d\">\n",
+                canvasW, canvasH, canvasW, canvasH));
+        sb.append("  <defs>\n");
+        sb.append("    <pattern id=\"dot-grid\" width=\"24\" height=\"24\" patternUnits=\"userSpaceOnUse\" y=\"60\">\n");
+        sb.append("      <rect width=\"24\" height=\"24\" fill=\"#0F172A\" />\n");
+        sb.append("      <circle cx=\"1\" cy=\"1\" r=\"1\" fill=\"#1E293B\" opacity=\"0.7\" />\n");
+        sb.append("    </pattern>\n");
+        sb.append("    <pattern id=\"known-issue-hatch\" width=\"10\" height=\"10\" patternTransform=\"rotate(45 0 0)\" patternUnits=\"userSpaceOnUse\">\n");
+        sb.append("      <line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"10\" stroke=\"#fbbf24\" stroke-width=\"2\" stroke-opacity=\"0.45\" />\n");
+        sb.append("      <line x1=\"0\" y1=\"0\" x2=\"10\" y2=\"0\" stroke=\"#fbbf24\" stroke-width=\"2\" stroke-opacity=\"0.45\" />\n");
+        sb.append("    </pattern>\n");
+        sb.append("  </defs>\n");
+
+        sb.append("  <rect width=\"100%\" height=\"100%\" fill=\"#0F172A\" />\n");
+        sb.append(String.format(Locale.US,
+                "  <rect x=\"0\" y=\"60\" width=\"%d\" height=\"%d\" fill=\"url(#dot-grid)\" />\n",
+                canvasW, canvasH - 60));
+
+        final List<Edge> sortedEdges = new ArrayList<>(layout.edges());
+        sortedEdges.sort(Comparator.comparingInt(e -> {
+            final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
+            final int fromExecs = (null != e.from().result()) ? e.from().result().getExecutions() : 0;
+            return (toExecs > 0 && fromExecs > 0) ? 1 : 0;
+        }));
+
+        for (final Edge e : sortedEdges) {
+            final int startX = e.from().col() * COL_WIDTH + CARD_WIDTH + PADDING_X;
+            final int startY = (int) Math.round(e.from().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + HEADER_HEIGHT + PADDING_Y);
+            final int endX = e.to().col() * COL_WIDTH + PADDING_X;
+            final int endY = (int) Math.round(e.to().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + HEADER_HEIGHT + PADDING_Y);
+            final int cX = (startX + endX) / 2;
+
+            final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
+            final int fromExecs = (null != e.from().result()) ? e.from().result().getExecutions() : 0;
+            final boolean toWarning = (null != e.to().result() && e.to().result().status() == ExecutionStatus.WARNING);
+            final boolean isRecent = recentNodeKeys.contains(e.to().id());
+
+            String strokeColor = "#3341558C";
+            float strokeW = 1.2f;
+            String dash = "";
+
+            if (isRecent) {
+                strokeColor = "#38BDF8";
+                strokeW = 3.0f;
+            } else if (TreeHtml.hasFailure(e.to())) {
+                strokeColor = "#EF4444";
+                strokeW = 2.2f;
+            } else if (TreeHtml.hasChildFailure(e.to(), childFailureCache)) {
+                strokeColor = "#818CF8";
+                strokeW = 1.2f;
+                dash = "stroke-dasharray=\"3 3\" ";
+            } else if (toExecs > 0 && fromExecs > 0) {
+                if (toWarning) {
+                    strokeColor = "#F59E0B";
+                } else {
+                    final Color col = getScenarioProgressColor(e.to(), target, maxLeafOverRatio);
+                    strokeColor = works.lysenko.base.output.tree.TreeTheme.DEFAULT.hex(col);
+                }
+                strokeW = 2.2f;
+            } else if (!isTheoreticallyExecutable(e.to(), accessibleScenarios)) {
+                strokeColor = "#24304464";
+                strokeW = 1.0f;
+                dash = "stroke-dasharray=\"3 3\" ";
+            }
+
+            sb.append(String.format(Locale.US,
+                    "  <path d=\"M %d %d C %d %d, %d %d, %d %d\" stroke=\"%s\" stroke-width=\"%.1f\" fill=\"none\" %s/>\n",
+                    startX, startY, cX, startY, cX, endY, endX, endY, strokeColor, strokeW, dash));
+        }
+
+        final boolean isAllLeafs = (null != works.lysenko.Base.parameters) ? works.lysenko.Base.parameters.isAllLeafs() : false;
+        final works.lysenko.base.output.tree.VisualNodeResolver nodeResolver =
+                new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, false, true);
+        final List<works.lysenko.base.output.tree.VisualNode> visualNodes = new ArrayList<>();
+        for (final NodeData n : layout.nodes()) {
+            visualNodes.add(nodeResolver.resolve(n, recentNodeKeys.contains(n.id()), childFailureCache, executableCache));
+        }
+        sb.append(new works.lysenko.base.output.tree.HtmlTreeRenderer(works.lysenko.base.output.tree.TreeTheme.DEFAULT).renderNodes(visualNodes));
+
+        sb.append(String.format(Locale.US,
+                "  <rect x=\"0\" y=\"0\" width=\"%d\" height=\"60\" fill=\"#1E293B\" stroke=\"#334155\" stroke-width=\"1\" />\n",
+                canvasW));
+        sb.append(String.format(Locale.US,
+                "  <circle cx=\"%d\" cy=\"30\" r=\"6\" fill=\"#38BDF8\" />\n",
+                PADDING_X + 6));
+        sb.append(String.format(Locale.US,
+                "  <text x=\"%d\" y=\"35\" fill=\"#F8FAFC\" font-family=\"sans-serif\" font-weight=\"bold\" font-size=\"15\">Scenario Execution Tree Progression</text>\n",
+                PADDING_X + 22));
+
+        int rightX = canvasW - PADDING_X;
+        final int topY = (HEADER_HEIGHT - 22) / 2;
+
+        final String elapsedText = (isNotNull(timer))
+                ? "Elapsed: " + formatElapsedTime(Math.max(0L, System.currentTimeMillis() - timer.startedAt()))
+                : "Elapsed: --:--:--";
+        rightX = appendHeaderBadgeSvg(sb, elapsedText, rightX, topY, "#334155", "#F8FAFC");
+        rightX = appendHeaderBadgeSvg(sb, totalExecs + " total execs", rightX, topY, "#334155", "#F8FAFC");
+
+        final String covBg = (coveredLeafs == totalLeafs && totalLeafs > 0) ? "#166534" : "#B45309";
+        rightX = appendHeaderBadgeSvg(sb, "Leafs: " + coveredLeafs + "/" + totalLeafs, rightX, topY, covBg, "#F8FAFC");
+        rightX = appendHeaderBadgeSvg(sb, "Target: " + target, rightX, topY, "#334155", "#CBD5E1");
+        appendHeaderBadgeSvg(sb, badgeText, rightX, topY, "#0284C7", "#FFFFFF");
+
+        sb.append("</svg>\n");
+        return sb.toString();
+    }
+
+    private static int appendHeaderBadgeSvg(
+            final StringBuilder sb,
+            final String text,
+            final int rightX,
+            final int topY,
+            final String bg,
+            final String fg) {
+        final int badgeW = text.length() * 7 + 16;
+        final int leftX = rightX - badgeW;
+        sb.append(String.format(Locale.US,
+                "  <rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"22\" rx=\"6\" ry=\"6\" fill=\"%s\" />\n" +
+                "  <text x=\"%d\" y=\"%d\" fill=\"%s\" font-family=\"monospace\" font-weight=\"bold\" font-size=\"11\">%s</text>\n",
+                leftX, topY, badgeW, bg, leftX + 8, topY + 15, fg, text));
+        return leftX - 10;
     }
 
     public static BufferedImage renderTreeProgression(

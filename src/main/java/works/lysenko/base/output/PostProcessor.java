@@ -29,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 public class PostProcessor {
 
     private static final String REPORT_TASK = "Run timeline report";
+    public static final String SCENARIO_PNG_TASK = "Scenario progression PNG frames";
+    public static final String TREE_PNG_TASK = "Tree progression PNG frames";
 
     static List<String> enabledTasks(
             final boolean scenarioEnabled,
@@ -42,11 +44,13 @@ public class PostProcessor {
         final List<String> tasks = new ArrayList<>();
         tasks.add(REPORT_TASK);
         if (scenarioEnabled) {
+            if (scenarioGifEnabled || scenarioWebpEnabled || scenarioMp4Enabled) tasks.add(SCENARIO_PNG_TASK);
             if (scenarioGifEnabled) tasks.add("Scenario progression GIF");
             if (scenarioWebpEnabled) tasks.add("Scenario progression WebP");
             if (scenarioMp4Enabled) tasks.add("Scenario progression MP4");
         }
         if (treeEnabled) {
+            if (treeGifEnabled || treeWebpEnabled || treeMp4Enabled) tasks.add(TREE_PNG_TASK);
             if (treeGifEnabled) tasks.add("Tree progression GIF");
             if (treeWebpEnabled) tasks.add("Tree progression WebP");
             if (treeMp4Enabled) tasks.add("Tree progression MP4");
@@ -64,14 +68,16 @@ public class PostProcessor {
             }
         }
 
-        final Class<?>[] keyClasses = {
-                PostProcessor.class,
-                com.fasterxml.jackson.databind.ObjectMapper.class,
-                org.apache.commons.math3.fraction.Fraction.class,
-                org.apache.commons.lang3.StringUtils.class
+        final String[] keyClassNames = {
+                "works.lysenko.base.output.PostProcessor",
+                "com.fasterxml.jackson.databind.ObjectMapper",
+                "org.apache.commons.math3.fraction.Fraction",
+                "org.apache.commons.lang3.StringUtils",
+                "com.github.weisj.jsvg.parser.SVGLoader"
         };
-        for (final Class<?> cls : keyClasses) {
+        for (final String className : keyClassNames) {
             try {
+                final Class<?> cls = Class.forName(className);
                 final java.security.ProtectionDomain pd = cls.getProtectionDomain();
                 if (null != pd && null != pd.getCodeSource() && null != pd.getCodeSource().getLocation()) {
                     final String locPath = new File(pd.getCodeSource().getLocation().toURI()).getAbsolutePath();
@@ -79,7 +85,7 @@ public class PostProcessor {
                         sb.append(File.pathSeparator).append(locPath);
                     }
                 }
-            } catch (final Exception ignored) {
+            } catch (final Throwable ignored) {
             }
         }
 

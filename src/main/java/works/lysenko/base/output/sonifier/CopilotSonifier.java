@@ -37,7 +37,7 @@ public final class CopilotSonifier extends AbstractTreeSonifier {
     public static File eventsFile(final File frame) {
 
         return new File(new File(frame.getParentFile(), "events"),
-                frame.getName().replaceFirst("\\.png$", ".events"));
+                frame.getName().replaceFirst("\\.(png|svg)$", ".events"));
     }
 
     @Override
