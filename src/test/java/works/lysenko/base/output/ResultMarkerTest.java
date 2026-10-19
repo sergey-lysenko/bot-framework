@@ -80,7 +80,7 @@ class ResultMarkerTest {
         Base.core.setStopFlag(true);
 
         final String message = invokeGenerateFailureMessage();
-        assertEquals(" = [FAILURE] Tests had been stopped preemptively = ", message);
+        org.junit.jupiter.api.Assertions.assertNull(message, "Manual/preemptive stop without failure must not generate a failure message");
     }
 
     @Test
@@ -179,7 +179,7 @@ class ResultMarkerTest {
         Base.core.setStopScenario(dummyScenario);
 
         final String message = invokeGenerateFailureMessage();
-        assertEquals(String.format(" = [FAILURE] Tests had been stopped preemptively in '%s' = ", dummyScenario.getName()), message);
+        org.junit.jupiter.api.Assertions.assertNull(message, "Manual/preemptive stop without failure must not generate a failure message");
     }
 
     @Test

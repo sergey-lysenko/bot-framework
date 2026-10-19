@@ -27,6 +27,7 @@ import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.chrs.__.IN;
 import static works.lysenko.util.func.imgs.Screenshot.makeScreenAndCodeSnapshot;
 import static works.lysenko.util.func.type.Objects.isNotNull;
+import static works.lysenko.util.lang.M.MANUALLY_REQUESTED_TEST_STOP_PERFORMED;
 import static works.lysenko.util.lang.T.TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY;
 import static works.lysenko.util.lang.word.E.EXECUTION;
 import static works.lysenko.util.lang.word.P.PASSED;
@@ -37,10 +38,19 @@ import static works.lysenko.util.spec.Symbols.*;
 @SuppressWarnings({"NestedMethodCall", "FeatureEnvy", "AutoBoxing"})
 record ResultMarker() {
 
+    private static boolean isManualStopReason(final String stopReason) {
+        if (isNull(stopReason) || stopReason.isBlank()) return true;
+        final String clean = stopReason.trim();
+        return clean.equalsIgnoreCase(TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY)
+                || clean.equalsIgnoreCase(MANUALLY_REQUESTED_TEST_STOP_PERFORMED)
+                || clean.contains("Manually requested")
+                || clean.contains("stopped preemptively");
+    }
+
     private static boolean isGenericStopReason(final String stopReason) {
         if (isNull(stopReason) || stopReason.isBlank()) return true;
         final String clean = stopReason.trim();
-        return clean.equals(TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY)
+        return isManualStopReason(clean)
                 || clean.startsWith("due to ")
                 || clean.startsWith("due to [")
                 || clean.equalsIgnoreCase("due to [FAILURE] event")
@@ -50,7 +60,7 @@ record ResultMarker() {
     /**
      * Generates a failure message using the core's stoppage reason or failure summary.
      *
-     * @return The generated failure message.
+     * @return The generated failure message, or null if no failure occurred.
      */
     @SuppressWarnings({"MethodWithMultipleReturnPoints", "CallToSuspiciousStringMethod"})
     private static String generateFailureMessage() {
@@ -59,7 +69,7 @@ record ResultMarker() {
 
         if (core.getStopFlag()) {
             final String stopReason = core.getStopReason();
-            if (!isGenericStopReason(stopReason)) {
+            if (isNotNull(stopReason) && !isManualStopReason(stopReason) && !isGenericStopReason(stopReason)) {
                 String clean = stopReason.trim().replace(_LFD_, _BULLT_);
                 if (!clean.startsWith("[FAILURE]") && !clean.startsWith("[ERROR]")) {
                     clean = b(s("[FAILURE]"), clean);
@@ -86,16 +96,6 @@ record ResultMarker() {
                 }
             }
             return generateMessage(clean);
-        }
-
-        if (core.getStopFlag()) {
-            final String message;
-            if (isNotNull(scenario)) {
-                message = b(s("[FAILURE]"), TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY, IN, q(scenario.getName()));
-            } else {
-                message = b(s("[FAILURE]"), TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY);
-            }
-            return generateMessage(message);
         }
 
         final int failedCount = countFailedScenarios();
@@ -191,16 +191,18 @@ record ResultMarker() {
         final Ansi foreground;
         final Ansi background;
 
+        final String failureMessage = generateFailureMessage();
+
         if (core.getResults().getSorted().isEmpty()) {
             resultMessage = generateMessage(b(c(NO), TEST, RESULTS));
             foreground = WHITE_BOLD_BRIGHT;
             background = BLACK_BACKGROUND_BRIGHT;
-        } else if (!core.getStopFlag() && core.getResults().getFailures().isEmpty()) {
+        } else if (isNull(failureMessage)) {
             resultMessage = generateMessage(b(c(EXECUTION), PASSED, SUCCESSFULLY));
             foreground = BLACK;
             background = GREEN_BACKGROUND;
         } else {
-            resultMessage = generateFailureMessage();
+            resultMessage = failureMessage;
             foreground = WHITE_BOLD_BRIGHT;
             background = RED_BACKGROUND;
             makeScreenAndCodeSnapshot(true, e(UND_SCR, u(EXIT)));

@@ -65,7 +65,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
 
         works.lysenko.Base.parameters = this;
         loadFromFile();
-        read(TEST);
+        read(SUITE);
         read(POOL);
         read(PLATFORM);
         readDeviceOrDomain();
