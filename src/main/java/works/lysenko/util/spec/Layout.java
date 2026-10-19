@@ -67,7 +67,7 @@ public record Layout() {
         public static final String VAR_ = s(VAR, s);
         public static final String ETC_ = s(ETC, s);
         static final String BIN_ = s(BIN, s);
-        static final String DASH_ = s(s(DA, SH), s);
+        public static final String DASH_ = s(s(DA, SH), s);
         static final String MAIN_ = s(MAIN, s);
         static final String RESOURCES_ = s(RESOURCES, s);
         static final String RESULT_ = s(RESULT, s);
@@ -88,8 +88,9 @@ public record Layout() {
     @SuppressWarnings({"PublicInnerClass", "MissingJavadoc"})
     public record Paths() {
 
-        public static final String _RESULT_DASH_ = s(RESULT_, DASH_);
-        public static final String _TARGET_DASH_ = _RESULT_DASH_;
+        public static final String _DASH_ = DASH_;
+        public static final String _RESULT_DASH_ = _DASH_;
+        public static final String _TARGET_DASH_ = _DASH_;
         public static final String _RESOURCES_ = s(SRC_, MAIN_, RESOURCES_);
         public static final String _CONFIG_ = s(_RESOURCES_, CONFIG_);
         public static final String _SUITES_ = s(_RESOURCES_, SUITES_);
