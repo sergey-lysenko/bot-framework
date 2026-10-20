@@ -466,10 +466,7 @@ public class TestProperties implements _TestProperties {
             }
         }
         applyUserOverrides();
-        works.lysenko.util.prop.issues.KnownIssues.refresh();
-        works.lysenko.util.prop.tree.Optimization.refresh();
-        works.lysenko.util.prop.tree.Scenario.refresh();
-        works.lysenko.util.prop.tree.Traverse.refresh();
+        refreshAllPropertyRecords();
         logTestConfiguration(common, result.debug());
     }
 
@@ -509,8 +506,20 @@ public class TestProperties implements _TestProperties {
             the.setProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(allLeafsCount));
         }
         applyUserOverrides();
+        refreshAllPropertyRecords();
+    }
+
+    public static void refreshAllPropertyRecords() {
+        works.lysenko.util.prop.core.Assertions.refresh();
+        works.lysenko.util.prop.core.Mode.refresh();
+        works.lysenko.util.prop.core.Screenshot.refresh();
         works.lysenko.util.prop.issues.KnownIssues.refresh();
+        works.lysenko.util.prop.logs.Debug.refresh();
+        works.lysenko.util.prop.tree.HideOff.refresh();
+        works.lysenko.util.prop.tree.Include.refresh();
+        works.lysenko.util.prop.tree.Notify.refresh();
         works.lysenko.util.prop.tree.Optimization.refresh();
+        works.lysenko.util.prop.tree.Retries.refresh();
         works.lysenko.util.prop.tree.Scenario.refresh();
         works.lysenko.util.prop.tree.Traverse.refresh();
     }

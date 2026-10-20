@@ -16,10 +16,19 @@ import static works.lysenko.util.prop.PropEnum._LOGS_TRACE;
  * This class interacts with a properties instance to retrieve boolean values based on specific keys.
  * The values for adebug, debug, and trace are obtained using the properties instance.
  */
-@SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "NonFinalStaticVariableUsedInClassInitialization", "MissingJavadoc"})
+@SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "NonFinalStaticVariableUsedInClassInitialization", "MissingJavadoc", "StaticNonFinalField"})
 public record Debug() {
 
-    public static final Boolean adebug = _LOGS_ADEBUG.get();
-    public static final Boolean debug = _LOGS_DEBUG.get();
-    public static final Boolean trace = _LOGS_TRACE.get();
+    public static Boolean adebug = _LOGS_ADEBUG.get();
+    public static Boolean debug = _LOGS_DEBUG.get();
+    public static Boolean trace = _LOGS_TRACE.get();
+
+    /**
+     * Refreshes static fields from current test properties.
+     */
+    public static void refresh() {
+        adebug = _LOGS_ADEBUG.get();
+        debug = _LOGS_DEBUG.get();
+        trace = _LOGS_TRACE.get();
+    }
 }

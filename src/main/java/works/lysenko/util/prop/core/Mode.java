@@ -14,4 +14,11 @@ public record Mode() {
      */
     public static boolean resilient = _TEST_RESILIENT_MODE.get();
 
+    /**
+     * Refreshes static fields from current test properties.
+     */
+    public static void refresh() {
+        resilient = _TEST_RESILIENT_MODE.get();
+    }
+
 }
