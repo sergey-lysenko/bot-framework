@@ -393,6 +393,9 @@ public class Gui implements _GUI {
         lastSelectedSuite = currentSuite;
 
         updateParametersFromSelectedTestConfiguration();
+        if (isNotNull(parameters)) {
+            propagateUserInput();
+        }
     }
 
     private static JCheckBox createCheckBox(final Boolean paramValue, final works.lysenko.util.apis._PropEnum propEnum) {

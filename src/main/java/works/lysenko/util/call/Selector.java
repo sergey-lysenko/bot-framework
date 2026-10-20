@@ -123,9 +123,6 @@ public final class Selector implements Callable<_Scenario> {
         ctrl.sleep(1L, true);
         if (fits) return verifyScenarioSelection(scenario);
         if (candidates.isEmpty()) {
-            if (isNotNull(ctrl.getParent())) {
-                ctrl.getParent().markAsExhausted();
-            }
             final String message = s(b(c(UNABLE), TO, FIT, ANY, SCENARIO, AMONG,
                     createReadableScenariosList(ctrl.getWeightedList(), false, isDebug()), s(_COLON_), ALL, SCENARIOS,
                     HAVE, UNMET, REQUIREMENTS, OR, ARE, NOT, EXECUTABLE));
@@ -137,6 +134,9 @@ public final class Selector implements Callable<_Scenario> {
                 logEvent(S3, message);
                 logEvent(S3, b(c(TESTS), WILL, GO, ON, AS, REQUESTED));
             } else {
+                if (isNotNull(ctrl.getParent())) {
+                    ctrl.getParent().markAsExhausted();
+                }
                 selectionFailed(message);
             }
         }

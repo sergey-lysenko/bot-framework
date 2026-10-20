@@ -407,28 +407,27 @@ public class TestProperties implements _TestProperties {
         if (isNull(commonConfiguration)) common = readCommonConfiguration();
         the = new Properties(); // reset
         the.putAll(commonConfiguration);
-        result = readSuiteProperties(parameters.getTest());
+        final String testName = isNotNull(parameters) ? parameters.getTest() : (isNotNull(works.lysenko.Base.parameters) ? works.lysenko.Base.parameters.getTest() : null);
+        result = readSuiteProperties(testName);
         the.putAll(result.properties());
-        updateConfigFileDefaults(parameters.getTest());
+        updateConfigFileDefaults(testName);
         applyUserOverrides();
         if (isNotNull(parameters)) {
-            if (parameters.isHeadless()) {
-                the.setProperty(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(true));
-            } else {
-                the.setProperty(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(false));
+            final String headlessVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.HEADLESS);
+            if (isNotNull(headlessVal) && !headlessVal.isEmpty()) {
+                the.setProperty(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(Boolean.parseBoolean(headlessVal)));
             }
-            if (parameters.isHideOffBranches()) {
-                the.setProperty(PropEnum._TREE_HIDE_OFF_BRANCHES.getPropertyName(), String.valueOf(true));
-            } else {
-                the.setProperty(PropEnum._TREE_HIDE_OFF_BRANCHES.getPropertyName(), String.valueOf(false));
+            final String hideOffVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.HIDE_OFF_BRANCHES);
+            if (isNotNull(hideOffVal) && !hideOffVal.isEmpty()) {
+                the.setProperty(PropEnum._TREE_HIDE_OFF_BRANCHES.getPropertyName(), String.valueOf(Boolean.parseBoolean(hideOffVal)));
             }
-            if (parameters.isAllLeafs()) {
-                the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(true));
-            } else {
-                the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(false));
+            final String allLeafsVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.ALL_LEAFS);
+            if (isNotNull(allLeafsVal) && !allLeafsVal.isEmpty()) {
+                the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(Boolean.parseBoolean(allLeafsVal)));
             }
-            if (1 < parameters.getAllLeafsCount()) {
-                the.setProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(parameters.getAllLeafsCount()));
+            final String allLeafsCountVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.ALL_LEAFS_COUNT);
+            if (isNotNull(allLeafsCountVal) && !allLeafsCountVal.isEmpty()) {
+                the.setProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), allLeafsCountVal);
             }
             final String testsVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.TESTS);
             if (isNotNull(testsVal) && !testsVal.isEmpty()) {
