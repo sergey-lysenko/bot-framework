@@ -1323,9 +1323,11 @@ public final class TreeHtml {
     private static void pruneOffBranches(final List<NodeData> nodes, final List<Edge> edges) {
         if (!HideOff.branches) return;
 
+        final Set<_Scenario> accessibleScenarios = getAccessibleScenarios();
+        final Map<NodeData, Boolean> cache = new HashMap<>();
         final Set<NodeData> toRemove = new HashSet<>();
         for (final NodeData n : nodes) {
-            if (!isTheoreticallyExecutable(n)) {
+            if (!isTheoreticallyExecutable(n, accessibleScenarios, cache)) {
                 toRemove.add(n);
             }
         }
