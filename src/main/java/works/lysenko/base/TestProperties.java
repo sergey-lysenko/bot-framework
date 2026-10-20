@@ -433,36 +433,22 @@ public class TestProperties implements _TestProperties {
             final String testsVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.TESTS);
             if (isNotNull(testsVal) && !testsVal.isEmpty()) {
                 the.setProperty(PropEnum._TEST_TESTS.getPropertyName(), testsVal);
-            } else {
-                the.remove(PropEnum._TEST_TESTS.getPropertyName());
             }
             final String forbidVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.FORBID_OVEREXECUTION);
-            if (isNotNull(forbidVal) && !forbidVal.isEmpty() && Boolean.parseBoolean(forbidVal)) {
-                the.setProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), String.valueOf(true));
-            } else {
-                the.remove(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName());
+            if (isNotNull(forbidVal) && !forbidVal.isEmpty()) {
+                the.setProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), String.valueOf(Boolean.parseBoolean(forbidVal)));
             }
             final String resilientVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.RESILIENT_MODE);
             if (isNotNull(resilientVal) && !resilientVal.isEmpty()) {
-                if (Boolean.parseBoolean(resilientVal)) {
-                    the.setProperty(PropEnum._TEST_RESILIENT_MODE.getPropertyName(), String.valueOf(true));
-                } else {
-                    the.setProperty(PropEnum._TEST_RESILIENT_MODE.getPropertyName(), String.valueOf(false));
-                }
-            } else {
-                the.remove(PropEnum._TEST_RESILIENT_MODE.getPropertyName());
+                the.setProperty(PropEnum._TEST_RESILIENT_MODE.getPropertyName(), String.valueOf(Boolean.parseBoolean(resilientVal)));
             }
             final String weightVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.COMPLETION_WEIGHT);
             if (isNotNull(weightVal) && !weightVal.isEmpty() && !PropEnum._TREE_COMPLETION_WEIGHT.defaultValue().equals(weightVal)) {
                 the.setProperty(PropEnum._TREE_COMPLETION_WEIGHT.getPropertyName(), weightVal);
-            } else {
-                the.remove(PropEnum._TREE_COMPLETION_WEIGHT.getPropertyName());
             }
             final String traverseVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.TRAVERSE_EXTENSIONS);
-            if (isNotNull(traverseVal) && !traverseVal.isEmpty() && Boolean.parseBoolean(traverseVal)) {
-                the.setProperty(PropEnum._TREE_TRAVERSE_EXTENSIONS.getPropertyName(), String.valueOf(true));
-            } else {
-                the.remove(PropEnum._TREE_TRAVERSE_EXTENSIONS.getPropertyName());
+            if (isNotNull(traverseVal) && !traverseVal.isEmpty()) {
+                the.setProperty(PropEnum._TREE_TRAVERSE_EXTENSIONS.getPropertyName(), String.valueOf(Boolean.parseBoolean(traverseVal)));
             }
         }
         applyUserOverrides();
