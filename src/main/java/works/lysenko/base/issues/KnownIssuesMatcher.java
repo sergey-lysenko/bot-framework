@@ -58,6 +58,7 @@ public final class KnownIssuesMatcher {
                 final String lowerTrimmed = trimmed.toLowerCase(java.util.Locale.ROOT);
                 if (lowerFqn.equalsIgnoreCase(lowerTrimmed)) match = true;
                 else if (lowerFqn.endsWith(String.format(FORMAT_CONCAT, DOT, lowerTrimmed)) || lowerFqn.endsWith(lowerTrimmed)) match = true;
+                else if (lowerTrimmed.endsWith(String.format(FORMAT_CONCAT, DOT, lowerFqn)) || lowerTrimmed.endsWith(lowerFqn)) match = true;
             }
 
             if (!match && trimmed.contains(ASTERISK)) {
@@ -164,22 +165,25 @@ public final class KnownIssuesMatcher {
             match = true;
         } else if (null != logRecord && null != logRecord.text()) {
             final String text = logRecord.text();
+            final String dataStr = (null != logRecord.data()) ? logRecord.data().toString() : "";
+            final String fullText = (!dataStr.isBlank()) ? dataStr + " " + text : text;
 
             // 1. Direct Regex match
             try {
                 final Pattern pattern = getCompiledPattern(patternStr, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-                if (pattern.matcher(text).find()) match = true;
+                if (pattern.matcher(text).find() || pattern.matcher(fullText).find()) match = true;
             } catch (final PatternSyntaxException ignored) {
             }
 
             if (!match) {
                 // 2. Direct Substring match (case-insensitive)
                 final String lowerText = text.toLowerCase(java.util.Locale.ROOT);
+                final String lowerFullText = fullText.toLowerCase(java.util.Locale.ROOT);
                 final String lowerPattern = patternStr.toLowerCase(java.util.Locale.ROOT);
-                if (lowerText.contains(lowerPattern)) match = true;
+                if (lowerText.contains(lowerPattern) || lowerFullText.contains(lowerPattern)) match = true;
                 else {
                     // 3. Normalized alphanumeric tolerance match
-                    final String normText = NON_ALPHANUMERIC.matcher(lowerText).replaceAll(EMPTY);
+                    final String normText = NON_ALPHANUMERIC.matcher(lowerFullText).replaceAll(EMPTY);
                     final String normPattern = NON_ALPHANUMERIC.matcher(lowerPattern).replaceAll(EMPTY);
                     match = !normPattern.isEmpty() && normText.contains(normPattern);
                 }

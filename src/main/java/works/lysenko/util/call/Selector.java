@@ -278,8 +278,8 @@ public final class Selector implements Callable<_Scenario> {
         Utils.logDebug(a(kv(s(IGNORE, c(FAILED), c(SELECTION)), s(Scenario.ignoreFailedSelection))));
 
         if (Scenario.ignoreFailedSelection) {
-            if (isTrace()) logEvent(S3, message);
-            if (isTrace()) logEvent(S3, b(c(TESTS), WILL, GO, ON, AS, REQUESTED));
+            logEvent(S3, message);
+            logEvent(S3, b(c(TESTS), WILL, GO, ON, AS, REQUESTED));
         } else {
             logEvent(S0, message);
             if (isNull(ctrl.getParent())) {

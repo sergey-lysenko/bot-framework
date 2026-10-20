@@ -98,13 +98,13 @@ class KnownIssuesStoreTest {
                     "title" : "NODEJS-3009",
                     "description" : "Messages about required fields are too sparce",
                     "link" : "https://biteheist.atlassian.net/browse/NODEJS-3009",
-                    "pattern" : "[SEVERE] Wrong label {Values are not equal: : 'Website is required', 'Please enter website'}"
+                    "pattern" : "Wrong label"
                   }, {
                     "scenario" : "signIn.correctLogin.partners.addNew.random.absentData.Password",
                     "title" : "NODEJS-3010",
                     "description" : "No messages about required field after. cleanup of field text",
                     "link" : "https://biteheist.atlassian.net/browse/NODEJS-3010",
-                    "pattern" : "contains(@style, 'color: red')"
+                    "pattern" : "Wrong label"
                   } ]
                 }
                 """;
@@ -162,7 +162,7 @@ class KnownIssuesStoreTest {
         };
 
         final _LogRecord lrPassword = new LogRecord(3, System.currentTimeMillis(),
-                new Event(3, EventType.FAILURE, 0, "no such element: Unable to locate element: {\"method\":\"xpath\",\"selector\":\"//input[@name='password']/ancestor::div[contains(@class, 'col-')]//*[contains(@style, 'color: red') or contains(@class, 'text-danger') or contains(@class, 'invalid-feedback')]\"}\n  (Session info: chrome=155.0.8059.39)", null));
+                new Event(3, EventType.FAILURE, 0, "Wrong label { Values are not equal: : 'Password is required', 'Required' }", null));
 
         final List<KnownIssue> matched3 = store.getForLogRecord(List.of(passwordScenario), lrPassword);
         assertEquals(1, matched3.size(), "Should match Password known issue");
@@ -179,7 +179,7 @@ class KnownIssuesStoreTest {
                     "title" : "NODEJS-3010",
                     "description" : "No messages about required field after cleanup of field text",
                     "link" : "https://biteheist.atlassian.net/browse/NODEJS-3010",
-                    "pattern" : "contains(@style, 'color: red')"
+                    "pattern" : "Wrong label"
                   } ]
                 }
                 """;
@@ -200,7 +200,7 @@ class KnownIssuesStoreTest {
 
         final Result result = new Result(addressScenario);
         result.addEvent(new LogRecord(1, System.currentTimeMillis(),
-                new Event(1, EventType.FAILURE, 0, "no such element: Unable to locate element: {\"method\":\"xpath\",\"selector\":\"//textarea[@name='address']/ancestor::div[contains(@class, 'col-')]//*[contains(@style, 'color: red') or contains(@class, 'text-danger') or contains(@class, 'invalid-feedback')]\"}", null)));
+                new Event(1, EventType.FAILURE, 0, "Wrong label { Values are not equal: : 'Address is required', 'Required' }", null)));
 
         final List<KnownIssue> matched = store.getForNode(addressScenario, result);
         assertEquals(1, matched.size(), "Wildcard scenario with getForNode should match Address scenario result");
@@ -217,7 +217,7 @@ class KnownIssuesStoreTest {
                     "title" : "NODEJS-3010",
                     "description" : "No messages about required field after cleanup of field text",
                     "link" : "https://biteheist.atlassian.net/browse/NODEJS-3010",
-                    "pattern" : "contains(@style, 'color: red')"
+                    "pattern" : "Wrong label"
                   } ]
                 }
                 """;

@@ -834,6 +834,50 @@ class AllLeafsCoverageTest {
         assertEquals(fr(1.0), downstreamWeight(dummyScenario), "Child scenario starting with signIn. should inherit downstream weight 1.0 from parent SignIn");
     }
 
+    @Test
+    void testParentNodesInheritDownstreamWeightFromLeafScenarios() {
+        setTestProperty("signIn.login.partners.addNew.AllEmpty", "1.0");
+        Scenario.refresh();
+
+        final _Scenario signIn = new Leaf(fr(1.0)) {
+            @Override
+            public String getShortName() {
+                return "signIn";
+            }
+        };
+        final _Scenario signInLogin = new Leaf(fr(1.0)) {
+            @Override
+            public String getShortName() {
+                return "signIn.login";
+            }
+        };
+
+        assertEquals(fr(1.0), downstreamWeight(signIn), "Parent node signIn should inherit downstream weight from leaf scenario");
+        assertEquals(fr(1.0), downstreamWeight(signInLogin), "Parent node signIn.login should inherit downstream weight from leaf scenario");
+    }
+
+    @Test
+    void testSiblingScenariosDoNotInheritDownstreamWeight() {
+        setTestProperty("signIn.login.partners.addNew.AllEmpty", "1.0");
+        Scenario.refresh();
+
+        final _Scenario appManagement = new Leaf(fr(1.0)) {
+            @Override
+            public String getShortName() {
+                return "signIn.login.appManagement";
+            }
+        };
+        final _Scenario auditLogs = new Leaf(fr(1.0)) {
+            @Override
+            public String getShortName() {
+                return "signIn.login.auditLogs";
+            }
+        };
+
+        assertEquals(fr(0.0), downstreamWeight(appManagement), "Sibling scenario appManagement should NOT inherit downstream weight from partners.addNew.AllEmpty");
+        assertEquals(fr(0.0), downstreamWeight(auditLogs), "Sibling scenario auditLogs should NOT inherit downstream weight from partners.addNew.AllEmpty");
+    }
+
     private static class TestMono extends Mono {
         TestMono(final Fraction weight) {
             try {

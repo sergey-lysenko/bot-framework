@@ -509,9 +509,14 @@ public final class TreeHtml {
 
             final KnownIssuesStore store = getKnownIssuesStore();
             if (null != store) {
+                final String groupPath = group.getKey().replace(" ▷", "").replace(" ◼", "").replace(" ◆", "");
+                final String fullScenarioKey = (nd.scenario() != null) ? nd.scenario().getName() : (groupPath.isEmpty() || groupPath.equals(TESTS) ? rawKey : groupPath + "." + rawKey);
+                final String altScenarioKey = (nd.scenario() != null) ? nd.scenario().getShortName() : shortKey;
                 if (isNotNull(nd.result())) {
                     for (final KnownIssue ki : store.getIssues()) {
-                        if (works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), rawKey, shortKey)) {
+                        if (works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), fullScenarioKey, shortKey)
+                                || works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), altScenarioKey, shortKey)
+                                || works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), rawKey, shortKey)) {
                             if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPattern(ki.pattern(), nd.result())) {
                                 if (!nd.knownIssues().contains(ki)) nd.knownIssues().add(ki);
                             }
@@ -521,7 +526,9 @@ public final class TreeHtml {
                 if (!works.lysenko.util.prop.issues.KnownIssues.failedOnly && null != logRecords && !logRecords.isEmpty()) {
                     for (final KnownIssue ki : store.getIssues()) {
                         if (nd.knownIssues().contains(ki)) continue;
-                        if (works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), rawKey, shortKey)) {
+                        if (works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), fullScenarioKey, shortKey)
+                                || works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), altScenarioKey, shortKey)
+                                || works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), rawKey, shortKey)) {
                             for (int i = 0; i < logRecords.size(); i++) {
                                 final _LogRecord lr = logRecords.get(i);
                                 logProgressIfNeeded(s("checking known issues for ", shortKey), i + 1, logRecords.size());

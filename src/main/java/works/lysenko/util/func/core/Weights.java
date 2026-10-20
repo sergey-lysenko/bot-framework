@@ -221,24 +221,47 @@ public record Weights() {
             return true;
         }
 
-        // 3. Ancestor / parent scenario chain match (tree hierarchy, alias nodes)
+        // 3. Check scenario's own property key/alias for candidate itself
+        final String propKey = getScenarioPropertyKey(scenario).toLowerCase();
+        if (!propKey.isEmpty() && !propKey.equals(shortName)) {
+            if (rec.equals(propKey)) return false;
+            if (shortName.startsWith(propKey + ".") || rec.startsWith(propKey + ".")) {
+                return true;
+            }
+        }
+
+        if (Traverse.extensions) {
+            Class<?> supercls = scenario.getClass().getSuperclass();
+            while (isNotNull(supercls) && supercls != Object.class && supercls != Leaf.class && supercls != Node.class && supercls != Core.class) {
+                final String supKey = getScenarioPropertyKey(supercls).toLowerCase();
+                if (!supKey.isEmpty()) {
+                    if (rec.equals(supKey)) return false;
+                    if (shortName.startsWith(supKey + ".") || rec.startsWith(supKey + ".")) {
+                        return true;
+                    }
+                }
+                supercls = supercls.getSuperclass();
+            }
+        }
+
+        // 4. Ancestor scenario chain match (checking if configRecord configures an ancestor of scenario)
         _Scenario ancestor = parentOf(scenario);
         while (isNotNull(ancestor)) {
             final String ancPropKey = getScenarioPropertyKey(ancestor).toLowerCase();
             final String ancShort = ancestor.getShortName().toLowerCase();
             final String ancSimple = ancestor.getSimpleName().toLowerCase();
             final String ancName = ancestor.getName().toLowerCase();
-            if (!ancPropKey.isEmpty() && (ancPropKey.equals(rec) || shortName.startsWith(ancPropKey + "."))
-                    || !ancShort.isEmpty() && (ancShort.equals(rec) || shortName.startsWith(ancShort + "."))
-                    || !ancSimple.isEmpty() && (ancSimple.equals(rec) || shortName.startsWith(ancSimple + "."))
-                    || !ancName.isEmpty() && (ancName.equals(rec) || shortName.startsWith(ancName + "."))) {
+            if ((!ancPropKey.isEmpty() && ancPropKey.equals(rec))
+                    || (!ancShort.isEmpty() && ancShort.equals(rec))
+                    || (!ancSimple.isEmpty() && ancSimple.equals(rec))
+                    || (!ancName.isEmpty() && ancName.equals(rec))) {
                 return true;
             }
             if (Traverse.extensions) {
                 Class<?> supercls = ancestor.getClass().getSuperclass();
                 while (isNotNull(supercls) && supercls != Object.class && supercls != Leaf.class && supercls != Node.class && supercls != Core.class) {
                     final String supKey = getScenarioPropertyKey(supercls).toLowerCase();
-                    if (!supKey.isEmpty() && (supKey.equals(rec) || shortName.startsWith(supKey + "."))) {
+                    if (!supKey.isEmpty() && supKey.equals(rec)) {
                         return true;
                     }
                     supercls = supercls.getSuperclass();
