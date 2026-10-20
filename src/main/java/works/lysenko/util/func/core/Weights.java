@@ -207,31 +207,38 @@ public record Weights() {
     private static boolean isDownstreamOf(final _Scenario scenario, final String configRecord) {
         if (isNull(scenario) || isNull(configRecord) || configRecord.isEmpty()) return false;
         final String rec = configRecord.toLowerCase();
-
-        // 1. Direct shortName prefix match (standard package hierarchy)
         final String shortName = scenario.getShortName().toLowerCase();
-        if (shortName.startsWith(rec) && !rec.equals(shortName)) {
+
+        if (rec.equals(shortName)) return false;
+
+        // 1. Candidate is child of configured key (e.g. config="signIn", scenario="signIn.WrongPassword")
+        if (!shortName.isEmpty() && shortName.startsWith(rec + ".")) {
             return true;
         }
 
-        // 2. Ancestor / parent scenario chain match (tree hierarchy, alias nodes)
+        // 2. Candidate is parent of configured key (e.g. config="signIn.login.partners.addNew.AllEmpty", scenario="signIn.login")
+        if (!shortName.isEmpty() && rec.startsWith(shortName + ".")) {
+            return true;
+        }
+
+        // 3. Ancestor / parent scenario chain match (tree hierarchy, alias nodes)
         _Scenario ancestor = parentOf(scenario);
         while (isNotNull(ancestor)) {
             final String ancPropKey = getScenarioPropertyKey(ancestor).toLowerCase();
             final String ancShort = ancestor.getShortName().toLowerCase();
             final String ancSimple = ancestor.getSimpleName().toLowerCase();
             final String ancName = ancestor.getName().toLowerCase();
-            if (ancPropKey.equals(rec) || ancPropKey.startsWith(rec)
-                    || ancShort.equals(rec) || ancShort.startsWith(rec)
-                    || ancSimple.equals(rec) || ancSimple.startsWith(rec)
-                    || ancName.equals(rec) || ancName.startsWith(rec)) {
+            if (!ancPropKey.isEmpty() && (ancPropKey.equals(rec) || rec.startsWith(ancPropKey + ".") || ancPropKey.startsWith(rec + "."))
+                    || !ancShort.isEmpty() && (ancShort.equals(rec) || rec.startsWith(ancShort + ".") || ancShort.startsWith(rec + "."))
+                    || !ancSimple.isEmpty() && (ancSimple.equals(rec) || rec.startsWith(ancSimple + ".") || ancSimple.startsWith(rec + "."))
+                    || !ancName.isEmpty() && (ancName.equals(rec) || rec.startsWith(ancName + ".") || ancName.startsWith(rec + "."))) {
                 return true;
             }
             if (Traverse.extensions) {
                 Class<?> supercls = ancestor.getClass().getSuperclass();
                 while (isNotNull(supercls) && supercls != Object.class && supercls != Leaf.class && supercls != Node.class && supercls != Core.class) {
                     final String supKey = getScenarioPropertyKey(supercls).toLowerCase();
-                    if (supKey.equals(rec) || supKey.startsWith(rec)) {
+                    if (!supKey.isEmpty() && (supKey.equals(rec) || rec.startsWith(supKey + ".") || supKey.startsWith(rec + "."))) {
                         return true;
                     }
                     supercls = supercls.getSuperclass();
