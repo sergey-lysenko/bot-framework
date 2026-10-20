@@ -80,6 +80,8 @@ public class Gui implements _GUI {
     private JCheckBox forbidOverexecution = null;
     private JCheckBox resilientMode = null;
     private JTextField completionWeight = null;
+    private JTextField origin = null;
+    private JTextField tag = null;
     private JCheckBox traverseExtensions = null;
     private JComboBox<Object> platform = null;
     private JComboBox<Object> test = null;
@@ -275,6 +277,12 @@ public class Gui implements _GUI {
         completionWeight = new JTextField(defaultWeight, WIDTH);
 
         traverseExtensions = createCheckBox(parameters.getTraverseExtensions(), PropEnum._TREE_TRAVERSE_EXTENSIONS);
+
+        final String defaultOrigin = defaultIfEmpty(parameters.getProperty(ORIGIN.name()), Parameters.getLocalIpAddress() + " [GUI]");
+        origin = new JTextField(defaultOrigin, WIDTH);
+
+        final String defaultTag = defaultIfEmpty(parameters.getProperty(TAG.name()), defaultIfEmpty(parameters.getSuite(), "default"));
+        tag = new JTextField(defaultTag, WIDTH);
 
         initCyclesComponents();
         initPropertiesComponents();
@@ -578,6 +586,8 @@ public class Gui implements _GUI {
         rows = addRowOptional(TRAVERSE_EXTENSIONS.name(), traverseExtensions, panel, rows);
         rows = addRowOptional(HEADLESS.name(), headless, panel, rows);
         rows = addRowOptional(HIDE_OFF_BRANCHES.name(), hideOffBranches, panel, rows);
+        rows = addRowOptional(ORIGIN.name(), origin, panel, rows);
+        rows = addRowOptional(TAG.name(), tag, panel, rows);
 
         // Additional parameters
         rows = addRowsAdditional(rows);
@@ -641,6 +651,8 @@ public class Gui implements _GUI {
         }
         propagatePropertyOptional(resilientMode, RESILIENT_MODE.name());
         propagatePropertyOptional(traverseExtensions, TRAVERSE_EXTENSIONS.name());
+        propagatePropertyOptional(origin, ORIGIN.name());
+        propagatePropertyOptional(tag, TAG.name());
 
         // Additional parameters
         if (isNotNull(aParams)) {

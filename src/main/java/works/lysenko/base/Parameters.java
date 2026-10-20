@@ -10,7 +10,11 @@ import works.lysenko.util.data.enums.Platform;
 import works.lysenko.util.prop.*;
 
 import java.io.*;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.nio.charset.StandardCharsets;
+import java.util.Enumeration;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -162,16 +166,55 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         return getValue(DOMAIN);
     }
 
+    public static String getLocalIpAddress() {
+
+        try {
+            final InetAddress localHost = InetAddress.getLocalHost();
+            final String hostAddr = localHost.getHostAddress();
+            if (isNotNull(hostAddr) && !hostAddr.startsWith("127.")) {
+                return hostAddr;
+            }
+            final Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                final NetworkInterface iface = interfaces.nextElement();
+                if (iface.isLoopback() || !iface.isUp()) continue;
+                final Enumeration<InetAddress> addresses = iface.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    final InetAddress addr = addresses.nextElement();
+                    if (addr instanceof Inet4Address && !addr.isLoopbackAddress()) {
+                        return addr.getHostAddress();
+                    }
+                }
+            }
+        } catch (final Exception ignored) {
+            // Fallback
+        }
+        return "127.0.0.1";
+    }
+
     @Override
     public String getOrigin() {
 
-        return getValue(ORIGIN);
+        final String val = getValue(ORIGIN);
+        if (isNotNull(val) && !val.isBlank()) return val;
+
+        final boolean isGui = !(isInsideDocker() || isInsideCI());
+        final String mode = isGui ? "GUI" : "CLI";
+        final String ip = getLocalIpAddress();
+        return isNotNull(ip) && !ip.isBlank() ? s(ip, " [", mode, "]") : mode;
     }
 
     @Override
     public String getTag() {
 
-        return getValue(TAG);
+        final String val = getValue(TAG);
+        if (isNotNull(val) && !val.isBlank()) return val;
+
+        final String suiteVal = getSuite();
+        if (isNotNull(suiteVal) && !suiteVal.isBlank()) {
+            return suiteVal;
+        }
+        return "default";
     }
 
     @Override
