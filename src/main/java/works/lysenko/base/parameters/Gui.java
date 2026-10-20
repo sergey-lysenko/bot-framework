@@ -31,6 +31,8 @@ import works.lysenko.base.TestProperties;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static works.lysenko.base.Parameters.WIDTH;
+import static works.lysenko.util.spec.Layout.Parts.SUITE_PROPERTIES_EXTENSION;
+import static works.lysenko.util.spec.Layout.Paths._SUITES_;
 import static works.lysenko.util.chrs.__.BY;
 import static works.lysenko.util.chrs.__.TO;
 import static works.lysenko.util.chrs.___.DOTS;
@@ -242,12 +244,6 @@ public class Gui implements _GUI {
         isInitializingGui = true;
 
         test = addFromFiles(SUITE.name(), _SUITES_, SUITE_PROPERTIES_EXTENSION);
-        if (isNull(test.getSelectedItem())) {
-            final JComboBox<Object> testFallback = addFromFiles(TEST.name(), _SUITES_, SUITE_PROPERTIES_EXTENSION);
-            if (isNotNull(testFallback.getSelectedItem())) {
-                test.setSelectedItem(testFallback.getSelectedItem());
-            }
-        }
         test.addActionListener(e -> updateTestsFromSelectedTestConfiguration());
         pool = addFromFiles(POOL.name(), ETC_, USERS_POOL_EXTENSION);
         addPlatforms();

@@ -11,8 +11,10 @@ import works.lysenko.util.prop.*;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.Properties;
 
+import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static works.lysenko.Base.properties;
 import static works.lysenko.base.core.Routines.isInsideCI;
@@ -58,6 +60,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
 
         if (isNotNull(properties)) {
             putAll(properties);
+            cleanupLegacyTestKey();
         }
     }
 
@@ -81,6 +84,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         read(ORIGIN.name());
         read(TAG.name());
         readAdditionalParameters(list);
+        cleanupLegacyTestKey();
         showOptionalGui();
     }
 
@@ -98,13 +102,13 @@ public final class Parameters extends Properties implements _ExecutionParameterV
 
         final String suiteVal = getValue(SUITE);
         if (isNotNull(suiteVal) && !suiteVal.isBlank()) return suiteVal;
-        return getValue(TEST);
+        return (String) get("TEST");
     }
 
     public void setTest(final String name) {
 
         put(SUITE.name(), name);
-        put(TEST.name(), name);
+        remove("TEST");
         properties.readTestConfiguration();
     }
 
@@ -286,8 +290,20 @@ public final class Parameters extends Properties implements _ExecutionParameterV
 
         try (final FileInputStream stream = new FileInputStream(PARAMETERS_)) {
             load(stream);
+            cleanupLegacyTestKey();
         } catch (final IOException e) {
             // NOP
+        }
+    }
+
+    private void cleanupLegacyTestKey() {
+
+        if (containsKey("TEST")) {
+            final String oldTestVal = (String) remove("TEST");
+            if ((!containsKey(SUITE.name()) || isNull(get(SUITE.name())) || ((String) get(SUITE.name())).isBlank())
+                    && isNotNull(oldTestVal) && !oldTestVal.isBlank()) {
+                put(SUITE.name(), oldTestVal);
+            }
         }
     }
 

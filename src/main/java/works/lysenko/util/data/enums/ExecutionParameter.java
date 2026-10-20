@@ -39,7 +39,6 @@ public enum ExecutionParameter implements _Default {
     RESILIENT_MODE(FALSE),
     SUITE(EMPTY),
     TAG(EMPTY),
-    TEST(EMPTY),
     TESTS(EMPTY),
     TRAVERSE_EXTENSIONS(FALSE);
 
