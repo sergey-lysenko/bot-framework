@@ -1,5 +1,9 @@
 package works.lysenko.base.ui;
 
+import works.lysenko.base.issues.KnownIssue;
+import works.lysenko.base.issues.KnownIssuesStore;
+import works.lysenko.base.issues.KnownIssuesMatcher;
+import works.lysenko.util.prop.PropEnum;
 import works.lysenko.base.parameters.PropertyValidator;
 
 import javax.swing.*;

@@ -3,7 +3,10 @@ package works.lysenko.base.ui;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import works.lysenko.base.issues.KnownIssue;
+import works.lysenko.base.issues.KnownIssuesMatcher;
 import works.lysenko.base.issues.KnownIssuesStore;
+import works.lysenko.base.parameters.PropertyValidator;
+import works.lysenko.util.prop.PropEnum;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -11,6 +14,7 @@ import java.awt.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -135,9 +139,16 @@ public class KnownIssuesPanel extends JPanel {
             }
         });
 
+        final JButton prepareKnownIssuesBtn = new JButton("Prepare Known Issues verification");
+        prepareKnownIssuesBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        prepareKnownIssuesBtn.setForeground(new Color(0x02, 0x84, 0xC7));
+        prepareKnownIssuesBtn.setToolTipText("Generates KnownIssues.suite and switches to Run Setup tab");
+        prepareKnownIssuesBtn.addActionListener(e -> prepareKnownIssuesVerification());
+
         toolbar.add(reloadBtn);
         toolbar.add(saveFileBtn);
         toolbar.add(toggleViewBtn);
+        toolbar.add(prepareKnownIssuesBtn);
 
         add(toolbar, BorderLayout.NORTH);
 
@@ -243,6 +254,10 @@ public class KnownIssuesPanel extends JPanel {
     }
 
     public void saveToFile() {
+        saveToFile(true);
+    }
+
+    public void saveToFile(final boolean showMessage) {
         final File target = resolveTargetFile();
         try {
             if (isRawViewActive()) {
@@ -254,7 +269,9 @@ public class KnownIssuesPanel extends JPanel {
             }
             Files.writeString(target.toPath(), json, StandardCharsets.UTF_8);
             rawJsonArea.setText(json);
-            JOptionPane.showMessageDialog(this, "Known issues saved successfully to " + target.getPath(), "Saved", JOptionPane.INFORMATION_MESSAGE);
+            if (showMessage) {
+                JOptionPane.showMessageDialog(this, "Known issues saved successfully to " + target.getPath(), "Saved", JOptionPane.INFORMATION_MESSAGE);
+            }
         } catch (final Exception e) {
             JOptionPane.showMessageDialog(this, "Error saving file: " + e.getMessage(), "Save Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -277,6 +294,7 @@ public class KnownIssuesPanel extends JPanel {
         }
 
         final Map<String, Object> root = new LinkedHashMap<>();
+        root.put("$schema", "./issues.schema.json");
         root.put("issues", list);
         return MAPPER.writeValueAsString(root);
     }
@@ -305,6 +323,85 @@ public class KnownIssuesPanel extends JPanel {
                 }
             }
         } catch (final Exception ignored) {
+        }
+    }
+
+    private void prepareKnownIssuesVerification() {
+        try {
+            if (isRawViewActive()) {
+                syncRawJsonToTable();
+            }
+            saveToFile(false);
+
+            final File target = resolveTargetFile();
+            if (!target.exists()) {
+                JOptionPane.showMessageDialog(this, "issues.json not found", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            final KnownIssuesStore store = new KnownIssuesStore(Files.newInputStream(target.toPath()));
+            final List<KnownIssue> issues = store.getIssues();
+
+            final List<String> allProperties = PropertyValidator.getAllKnownProperties();
+            final Map<String, String> canonicalScenarios = new LinkedHashMap<>();
+            for (final String prop : allProperties) {
+                if (prop.startsWith(".")) continue;
+                final String lowerKey = prop.toLowerCase(java.util.Locale.ROOT);
+                if (!canonicalScenarios.containsKey(lowerKey)) {
+                    canonicalScenarios.put(lowerKey, prop);
+                } else {
+                    final String existing = canonicalScenarios.get(lowerKey);
+                    if (Character.isUpperCase(existing.charAt(0)) && Character.isLowerCase(prop.charAt(0))) {
+                        canonicalScenarios.put(lowerKey, prop);
+                    }
+                }
+            }
+
+            final java.util.Set<String> matchingScenarios = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
+            for (final KnownIssue ki : issues) {
+                final String pattern = ki.scenario();
+                if (pattern == null || pattern.isBlank()) continue;
+
+                final String rootPackage = works.lysenko.util.prop.PropEnum._TEST_ROOT.get();
+                final String prefix = (rootPackage != null && !rootPackage.isEmpty() && !rootPackage.equals(".")) ? rootPackage + "." : "works.lysenko.";
+
+                for (final String prop : canonicalScenarios.values()) {
+                    final String fqn = prefix + prop;
+                    final String simpleName = prop.contains(".") ? prop.substring(prop.lastIndexOf('.') + 1) : prop;
+
+                    if (KnownIssuesMatcher.matchesScenario(pattern, fqn, simpleName)) {
+                        matchingScenarios.add(prop);
+                    }
+                }
+            }
+
+            final Path suitePath = Path.of(works.lysenko.util.spec.Layout.Paths._SUITES_, "KnownIssues.suite");
+            final StringBuilder suiteContent = new StringBuilder();
+            suiteContent.append("# Generated automatically from Known Issues\n");
+            suiteContent.append(".test.all.leafs=true\n");
+            suiteContent.append(".test.all.leafs.count=1\n");
+            suiteContent.append(PropEnum._TEST_RESILIENT_MODE.getPropertyName()).append("=true\n");
+
+            for (final String scenario : matchingScenarios) {
+                suiteContent.append(scenario).append("=1\n");
+            }
+
+            if (suitePath.getParent() != null) {
+                Files.createDirectories(suitePath.getParent());
+            }
+            Files.writeString(suitePath, suiteContent.toString(), StandardCharsets.UTF_8);
+
+            final ControlPanel controlPanel = ControlPanel.getInstance();
+            if (controlPanel != null) {
+                controlPanel.getGui().selectTestSuite("KnownIssues");
+                controlPanel.getTabbedPane().setSelectedIndex(1);
+            }
+
+            JOptionPane.showMessageDialog(this, "KnownIssues.suite generated with " + matchingScenarios.size() + " scenarios.", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (final Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error preparing known issues: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }

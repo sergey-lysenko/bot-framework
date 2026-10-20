@@ -239,6 +239,18 @@ public class Gui implements _GUI {
         }
     }
 
+    public void selectTestSuite(final String suiteName) {
+        if (isNotNull(test)) {
+            refreshTestDropdown();
+            for (int i = 0; i < test.getItemCount(); i++) {
+                if (String.valueOf(test.getItemAt(i)).equalsIgnoreCase(suiteName)) {
+                    test.setSelectedIndex(i);
+                    break;
+                }
+            }
+        }
+    }
+
     /**
      * Adds the standard parameters to the Parameters object.
      */

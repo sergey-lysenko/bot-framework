@@ -307,6 +307,10 @@ public class ControlPanel extends JFrame implements _Dashboard {
         return tabbedPane;
     }
 
+    public Gui getGui() {
+        return gui;
+    }
+
     public ImagePanel getTreeImagePanel() {
         return treeImagePanel;
     }
