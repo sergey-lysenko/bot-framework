@@ -410,7 +410,7 @@ public final class TreeTracker {
             final boolean enabled,
             final int maxFrames,
             final int maxFramePixels,
-            final int maxTotalPixels) {
+            final long maxTotalPixels) {
         processFrames(
                 runDir,
                 prefix,
@@ -430,7 +430,7 @@ public final class TreeTracker {
             final boolean enabled,
             final int maxFrames,
             final int maxFramePixels,
-            final int maxTotalPixels,
+            final long maxTotalPixels,
             final boolean mp4Enabled,
             final String ffmpeg) {
         processFrames(
@@ -453,7 +453,7 @@ public final class TreeTracker {
             final boolean enabled,
             final int maxFrames,
             final int maxFramePixels,
-            final int maxTotalPixels,
+            final long maxTotalPixels,
             final boolean mp4Enabled,
             final String ffmpeg,
             final String treeSonification) {
@@ -479,7 +479,7 @@ public final class TreeTracker {
             final boolean enabled,
             final int maxFrames,
             final int maxFramePixels,
-            final int maxTotalPixels,
+            final long maxTotalPixels,
             final boolean gifEnabled,
             final boolean webpEnabled,
             final boolean mp4Enabled,
@@ -524,7 +524,7 @@ public final class TreeTracker {
             return;
         }
 
-        final boolean needsRaster = gifEnabled || webpEnabled || mp4Enabled;
+        final boolean needsRaster = gifEnabled || webpEnabled;
         final File tmpDir = new File(runDir, ".tmp_raster_tree");
         final List<File> rasterizedFrames;
         try {
@@ -739,7 +739,18 @@ public final class TreeTracker {
         sb.append("      <line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"10\" stroke=\"#fbbf24\" stroke-width=\"2\" stroke-opacity=\"0.45\" />\n");
         sb.append("      <line x1=\"0\" y1=\"0\" x2=\"10\" y2=\"0\" stroke=\"#fbbf24\" stroke-width=\"2\" stroke-opacity=\"0.45\" />\n");
         sb.append("    </pattern>\n");
+        sb.append("    <rect id=\"cb\" width=\"" + CARD_WIDTH + "\" height=\"" + CARD_HEIGHT + "\" rx=\"8\" ry=\"8\" />\n");
+        sb.append("    <rect id=\"pt\" x=\"8\" y=\"" + (CARD_HEIGHT - 8) + "\" width=\"" + (CARD_WIDTH - 16) + "\" height=\"4\" fill=\"#0f172a\" opacity=\"0.8\" rx=\"2\" ry=\"2\" />\n");
+        sb.append("    <rect id=\"ho\" width=\"" + CARD_WIDTH + "\" height=\"" + CARD_HEIGHT + "\" fill=\"url(#known-issue-hatch)\" rx=\"8\" ry=\"8\" pointer-events=\"none\" />\n");
         sb.append("  </defs>\n");
+        sb.append("  <style>\n");
+        sb.append("    .tx1 { font-family: monospace; font-size: 10px; font-weight: bold; }\n");
+        sb.append("    .tx2 { font-size: 12px; }\n");
+        sb.append("    .tx3 { font-family: monospace; font-weight: bold; font-size: 11px; }\n");
+        sb.append("    .tx4 { font-family: sans-serif; font-weight: bold; font-size: 15px; fill: #F8FAFC; }\n");
+        sb.append("    .pb { fill: #0f172a; opacity: 0.8; }\n");
+        sb.append("    .edge { fill: none; }\n");
+        sb.append("  </style>\n");
 
         sb.append("  <rect width=\"100%\" height=\"100%\" fill=\"#0F172A\" />\n");
         sb.append(String.format(Locale.US,
@@ -794,7 +805,7 @@ public final class TreeTracker {
             }
 
             sb.append(String.format(Locale.US,
-                    "  <path d=\"M %d %d C %d %d, %d %d, %d %d\" stroke=\"%s\" stroke-width=\"%.1f\" fill=\"none\" %s/>\n",
+                    "  <path class=\"edge\" d=\"M %d %d C %d %d, %d %d, %d %d\" stroke=\"%s\" stroke-width=\"%.1f\" %s/>\n",
                     startX, startY, cX, startY, cX, endY, endX, endY, strokeColor, strokeW, dash));
         }
 
@@ -814,7 +825,7 @@ public final class TreeTracker {
                 "  <circle cx=\"%d\" cy=\"30\" r=\"6\" fill=\"#38BDF8\" />\n",
                 PADDING_X + 6));
         sb.append(String.format(Locale.US,
-                "  <text x=\"%d\" y=\"35\" fill=\"#F8FAFC\" font-family=\"sans-serif\" font-weight=\"bold\" font-size=\"15\">Scenario Execution Tree Progression</text>\n",
+                "  <text class=\"tx4\" x=\"%d\" y=\"35\">Scenario Execution Tree Progression</text>\n",
                 PADDING_X + 22));
 
         int rightX = canvasW - PADDING_X;
@@ -846,7 +857,7 @@ public final class TreeTracker {
         final int leftX = rightX - badgeW;
         sb.append(String.format(Locale.US,
                 "  <rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"22\" rx=\"6\" ry=\"6\" fill=\"%s\" />\n" +
-                "  <text x=\"%d\" y=\"%d\" fill=\"%s\" font-family=\"monospace\" font-weight=\"bold\" font-size=\"11\">%s</text>\n",
+                "  <text class=\"tx3\" x=\"%d\" y=\"%d\" fill=\"%s\">%s</text>\n",
                 leftX, topY, badgeW, bg, leftX + 8, topY + 15, fg, text));
         return leftX - 10;
     }

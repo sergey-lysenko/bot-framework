@@ -152,7 +152,7 @@ a.scen-stat-link:hover { color: #38bdf8; text-decoration: underline; }
 .sym-fork { color: #22c55e; }
 .sym-other { color: #f59e0b; }
 #sectionsContainer { position: relative; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 10px; align-items: start; }
-details.log-section { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: all 0.15s ease-out; }
+details.log-section { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: all 0.15s ease-out; content-visibility: auto; contain-intrinsic-size: 0 42px; }
 details.log-section.preflight, details.log-section.postflight { grid-column: 1 / -1; background: var(--card-bg); border-left: 4px solid #38bdf8; }
 details.log-section.booting { grid-column: 1; background: var(--card-bg); border-left: 4px solid #38bdf8; }
 details.log-section.configuring { grid-column: 2; background: var(--limbo-bg); border-left: 4px solid #475569; opacity: 0.85; }
@@ -206,6 +206,7 @@ details.log-section.test.warning .soundtrack-column { background: #0c0a03; borde
 details.log-section.test.failed .soundtrack-column { background: #120505; border-color: #2b1111; }
 .soundtrack-column::before { content: ''; position: absolute; top: 0; bottom: 0; left: 8px; width: 6px; background-image: radial-gradient(circle, #334155 35%, transparent 40%); background-size: 6px 19.2px; opacity: 0.5; }
 .soundtrack-track { margin-left: 18px; width: 34px; height: 100%; display: flex; flex-direction: column; }
+.st-row.e { width: 1px; opacity: 0.15; background: #ffffff; height: 18px; display: block; }
 .soundtrack-column.right-track { border-right: none; border-left: 1px solid #1a2234; }
 .soundtrack-column.right-track::before { left: auto; right: 8px; }
 .soundtrack-column.right-track .soundtrack-track { margin-left: 0; margin-right: 18px; }
@@ -228,7 +229,8 @@ details.log-section.test.failed .soundtrack-column { background: #120505; border
 .lg-st-sample.rate-green { background: #22c55e; box-shadow: 0 0 7px rgba(34, 197, 94, 0.7); }
 .lg-st-sample.rate-yellow { background: #eab308; box-shadow: 0 0 8px rgba(234, 179, 8, 0.8); }
 .lg-st-sample.rate-red { background: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.9); }
-.lg-item-text { display: flex; flex-direction: column; line-height: 1.2; }
+.lg-item-text { display: flex; flex-direction: row; align-items: baseline; gap: 8px; line-height: 1.2; }
+.lg-sub::before { content: '/ '; opacity: 0.35; margin-right: 2px; }
 .lg-val { font-weight: 600; font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 .lg-val.rate-white { color: #cbd5e1; }
 .lg-val.rate-blue { color: #38bdf8; }
@@ -243,7 +245,7 @@ details.log-section.test.failed .soundtrack-column { background: #120505; border
 .lg-sub.rate-red { color: #fca5a5; opacity: 0.85; }
 .lg-track-labels { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .lg-track-tag { font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: #64748b; background: rgba(15, 23, 42, 0.6); padding: 2px 6px; border-radius: 4px; border: 1px solid #1e293b; white-space: nowrap; }
-.log-content { flex: 1; padding: 12px 18px; overflow-x: auto; background: transparent; font-size: 12px; line-height: 19.2px; white-space: pre; word-break: normal; border-top: none; }
+.log-content { flex: 1; padding: 12px 18px; overflow-x: auto; background: transparent; font-size: 12px; line-height: 19.2px; white-space: normal; word-break: normal; border-top: none; }
 a.path-step { text-decoration: none; }
 .scenario-anchor { position: absolute; pointer-events: none; width: 0; height: 0; }
 .scen-link-btn { display: inline-flex; align-items: center; justify-content: center; margin-left: 8px; padding: 0 4px; color: #64748b; text-decoration: none; font-size: 11px; opacity: 0.35; border-radius: 3px; transition: all 0.15s ease; user-select: none; cursor: pointer; }
@@ -419,7 +421,204 @@ a.path-step { text-decoration: none; }
 </main>
 
 <script>
-  function expandAll() { document.querySelectorAll('details.log-section').forEach(d => d.open = true); }
+  function arrayMax(arr, initial) {
+    const init = (initial !== undefined) ? initial : -Infinity;
+    if (!arr || !arr.length) return init;
+    let max = init;
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i] > max) max = arr[i];
+    }
+    return max;
+  }
+
+  const ANSI_COLOR_MAP = {
+    '0': null,
+    '30': 'color:#1e293b', '31': 'color:#ef4444', '32': 'color:#22c55e', '33': 'color:#eab308',
+    '34': 'color:#3b82f6', '35': 'color:#d946ef', '36': 'color:#06b6d4', '37': 'color:#e2e8f0',
+    '90': 'color:#64748b', '91': 'color:#f87171', '92': 'color:#4ade80', '93': 'color:#facc15',
+    '94': 'color:#60a5fa', '95': 'color:#e879f9', '96': 'color:#22d3ee', '97': 'color:#f8fafc',
+    '40': 'background-color:#1e293b', '41': 'background-color:#dc2626;color:#ffffff',
+    '42': 'background-color:#16a34a;color:#000000;font-weight:bold', '43': 'background-color:#ca8a04;color:#000000',
+    '44': 'background-color:#2563eb;color:#ffffff', '45': 'background-color:#c026d3;color:#ffffff',
+    '46': 'background-color:#0891b2;color:#ffffff', '47': 'background-color:#f1f5f9;color:#0f172a',
+    '1': 'font-weight:bold', '4': 'text-decoration:underline'
+  };
+
+  function parseAnsiJs(text) {
+    if (!text) return '';
+    let out = '';
+    let openSpans = 0;
+    let i = 0;
+    while (i < text.length) {
+      const esc = text.indexOf('\u001b[', i);
+      if (esc === -1) {
+        out += text.substring(i);
+        break;
+      }
+      out += text.substring(i, esc);
+      const end = text.indexOf('m', esc + 2);
+      if (end === -1) {
+        out += text.substring(esc);
+        break;
+      }
+      const codeStr = text.substring(esc + 2, end);
+      const codes = codeStr.split(';');
+      let reset = false;
+      for (const c of codes) { if (c === '0' || c === '') reset = true; }
+      if (reset) {
+        while (openSpans > 0) { out += '</span>'; openSpans--; }
+      }
+      let styles = '';
+      for (const c of codes) {
+        if (ANSI_COLOR_MAP[c]) styles += ANSI_COLOR_MAP[c] + ';';
+      }
+      if (styles) {
+        out += `<span style="${styles}">`;
+        openSpans++;
+      }
+      i = end + 1;
+    }
+    while (openSpans > 0) { out += '</span>'; openSpans--; }
+
+    return out.replace(/((?:result|target)\/runs\/[^\s"&<>]+\/)?((?:snapshots|data)\/[^"&<>\r\n]+?\.(?:png|properties|log|json|html|txt))/g, (m, p, rel) => {
+      return `<a class="log-artifact-link" href="${rel}" target="_blank" title="Open artifact: ${rel}">${rel}</a>`;
+    });
+  }
+
+  function unescapeHtmlJs(str) {
+    if (!str) return '';
+    return str.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+  }
+
+  const LINE_WITH_TEST_RE = /^\[\s*(\d+)\s*\]\[\s*(\d+)\s*\]\[([^\]]+)\](?:\[([^\]]*)\])?(.*)$/;
+  const LINE_NO_TEST_RE = /^(?:\[\s*\])?\[\s*(\d+)\s*\]\[([^\]]+)\](?:\[([^\]]*)\])?(.*)$/;
+  const SCEN_TOKEN_RE = /([▷◆◼●])\s+([a-zA-Z0-9_$-]+(?:\.[a-zA-Z0-9_$-]+)*)\s*:/;
+
+  function extractLineSpanJs(line) {
+    if (!line) return 0;
+    const clean = line.replace(/\u001b\[[0-9;]*m/g, '').trim();
+    const m1 = clean.match(/^\[\s*\d+\s*\]\[\s*\d+\s*\]\[[^\]]+\](?:\s*\[\s*(\d+)\s*\])?/);
+    if (m1 && m1[1]) return parseInt(m1[1].trim(), 10) || 0;
+    const m2 = clean.match(/^(?:\[\s*\])?\[\s*\d+\s*\]\[[^\]]+\](?:\s*\[\s*(\d+)\s*\])?/);
+    if (m2 && m2[1]) return parseInt(m2[1].trim(), 10) || 0;
+    return 0;
+  }
+
+  function loadSectionLines(detailsEl) {
+    if (!detailsEl || detailsEl.hasAttribute('data-loaded')) return;
+    detailsEl.setAttribute('data-loaded', 'true');
+    const rawScript = detailsEl.querySelector('script.raw-lines');
+    const bodyEl = detailsEl.querySelector('.log-section-body');
+    if (!rawScript || !bodyEl) return;
+
+    const secTestNum = parseInt(detailsEl.getAttribute('data-test') || '0', 10);
+    const lines = rawScript.textContent.split('\n');
+    const seenOps = new Set();
+    const scenCounts = {};
+
+    let contentHtml = '';
+    let stHtml = '';
+    let cpuHtml = '';
+
+    let maxS = 0;
+    const spans = [];
+    for (let i = 0; i < lines.length; i++) {
+      const sp = extractLineSpanJs(lines[i]);
+      spans.push(sp);
+      if (sp > maxS) maxS = sp;
+    }
+    const logScale = Math.log10(Math.max(15000, maxS) + 1);
+
+    for (let i = 0; i < lines.length; i++) {
+      let rawLine = lines[i];
+      if (rawLine.endsWith('\r')) rawLine = rawLine.substring(0, rawLine.length - 1);
+      if (!rawLine && i === lines.length - 1) continue;
+
+      const sp = spans[i];
+      if (sp > 0) {
+        const pct = Math.log10(sp + 1) / logScale;
+        const wPx = Math.max(2, Math.min(32, Math.round(pct * 32)));
+        const rateClass = (sp > 999) ? ' rate-red' : (sp > 99) ? ' rate-yellow' : (sp > 49) ? ' rate-green' : (sp > 19) ? ' rate-blue' : ' rate-white';
+        stHtml += `<div class="st-row${rateClass}" title="${sp} ms"><div class="st-wave" style="width: ${wPx}px;"></div></div>`;
+      } else {
+        stHtml += '<div class="st-row e"></div>';
+      }
+
+      const cleanL = rawLine.replace(/\u001b\[[0-9;]*m/g, '').trim();
+      const mTest = cleanL.match(LINE_WITH_TEST_RE);
+      const mNoTest = mTest ? null : cleanL.match(LINE_NO_TEST_RE);
+
+      let opNum = null;
+      let tNum = secTestNum;
+      if (mTest) {
+        tNum = parseInt(mTest[1].trim(), 10);
+        opNum = mTest[2].trim();
+      } else if (mNoTest) {
+        opNum = mNoTest[1].trim();
+      }
+
+      let cpuVal = 0;
+      if (opNum && window.resourceData && window.resourceData.length) {
+        const resItem = window.resourceData.find(r => r.t === tNum || r.n === parseInt(opNum, 10));
+        if (resItem) cpuVal = resItem.cpu || 0;
+      }
+      if (cpuVal > 0) {
+        const rel = Math.min(1.0, Math.max(0.0, cpuVal / 100.0));
+        const cClass = (rel > 0.80) ? ' rate-red' : (rel > 0.60) ? ' rate-yellow' : (rel > 0.40) ? ' rate-green' : (rel > 0.20) ? ' rate-blue' : ' rate-white';
+        const cpuW = Math.max(2, Math.min(32, Math.round(rel * 32)));
+        cpuHtml += `<div class="st-row${cClass}" title="${cpuVal.toFixed(1)}%"><div class="st-wave" style="width: ${cpuW}px;"></div></div>`;
+      } else {
+        cpuHtml += '<div class="st-row e"></div>';
+      }
+
+      let scenName = null;
+      if (cleanL.includes('▷') || cleanL.includes('◆') || cleanL.includes('◼') || cleanL.includes('●')) {
+        const mScen = cleanL.match(SCEN_TOKEN_RE);
+        if (mScen) {
+          const cand = mScen[2].trim();
+          if (cand && cand.toLowerCase() !== 'scenario') {
+            scenName = cand;
+          }
+        }
+      }
+
+      let cls = 'log-line-entry';
+      if (scenName) cls += ' is-scenario';
+      let divAttrs = `class="${cls}"`;
+      let anchorsHtml = '';
+
+      if (opNum && !seenOps.has(opNum)) {
+        seenOps.add(opNum);
+        divAttrs += ` id="op_${opNum}" data-op="${opNum}"`;
+      }
+      if (tNum > 0) divAttrs += ` data-test="${tNum}"`;
+
+      let badgeHtml = '';
+      if (scenName) {
+        divAttrs += ` data-scenario="${escapeHtmlStr(scenName)}"`;
+        scenCounts[scenName] = (scenCounts[scenName] || 0) + 1;
+        const occ = scenCounts[scenName];
+        const occSuffix = occ > 1 ? `-${occ}` : '';
+        const canonicalHash = tNum > 0 ? `test-${tNum}-${scenName}${occSuffix}` : `scen-${scenName}${occSuffix}`;
+        anchorsHtml += `<a id="${canonicalHash}" class="scenario-anchor"></a>`;
+        badgeHtml += `<a class="scen-link-btn" href="#${canonicalHash}" onclick="onScenarioLinkClick(event, '${canonicalHash}')" title="Copy link to this scenario (#${canonicalHash})">🔗</a>`;
+      }
+      contentHtml += `<div ${divAttrs}>${anchorsHtml}${parseAnsiJs(rawLine)}${badgeHtml}</div>`;
+    }
+
+    bodyEl.innerHTML = `
+      <div class="soundtrack-column" title="35mm Optical Track (Operation Duration)"><div class="soundtrack-track">${stHtml}</div></div>
+      <div class="log-content">${contentHtml}</div>
+      <div class="soundtrack-column right-track" title="35mm Optical Track (CPU Load)"><div class="soundtrack-track">${cpuHtml}</div></div>
+    `;
+  }
+
+  function expandAll() {
+    document.querySelectorAll('details.log-section').forEach(d => {
+      d.open = true;
+      loadSectionLines(d);
+    });
+  }
   function collapseAll() { document.querySelectorAll('details.log-section').forEach(d => d.open = false); }
   let hideLimbo = false;
   function toggleLimbo() {
@@ -441,9 +640,18 @@ a.path-step { text-decoration: none; }
   function filterLogs() {
     const q = document.getElementById('filterInput').value.toLowerCase();
     document.querySelectorAll('details.log-section').forEach(d => {
-      const content = d.querySelector('.log-content').innerText.toLowerCase();
+      const script = d.querySelector('script.raw-lines');
+      const rawText = script ? script.textContent.toLowerCase() : '';
       const title = d.querySelector('summary').innerText.toLowerCase();
-      if (!q || content.includes(q) || title.includes(q)) { d.classList.remove('hidden'); if (q) d.open = true; } else { d.classList.add('hidden'); }
+      if (!q || rawText.includes(q) || title.includes(q)) {
+        d.classList.remove('hidden');
+        if (q) {
+          d.open = true;
+          loadSectionLines(d);
+        }
+      } else {
+        d.classList.add('hidden');
+      }
     });
   }
   function focusSection(title) {
@@ -695,6 +903,28 @@ a.path-step { text-decoration: none; }
     if (hash.startsWith('#')) hash = hash.substring(1);
     hash = decodeURIComponent(hash);
 
+    let sec = null;
+    const testMatch = hash.match(/^(?:test[-_]?)?(\d+)/i);
+    if (testMatch) {
+      const tNum = testMatch[1];
+      sec = document.querySelector(`details.log-section[data-test="${tNum}"]`) ||
+            document.querySelector(`details.log-section#sec_Test_${tNum}`) ||
+            document.querySelector(`details.log-section#sec_Test_%23${tNum}`);
+    }
+
+    if (!sec) {
+      sec = document.getElementById(hash) || document.querySelector(`details.log-section[id*="${hash}"]`);
+    }
+
+    if (sec) {
+      if (hideLimbo && sec.classList.contains('limbo')) {
+        toggleLimbo();
+      }
+      sec.classList.remove('hidden');
+      sec.open = true;
+      loadSectionLines(sec);
+    }
+
     let target = document.getElementById(hash);
 
     if (!target) {
@@ -720,7 +950,7 @@ a.path-step { text-decoration: none; }
         const sc = testScenMatch[2].toLowerCase();
         const candidates = document.querySelectorAll('.log-line-entry.is-scenario[data-test="' + tNum + '"]');
         for (const el of candidates) {
-          const elScen = el.getAttribute('data-scenario').toLowerCase();
+          const elScen = (el.getAttribute('data-scenario') || '').toLowerCase();
           if (elScen === sc || elScen.startsWith(sc + '.') || elScen.endsWith('.' + sc) || elScen.includes('.' + sc + '.')) {
             target = el;
             break;
@@ -729,34 +959,23 @@ a.path-step { text-decoration: none; }
       }
     }
 
-    if (!target) {
-      const allScens = document.querySelectorAll('.log-line-entry.is-scenario');
-      for (const el of allScens) {
-        if (el.getAttribute('data-scenario') === hash) {
-          target = el;
-          break;
-        }
-      }
+    if (!target && sec) {
+      target = sec;
     }
 
     if (!target) {
-      const testNumMatch = hash.match(/^test[-_]?(\d+)$/i);
-      if (testNumMatch) {
-        focusSection('Test #' + testNumMatch[1]);
-        return;
-      }
       focusSection(hash);
       return;
     }
 
     const lineEntry = target.classList.contains('log-line-entry') ? target : target.closest('.log-line-entry');
-    const sec = target.closest('details.log-section');
-    if (sec) {
-      if (hideLimbo && sec.classList.contains('limbo')) {
+    const targetSec = target.closest('details.log-section') || sec;
+    if (targetSec) {
+      if (hideLimbo && targetSec.classList.contains('limbo')) {
         toggleLimbo();
       }
-      sec.classList.remove('hidden');
-      sec.open = true;
+      targetSec.classList.remove('hidden');
+      targetSec.open = true;
     }
 
     const scrollTarget = lineEntry || target;
@@ -1010,8 +1229,8 @@ a.path-step { text-decoration: none; }
 
     const roundSecs = window.leafData.filter(item => item.round > 0 && item.roundIntervalMs >= 0).map(item => item.roundIntervalMs / 1000.0);
     const projSecs = window.leafData.map(item => (item.at + (item.etaMs || 0)) / 1000.0);
-    const maxRawInterval = roundSecs.length ? Math.max(...roundSecs) : (window.leafCeilInterval || 1.0);
-    const maxRawProjected = Math.max(...projSecs);
+    const maxRawInterval = roundSecs.length ? arrayMax(roundSecs) : (window.leafCeilInterval || 1.0);
+    const maxRawProjected = arrayMax(projSecs, 1.0);
 
     let ceilIntervalSec;
     if (!window.leafLeftCutoffSetting || window.leafLeftCutoffSetting === 'auto') {
@@ -1085,8 +1304,8 @@ a.path-step { text-decoration: none; }
 
     const errVals = window.etaDebugData.map(item => item.error);
     const instVals = window.etaDebugData.map(item => item.instability);
-    const maxRawErr = Math.max(...errVals);
-    const maxRawInst = Math.max(...instVals);
+    const maxRawErr = arrayMax(errVals, 1.0);
+    const maxRawInst = arrayMax(instVals, 1.0);
 
     let ceilInstabilityPct;
     if (!window.etaLeftCutoffSetting || window.etaLeftCutoffSetting === 'auto') {
@@ -1157,8 +1376,8 @@ a.path-step { text-decoration: none; }
 
     const cpuVals = window.resourceData.map(item => item.cpu);
     const ramVals = window.resourceData.map(item => item.ramTotal);
-    const maxCpu = Math.max(10.0, ...cpuVals);
-    const maxRam = Math.max(100.0, ...ramVals);
+    const maxCpu = arrayMax(cpuVals, 10.0);
+    const maxRam = arrayMax(ramVals, 100.0);
 
     let ceilCpu, ceilRam;
     if (!window.resLeftCutoffSetting || window.resLeftCutoffSetting === 'auto') {
@@ -1480,8 +1699,8 @@ a.path-step { text-decoration: none; }
 
     const roundSecs = window.leafData.filter(d => d.round > 0 && d.roundIntervalMs >= 0).map(d => d.roundIntervalMs / 1000.0);
     const projSecs = window.leafData.map(d => (d.at + (d.etaMs || 0)) / 1000.0);
-    const maxRawInterval = roundSecs.length ? Math.max(...roundSecs) : (window.leafCeilInterval || 1.0);
-    const maxRawProjected = Math.max(...projSecs);
+    const maxRawInterval = roundSecs.length ? arrayMax(roundSecs) : (window.leafCeilInterval || 1.0);
+    const maxRawProjected = arrayMax(projSecs, 1.0);
 
     let ceilIntervalSec;
     if (!window.leafLeftCutoffSetting || window.leafLeftCutoffSetting === 'auto') {
@@ -1675,8 +1894,8 @@ a.path-step { text-decoration: none; }
 
     const errVals = window.etaDebugData.map(d => d.error);
     const instVals = window.etaDebugData.map(d => d.instability);
-    const maxRawErr = Math.max(...errVals);
-    const maxRawInst = Math.max(...instVals);
+    const maxRawErr = arrayMax(errVals, 1.0);
+    const maxRawInst = arrayMax(instVals, 1.0);
 
     let ceilInstabilityPct;
     if (!window.etaLeftCutoffSetting || window.etaLeftCutoffSetting === 'auto') {
@@ -1801,8 +2020,8 @@ a.path-step { text-decoration: none; }
     if (tt) {
       const errVals = window.etaDebugData.map(item => item.error);
       const instVals = window.etaDebugData.map(item => item.instability);
-      const maxRawErr = Math.max(...errVals);
-      const maxRawInst = Math.max(...instVals);
+      const maxRawErr = arrayMax(errVals, 1.0);
+      const maxRawInst = arrayMax(instVals, 1.0);
 
       let ceilInstabilityPct;
       if (!window.etaLeftCutoffSetting || window.etaLeftCutoffSetting === 'auto') {
@@ -1865,8 +2084,8 @@ a.path-step { text-decoration: none; }
     const N = window.resourceData.length;
     const cpuVals = window.resourceData.map(d => d.cpu);
     const ramVals = window.resourceData.map(d => d.ramTotal);
-    const maxCpu = Math.max(10.0, ...cpuVals);
-    const maxRam = Math.max(100.0, ...ramVals);
+    const maxCpu = arrayMax(cpuVals, 10.0);
+    const maxRam = arrayMax(ramVals, 100.0);
 
     let ceilCpu;
     if (!window.resLeftCutoffSetting || window.resLeftCutoffSetting === 'auto') {
@@ -1981,68 +2200,73 @@ a.path-step { text-decoration: none; }
     svg += `  <path d="${pathCpu}" class="res-cpu-line" fill="none" stroke="#38bdf8" stroke-width="2"/>`;
 
     if (numTests > 0) {
-      for (let k = 0; k < numTests; k++) {
-        const xLeft = ml + k * Y;
-        const xCenter = ml + (k + 0.5) * Y;
-        const xRight = ml + (k + 1) * Y;
+      if (Y >= 15) {
+        for (let k = 0; k < numTests; k++) {
+          const xLeft = ml + k * Y;
+          const xCenter = ml + (k + 0.5) * Y;
+          const xRight = ml + (k + 1) * Y;
 
-        if (k < numTests - 1) {
-          svg += `  <line x1="${xRight.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xRight.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(255,255,255,0.28)" stroke-dasharray="3 3" stroke-width="1"/>`;
+          if (k < numTests - 1) {
+            svg += `  <line x1="${xRight.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xRight.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(255,255,255,0.28)" stroke-dasharray="3 3" stroke-width="1"/>`;
+          }
+
+          const testItem = (window.lgData && window.lgData[k]) ? window.lgData[k] : null;
+          if (testItem) {
+            const durSec = testItem.s || (testItem.ms ? testItem.ms / 1000.0 : 0);
+            if (durSec >= 1.0) {
+              const pxPerSec = Y / durSec;
+
+              if (pxPerSec * 1.0 >= 1.5) {
+                const max1s = Math.min(Math.floor(durSec), 30);
+                for (let s = 1; s <= max1s; s++) {
+                  if (s % 30 !== 0) {
+                    const xSub = xLeft + (s / durSec) * Y;
+                    if (xSub < xRight - 1) {
+                      svg += `  <line x1="${xSub.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xSub.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(148,163,184,0.18)" stroke-dasharray="2 2" stroke-width="0.8"/>`;
+                    }
+                  }
+                }
+              }
+
+              if (pxPerSec * 30.0 >= 2.0) {
+                const max30s = Math.min(Math.floor(durSec), 600);
+                for (let s = 30; s <= max30s; s += 30) {
+                  if (s % 600 !== 0) {
+                    const xSub = xLeft + (s / durSec) * Y;
+                    if (xSub < xRight - 1) {
+                      svg += `  <line x1="${xSub.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xSub.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(148,163,184,0.35)" stroke-dasharray="3 3" stroke-width="1.2"/>`;
+                    }
+                  }
+                }
+              }
+
+              if (pxPerSec * 600.0 >= 2.0) {
+                const max600s = Math.min(Math.floor(durSec), 18000);
+                for (let s = 600; s <= max600s; s += 600) {
+                  const xSub = xLeft + (s / durSec) * Y;
+                  if (xSub < xRight - 1) {
+                    svg += `  <line x1="${xSub.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xSub.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(148,163,184,0.55)" stroke-dasharray="4 2" stroke-width="1.8"/>`;
+                  }
+                }
+              }
+            }
+
+            if (Y >= 36) {
+              const durStr = testItem.ms < 1000 ? Math.round(testItem.ms) + 'ms' : (durSec < 10.0 ? durSec.toFixed(2) + 's' : (durSec < 60.0 ? durSec.toFixed(1) + 's' : (durSec < 3600.0 ? (durSec / 60.0).toFixed(1) + 'm' : (durSec / 3600.0).toFixed(1) + 'h')));
+              const badgeLabel = `\u0394t ${durStr}`;
+              const bw = Math.min(Y - 4, Math.max(38, badgeLabel.length * 5.8));
+              svg += `  <g class="res-scale-badge" opacity="0.85">`;
+              svg += `    <rect x="${(xCenter - bw / 2).toFixed(1)}" y="${(mt + 3).toFixed(1)}" width="${bw.toFixed(1)}" height="13" rx="3" fill="#0f172a" stroke="rgba(148,163,184,0.25)" stroke-width="0.8"/>`;
+              svg += `    <text x="${xCenter.toFixed(1)}" y="${(mt + 12.5).toFixed(1)}" text-anchor="middle" fill="#94a3b8" font-size="8" font-family="ui-monospace, monospace">${badgeLabel}</text>`;
+              svg += `  </g>`;
+            }
+          }
         }
-
-        const testItem = (window.lgData && window.lgData[k]) ? window.lgData[k] : null;
-        if (testItem) {
-          const durSec = testItem.s || (testItem.ms ? testItem.ms / 1000.0 : 0);
-          if (durSec >= 1.0 && Y >= 10) {
-            const pxPerSec = Y / durSec;
-
-            // Thin scale: 1 second interval, 30 seconds max
-            if (pxPerSec * 1.0 >= 1.5) {
-              const max1s = Math.min(Math.floor(durSec), 30);
-              for (let s = 1; s <= max1s; s++) {
-                if (s % 30 !== 0) {
-                  const xSub = xLeft + (s / durSec) * Y;
-                  if (xSub < xRight - 1) {
-                    svg += `  <line x1="${xSub.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xSub.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(148,163,184,0.18)" stroke-dasharray="2 2" stroke-width="0.8"/>`;
-                  }
-                }
-              }
-            }
-
-            // Slightly thicker scale: 30 seconds interval, 600 seconds max
-            if (pxPerSec * 30.0 >= 2.0) {
-              const max30s = Math.min(Math.floor(durSec), 600);
-              for (let s = 30; s <= max30s; s += 30) {
-                if (s % 600 !== 0) {
-                  const xSub = xLeft + (s / durSec) * Y;
-                  if (xSub < xRight - 1) {
-                    svg += `  <line x1="${xSub.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xSub.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(148,163,184,0.35)" stroke-dasharray="3 3" stroke-width="1.2"/>`;
-                  }
-                }
-              }
-            }
-
-            // Thickest scale: 600 seconds interval, 18000 seconds max
-            if (pxPerSec * 600.0 >= 2.0) {
-              const max600s = Math.min(Math.floor(durSec), 18000);
-              for (let s = 600; s <= max600s; s += 600) {
-                const xSub = xLeft + (s / durSec) * Y;
-                if (xSub < xRight - 1) {
-                  svg += `  <line x1="${xSub.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xSub.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(148,163,184,0.55)" stroke-dasharray="4 2" stroke-width="1.8"/>`;
-                }
-              }
-            }
-          }
-
-          if (Y >= 36 || numTests <= 15) {
-            const durStr = testItem.ms < 1000 ? Math.round(testItem.ms) + 'ms' : (durSec < 10.0 ? durSec.toFixed(2) + 's' : (durSec < 60.0 ? durSec.toFixed(1) + 's' : (durSec < 3600.0 ? (durSec / 60.0).toFixed(1) + 'm' : (durSec / 3600.0).toFixed(1) + 'h')));
-            const badgeLabel = `\u0394t ${durStr}`;
-            const bw = Math.min(Y - 4, Math.max(38, badgeLabel.length * 5.8));
-            svg += `  <g class="res-scale-badge" opacity="0.85">`;
-            svg += `    <rect x="${(xCenter - bw / 2).toFixed(1)}" y="${(mt + 3).toFixed(1)}" width="${bw.toFixed(1)}" height="13" rx="3" fill="#0f172a" stroke="rgba(148,163,184,0.25)" stroke-width="0.8"/>`;
-            svg += `    <text x="${xCenter.toFixed(1)}" y="${(mt + 12.5).toFixed(1)}" text-anchor="middle" fill="#94a3b8" font-size="8" font-family="ui-monospace, monospace">${badgeLabel}</text>`;
-            svg += `  </g>`;
-          }
+      } else {
+        const step = Math.ceil(numTests / 10);
+        for (let k = step; k < numTests; k += step) {
+          const xRight = ml + k * Y;
+          svg += `  <line x1="${xRight.toFixed(1)}" y1="${mt.toFixed(1)}" x2="${xRight.toFixed(1)}" y2="${(mt + ph).toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-dasharray="3 3" stroke-width="1"/>`;
         }
       }
 

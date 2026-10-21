@@ -219,7 +219,7 @@ public final class ScenarioTracker {
             final boolean enabled,
             final int maxFrames,
             final int maxFramePixels,
-            final int maxTotalPixels) {
+            final long maxTotalPixels) {
         processFrames(
                 runDir,
                 prefix,
@@ -241,7 +241,7 @@ public final class ScenarioTracker {
             final boolean enabled,
             final int maxFrames,
             final int maxFramePixels,
-            final int maxTotalPixels,
+            final long maxTotalPixels,
             final boolean mp4Enabled,
             final String ffmpeg) {
         processFrames(
@@ -265,7 +265,7 @@ public final class ScenarioTracker {
             final boolean enabled,
             final int maxFrames,
             final int maxFramePixels,
-            final int maxTotalPixels,
+            final long maxTotalPixels,
             final boolean gifEnabled,
             final boolean webpEnabled,
             final boolean mp4Enabled,

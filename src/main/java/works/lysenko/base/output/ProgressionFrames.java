@@ -34,7 +34,7 @@ final class ProgressionFrames {
 
     private static final Pattern FRAME_NAME = Pattern.compile("frame_(\\d+)\\.(svg|png)");
     static final int MAX_DIMENSION = (1 << 14) - 2;
-    private static final int MAX_FRAMES = 10_000;
+    private static final int MAX_FRAMES = 100_000;
     private static final int MAX_FRAME_PIXELS = 33_554_432;
     private static final int MAX_PENDING_FRAMES = 4;
     private static final Semaphore WRITER_SEMAPHORE = new Semaphore(MAX_PENDING_FRAMES);
@@ -125,7 +125,7 @@ final class ProgressionFrames {
             final File directory,
             final int configuredMaxFrames,
             final int configuredMaxFramePixels,
-            final int configuredMaxTotalPixels) throws IOException {
+            final long configuredMaxTotalPixels) throws IOException {
         if (!directory.isDirectory()) return List.of();
         final int maxFrames = maxFrames(configuredMaxFrames);
 
@@ -182,18 +182,22 @@ final class ProgressionFrames {
 
     static int frameLimit(
             final int configuredMaxFrames,
-            final int configuredMaxTotalPixels,
+            final long configuredMaxTotalPixels,
             final int width,
             final int height) {
-        final long totalPixelLimit = Math.max(1L, Math.min(2_000_000_000L, configuredMaxTotalPixels));
+        final long totalPixelLimit = Math.max(1L, configuredMaxTotalPixels);
         final long pixelsPerFrame = Math.max(1L, (long) width * height);
         final int totalPixelFrames = (int) Math.max(1L, totalPixelLimit / pixelsPerFrame);
         return Math.min(maxFrames(configuredMaxFrames), totalPixelFrames);
     }
 
     static BufferedImage read(final File file, final int maxFramePixels) throws IOException {
+        return read(file, maxFramePixels, -1, -1);
+    }
+
+    static BufferedImage read(final File file, final int maxFramePixels, final int targetWidth, final int targetHeight) throws IOException {
         if (file.getName().endsWith(".svg")) {
-            return renderSvg(file, maxFramePixels);
+            return renderSvg(file, maxFramePixels, targetWidth, targetHeight);
         }
         try (ImageInputStream input = ImageIO.createImageInputStream(file)) {
             if (null == input) throw new IOException("Unable to open progression frame: " + file);
@@ -202,22 +206,36 @@ final class ProgressionFrames {
             final ImageReader reader = readers.next();
             try {
                 reader.setInput(input, true, true);
-                validateDimensions(file, reader.getWidth(0), reader.getHeight(0), maxFramePixels);
-                return reader.read(0);
+                final int width = reader.getWidth(0);
+                final int height = reader.getHeight(0);
+                validateDimensions(file, width, height, maxFramePixels);
+                final BufferedImage src = reader.read(0);
+                if (targetWidth > 0 && targetHeight > 0 && (width != targetWidth || height != targetHeight)) {
+                    final BufferedImage padded = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
+                    final Graphics2D g = padded.createGraphics();
+                    g.setColor(new Color(0x0F, 0x17, 0x2A));
+                    g.fillRect(0, 0, targetWidth, targetHeight);
+                    g.drawImage(src, 0, 0, null);
+                    g.dispose();
+                    return padded;
+                }
+                return src;
             } finally {
                 reader.dispose();
             }
         }
     }
 
-    static BufferedImage renderSvg(final File file, final int maxFramePixels) throws IOException {
+    static BufferedImage renderSvg(final File file, final int maxFramePixels, final int targetWidth, final int targetHeight) throws IOException {
         try {
             final SVGLoader loader = new SVGLoader();
             final SVGDocument doc = loader.load(file.toURI().toURL());
             if (null == doc) throw new IOException("Unable to parse SVG file: " + file);
             final FloatSize size = doc.size();
-            final int width = (int) Math.ceil(size.width);
-            final int height = (int) Math.ceil(size.height);
+            final int svgWidth = (int) Math.ceil(size.width);
+            final int svgHeight = (int) Math.ceil(size.height);
+            final int width = targetWidth > 0 ? Math.max(targetWidth, svgWidth) : svgWidth;
+            final int height = targetHeight > 0 ? Math.max(targetHeight, svgHeight) : svgHeight;
             validateDimensions(file, width, height, maxFramePixels);
             final BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
             final Graphics2D g = img.createGraphics();
@@ -233,7 +251,7 @@ final class ProgressionFrames {
         }
     }
 
-    private static int[] dimensions(final File file, final int maxFramePixels) throws IOException {
+    static int[] dimensions(final File file, final int maxFramePixels) throws IOException {
         if (file.getName().endsWith(".svg")) {
             try {
                 final SVGLoader loader = new SVGLoader();
@@ -291,6 +309,14 @@ final class ProgressionFrames {
             throw new IOException("Failed to create temporary raster directory: " + tmpDir);
         }
 
+        int maxWidth = 0;
+        int maxHeight = 0;
+        for (final File f : frames) {
+            final int[] dims = dimensions(f, maxFramePixels);
+            maxWidth = Math.max(maxWidth, dims[0]);
+            maxHeight = Math.max(maxHeight, dims[1]);
+        }
+
         final List<File> pngFrames = new ArrayList<>(frames.size());
         final int total = frames.size();
         progress.update(taskName, 0);
@@ -299,7 +325,7 @@ final class ProgressionFrames {
             final File src = frames.get(i);
             final File dstPng = new File(tmpDir, String.format(Locale.US, "frame_%04d.png", i + 1));
             if (src.getName().endsWith(".svg")) {
-                final BufferedImage img = renderSvg(src, maxFramePixels);
+                final BufferedImage img = renderSvg(src, maxFramePixels, maxWidth, maxHeight);
                 ImageIO.write(img, "png", dstPng);
                 pngFrames.add(dstPng);
             } else {

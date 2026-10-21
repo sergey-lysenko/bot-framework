@@ -515,20 +515,10 @@ class LogHtmlTest {
         assertTrue(Files.exists(htmlPath), "HTML report should be generated");
         final String html = Files.readString(htmlPath);
 
-        // Verify scenario line attributes and anchors
-        assertTrue(html.contains("id=\"op_2450\""), "Scenario line should have op ID");
-        assertTrue(html.contains("data-op=\"2450\""), "Scenario line should have data-op");
-        assertTrue(html.contains("data-test=\"25\""), "Scenario line should have data-test");
-        assertTrue(html.contains("data-scenario=\"signIn.correctLogin.Settings\""), "Scenario line should have data-scenario");
-        assertTrue(html.contains("id=\"test-25-signIn.correctLogin.Settings\""), "Should render test-scen anchor");
-        assertTrue(html.contains("id=\"test_25_signIn.correctLogin.Settings\""), "Should render underscored test-scen anchor");
-        assertTrue(html.contains("id=\"test-25-op-2450\""), "Should render test-op anchor");
-        assertTrue(html.contains("id=\"signIn.correctLogin.Settings\""), "Should render global scenario anchor");
-
-        // Verify link button on scenario line
-        assertTrue(html.contains("class=\"scen-link-btn\""), "Should render link button on scenario line");
-        assertTrue(html.contains("href=\"#test-25-signIn.correctLogin.Settings\""), "Link button should target scenario");
-        assertTrue(html.contains("onclick=\"onScenarioLinkClick(event, 'test-25-signIn.correctLogin.Settings')\""), "Link button should have copy/navigate click handler");
+        // Verify scenario line stored in raw text script block and section data-test
+        assertTrue(html.contains("class=\"raw-lines\""), "Scenario log section should contain raw text script block");
+        assertTrue(html.contains("▷ signIn.correctLogin.Settings"), "Raw script block should contain scenario line");
+        assertTrue(html.contains("data-test=\"25\""), "Section details tag should contain data-test");
 
         // Verify breadcrumbs in section header
         assertTrue(html.contains("class=\"pill scen-pill\""), "Breadcrumb scenario pill should be hyperlinked");
@@ -641,9 +631,9 @@ class LogHtmlTest {
         LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
 
         final String html = Files.readString(htmlPath);
-        assertTrue(html.contains("<details id=\"sec_Booting\" class=\"log-section booting neutral\">"), "Should contain sec_Booting");
-        assertTrue(html.contains("<details id=\"sec_Configuring\" class=\"log-section configuring neutral\">"), "Should contain sec_Configuring");
-        assertTrue(html.contains("<details id=\"sec_Preflight\" class=\"log-section preflight neutral\">"), "Should contain sec_Preflight");
+        assertTrue(html.contains("<details id=\"sec_Booting\" class=\"log-section booting neutral\""), "Should contain sec_Booting");
+        assertTrue(html.contains("<details id=\"sec_Configuring\" class=\"log-section configuring neutral\""), "Should contain sec_Configuring");
+        assertTrue(html.contains("<details id=\"sec_Preflight\" class=\"log-section preflight neutral\""), "Should contain sec_Preflight");
     }
 
     @Test

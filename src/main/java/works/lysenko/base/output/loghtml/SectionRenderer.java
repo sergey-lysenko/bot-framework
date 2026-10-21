@@ -380,7 +380,7 @@ public final class SectionRenderer {
             final String secId = s("sec_", sec.title.replace(" ", "_").replace("#", "").replace("➔", "to"));
 
             sb.append(s(
-                    "<details id=\"", secId, "\" class=\"log-section ", sec.type, " ", sec.status, "\">\n",
+                    "<details id=\"", secId, "\" class=\"log-section ", sec.type, " ", sec.status, "\" ontoggle=\"loadSectionLines(this)\" data-test=\"", sec.testNum, "\">\n",
                     "  <summary>\n    <div class=\"summary-left\">\n",
                     opRange.isEmpty() ? "" : s("      <span class=\"op-range\">", opRange, "</span>\n"),
                     "      <span class=\"sec-title\">", escapeHtml(sec.title), "</span>\n",
@@ -402,160 +402,9 @@ public final class SectionRenderer {
                 sb.append("  </div>\n");
             }
 
-            final boolean hasOps = sec.startOp != null;
-            final List<Integer> lineSpans = new ArrayList<>();
-            int maxS = 0;
-            if (hasOps) {
-                for (final String l : sec.lines) {
-                    final int sp = extractLineSpan(l);
-                    lineSpans.add(sp);
-                    if (sp > maxS) maxS = sp;
-                }
-            }
-
-            // Map artifacts to lines in this section
-            final Map<Integer, List<ArtifactItem>> secArtifacts = new HashMap<>();
-            final Map<Integer, List<ArtifactItem>> causativeArtifacts = new HashMap<>();
-            for (final ArtifactItem a : runArtifacts) {
-                if (sec.testNum > 0 && a.test() != sec.testNum) continue;
-                if (sec.testNum == 0 && a.test() != 0) continue;
-
-                Integer bestIdx = null;
-                for (int lIdx = 0; lIdx < sec.lines.size(); lIdx++) {
-                    final String rawL = sec.lines.get(lIdx);
-                    if (rawL.contains(a.rel())) {
-                        bestIdx = lIdx;
-                        break;
-                    }
-                }
-                if (bestIdx == null) {
-                    for (int lIdx = 0; lIdx < sec.lines.size(); lIdx++) {
-                        final String rawL = sec.lines.get(lIdx);
-                        final String cleanRaw = ANSI_PATTERN.matcher(rawL).replaceAll("").trim();
-                        final Matcher mTs = Pattern.compile("\\[([0-9]+\\.[0-9]+)\\]").matcher(cleanRaw);
-                        if (mTs.find()) {
-                            try {
-                                final double lineSec = Double.parseDouble(mTs.group(1));
-                                if (Math.abs(lineSec - a.sec()) < 0.05) {
-                                    if (".properties".equals(a.ext()) && rawL.contains("Made '") && rawL.contains("snapshot of test data")) {
-                                        bestIdx = lIdx;
-                                        break;
-                                    } else if (".xml".equals(a.ext()) && rawL.contains("snapshot of page code")) {
-                                        bestIdx = lIdx;
-                                        break;
-                                    }
-                                }
-                            } catch (final NumberFormatException ignored) {}
-                        }
-                    }
-                }
-                if (bestIdx != null) {
-                    secArtifacts.computeIfAbsent(bestIdx, k -> new ArrayList<>()).add(a);
-                }
-
-                Integer causativeIdx = null;
-                for (int lIdx = 0; lIdx < sec.lines.size(); lIdx++) {
-                    if (bestIdx != null && lIdx == bestIdx) continue;
-                    final String rawL = sec.lines.get(lIdx);
-                    final String cleanRaw = ANSI_PATTERN.matcher(rawL).replaceAll("").trim();
-                    final Matcher mTs = Pattern.compile("\\[([0-9]+\\.[0-9]+)\\]").matcher(cleanRaw);
-                    if (mTs.find()) {
-                        try {
-                            final double lineSec = Double.parseDouble(mTs.group(1));
-                            final int spanMs = extractLineSpan(rawL);
-                            if (spanMs > 0) {
-                                final double lineEndSec = lineSec + (spanMs / 1000.0);
-                                if (lineSec - 0.002 <= a.sec() && a.sec() <= lineEndSec + 0.005) {
-                                    causativeIdx = lIdx;
-                                    break;
-                                }
-                            }
-                        } catch (final NumberFormatException ignored) {}
-                    }
-                }
-                if (causativeIdx != null) {
-                    causativeArtifacts.computeIfAbsent(causativeIdx, k -> new ArrayList<>()).add(a);
-                }
-            }
-
-            if (hasOps && maxS > 0) {
-                final StringBuilder stRows = new StringBuilder();
-                final StringBuilder cpuRows = new StringBuilder();
-                final double logScale = Math.log10(Math.max(15000, maxS) + 1);
-
-                for (int lIdx = 0; lIdx < lineSpans.size(); lIdx++) {
-                    final int sp = lineSpans.get(lIdx);
-                    if (sp > 0) {
-                        final double pct = Math.log10(sp + 1) / logScale;
-                        final int wPx = Math.max(2, Math.min(32, (int) Math.round(pct * 32)));
-                        final String rateClass = (sp > 999) ? " rate-red" : (sp > 99) ? " rate-yellow" : (sp > 49) ? " rate-green" : (sp > 19) ? " rate-blue" : " rate-white";
-                        stRows.append(s("<div class=\"st-row", rateClass, "\" title=\"", sp, " ms\"><div class=\"st-wave\" style=\"width: ", wPx, "px;\"></div></div>"));
-                    } else {
-                        stRows.append("<div class=\"st-row rate-white\" title=\"0 ms\"><div class=\"st-wave\" style=\"width: 1px; opacity: 0.25;\"></div></div>");
-                    }
-
-                    final String lineText = sec.lines.get(lIdx);
-                    final String cleanL = ANSI_PATTERN.matcher(lineText).replaceAll("").trim();
-                    final Matcher mTest = LINE_WITH_TEST_RE.matcher(cleanL);
-                    final Matcher mNoTest = mTest.matches() ? null : LINE_NO_TEST_RE.matcher(cleanL);
-                    final boolean isOpLine = mTest.matches() || (null != mNoTest && mNoTest.matches());
-
-                    Integer opNum = null;
-                    if (mTest.matches()) {
-                        try { opNum = Integer.parseInt(mTest.group(2).trim()); } catch (final NumberFormatException ignored) {}
-                    } else if (null != mNoTest && mNoTest.matches()) {
-                        try { opNum = Integer.parseInt(mNoTest.group(1).trim()); } catch (final NumberFormatException ignored) {}
-                    }
-
-                    if (null != opNum && null != telemetryCpuMap && telemetryCpuMap.containsKey(opNum)) {
-                        lastSeenCpu = telemetryCpuMap.get(opNum);
-                    } else if (isOpLine && null != telemetryCpuList && currOpGlobalIdx < telemetryCpuList.size()) {
-                        lastSeenCpu = telemetryCpuList.get(currOpGlobalIdx++);
-                    }
-
-                    if (isOpLine && lastSeenCpu > 0.0 && lastSeenCpu <= 100.0) {
-                        final double cpuVal = lastSeenCpu;
-                        final double rel;
-                        if (hasCpuRange && (maxCpu - minCpu) > 0.001) {
-                            final double valRel = Math.min(1.0, Math.max(0.0, (cpuVal - minCpu) / (maxCpu - minCpu)));
-                            final double rankRel = getPercentileRank(allCpuVals, cpuVal);
-                            rel = Math.min(1.0, Math.max(0.0, 0.5 * valRel + 0.5 * rankRel));
-                        } else {
-                            rel = Math.min(1.0, Math.max(0.0, cpuVal / 50.0));
-                        }
-                        final String cClass = (rel > 0.80) ? " rate-red" : (rel > 0.60) ? " rate-yellow" : (rel > 0.40) ? " rate-green" : (rel > 0.20) ? " rate-blue" : " rate-white";
-                        final int cpuW = Math.max(2, Math.min(32, (int) Math.round(rel * 32)));
-                        final String tooltip = hasCpuRange
-                                ? String.format(Locale.ROOT, "%.2f%% (range: %.1f%%-%.1f%%)", cpuVal, minCpu, maxCpu)
-                                : String.format(Locale.ROOT, "%.2f%%", cpuVal);
-                        cpuRows.append(String.format(Locale.ROOT, s("<div class=\"st-row%s\" title=\"%s\"><div class=\"st-wave\" style=\"width: %dpx;\"></div></div>"), cClass, tooltip, cpuW));
-                    } else {
-                        cpuRows.append("<div class=\"st-row rate-white\" title=\"-\"><div class=\"st-wave\" style=\"width: 1px; opacity: 0.15;\"></div></div>");
-                    }
-
-                    final int extraLines = countExtraNewlines(lineText);
-                    for (int k = 0; k < extraLines; k++) {
-                        stRows.append("<div class=\"st-row rate-white\" title=\"(multiline continuation)\"><div class=\"st-wave\" style=\"width: 1px; opacity: 0.15;\"></div></div>");
-                        cpuRows.append("<div class=\"st-row rate-white\" title=\"(multiline continuation)\"><div class=\"st-wave\" style=\"width: 1px; opacity: 0.15;\"></div></div>");
-                    }
-                }
-
-                sb.append(s(
-                        "  <div class=\"log-section-body\">\n",
-                        "    <div class=\"soundtrack-column\" title=\"35mm Optical Track (Operation Duration)\"><div class=\"soundtrack-track\">", stRows, "</div></div>\n",
-                        "    <div class=\"log-content\">"
-                ));
-                appendSectionLines(sb, sec, causativeArtifacts, secArtifacts);
-                sb.append(s(
-                        "</div>\n",
-                        "    <div class=\"soundtrack-column right-track\" title=\"35mm Optical Track (CPU Load)\"><div class=\"soundtrack-track\">", cpuRows, "</div></div>\n",
-                        "  </div>\n</details>\n"
-                ));
-            } else {
-                sb.append("  <div class=\"log-content\">");
-                appendSectionLines(sb, sec, causativeArtifacts, secArtifacts);
-                sb.append("</div>\n</details>\n");
-            }
+            sb.append("  <div class=\"log-section-body\">\n");
+            appendSectionLines(sb, sec);
+            sb.append("  </div>\n</details>\n");
         }
         return sb.toString();
     }
@@ -570,138 +419,13 @@ public final class SectionRenderer {
      */
     public static void appendSectionLines(
             final StringBuilder output,
-            final LogSection section,
-            final Map<Integer, List<ArtifactItem>> causativeArtifacts,
-            final Map<Integer, List<ArtifactItem>> sectionArtifacts) {
-        final Map<String, Integer> scenCounts = new HashMap<>();
-        final Set<String> seenOps = new HashSet<>();
+            final LogSection section) {
+        output.append("<div class=\"log-content\"><script type=\"text/plain\" class=\"raw-lines\">\n");
         for (int lineIndex = 0; lineIndex < section.lines.size(); lineIndex++) {
             final String rawLine = section.lines.get(lineIndex);
-            final String cleanL = ANSI_PATTERN.matcher(rawLine).replaceAll("").trim();
-            final Matcher mTest = LINE_WITH_TEST_RE.matcher(cleanL);
-            final Matcher mNoTest = mTest.matches() ? null : LINE_NO_TEST_RE.matcher(cleanL);
-
-            String opNum = null;
-            int tNum = section.testNum;
-            if (mTest.matches()) {
-                tNum = Integer.parseInt(mTest.group(1).trim());
-                opNum = mTest.group(2).trim();
-            } else if (null != mNoTest && mNoTest.matches()) {
-                opNum = mNoTest.group(1).trim();
-            }
-
-            String scenName = null;
-            if (cleanL.contains("▷") || cleanL.contains("◆") || cleanL.contains("◼") || cleanL.contains("●")) {
-                final Matcher mScen = SCEN_TOKEN_RE.matcher(cleanL);
-                if (mScen.find()) {
-                    final String cand = mScen.group(2).trim();
-                    if (!cand.isEmpty() && !"scenario".equalsIgnoreCase(cand)) {
-                        scenName = cand;
-                    }
-                }
-            }
-
-            String parsedLine = parseAnsi(rawLine);
-            final StringBuilder badgeHtml = new StringBuilder();
-
-            final List<ArtifactItem> causative = causativeArtifacts.get(lineIndex);
-            if (null != causative && !causative.isEmpty()) {
-                final ArtifactItem firstArtifact = causative.get(0);
-                final String tip = s("Artifact created during this operation: ", firstArtifact.rel());
-                final Matcher spanMatcher = SPAN_BRACKET_RE.matcher(parsedLine);
-                if (spanMatcher.find()) {
-                    final String prefix = spanMatcher.group(1);
-                    final String bracket = spanMatcher.group(2);
-                    final String linkedBracket = s(
-                            prefix, "<a class=\"log-artifact-link\" href=\"",
-                            firstArtifact.rel(), "\" target=\"_blank\" title=\"", tip, "\">",
-                            bracket, "</a>"
-                    );
-                    parsedLine = spanMatcher.replaceFirst(Matcher.quoteReplacement(linkedBracket));
-                }
-            }
-
-            final List<ArtifactItem> matched = sectionArtifacts.get(lineIndex);
-            if (null != matched) {
-                for (final ArtifactItem artifact : matched) {
-                    if (".properties".equals(artifact.ext()) && parsedLine.contains("snapshot of test data")
-                            && !parsedLine.contains("log-artifact-link")) {
-                        parsedLine = parsedLine.replaceAll(
-                                "(Made\\s+(?:'|&#x27;|&quot;)[^<&]+(?:'|&#x27;|&quot;)\\s+snapshot\\s+of\\s+test\\s+data)",
-                                s("<a class=\"log-artifact-link\" href=\"", artifact.rel(),
-                                        "\" target=\"_blank\" title=\"Open artifact: ", artifact.rel(), "\">", "$1</a>"));
-                    } else if (".xml".equals(artifact.ext()) && parsedLine.contains("snapshot of page code")
-                            && !parsedLine.contains("log-artifact-link")) {
-                        parsedLine = parsedLine.replaceAll(
-                                "(Making\\s+(?:'|&#x27;|&quot;)[^<&]+(?:'|&#x27;|&quot;)\\s+snapshot\\s+of\\s+page\\s+code)",
-                                s("<a class=\"log-artifact-link\" href=\"", artifact.rel(),
-                                        "\" target=\"_blank\" title=\"Open artifact: ", artifact.rel(), "\">", "$1</a>"));
-                    }
-                    if (!parsedLine.contains(artifact.rel())) {
-                        final String icon = ".properties".equals(artifact.ext()) ? "💾"
-                                : ".xml".equals(artifact.ext()) ? "📄" : "📸";
-                        final String type = ".properties".equals(artifact.ext()) ? "badge-data"
-                                : ".xml".equals(artifact.ext()) ? "badge-xml" : "badge-img";
-                        badgeHtml.append(s(
-                                "<a class=\"gutter-artifact-badge ", type,
-                                "\" href=\"", artifact.rel(),
-                                "\" target=\"_blank\" title=\"Open ",
-                                artifact.ext().isEmpty() ? "" : artifact.ext().substring(1),
-                                ": ", artifact.rel(), "\">", icon, "</a>"
-                        ));
-                    }
-                }
-            }
-
-            final StringBuilder divOpen = new StringBuilder("<div class=\"log-line-entry");
-            final StringBuilder anchorsHtml = new StringBuilder();
-
-            if (null != scenName) {
-                divOpen.append(" is-scenario");
-            }
-            if (null != opNum && !seenOps.contains(opNum)) {
-                seenOps.add(opNum);
-                divOpen.append(" id=\"op_").append(opNum).append("\" data-op=\"").append(opNum).append("\"");
-            }
-            if (tNum > 0) {
-                divOpen.append(" data-test=\"").append(tNum).append("\"");
-            }
-
-            if (null != scenName) {
-                divOpen.append(" data-scenario=\"").append(escapeHtml(scenName)).append("\"");
-                final int occ = scenCounts.merge(scenName, 1, Integer::sum);
-                final String canonicalHash;
-                if (tNum > 0) {
-                    canonicalHash = s("test-", tNum, "-", scenName);
-                    anchorsHtml.append(s("<a id=\"test-", tNum, "-", scenName, "\" class=\"scenario-anchor\"></a>"));
-                    anchorsHtml.append(s("<a id=\"test_", tNum, "_", scenName, "\" class=\"scenario-anchor\"></a>"));
-                    if (occ > 1) {
-                        anchorsHtml.append(s("<a id=\"test-", tNum, "-", scenName, "-", occ, "\" class=\"scenario-anchor\"></a>"));
-                        anchorsHtml.append(s("<a id=\"test_", tNum, "_", scenName, "_", occ, "\" class=\"scenario-anchor\"></a>"));
-                    }
-                    if (null != opNum) {
-                        anchorsHtml.append(s("<a id=\"test-", tNum, "-op-", opNum, "\" class=\"scenario-anchor\"></a>"));
-                        anchorsHtml.append(s("<a id=\"test_", tNum, "_op_", opNum, "\" class=\"scenario-anchor\"></a>"));
-                    }
-                } else if (null != opNum) {
-                    canonicalHash = s("op_", opNum);
-                } else {
-                    canonicalHash = scenName;
-                }
-                if (1 == occ) {
-                    anchorsHtml.append(s("<a id=\"", escapeHtml(scenName), "\" class=\"scenario-anchor\"></a>"));
-                }
-                badgeHtml.append(s(
-                        "<a class=\"scen-link-btn\" href=\"#", canonicalHash,
-                        "\" onclick=\"onScenarioLinkClick(event, '", canonicalHash, "')\" title=\"Copy link to this scenario (#",
-                        canonicalHash, ")\">🔗</a>"
-                ));
-            }
-
-            divOpen.append(">");
-            if (badgeHtml.length() > 0) parsedLine = s(parsedLine, "  ", badgeHtml);
-            output.append(divOpen).append(anchorsHtml).append(parsedLine).append("</div>");
+            output.append(escapeHtml(rawLine)).append('\n');
         }
+        output.append("</script></div>\n");
     }
 
     /**

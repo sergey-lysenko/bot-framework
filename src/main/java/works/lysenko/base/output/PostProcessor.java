@@ -375,7 +375,7 @@ public class PostProcessor {
             final boolean treeProgressionEnabled,
             final int maxFrames,
             final int maxFramePixels,
-            final int maxTotalPixels) {
+            final long maxTotalPixels) {
         process(
                 logFile,
                 htmlFile,
@@ -398,7 +398,7 @@ public class PostProcessor {
             final boolean treeProgressionEnabled,
             final int maxFrames,
             final int maxFramePixels,
-            final int maxTotalPixels,
+            final long maxTotalPixels,
             final boolean scenarioMp4Enabled,
             final boolean treeMp4Enabled,
             final String ffmpeg) {
@@ -425,7 +425,7 @@ public class PostProcessor {
             final boolean treeProgressionEnabled,
             final int maxFrames,
             final int maxFramePixels,
-            final int maxTotalPixels,
+            final long maxTotalPixels,
             final boolean scenarioMp4Enabled,
             final boolean treeMp4Enabled,
             final String ffmpeg,
@@ -454,7 +454,7 @@ public class PostProcessor {
             final boolean treeProgressionEnabled,
             final int maxFrames,
             final int maxFramePixels,
-            final int maxTotalPixels,
+            final long maxTotalPixels,
             final boolean scenarioMp4Enabled,
             final boolean treeMp4Enabled,
             final String ffmpeg,
@@ -494,7 +494,7 @@ public class PostProcessor {
             final boolean treeMp4Enabled,
             final int maxFrames,
             final int maxFramePixels,
-            final int maxTotalPixels,
+            final long maxTotalPixels,
             final String ffmpeg,
             final boolean openBrowser,
             final String treeSonification) {

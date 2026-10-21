@@ -12,7 +12,7 @@ public record ProgressionSettings(
         boolean treePerNodeEnabled,
         int maxFrames,
         int maxFramePixels,
-        int maxTotalPixels,
+        long maxTotalPixels,
         boolean scenarioGifEnabled,
         boolean scenarioWebpEnabled,
         boolean scenarioMp4Enabled,
@@ -51,7 +51,7 @@ public record ProgressionSettings(
         final Boolean treePerNodeEnabled = PropEnum._TEST_REPORT_PROGRESSION_TREE_PER_NODE.get();
         final Integer maxFrames = PropEnum._TEST_REPORT_PROGRESSION_MAX_FRAMES.get();
         final Integer maxFramePixels = PropEnum._TEST_REPORT_PROGRESSION_MAX_FRAME_PIXELS.get();
-        final Integer maxTotalPixels = PropEnum._TEST_REPORT_PROGRESSION_MAX_TOTAL_PIXELS.get();
+        final Long maxTotalPixels = PropEnum._TEST_REPORT_PROGRESSION_MAX_TOTAL_PIXELS.get();
         final Boolean scenarioGifEnabled = PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_GIF.get();
         final Boolean scenarioWebpEnabled = PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_WEBP.get();
         final Boolean scenarioMp4Enabled = PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_MP4.get();

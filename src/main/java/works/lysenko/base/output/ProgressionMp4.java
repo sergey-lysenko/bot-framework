@@ -11,6 +11,10 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntConsumer;
@@ -39,10 +43,21 @@ final class ProgressionMp4 {
             final File audioFile,
             final IntConsumer progress) throws IOException, InterruptedException {
         if (frames.isEmpty()) throw new IllegalArgumentException("At least one MP4 frame is required");
-        final BufferedImage first = ProgressionFrames.read(frames.get(0), maxFramePixels);
-        final int width = first.getWidth();
-        final int height = first.getHeight();
-        validateDimensions(width, height);
+
+        final int[] maxDims = frames.parallelStream().map(f -> {
+            try {
+                return ProgressionFrames.dimensions(f, maxFramePixels);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to read frame dimensions for " + f.getName(), e);
+            }
+        }).reduce(new int[]{0, 0}, (a, b) -> new int[]{Math.max(a[0], b[0]), Math.max(a[1], b[1])});
+
+        int maxWidth = maxDims[0];
+        int maxHeight = maxDims[1];
+        if ((maxWidth & 1) != 0) maxWidth++;
+        if ((maxHeight & 1) != 0) maxHeight++;
+        validateDimensions(maxWidth, maxHeight);
+
         final Path parent = outputFile.getAbsoluteFile().getParentFile().toPath();
         Files.createDirectories(parent);
         final Path encodedOutput = Files.createTempFile(parent, "progression-video-", ".mp4");
@@ -86,15 +101,36 @@ final class ProgressionMp4 {
                 "progression-ffmpeg-stderr");
         stderrReader.setDaemon(true);
         stderrReader.start();
+
+        final int finalW = maxWidth;
+        final int finalH = maxHeight;
+        final int threads = Math.max(2, Runtime.getRuntime().availableProcessors());
+        final ExecutorService renderExecutor = Executors.newFixedThreadPool(threads, r -> {
+            final Thread t = new Thread(r, "mp4-frame-renderer");
+            t.setDaemon(true);
+            return t;
+        });
+
         try {
             try (OutputStream input = process.getOutputStream()) {
+                final int windowSize = threads * 2;
+                final List<Future<BufferedImage>> futures = new ArrayList<>(frames.size());
+
+                for (int i = 0; i < Math.min(windowSize, frames.size()); i++) {
+                    final File file = frames.get(i);
+                    futures.add(renderExecutor.submit(() -> ProgressionFrames.read(file, maxFramePixels, finalW, finalH)));
+                }
+
                 for (int i = 0; i < frames.size(); i++) {
-                    final BufferedImage image = (i == 0)
-                            ? first
-                            : ProgressionFrames.read(frames.get(i), maxFramePixels);
-                    if (image.getWidth() != width || image.getHeight() != height) {
-                        throw new IOException("All MP4 frames must have identical dimensions");
+                    final int nextToSubmit = i + windowSize;
+                    if (nextToSubmit < frames.size()) {
+                        final File file = frames.get(nextToSubmit);
+                        futures.add(renderExecutor.submit(() -> ProgressionFrames.read(file, maxFramePixels, finalW, finalH)));
                     }
+
+                    final BufferedImage image = futures.get(i).get();
+                    futures.set(i, null);
+
                     validateDimensions(image.getWidth(), image.getHeight());
                     if (!javax.imageio.ImageIO.write(image, "png", input)) {
                         throw new IOException("No PNG ImageIO writer is available for MP4 input");
@@ -102,6 +138,11 @@ final class ProgressionMp4 {
                     input.flush();
                     progress.accept((int) (((i + 1L) * 100) / frames.size()));
                 }
+            } catch (final ExecutionException e) {
+                if (e.getCause() instanceof IOException) throw (IOException) e.getCause();
+                throw new IOException("Failed during parallel frame rendering: " + e.getMessage(), e);
+            } finally {
+                renderExecutor.shutdownNow();
             }
 
             final boolean exited = process.waitFor(10, TimeUnit.MINUTES);
