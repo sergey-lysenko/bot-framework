@@ -15,5 +15,6 @@ public class Reports implements _Reports {
         Tests.run();
         Scenarios.run();
         ResultMarker.run();
+        SequenceTracker.writeSequenceFile();
     }
 }

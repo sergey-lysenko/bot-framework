@@ -188,6 +188,7 @@ public record Utils() {
      */
     public static _Scenario verifyScenarioSelection(final _Scenario scenario) throws SafeguardException {
 
+        works.lysenko.base.output.SequenceTracker.recordScenarioExecution(scenario);
         logDetails(scenario);
         processSafeguard();
         return scenario;

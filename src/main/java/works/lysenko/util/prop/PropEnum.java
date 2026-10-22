@@ -206,6 +206,8 @@ public enum PropEnum implements _PropEnum {
     _TREE_SCENARIO_DOES_NOT_FIT_NOTICE(Boolean.class, TRUE),
     _TREE_SCENARIO_HISTORY_DEPTH_SAFEGUARD(Integer.class, _2_, _0_),
     _TREE_SCENARIO_NOT_EXECUTABLE_NOTICE(Boolean.class, TRUE),
+    _TREE_SEQUENCE_MODE(SequenceMode.class, "SUGGESTION", false, true),
+    _TREE_SEQUENCE_FAILURE_SEVERITY(Severity.class, _S0_, false, true),
     _TREE_TRAVERSE_EXTENSIONS(Boolean.class, FALSE, false, true),
     _WEBD_FORCED_PLATFORM(String.class, NULL),
     _WEBD_IWAIT(Integer.class, _1_, _0_, _0_, _0_),
@@ -289,6 +291,8 @@ public enum PropEnum implements _PropEnum {
             case _SWIPE_LINE_MARKER_COLOUR -> ".swipes.marker.line.colour";
             case _SWIPE_START_MARKER_COLOUR -> ".swipes.marker.start.colour";
             case _SWIPE_STOP_MARKER_COLOUR -> ".swipes.marker.stop.colour";
+            case _TREE_SEQUENCE_MODE -> ".tree.sequence.mode";
+            case _TREE_SEQUENCE_FAILURE_SEVERITY -> ".tree.sequence.failure.severity";
             default -> _PropEnum.super.getPropertyName();
         };
     }

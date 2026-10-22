@@ -3,6 +3,7 @@ package works.lysenko.util.call;
 import org.apache.commons.math3.exception.MathArithmeticException;
 import org.apache.commons.math3.exception.NotPositiveException;
 import org.apache.commons.math3.fraction.Fraction;
+import works.lysenko.base.output.SequenceTracker;
 import works.lysenko.tree.Core;
 import works.lysenko.tree.Ctrl;
 import works.lysenko.tree.base.Mono;
@@ -13,6 +14,8 @@ import java.util.HashSet;
 import java.util.Set;
 import static java.util.Objects.isNull;
 import works.lysenko.util.call.selector.Utils;
+import works.lysenko.util.data.enums.SequenceMode;
+import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.data.records.KeyValue;
 import works.lysenko.util.prop.core.*;
 import works.lysenko.util.prop.tree.Include;
@@ -248,6 +251,27 @@ public final class Selector implements Callable<_Scenario> {
      */
     @SuppressWarnings({"ChainedMethodCall", "ObjectAllocationInLoop"})
     private Core selectAmongCandidates(final Collection<KeyValue<_Scenario, Fraction>> candidates) {
+
+        if (SequenceTracker.hasActiveScript()) {
+            final String expected = SequenceTracker.peekNextScenario();
+            if (expected != null && !expected.isBlank()) {
+                for (final KeyValue<_Scenario, Fraction> candidate : candidates) {
+                    final _Scenario sc = candidate.k();
+                    if (expected.equalsIgnoreCase(sc.getShortName()) || expected.equalsIgnoreCase(sc.getName())) {
+                        SequenceTracker.advanceSequence();
+                        Utils.logDebug(b(q(sc.getShortName()), "SELECTED FROM SEQUENCE SCRIPT", FROM, s1(candidates.size(), CANDIDATE)));
+                        return (Core) sc;
+                    }
+                }
+                final SequenceMode mode = PropEnum._TREE_SEQUENCE_MODE.get();
+                if (SequenceMode.ORDER.equals(mode)) {
+                    final Severity sev = PropEnum._TREE_SEQUENCE_FAILURE_SEVERITY.get();
+                    logEvent(sev != null ? sev : Severity.S0, "Sequence script order failed: scenario '" + expected + "' is not available among candidates");
+                } else {
+                    Utils.logDebug("Sequence script suggested scenario '" + expected + "' is not available; falling back to weighted selection");
+                }
+            }
+        }
 
         Core scenario = null;
         final Collection<KeyValue<_Scenario, Double>> doubleCandidates = new ArrayList<>(0);
