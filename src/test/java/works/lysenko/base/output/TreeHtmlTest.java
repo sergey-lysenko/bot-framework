@@ -498,4 +498,20 @@ class TreeHtmlTest {
         assertEquals(2, leaf1.col());
         assertEquals(3, leaf2.col());
     }
+
+    @Test
+    void testHtmlTreeRendererProducesCompleteCardShapesAndDefs() {
+        final List<NodeData> nodes = new ArrayList<>();
+        final NodeData root = new NodeData("col_0_0", "RootApp", "Root", 0, 1.0, null);
+        nodes.add(root);
+
+        final String html = TreeHtml.renderHtml(nodes, List.of());
+
+        assertTrue(html.contains("<rect class=\"card-bg\""));
+        assertTrue(html.contains("<rect class=\"pill-bg\""));
+        assertTrue(html.contains("<text class=\"tx1\""));
+        assertTrue(html.contains("<text class=\"tx2\""));
+        assertTrue(html.contains("id=\"cb\""));
+        assertTrue(html.contains("id=\"pt\""));
+    }
 }

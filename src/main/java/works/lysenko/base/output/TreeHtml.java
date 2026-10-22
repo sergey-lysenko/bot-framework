@@ -1236,6 +1236,8 @@ public final class TreeHtml {
                 "      <pattern id=\"known-issue-hatch\" width=\"12\" height=\"12\" patternUnits=\"userSpaceOnUse\">\n" +
                 "        <path d=\"M 0 12 L 12 0 M -3 3 L 3 -3 M 9 15 L 15 9 M 0 0 L 12 12 M -3 9 L 3 15 M 9 -3 L 15 3\" stroke=\"#fbbf24\" stroke-width=\"1.8\" stroke-opacity=\"0.6\" />\n" +
                 "      </pattern>\n" +
+                "      <rect id=\"cb\" width=\"220\" height=\"44\" rx=\"8\" ry=\"8\" />\n" +
+                "      <rect id=\"pt\" x=\"8\" y=\"38\" width=\"204\" height=\"3\" fill=\"#0f172a\" opacity=\"0.7\" rx=\"1.5\" ry=\"1.5\" />\n" +
                 "    </defs>\n" +
                 "    <g id=\"viewport\">\n" +
                 svgContent +

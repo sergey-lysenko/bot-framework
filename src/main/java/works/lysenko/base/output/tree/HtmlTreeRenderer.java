@@ -8,10 +8,11 @@ public class HtmlTreeRenderer {
     private final TreeTheme theme;
 
     public HtmlTreeRenderer(TreeTheme theme) {
-        this.theme = theme;
+        this.theme = (null != theme) ? theme : TreeTheme.DEFAULT;
     }
 
     public String renderNodes(List<VisualNode> nodes) {
+        if (null == nodes || nodes.isEmpty()) return "";
         StringBuilder sb = new StringBuilder();
 
         for (VisualNode node : nodes) {
@@ -38,46 +39,71 @@ public class HtmlTreeRenderer {
                 titleStatus += " (Known Issue)";
             }
 
-            String safeLabel = node.label().replace("<", "&lt;").replace(">", "&gt;");
-            int pillWidth = node.badgeText().length() * 7 + 12;
-            int pillX = theme.cardWidth() - pillWidth - 8;
+            int cardW = theme.cardWidth();
+            int cardH = theme.cardHeight();
 
-            int maxChars = Math.max(4, (pillX - 18) / 8);
+            String bgHex = (null != node.backgroundColor()) ? theme.hex(node.backgroundColor()) : theme.hex(theme.unvisitedBg());
+            String borderHex = (null != node.borderColor()) ? theme.hex(node.borderColor()) : theme.hex(theme.unvisitedBorder());
+            float strokeW = (node.strokeWidth() > 0) ? node.strokeWidth() : 1.5f;
+            String dashAttr = node.isDashed() ? " stroke-dasharray=\"4 4\"" : "";
+
+            boolean hasIndicator = (null != node.indicatorColor());
+            int labelX = hasIndicator ? 24 : 12;
+
+            String badgeStr = (null != node.badgeText()) ? node.badgeText() : "";
+            int pillW = Math.max(32, badgeStr.length() * 7 + 10);
+            int pillX = cardW - pillW - 8;
+            int pillY = (cardH - 18) / 2;
+
+            String rawLabel = (null != node.label()) ? node.label() : "";
+            String safeLabel = rawLabel.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+            int availLabelW = pillX - labelX - 6;
+            int maxChars = Math.max(4, availLabelW / 7);
             if (safeLabel.length() > maxChars) {
-                safeLabel = safeLabel.substring(0, maxChars - 3) + "...";
+                safeLabel = safeLabel.substring(0, Math.max(1, maxChars - 3)) + "...";
             }
 
-            String progressBar = "";
+            String textHex = (null != node.textColor()) ? theme.hex(node.textColor()) : "#f8fafc";
+            String badgeTextHex = (null != node.badgeTextColor()) ? theme.hex(node.badgeTextColor()) : "#38bdf8";
+
+            String hatchOverlay = node.hasKnownIssues()
+                ? String.format(Locale.US, "  <rect class=\"hatch-overlay\" width=\"%d\" height=\"%d\" fill=\"url(#known-issue-hatch)\" rx=\"8\" ry=\"8\" pointer-events=\"none\" />\n", cardW, cardH)
+                : "";
+
+            StringBuilder pbSb = new StringBuilder();
             if (node.fillRatio() >= 0) {
-                int barW = theme.cardWidth() - 16;
-                int filledW = Math.max(4, (int) Math.round(barW * node.fillRatio()));
-                progressBar = String.format(Locale.US,
-                    "  <rect class=\"pb\" x=\"8\" y=\"%d\" width=\"%d\" height=\"4\" />\n",
-                    theme.cardHeight() - 8, filledW);
+                int pbY = cardH - 6;
+                int pbTotalW = cardW - 16;
+                int pbFilledW = Math.max(3, (int) Math.round(pbTotalW * Math.min(1.0, node.fillRatio())));
+                pbSb.append(String.format(Locale.US, "  <rect class=\"pb-track\" x=\"8\" y=\"%d\" width=\"%d\" height=\"3\" fill=\"#0f172a\" opacity=\"0.7\" rx=\"1.5\" ry=\"1.5\" />\n", pbY, pbTotalW));
+                pbSb.append(String.format(Locale.US, "  <rect class=\"pb-fill\" x=\"8\" y=\"%d\" width=\"%d\" height=\"3\" fill=\"%s\" rx=\"1.5\" ry=\"1.5\" />\n", pbY, pbFilledW, borderHex));
             }
 
-            String hatchOverlay = node.hasKnownIssues() ?
-                String.format(Locale.US, "  <rect class=\"hatch-overlay\" width=\"%d\" height=\"%d\" fill=\"url(#known-issue-hatch)\" rx=\"8\" ry=\"8\" pointer-events=\"none\" />\n",
-                theme.cardWidth(), theme.cardHeight()) : "";
+            String indicatorSvg = hasIndicator
+                ? String.format(Locale.US, "  <circle cx=\"12\" cy=\"%d\" r=\"4\" fill=\"%s\" />\n", cardH / 2, theme.hex(node.indicatorColor()))
+                : "";
 
             sb.append(String.format(
                 Locale.US,
                 "<g id=\"%s\" class=\"node-card %s\" transform=\"translate(%d, %d)\" onclick=\"showNodeDetails('%s')\">\n" +
                 "  <title>%s (%s)</title>\n" +
-                "  <use href=\"#cb\" />\n" +
+                "  <rect class=\"card-bg\" width=\"%d\" height=\"%d\" rx=\"8\" ry=\"8\" fill=\"%s\" stroke=\"%s\" stroke-width=\"%.1f\"%s />\n" +
                 "%s" +
                 "%s" +
-                "  <use href=\"#pt\" x=\"%d\" />\n" +
-                "  <text class=\"tx1\" x=\"%d\">%s</text>\n" +
-                "  <text class=\"tx2\">%s</text>\n" +
+                "%s" +
+                "  <rect class=\"pill-bg\" x=\"%d\" y=\"%d\" width=\"%d\" height=\"18\" rx=\"9\" ry=\"9\" fill=\"#0f172a\" fill-opacity=\"0.75\" stroke=\"%s\" stroke-width=\"1\" />\n" +
+                "  <text class=\"tx1\" x=\"%d\" y=\"%d\" text-anchor=\"middle\" fill=\"%s\">%s</text>\n" +
+                "  <text class=\"tx2\" x=\"%d\" y=\"%d\" fill=\"%s\">%s</text>\n" +
                 "</g>\n",
-                node.id(), cssClass, (int) node.x(), (int) node.y(), node.id(),
+                node.id(), cssClass, (int) Math.round(node.x()), (int) Math.round(node.y()), node.id(),
                 safeLabel, titleStatus,
+                cardW, cardH, bgHex, borderHex, strokeW, dashAttr,
                 hatchOverlay,
-                progressBar,
-                pillX,
-                pillX + 6, node.badgeText(),
-                safeLabel
+                pbSb.toString(),
+                indicatorSvg,
+                pillX, pillY, pillW, badgeTextHex,
+                pillX + pillW / 2, pillY + 13, badgeTextHex, badgeStr,
+                labelX, cardH / 2 + 4, textHex, safeLabel
             ));
         }
 
