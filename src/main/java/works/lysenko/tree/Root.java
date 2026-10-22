@@ -682,10 +682,20 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         else core.getLogger().logEmptyLine();
     }
 
-    public final void logEvent(final Severity severity, final String message) {
+    private static final ThreadLocal<Boolean> ROOT_LOG_EVENT_RECURSION_GUARD = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
-        core.getLogger().logEvent(severity, message, isDebug() ?
-                Stacktrace.getShort(Thread.currentThread().getStackTrace()) : EMPTY);
+    public final void logEvent(final Severity severity, final String message) {
+        if (Boolean.TRUE.equals(ROOT_LOG_EVENT_RECURSION_GUARD.get())) {
+            System.err.println("[RECURSION GUARD] Blocked nested Root.logEvent: " + severity + " - " + message);
+            return;
+        }
+        ROOT_LOG_EVENT_RECURSION_GUARD.set(Boolean.TRUE);
+        try {
+            core.getLogger().logEvent(severity, message, isDebug() ?
+                    Stacktrace.getShort(Thread.currentThread().getStackTrace()) : EMPTY);
+        } finally {
+            ROOT_LOG_EVENT_RECURSION_GUARD.set(Boolean.FALSE);
+        }
     }
 
     public final void logTrace(final String message) {

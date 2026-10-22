@@ -9,13 +9,12 @@ import works.lysenko.util.lang.word.P;
 import java.awt.Color;
 
 import static java.util.Objects.isNull;
-import static works.lysenko.Base.logEvent;
+import static works.lysenko.Base.logDebug;
 import static works.lysenko.util.chrs.__.BY;
 import static works.lysenko.util.chrs.__.IS;
 import static works.lysenko.util.chrs.__.OF;
 import static works.lysenko.util.chrs.___.NOT;
 import static works.lysenko.util.chrs.____.TYPE;
-import static works.lysenko.util.data.enums.Severity.S0;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.i;
@@ -102,7 +101,7 @@ public final class StringParser<T> implements _Result<T> {
                     } catch (final NumberFormatException ignored) {
                     }
                 }
-                logEvent(S0, b(c(TYPE), aType.getName(), OF, q(source), IS, NOT, SUPPORTED, BY, STRING, P.PARSER));
+                logDebug(b(c(TYPE), aType.getName(), OF, q(source), IS, NOT, SUPPORTED, BY, STRING, P.PARSER));
                 return null;
             }
         }
@@ -127,11 +126,11 @@ public final class StringParser<T> implements _Result<T> {
             try {
                 return (T) Enum.valueOf((Class) aType, trimmed);
             } catch (final IllegalArgumentException e) {
-                logEvent(S0, b(c(TYPE), aType.getName(), OF, q(source), IS, NOT, SUPPORTED, BY, STRING, P.PARSER));
+                logDebug(b(c(TYPE), aType.getName(), OF, q(source), IS, NOT, SUPPORTED, BY, STRING, P.PARSER));
                 return null;
             }
         }
-        logEvent(S0, b(c(TYPE), aType.getName(), OF, q(source), IS, NOT, SUPPORTED, BY, STRING, P.PARSER));
+        logDebug(b(c(TYPE), aType.getName(), OF, q(source), IS, NOT, SUPPORTED, BY, STRING, P.PARSER));
         return null;
     }
 }

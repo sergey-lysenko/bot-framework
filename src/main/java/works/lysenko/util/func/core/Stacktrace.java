@@ -58,8 +58,11 @@ public record Stacktrace() {
         return s(shortClassName, _DOT_, method, line);
     }
 
-    private static void saveStacktraceReference(final int index, final String stacktrace) {
+    private static final ThreadLocal<Boolean> STACKTRACE_GUARD = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
+    private static void saveStacktraceReference(final int index, final String stacktrace) {
+        if (Boolean.TRUE.equals(STACKTRACE_GUARD.get())) return;
+        STACKTRACE_GUARD.set(Boolean.TRUE);
         try {
             final String filePath = works.lysenko.util.spec.Layout.Files.name(Layout.Templates.RUN_STACKTRACES_);
             final java.io.File file = new java.io.File(filePath);
@@ -75,6 +78,8 @@ public record Stacktrace() {
                     java.nio.file.StandardOpenOption.APPEND);
         } catch (final Exception ignored) {
             // Suppressed to prevent failure during stacktrace formatting
+        } finally {
+            STACKTRACE_GUARD.set(Boolean.FALSE);
         }
     }
 
