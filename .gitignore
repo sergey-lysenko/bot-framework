@@ -6,3 +6,4 @@ result/
 *.log
 run/
 dash/
+/var/parameters
