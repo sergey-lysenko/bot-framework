@@ -90,7 +90,7 @@ class PropEnumTest {
         assertTrue(PropEnum._LOGS_DEBUG.silent());
         assertTrue(PropEnum._TEST_ALL_LEAFS.silent());
         assertTrue(PropEnum._TEST_ALL_LEAFS.executionParameter());
-        assertTrue(PropEnum._TEST_ALL_LEAFS_COUNT.executionParameter());
+        assertTrue(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.executionParameter());
         assertFalse(PropEnum._LOGS_DEBUG.executionParameter());
         assertFalse(PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_GIF.silent());
         assertFalse(PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_GIF.executionParameter());

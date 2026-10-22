@@ -250,8 +250,8 @@ public final class TreeTracker {
         final TreeLayout layout = TreeHtml.computeLayout(sorted);
         if (layout.nodes().isEmpty())
             return;
-        final int target = (isNotNull(parameters)) ? parameters.getAllLeafsCount()
-                : (isNotNull(PropEnum._TEST_ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_COUNT.get()) : 1);
+        final int target = (isNotNull(parameters)) ? parameters.getAllLeafsExecutions()
+                : (isNotNull(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) : 1);
         final String badgeText = isNotNull(testNumber)
                 ? "Cycle #" + testNumber
                 : "Step #" + (capturedFrames.size() + 1);

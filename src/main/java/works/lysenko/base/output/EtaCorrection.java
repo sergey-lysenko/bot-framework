@@ -53,7 +53,7 @@ public final class EtaCorrection {
             String test,
             String tests,
             boolean allLeafs,
-            int allLeafsCount,
+            int allLeafsExecutions,
             String root,
             String app,
             int pauseLength,
@@ -64,7 +64,7 @@ public final class EtaCorrection {
             return Objects.equals(test, other.test)
                     && Objects.equals(tests, other.tests)
                     && allLeafs == other.allLeafs
-                    && allLeafsCount == other.allLeafsCount
+                    && allLeafsExecutions == other.allLeafsExecutions
                     && Objects.equals(root, other.root)
                     && Objects.equals(app, other.app)
                     && pauseLength == other.pauseLength
@@ -104,16 +104,16 @@ public final class EtaCorrection {
         final String tests = n(PropEnum._TEST_TESTS.get(), "");
         final boolean allLeafs = (isNotNull(Base.parameters) && Base.parameters.isAllLeafs())
                 || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
-        final int allLeafsCount = (isNotNull(Base.parameters))
-                ? Base.parameters.getAllLeafsCount()
-                : Math.max(1, n(PropEnum._TEST_ALL_LEAFS_COUNT.get(), 1));
+        final int allLeafsExecutions = (isNotNull(Base.parameters))
+                ? Base.parameters.getAllLeafsExecutions()
+                : Math.max(1, n(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get(), 1));
         final String root = n(PropEnum._TEST_ROOT.get(), "");
         final String app = n(PropEnum._TEST_APP.get(), "");
         final Integer pauseProp = PropEnum._TEST_PAUSE_LENGTH.get();
         final int pauseLength = (null != pauseProp) ? pauseProp : 5000;
         final String platform = n(PropEnum._WEBD_FORCED_PLATFORM.get(), "web");
 
-        return new Metadata(test, tests, allLeafs, allLeafsCount, root, app, pauseLength, platform);
+        return new Metadata(test, tests, allLeafs, allLeafsExecutions, root, app, pauseLength, platform);
     }
 
     private static String n(final Object val, final String fallback) {

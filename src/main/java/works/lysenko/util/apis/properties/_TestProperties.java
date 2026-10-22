@@ -130,10 +130,10 @@ public interface _TestProperties {
      * @param testName      test suite name
      * @param isHeadless    headless toggle
      * @param isAllLeafs    all leafs toggle
-     * @param allLeafsCount leaf executions target
+     * @param allLeafsExecutions leaf executions target
      */
     void prepareTestConfiguration(final String testName, final Boolean isHeadless,
-                                  final Boolean isAllLeafs, final Integer allLeafsCount);
+                                  final Boolean isAllLeafs, final Integer allLeafsExecutions);
 
     /**
      * Retrieves the size of the default properties.
@@ -212,11 +212,11 @@ public interface _TestProperties {
      * @param testName       the test name
      * @param isHeadless     headless parameter flag
      * @param isAllLeafs     all leafs parameter flag
-     * @param allLeafsCount  all leafs count parameter value
+     * @param allLeafsExecutions  all leafs count parameter value
      * @return resolved map of effective properties
      */
     Map<String, String> resolveEffectiveProperties(final String testName, final Boolean isHeadless,
-                                                   final Boolean isAllLeafs, final Integer allLeafsCount);
+                                                   final Boolean isAllLeafs, final Integer allLeafsExecutions);
 
     /**
      * Resolves effective properties for the specified test configuration.
@@ -224,12 +224,12 @@ public interface _TestProperties {
      * @param testName             the test name
      * @param isHeadless           headless parameter flag
      * @param isAllLeafs           all leafs parameter flag
-     * @param allLeafsCount        all leafs count parameter value
+     * @param allLeafsExecutions        all leafs count parameter value
      * @param includeUserOverrides whether to include user overrides
      * @return resolved map of effective properties
      */
     Map<String, String> resolveEffectiveProperties(final String testName, final Boolean isHeadless,
-                                                   final Boolean isAllLeafs, final Integer allLeafsCount,
+                                                   final Boolean isAllLeafs, final Integer allLeafsExecutions,
                                                    final boolean includeUserOverrides);
 
 }

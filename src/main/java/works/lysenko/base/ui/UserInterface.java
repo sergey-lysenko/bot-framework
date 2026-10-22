@@ -572,7 +572,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
                 : Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
 
         if (allLeafsMode) {
-            final boolean multipleExecutionsPerLeaf = isNotNull(parameters) && parameters.getAllLeafsCount() > 1;
+            final boolean multipleExecutionsPerLeaf = isNotNull(parameters) && parameters.getAllLeafsExecutions() > 1;
             final int executed = multipleExecutionsPerLeaf
                     ? core.getExecutedLeafExecutionsCount()
                     : core.getExecutedLeafsCount();
@@ -638,7 +638,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
                 ? parameters.isAllLeafs()
                 : Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
         if (allLeafsMode) {
-            final boolean multipleExecutionsPerLeaf = isNotNull(parameters) && parameters.getAllLeafsCount() > 1;
+            final boolean multipleExecutionsPerLeaf = isNotNull(parameters) && parameters.getAllLeafsExecutions() > 1;
             final int executed = multipleExecutionsPerLeaf
                     ? core.getExecutedLeafExecutionsCount()
                     : core.getExecutedLeafsCount();

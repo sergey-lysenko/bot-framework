@@ -425,9 +425,9 @@ public class TestProperties implements _TestProperties {
             if (isNotNull(allLeafsVal) && !allLeafsVal.isEmpty()) {
                 the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(Boolean.parseBoolean(allLeafsVal)));
             }
-            final String allLeafsCountVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.ALL_LEAFS_COUNT);
-            if (isNotNull(allLeafsCountVal) && !allLeafsCountVal.isEmpty()) {
-                the.setProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), allLeafsCountVal);
+            final String allLeafsExecutionsVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.ALL_LEAFS_EXECUTIONS);
+            if (isNotNull(allLeafsExecutionsVal) && !allLeafsExecutionsVal.isEmpty()) {
+                the.setProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), allLeafsExecutionsVal);
             }
             final String testsVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.TESTS);
             if (isNotNull(testsVal) && !testsVal.isEmpty()) {
@@ -458,7 +458,7 @@ public class TestProperties implements _TestProperties {
     @Override
     @SuppressWarnings("UseOfPropertiesAsHashtable")
     public final void prepareTestConfiguration(final String testName, final Boolean isHeadless,
-                                               final Boolean isAllLeafs, final Integer allLeafsCount) {
+                                               final Boolean isAllLeafs, final Integer allLeafsExecutions) {
 
         if (isNull(commonConfiguration)) {
             readCommonConfiguration();
@@ -482,13 +482,13 @@ public class TestProperties implements _TestProperties {
         } else if (Boolean.FALSE.equals(isHeadless)) {
             the.setProperty(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(false));
         }
-        if (Boolean.TRUE.equals(isAllLeafs) || (isNotNull(allLeafsCount) && 1 < allLeafsCount)) {
+        if (Boolean.TRUE.equals(isAllLeafs) || (isNotNull(allLeafsExecutions) && 1 < allLeafsExecutions)) {
             the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(true));
         } else if (Boolean.FALSE.equals(isAllLeafs)) {
             the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(false));
         }
-        if (isNotNull(allLeafsCount) && 1 < allLeafsCount) {
-            the.setProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(allLeafsCount));
+        if (isNotNull(allLeafsExecutions) && 1 < allLeafsExecutions) {
+            the.setProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), String.valueOf(allLeafsExecutions));
         }
         applyUserOverrides();
         refreshAllPropertyRecords();
@@ -527,15 +527,15 @@ public class TestProperties implements _TestProperties {
 
     @Override
     public final Map<String, String> resolveEffectiveProperties(final String testName, final Boolean isHeadless,
-                                                                 final Boolean isAllLeafs, final Integer allLeafsCount) {
+                                                                 final Boolean isAllLeafs, final Integer allLeafsExecutions) {
 
-        return resolveEffectiveProperties(testName, isHeadless, isAllLeafs, allLeafsCount, true);
+        return resolveEffectiveProperties(testName, isHeadless, isAllLeafs, allLeafsExecutions, true);
     }
 
     @Override
     @SuppressWarnings({"UseOfPropertiesAsHashtable", "MethodWithMultipleLoops"})
     public final Map<String, String> resolveEffectiveProperties(final String testName, final Boolean isHeadless,
-                                                                 final Boolean isAllLeafs, final Integer allLeafsCount,
+                                                                 final Boolean isAllLeafs, final Integer allLeafsExecutions,
                                                                  final boolean includeUserOverrides) {
 
         if (isNull(commonConfiguration)) readCommonConfiguration();
@@ -561,13 +561,13 @@ public class TestProperties implements _TestProperties {
         } else if (Boolean.FALSE.equals(isHeadless)) {
             effective.put(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(false));
         }
-        if (Boolean.TRUE.equals(isAllLeafs) || (isNotNull(allLeafsCount) && 1 < allLeafsCount)) {
+        if (Boolean.TRUE.equals(isAllLeafs) || (isNotNull(allLeafsExecutions) && 1 < allLeafsExecutions)) {
             effective.put(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(true));
         } else if (Boolean.FALSE.equals(isAllLeafs)) {
             effective.put(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(false));
         }
-        if (isNotNull(allLeafsCount) && 1 < allLeafsCount) {
-            effective.put(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(allLeafsCount));
+        if (isNotNull(allLeafsExecutions) && 1 < allLeafsExecutions) {
+            effective.put(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), String.valueOf(allLeafsExecutions));
         }
         if (includeUserOverrides) {
             effective.putAll(userOverrides);

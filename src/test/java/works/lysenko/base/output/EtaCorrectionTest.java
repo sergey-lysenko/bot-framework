@@ -60,7 +60,7 @@ class EtaCorrectionTest {
         props.setProperty("TEST", "Suite1");
         props.setProperty("PLATFORM", "chrome");
         props.setProperty("ALL_LEAFS", "true");
-        props.setProperty("ALL_LEAFS_COUNT", "2");
+        props.setProperty("ALL_LEAFS_EXECUTIONS", "2");
 
         final Parameters parameters = new Parameters(props);
         Base.parameters = parameters;

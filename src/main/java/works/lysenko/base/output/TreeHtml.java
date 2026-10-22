@@ -1119,9 +1119,9 @@ public final class TreeHtml {
                    && Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get()));
 
         final int target = (null != works.lysenko.Base.parameters)
-                ? works.lysenko.Base.parameters.getAllLeafsCount()
-                : (null != PropEnum._TEST_ALL_LEAFS_COUNT.get()
-                   ? Math.max(1, PropEnum._TEST_ALL_LEAFS_COUNT.get()) : 1);
+                ? works.lysenko.Base.parameters.getAllLeafsExecutions()
+                : (null != PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()
+                   ? Math.max(1, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) : 1);
 
         double maxLeafOverRatio = 0.0;
         for (final NodeData n : nodes) {

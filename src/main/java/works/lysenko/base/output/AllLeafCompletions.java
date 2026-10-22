@@ -108,9 +108,9 @@ public final class AllLeafCompletions {
     private static int resolveAllLeafsTarget() {
 
         if (isNotNull(Base.parameters)) {
-            return Base.parameters.getAllLeafsCount();
+            return Base.parameters.getAllLeafsExecutions();
         }
-        final Integer prop = PropEnum._TEST_ALL_LEAFS_COUNT.get();
+        final Integer prop = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
         return isNotNull(prop) ? Math.max(1, prop) : 1;
     }
 }

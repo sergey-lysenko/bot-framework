@@ -155,7 +155,7 @@ public class Repeater implements _Repeater {
     }
 
     private static boolean isCountAllLeafs() {
-        final Integer count = PropEnum._TEST_ALL_LEAFS_COUNT.get();
+        final Integer count = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
         return isNotNull(count) && count > 1;
     }
 
@@ -281,7 +281,7 @@ public class Repeater implements _Repeater {
                 ? parameters.isAllLeafs()
                 : (Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get()) || isCountAllLeafs());
         if (allLeafsMode) {
-            final boolean multipleExecutionsPerLeaf = isNotNull(parameters) && parameters.getAllLeafsCount() > 1;
+            final boolean multipleExecutionsPerLeaf = isNotNull(parameters) && parameters.getAllLeafsExecutions() > 1;
             final int executed = multipleExecutionsPerLeaf
                     ? core.getExecutedLeafExecutionsCount()
                     : core.getExecutedLeafsCount();

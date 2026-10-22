@@ -278,7 +278,7 @@ class TreeTrackerTest {
         final File customRunDir = tempDir.toFile();
         TreeTracker.setCustomOutputDir(customRunDir);
 
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
         setTestProperty(PropEnum._TEST_REPORT_PROGRESSION_TREE_GIF.getPropertyName(), "true");
         Base.parameters = new Parameters(new Properties());
         ProgressionSettings.initialize();
@@ -444,7 +444,7 @@ class TreeTrackerTest {
         final File customRunDir = tempDir.toFile();
         TreeTracker.setCustomOutputDir(customRunDir);
 
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
         ProgressionSettings.initialize();
 
@@ -482,7 +482,7 @@ class TreeTrackerTest {
         final File customRunDir = tempDir.toFile();
         TreeTracker.setCustomOutputDir(customRunDir);
 
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
         setTestProperty(PropEnum._TEST_REPORT_PROGRESSION_TREE_PER_NODE.getPropertyName(), "true");
         Base.parameters = new Parameters(new Properties());
         ProgressionSettings.initialize();

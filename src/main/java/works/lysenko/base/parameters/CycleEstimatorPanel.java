@@ -92,7 +92,7 @@ public final class CycleEstimatorPanel {
      * @param testName            name of the selected test
      * @param headless            headless checkbox
      * @param allLeafs            all-leafs checkbox
-     * @param allLeafsCount       all-leafs-count input
+     * @param allLeafsExecutions       all-leafs-executions input
      * @param testsCount          tests-count input
      * @param forbidOverexecution forbid-overexecution checkbox
      * @param resilientMode       resilient-mode checkbox
@@ -106,7 +106,7 @@ public final class CycleEstimatorPanel {
             final String testName,
             final JCheckBox headless,
             final JCheckBox allLeafs,
-            final JTextField allLeafsCount,
+            final JTextField allLeafsExecutions,
             final JTextField testsCount,
             final JCheckBox forbidOverexecution,
             final JCheckBox resilientMode,
@@ -130,14 +130,14 @@ public final class CycleEstimatorPanel {
         final boolean isAllLeafs = isNotNull(allLeafs) && allLeafs.isSelected();
 
         int leafsCount = 1;
-        if (isNotNull(allLeafsCount) && !allLeafsCount.getText().isBlank()) {
+        if (isNotNull(allLeafsExecutions) && !allLeafsExecutions.getText().isBlank()) {
             try {
-                leafsCount = Math.max(1, Integer.parseInt(allLeafsCount.getText().trim()));
+                leafsCount = Math.max(1, Integer.parseInt(allLeafsExecutions.getText().trim()));
             } catch (final NumberFormatException ignored) {
-                if (isNotNull(parameters)) leafsCount = parameters.getAllLeafsCount();
+                if (isNotNull(parameters)) leafsCount = parameters.getAllLeafsExecutions();
             }
         } else if (isNotNull(parameters)) {
-            leafsCount = parameters.getAllLeafsCount();
+            leafsCount = parameters.getAllLeafsExecutions();
         }
 
         tp.prepareTestConfiguration(testName, isHeadless, isAllLeafs, leafsCount);

@@ -351,7 +351,7 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     private static boolean isAllLeafsMode() {
 
         if (isNotNull(parameters)) return parameters.isAllLeafs();
-        final Integer count = PropEnum._TEST_ALL_LEAFS_COUNT.get();
+        final Integer count = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
         return Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get()) || (isNotNull(count) && ONE < count);
     }
 

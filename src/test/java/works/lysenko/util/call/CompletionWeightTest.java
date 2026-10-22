@@ -93,8 +93,8 @@ class CompletionWeightTest {
     }
 
     @Test
-    void testProportionalWeightReductionWithAllLeafsCount() {
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
+    void testProportionalWeightReductionWithAllLeafsExecutions() {
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
 
         final Results results = (Results) Base.core.getResults();
@@ -285,7 +285,7 @@ class CompletionWeightTest {
 
     @Test
     void testCompletionWeightSumsUncompletedDescendantLeafs() {
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
 
         final Results results = (Results) Base.core.getResults();

@@ -75,7 +75,7 @@ public class Gui implements _GUI {
     private JCheckBox headless = null;
     private JCheckBox hideOffBranches = null;
     private JCheckBox allLeafs = null;
-    private JTextField allLeafsCount = null;
+    private JTextField allLeafsExecutions = null;
     private JTextField testsCount = null;
     private JCheckBox forbidOverexecution = null;
     private JCheckBox resilientMode = null;
@@ -271,7 +271,7 @@ public class Gui implements _GUI {
         hideOffBranches.setSelected(Boolean.parseBoolean(parameters.getProperty(HIDE_OFF_BRANCHES.name())));
         allLeafs = new JCheckBox();
         allLeafs.setSelected(parameters.isAllLeafs());
-        allLeafsCount = new JTextField(String.valueOf(parameters.getAllLeafsCount()), WIDTH);
+        allLeafsExecutions = new JTextField(String.valueOf(parameters.getAllLeafsExecutions()), WIDTH);
 
         final String defaultTests = defaultIfEmpty(
                 parameters.getTests(),
@@ -347,10 +347,10 @@ public class Gui implements _GUI {
             }
         }
 
-        if (isNotNull(allLeafsCount)) {
-            final String val = configProps.get(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName());
+        if (isNotNull(allLeafsExecutions)) {
+            final String val = configProps.get(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName());
             if (isNotNull(val) && !val.isBlank()) {
-                allLeafsCount.setText(val.trim());
+                allLeafsExecutions.setText(val.trim());
             }
         }
 
@@ -423,7 +423,7 @@ public class Gui implements _GUI {
 
         attachChangeListener(test);
         attachChangeListener(allLeafs);
-        attachChangeListener(allLeafsCount);
+        attachChangeListener(allLeafsExecutions);
         attachChangeListener(completionWeight);
         attachChangeListener(testsCount);
         attachChangeListener(forbidOverexecution);
@@ -500,7 +500,7 @@ public class Gui implements _GUI {
     String calculateEstimatedCycles(final String testName, final IntConsumer progressConsumer) {
 
         return CycleEstimatorPanel.calculateEstimatedCycles(
-                parameters, testName, headless, allLeafs, allLeafsCount,
+                parameters, testName, headless, allLeafs, allLeafsExecutions,
                 testsCount, forbidOverexecution, resilientMode, completionWeight,
                 traverseExtensions, progressConsumer);
     }
@@ -589,7 +589,7 @@ public class Gui implements _GUI {
         // Add additional special properties
         rows = addRowOptional(TESTS.name(), testsCount, panel, rows);
         if (isNotNull(allLeafs) && allLeafs.isSelected()) {
-            rows = addRowOptional(ALL_LEAFS_COUNT.name(), allLeafsCount, panel, rows);
+            rows = addRowOptional(ALL_LEAFS_EXECUTIONS.name(), allLeafsExecutions, panel, rows);
             rows = addRowOptional(COMPLETION_WEIGHT.name(), completionWeight, panel, rows);
         }
         rows = addDivider(panel, rows);
@@ -647,12 +647,12 @@ public class Gui implements _GUI {
         if (isNotNull(allLeafs)) {
             parameters.setAllLeafs(allLeafs.isSelected());
             if (!allLeafs.isSelected()) {
-                parameters.setAllLeafsCount(1);
+                parameters.setAllLeafsExecutions(1);
             }
         }
-        if (isNotNull(allLeafs) && allLeafs.isSelected() && isNotNull(allLeafsCount)) {
+        if (isNotNull(allLeafs) && allLeafs.isSelected() && isNotNull(allLeafsExecutions)) {
             try {
-                parameters.setAllLeafsCount(Integer.parseInt(allLeafsCount.getText()));
+                parameters.setAllLeafsExecutions(Integer.parseInt(allLeafsExecutions.getText()));
             } catch (final NumberFormatException ignored) {
             }
         }

@@ -26,7 +26,7 @@ import static works.lysenko.util.lang.word.F.*;
 public enum ExecutionParameter implements _Default {
 
     ALL_LEAFS(FALSE),
-    ALL_LEAFS_COUNT(EMPTY),
+    ALL_LEAFS_EXECUTIONS(EMPTY),
     COMPLETION_WEIGHT(EMPTY),
     DEVICE(EMPTY),
     DOMAIN(EMPTY),

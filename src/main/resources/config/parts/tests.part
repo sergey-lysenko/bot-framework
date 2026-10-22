@@ -11,7 +11,7 @@
 
 # ------------------------------------------------------------------------------
 # Limits the number of leaf tests selected when running all leaf tests. Default: 1
-# .test.all.leafs.count=1
+# .test.all.leafs.executions=1
 
 # ------------------------------------------------------------------------------
 # Controls whether a failed assertion produces an exception. Default: true

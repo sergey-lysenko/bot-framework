@@ -380,7 +380,7 @@ public class KnownIssuesPanel extends JPanel {
             final StringBuilder suiteContent = new StringBuilder();
             suiteContent.append("# Generated automatically from Known Issues\n");
             suiteContent.append(".test.all.leafs=true\n");
-            suiteContent.append(".test.all.leafs.count=1\n");
+            suiteContent.append(".test.all.leafs.executions=1\n");
             suiteContent.append(PropEnum._TEST_RESILIENT_MODE.getPropertyName()).append("=true\n");
 
             for (final String scenario : matchingScenarios) {

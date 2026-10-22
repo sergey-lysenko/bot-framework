@@ -117,8 +117,8 @@ public final class ScenarioTracker {
         final List<_Scenario> scenarios = new ArrayList<>(leafs);
         scenarios.sort(Comparator.comparing(_Scenario::getShortName).thenComparing(_Scenario::getName));
 
-        final int target = (isNotNull(parameters)) ? parameters.getAllLeafsCount()
-                : (isNotNull(PropEnum._TEST_ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_COUNT.get()) : 1);
+        final int target = (isNotNull(parameters)) ? parameters.getAllLeafsExecutions()
+                : (isNotNull(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) : 1);
         final int currentCycle = isNotNull(testNumber) ? testNumber : capturedFrames.size() + 1;
 
         logDebug(String.format("Rendering scenario progression graph (%d scenarios)...", scenarios.size()));

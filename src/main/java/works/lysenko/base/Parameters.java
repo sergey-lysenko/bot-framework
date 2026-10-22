@@ -79,7 +79,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         read(HEADLESS);
         read(HIDE_OFF_BRANCHES);
         read(ALL_LEAFS.name()); // empty default: allows fallback to properties / count inference
-        read(ALL_LEAFS_COUNT.name());
+        read(ALL_LEAFS_EXECUTIONS.name());
         read(TESTS.name());
         read(FORBID_OVEREXECUTION.name());
         read(RESILIENT_MODE.name());
@@ -141,9 +141,9 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         put(ALL_LEAFS.name(), String.valueOf(value));
     }
     
-    public void setAllLeafsCount(final int count) {
+    public void setAllLeafsExecutions(final int count) {
         
-        put(ALL_LEAFS_COUNT.name(), String.valueOf(count));
+        put(ALL_LEAFS_EXECUTIONS.name(), String.valueOf(count));
     }
     
     public void setHeadless(final boolean value) {
@@ -220,7 +220,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
     @Override
     public boolean isAllLeafs() {
 
-        final String countVal = getValue(ALL_LEAFS_COUNT);
+        final String countVal = getValue(ALL_LEAFS_EXECUTIONS);
         if (isNotNull(countVal) && !countVal.isEmpty()) {
             try {
                 if (Integer.parseInt(countVal) > 1) {
@@ -233,23 +233,23 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         if (isNotNull(val) && !val.isEmpty()) {
             return Boolean.parseBoolean(val);
         }
-        if (getAllLeafsCount() > 1) {
+        if (getAllLeafsExecutions() > 1) {
             return true;
         }
         return Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
     }
 
     @Override
-    public int getAllLeafsCount() {
+    public int getAllLeafsExecutions() {
 
-        final String val = getValue(ALL_LEAFS_COUNT);
+        final String val = getValue(ALL_LEAFS_EXECUTIONS);
         if (isNotNull(val) && !val.isEmpty()) {
             try {
                 return Math.max(1, Integer.parseInt(val));
             } catch (final NumberFormatException ignored) {
             }
         }
-        final Integer prop = PropEnum._TEST_ALL_LEAFS_COUNT.get();
+        final Integer prop = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
         return isNotNull(prop) ? Math.max(1, prop) : 1;
     }
 

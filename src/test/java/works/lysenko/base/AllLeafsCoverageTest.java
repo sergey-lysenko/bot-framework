@@ -93,23 +93,23 @@ class AllLeafsCoverageTest {
     }
 
     @Test
-    void testTestPropertiesValidationWithAllLeafsCount() throws Exception {
+    void testTestPropertiesValidationWithAllLeafsExecutions() throws Exception {
         final TestProperties tp = new TestProperties();
         final Field ccField = TestProperties.class.getDeclaredField("commonConfiguration");
         ccField.setAccessible(true);
         ccField.set(tp, new Properties());
         Base.properties = tp;
 
-        // Default parameters (ALL_LEAFS_COUNT = 1)
+        // Default parameters (ALL_LEAFS_EXECUTIONS = 1)
         final java.util.Properties props1 = new java.util.Properties();
-        props1.put(ExecutionParameter.ALL_LEAFS_COUNT.name(), "1");
+        props1.put(ExecutionParameter.ALL_LEAFS_EXECUTIONS.name(), "1");
         Base.parameters = new Parameters(props1);
 
         final java.util.Properties the1 = new java.util.Properties();
-        if (1 < Base.parameters.getAllLeafsCount()) {
-            the1.setProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(Base.parameters.getAllLeafsCount()));
+        if (1 < Base.parameters.getAllLeafsExecutions()) {
+            the1.setProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), String.valueOf(Base.parameters.getAllLeafsExecutions()));
         } else {
-            the1.remove(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName());
+            the1.remove(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName());
         }
 
         final Field theField = TestProperties.class.getDeclaredField("the");
@@ -124,16 +124,16 @@ class AllLeafsCoverageTest {
         final works.lysenko.util.data.records.PropertiesMeta meta1 = new works.lysenko.util.data.records.PropertiesMeta(new java.util.HashMap<>(defaults), new java.util.ArrayList<>(0));
         assertDoesNotThrow(() -> works.lysenko.base.properties.Renderer.outputAndValidate(tp.getSorted(), meta1));
 
-        // Custom count (ALL_LEAFS_COUNT = 3)
+        // Custom count (ALL_LEAFS_EXECUTIONS = 3)
         final java.util.Properties props3 = new java.util.Properties();
-        props3.put(ExecutionParameter.ALL_LEAFS_COUNT.name(), "3");
+        props3.put(ExecutionParameter.ALL_LEAFS_EXECUTIONS.name(), "3");
         Base.parameters = new Parameters(props3);
 
         final java.util.Properties the3 = new java.util.Properties();
-        if (1 < Base.parameters.getAllLeafsCount()) {
-            the3.setProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), String.valueOf(Base.parameters.getAllLeafsCount()));
+        if (1 < Base.parameters.getAllLeafsExecutions()) {
+            the3.setProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), String.valueOf(Base.parameters.getAllLeafsExecutions()));
         } else {
-            the3.remove(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName());
+            the3.remove(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName());
         }
 
         theField.set(tp, the3);
@@ -142,28 +142,28 @@ class AllLeafsCoverageTest {
     }
 
     @Test
-    void testPropEnumAllLeafsCount() {
-        assertEquals(".test.all.leafs.count", PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName());
-        assertEquals(Integer.class, PropEnum._TEST_ALL_LEAFS_COUNT.type());
-        assertEquals("1", PropEnum._TEST_ALL_LEAFS_COUNT.defaultValue());
-        assertEquals(1, (int) PropEnum._TEST_ALL_LEAFS_COUNT.get());
+    void testPropEnumAllLeafsExecutions() {
+        assertEquals(".test.all.leafs.executions", PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName());
+        assertEquals(Integer.class, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.type());
+        assertEquals("1", PropEnum._TEST_ALL_LEAFS_EXECUTIONS.defaultValue());
+        assertEquals(1, (int) PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get());
     }
 
     @Test
-    void testParametersAllLeafsCount() {
+    void testParametersAllLeafsExecutions() {
         final Parameters pDefault = new Parameters(new Properties());
-        assertEquals(1, pDefault.getAllLeafsCount());
+        assertEquals(1, pDefault.getAllLeafsExecutions());
         assertFalse(pDefault.isAllLeafs());
 
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "3");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "3");
         final Parameters p3 = new Parameters(new Properties());
-        assertEquals(3, p3.getAllLeafsCount());
+        assertEquals(3, p3.getAllLeafsExecutions());
         assertTrue(p3.isAllLeafs());
     }
 
     @Test
     void testMultiCountLeafExecutionTrackingInCore() throws Exception {
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
 
         final Ctrl rootCtrl = new Ctrl(null);
@@ -212,7 +212,7 @@ class AllLeafsCoverageTest {
 
     @Test
     void testMultiCountLeafExecutionWithMonoInCore() throws Exception {
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "3");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "3");
         Base.parameters = new Parameters(new Properties());
 
         final Ctrl rootCtrl = new Ctrl(null);
@@ -336,7 +336,7 @@ class AllLeafsCoverageTest {
             Base.timer = new Stopwatch();
         }
         setTestProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), "true");
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
 
         final Ctrl rootCtrl = new Ctrl(null);
@@ -568,8 +568,8 @@ class AllLeafsCoverageTest {
     }
 
     @Test
-    void testIsNotExhaustedWithAllLeafsCount() throws Exception {
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
+    void testIsNotExhaustedWithAllLeafsExecutions() throws Exception {
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
 
         final Ctrl rootCtrl = new Ctrl(null);
@@ -615,7 +615,7 @@ class AllLeafsCoverageTest {
 
     @Test
     void testPropertyLoggingCycleProtection() throws Exception {
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "5");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "5");
         setTestProperty(PropEnum._LOGS_DEBUG.getPropertyName(), "true");
 
         final Field f = Unsafe.class.getDeclaredField("theUnsafe");
@@ -634,7 +634,7 @@ class AllLeafsCoverageTest {
             @Override
             public Integer getCurrent() {
                 // Mimics Repeater accessing property
-                return PropEnum._TEST_ALL_LEAFS_COUNT.get();
+                return PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
             }
             @Override
             public java.util.List<java.util.List<String>> getHistory() { return java.util.List.of(); }
@@ -685,10 +685,10 @@ class AllLeafsCoverageTest {
         loggerField.setAccessible(true);
         loggerField.set(Base.core, mockLogger);
 
-        // Querying PropEnum._TEST_ALL_LEAFS_COUNT.get() when debug is active and exec is not null
+        // Querying PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get() when debug is active and exec is not null
         // must not cause any recursion or StackOverflowError
         assertDoesNotThrow(() -> {
-            final Integer val = PropEnum._TEST_ALL_LEAFS_COUNT.get();
+            final Integer val = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
             assertEquals(5, val);
         });
     }
@@ -738,7 +738,7 @@ class AllLeafsCoverageTest {
         assertEquals("false", PropEnum._TREE_FORBID_OVEREXECUTION.defaultValue());
 
         setTestProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), "false");
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
         Scenario.refresh();
 
@@ -773,7 +773,7 @@ class AllLeafsCoverageTest {
     @Test
     void testSaturatedNodeBranchIsNonExecutable() throws Exception {
         setTestProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), "true");
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_COUNT.getPropertyName(), "1");
+        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "1");
         Base.parameters = new Parameters(new Properties());
         Scenario.refresh();
 

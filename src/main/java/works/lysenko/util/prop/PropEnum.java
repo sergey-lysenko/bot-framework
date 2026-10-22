@@ -141,7 +141,7 @@ public enum PropEnum implements _PropEnum {
     _SWIPE_STOP_MARKER_COLOUR(Color.class, b(_COMMA_, _255, _0_, _0_, _128)),
     _TEST_ACTION_RETRIES(Integer.class, _3_),
     _TEST_ALL_LEAFS(Boolean.class, FALSE, true, true),
-    _TEST_ALL_LEAFS_COUNT(Integer.class, s(_1_), true, true),
+    _TEST_ALL_LEAFS_EXECUTIONS(Integer.class, s(_1_), true, true),
     _TEST_APP(String.class, EMPTY),
     _TEST_ASSERTIONS_PRODUCE_EXCEPTION(Boolean.class, TRUE),
     _TEST_ASSERTIONS_SEVERITY(Severity.class, _S0_),

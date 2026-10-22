@@ -168,7 +168,7 @@ public class Test implements _Test {
     }
 
     private static boolean isCountAllLeafs() {
-        final Integer count = PropEnum._TEST_ALL_LEAFS_COUNT.get();
+        final Integer count = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
         return isNotNull(count) && count > 1;
     }
 

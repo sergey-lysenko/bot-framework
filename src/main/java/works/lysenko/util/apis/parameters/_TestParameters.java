@@ -46,7 +46,7 @@ public interface _TestParameters {
      *
      * @return the number of required executions per leaf
      */
-    int getAllLeafsCount();
+    int getAllLeafsExecutions();
 
     /**
      * Checks if headless mode is enabled.

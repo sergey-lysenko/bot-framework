@@ -206,9 +206,9 @@ public final class Core extends Root implements _Core, _Tests {
 
     public static int resolveAllLeafsTarget() {
         if (isNotNull(parameters)) {
-            return parameters.getAllLeafsCount();
+            return parameters.getAllLeafsExecutions();
         }
-        final Integer prop = PropEnum._TEST_ALL_LEAFS_COUNT.get();
+        final Integer prop = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
         return isNotNull(prop) ? Math.max(1, prop) : 1;
     }
 

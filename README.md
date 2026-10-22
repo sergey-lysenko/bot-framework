@@ -54,7 +54,7 @@ The framework features a built-in Swing-based **Control Panel** (`works.lysenko.
    - **Unsaved Changes Tracking**: Prompts users to save modifications upon losing focus, switching files, or switching tabs.
    - **Preservation Assurance**: Invalid or custom properties are clearly flagged while guaranteeing they are preserved on disk when saved.
 2. **Run Setup**:
-   - Graphical controls for selecting test targets, user pools, domains, platforms (Web/Android/iOS), headless execution, and execution parameters (`TESTS`, `ALL_LEAFS`, `ALL_LEAFS_COUNT`, `RESILIENT_MODE`, `COMPLETION_WEIGHT`, `TRAVERSE_EXTENSIONS`).
+   - Graphical controls for selecting test targets, user pools, domains, platforms (Web/Android/iOS), headless execution, and execution parameters (`TESTS`, `ALL_LEAFS`, `ALL_LEAFS_EXECUTIONS`, `RESILIENT_MODE`, `COMPLETION_WEIGHT`, `TRAVERSE_EXTENSIONS`).
    - Live status tracking (`Default`, `Configured`, `Modified`) for every property against default baselines.
 3. **Execution Dashboard**:
    - Live controls (`Pause`, `Resume`, `Stop`, `Halt`, `Step`), real-time CPU/RAM meters, execution duration counters, and active scenario breadcrumb trails.
@@ -163,7 +163,7 @@ Configuration is organized into 11 specialized partial files included via `src/m
 | **Stacktrace**| `.logs.full.stacktrace` | `false` | Includes unshortened stacktraces in log output |
 | **Tests** | `.test.action.retries` | `3` | Maximum retry attempts for UI state actions |
 | **Tests** | `.test.all.leafs` | `false` | Enables ALL_LEAFS coverage mode |
-| **Tests** | `.test.all.leafs.count` | `1` | Target execution count for each leaf scenario in ALL_LEAFS mode |
+| **Tests** | `.test.all.leafs.executions` | `1` | Target execution count for each leaf scenario in ALL_LEAFS mode |
 | **Tests** | `.test.fail.by.event.of.severity` | `s1` | Event severity level that halts test execution |
 | **Tests** | `.test.resilient.mode` | `false` | Enables resilient mode (executes full suite despite failures) |
 | **Tests** | `.test.report.progression.tree.mp4` | `true` | Generates MP4 video of scenario tree progression (FFmpeg) |

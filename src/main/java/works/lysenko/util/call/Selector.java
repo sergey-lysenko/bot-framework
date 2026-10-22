@@ -153,8 +153,8 @@ public final class Selector implements Callable<_Scenario> {
     List<KeyValue<_Scenario, Fraction>> getExecutionCandidates() {
 
         final int target = (isNotNull(parameters))
-                ? parameters.getAllLeafsCount()
-                : (isNotNull(PropEnum._TEST_ALL_LEAFS_COUNT.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_COUNT.get()) : 1);
+                ? parameters.getAllLeafsExecutions()
+                : (isNotNull(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) : 1);
         final List<KeyValue<_Scenario, Fraction>> candidates = new LinkedList<>();
         for (final KeyValue<_Scenario, Fraction> pair : ctrl.getWeightedList()) {
             final _Scenario scenario = pair.k();

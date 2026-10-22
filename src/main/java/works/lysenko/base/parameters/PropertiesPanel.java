@@ -69,19 +69,19 @@ public class PropertiesPanel extends JPanel {
      * @param testName      the selected test name
      * @param isHeadless    headless flag
      * @param isAllLeafs    all-leafs flag
-     * @param allLeafsCount all-leafs count
+     * @param allLeafsExecutions all-leafs count
      */
     public PropertiesPanel(final String testName, final boolean isHeadless,
-                           final boolean isAllLeafs, final int allLeafsCount) {
+                           final boolean isAllLeafs, final int allLeafsExecutions) {
 
-        this((isNotNull(Base.properties)) ? Base.properties : new TestProperties(), testName, isHeadless, isAllLeafs, allLeafsCount);
+        this((isNotNull(Base.properties)) ? Base.properties : new TestProperties(), testName, isHeadless, isAllLeafs, allLeafsExecutions);
     }
 
     public PropertiesPanel(final String testName, final boolean isHeadless,
-                           final boolean isAllLeafs, final int allLeafsCount,
+                           final boolean isAllLeafs, final int allLeafsExecutions,
                            final JComponent extraSearchComponent) {
 
-        this((isNotNull(Base.properties)) ? Base.properties : new TestProperties(), testName, isHeadless, isAllLeafs, allLeafsCount, extraSearchComponent);
+        this((isNotNull(Base.properties)) ? Base.properties : new TestProperties(), testName, isHeadless, isAllLeafs, allLeafsExecutions, extraSearchComponent);
     }
 
     /**
@@ -92,16 +92,16 @@ public class PropertiesPanel extends JPanel {
      * @param testName      the selected test name
      * @param isHeadless    headless flag
      * @param isAllLeafs    all-leafs flag
-     * @param allLeafsCount all-leafs count
+     * @param allLeafsExecutions all-leafs count
      */
     public PropertiesPanel(final _TestProperties testProps, final String testName,
-                           final boolean isHeadless, final boolean isAllLeafs, final int allLeafsCount) {
+                           final boolean isHeadless, final boolean isAllLeafs, final int allLeafsExecutions) {
 
-        this(testProps, testName, isHeadless, isAllLeafs, allLeafsCount, null);
+        this(testProps, testName, isHeadless, isAllLeafs, allLeafsExecutions, null);
     }
 
     public PropertiesPanel(final _TestProperties testProps, final String testName,
-                           final boolean isHeadless, final boolean isAllLeafs, final int allLeafsCount,
+                           final boolean isHeadless, final boolean isAllLeafs, final int allLeafsExecutions,
                            final JComponent extraSearchComponent) {
 
         this.testProperties = testProps;
@@ -124,7 +124,7 @@ public class PropertiesPanel extends JPanel {
             }
         };
 
-        populateProperties(testName, isHeadless, isAllLeafs, allLeafsCount);
+        populateProperties(testName, isHeadless, isAllLeafs, allLeafsExecutions);
 
         propertyTablePanel = new PropertyTablePanel(model, 0, 2, true, extraSearchComponent);
         propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);
@@ -213,7 +213,7 @@ public class PropertiesPanel extends JPanel {
     }
 
     public void reloadFromDisk(final String testName, final boolean isHeadless, final boolean isAllLeafs,
-                               final int allLeafsCount) {
+                               final int allLeafsExecutions) {
 
         if (isNotNull(testProperties)) {
             testProperties.readCommonConfiguration();
@@ -221,11 +221,11 @@ public class PropertiesPanel extends JPanel {
         }
         baseline.clear();
         model.setRowCount(0);
-        populateProperties(testName, isHeadless, isAllLeafs, allLeafsCount);
+        populateProperties(testName, isHeadless, isAllLeafs, allLeafsExecutions);
     }
 
     private void populateProperties(final String testName, final boolean isHeadless, final boolean isAllLeafs,
-                                    final int allLeafsCount) {
+                                    final int allLeafsExecutions) {
 
         if (isNotNull(testProperties)) {
             final Map<String, String> originalConfig = testProperties.getOriginalConfigProperties(testName);
@@ -235,7 +235,7 @@ public class PropertiesPanel extends JPanel {
             final Map<String, String> defaults = testProperties.getDefaults();
 
             final Map<String, String> effective = testProperties.resolveEffectiveProperties(testName, isHeadless, isAllLeafs,
-                    allLeafsCount, true);
+                    allLeafsExecutions, true);
 
             final Set<String> allKeys = new TreeSet<>(Comparator.naturalOrder());
             if (isNotNull(effective)) allKeys.addAll(effective.keySet());
