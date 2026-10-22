@@ -243,4 +243,69 @@ class KnownIssuesStoreTest {
         final List<KnownIssue> matchedForBilling = store.getForLogRecord(List.of(billingScenario), lrOtherScenario);
         assertTrue(matchedForBilling.isEmpty(), "Known issue for absentData should NOT be attached to unrelated Billing scenario");
     }
+
+    @Test
+    void testMultiScenarioAndMultiIssueParsing() {
+        final String json = """
+                {
+                  "issues": [
+                    {
+                      "title": "NODEJS-3132",
+                      "description": "Uncaught React component crash",
+                      "link": "https://biteheist.atlassian.net/browse/NODEJS-3132",
+                      "scenarios": [
+                        "signIn.login.appManagement.AddNew",
+                        "signIn.login.Dashboard"
+                      ]
+                    }
+                  ],
+                  "scenarios": [
+                    {
+                      "scenario": "signIn.login.partners.addNew.random.Save",
+                      "issues": [
+                        {
+                          "title": "NODEJS-3008",
+                          "link": "https://biteheist.atlassian.net/browse/NODEJS-3008"
+                        },
+                        {
+                          "title": "NODEJS-3009",
+                          "link": "https://biteheist.atlassian.net/browse/NODEJS-3009"
+                        }
+                      ]
+                    }
+                  ]
+                }
+                """;
+
+        final KnownIssuesStore store = new KnownIssuesStore(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+        assertEquals(4, store.getIssues().size());
+
+        final _Scenario appMgmtScenario = new Leaf(Fraction.ONE) {
+            @Override public String getName() { return "biteheist.tree.signIn.login.appManagement.AddNew"; }
+            @Override public String getSimpleName() { return "AddNew"; }
+        };
+
+        final _Scenario dashboardScenario = new Leaf(Fraction.ONE) {
+            @Override public String getName() { return "biteheist.tree.signIn.login.Dashboard"; }
+            @Override public String getSimpleName() { return "Dashboard"; }
+        };
+
+        final _Scenario saveScenario = new Leaf(Fraction.ONE) {
+            @Override public String getName() { return "biteheist.tree.signIn.login.partners.addNew.random.Save"; }
+            @Override public String getSimpleName() { return "Save"; }
+        };
+
+        final Result result = new Result(appMgmtScenario);
+
+        List<KnownIssue> appMgmtMatches = store.getForNode(appMgmtScenario, result);
+        assertEquals(1, appMgmtMatches.size());
+        assertEquals("NODEJS-3132", appMgmtMatches.get(0).title());
+
+        List<KnownIssue> dashboardMatches = store.getForNode(dashboardScenario, result);
+        assertEquals(1, dashboardMatches.size());
+        assertEquals("NODEJS-3132", dashboardMatches.get(0).title());
+
+        List<KnownIssue> saveMatches = store.getForNode(saveScenario, result);
+        assertEquals(2, saveMatches.size());
+    }
 }

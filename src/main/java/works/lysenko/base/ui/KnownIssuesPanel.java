@@ -282,20 +282,74 @@ public class KnownIssuesPanel extends JPanel {
     }
 
     private String generateJsonString() throws Exception {
-        final List<Map<String, String>> list = new ArrayList<>();
+        final Map<String, Map<String, Object>> issueMap = new LinkedHashMap<>();
+
         for (int i = 0; i < tableModel.getRowCount(); i++) {
-            final Map<String, String> item = new LinkedHashMap<>();
-            item.put("scenario", (String) tableModel.getValueAt(i, 0));
-            item.put("title", (String) tableModel.getValueAt(i, 1));
-            item.put("description", (String) tableModel.getValueAt(i, 2));
-            item.put("link", (String) tableModel.getValueAt(i, 3));
-            item.put("pattern", (String) tableModel.getValueAt(i, 4));
-            list.add(item);
+            final String scenario = (String) tableModel.getValueAt(i, 0);
+            final String title = (String) tableModel.getValueAt(i, 1);
+            final String description = (String) tableModel.getValueAt(i, 2);
+            final String link = (String) tableModel.getValueAt(i, 3);
+            final String pattern = (String) tableModel.getValueAt(i, 4);
+
+            final String scVal = (null == scenario) ? "" : scenario.trim();
+            final String titleVal = (null == title) ? "" : title.trim();
+            final String descVal = (null == description) ? "" : description.trim();
+            final String linkVal = (null == link) ? "" : link.trim();
+            final String patternVal = (null == pattern) ? "" : pattern.trim();
+
+            final String groupKey = titleVal + "||" + linkVal + "||" + patternVal + "||" + descVal;
+
+            if (!issueMap.containsKey(groupKey)) {
+                final Map<String, Object> item = new LinkedHashMap<>();
+                if (scVal.contains(",")) {
+                    final List<String> scList = new ArrayList<>();
+                    for (final String s : scVal.split(",")) {
+                        if (!s.isBlank() && !scList.contains(s.trim())) scList.add(s.trim());
+                    }
+                    if (scList.size() > 1) {
+                        item.put("scenarios", scList);
+                    } else {
+                        item.put("scenario", scList.isEmpty() ? "" : scList.get(0));
+                    }
+                } else {
+                    item.put("scenario", scVal);
+                }
+                item.put("title", titleVal);
+                item.put("description", descVal);
+                item.put("link", linkVal);
+                item.put("pattern", patternVal);
+                issueMap.put(groupKey, item);
+            } else {
+                final Map<String, Object> existingItem = issueMap.get(groupKey);
+                final List<String> scList = new ArrayList<>();
+                if (existingItem.containsKey("scenario")) {
+                    final String existingSc = (String) existingItem.remove("scenario");
+                    if (existingSc != null && !existingSc.isBlank()) scList.add(existingSc);
+                } else if (existingItem.containsKey("scenarios")) {
+                    @SuppressWarnings("unchecked")
+                    final List<String> prevList = (List<String>) existingItem.get("scenarios");
+                    if (prevList != null) scList.addAll(prevList);
+                }
+
+                if (scVal.contains(",")) {
+                    for (final String s : scVal.split(",")) {
+                        if (!s.isBlank() && !scList.contains(s.trim())) scList.add(s.trim());
+                    }
+                } else if (!scVal.isBlank() && !scList.contains(scVal)) {
+                    scList.add(scVal);
+                }
+
+                if (scList.size() > 1) {
+                    existingItem.put("scenarios", scList);
+                } else if (scList.size() == 1) {
+                    existingItem.put("scenario", scList.get(0));
+                }
+            }
         }
 
         final Map<String, Object> root = new LinkedHashMap<>();
         root.put("$schema", "./issues.schema.json");
-        root.put("issues", list);
+        root.put("issues", new ArrayList<>(issueMap.values()));
         return MAPPER.writeValueAsString(root);
     }
 

@@ -1,6 +1,7 @@
 package works.lysenko.base.issues;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.ByteArrayInputStream;
@@ -102,9 +103,30 @@ public final class KnownIssuesLoader {
 
         try {
             final KnownIssuesContainer container = MAPPER.readValue(bytes, KnownIssuesContainer.class);
-            if (isNotNull(container) && isNotNull(container.issues())) {
-                issues.addAll(container.issues());
-                return issues;
+            if (isNotNull(container)) {
+                if (isNotNull(container.issues())) {
+                    for (final KnownIssueRaw raw : container.issues()) {
+                        final List<String> targetScenarios = collectScenarios(raw.scenario(), raw.scenarios());
+                        for (final String scStr : targetScenarios) {
+                            issues.add(new KnownIssue(scStr, raw.title(), raw.description(), raw.link(), raw.pattern()));
+                        }
+                    }
+                }
+                if (isNotNull(container.scenarios())) {
+                    for (final KnownScenarioRaw scRaw : container.scenarios()) {
+                        final List<String> targetScenarios = collectScenarios(scRaw.scenario(), scRaw.scenarios());
+                        if (isNotNull(scRaw.issues())) {
+                            for (final KnownIssueRaw rawIssue : scRaw.issues()) {
+                                for (final String scStr : targetScenarios) {
+                                    issues.add(new KnownIssue(scStr, rawIssue.title(), rawIssue.description(), rawIssue.link(), rawIssue.pattern()));
+                                }
+                            }
+                        }
+                    }
+                }
+                if (!issues.isEmpty()) {
+                    return issues;
+                }
             }
         } catch (final IOException ignored) {
         }
@@ -128,7 +150,45 @@ public final class KnownIssuesLoader {
         return issues;
     }
 
+    private static List<String> collectScenarios(final String singleScenario, final List<String> scenarioList) {
+        final List<String> result = new ArrayList<>();
+        if (isNotNull(scenarioList) && !scenarioList.isEmpty()) {
+            for (final String s : scenarioList) {
+                if (isNotNull(s) && !s.isBlank()) {
+                    result.add(s.trim());
+                }
+            }
+        }
+        if (result.isEmpty() && isNotNull(singleScenario) && !singleScenario.isBlank()) {
+            result.add(singleScenario.trim());
+        }
+        if (result.isEmpty()) {
+            result.add("");
+        }
+        return result;
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record KnownIssuesContainer(List<KnownIssue> issues) {}
+    private record KnownIssueRaw(
+            @JsonProperty("scenario") String scenario,
+            @JsonProperty("scenarios") List<String> scenarios,
+            @JsonProperty("title") String title,
+            @JsonProperty("description") String description,
+            @JsonProperty("link") String link,
+            @JsonProperty("pattern") String pattern
+    ) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record KnownScenarioRaw(
+            @JsonProperty("scenario") String scenario,
+            @JsonProperty("scenarios") List<String> scenarios,
+            @JsonProperty("issues") List<KnownIssueRaw> issues
+    ) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record KnownIssuesContainer(
+            @JsonProperty("issues") List<KnownIssueRaw> issues,
+            @JsonProperty("scenarios") List<KnownScenarioRaw> scenarios
+    ) {}
 }
 
