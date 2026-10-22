@@ -85,6 +85,17 @@
 # .tree.traverse.extensions=false
 
 # ==============================================================================
+# Scenario Sequence Script
+# ==============================================================================
+
+# How a scenario sequence script is applied to selection: SUGGESTION prefers the next scripted scenario and falls back to weighted selection, ORDER requires the scripted order. Default: SUGGESTION
+# .tree.sequence.mode=SUGGESTION
+
+# ------------------------------------------------------------------------------
+# Severity used when a scripted scenario cannot be selected in ORDER mode. Default: S0
+# .tree.sequence.failure.severity=S0
+
+# ==============================================================================
 # Notices and Warnings
 # ==============================================================================
 
