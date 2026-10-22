@@ -219,7 +219,6 @@
             -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
           </argLine>
           <rerunFailingTestsCount>0</rerunFailingTestsCount>
-          <testFailureIgnore>true</testFailureIgnore>
         </configuration>
         <dependencies>
           <dependency>

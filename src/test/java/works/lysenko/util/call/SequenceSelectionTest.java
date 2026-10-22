@@ -6,32 +6,22 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import sun.misc.Unsafe;
-import works.lysenko.Base;
-import works.lysenko.base.Core;
-import works.lysenko.base.Exec;
-import works.lysenko.base.Parameters;
-import works.lysenko.base.Results;
-import works.lysenko.base.TestProperties;
+import works.lysenko.testing.SelectionFixture;
+import works.lysenko.util.data.enums.Severity;
 import works.lysenko.base.output.SequenceTracker;
 import works.lysenko.tree.Ctrl;
 import works.lysenko.tree.base.Leaf;
-import works.lysenko.util.apis.log._Logs;
 import works.lysenko.util.apis.scenario._Scenario;
-import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.data.records.KeyValue;
 import works.lysenko.util.prop.PropEnum;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static works.lysenko.util.data.records.KeyValue.kv;
@@ -46,45 +36,23 @@ class SequenceSelectionTest {
 
     private static final String SEQUENCE = "SEQUENCE";
 
-    private Core previousCore;
-    private Exec previousExec;
-    private Parameters previousParameters;
-    private TestProperties previousProperties;
     private String previousSequence;
-    private final List<String> events = new ArrayList<>();
+    private SelectionFixture fixture;
+    private List<String> events;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         Assumptions.assumeTrue(null == System.getenv(SEQUENCE), "SEQUENCE environment variable overrides system properties");
-        previousCore = Base.core;
-        previousExec = Base.exec;
-        previousParameters = Base.parameters;
-        previousProperties = Base.properties;
         previousSequence = System.getProperty(SEQUENCE);
-        Base.parameters = null;
-        Base.properties = null;
-        events.clear();
-        SequenceTracker.reset();
-
-        final Unsafe unsafe = unsafe();
-        final Core core = (Core) unsafe.allocateInstance(Core.class);
-        set(Core.class, core, "results", new Results());
-        set(Core.class, core, "logger", recordingLogger());
-        Base.core = core;
-
-        final Exec exec = (Exec) unsafe.allocateInstance(Exec.class);
-        Base.exec = exec;
+        fixture = SelectionFixture.install();
+        events = fixture.events;
     }
 
     @AfterEach
     void tearDown() {
-        Base.core = previousCore;
-        Base.exec = previousExec;
-        Base.parameters = previousParameters;
-        Base.properties = previousProperties;
+        if (null != fixture) fixture.close();
         if (null == previousSequence) System.clearProperty(SEQUENCE);
         else System.setProperty(SEQUENCE, previousSequence);
-        SequenceTracker.reset();
     }
 
     @Test
@@ -145,7 +113,7 @@ class SequenceSelectionTest {
 
     @Test
     void orderModeReportsFailureWithDefaultSeverityAndStillSelects(@TempDir final Path dir) throws Exception {
-        setProperty(PropEnum._TREE_SEQUENCE_MODE, "ORDER");
+        fixture.setProperty(PropEnum._TREE_SEQUENCE_MODE, "ORDER");
         final Leaf a = new LeafA();
         script(dir, "no.such.Scenario\n");
 
@@ -158,8 +126,8 @@ class SequenceSelectionTest {
 
     @Test
     void orderModeUsesConfiguredFailureSeverity(@TempDir final Path dir) throws Exception {
-        setProperty(PropEnum._TREE_SEQUENCE_MODE, "ORDER");
-        setProperty(PropEnum._TREE_SEQUENCE_FAILURE_SEVERITY, "S2");
+        fixture.setProperty(PropEnum._TREE_SEQUENCE_MODE, "ORDER");
+        fixture.setProperty(PropEnum._TREE_SEQUENCE_FAILURE_SEVERITY, "S2");
         final Leaf a = new LeafA();
         script(dir, "no.such.Scenario\n");
 
@@ -171,7 +139,7 @@ class SequenceSelectionTest {
 
     @Test
     void orderModeDoesNotFailWhenScriptedScenarioIsAvailable(@TempDir final Path dir) throws Exception {
-        setProperty(PropEnum._TREE_SEQUENCE_MODE, "ORDER");
+        fixture.setProperty(PropEnum._TREE_SEQUENCE_MODE, "ORDER");
         final Leaf a = new LeafA();
         final Leaf b = new LeafB();
         script(dir, b.getShortName() + "\n");
@@ -224,40 +192,6 @@ class SequenceSelectionTest {
         } catch (final InvocationTargetException e) {
             throw (e.getCause() instanceof Exception cause) ? cause : e;
         }
-    }
-
-    private void setProperty(final PropEnum property, final String value) throws Exception {
-        final TestProperties testProperties = new TestProperties();
-        final Field theField = TestProperties.class.getDeclaredField("the");
-        theField.setAccessible(true);
-        final Properties props = null != Base.properties ? (Properties) theField.get(Base.properties) : new Properties();
-        props.put(property.getPropertyName(), value);
-        theField.set(testProperties, props);
-        Base.properties = testProperties;
-    }
-
-    private _Logs recordingLogger() {
-        return (_Logs) Proxy.newProxyInstance(_Logs.class.getClassLoader(), new Class<?>[]{_Logs.class}, (proxy, method, args) -> {
-            if ("logEvent".equals(method.getName())) {
-                events.add(args[0] + ": " + args[1]);
-            }
-            final Class<?> type = method.getReturnType();
-            if (boolean.class == type) return false;
-            if (int.class == type) return 0;
-            return null;
-        });
-    }
-
-    private static Unsafe unsafe() throws Exception {
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        return (Unsafe) f.get(null);
-    }
-
-    private static void set(final Class<?> owner, final Object target, final String name, final Object value) throws Exception {
-        final Field field = owner.getDeclaredField(name);
-        field.setAccessible(true);
-        field.set(target, value);
     }
 
     private static final class LeafA extends Leaf {
