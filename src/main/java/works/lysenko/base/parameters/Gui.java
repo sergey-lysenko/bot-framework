@@ -304,6 +304,57 @@ public class Gui implements _GUI {
     }
 
     /**
+     * Updates the GUI parameter input fields directly from the Parameters object.
+     */
+    public void updateGuiFromParameters() {
+
+        if (isNull(parameters)) return;
+
+        if (isNotNull(testsCount)) {
+            testsCount.setText(parameters.getTests());
+        }
+
+        if (isNotNull(headless)) {
+            headless.setSelected(parameters.isHeadless());
+        }
+
+        if (isNotNull(hideOffBranches)) {
+            hideOffBranches.setSelected(parameters.isHideOffBranches());
+        }
+
+        if (isNotNull(allLeafs)) {
+            allLeafs.setSelected(parameters.isAllLeafs());
+        }
+
+        if (isNotNull(allLeafsExecutions)) {
+            allLeafsExecutions.setText(String.valueOf(parameters.getAllLeafsExecutions()));
+        }
+
+        if (isNotNull(forbidOverexecution)) {
+            final Boolean val = parameters.getForbidOverexecution();
+            forbidOverexecution.setSelected(Boolean.TRUE.equals(val));
+        }
+
+        if (isNotNull(resilientMode)) {
+            final Boolean val = parameters.getResilientMode();
+            resilientMode.setSelected(Boolean.TRUE.equals(val));
+        }
+
+        if (isNotNull(completionWeight)) {
+            completionWeight.setText(parameters.getCompletionWeight());
+        }
+
+        if (isNotNull(traverseExtensions)) {
+            final Boolean val = parameters.getTraverseExtensions();
+            traverseExtensions.setSelected(Boolean.TRUE.equals(val));
+        }
+
+        if (isNotNull(tag)) {
+            tag.setText(defaultIfEmpty(parameters.getProperty(TAG.name()), defaultIfEmpty(parameters.getSuite(), "default")));
+        }
+    }
+
+    /**
      * Updates the GUI parameter input fields based on properties of the selected test/suite configuration.
      */
     private void updateParametersFromSelectedTestConfiguration() {
@@ -313,73 +364,9 @@ public class Gui implements _GUI {
         if (isNull(selected)) return;
         final String testName = selected.toString();
 
-        final TestProperties tp = (isNotNull(works.lysenko.Base.properties))
-                ? works.lysenko.Base.properties
-                : new TestProperties();
-        final Map<String, String> configProps = tp.getOriginalConfigProperties(testName);
-        if (isNull(configProps) || configProps.isEmpty()) return;
-
-        if (isNotNull(testsCount)) {
-            final String testsVal = configProps.get(PropEnum._TEST_TESTS.getPropertyName());
-            if (isNotNull(testsVal) && !testsVal.isBlank()) {
-                testsCount.setText(testsVal.trim());
-            }
-        }
-
-        if (isNotNull(headless)) {
-            final String val = configProps.get(PropEnum._TEST_HEADLESS.getPropertyName());
-            if (isNotNull(val) && !val.isBlank()) {
-                headless.setSelected(Boolean.parseBoolean(val.trim()));
-            }
-        }
-
-        if (isNotNull(hideOffBranches)) {
-            final String val = configProps.get(PropEnum._TREE_HIDE_OFF_BRANCHES.getPropertyName());
-            if (isNotNull(val) && !val.isBlank()) {
-                hideOffBranches.setSelected(Boolean.parseBoolean(val.trim()));
-            }
-        }
-
-        if (isNotNull(allLeafs)) {
-            final String val = configProps.get(PropEnum._TEST_ALL_LEAFS.getPropertyName());
-            if (isNotNull(val) && !val.isBlank()) {
-                allLeafs.setSelected(Boolean.parseBoolean(val.trim()));
-            }
-        }
-
-        if (isNotNull(allLeafsExecutions)) {
-            final String val = configProps.get(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName());
-            if (isNotNull(val) && !val.isBlank()) {
-                allLeafsExecutions.setText(val.trim());
-            }
-        }
-
-        if (isNotNull(forbidOverexecution)) {
-            final String val = configProps.get(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName());
-            if (isNotNull(val) && !val.isBlank()) {
-                forbidOverexecution.setSelected(Boolean.parseBoolean(val.trim()));
-            }
-        }
-
-        if (isNotNull(resilientMode)) {
-            final String val = configProps.get(PropEnum._TEST_RESILIENT_MODE.getPropertyName());
-            if (isNotNull(val) && !val.isBlank()) {
-                resilientMode.setSelected(Boolean.parseBoolean(val.trim()));
-            }
-        }
-
-        if (isNotNull(completionWeight)) {
-            final String val = configProps.get(PropEnum._TREE_COMPLETION_WEIGHT.getPropertyName());
-            if (isNotNull(val) && !val.isBlank()) {
-                completionWeight.setText(val.trim());
-            }
-        }
-
-        if (isNotNull(traverseExtensions)) {
-            final String val = configProps.get(PropEnum._TREE_TRAVERSE_EXTENSIONS.getPropertyName());
-            if (isNotNull(val) && !val.isBlank()) {
-                traverseExtensions.setSelected(Boolean.parseBoolean(val.trim()));
-            }
+        if (isNotNull(parameters)) {
+            parameters.setSuite(testName);
+            updateGuiFromParameters();
         }
     }
 
@@ -392,9 +379,9 @@ public class Gui implements _GUI {
         if (Objects.equals(currentSuite, lastSelectedSuite)) return;
         lastSelectedSuite = currentSuite;
 
-        updateParametersFromSelectedTestConfiguration();
         if (isNotNull(parameters)) {
-            propagateUserInput();
+            parameters.setSuite(currentSuite);
+            updateGuiFromParameters();
         }
     }
 

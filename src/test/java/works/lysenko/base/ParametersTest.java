@@ -121,4 +121,52 @@ class ParametersTest {
         assertEquals("2.5", parameters.getCompletionWeight());
         assertEquals(Boolean.TRUE, parameters.getTraverseExtensions());
     }
+
+    @Test
+    void testBackdraftOnSuiteChange() throws Exception {
+        final java.io.File suiteAlpha = new java.io.File("src/main/resources/suites/suite_alpha.suite");
+        final java.io.File suiteBeta = new java.io.File("src/main/resources/suites/suite_beta.suite");
+        try {
+            suiteAlpha.getParentFile().mkdirs();
+            java.nio.file.Files.writeString(suiteAlpha.toPath(), ".test.tests=42\n.test.headless=true\n");
+            java.nio.file.Files.writeString(suiteBeta.toPath(), ".test.tests=7\n.test.headless=false\n");
+
+            Base.properties = new TestProperties();
+            final Parameters parameters = with("SUITE", "suite_alpha", "OLD_SUITE", "suite_alpha", "TESTS", "42", "HEADLESS", "true");
+
+            assertEquals("42", parameters.getTests());
+            assertTrue(parameters.isHeadless());
+
+            parameters.setSuite("suite_beta");
+
+            assertEquals("7", parameters.getTests());
+            assertFalse(parameters.isHeadless());
+            assertEquals("suite_beta", parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.OLD_SUITE));
+        } finally {
+            if (suiteAlpha.exists()) suiteAlpha.delete();
+            if (suiteBeta.exists()) suiteBeta.delete();
+        }
+    }
+
+    @Test
+    void testBackdraftClearsStaleParametersWhenOmittedInNewSuite() throws Exception {
+        final java.io.File suiteA = new java.io.File("src/main/resources/suites/suite_a.suite");
+        final java.io.File suiteB = new java.io.File("src/main/resources/suites/suite_b.suite");
+        try {
+            suiteA.getParentFile().mkdirs();
+            java.nio.file.Files.writeString(suiteA.toPath(), ".test.tests=100\n.tree.completion.weight=3.5\n");
+            java.nio.file.Files.writeString(suiteB.toPath(), ".test.headless=false\n");
+
+            Base.properties = new TestProperties();
+            final Parameters parameters = with("SUITE", "suite_a", "OLD_SUITE", "suite_a", "TESTS", "100", "COMPLETION_WEIGHT", "3.5");
+
+            parameters.setSuite("suite_b");
+
+            assertEquals("", parameters.getTests());
+            assertEquals("suite_b", parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.OLD_SUITE));
+        } finally {
+            if (suiteA.exists()) suiteA.delete();
+            if (suiteB.exists()) suiteB.delete();
+        }
+    }
 }

@@ -1,6 +1,7 @@
 package works.lysenko.base;
 
 import works.lysenko.base.parameters.Gui;
+import works.lysenko.util.apis._PropEnum;
 import works.lysenko.util.apis.parameters._AdditionalParameters;
 import works.lysenko.util.apis.parameters._ExecutionParameterValue;
 import works.lysenko.util.apis.parameters._GUI;
@@ -15,6 +16,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -73,6 +75,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         works.lysenko.Base.parameters = this;
         loadFromFile();
         read(SUITE);
+        read(OLD_SUITE);
         read(POOL);
         read(PLATFORM);
         readDeviceOrDomain();
@@ -89,7 +92,69 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         read(TAG.name());
         readAdditionalParameters(list);
         cleanupLegacyTestKey();
+        checkSuiteChangeAndBackdraft();
         showOptionalGui();
+    }
+
+    private void checkSuiteChangeAndBackdraft() {
+
+        final String currentSuite = getSuite();
+        final String oldSuite = getValue(OLD_SUITE);
+        if (isNotNull(currentSuite) && !currentSuite.isBlank() &&
+                (isNull(oldSuite) || oldSuite.isBlank() || !currentSuite.equalsIgnoreCase(oldSuite))) {
+            applyBackdraft(currentSuite);
+        }
+    }
+
+    /**
+     * Applies "back draft" when a test suite is defined or changed.
+     * Configuration properties defined in the new suite overwrite stale cached execution parameters.
+     *
+     * @param suiteName the name of the new test suite
+     */
+    public void applyBackdraft(final String suiteName) {
+
+        if (isNull(suiteName) || suiteName.isBlank()) return;
+
+        put(SUITE.name(), suiteName);
+        put(OLD_SUITE.name(), suiteName);
+
+        final Boolean updateParams = PropEnum._TEST_SUITE_CHANGE_UPDATES_PARAMETERS.get();
+        if (!Boolean.FALSE.equals(updateParams)) {
+            final TestProperties tp = (isNotNull(works.lysenko.Base.properties))
+                    ? works.lysenko.Base.properties
+                    : new TestProperties();
+            final Map<String, String> configProps = tp.getOriginalConfigProperties(suiteName);
+            if (isNotNull(configProps)) {
+                updateParameterFromConfig(TESTS, PropEnum._TEST_TESTS, configProps);
+                updateParameterFromConfig(HEADLESS, PropEnum._TEST_HEADLESS, configProps);
+                updateParameterFromConfig(HIDE_OFF_BRANCHES, PropEnum._TREE_HIDE_OFF_BRANCHES, configProps);
+                updateParameterFromConfig(ALL_LEAFS, PropEnum._TEST_ALL_LEAFS, configProps);
+                updateParameterFromConfig(ALL_LEAFS_EXECUTIONS, PropEnum._TEST_ALL_LEAFS_EXECUTIONS, configProps);
+                updateParameterFromConfig(FORBID_OVEREXECUTION, PropEnum._TREE_FORBID_OVEREXECUTION, configProps);
+                updateParameterFromConfig(RESILIENT_MODE, PropEnum._TEST_RESILIENT_MODE, configProps);
+                updateParameterFromConfig(COMPLETION_WEIGHT, PropEnum._TREE_COMPLETION_WEIGHT, configProps);
+                updateParameterFromConfig(TRAVERSE_EXTENSIONS, PropEnum._TREE_TRAVERSE_EXTENSIONS, configProps);
+            }
+        }
+
+        saveToFile();
+    }
+
+    private void updateParameterFromConfig(final ExecutionParameter param, final _PropEnum propEnum,
+                                           final Map<String, String> configProps) {
+
+        final String envVal = System.getenv(param.name());
+        if (isNotNull(envVal)) {
+            put(param.name(), envVal);
+        } else {
+            final String propVal = configProps.get(propEnum.getPropertyName());
+            if (isNotNull(propVal) && !propVal.isBlank() && !"null".equalsIgnoreCase(propVal.trim())) {
+                put(param.name(), propVal.trim());
+            } else {
+                put(param.name(), EMPTY);
+            }
+        }
     }
 
     public String[] getAdditionalTypes() {
@@ -109,16 +174,27 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         return (String) get("TEST");
     }
 
-    public void setTest(final String name) {
-
-        put(SUITE.name(), name);
-        remove("TEST");
-        properties.readTestConfiguration();
-    }
-
     public String getSuite() {
 
         return getTest();
+    }
+
+    public void setTest(final String name) {
+
+        if (isNull(name) || name.isBlank()) return;
+        final String currentSuite = getSuite();
+        final String oldSuite = getValue(OLD_SUITE);
+        put(SUITE.name(), name);
+        remove("TEST");
+        if (!name.equalsIgnoreCase(currentSuite) || !name.equalsIgnoreCase(oldSuite)) {
+            applyBackdraft(name);
+        } else {
+            put(OLD_SUITE.name(), name);
+            saveToFile();
+        }
+        if (isNotNull(works.lysenko.Base.properties)) {
+            works.lysenko.Base.properties.readTestConfiguration();
+        }
     }
 
     public void setSuite(final String name) {
@@ -411,7 +487,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
      * Saves the parameters to a file.
      */
     @SuppressWarnings({"ProhibitedExceptionThrown", "ResultOfMethodCallIgnored", "ThrowInsideCatchBlockWhichIgnoresCaughtException"})
-    private void saveToFile() {
+    public void saveToFile() {
 
         new File(PARAMETERS_).getParentFile().mkdirs(); // Create parent directory
         try (final BufferedWriter writer = new BufferedWriter(new FileWriter(PARAMETERS_, StandardCharsets.UTF_8))) { //

@@ -28,6 +28,7 @@ import static works.lysenko.util.data.enums.Ansi.*;
 import static works.lysenko.util.data.enums.Brackets.CURLY;
 import static works.lysenko.util.data.enums.Brackets.ROUND;
 import static works.lysenko.util.data.enums.Brackets.SQUARE;
+import static works.lysenko.util.data.enums.ExecutionParameter.*;
 import static works.lysenko.util.data.enums.Severity.S0;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
@@ -413,39 +414,39 @@ public class TestProperties implements _TestProperties {
         updateConfigFileDefaults(testName);
         applyUserOverrides();
         if (isNotNull(parameters)) {
-            final String headlessVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.HEADLESS);
+            final String headlessVal = parameters.getValue(HEADLESS);
             if (isNotNull(headlessVal) && !headlessVal.isEmpty()) {
                 the.setProperty(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(Boolean.parseBoolean(headlessVal)));
             }
-            final String hideOffVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.HIDE_OFF_BRANCHES);
+            final String hideOffVal = parameters.getValue(HIDE_OFF_BRANCHES);
             if (isNotNull(hideOffVal) && !hideOffVal.isEmpty()) {
                 the.setProperty(PropEnum._TREE_HIDE_OFF_BRANCHES.getPropertyName(), String.valueOf(Boolean.parseBoolean(hideOffVal)));
             }
-            final String allLeafsVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.ALL_LEAFS);
+            final String allLeafsVal = parameters.getValue(ALL_LEAFS);
             if (isNotNull(allLeafsVal) && !allLeafsVal.isEmpty()) {
                 the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(Boolean.parseBoolean(allLeafsVal)));
             }
-            final String allLeafsExecutionsVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.ALL_LEAFS_EXECUTIONS);
+            final String allLeafsExecutionsVal = parameters.getValue(ALL_LEAFS_EXECUTIONS);
             if (isNotNull(allLeafsExecutionsVal) && !allLeafsExecutionsVal.isEmpty()) {
                 the.setProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), allLeafsExecutionsVal);
             }
-            final String testsVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.TESTS);
+            final String testsVal = parameters.getValue(TESTS);
             if (isNotNull(testsVal) && !testsVal.isEmpty()) {
                 the.setProperty(PropEnum._TEST_TESTS.getPropertyName(), testsVal);
             }
-            final String forbidVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.FORBID_OVEREXECUTION);
+            final String forbidVal = parameters.getValue(FORBID_OVEREXECUTION);
             if (isNotNull(forbidVal) && !forbidVal.isEmpty()) {
                 the.setProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), String.valueOf(Boolean.parseBoolean(forbidVal)));
             }
-            final String resilientVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.RESILIENT_MODE);
+            final String resilientVal = parameters.getValue(RESILIENT_MODE);
             if (isNotNull(resilientVal) && !resilientVal.isEmpty()) {
                 the.setProperty(PropEnum._TEST_RESILIENT_MODE.getPropertyName(), String.valueOf(Boolean.parseBoolean(resilientVal)));
             }
-            final String weightVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.COMPLETION_WEIGHT);
+            final String weightVal = parameters.getValue(COMPLETION_WEIGHT);
             if (isNotNull(weightVal) && !weightVal.isEmpty() && !PropEnum._TREE_COMPLETION_WEIGHT.defaultValue().equals(weightVal)) {
                 the.setProperty(PropEnum._TREE_COMPLETION_WEIGHT.getPropertyName(), weightVal);
             }
-            final String traverseVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.TRAVERSE_EXTENSIONS);
+            final String traverseVal = parameters.getValue(TRAVERSE_EXTENSIONS);
             if (isNotNull(traverseVal) && !traverseVal.isEmpty()) {
                 the.setProperty(PropEnum._TREE_TRAVERSE_EXTENSIONS.getPropertyName(), String.valueOf(Boolean.parseBoolean(traverseVal)));
             }
