@@ -104,6 +104,16 @@ public interface _TestProperties {
     boolean isCommonValue(String name, String value);
 
     /**
+     * Checks if the active value for a property was overridden by an execution parameter
+     * (differing from config file defaults).
+     *
+     * @param name  The name of the property.
+     * @param value The value to check.
+     * @return True if the value was overridden by a parameter, false otherwise.
+     */
+    boolean isParameterValue(String name, String value);
+
+    /**
      * Inserts or updates a property in the test properties.
      *
      * @param name  the name of the property

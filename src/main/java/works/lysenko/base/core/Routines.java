@@ -102,7 +102,7 @@ public record Routines() {
      */
     public static boolean isInsideCI() {
 
-        return System.getenv().containsKey("CI");
+        return System.getenv().containsKey("CI") || System.getenv().containsKey("CONTINUOUS_INTEGRATION") || System.getenv().containsKey("JENKINS_URL") || java.awt.GraphicsEnvironment.isHeadless();
     }
 
     /**

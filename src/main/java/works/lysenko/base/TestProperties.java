@@ -349,6 +349,13 @@ public class TestProperties implements _TestProperties {
     }
 
     @Override
+    public final boolean isParameterValue(final String name, final String value) {
+
+        final String configFileVal = configFileDefaults.get(name);
+        return isNotNull(configFileVal) && !value.equals(configFileVal);
+    }
+
+    @Override
     public final void put(final String name, final Object value) {
 
         final Object o = the.setProperty(s(name), s(value));

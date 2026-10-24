@@ -182,13 +182,23 @@ When executing tests, the framework logs the active test parameters under `# App
 - **Presence in the list**: Indicates properties currently active and applied for the test execution.
 - **Color Coding**:
   - **Blue Property Name + Yellow Value**: Highlights properties whose values have been **redefined / modified** from standard schema defaults (`value != def`).
+  - **Magenta Property Name + Magenta Value**: Highlights properties whose values were **overridden by execution parameters, JVM system properties, or CLI flags** (`value != configFileDefaults`).
   - **Gray (Plain Text)**: Indicates properties whose values **match their default values** (`value == def`).
-- **Bullet (`•`) Prefix**:
-  - **`•` Bullet Present**: Indicates the property value originates from or matches the **common configuration** (`common.properties`).
-  - **Bullet Absent**: Indicates the property value was set elsewhere (e.g., in a test-suite file, CLI flag, environment variable, or programmatically).
+- **Prefix Markers**:
+  - **`•` Bullet Present**: Indicates the property value originates from or matches the **common configuration** (`common.configuration.properties`).
+  - **`*` Asterisk Present**: Indicates the property value was **redefined by an execution parameter, JVM `-D` flag, or runtime override** (`var/parameters`).
+  - **No Marker**: Indicates the property value was overridden by a **test-suite file** (`*.suite`).
 - **Green `" = "` with Spaces**:
   - **Green `" = "` with spaces**: Indicates a custom, ad-hoc, or non-standard property that does **not** have a default value defined in the framework's property schema (`isNull(def)`).
   - **Plain `=` without spaces**: Indicates a standard framework property recognized by the schema (`def != null`).
+
+#### Parameter & Property Precedence Order
+When resolving configuration, `bot-framework` evaluates properties in strict precedence order (highest to lowest):
+1. **JVM System Properties / CLI Flags** (e.g. `-D.test.resilient.mode=true` or `-DRESILIENT_MODE=true`)
+2. **Runtime Execution Parameters** (`var/parameters`)
+3. **Test Suite & Suite Part Overrides** (`*.suite`, `*.part`)
+4. **Common Configuration Partials** (`src/main/resources/config/*.part`)
+5. **Master Schema Defaults** (`PropEnum`)
 
 ---
 

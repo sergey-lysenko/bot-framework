@@ -53,8 +53,10 @@ public record Routines() {
         int longestKeyValue = 0;
         for (final Map.Entry<String, String> entry : map.entrySet()) {
             if (entry.getKey().length() + entry.getValue().length() > longestKeyValue) {
-                longestKeyValue = entry.getKey().length() + entry.getValue().length() +
-                        (properties.isCommonValue(entry.getKey(), entry.getValue()) ? Keys.COMMON_MARKER.length() + 1 : 0);
+                final boolean isCommon = properties.isCommonValue(entry.getKey(), entry.getValue());
+                final boolean isParam = properties.isParameterValue(entry.getKey(), entry.getValue());
+                final int markerLen = isCommon ? Keys.COMMON_MARKER.length() : (isParam ? Keys.PARAM_MARKER.length() : 0);
+                longestKeyValue = entry.getKey().length() + entry.getValue().length() + (markerLen > 0 ? markerLen + 1 : 0);
             }
         }
         return longestKeyValue;

@@ -21,6 +21,7 @@ import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.func.type.Objects.isNotNull;
+import static works.lysenko.util.spec.Symbols._ASTRS_;
 import static works.lysenko.util.spec.Symbols._BULLT_;
 import static works.lysenko.util.spec.Symbols._DOT_;
 import static works.lysenko.util.spec.Symbols._EQUAL_;
@@ -31,6 +32,7 @@ record Keys() {
 
     @SuppressWarnings("WeakerAccess")
     static final String COMMON_MARKER = s(_BULLT_);
+    static final String PARAM_MARKER = s(_ASTRS_);
 
     private static String processUnknown(final Map.Entry<String, String> entry,
                                          final Collection<? super String> keysWithValidClasses) {
@@ -51,12 +53,13 @@ record Keys() {
         final String value = entry.getValue();
         final boolean defaultValue = value.equalsIgnoreCase(def);
         meta.defaults().remove(key);
-        final String commonMarker = properties.isCommonValue(key, value) ? COMMON_MARKER : EMPTY;
-        final String renderedKey = bb(!defaultValue, entry.getKey());
+        final boolean isParam = properties.isParameterValue(key, value);
+        final String marker = properties.isCommonValue(key, value) ? COMMON_MARKER : (isParam ? PARAM_MARKER : EMPTY);
+        final String renderedKey = isParam ? mb(entry.getKey()) : bb(!defaultValue, entry.getKey());
         final String equals = gb(isNull(def), s(_EQUAL_));
         final String join = isNull(def) ? e(equals) : equals;
-        final String renderedValue = yb(!defaultValue, value);
-        return s(commonMarker, renderedKey, join, renderedValue);
+        final String renderedValue = isParam ? mb(value) : yb(!defaultValue, value);
+        return s(marker, renderedKey, join, renderedValue);
     }
 
     /**
