@@ -46,6 +46,7 @@
     <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
     <maven-dependency-plugin.version>3.6.1</maven-dependency-plugin.version>
     <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+    <jacoco.version>0.8.12</jacoco.version>
   </properties>
 
   <dependencies>
@@ -216,7 +217,7 @@
         <configuration>
           <reportsDirectory>${project.basedir}/result/surefire-reports</reportsDirectory>
           <argLine>
-            -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
+            @{argLine} -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
           </argLine>
           <rerunFailingTestsCount>0</rerunFailingTestsCount>
         </configuration>
@@ -227,6 +228,26 @@
             <version>${aspectj.version}</version>
           </dependency>
         </dependencies>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

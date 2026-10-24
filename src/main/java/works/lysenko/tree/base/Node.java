@@ -202,6 +202,9 @@ public abstract class Node extends Core implements _Node {
             boolean actionSucceeded = false;
             try {
                 action();
+                if (isNotNull(works.lysenko.Base.exec) && isNotNull(works.lysenko.Base.exec.wd())) {
+                    verify();
+                }
                 actionSucceeded = true;
                 boolean ok = false;
                 if (halted) halted = false;

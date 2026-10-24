@@ -20,19 +20,26 @@ import static works.lysenko.util.func.type.Objects.isNotNull;
 
 /**
  * Estimates the average number of execution cycles required to achieve 100% leaf coverage
- * using Monte Carlo simulation of the scenario selection algorithm.
+ * using a high-performance Monte Carlo simulation of the scenario selection algorithm.
+ * <p>
+ * The estimator flattens the scenario tree into primitive arrays and precomputes candidate
+ * weights to execute Monte Carlo trials without object allocations during simulation loops.
  */
 @SuppressWarnings({"ClassWithTooManyMethods", "OverlyComplexMethod", "MagicNumber"})
 public record CoverageEstimator() {
 
+    /** Number of Monte Carlo simulation trials performed to compute the average. */
     private static final int TRIALS = 100;
+
+    /** Maximum allowed cycles per simulation trial before timing out. */
     private static final int MAX_CYCLES_PER_TRIAL = 10000;
 
     /**
-     * Estimates average cycles required to visit all accessible leafs the required amount of times.
+     * Estimates average cycles required to visit all accessible leafs the required amount of times,
+     * using the target execution count configured in system parameters or properties.
      *
-     * @param rootCtrl root controller
-     * @return estimated average number of cycles
+     * @param rootCtrl root controller managing the scenario tree
+     * @return estimated average number of execution cycles required to achieve full leaf coverage
      */
     public static int estimateAverageCycles(final _Ctrl rootCtrl) {
 
@@ -45,9 +52,9 @@ public record CoverageEstimator() {
     /**
      * Estimates average cycles required to visit all accessible leafs at least target times.
      *
-     * @param rootCtrl root controller
-     * @param target required executions per leaf
-     * @return estimated average number of cycles
+     * @param rootCtrl root controller managing the scenario tree
+     * @param target   required executions per leaf scenario
+     * @return estimated average number of execution cycles required to achieve full leaf coverage
      */
     public static int estimateAverageCycles(final _Ctrl rootCtrl, final int target) {
 
@@ -56,12 +63,13 @@ public record CoverageEstimator() {
 
     /**
      * Estimates average cycles required to visit all accessible leafs at least target times,
-     * reporting progress to a consumer.
+     * reporting progress percentage to a consumer.
      *
-     * @param rootCtrl         root controller
-     * @param target           required executions per leaf
+     * @param rootCtrl         root controller managing the scenario tree
+     * @param target           required executions per leaf scenario
      * @param progressConsumer consumer receiving progress percentage (0..100), nullable
-     * @return estimated average number of cycles
+     * @return estimated average number of execution cycles required to achieve full leaf coverage,
+     *         or 0 if rootCtrl is null or has no accessible leafs
      */
     public static int estimateAverageCycles(
             final _Ctrl rootCtrl,
@@ -229,6 +237,15 @@ public record CoverageEstimator() {
         return (int) Math.round((double) totalCycles / successfulTrials);
     }
 
+    /**
+     * Recursively indexes pools and scenarios into primitive ID mapping structures.
+     *
+     * @param pool             pool to index
+     * @param scenarioIndexMap map from scenario instance to integer ID
+     * @param scenarios        list collecting scenario instances by ID
+     * @param poolIndexMap     map from pool instance to integer ID
+     * @param pools            list collecting pool instances by ID
+     */
     private static void indexTree(
             final _Pool pool,
             final Map<_Scenario, Integer> scenarioIndexMap,
@@ -256,6 +273,13 @@ public record CoverageEstimator() {
         }
     }
 
+    /**
+     * Recursively collects executable descendant scenarios for a container node.
+     *
+     * @param node          container node to traverse
+     * @param descScenarios set accumulating executable descendant scenarios
+     * @param visited       set tracking visited nodes to avoid infinite cycles
+     */
     private static void collectDescendants(final _Node node, final Set<_Scenario> descScenarios, final Set<_Node> visited) {
 
         if (isNull(node) || isNull(node.getPool()) || !visited.add(node)) return;
@@ -274,6 +298,18 @@ public record CoverageEstimator() {
         }
     }
 
+    /**
+     * Precomputes a simulation pool with static weights and descendant scenario references.
+     *
+     * @param pool              pool to build simulation structure for
+     * @param parent            parent scenario used for downstream weight computation
+     * @param scenarioIndexMap  mapping from scenario instance to integer ID
+     * @param simPoolMap        caching map for created simulation pools
+     * @param descScenarioIds   array mapping scenario ID to descendant scenario IDs
+     * @param descLeafIds       array mapping scenario ID to descendant leaf IDs
+     * @param hasRepeatableLeaf array indicating if scenario has repeatable descendant leaves
+     * @return precomputed simulation pool, or null if input pool is null
+     */
     private static SimPool buildSimPool(
             final _Pool pool,
             final _Scenario parent,
@@ -351,6 +387,23 @@ public record CoverageEstimator() {
         return simPool;
     }
 
+    /**
+     * Simulates a single traversal cycle through a simulation pool using weighted random selection.
+     *
+     * @param pool             current simulation pool
+     * @param executions       array tracking current execution counts per scenario ID
+     * @param target           required execution target count per leaf
+     * @param completionBoost  factor for boosting weights of incomplete leaves
+     * @param random           pseudorandom number generator
+     * @param pathBuffer       reusable buffer recording scenario path taken during cycle
+     * @param pathLen          single-element array tracking recorded path length
+     * @param candidatesBuffer reusable buffer storing candidate indices
+     * @param weightsBuffer    reusable buffer storing candidate weights
+     * @param isMono           boolean array flagging single-execution scenarios
+     * @param isNode           boolean array flagging container nodes
+     * @param targets          array specifying target execution count per scenario ID
+     * @return selected leaf scenario ID, or -1 if no valid candidate could be selected
+     */
     private static int simulateCycle(
             final SimPool pool,
             final int[] executions,
@@ -427,6 +480,14 @@ public record CoverageEstimator() {
         return chosenScId;
     }
 
+    /**
+     * Calculates the cumulative uncompleted ratio across all descendant leaves of a scenario.
+     *
+     * @param descLeafIds array of descendant leaf scenario IDs
+     * @param executions  array tracking current execution counts per scenario ID
+     * @param targets     array specifying target execution count per scenario ID
+     * @return sum of remaining uncompleted fractions across descendant leaves
+     */
     private static double getUncompletedWeight(
             final int[] descLeafIds,
             final int[] executions,
@@ -442,6 +503,16 @@ public record CoverageEstimator() {
         return total;
     }
 
+    /**
+     * Immutable precomputed simulation pool containing primitive-indexed candidates and static base weights.
+     *
+     * @param candidateIds      primitive scenario IDs of candidates in this pool
+     * @param baseWeights       precalculated static base weights for candidates
+     * @param descScenarioIds   array mapping candidate index to descendant scenario IDs
+     * @param descLeafIds       array mapping candidate index to descendant leaf IDs
+     * @param hasRepeatableLeaf flag per candidate indicating presence of non-Mono descendant leaves
+     * @param childPools        nested simulation pools for node candidates, null for leaf candidates
+     */
     private record SimPool(
             int[] candidateIds,
             double[] baseWeights,

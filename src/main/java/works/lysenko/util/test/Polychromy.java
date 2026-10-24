@@ -24,16 +24,17 @@ import static works.lysenko.util.spec.Layout.Parts.GRID_EXTENSION;
 import static works.lysenko.util.spec.Layout.Paths._GRIDS_;
 
 /**
- * The {@code Polychromy} class represents a record of polychromies.
- * It contains a static method for calculating the maximum polychromies.
+ * Utility record representing polychromies and providing methods to calculate
+ * maximum polychromy metrics across grid configuration files.
  */
 @SuppressWarnings("WeakerAccess")
 public record Polychromy() {
 
     /**
-     * Calculates the maximum polychromies across all grid files in the directory defined by {@code _GRIDS_}.
+     * Calculates the maximum polychromies across all grid files located in the directory
+     * defined by {@code _GRIDS_}.
      * <p>
-     * A titled section is added to the execution output to indicate the calculation process.
+     * A titled section is logged to the execution output indicating the update process.
      * Each file matching the {@code GRID_EXTENSION} extension is processed by
      * {@link Polychromy#calculateMaxPolychromy(String)}.
      */
@@ -46,10 +47,10 @@ public record Polychromy() {
 
     /**
      * Calculates the maximum polychromy for a given file specified by its path.
-     * This method reads the properties from the given file, checks the polychromy and method,
-     * and if applicable, computes the maximum Euclidean dispersion.
+     * This method reads properties from the specified file, validates polychromy and method settings,
+     * and if applicable, computes the maximum Euclidean dispersion based on the file's resolution.
      *
-     * @param path the file path as a String from which to read properties and calculate the maximum polychromy
+     * @param path the file path as a String from which to read properties and calculate maximum polychromy
      */
     private static void calculateMaxPolychromy(final String path) {
 

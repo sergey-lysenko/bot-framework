@@ -185,6 +185,7 @@ public enum PropEnum implements _PropEnum {
     _TEST_SCENARIO_SUFFICIENCY_ATTEMPTS(Integer.class, _9_),
     _TEST_SUITE_CHANGE_UPDATES_PARAMETERS(Boolean.class, TRUE),
     _TEST_TESTS(Integer.class, NULL, false, true),
+    _TREE_BRANCH_STALE_PENALTY(Boolean.class, TRUE, false, true),
     _TREE_COMPLETION_WEIGHT(Fraction.class, s(_4_, _DOT_, _5_), false, true),
     _TREE_DEFAULT_WEIGHT(String.class, _0_, _DOT_, _0_),
     _TREE_FITS_BY_DEFAULT(Boolean.class, FALSE),
@@ -209,6 +210,7 @@ public enum PropEnum implements _PropEnum {
     _TREE_SEQUENCE_MODE(SequenceMode.class, "SUGGESTION", false, true),
     _TREE_SEQUENCE_FAILURE_SEVERITY(Severity.class, _S0_, false, true),
     _TREE_TRAVERSE_EXTENSIONS(Boolean.class, FALSE, false, true),
+    _TREE_UNREACHABLE_LEAF_PRUNING(Boolean.class, TRUE, false, true),
     _WEBD_FORCED_PLATFORM(String.class, NULL),
     _WEBD_IWAIT(Integer.class, _1_, _0_, _0_, _0_),
     _WEBD_RECREATE_DRIVER_AFTER_EXCEPTION(Boolean.class, TRUE);

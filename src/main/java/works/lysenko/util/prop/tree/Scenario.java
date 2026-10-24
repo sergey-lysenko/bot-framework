@@ -41,6 +41,16 @@ public record Scenario() {
     public static boolean forbidOverexecution = _TREE_FORBID_OVEREXECUTION.get();
 
     /**
+     * Indicates whether unreachable leaf scenarios should be automatically pruned when fits() returns false.
+     */
+    public static boolean unreachableLeafPruning = _TREE_UNREACHABLE_LEAF_PRUNING.get();
+
+    /**
+     * Indicates whether unproductive branch selection should incur a weight penalty.
+     */
+    public static boolean branchStalePenalty = _TREE_BRANCH_STALE_PENALTY.get();
+
+    /**
      * Represents the root identifier or path for a scenario within the system.
      */
     public static String root = _TEST_ROOT.get();
@@ -55,6 +65,8 @@ public record Scenario() {
         selectionRetries = _TEST_SCENARIO_SUFFICIENCY_ATTEMPTS.get();
         ignoreFailedSelection = _TREE_IGNORE_FAILED_SCENARIO_SELECTION.get();
         forbidOverexecution = _TREE_FORBID_OVEREXECUTION.get();
+        unreachableLeafPruning = _TREE_UNREACHABLE_LEAF_PRUNING.get();
+        branchStalePenalty = _TREE_BRANCH_STALE_PENALTY.get();
         root = _TEST_ROOT.get();
     }
 

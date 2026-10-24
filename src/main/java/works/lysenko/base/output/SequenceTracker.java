@@ -67,11 +67,30 @@ public final class SequenceTracker {
     }
 
     /**
-     * Records a scenario execution name.
+     * Gets the canonical class key or name for a scenario (e.g. signIn.login.auditLogs.clearFilters.AllEmpty).
+     */
+    public static String getScenarioClassKey(final _Scenario scenario) {
+        if (scenario == null) return "";
+        final String fqn = scenario.getClass().getName();
+        if (fqn.contains("$")) {
+            return (scenario.getShortName() != null && !scenario.getShortName().isBlank()) ? scenario.getShortName() : scenario.getSimpleName();
+        }
+        String rootPackage = works.lysenko.util.prop.tree.Scenario.root;
+        if (rootPackage == null || rootPackage.isBlank()) {
+            rootPackage = works.lysenko.util.prop.PropEnum._TEST_ROOT.get();
+        }
+        if (rootPackage != null && !rootPackage.isBlank() && !rootPackage.equals(".") && fqn.startsWith(rootPackage + ".")) {
+            return fqn.substring(rootPackage.length() + 1);
+        }
+        return fqn;
+    }
+
+    /**
+     * Records a scenario execution name using canonical class key.
      */
     public static void recordScenarioExecution(final _Scenario scenario) {
         if (scenario == null) return;
-        final String name = scenario.getShortName();
+        final String name = getScenarioClassKey(scenario);
         if (name != null && !name.isBlank()) {
             recordedSequence.add(name);
         }

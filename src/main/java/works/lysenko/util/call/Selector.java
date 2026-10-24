@@ -77,22 +77,26 @@ import static works.lysenko.util.prop.data.Delimeters.L0;
 import static works.lysenko.util.spec.Symbols._COLON_;
 
 /**
- * The Selector class represents a scenario selector in a control system.
- * It is responsible for selecting and executing scenarios based on their weights
- * and other criteria.
+ * Scenario selector for the control system.
+ * <p>
+ * Responsible for selecting and executing scenarios based on candidate weights,
+ * dynamic weight adjustments (upstream, downstream, and completion deficits),
+ * registered sequence scripts, and runtime prerequisite checks.
  */
 @SuppressWarnings("MethodWithMultipleReturnPoints")
 public final class Selector implements Callable<_Scenario> {
 
+    /** The controller instance managing scenario candidate pools and execution state. */
     private final Ctrl ctrl; // TODO: use interface instead of concrete class
+
+    /** The number of selection attempts remaining before giving up. */
     private int attemptsLeft;
 
     /**
-     * Represents a Selector object that is responsible for selecting scenarios based on weights.
+     * Constructs a {@code Selector} bound to a specific controller and maximum retry limit.
      *
-     * @param ctrl     an instance of the Ctrl class which is responsible for the main control functionalities such as
-     *                 scenario selections and decisions.
-     * @param attempts the number of retry attempts left if the current selection process fails.
+     * @param ctrl     the controller instance managing scenario selections and decisions
+     * @param attempts the maximum number of retry attempts allowed if candidates do not fit
      */
     public Selector(final Ctrl ctrl, final int attempts) {
 
@@ -101,10 +105,15 @@ public final class Selector implements Callable<_Scenario> {
     }
 
     /**
-     * Executes the scenario selection process to select a scenario based on weights.
+     * Executes the scenario selection workflow.
+     * <p>
+     * Evaluates executable scenario candidates, applies dynamic weights, and selects a scenario
+     * either via sequence script matching or weighted sampling. Each selected scenario is verified
+     * against {@link Core#fits()}. Non-fitting candidates are removed, and selection retries until
+     * a valid scenario is found or attempts are exhausted.
      *
-     * @return The selected scenario, or null if no scenario is selected.
-     * @throws SafeguardException if an exception occurs during the scenario selection process.
+     * @return the selected {@link _Scenario} that satisfies all fit requirements, or {@code null} if selection fails
+     * @throws SafeguardException if an error occurs during selection verification
      */
     @Override
     public _Scenario call() throws SafeguardException {
@@ -119,6 +128,12 @@ public final class Selector implements Callable<_Scenario> {
                 if (!fits) {
                     if (Notify.doesNotFit) logEvent(S3, b(c(SCENARIO), q(scenario.getShortName()), DOES, NOT, FIT));
                     candidates.remove(Utils.getThePair(scenario, candidates));
+                    if (Scenario.unreachableLeafPruning) {
+                        scenario.markAsExhausted();
+                    }
+                    if (Scenario.branchStalePenalty) {
+                        scenario.incrementStaleCount();
+                    }
                 }
             }
             logStateDebug(fits, candidates);
@@ -136,6 +151,9 @@ public final class Selector implements Callable<_Scenario> {
                 logDebug(a(kv(s(IGNORE, c(FAILED), c(SELECTION)), String.valueOf(true))));
                 logEvent(S3, message);
                 logEvent(S3, b(c(TESTS), WILL, GO, ON, AS, REQUESTED));
+                if (Scenario.branchStalePenalty && isNotNull(ctrl.getParent())) {
+                    ctrl.getParent().incrementStaleCount();
+                }
             } else {
                 if (isNotNull(ctrl.getParent())) {
                     ctrl.getParent().markAsExhausted();
@@ -148,9 +166,12 @@ public final class Selector implements Callable<_Scenario> {
     }
 
     /**
-     * Retrieves the execution candidates based on the scenarios and their weights.
+     * Builds the list of execution candidates from the controller's pool.
+     * <p>
+     * Filters out non-executable scenarios and calculates adjusted candidate weights by applying
+     * upstream weights, downstream weights, and completion deficit bonuses based on uncompleted target executions.
      *
-     * @return A1 list of pairs containing the selected scenarios and their adjusted weights.
+     * @return a list of candidate {@link KeyValue} pairs containing executable scenarios and their adjusted {@link Fraction} weights
      */
     @SuppressWarnings("ObjectAllocationInLoop")
     List<KeyValue<_Scenario, Fraction>> getExecutionCandidates() {
@@ -173,6 +194,10 @@ public final class Selector implements Callable<_Scenario> {
                         weight = weight.add(fr(Scenario.completionWeight.doubleValue() * uncompletedWeight));
                     }
                 }
+                if (Scenario.branchStalePenalty && scenario.getStaleCount() > 0) {
+                    final double penaltyDivisor = 1.0 + scenario.getStaleCount();
+                    weight = fr(weight.doubleValue() / penaltyDivisor);
+                }
                 final KeyValue<_Scenario, Fraction> newPair = kv(scenario, weight);
                 candidates.add(newPair);
             } else Utils.logScenarioNotExecutable(scenario);
@@ -182,11 +207,13 @@ public final class Selector implements Callable<_Scenario> {
 
     /**
      * Sums the remaining execution deficits of a scenario's accessible leaf descendants.
-     * This lets branches with more unfinished leaf work attract proportionally more completion weight.
+     * <p>
+     * For single scenarios, calculates the uncompleted execution ratio. For composite nodes ({@link _Node}),
+     * recursively aggregates the deficits of all child leaves to attract proportionally more completion weight.
      *
-     * @param scenario the scenario to check
-     * @param target the target execution count
-     * @return summed deficit across accessible leaf descendants
+     * @param scenario the scenario or node to evaluate
+     * @param target   the target execution count
+     * @return the total completion deficit across accessible leaf descendants
      */
     static double getUncompletedWeight(final _Scenario scenario, final int target) {
 
@@ -197,6 +224,14 @@ public final class Selector implements Callable<_Scenario> {
         return getLeafUncompletedRatio(scenario, target);
     }
 
+    /**
+     * Recursively computes the uncompleted weight for node descendants while tracking visited nodes to avoid cycles.
+     *
+     * @param node    the parent node whose descendants are being traversed
+     * @param target  the target execution count for leaves
+     * @param visited the set of already visited node objects to prevent infinite recursion
+     * @return the aggregated uncompleted weight across all executable descendant leaves
+     */
     private static double getDescendantUncompletedWeight(final _Node node, final int target, final Set<Object> visited) {
 
         if (isNull(node) || isNull(node.getPool()) || !visited.add(node)) return 0.0;
@@ -216,6 +251,13 @@ public final class Selector implements Callable<_Scenario> {
         return total;
     }
 
+    /**
+     * Calculates the remaining uncompleted execution deficit ratio for a single leaf scenario.
+     *
+     * @param leaf   the leaf scenario to evaluate
+     * @param target the target execution count
+     * @return a ratio between {@code 0.0} (fully completed) and {@code 1.0} (unexecuted) representing remaining execution deficit
+     */
     private static double getLeafUncompletedRatio(final _Scenario leaf, final int target) {
 
         final int leafTarget = (leaf instanceof Mono) ? 1 : target;
@@ -224,17 +266,24 @@ public final class Selector implements Callable<_Scenario> {
     }
 
     /**
-     * Checks if a scenario or any of its executable descendants are unexecuted.
+     * Checks if a scenario or any of its executable descendants have remaining unexecuted target state.
+     * <p>
      * Retained for backward compatibility.
      *
      * @param scenario the scenario to check
-     * @return true if the scenario itself has zero executions or has any unexecuted executable descendants
+     * @return {@code true} if the scenario or any descendant leaves have unfinished target executions; {@code false} otherwise
      */
     static boolean hasUnexecutedState(final _Scenario scenario) {
 
         return getUncompletedWeight(scenario, 1) > 0.0;
     }
 
+    /**
+     * Logs debug information detailing the current retry state and candidate pool size.
+     *
+     * @param fits       whether the currently sampled scenario satisfied runtime prerequisites
+     * @param candidates the collection of remaining candidate scenario pairs
+     */
     @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "NestedConditionalExpression"})
     private void logStateDebug(final boolean fits, final Collection<KeyValue<_Scenario, Fraction>> candidates) {
 
@@ -244,10 +293,13 @@ public final class Selector implements Callable<_Scenario> {
     }
 
     /**
-     * Selects a scenario among the given candidates based on their weights.
+     * Selects a single scenario candidate from the candidate list.
+     * <p>
+     * First attempts to match against an active sequence script in {@link SequenceTracker}.
+     * If no script match occurs, performs weighted random sampling using an enumerated probability distribution.
      *
-     * @param candidates The list of candidate pairs consisting of ProvidesScenario objects and their weights
-     * @return The selected scenario
+     * @param candidates the collection of candidate scenario-weight pairs
+     * @return the selected {@link Core} scenario
      */
     @SuppressWarnings({"ChainedMethodCall", "ObjectAllocationInLoop"})
     private Core selectAmongCandidates(final Collection<KeyValue<_Scenario, Fraction>> candidates) {
@@ -257,9 +309,10 @@ public final class Selector implements Callable<_Scenario> {
             if (expected != null && !expected.isBlank()) {
                 for (final KeyValue<_Scenario, Fraction> candidate : candidates) {
                     final _Scenario sc = candidate.k();
-                    if (expected.equalsIgnoreCase(sc.getShortName()) || expected.equalsIgnoreCase(sc.getName())) {
+                    final String classKey = SequenceTracker.getScenarioClassKey(sc);
+                    if (expected.equalsIgnoreCase(sc.getShortName()) || expected.equalsIgnoreCase(sc.getName()) || expected.equalsIgnoreCase(classKey)) {
                         SequenceTracker.advanceSequence();
-                        Utils.logDebug(b(q(sc.getShortName()), "SELECTED FROM SEQUENCE SCRIPT", FROM, s1(candidates.size(), CANDIDATE)));
+                        Utils.logDebug(b(q(sc.getShortName()), "scripted"));
                         return (Core) sc;
                     }
                 }
@@ -292,9 +345,9 @@ public final class Selector implements Callable<_Scenario> {
     }
 
     /**
-     * Fails the scenario selection process and performs necessary logging.
+     * Handles selection failure processing, accounting logs, and stopping test execution if configured.
      *
-     * @param message The error message to log planning.
+     * @param message the failure error message to log
      */
     private void selectionFailed(final String message) {
 

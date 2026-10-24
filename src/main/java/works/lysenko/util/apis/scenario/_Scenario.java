@@ -30,6 +30,26 @@ public interface _Scenario {
     int calculateCombinations(boolean onlyConfigured);
 
     /**
+     * @return the current stale count of this scenario
+     */
+    default int getStaleCount() { return 0; }
+
+    /**
+     * Increments the stale count of this scenario.
+     */
+    default void incrementStaleCount() {}
+
+    /**
+     * Resets the stale count of this scenario to zero.
+     */
+    default void resetStaleCount() {}
+
+    /**
+     * @return parent scenario of this scenario
+     */
+    default _Scenario getParentScenario() { return null; }
+
+    /**
      * @return depth of Scenario
      */
     int depth();

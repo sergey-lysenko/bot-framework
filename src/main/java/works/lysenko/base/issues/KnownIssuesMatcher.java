@@ -115,7 +115,7 @@ public final class KnownIssuesMatcher {
             else if (trimmed.contains(ASTERISK)) {
                 String patternStr = trimmed.replace(DOT, DOT_ESCAPED).replace(ASTERISK, DOT_STAR);
                 if (!patternStr.startsWith(DOT_STAR)) patternStr = String.format(FORMAT_CONCAT, DOT_STAR, patternStr);
-                final String regex = String.format(FORMAT_REGEX);
+                final String regex = String.format(FORMAT_REGEX, patternStr);
                 try {
                     final Pattern pattern = getCompiledPattern(regex, 0);
                     if (pattern.matcher(text).find()) {

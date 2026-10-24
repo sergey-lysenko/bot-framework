@@ -140,6 +140,74 @@ public final class SectionRenderer {
     }
 
     /**
+     * Computes execution statuses for individual scenarios within a test section based on log line severe/warning indicators.
+     *
+     * @param sec the log section for a test (may be null)
+     * @return map of scenario token names to their status ("passed", "warning", or "failed")
+     */
+    public static Map<String, String> computeScenarioStatuses(final LogSection sec) {
+        final Map<String, String> statuses = new HashMap<>(8);
+        if (null == sec || sec.lines.isEmpty()) return statuses;
+
+        String currentScen = null;
+        final Matcher mScenToken = SCEN_TOKEN_RE.matcher("");
+        for (final String line : sec.lines) {
+            final String clean = ANSI_PATTERN.matcher(line).replaceAll("").trim();
+            mScenToken.reset(clean);
+            if (mScenToken.find()) {
+                final String sc = mScenToken.group(2).trim();
+                if (!sc.isEmpty() && !"Scenario".equalsIgnoreCase(sc) && !"Specifics".equalsIgnoreCase(sc)
+                        && !sc.toLowerCase(Locale.ROOT).endsWith(".specifics")) {
+                    currentScen = sc;
+                    statuses.putIfAbsent(currentScen, "passed");
+                }
+            }
+            if (null != currentScen) {
+                if (clean.contains("[SEVERE]") || clean.contains("[FAILURE]")) {
+                    statuses.put(currentScen, "failed");
+                } else if (clean.contains("[WARNING]") && !"failed".equals(statuses.get(currentScen))) {
+                    statuses.put(currentScen, "warning");
+                }
+            }
+        }
+        return statuses;
+    }
+
+    /**
+     * Resolves the execution status for a scenario step name.
+     *
+     * @param scenName         the scenario step name
+     * @param sIdx             the step index (-1 if not in path row)
+     * @param totalSteps       total steps in the path row (-1 if not in path row)
+     * @param testStatus       overall section status ("passed", "warning", "failed")
+     * @param scenarioStatuses map of scenario statuses for the test section
+     * @return status string ("passed", "warning", or "failed")
+     */
+    public static String resolveScenarioStatus(
+            final String scenName,
+            final int sIdx,
+            final int totalSteps,
+            final String testStatus,
+            final Map<String, String> scenarioStatuses) {
+        if (null != scenName && null != scenarioStatuses && !scenarioStatuses.isEmpty()) {
+            final String scenLower = scenName.toLowerCase(Locale.ROOT);
+            for (final Map.Entry<String, String> entry : scenarioStatuses.entrySet()) {
+                final String keyLower = entry.getKey().toLowerCase(Locale.ROOT);
+                if (keyLower.equals(scenLower)
+                        || keyLower.endsWith("." + scenLower)
+                        || scenLower.endsWith("." + keyLower)) {
+                    return entry.getValue();
+                }
+            }
+        }
+        if (sIdx >= 0 && sIdx == totalSteps - 1) {
+            if ("failed".equals(testStatus)) return "failed";
+            if ("warning".equals(testStatus)) return "warning";
+        }
+        return "passed";
+    }
+
+    /**
      * Renders HTML rows for recorded test paths with common path resolution.
      *
      * @param testPaths       recorded test paths with execution steps
@@ -153,9 +221,11 @@ public final class SectionRenderer {
 
         for (final PathEntry p : testPaths) {
             String testStatus = "neutral";
+            LogSection testSec = null;
             for (final LogSection sec : sections) {
                 if ("test".equals(sec.type) && String.valueOf(sec.testNum).equals(p.num)) {
                     testStatus = sec.status;
+                    testSec = sec;
                     break;
                 }
             }
@@ -179,6 +249,9 @@ public final class SectionRenderer {
                 }
             }
 
+            final Map<String, String> scenarioStatuses = computeScenarioStatuses(testSec);
+            boolean hasFailedStep = false;
+
             for (int sIdx = 0; sIdx < p.steps.size(); sIdx++) {
                 if (sIdx > 0) sb.append(" <span class=\"step-arrow\">→</span> ");
                 final String stepName = p.steps.get(sIdx);
@@ -191,10 +264,15 @@ public final class SectionRenderer {
                             "\" onclick=\"focusScenario(event, '", p.num, "', '", escapeHtml(targetScen),
                             "')\" title=\"Jump to ", escapeHtml(targetScen), " in Test #", p.num, "\">-</a>"));
                 } else {
-                    String nodeCssClass = "passed";
-                    if (sIdx == p.steps.size() - 1) {
+                    String nodeCssClass = resolveScenarioStatus(targetScen, sIdx, p.steps.size(), testStatus, scenarioStatuses);
+
+                    if ("passed".equals(nodeCssClass) && sIdx == p.steps.size() - 1 && !hasFailedStep) {
                         if ("failed".equals(testStatus)) nodeCssClass = "failed";
                         else if ("warning".equals(testStatus)) nodeCssClass = "warning";
+                    }
+
+                    if ("failed".equals(nodeCssClass) || "warning".equals(nodeCssClass)) {
+                        hasFailedStep = true;
                     }
 
                     sb.append(s("<a class=\"path-step ", nodeCssClass, "\" href=\"#test-", p.num, "-", escapeHtml(targetScen),
@@ -392,10 +470,12 @@ public final class SectionRenderer {
             ));
 
             if ("test".equals(sec.type) && !sec.scenarios.isEmpty()) {
+                final Map<String, String> scenStatuses = computeScenarioStatuses(sec);
                 sb.append("  <div class=\"section-breadcrumb\">\n    <span class=\"breadcrumb-label\">Scenario:</span>\n");
                 for (final String sc : sec.scenarios) {
                     if (sc.equalsIgnoreCase("Specifics") || sc.toLowerCase(java.util.Locale.ROOT).endsWith(".specifics")) continue;
-                    sb.append(s("    <a class=\"pill scen-pill\" href=\"#test-", sec.testNum, "-", escapeHtml(sc),
+                    final String scStatus = resolveScenarioStatus(sc, -1, -1, sec.status, scenStatuses);
+                    sb.append(s("    <a class=\"pill scen-pill ", scStatus, "\" href=\"#test-", sec.testNum, "-", escapeHtml(sc),
                             "\" onclick=\"focusScenario(event, '", sec.testNum, "', '", escapeHtml(sc),
                             "')\" title=\"Jump to ", escapeHtml(sc), "\">", escapeHtml(sc), "</a>\n"));
                 }

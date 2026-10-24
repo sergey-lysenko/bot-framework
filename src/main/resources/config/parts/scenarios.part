@@ -34,6 +34,14 @@
 # .tree.forbid.overexecution=false
 
 # ------------------------------------------------------------------------------
+# Automatically prunes non-fitting scenarios and unreachable leaves when fits() returns false. Default: true
+# .tree.unreachable.leaf.pruning=true
+
+# ------------------------------------------------------------------------------
+# Applies a selection weight penalty to unproductive branches that fail to yield executable leaves. Default: true
+# .tree.branch.stale.penalty=true
+
+# ------------------------------------------------------------------------------
 # Hides branches of the test tree which are entirely OFF to reduce wasted space on partial test executions. Default: false
 # .tree.hide.off.branches=false
 

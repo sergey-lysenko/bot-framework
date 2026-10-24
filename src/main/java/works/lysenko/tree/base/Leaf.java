@@ -15,6 +15,7 @@ import works.lysenko.util.prop.tree.Scenario;
 import java.util.Set;
 
 import static java.util.Objects.isNull;
+import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.data.enums.ScenarioType.LEAF;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Null.n;
@@ -93,6 +94,9 @@ public abstract class Leaf extends Core {
         if (super.isOk()) {
             try {
                 action();
+                if (isNotNull(works.lysenko.Base.exec) && isNotNull(works.lysenko.Base.exec.wd())) {
+                    verify();
+                }
                 finals();
                 return true;
             } catch (final RuntimeException e) {

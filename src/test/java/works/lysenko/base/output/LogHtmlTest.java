@@ -521,7 +521,7 @@ class LogHtmlTest {
         assertTrue(html.contains("data-test=\"25\""), "Section details tag should contain data-test");
 
         // Verify breadcrumbs in section header
-        assertTrue(html.contains("class=\"pill scen-pill\""), "Breadcrumb scenario pill should be hyperlinked");
+        assertTrue(html.contains("class=\"pill scen-pill passed\""), "Breadcrumb scenario pill should be hyperlinked");
 
         // Verify common path pills are non-interactive spans
         assertTrue(html.contains("<span class=\"path-step common\">signIn.correctLogin.Settings</span>"), "Common path steps should be non-interactive spans");
@@ -741,5 +741,36 @@ class LogHtmlTest {
                 works.lysenko.Base.properties.clearUserOverrides();
             }
         }
+    }
+
+    @Test
+    void intermediateScenarioFailureRendersFailedBreadcrumbs(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("intermediate_fail.run.log");
+        final Path htmlPath = tempDir.resolve("intermediate_fail.run.log.html");
+
+        final List<String> logLines = List.of(
+                "Starting Bot core ...",
+                "[16][100][10.000][10] ▷ SignIn.Login : starting Login",
+                "[16][101][10.100][10] Login ok",
+                "[16][102][10.200][10] ▷ SignIn.Login.Partners : starting Partners",
+                "[16][103][10.300][10] Partners ok",
+                "[16][104][10.400][10] ▷ SignIn.Login.Partners.AddNew : starting AddNew",
+                "[16][105][10.500][10] [SEVERE] Exception occurred in AddNew",
+                "[16][106][10.600][10] ▷ SignIn.Login.Partners.AddNew.AllEmpty : starting AllEmpty",
+                "[16][107][10.700][10] AllEmpty ok",
+                "[  ][108][10.800][10] [16] [10,700] → Login → Partners → AddNew → AllEmpty"
+        );
+
+        Files.write(logPath, logLines);
+        LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+
+        assertTrue(Files.exists(htmlPath), "HTML report should be generated");
+        final String html = Files.readString(htmlPath);
+
+        assertTrue(html.contains("<a class=\"path-step failed\" href=\"#test-16-AddNew\""),
+                "Path step for AddNew should be marked as failed");
+
+        assertTrue(html.contains("class=\"pill scen-pill failed\""),
+                "Section breadcrumb pill for AddNew should be marked as failed");
     }
 }

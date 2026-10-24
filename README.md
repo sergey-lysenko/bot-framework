@@ -175,6 +175,21 @@ Configuration is organized into 11 specialized partial files included via `src/m
 
 The framework uses OS-backed `run/.run.lock` and `run/.postprocess.lock` files to prevent a new test run from starting while a test or its detached post-processor is active.
 
+### Applied Test Configuration Visual Legend
+
+When executing tests, the framework logs the active test parameters under `# Applied test configuration`. The visual indicators and color-coding convey property origin, defaults, and custom overrides:
+
+- **Presence in the list**: Indicates properties currently active and applied for the test execution.
+- **Color Coding**:
+  - **Blue Property Name + Yellow Value**: Highlights properties whose values have been **redefined / modified** from standard schema defaults (`value != def`).
+  - **Gray (Plain Text)**: Indicates properties whose values **match their default values** (`value == def`).
+- **Bullet (`•`) Prefix**:
+  - **`•` Bullet Present**: Indicates the property value originates from or matches the **common configuration** (`common.properties`).
+  - **Bullet Absent**: Indicates the property value was set elsewhere (e.g., in a test-suite file, CLI flag, environment variable, or programmatically).
+- **Green `" = "` with Spaces**:
+  - **Green `" = "` with spaces**: Indicates a custom, ad-hoc, or non-standard property that does **not** have a default value defined in the framework's property schema (`isNull(def)`).
+  - **Plain `=` without spaces**: Indicates a standard framework property recognized by the schema (`def != null`).
+
 ---
 
 ## 🎬 Progression Videos & Deterministic Sonification

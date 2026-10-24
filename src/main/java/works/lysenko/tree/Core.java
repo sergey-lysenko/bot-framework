@@ -189,6 +189,25 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     private boolean failed = false;
     private boolean childFailed = false;
     private boolean exhausted = false;
+    private int staleCount = 0;
+
+    @Override
+    public int getStaleCount() {
+
+        return staleCount;
+    }
+
+    @Override
+    public void incrementStaleCount() {
+
+        staleCount++;
+    }
+
+    @Override
+    public void resetStaleCount() {
+
+        staleCount = 0;
+    }
 
     @Override
     public boolean isExhausted() {
@@ -344,6 +363,13 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         if (ScenarioType.LEAF == type() || ScenarioType.MONO == type()) {
             EtaDebug.endCycle(getShortName());
             AllLeafCompletions.checkAndRecord(msSinceStart(), this);
+            if (Scenario.branchStalePenalty) {
+                _Scenario curr = this;
+                while (isNotNull(curr)) {
+                    curr.resetStaleCount();
+                    curr = curr.getParentScenario();
+                }
+            }
         }
         exec.scenarios().pop(this);
     }
