@@ -24,6 +24,7 @@ import works.lysenko.util.apis.test._Test;
 import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.type.Result;
 import works.lysenko.util.prop.PropEnum;
+import works.lysenko.util.prop.tree.*;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -44,6 +45,7 @@ import java.util.Properties;
 import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -673,7 +675,7 @@ class TreeTrackerTest {
                 List.of(new Edge(root, leafPlanned), new Edge(root, leafExcluded)));
 
         // Both leafs in layout, but only 1 is executable (and executed 1/1)
-        final BufferedImage img = TreeTracker.renderTreeProgression(layout, 1, "Cycle #1", Collections.emptySet());
+        final BufferedImage img = TreeTracker.renderTreeProgression(layout, 1, "Test #1", Collections.emptySet());
         assertNotNull(img);
         // Image rendered successfully without error, covered leafs == total executable leafs (1/1)
     }
@@ -712,5 +714,79 @@ class TreeTrackerTest {
         final int upsetY = (int) Math.round(tx.translateY() + (vUpset.y() + 8) * tx.zoom());
         final Color upsetFill = new Color(img.getRGB(upsetX, upsetY));
         assertEquals(TreeTracker.UPSET_CARD_FILL, upsetFill, "Child failed node must use UPSET_CARD_FILL fill");
+    }
+
+    @Test
+    void testTriggerCooldownFramesExhaustsImpulseAndPreservesBadge(@TempDir final Path tempDir) throws Exception {
+        TreeTracker.reset();
+        final File customRunDir = tempDir.toFile();
+        TreeTracker.setCustomOutputDir(customRunDir);
+
+        final TestLeaf leaf1 = new TestLeaf("root.auth.LoginSuccess", fr(1.0));
+        final TestLeaf leaf2 = new TestLeaf("root.auth.LoginFailure", fr(1.0));
+
+        final Ctrl rootCtrl = new Ctrl(null);
+        rootCtrl.getPool().appendScenarioWithWeight(leaf1, fr(1.0));
+        rootCtrl.getPool().appendScenarioWithWeight(leaf2, fr(1.0));
+
+        final _Test mockTest = (_Test) SelectionFixture.allocate(works.lysenko.base.Test.class);
+        final _Exec mockExec = (_Exec) SelectionFixture.allocate(works.lysenko.base.test.Exec.class);
+
+        final Field ctrlField = works.lysenko.base.test.Exec.class.getDeclaredField("ctrl");
+        ctrlField.setAccessible(true);
+        ctrlField.set(mockExec, rootCtrl);
+
+        final Field executorField = works.lysenko.base.Test.class.getDeclaredField("executor");
+        executorField.setAccessible(true);
+        executorField.set(mockTest, mockExec);
+
+        final Core core = (Core) SelectionFixture.allocate(Core.class);
+        final Results results = new Results();
+        final Field rf = Core.class.getDeclaredField("results");
+        rf.setAccessible(true);
+        rf.set(core, results);
+        Base.core = core;
+        Base.core.getResults().count(leaf1);
+
+        final Field testField = Core.class.getDeclaredField("test");
+        testField.setAccessible(true);
+        testField.set(Base.core, mockTest);
+
+        // Frame 1 captured for cycle 48
+        TreeTracker.onLimbo(48);
+        assertTrue(TreeTracker.getCapturedFrames().size() >= 1);
+
+        // Trigger cooldown frames
+        TreeTracker.triggerCooldownFrames();
+
+        assertTrue(TreeTracker.isTransformSettled(), "Camera transform must be settled after triggerCooldownFrames");
+
+        final File treeProgressionDir = new File(customRunDir, "tree_progression");
+        final File[] frameFiles = treeProgressionDir.listFiles((dir, name) -> name.endsWith(".svg"));
+        assertNotNull(frameFiles);
+        assertTrue(frameFiles.length >= 1);
+
+        // Verify badge text in SVG header retains "Test #48"
+        final String svgContent = Files.readString(frameFiles[0].toPath());
+        assertTrue(svgContent.contains("Test #48"), "Cooldown frames must preserve test badge");
+    }
+
+    @Test
+    void testProgressionDebugPropertyControlsVectorAndCoordinates() {
+        final NodeData root = new NodeData("root", "Root", "Root", 0, 1.0, null);
+        final TreeLayout layout = new TreeLayout(List.of(root), List.of());
+
+        // Default (.tree.progression.debug=false): debug text and vector line should NOT be present in SVG
+        setTestProperty(String.valueOf(Progression.debug), "false");
+        final String svgNoDebug = TreeTracker.renderTreeProgressionSvg(layout, 1, "Test #1", Collections.emptySet());
+        assertFalse(svgNoDebug.contains("dx:"), "SVG must not contain debug coordinates when debug is false");
+        assertFalse(svgNoDebug.contains("stroke=\"#F59E0B\""), "SVG must not contain impulse vector line when debug is false");
+
+        // Enabled (.tree.progression.debug=true): debug text and vector line SHOULD be present in SVG
+        setTestProperty(String.valueOf(Progression.debug), "true");
+        final String svgDebug = TreeTracker.renderTreeProgressionSvg(layout, 1, "Test #1", Collections.emptySet());
+        assertTrue(svgDebug.contains("dx:"), "SVG must contain debug coordinates when debug is true");
+        assertTrue(svgDebug.contains("maxZ:"), "SVG debug text must include maxZ when debug is true");
+        assertTrue(svgDebug.contains("stroke=\"#F59E0B\""), "SVG must contain impulse vector line when debug is true");
     }
 }

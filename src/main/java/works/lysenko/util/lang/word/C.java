@@ -55,6 +55,8 @@ public record C() {
     public static final String CHANGER = s(CHANGE, R);
     /** Constant representing the word CHECK. */
     public static final String CHECK = s(CHE, CK);
+    /** Constant representing the word CHECKED. */
+    public static final String CHECKED = s(CHECK, ED);
     /** Constant representing the word CHECKING. */
     public static final String CHECKING = s(CHECK, ING);
     /** Constant representing the word CHECKS. */

@@ -115,6 +115,8 @@ public final class GeminiSonifier extends AbstractTreeSonifier {
             }
         }
 
+        int previousTotalNodes = -1;
+
         for (int frameIndex = 0; frameIndex < frames.size(); frameIndex++) {
             final Map<Integer, ColumnStats> current = readSnapshot(snapshotFile(frames.get(frameIndex)));
             final List<AudioNote> frameNotes = new ArrayList<>();
@@ -125,6 +127,11 @@ public final class GeminiSonifier extends AbstractTreeSonifier {
             for (final ColumnStats s : current.values()) {
                 currentTotalNodes += s.total;
             }
+
+            if (previousTotalNodes != -1 && currentTotalNodes < previousTotalNodes) {
+                frameNotes.add(new AudioNote(startSample, 0, 0.1, 0.0, true));
+            }
+            previousTotalNodes = currentTotalNodes;
 
             final double shrinkRatio = Math.max(0.0, Math.min(1.0, (double) currentTotalNodes / Math.max(1, initialTotalNodes)));
             final double shrinkProgress = 1.0 - shrinkRatio; // 0.0 at full initial tree, approaching 1.0 as tree shrinks

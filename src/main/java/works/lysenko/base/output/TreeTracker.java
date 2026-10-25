@@ -10,6 +10,8 @@ import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.base.output.sonifier.TreeSonifier;
 import works.lysenko.base.output.sonifier.TreeProgressionAudio;
 import works.lysenko.util.prop.PropEnum;
+import works.lysenko.util.prop.tree.*;
+
 import java.awt.Stroke;
 
 import java.awt.BasicStroke;
@@ -36,6 +38,7 @@ import java.util.TreeMap;
 import static java.util.Objects.isNull;
 import static works.lysenko.Base.*;
 import static works.lysenko.util.func.type.Objects.isNotNull;
+import static works.lysenko.util.prop.tree.Progression.*;
 import static works.lysenko.util.spec.Layout.Files.name;
 import static works.lysenko.util.spec.Layout.Paths._RUNS_;
 import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_;
@@ -54,7 +57,8 @@ public final class TreeTracker {
     private static final int ROW_HEIGHT = 60;
     private static final int CARD_WIDTH = 220;
     private static final int CARD_HEIGHT = 46;
-    private static final int HEADER_HEIGHT = 60;
+    private static final int HEADER_HEIGHT_BASE = 60;
+    private static int headerHeight(int w) { return (int) Math.round(HEADER_HEIGHT_BASE * Math.max(1.0, w / 1200.0)); }
     private static final int PADDING_X = 40;
     private static final int PADDING_Y = 32;
     private static final int BOTTOM_PADDING = 32;
@@ -96,6 +100,7 @@ public final class TreeTracker {
     private static File customOutputDir = null;
     private static volatile BufferedImage latestFrameImage = null;
     private static final Map<String, Integer> previousExecutions = new HashMap<>();
+    private static final Set<String> lastRecentNodeKeys = new HashSet<>();
     private static volatile Set<_Scenario> cachedAccessibleScenarios = null;
     private static volatile TreeHtml.AccessibleContext cachedAccessibleContext = null;
     private static volatile Map<TreeHtml.NodeData, Boolean> cachedExecutable = null;
@@ -107,6 +112,13 @@ public final class TreeTracker {
     private static volatile double currentTranslateX = 0.0;
     private static volatile double currentTranslateY = 0.0;
     private static volatile boolean transformInitialized = false;
+
+    private static double debugDx = 0.0;
+    private static double debugDy = 0.0;
+    private static double debugDz = 0.0;
+    private static double debugMaxZoom = 1.0;
+
+    private static String lastBadgeText = null;
 
     private static volatile java.awt.TexturePaint cachedDotPaint = null;
 
@@ -122,6 +134,8 @@ public final class TreeTracker {
         customOutputDir = null;
         latestFrameImage = null;
         previousExecutions.clear();
+        lastRecentNodeKeys.clear();
+        lastBadgeText = null;
         sessionBaseW = 0;
         sessionBaseH = 0;
         currentZoom = 1.0;
@@ -278,7 +292,7 @@ public final class TreeTracker {
             sessionBaseW = (int) evenDimension(Math.max(800L, ((long) fullMaxCol + 1L) * COL_WIDTH + PADDING_X * 2L));
             sessionBaseH = (int) evenDimension(Math.max(
                     400L,
-                    (long) Math.ceil((fullMaxRow + 1.0) * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y + BOTTOM_PADDING)));
+                    (long) Math.ceil((fullMaxRow + 1.0) * ROW_HEIGHT + headerHeight(sessionBaseW) + PADDING_Y + BOTTOM_PADDING)));
         } else {
             int currentMaxCol = 0;
             double currentMaxRow = 0.0;
@@ -289,16 +303,23 @@ public final class TreeTracker {
             final int currW = (int) evenDimension(Math.max(800L, ((long) currentMaxCol + 1L) * COL_WIDTH + PADDING_X * 2L));
             final int currH = (int) evenDimension(Math.max(
                     400L,
-                    (long) Math.ceil((currentMaxRow + 1.0) * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y + BOTTOM_PADDING)));
+                    (long) Math.ceil((currentMaxRow + 1.0) * ROW_HEIGHT + headerHeight(currW) + PADDING_Y + BOTTOM_PADDING)));
             if (currW > sessionBaseW) sessionBaseW = currW;
             if (currH > sessionBaseH) sessionBaseH = currH;
         }
 
         final int target = (isNotNull(parameters)) ? parameters.getAllLeafsExecutions()
                 : (isNotNull(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) : 1);
-        final String badgeText = isNotNull(testNumber)
-                ? "Cycle #" + testNumber
-                : "Step #" + (capturedFrames.size() + 1);
+        final String badgeText;
+        if (isNotNull(testNumber)) {
+            badgeText = "Test #" + testNumber;
+            lastBadgeText = badgeText;
+        } else if (isNotNull(lastBadgeText)) {
+            badgeText = lastBadgeText;
+        } else {
+            badgeText = "Step #" + (capturedFrames.size() + 1);
+            lastBadgeText = badgeText;
+        }
 
         final File runDir = resolveRunDirectory();
         if (isNull(runDir))
@@ -369,7 +390,12 @@ public final class TreeTracker {
                 recent.add(n.id());
             }
         }
-        return recent;
+        if (!recent.isEmpty()) {
+            lastRecentNodeKeys.clear();
+            lastRecentNodeKeys.addAll(recent);
+            return recent;
+        }
+        return new HashSet<>(lastRecentNodeKeys);
     }
 
     private static void updatePreviousExecutions(final TreeLayout layout) {
@@ -379,12 +405,49 @@ public final class TreeTracker {
         }
     }
 
+    public static synchronized boolean isTransformSettled() {
+        if (!transformInitialized || isNull(core) || isNull(core.getResults())) return true;
+        final TreeMap<String, Result> sorted = core.getResults().getSortedStrings(false);
+        if (sorted.isEmpty()) return true;
+        final TreeLayout layout = TreeHtml.computeLayout(sorted);
+        if (layout.nodes().isEmpty()) return true;
+        final Set<String> recentNodeKeys = computeRecentNodeKeys(layout);
+        final int target = (isNotNull(parameters)) ? parameters.getAllLeafsExecutions()
+                : (isNotNull(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) : 1);
+        final Transform targetTx = computeZoomTransform(layout, recentNodeKeys, target, sessionBaseW, sessionBaseH);
+
+        final double epsilonZ = 0.005;
+        final double epsilonT = 0.5;
+
+        debugDx = targetTx.translateX() - currentTranslateX;
+        debugDy = targetTx.translateY() - currentTranslateY;
+        debugDz = targetTx.zoom() - currentZoom;
+
+        return Math.abs(debugDz) < epsilonZ &&
+               Math.abs(debugDx) < epsilonT &&
+               Math.abs(debugDy) < epsilonT;
+    }
+
+    /**
+     * Triggers the generation of additional cooldown frames at the end of test execution
+     * to exhaust any leftover camera movement and zoom momentum (dx, dy, dz impulse)
+     * until the view transform settles.
+     */
+    public static synchronized void triggerCooldownFrames() {
+        if (!ProgressionSettings.current().treeEnabled()) return;
+        int maxAdditionalFrames = 60;
+        while (!isTransformSettled() && maxAdditionalFrames-- > 0) {
+            captureFrame(null);
+        }
+        ProgressionFrames.awaitCompletion();
+    }
+
     /**
      * Hook called upon test completion to compile collected frames into animated
-     * GIF and WebP.
+     * GIF, WebP, and MP4.
      */
     public static void onComplete() {
-        ProgressionFrames.awaitCompletion();
+        triggerCooldownFrames();
         final String prefix = (isNotNull(timer)) ? String.valueOf(timer.startedAt()) : "run";
         processFrames(resolveRunDirectory(), prefix, ProcessingProgress.NONE);
     }
@@ -557,6 +620,7 @@ public final class TreeTracker {
             progress.skipped("Tree progression MP4");
             return;
         }
+        triggerCooldownFrames();
         final String pngTask = PostProcessor.TREE_PNG_TASK;
         final String gifTask = "Tree progression GIF";
         final String webpTask = "Tree progression WebP";
@@ -713,7 +777,7 @@ public final class TreeTracker {
             final TreeLayout layout,
             final int target,
             final int currentCycle) {
-        return renderTreeProgressionSvg(layout, target, "Cycle #" + currentCycle, Collections.emptySet(), getAccessibleScenarios());
+        return renderTreeProgressionSvg(layout, target, "Test #" + currentCycle, Collections.emptySet(), getAccessibleScenarios());
     }
 
     /**
@@ -725,7 +789,7 @@ public final class TreeTracker {
             final int target,
             final int currentCycle,
             final Set<String> recentNodeKeys) {
-        return renderTreeProgressionSvg(layout, target, "Cycle #" + currentCycle, recentNodeKeys);
+        return renderTreeProgressionSvg(layout, target, "Test #" + currentCycle, recentNodeKeys);
     }
 
     /**
@@ -760,10 +824,6 @@ public final class TreeTracker {
             final Set<String> recentNodeKeys,
             final int target) {
 
-        final double focusMinRow = 1.0;
-        double focusMaxRow = 1.0;
-        int focusMaxCol = 0;
-
         final Set<NodeData> focusNodes = new HashSet<>();
 
         for (final NodeData n : layout.nodes()) {
@@ -785,12 +845,20 @@ public final class TreeTracker {
             focusNodes.addAll(layout.nodes());
         }
 
+        double focusMinRow = Double.MAX_VALUE;
+        double focusMaxRow = 0.0;
+        int focusMaxCol = 0;
+
         for (final NodeData n : focusNodes) {
             if (n.col() > focusMaxCol) focusMaxCol = n.col();
+            if (n.row() < focusMinRow) focusMinRow = n.row();
             if (n.row() > focusMaxRow) focusMaxRow = n.row();
         }
 
-        if (focusMaxRow < 1.0) focusMaxRow = 1.0;
+        if (focusMinRow > focusMaxRow) {
+            focusMinRow = 0.0;
+            focusMaxRow = 0.0;
+        }
 
         if (focusMaxRow - focusMinRow < 2.0) {
             focusMaxRow = focusMinRow + 2.0;
@@ -806,8 +874,8 @@ public final class TreeTracker {
 
         final double activeLeft = bounds.minCol() * COL_WIDTH + PADDING_X;
         final double activeRight = bounds.maxCol() * COL_WIDTH + CARD_WIDTH + PADDING_X;
-        final double activeTop = bounds.minRow() * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y;
-        final double activeBottom = bounds.maxRow() * ROW_HEIGHT + CARD_HEIGHT + HEADER_HEIGHT + PADDING_Y;
+        final double activeTop = bounds.minRow() * ROW_HEIGHT + headerHeight(baseW) + PADDING_Y;
+        final double activeBottom = bounds.maxRow() * ROW_HEIGHT + CARD_HEIGHT + headerHeight(baseW) + PADDING_Y;
 
         final double activeW = Math.max(CARD_WIDTH, activeRight - activeLeft);
         final double activeH = Math.max(CARD_HEIGHT, activeBottom - activeTop);
@@ -816,14 +884,16 @@ public final class TreeTracker {
         final double activeCenterY = (activeTop + activeBottom) / 2.0;
 
         final double availW = baseW - PADDING_X * 2.0;
-        final double availH = baseH - HEADER_HEIGHT - PADDING_Y - BOTTOM_PADDING;
+        final double availH = baseH - headerHeight(baseW) - PADDING_Y - BOTTOM_PADDING;
 
         final double scaleX = availW / activeW;
         final double scaleY = availH / activeH;
-        final double zoom = Math.max(1.0, Math.min(Math.min(scaleX, scaleY), 4.0));
+        final double maxSingleNodeZoom = Math.max(1.0, Math.min(availW / CARD_WIDTH, availH / CARD_HEIGHT));
+        debugMaxZoom = maxSingleNodeZoom;
+        final double zoom = Math.max(1.0, Math.min(Math.min(scaleX, scaleY), maxSingleNodeZoom));
 
         final double targetCenterX = baseW / 2.0;
-        final double targetCenterY = HEADER_HEIGHT + PADDING_Y + availH / 2.0;
+        final double targetCenterY = headerHeight(baseW) + PADDING_Y + availH / 2.0;
 
         final double translateX = targetCenterX - activeCenterX * zoom;
         final double translateY = targetCenterY - activeCenterY * zoom;
@@ -840,6 +910,10 @@ public final class TreeTracker {
 
         final Transform targetTx = computeZoomTransform(layout, recentNodeKeys, target, baseW, baseH);
 
+        debugDx = targetTx.translateX() - currentTranslateX;
+        debugDy = targetTx.translateY() - currentTranslateY;
+        debugDz = targetTx.zoom() - currentZoom;
+
         if (!transformInitialized) {
             currentZoom = targetTx.zoom();
             currentTranslateX = targetTx.translateX();
@@ -847,9 +921,9 @@ public final class TreeTracker {
             transformInitialized = true;
         } else {
             final double alpha = 0.20;
-            currentZoom += alpha * (targetTx.zoom() - currentZoom);
-            currentTranslateX += alpha * (targetTx.translateX() - currentTranslateX);
-            currentTranslateY += alpha * (targetTx.translateY() - currentTranslateY);
+            currentZoom += alpha * debugDz;
+            currentTranslateX += alpha * debugDx;
+            currentTranslateY += alpha * debugDy;
         }
 
         return new Transform(currentZoom, currentTranslateX, currentTranslateY);
@@ -926,7 +1000,7 @@ public final class TreeTracker {
             baseW = (int) evenDimension(Math.max(800L, ((long) fullMaxCol + 1L) * COL_WIDTH + PADDING_X * 2L));
             baseH = (int) evenDimension(Math.max(
                     400L,
-                    (long) Math.ceil((fullMaxRow + 1.0) * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y + BOTTOM_PADDING)));
+                    (long) Math.ceil((fullMaxRow + 1.0) * ROW_HEIGHT + headerHeight(sessionBaseW) + PADDING_Y + BOTTOM_PADDING)));
         }
 
         final Transform tx = (null != overrideTx) ? overrideTx : computeZoomTransform(layout, recentNodeKeys, target, baseW, baseH);
@@ -978,9 +1052,9 @@ public final class TreeTracker {
 
         for (final Edge e : sortedEdges) {
             final int startX = e.from().col() * COL_WIDTH + CARD_WIDTH + PADDING_X;
-            final int startY = (int) Math.round(e.from().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + HEADER_HEIGHT + PADDING_Y);
+            final int startY = (int) Math.round(e.from().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + headerHeight(baseW) + PADDING_Y);
             final int endX = e.to().col() * COL_WIDTH + PADDING_X;
-            final int endY = (int) Math.round(e.to().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + HEADER_HEIGHT + PADDING_Y);
+            final int endY = (int) Math.round(e.to().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + headerHeight(baseW) + PADDING_Y);
             final int cX = (startX + endX) / 2;
 
             final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
@@ -1023,7 +1097,7 @@ public final class TreeTracker {
 
         final boolean isAllLeafs = (null != works.lysenko.Base.parameters) ? works.lysenko.Base.parameters.isAllLeafs() : false;
         final works.lysenko.base.output.tree.VisualNodeResolver nodeResolver =
-                new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, false, true, 0.0);
+                new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, false, true, 0.0, headerHeight(baseW));
         final List<works.lysenko.base.output.tree.VisualNode> visualNodes = new ArrayList<>();
         for (final NodeData n : layout.nodes()) {
             visualNodes.add(nodeResolver.resolve(n, recentNodeKeys.contains(n.id()), childFailureCache, executableCache));
@@ -1032,18 +1106,22 @@ public final class TreeTracker {
 
         sb.append("  </g>\n");
 
-        sb.append(String.format(Locale.US,
-                "  <rect x=\"0\" y=\"0\" width=\"%d\" height=\"60\" fill=\"#1E293B\" stroke=\"#334155\" stroke-width=\"1\" />\n",
-                baseW));
-        sb.append(String.format(Locale.US,
-                "  <circle cx=\"%d\" cy=\"30\" r=\"6\" fill=\"#38BDF8\" />\n",
-                PADDING_X + 6));
-        sb.append(String.format(Locale.US,
-                "  <text class=\"tx4\" x=\"%d\" y=\"35\">Scenario Execution Tree Progression</text>\n",
-                PADDING_X + 22));
+        final double scale = Math.max(1.0, baseW / 1200.0);
+        final int localW = (int) Math.round(baseW / scale);
 
-        int rightX = baseW - PADDING_X;
-        final int topY = (HEADER_HEIGHT - 22) / 2;
+        sb.append(String.format(Locale.US, "  <g transform=\"scale(%.4f)\">\n", scale));
+        sb.append(String.format(Locale.US,
+                "    <rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\" fill=\"#1E293B\" stroke=\"#334155\" stroke-width=\"1\" />\n",
+                localW, HEADER_HEIGHT_BASE));
+        sb.append(String.format(Locale.US,
+                "    <circle cx=\"%d\" cy=\"%d\" r=\"6\" fill=\"#38BDF8\" />\n",
+                PADDING_X + 6, HEADER_HEIGHT_BASE / 2));
+        sb.append(String.format(Locale.US,
+                "    <text class=\"tx4\" x=\"%d\" y=\"%d\">Scenario Execution Tree Progression</text>\n",
+                PADDING_X + 22, (HEADER_HEIGHT_BASE / 2) + 5));
+
+        int rightX = localW - PADDING_X;
+        final int topY = (HEADER_HEIGHT_BASE - 22) / 2;
 
         final String elapsedText = (isNotNull(timer))
                 ? "Elapsed: " + formatElapsedTime(Math.max(0L, System.currentTimeMillis() - timer.startedAt()))
@@ -1058,6 +1136,21 @@ public final class TreeTracker {
         rightX = appendHeaderBadgeSvg(sb, "Leafs: " + coveredLeafs + "/" + totalLeafs, rightX, topY, covBg, "#F8FAFC");
         rightX = appendHeaderBadgeSvg(sb, "Target: " + target, rightX, topY, "#334155", "#CBD5E1");
         appendHeaderBadgeSvg(sb, badgeText, rightX, topY, "#0284C7", "#FFFFFF");
+
+        if (Boolean.TRUE.equals(debug)) {
+            final String debugStr = String.format(Locale.US, "dx:%.1f dy:%.1f dz:%.3f maxZ:%.1fx", debugDx, debugDy, debugDz, debugMaxZoom);
+            sb.append(String.format(Locale.US, "  <text class=\"tx3\" x=\"%d\" y=\"%d\" fill=\"#64748B\">%s</text>\n", PADDING_X, HEADER_HEIGHT_BASE - 5, debugStr));
+
+            // The debug movement indicator is drawn relative to the center of the viewport
+            // but reversed since the transform shifts the *camera* not the *object*.
+            final double ox = localW / 2.0;
+            final double oy = (baseH / scale) / 2.0;
+            sb.append(String.format(Locale.US, "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"#F59E0B\" stroke-width=\"2\" />\n", ox, oy, ox - debugDx, oy - debugDy));
+            sb.append(String.format(Locale.US, "  <circle cx=\"%.1f\" cy=\"%.1f\" r=\"3\" fill=\"#F59E0B\" />\n", ox, oy));
+            sb.append(String.format(Locale.US, "  <circle cx=\"%.1f\" cy=\"%.1f\" r=\"2\" fill=\"#F8FAFC\" />\n", ox - debugDx, oy - debugDy));
+        }
+
+        sb.append("  </g>\n");
 
         sb.append("</svg>\n");
         return sb.toString();
@@ -1088,7 +1181,7 @@ public final class TreeTracker {
             final int target,
             final int currentCycle) {
 
-        return renderTreeProgression(layout, target, "Cycle #" + currentCycle, Collections.emptySet(), getAccessibleScenarios());
+        return renderTreeProgression(layout, target, "Test #" + currentCycle, Collections.emptySet(), getAccessibleScenarios());
     }
 
     /**
@@ -1106,7 +1199,7 @@ public final class TreeTracker {
             final int currentCycle,
             final Set<String> recentNodeKeys) {
 
-        return renderTreeProgression(layout, target, "Cycle #" + currentCycle, recentNodeKeys);
+        return renderTreeProgression(layout, target, "Test #" + currentCycle, recentNodeKeys);
     }
 
     /**
@@ -1115,7 +1208,7 @@ public final class TreeTracker {
      *
      * @param layout         computed tree layout
      * @param target         target executions count
-     * @param badgeText      text for the frame badge (e.g. "Cycle #1", "Step #42")
+     * @param badgeText      text for the frame badge (e.g. "Test #1", "Step #42")
      * @param recentNodeKeys set of node keys recently traversed or changed
      * @return rendered BufferedImage
      */
@@ -1246,7 +1339,7 @@ public final class TreeTracker {
             baseW = (int) evenDimension(Math.max(800L, ((long) fullMaxCol + 1L) * COL_WIDTH + PADDING_X * 2L));
             baseH = (int) evenDimension(Math.max(
                     400L,
-                    (long) Math.ceil((fullMaxRow + 1.0) * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y + BOTTOM_PADDING)));
+                    (long) Math.ceil((fullMaxRow + 1.0) * ROW_HEIGHT + headerHeight(sessionBaseW) + PADDING_Y + BOTTOM_PADDING)));
         }
 
         final Transform tx = (null != overrideTx) ? overrideTx : computeZoomTransform(layout, recentNodeKeys, target, baseW, baseH);
@@ -1283,11 +1376,11 @@ public final class TreeTracker {
             tileG.dispose();
 
             dotPaint = new java.awt.TexturePaint(dotTile,
-                    new java.awt.geom.Rectangle2D.Double(0, HEADER_HEIGHT, 24, 24));
+                    new java.awt.geom.Rectangle2D.Double(0, headerHeight(baseW), 24, 24));
             cachedDotPaint = dotPaint;
         }
         g.setPaint(dotPaint);
-        g.fillRect(0, HEADER_HEIGHT, baseW, baseH - HEADER_HEIGHT);
+        g.fillRect(0, headerHeight(baseW), baseW, baseH - headerHeight(baseW));
 
         final long tInit = System.currentTimeMillis() - tRenderStart;
 
@@ -1298,14 +1391,14 @@ public final class TreeTracker {
 
         // Draw edges
         final long tEdgeStart = System.currentTimeMillis();
-        drawEdges(g, layout.edges(), target, maxLeafOverRatio, recentNodeKeys, accessibleScenarios, childFailureCache);
+        drawEdges(g, layout.edges(), target, maxLeafOverRatio, recentNodeKeys, accessibleScenarios, childFailureCache, baseW);
         final long tEdges = System.currentTimeMillis() - tEdgeStart;
 
         // Draw nodes
         final long tNodeStart = System.currentTimeMillis();
         final boolean isAllLeafs = (null != works.lysenko.Base.parameters) ? works.lysenko.Base.parameters.isAllLeafs() : false;
         final works.lysenko.base.output.tree.VisualNodeResolver nodeResolver =
-                new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, false, true, 0.0);
+                new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, false, true, 0.0, headerHeight(baseW));
         final List<works.lysenko.base.output.tree.VisualNode> visualNodes = new ArrayList<>();
         final int totalNodes = layout.nodes().size();
         final Set<Integer> nodeMilestones = new HashSet<>();
@@ -1349,7 +1442,8 @@ public final class TreeTracker {
             final double maxLeafOverRatio,
             final Set<String> recentNodeKeys,
             final Set<_Scenario> accessibleScenarios,
-            final Map<NodeData, Boolean> childFailureCache) {
+            final Map<NodeData, Boolean> childFailureCache,
+            final int baseW) {
 
         final List<Edge> sortedEdges = new ArrayList<>(edges);
         sortedEdges.sort(Comparator.comparingInt(e -> {
@@ -1377,10 +1471,10 @@ public final class TreeTracker {
 
             final int startX = e.from().col() * COL_WIDTH + CARD_WIDTH + PADDING_X;
             final int startY = (int) Math
-                    .round(e.from().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + HEADER_HEIGHT + PADDING_Y);
+                    .round(e.from().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + headerHeight(baseW) + PADDING_Y);
             final int endX = e.to().col() * COL_WIDTH + PADDING_X;
             final int endY = (int) Math
-                    .round(e.to().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + HEADER_HEIGHT + PADDING_Y);
+                    .round(e.to().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + headerHeight(baseW) + PADDING_Y);
             final int cX = (startX + endX) / 2;
 
             final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
@@ -1494,20 +1588,25 @@ public final class TreeTracker {
             final int totalExecs,
             final double zoom) {
 
+        final double scale = Math.max(1.0, canvasW / 1200.0);
+        final java.awt.geom.AffineTransform origTx = g.getTransform();
+        g.scale(scale, scale);
+        final int localCanvasW = (int) Math.round(canvasW / scale);
+
         g.setColor(HEADER_BG);
-        g.fillRect(0, 0, canvasW, HEADER_HEIGHT);
+        g.fillRect(0, 0, localCanvasW, HEADER_HEIGHT_BASE);
         g.setColor(HEADER_BORDER);
-        g.drawLine(0, HEADER_HEIGHT, canvasW, HEADER_HEIGHT);
+        g.drawLine(0, HEADER_HEIGHT_BASE, localCanvasW, HEADER_HEIGHT_BASE);
 
         g.setColor(ACCENT_CYAN);
-        g.fillOval(PADDING_X, (HEADER_HEIGHT - 12) / 2, 12, 12);
+        g.fillOval(PADDING_X, (HEADER_HEIGHT_BASE - 12) / 2, 12, 12);
 
         g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
         g.setColor(TEXT_WHITE);
-        g.drawString("Scenario Execution Tree Progression", PADDING_X + 22, (HEADER_HEIGHT / 2) + 5);
+        g.drawString("Scenario Execution Tree Progression", PADDING_X + 22, (HEADER_HEIGHT_BASE / 2) + 5);
 
-        int rightX = canvasW - PADDING_X;
-        final int topY = (HEADER_HEIGHT - 22) / 2;
+        int rightX = localCanvasW - PADDING_X;
+        final int topY = (HEADER_HEIGHT_BASE - 22) / 2;
 
         final String elapsedText = (isNotNull(timer))
                 ? "Elapsed: " + formatElapsedTime(Math.max(0L, System.currentTimeMillis() - timer.startedAt()))
@@ -1526,6 +1625,24 @@ public final class TreeTracker {
         rightX -= drawBadge(g, "Target: " + target, rightX, topY, new Color(51, 65, 85), new Color(203, 213, 225)) + 10;
 
         drawBadge(g, badgeText, rightX, topY, new Color(2, 132, 199), Color.WHITE);
+
+        if (debug) {
+            final String debugStr = String.format(Locale.US, "dx:%.1f dy:%.1f dz:%.3f maxZ:%.1fx", debugDx, debugDy, debugDz, debugMaxZoom);
+            g.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 10));
+            g.setColor(new Color(100, 116, 139));
+            g.drawString(debugStr, PADDING_X, HEADER_HEIGHT_BASE - 5);
+
+            final double ox = localCanvasW / 2.0;
+            final double oy = (canvasW / scale) / 2.0; // Approximation since we don't pass baseH
+            g.setColor(new Color(245, 158, 11));
+            g.setStroke(new BasicStroke(2.0f));
+            g.drawLine((int) ox, (int) oy, (int) (ox - debugDx), (int) (oy - debugDy));
+            g.fillOval((int) (ox - 3), (int) (oy - 3), 6, 6);
+            g.setColor(new Color(248, 250, 252));
+            g.fillOval((int) (ox - debugDx - 2), (int) (oy - debugDy - 2), 4, 4);
+        }
+
+        g.setTransform(origTx);
     }
 
     private static int drawBadge(

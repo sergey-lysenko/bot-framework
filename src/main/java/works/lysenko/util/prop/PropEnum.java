@@ -194,6 +194,7 @@ public enum PropEnum implements _PropEnum {
     _TREE_INCLUDE_DOWNSTREAM(Boolean.class, FALSE),
     _TREE_INCLUDE_UPSTREAM(Boolean.class, FALSE),
     _TREE_NOTIFY_ABOUT_EMPTY_SCENARIO_PACKAGES(Boolean.class, TRUE),
+    _TREE_PROGRESSION_DEBUG(Boolean.class, FALSE),
     _TREE_PROGRESSION_OPTIMIZATION(Boolean.class, TRUE),
     _TREE_PROGRESSION_OPTIMIZATION_BANK_COLUMNS(Integer.class, _2_),
     _TREE_PROGRESSION_OPTIMIZATION_MAX_ASPECT_RATIO(Double.class, _0_, _DOT_, _8_, _5_),

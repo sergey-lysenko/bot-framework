@@ -5,6 +5,8 @@ import works.lysenko.base.core.Routines;
 import works.lysenko.base.output.PostProcessor;
 import works.lysenko.base.output.ProgressionSettings;
 import works.lysenko.base.output.RunLocks;
+import works.lysenko.base.output.ScenarioTracker;
+import works.lysenko.base.output.TreeTracker;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
 import static works.lysenko.util.spec.Layout.Files.name;
@@ -475,6 +477,8 @@ public final class Core extends Root implements _Core, _Tests {
             log(Level.none, b(c(CLOSING), LOG, AND, TELEMETRY, s(WRITER, S)), false);
             Routines.closeQuietly(logger.getLogWriter(), "Unable to close log writer"); //NON-NLS
             Routines.closeQuietly(logger.getTelemetryWriter(), "Unable to close telemetry writer"); //NON-NLS
+            ScenarioTracker.onComplete();
+            TreeTracker.triggerCooldownFrames();
             PostProcessor.launchDetached(logFile, htmlFile, shouldOpenBrowser, shouldShowPostProcessorWindow);
             runLock.close();
             processCode(isSuccess ? SUCCESS : EXECUTION_FAILURE);

@@ -455,7 +455,7 @@ public final class ScenarioTracker {
         final String compColor = (completedCount == totalScenarios) ? "#22C55E" : "#F59E0B";
         badgeX = appendBadgeSvg(sb, completedStr, badgeX, badgeY, compColor + "28", compColor);
 
-        final String cycleStr = String.format("CYCLE #%d", currentCycle);
+        final String cycleStr = String.format("TEST #%d", currentCycle);
         appendBadgeSvg(sb, cycleStr, badgeX, badgeY, "#38BDF828", "#38BDF8");
 
         final int chartX = cardX + 54;
@@ -639,7 +639,7 @@ public final class ScenarioTracker {
                 new Color(compColor.getRed(), compColor.getGreen(), compColor.getBlue(), 40), compColor) + 8;
 
         // Badge 1: Cycle number
-        final String cycleStr = String.format("CYCLE #%d", currentCycle);
+        final String cycleStr = String.format("TEST #%d", currentCycle);
         drawBadge(g, cycleStr, badgeX, badgeY, new Color(56, 189, 248, 40), ACCENT_BLUE);
 
         // Chart plotting area

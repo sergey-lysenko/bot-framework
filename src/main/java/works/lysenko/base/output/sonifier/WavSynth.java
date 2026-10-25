@@ -49,6 +49,7 @@ final class WavSynth {
             final int attackSamples = SAMPLE_RATE * NOTE_ATTACK_MILLIS / 1000;
             final List<AudioNote> activeNotes = new ArrayList<>();
             int currentFrame = -1;
+            double globalSwooshState = 0.0;
             for (long sample = 0; sample < totalSamples; sample++) {
                 final int frameIndex = (int) (sample / samplesPerFrame);
                 if (frameIndex != currentFrame) {
@@ -56,23 +57,36 @@ final class WavSynth {
                     activeNotes.addAll(notesByFrame.getOrDefault(frameIndex, List.of()));
                 }
                 for (int noteIndex = activeNotes.size() - 1; noteIndex >= 0; noteIndex--) {
-                    if (sample - activeNotes.get(noteIndex).startSample() >= noteSamples) {
+                    // Let swooshes ring out longer if needed, or just let them fade out naturally within the 400ms duration
+                    // We'll increase noteSamples for swoosh so it doesn't get cut off
+                    final int activeNoteSamples = activeNotes.get(noteIndex).isSwoosh() ? SAMPLE_RATE : noteSamples;
+                    if (sample - activeNotes.get(noteIndex).startSample() >= activeNoteSamples) {
                         activeNotes.remove(noteIndex);
                     }
                 }
                 double value = 0.0;
+                globalSwooshState = 0.90 * globalSwooshState + 0.10 * (Math.random() * 2.0 - 1.0);
                 final double chordScale = activeNotes.isEmpty() ? 0.0 : 1.0 / Math.sqrt(activeNotes.size());
                 for (final AudioNote note : activeNotes) {
                     final long age = sample - note.startSample();
-                    final double attack = Math.min(1.0, (double) age / attackSamples);
-                    final double decay = Math.exp(-age / (SAMPLE_RATE * NOTE_DECAY_SECONDS));
+                    final double localAttackSamples = note.isSwoosh() ? SAMPLE_RATE * 0.1 : attackSamples;
+                    final double localDecaySeconds = note.isSwoosh() ? 0.3 : NOTE_DECAY_SECONDS;
+                    final double attack = Math.min(1.0, (double) age / localAttackSamples);
+                    final double decay = Math.exp(-age / (SAMPLE_RATE * localDecaySeconds));
                     final double envelope = attack * decay;
-                    final double frequency = 440.0 * Math.pow(2.0, (note.midi() - 69) / 12.0);
-                    final double phase = 2.0 * Math.PI * frequency * age / SAMPLE_RATE;
-                    double wave = Math.sin(phase);
-                    if (0.0 < note.brightness()) {
-                        wave = (wave + note.brightness() * (0.5 * Math.sin(2.0 * phase) + 0.25 * Math.sin(3.0 * phase)))
-                                / (1.0 + 0.75 * note.brightness());
+                    
+                    double wave;
+                    if (note.isSwoosh()) {
+                        // Use 1-pole low-pass filtered noise to make it smooth instead of harsh white noise
+                        wave = globalSwooshState * 1.5;
+                    } else {
+                        final double frequency = 440.0 * Math.pow(2.0, (note.midi() - 69) / 12.0);
+                        final double phase = 2.0 * Math.PI * frequency * age / SAMPLE_RATE;
+                        wave = Math.sin(phase);
+                        if (0.0 < note.brightness()) {
+                            wave = (wave + note.brightness() * (0.5 * Math.sin(2.0 * phase) + 0.25 * Math.sin(3.0 * phase)))
+                                    / (1.0 + 0.75 * note.brightness());
+                        }
                     }
                     value += note.amplitude() * chordScale * envelope * wave;
                 }

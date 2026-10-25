@@ -13,7 +13,7 @@ import java.util.List;
  */
 public class GraphicsTreeRenderer {
 
-    private static final Font FONT_LABEL = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+    private static final Font FONT_LABEL = new Font(Font.MONOSPACED, Font.PLAIN, 12);
     private static final Font FONT_BADGE = new Font(Font.MONOSPACED, Font.BOLD, 10);
     private static final BasicStroke DASHED_STROKE = new BasicStroke(1.2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, new float[]{3.0f, 3.0f}, 0.0f);
 

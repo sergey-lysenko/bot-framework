@@ -23,6 +23,7 @@ public class VisualNodeResolver {
     private final boolean isRecent;
     private final boolean includeHeaderOffset;
     private final double minRow;
+    private final int headerHeight;
 
     /**
      * Constructs a new VisualNodeResolver.
@@ -57,7 +58,7 @@ public class VisualNodeResolver {
      * @param includeHeaderOffset the includeHeaderOffset
      */
     public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isAllLeafs, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset) {
-        this(theme, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, isRecent, includeHeaderOffset, 0.0);
+        this(theme, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, isRecent, includeHeaderOffset, 0.0, 60);
     }
 
     /**
@@ -72,6 +73,10 @@ public class VisualNodeResolver {
      * @param minRow the minRow
      */
     public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isAllLeafs, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset, double minRow) {
+        this(theme, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, isRecent, includeHeaderOffset, minRow, 60);
+    }
+
+    public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isAllLeafs, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset, double minRow, int headerHeight) {
         this.theme = theme;
         this.accessibleScenarios = accessibleScenarios;
         this.isAllLeafs = isAllLeafs;
@@ -80,6 +85,7 @@ public class VisualNodeResolver {
         this.isRecent = isRecent;
         this.includeHeaderOffset = includeHeaderOffset;
         this.minRow = minRow;
+        this.headerHeight = headerHeight;
     }
     
     /**
@@ -215,7 +221,7 @@ public class VisualNodeResolver {
         double x, y;
         if (includeHeaderOffset) {
             x = node.col() * 270 + 40;
-            y = (node.row() - minRow) * 60 + 60 + 32;
+            y = (node.row() - minRow) * 60 + headerHeight + 32;
         } else {
             x = node.col() * 260 + 40;
             y = (node.row() - minRow) * 56 + 20;

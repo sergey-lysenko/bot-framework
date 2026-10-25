@@ -46,6 +46,10 @@
 # .tree.hide.off.branches=false
 
 # ------------------------------------------------------------------------------
+# Displays debug coordinates and camera movement vector in tree progression frames. Default: false
+# .tree.progression.debug=false
+
+# ------------------------------------------------------------------------------
 # Enables 16:9 layout optimization and compaction for scenario execution trees. Default: true
 # .tree.progression.optimization=true
 
