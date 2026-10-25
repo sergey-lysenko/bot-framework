@@ -189,13 +189,14 @@ public class ColoursQuotas extends AbstractQuotas implements _ColoursQuotas {
         return new Slack(margin, border);
     }
 
-    @SuppressWarnings({"MethodWithMultipleReturnPoints", "rawtypes"})
     /**
      * Performs is within precision.
      * @param value the value
      * @param quota the quota
      * @return the is within precision result
      */
+    @SuppressWarnings({"MethodWithMultipleReturnPoints", "rawtypes"})
+    @Override
     public final boolean isWithinPrecision(final Object value, final _Quota quota) {
 
         if (isNull(quota.precision())) return quota.value().equals(value);

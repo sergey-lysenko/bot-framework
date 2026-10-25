@@ -27,7 +27,7 @@ import static works.lysenko.util.spec.Symbols._DOT_;
 /**
  * The Weights class provides utility methods for calculating and retrieving weights associated with scenarios.
  */
-@SuppressWarnings({"MethodWithMultipleReturnPoints", "StaticMethodOnlyUsedInOneClass", "CallToSuspiciousStringMethod",
+@SuppressWarnings({"MethodWithMultipleReturnPoints", "StaticMethodOnlyUsedInOneClass", "CallToSuspiciousStringMethod", "deprecation",
         "StringToUpperCaseOrToLowerCaseWithoutLocale"})
 public record Weights() {
 

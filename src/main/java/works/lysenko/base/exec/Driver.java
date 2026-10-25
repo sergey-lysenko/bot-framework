@@ -193,6 +193,29 @@ public class Driver implements _Driver {
     private static final String ANDROID_HOME = "ANDROID_HOME";
     private static final String ANDROID_SDK_ROOT = "ANDROID_SDK_ROOT";
     private static final int DEFAULT_APPIUM_PORT = 4723;
+    private static final String ERR_EADDRINUSE = "EADDRINUSE";
+    private static final String ERR_ADDRESS_IN_USE = "address already in use";
+    private static final String ERR_LISTEN_EADDRINUSE = "listen EADDRINUSE";
+    private static final String MSG_PORT_CONFLICT_4723 = "Port conflict: port 4723 is already in use (EADDRINUSE)";
+    private static final String MSG_SDK_ROOT_NOT_EXIST = "The Android SDK root folder";
+    private static final String MSG_DOES_NOT_EXIST = "does not exist";
+    private static final String MSG_SDK_ROOT_CHECK = "Android SDK root folder does not exist: check ANDROID_HOME / ANDROID_SDK_ROOT";
+    private static final String MSG_NO_DEVICE = "Could not find a connected Android device";
+    private static final String MSG_NO_DEVICE_HINT = "No connected Android device/emulator found. Ensure the emulator is running ('adb devices')";
+    private static final String MSG_ORIGINAL_ERROR = "Original error:";
+    private static final String MSG_PORT_CONFLICT_GENERIC = "Port conflict (EADDRINUSE): another Appium instance or process is using this port";
+    private static final String MSG_SDK_FOLDER_CHECK = "Android SDK folder does not exist: check ANDROID_HOME / ANDROID_SDK_ROOT";
+    private static final String MSG_PARSER_NO_BYTES = "HTTP/1.1 header parser received no bytes";
+    private static final String MSG_APPIUM_CLOSED = "Appium server closed the connection unexpectedly (see ";
+    private static final String MSG_UNKNOWN_ERROR = "Unknown driver instantiation error";
+    private static final String DIR_PLATFORM_TOOLS = "platform-tools";
+    private static final String DIR_PLATFORMS = "platforms";
+    private static final String PATH_MACOS_SDK = "/Library/Android/sdk";
+    private static final String PATH_ANDROID_SDK = "/Android/Sdk";
+    private static final String PATH_SDK = "/sdk";
+    private static final String PATH_OPT_SDK = "/opt/android-sdk";
+    private static final String PATH_USR_LOCAL_SDK = "/usr/local/share/android-sdk";
+    private static final String MSG_DEFAULT_PORT_BUSY = "Default Appium port 4723 is already in use; selecting an available free port ...";
 
     private void createService() {
 
@@ -204,7 +227,7 @@ public class Driver implements _Driver {
             builder.withArgument(() -> s(_DASH_, _DASH_, LOG, _DASH_, LEVEL), WARN);
         }
         if (!isPortAvailable(DEFAULT_APPIUM_PORT)) {
-            log(Level.none, "Default Appium port 4723 is already in use; selecting an available free port ...", true);
+            log(Level.none, MSG_DEFAULT_PORT_BUSY, true);
             builder.usingAnyFreePort();
         }
         configureAndroidSdk(builder);
@@ -253,12 +276,12 @@ public class Driver implements _Driver {
         final String userHome = System.getProperty("user.home");
         final String localAppData = System.getenv("LOCALAPPDATA");
         final String[] candidates = {
-                (isNotNull(userHome)) ? userHome + "/Library/Android/sdk" : null,
-                (isNotNull(userHome)) ? userHome + "/Android/Sdk" : null,
-                (isNotNull(userHome)) ? userHome + "/sdk" : null,
+                (isNotNull(userHome)) ? userHome + PATH_MACOS_SDK : null,
+                (isNotNull(userHome)) ? userHome + PATH_ANDROID_SDK : null,
+                (isNotNull(userHome)) ? userHome + PATH_SDK : null,
                 (isNotNull(localAppData)) ? localAppData + "\\Android\\Sdk" : null,
-                "/opt/android-sdk",
-                "/usr/local/share/android-sdk"
+                PATH_OPT_SDK,
+                PATH_USR_LOCAL_SDK
         };
         for (final String candidate : candidates) {
             if (isValidSdkDir(candidate)) return candidate;
@@ -270,7 +293,7 @@ public class Driver implements _Driver {
 
         if (isNull(path) || path.isBlank()) return false;
         final File dir = new File(path);
-        return dir.isDirectory() && (new File(dir, "platform-tools").isDirectory() || new File(dir, "platforms").isDirectory());
+        return dir.isDirectory() && (new File(dir, DIR_PLATFORM_TOOLS).isDirectory() || new File(dir, DIR_PLATFORMS).isDirectory());
     }
 
     /**
@@ -318,18 +341,18 @@ public class Driver implements _Driver {
                 final List<String> lines = Files.readAllLines(logFile.toPath());
                 for (int i = lines.size() - 1; i >= 0; i--) {
                     final String line = lines.get(i).trim();
-                    if (line.contains("EADDRINUSE") || line.contains("address already in use")) {
-                        final int idx = line.indexOf("listen EADDRINUSE");
-                        return (idx >= 0) ? line.substring(idx) : "Port conflict: port 4723 is already in use (EADDRINUSE)";
+                    if (line.contains(ERR_EADDRINUSE) || line.contains(ERR_ADDRESS_IN_USE)) {
+                        final int idx = line.indexOf(ERR_LISTEN_EADDRINUSE);
+                        return (idx >= 0) ? line.substring(idx) : MSG_PORT_CONFLICT_4723;
                     }
-                    if (line.contains("The Android SDK root folder") && line.contains("does not exist")) {
-                        return "Android SDK root folder does not exist: check ANDROID_HOME / ANDROID_SDK_ROOT";
+                    if (line.contains(MSG_SDK_ROOT_NOT_EXIST) && line.contains(MSG_DOES_NOT_EXIST)) {
+                        return MSG_SDK_ROOT_CHECK;
                     }
-                    if (line.contains("Could not find a connected Android device")) {
-                        return "No connected Android device/emulator found. Ensure the emulator is running ('adb devices')";
+                    if (line.contains(MSG_NO_DEVICE)) {
+                        return MSG_NO_DEVICE_HINT;
                     }
-                    if (line.contains("Original error:")) {
-                        return line.substring(line.indexOf("Original error:"));
+                    if (line.contains(MSG_ORIGINAL_ERROR)) {
+                        return line.substring(line.indexOf(MSG_ORIGINAL_ERROR));
                     }
                 }
             } catch (final Exception ignored) {
@@ -341,21 +364,22 @@ public class Driver implements _Driver {
         while (isNotNull(cause)) {
             final String msg = cause.getMessage();
             if (isNotNull(msg)) {
-                if (msg.contains("EADDRINUSE") || msg.contains("address already in use")) {
-                    return "Port conflict (EADDRINUSE): another Appium instance or process is using this port";
+                if (msg.contains(ERR_EADDRINUSE) || msg.contains(ERR_ADDRESS_IN_USE)) {
+                    return MSG_PORT_CONFLICT_GENERIC;
                 }
-                if (msg.contains("The Android SDK root folder") && msg.contains("does not exist")) {
-                    return "Android SDK folder does not exist: check ANDROID_HOME / ANDROID_SDK_ROOT";
+                if (msg.contains(MSG_SDK_ROOT_NOT_EXIST) && msg.contains(MSG_DOES_NOT_EXIST)) {
+                    return MSG_SDK_FOLDER_CHECK;
                 }
-                if (msg.contains("HTTP/1.1 header parser received no bytes")) {
-                    return "Appium server closed the connection unexpectedly (see " + APPIUM_LOG + ")";
+                if (msg.contains(MSG_PARSER_NO_BYTES)) {
+                    return s(MSG_APPIUM_CLOSED, APPIUM_LOG, ")");
                 }
             }
             cause = cause.getCause();
         }
 
-        return (isNotNull(e.getMessage())) ? e.getMessage() : "Unknown driver instantiation error";
+        return (isNotNull(e.getMessage())) ? e.getMessage() : MSG_UNKNOWN_ERROR;
     }
+
 
     /**
      * Configures the driver for executing the automation.

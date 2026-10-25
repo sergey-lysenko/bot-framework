@@ -2,7 +2,9 @@ package works.lysenko.util.data.range.graph;
 
 import org.apache.commons.math3.fraction.Fraction;
 import org.junit.jupiter.api.Test;
+import works.lysenko.util.apis.grid.q._Quota;
 import works.lysenko.util.apis.grid.v._ValuedRangeResult;
+
 import works.lysenko.util.data.enums.RangeResult;
 import works.lysenko.util.data.range.AbstractQuotas;
 import works.lysenko.util.data.range.IntegerRange;
@@ -89,16 +91,15 @@ class WriterTest {
 
     @Test
     void testGraphExpectedInteger() {
-        final AbstractQuotas quotas = new AbstractQuotas(List.of(
-                new Quota<>(1, null, null, Fraction.ZERO, Fraction.ONE_HALF)
-        )) {
+        final List<_Quota<?>> list = List.of(new Quota<Integer>(1, null, null, Fraction.ZERO, Fraction.ONE_HALF));
+        final AbstractQuotas quotas = new AbstractQuotas(list) {
             @Override
             public Fraction logExpected(final int width, final Renderers renderers) {
                 return Fraction.ZERO;
             }
 
             @Override
-            public boolean isWithinPrecision(final Object value, final works.lysenko.util.apis.grid.q._Quota quota) {
+            public boolean isWithinPrecision(final Object value, final _Quota quota) {
                 return true;
             }
 
@@ -114,16 +115,15 @@ class WriterTest {
 
     @Test
     void testGraphExpectedFraction() {
-        final AbstractQuotas quotas = new AbstractQuotas(List.of(
-                new Quota<>(Fraction.ONE_HALF, null, null, Fraction.ZERO, Fraction.ONE_HALF)
-        )) {
+        final List<_Quota<?>> list = List.of(new Quota<Fraction>(Fraction.ONE_HALF, null, null, Fraction.ZERO, Fraction.ONE_HALF));
+        final AbstractQuotas quotas = new AbstractQuotas(list) {
             @Override
             public Fraction logExpected(final int width, final Renderers renderers) {
                 return Fraction.ZERO;
             }
 
             @Override
-            public boolean isWithinPrecision(final Object value, final works.lysenko.util.apis.grid.q._Quota quota) {
+            public boolean isWithinPrecision(final Object value, final _Quota quota) {
                 return true;
             }
 
@@ -137,3 +137,5 @@ class WriterTest {
         assertNotNull(result);
     }
 }
+
+

@@ -321,6 +321,7 @@ public class TestProperties implements _TestProperties {
         return the.entrySet();
     }
 
+    @Deprecated
     @Override
     public final Object getProperty(final String key, final String def) {
 

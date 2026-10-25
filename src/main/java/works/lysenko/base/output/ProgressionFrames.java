@@ -238,6 +238,7 @@ final class ProgressionFrames {
         }
     }
 
+    @SuppressWarnings("deprecation")
     static BufferedImage renderSvg(final File file, final int maxFramePixels, final int targetWidth, final int targetHeight) throws IOException {
         try {
             final SVGLoader loader = new SVGLoader();
@@ -282,6 +283,7 @@ final class ProgressionFrames {
         }
     }
 
+    @SuppressWarnings("deprecation")
     static int[] dimensions(final File file, final int maxFramePixels) throws IOException {
         if (file.getName().endsWith(".svg")) {
             try {

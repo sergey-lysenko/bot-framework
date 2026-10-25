@@ -28,6 +28,7 @@ import static works.lysenko.util.func.type.fractions.Factory.fr;
  * Validates property keys and values entered in UI components or read from configuration files
  * against the declared properties in {@link PropEnum} and any project-scoped {@link _PropEnum} implementations.
  */
+@SuppressWarnings("deprecation")
 public final class PropertyValidator {
 
     /**

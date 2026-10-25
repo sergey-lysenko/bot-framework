@@ -59,7 +59,7 @@ import static works.lysenko.util.spec.Symbols.*;
 /**
  * Abstract scenario executed to analyze and handle exceptions occurring during test execution.
  */
-@SuppressWarnings("AbstractClassWithOnlyOneDirectInheritor")
+@SuppressWarnings({"AbstractClassWithOnlyOneDirectInheritor", "deprecation"})
 public abstract class Exceptional extends Core {
 
     /**

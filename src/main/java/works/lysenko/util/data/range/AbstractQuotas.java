@@ -408,5 +408,6 @@ public abstract class AbstractQuotas implements _Quotas {
      * @param quota the quota
      * @return the is within precision result
      */
+    @SuppressWarnings("rawtypes")
     public abstract boolean isWithinPrecision(final Object value, final _Quota quota);
 }

@@ -85,5 +85,6 @@ public interface _Quotas<T> {
      * @param quota the quota against which the precision is evaluated
      * @return true if the value is within the precision range defined by the quota, false otherwise
      */
-    boolean isWithinPrecision(Object value, _Quota<?> quota);
+    @SuppressWarnings("rawtypes")
+    boolean isWithinPrecision(Object value, _Quota quota);
 }
