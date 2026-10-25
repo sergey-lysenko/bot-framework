@@ -126,16 +126,33 @@ public class TestProperties implements _TestProperties {
         }
     }
 
+    /**
+     * Performs are test properties ready.
+     * @return the are test properties ready result
+     */
     public final boolean areTestPropertiesReady() {
 
         return isNotNull(the);
     }
 
+    /**
+     * Performs get.
+     * @param type the type
+     * @param name the name
+     * @return the get result
+     */
     public final <T> T get(final Class<T> type, final String name) {
 
         return get(type, name, false);
     }
 
+    /**
+     * Performs get.
+     * @param type the type
+     * @param name the name
+     * @param silent the silent
+     * @return the get result
+     */
     public final <T> T get(final Class<T> type, final String name, final boolean silent) {
 
         final String source = assureTestProperty(type, name, silent);
@@ -146,6 +163,10 @@ public class TestProperties implements _TestProperties {
 
     @Override
     @SuppressWarnings("MethodWithMultipleLoops")
+    /**
+     * Performs get defaults.
+     * @return the get defaults result
+     */
     public final Map<String, String> getDefaults() {
 
         final Map<String, String> def = new LinkedHashMap<>();
@@ -315,6 +336,10 @@ public class TestProperties implements _TestProperties {
         return (null != val) ? val : def;
     }
 
+    /**
+     * Performs get sorted.
+     * @return the get sorted result
+     */
     public final Map<String, String> getSorted() {
 
         final Map<String, String> sorted = new SortedString();
@@ -324,6 +349,12 @@ public class TestProperties implements _TestProperties {
         return sorted;
     }
 
+    /**
+     * Performs get test property source.
+     * @param name the name
+     * @param silent the silent
+     * @return the get test property source result
+     */
     public final String getTestPropertySource(final String name, final boolean silent) {
 
         if (isNull(the)) readCommonConfiguration();
@@ -342,6 +373,12 @@ public class TestProperties implements _TestProperties {
         return source;
     }
 
+    /**
+     * Performs is common value.
+     * @param name the name
+     * @param value the value
+     * @return the is common value result
+     */
     public final boolean isCommonValue(final String name, final String value) {
 
         final String commonValue = (String) commonConfiguration.get(name);
@@ -381,6 +418,10 @@ public class TestProperties implements _TestProperties {
     }
 
     @SuppressWarnings("UseOfPropertiesAsHashtable")
+    /**
+     * Performs read common configuration.
+     * @return the read common configuration result
+     */
     public final String readCommonConfiguration() {
 
         if (readingCommonConfiguration) return "";
@@ -407,6 +448,9 @@ public class TestProperties implements _TestProperties {
     }
 
     @SuppressWarnings("UseOfPropertiesAsHashtable")
+    /**
+     * Performs read test configuration.
+     */
     public final void readTestConfiguration() {
 
         String common = null;
@@ -464,6 +508,9 @@ public class TestProperties implements _TestProperties {
 
     @Override
     @SuppressWarnings("UseOfPropertiesAsHashtable")
+    /**
+     * Performs prepare test configuration operation.
+     */
     public final void prepareTestConfiguration(final String testName, final Boolean isHeadless,
                                                final Boolean isAllLeafs, final Integer allLeafsCount) {
 
@@ -501,6 +548,9 @@ public class TestProperties implements _TestProperties {
         refreshAllPropertyRecords();
     }
 
+    /**
+     * Performs refresh all property records.
+     */
     public static void refreshAllPropertyRecords() {
         works.lysenko.util.prop.core.Assertions.refresh();
         works.lysenko.util.prop.core.Mode.refresh();
@@ -541,6 +591,10 @@ public class TestProperties implements _TestProperties {
 
     @Override
     @SuppressWarnings({"UseOfPropertiesAsHashtable", "MethodWithMultipleLoops"})
+    /**
+     * Performs resolve effective properties operation.
+     * @return result of resolve effective properties
+     */
     public final Map<String, String> resolveEffectiveProperties(final String testName, final Boolean isHeadless,
                                                                  final Boolean isAllLeafs, final Integer allLeafsCount,
                                                                  final boolean includeUserOverrides) {

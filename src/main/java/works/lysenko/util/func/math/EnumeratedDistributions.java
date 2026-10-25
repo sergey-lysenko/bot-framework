@@ -7,6 +7,9 @@ import works.lysenko.util.data.records.KeyValue;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
+/**
+ * The EnumeratedDistributions record.
+ */
 public record EnumeratedDistributions<T>() {
 
     /**

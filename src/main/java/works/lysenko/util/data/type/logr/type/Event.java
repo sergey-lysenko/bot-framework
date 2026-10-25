@@ -14,7 +14,7 @@ import static works.lysenko.util.func.type.Objects.isNotNull;
 
 /**
  * Represents an event log record.
- * Extends {@AbstractLogData} and implements {@_Event}.
+ * Extends {@link AbstractLogData} and implements {@link _Event}.
  */
 @SuppressWarnings("ProtectedField")
 public class Event extends AbstractLogData implements _Event {

@@ -139,12 +139,22 @@ public class IntegerRange implements _Range<Integer> {
 
     }
 
+    /**
+     * Performs includes.
+     * @param i the i
+     * @return the includes result
+     */
     public final Boolean includes(final Integer i) {
 
         return range.contains(i);
     }
 
     @SuppressWarnings("MethodWithMultipleReturnPoints")
+    /**
+     * Performs margin.
+     * @param value the value
+     * @return the margin result
+     */
     public final Integer margin(final Integer value) {
 
         if (isAnyNull(min(), max())) return null;
@@ -177,11 +187,19 @@ public class IntegerRange implements _Range<Integer> {
         return range.getMinimum();
     }
 
+    /**
+     * Performs to string.
+     * @return the to string result
+     */
     public final String toString() {
 
         return toString(false);
     }
 
+    /**
+     * Performs to verbose string.
+     * @return the to verbose string result
+     */
     public final String toVerboseString() {
 
         return toString(true);

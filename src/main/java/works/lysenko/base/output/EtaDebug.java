@@ -18,6 +18,9 @@ import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.spec.Layout.Files.name;
 import static works.lysenko.util.spec.Layout.Templates.RUN_ETA_DEBUG_;
 
+/**
+ * The EtaDebug class.
+ */
 public final class EtaDebug {
 
     private static long cycleStartMs = 0L;
@@ -27,6 +30,9 @@ public final class EtaDebug {
     private EtaDebug() {
     }
 
+    /**
+     * Performs reset.
+     */
     public static synchronized void reset() {
 
         cycleStartMs = 0L;
@@ -34,6 +40,10 @@ public final class EtaDebug {
         cycleSamples.clear();
     }
 
+    /**
+     * Performs start cycle.
+     * @param name the name
+     */
     public static synchronized void startCycle(final String name) {
 
         cycleStartMs = (isNotNull(Base.timer)) ? Base.timer.msSinceStart() : 0L;
@@ -44,6 +54,10 @@ public final class EtaDebug {
         }
     }
 
+    /**
+     * Performs record sample.
+     * @param etaMs the etaMs
+     */
     public static synchronized void recordSample(final long etaMs) {
 
         if (etaMs > 0L) {
@@ -52,6 +66,10 @@ public final class EtaDebug {
         }
     }
 
+    /**
+     * Performs end cycle.
+     * @param name the name
+     */
     public static synchronized void endCycle(final String name) {
 
         if (Boolean.FALSE.equals(PropEnum._TEST_REPORT_ADD_ETA_DEBUG.get())) return;
@@ -102,6 +120,9 @@ public final class EtaDebug {
         cycleSamples.clear();
     }
 
+    /**
+     * Performs append operation.
+     */
     public static synchronized void append(final int testNum, final long realMs, final long meanEtaMs,
                                            final long stdDevEtaMs, final long predictedMs, final String name) {
 

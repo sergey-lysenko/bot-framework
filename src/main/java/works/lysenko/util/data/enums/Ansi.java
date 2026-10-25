@@ -247,6 +247,12 @@ public enum Ansi {
         return ansi(sn(o), BLACK_BRIGHT);
     }
 
+    /**
+     * Performs gray.
+     * @param inCase the inCase
+     * @param o the o
+     * @return the gray result
+     */
     public static String gray(final boolean inCase, final Object o) {
 
         return colorize(inCase, BLACK_BRIGHT, sn(o));

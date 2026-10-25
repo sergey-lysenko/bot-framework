@@ -8,6 +8,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
+/**
+ * The RunLocks class.
+ */
 public final class RunLocks {
 
     private static final String RUN_DIRECTORY = "run";
@@ -17,6 +20,10 @@ public final class RunLocks {
     private RunLocks() {
     }
 
+    /**
+     * Performs acquire run lock.
+     * @return the acquire run lock result
+     */
     public static RunLock acquireRunLock() {
         final Path directory = Path.of(RUN_DIRECTORY).toAbsolutePath().normalize();
         return acquireRunLock(directory);
@@ -57,10 +64,19 @@ public final class RunLocks {
         return lock;
     }
 
+    /**
+     * Performs is postprocess lock held.
+     * @return the is postprocess lock held result
+     */
     public static boolean isPostprocessLockHeld() throws IOException {
         return isPostprocessLockHeld(Path.of(RUN_DIRECTORY).toAbsolutePath().normalize());
     }
 
+    /**
+     * Performs is postprocess lock held.
+     * @param directory the directory
+     * @return the is postprocess lock held result
+     */
     public static boolean isPostprocessLockHeld(final Path directory) throws IOException {
         Files.createDirectories(directory);
         final Path lockPath = directory.resolve(POSTPROCESS_LOCK);
@@ -71,6 +87,10 @@ public final class RunLocks {
         return false;
     }
 
+    /**
+     * Performs wait for postprocess.
+     * @param timeoutSeconds the timeoutSeconds
+     */
     public static void waitForPostprocess(final long timeoutSeconds) {
         final long deadline = System.currentTimeMillis() + (timeoutSeconds * 1000);
         try {
@@ -82,6 +102,10 @@ public final class RunLocks {
         }
     }
 
+    /**
+     * Performs main.
+     * @param args the args
+     */
     public static void main(final String[] args) {
         final long timeout = (args.length > 0) ? Long.parseLong(args[0]) : 300;
         System.out.println("⏳ Waiting for postprocessing lock (run/.postprocess.lock)...");
@@ -113,6 +137,9 @@ public final class RunLocks {
         }
     }
 
+    /**
+     * The RunLock class.
+     */
     public static final class RunLock implements AutoCloseable {
         private final LockHandle handle;
 

@@ -82,6 +82,9 @@ public class Test implements _Test {
     }
 
     @SuppressWarnings("ChainedMethodCall")
+    /**
+     * Performs execute.
+     */
     public final void execute() throws SafeguardException {
 
         Traverse.freeze();
@@ -98,6 +101,10 @@ public class Test implements _Test {
         } else fail(INITIAL_SETBACK_MESSAGE); //NON-NLS
     }
 
+    /**
+     * Performs executor.
+     * @return the executor result
+     */
     public final _Exec executor() {
 
         return executor;
@@ -109,15 +116,27 @@ public class Test implements _Test {
         return (null == status) ? b(c(STATUS), UNKNOWN) : status.get();
     }
 
+    /**
+     * Performs handler.
+     * @return the handler result
+     */
     public final _ExceptionsHandler handler() {
 
         return handler;
     }
 
+    /**
+     * Performs statistics.
+     * @return the statistics result
+     */
     public final _Stat statistics() {
         return statistics;
     }
 
+    /**
+     * Performs is stop requested by dashboard.
+     * @return the is stop requested by dashboard result
+     */
     public final boolean isStopRequestedByDashboard() {
 
         return (isNotNull(core.getDashboard())) && core.getDashboard().isStop();
@@ -135,16 +154,27 @@ public class Test implements _Test {
         return preflight;
     }
 
+    /**
+     * Performs repeater.
+     * @return the repeater result
+     */
     public final _Repeater repeater() {
 
         return repeater;
     }
 
+    /**
+     * Performs stop.
+     */
     public final void stop() {
 
         stop(null);
     }
 
+    /**
+     * Performs stop.
+     * @param reason the reason
+     */
     public final void stop(final String reason) {
 
         if (null != reason) core.setStopReason(reason);

@@ -7,10 +7,17 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The AutoCompleteComboBox class.
+ */
 public class AutoCompleteComboBox extends JComboBox<String> {
 
     private final List<String> allItems;
 
+    /**
+     * Constructs a new AutoCompleteComboBox.
+     * @param items the items
+     */
     public AutoCompleteComboBox(List<String> items) {
         super(items.toArray(new String[0]));
         this.allItems = new ArrayList<>(items);
@@ -55,10 +62,18 @@ public class AutoCompleteComboBox extends JComboBox<String> {
         });
     }
 
+    /**
+     * Performs get text.
+     * @return the get text result
+     */
     public String getText() {
         return ((JTextComponent) getEditor().getEditorComponent()).getText();
     }
 
+    /**
+     * Performs set text.
+     * @param text the text
+     */
     public void setText(String text) {
         ((JTextComponent) getEditor().getEditorComponent()).setText(text);
     }

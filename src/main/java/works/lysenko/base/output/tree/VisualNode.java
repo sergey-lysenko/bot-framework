@@ -2,6 +2,9 @@ package works.lysenko.base.output.tree;
 
 import java.awt.Color;
 
+/**
+ * The VisualNode record.
+ */
 public record VisualNode(
     String id,
     String label,

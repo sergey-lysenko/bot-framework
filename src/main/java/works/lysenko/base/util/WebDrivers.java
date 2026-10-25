@@ -27,6 +27,9 @@ import static works.lysenko.util.func.type.Objects.isNotNull;
         "ClassWithTooManyTransitiveDependents", "UtilityClassCanBeEnum", "ClassUnconnectedToPackage",
         "ClassWithTooManyTransitiveDependencies",
         "CyclicClassDependency"})
+/**
+ * The WebDrivers class.
+ */
 public final class WebDrivers {
 
     private WebDrivers() {

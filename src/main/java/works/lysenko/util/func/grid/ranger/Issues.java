@@ -89,12 +89,19 @@ public class Issues<T> implements _Issues<T> {
         this.meta = meta;
     }
 
+    /**
+     * Performs add border too high.
+     */
     public final void addBorderTooHigh() {
 
         addFailure(meta.max(), THRESHOLD_TOO_HIGH, b(c(NO), meta.subject().noun().plural(), ARE, ABOVE, DEFINED, THRESHOLD,
                 IN, q(meta.vr().name())));
     }
 
+    /**
+     * Performs add no corresponding share.
+     * @param ignoreOther the ignoreOther
+     */
     public final void addNoCorrespondingShare(final boolean ignoreOther) {
 
         if (!ignoreOther || Ranges.logAbsentRange)
@@ -103,12 +110,22 @@ public class Issues<T> implements _Issues<T> {
                             q(meta.vr().name())));
     }
 
+    /**
+     * Performs add too few expectations.
+     * @param size the size
+     * @param actualValues the actualValues
+     */
     public final void addTooFewExpectations(final int size, final List<T> actualValues) {
 
         addFailure(meta.max(), TOO_FEW_EXPECTATIONS, b(s(size), IS, TOO_FEW_EXPECTED, meta.subject().noun().plural(), TO,
                 VALIDATE, s(actualValues.size()), ACTUAL, meta.subject().noun().plural(), IN, q(meta.vr().name())));
     }
 
+    /**
+     * Performs add unexpected actual.
+     * @param actualValue the actualValue
+     * @param index the index
+     */
     public final void addUnexpectedActual(final T actualValue, final int index) {
 
         final String actualString = (actualValue instanceof Fraction) ? ts((Fraction) actualValue) : s(actualValue);
@@ -169,6 +186,10 @@ public class Issues<T> implements _Issues<T> {
     }
 
 
+    /**
+     * Performs get.
+     * @return the get result
+     */
     public final RangerResults get() {
 
         final RangerResults results = new RangerResults();
@@ -176,6 +197,10 @@ public class Issues<T> implements _Issues<T> {
         return results;
     }
 
+    /**
+     * Performs is empty.
+     * @return the is empty result
+     */
     public final boolean isEmpty() {
 
         return issues.isEmpty();

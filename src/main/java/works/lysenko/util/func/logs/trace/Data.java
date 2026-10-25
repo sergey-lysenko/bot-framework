@@ -50,6 +50,10 @@ import static works.lysenko.util.spec.Symbols._1_;
 @SuppressWarnings({"unchecked", "MissingJavadoc"})
 public record Data() {
 
+    /**
+     * Performs traceable operation.
+     * @return result of traceable
+     */
     public static _Traceable traceable(final _Range<Fraction> expected, final Fraction actual, final double absoluteMargin,
                                        final _RangedMargin allowedMargin, final double allowedAbsoluteMargin,
                                        final boolean withinMargin, final Severity severity) {
@@ -59,6 +63,10 @@ public record Data() {
                 allowedAbsoluteMargin), key(s(WITHIN, c(MARGIN)), withinMargin), key(SEVERITY, severity));
     }
 
+    /**
+     * Performs traceable operation.
+     * @return result of traceable
+     */
     public static _Traceable traceable(final int width, final int height, final double horizontal, final double vertical,
                                        final double scale, final float ratio) {
 
@@ -66,21 +74,44 @@ public record Data() {
                 key(SCALE, scale), key(RATIO, ratio));
     }
 
+    /**
+     * Performs traceable.
+     * @param center the center
+     * @param radius the radius
+     * @param ratio the ratio
+     * @return the traceable result
+     */
     public static _Traceable traceable(final Location center, final float radius, final float ratio) {
 
         return create(key(CENTER, center), key(RADIUS, radius), key(RATIO, ratio));
     }
 
+    /**
+     * Performs traceable.
+     * @param aspect the aspect
+     * @param resolution the resolution
+     * @return the traceable result
+     */
     public static _Traceable traceable(final float aspect, final Resolution resolution) {
 
         return create(key(ASPECT, aspect), key(RESOLUTION, resolution));
     }
 
+    /**
+     * Performs traceable.
+     * @param expected the expected
+     * @param actual the actual
+     * @return the traceable result
+     */
     public static _Traceable traceable(final boolean expected, final boolean actual) {
 
         return create(key(EXPECTED, expected), key(ACTUAL, actual));
     }
 
+    /**
+     * Performs traceable operation.
+     * @return result of traceable
+     */
     public static _Traceable traceable(final int w, final int h, final Fraction relativeX, final Fraction relativeY,
                                        final int x1, final int y1, final int result) {
 
@@ -88,21 +119,42 @@ public record Data() {
                 , _1_), x1), key(s(Y, _1_), y1), key(RESULT, result));
     }
 
+    /**
+     * Performs traceable.
+     * @param actual the actual
+     * @param expected the expected
+     * @param margin the margin
+     * @return the traceable result
+     */
     public static _Traceable traceable(final Fraction actual, final _Range<Fraction> expected, final Fraction margin) {
 
         return create(key(ACTUAL, ts(true, actual)), key(EXPECTED, expected.toVerboseString()), key(MARGIN, ts(true, margin)));
     }
 
+    /**
+     * Performs traceable.
+     * @param output the output
+     * @return the traceable result
+     */
     public static _Traceable traceable(final String output) {
 
         return create(key(OUTPUT, output));
     }
 
+    /**
+     * Performs traceable.
+     * @param range the range
+     * @return the traceable result
+     */
     public static _Traceable traceable(final _Range<Fraction> range) {
 
         return create(key(RANGE, range.toVerboseString()));
     }
 
+    /**
+     * Performs traceable operation.
+     * @return result of traceable
+     */
     public static _Traceable traceable(final Integer key, final _ValuedRangeResult value, final _Quota<?> range,
                                        final Fraction margin) {
 
@@ -110,6 +162,10 @@ public record Data() {
         return create(key(KEY, key), key(VALUE, value.toString()), key(RANGE, rangeS), key(MARGIN, ts(true, margin)));
     }
 
+    /**
+     * Performs traceable operation.
+     * @return result of traceable
+     */
     public static _Traceable traceable(final boolean silent, final int draft, final int base, final int extra,
                                        final float rate, final int reduction) {
 
@@ -117,6 +173,15 @@ public record Data() {
                 key(REDUCTION, reduction));
     }
 
+    /**
+     * Performs traceable.
+     * @param rawText the rawText
+     * @param x the x
+     * @param y the y
+     * @param x1 the x1
+     * @param y1 the y1
+     * @return the traceable result
+     */
     public static _Traceable traceable(final String rawText, final int x, final int y, final int x1, final int y1) {
 
         return create(key(RAW, rawText), key(s(X), x), key(s(Y), y), key(s(X, _1_), x1), key(s(Y, _1_), y1));

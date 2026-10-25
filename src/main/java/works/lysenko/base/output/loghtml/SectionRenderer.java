@@ -494,8 +494,6 @@ public final class SectionRenderer {
      *
      * @param output             string builder output buffer
      * @param section            log section being rendered
-     * @param causativeArtifacts artifacts created during specific log operations
-     * @param sectionArtifacts   artifacts associated with specific section lines
      */
     public static void appendSectionLines(
             final StringBuilder output,

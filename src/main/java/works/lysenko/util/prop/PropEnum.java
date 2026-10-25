@@ -278,6 +278,10 @@ public enum PropEnum implements _PropEnum {
 
     @Override
     @SuppressWarnings("unchecked")
+    /**
+     * Performs get.
+     * @return the get result
+     */
     public <T> T get() {
 
         if (isNull(properties)) return (T) create(defaultValue, type).result();

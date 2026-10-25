@@ -78,7 +78,7 @@ public class ColourSpread implements _ColourSpread {
     /**
      * Checks if the given RGB color value fits within the spread threshold of this color.
      *
-     * @the rgb color value to check
+     * @param rgb color value to check
      * @return true if the color fits, false otherwise
      */
     @SuppressWarnings("DataFlowIssue")

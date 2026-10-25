@@ -63,7 +63,7 @@ public interface _Quota<T> {
     /**
      * Provides a share of a value of type T.
      *
-     * @return an instance of _Value<>, representing the share
+     * @return an instance of {@code _Value<T>}, representing the share
      */
     _Value<T> share();
 

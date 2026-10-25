@@ -19,10 +19,16 @@ import static works.lysenko.util.lang.word.W.WRITE;
 
 @SuppressWarnings({"unused", "MissingJavadoc", "ProhibitedExceptionThrown",
         "ThrowInsideCatchBlockWhichIgnoresCaughtException", "ClassIndependentOfModule"})
+/**
+ * The Png record.
+ */
 public record Png() {
 
     @SuppressWarnings({"MagicNumber", "HardCodedStringLiteral", "ThrowInsideCatchBlockWhichIgnoresCaughtException",
             "ProhibitedExceptionThrown", "HardcodedFileSeparator"})
+    /**
+     * Performs png stats.
+     */
     public static void pngStats() {
 
         try {

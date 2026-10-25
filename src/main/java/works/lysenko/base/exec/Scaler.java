@@ -90,6 +90,10 @@ public class Scaler implements _Scaler {
         return current;
     }
 
+    /**
+     * Performs get image.
+     * @return the get image result
+     */
     public final BufferedImage getImage() {
 
         return image;

@@ -16,7 +16,7 @@ import static works.lysenko.util.lang.C.COMMA_SPACE;
 
 /**
  * Manages a collection of RangerResult instances and provides validation results.
- * Implements the {@_ValidationResults} and {@_ValidationResult} interfaces.
+ * Implements the {@link _ValidationResults} and {@link _ValidationResult} interfaces.
  */
 @SuppressWarnings("MethodWithMultipleReturnPoints")
 public class RangerResults implements _ValidationResults, _ValidationResult {

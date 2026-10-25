@@ -76,6 +76,11 @@ public final class StringParser<T> implements _Result<T> {
         else return new Color(i(split[ZERO]), i(split[ONE]), i(split[TWO]), i(split[THREE]));
     }
 
+    /**
+     * Performs parse suffixed long.
+     * @param text the text
+     * @return the parse suffixed long result
+     */
     public static long parseSuffixedLong(final String text) throws NumberFormatException {
         if (null == text || text.isBlank()) {
             throw new NumberFormatException("Empty input");
@@ -114,6 +119,11 @@ public final class StringParser<T> implements _Result<T> {
         return Math.round(total);
     }
 
+    /**
+     * Performs parse suffixed int.
+     * @param text the text
+     * @return the parse suffixed int result
+     */
     public static int parseSuffixedInt(final String text) throws NumberFormatException {
         final long val = parseSuffixedLong(text);
         if (val < Integer.MIN_VALUE || val > Integer.MAX_VALUE) {

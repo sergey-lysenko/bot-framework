@@ -76,11 +76,21 @@ public class QuotasHSB extends AbstractQuotas implements _FractionQuotas {
         setQuotas(translate(get()));
     }
 
+    /**
+     * Performs fences.
+     * @return the fences result
+     */
     public final int fences() {
 
         return fences;
     }
 
+    /**
+     * Performs log expected.
+     * @param width the width
+     * @param renderers the renderers
+     * @return the log expected result
+     */
     public final Fraction logExpected(final int width, final Renderers renderers) {
 
         if (isNotNull(renderers) && isNotNull(renderers.point())) {
@@ -104,6 +114,10 @@ public class QuotasHSB extends AbstractQuotas implements _FractionQuotas {
         return null;
     }
 
+    /**
+     * Performs threshold.
+     * @return the threshold result
+     */
     public final Fraction threshold() {
 
         return threshold;

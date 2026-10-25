@@ -12,7 +12,7 @@ import static works.lysenko.util.data.strs.Wrap.e;
 
 /**
  * Represents a line feed log entry.
- * Extends {@AbstractLogData}.
+ * Extends {@link AbstractLogData}.
  *
  * @author Sergii Lysenko
  */

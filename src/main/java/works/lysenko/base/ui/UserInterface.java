@@ -62,6 +62,9 @@ import static works.lysenko.util.spec.Symbols._PRCNT_;
         "FinalClass",
         "ChainedMethodCall", "NestedMethodCall", "ClassWithTooManyDependencies", "ClassWithTooManyTransitiveDependencies",
         "ClassWithTooManyTransitiveDependents", "CyclicClassDependency", "AutoBoxing", "AutoUnboxing", "LawOfDemeter"})
+/**
+ * The UserInterface class.
+ */
 public final class UserInterface extends JPanel implements _Dashboard {
 
     private static final int bytesInMiB = 1 << 20;

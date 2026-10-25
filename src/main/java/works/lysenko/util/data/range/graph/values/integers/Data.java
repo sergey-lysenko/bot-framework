@@ -28,7 +28,7 @@ public record Data(Parameters graphParameters, String value, String max) {
      * Creates a `Data` object based on the provided range, quotas, and configuration options.
      *
      * @param amount The range of integer values representing the numerical limits used for computation.
-     * @param quotas An instance of `_Quotas<?>` that contains quota-related values.
+     * @param quotas An instance of {@code _Quotas<?>} that contains quota-related values.
      * @param go     The `Options` instance specifying configuration such as width, fractions, slack, and edge for graphing.
      * @return A `Data` object encapsulating the generated graph parameters, value, and max text.
      */

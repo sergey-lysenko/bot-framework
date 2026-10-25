@@ -12,6 +12,9 @@ import works.lysenko.util.apis.core._Timer;
         "ClassWithTooManyTransitiveDependents",
         "UnqualifiedFieldAccess", "ClassUnconnectedToPackage", "DesignForExtension", "ImplicitCallToSuper",
         "ClassWithTooManyTransitiveDependencies", "CyclicClassDependency"})
+/**
+ * The Stopwatch class.
+ */
 public class Stopwatch implements _Timer {
 
     private final long start;

@@ -19,7 +19,7 @@ import static works.lysenko.util.spec.Symbols._COMMA_;
 
 /**
  * Represents a standard log entry with indentation and severity level.
- * Extends {@AbstractLogData} and implements {@_Indentation}.
+ * Extends {@link AbstractLogData} and implements {@link _Indentation}.
  *
  * @author Sergii Lysenko
  */

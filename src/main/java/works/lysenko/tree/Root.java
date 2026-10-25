@@ -215,12 +215,22 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         exec.wd().navigate().forward();
     }
 
+    /**
+     * Performs clear.
+     * @param sendKeys the sendKeys
+     * @param locator the locator
+     */
     public final void clear(final boolean sendKeys, final String... locator) {
 
         final WebElement e = find(false, true, true, locator);
         clear(sendKeys, e);
     }
 
+    /**
+     * Performs clear.
+     * @param sendKeys the sendKeys
+     * @param element the element
+     */
     public final void clear(final boolean sendKeys, final WebElement element) {
 
         log(b(c(CLEARING), describe(element)));
@@ -232,38 +242,72 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         logDebug(b(TEXT_IN, describe(element), b(AFTER, s(CLEARING, _COLON_)), element.getAttribute(VALUE)));
     }
 
+    /**
+     * Performs clear.
+     * @param locator the locator
+     */
     public final void clear(final String... locator) {
 
         final WebElement e = find(false, true, true, locator);
         clear(e);
     }
 
+    /**
+     * Performs clear.
+     * @param element the element
+     */
     public final void clear(final WebElement element) {
 
         clear(false, element);
     }
 
+    /**
+     * Performs click on.
+     * @param element the element
+     */
     public final void clickOn(final WebElement element) {
 
         clickOn(element, true);
     }
 
+    /**
+     * Performs click on.
+     * @param element the element
+     * @param waitAfter the waitAfter
+     */
     public final void clickOn(final WebElement element, final long waitAfter) {
 
         clickOn(element, true);
         sleep(waitAfter);
     }
 
+    /**
+     * Performs click on.
+     * @param element the element
+     * @param geometry the geometry
+     */
     public final void clickOn(final WebElement element, final boolean geometry) {
 
         clickOn(false, element);
     }
 
+    /**
+     * Performs click on.
+     * @param x1 the x1
+     * @param y1 the y1
+     * @param locator the locator
+     */
     public final void clickOn(final Fraction x1, final Fraction y1, final String... locator) {
 
         clickOn(x1.doubleValue(), y1.doubleValue(), locator);
     }
 
+    /**
+     * Performs click on.
+     * @param x1 the x1
+     * @param y1 the y1
+     * @param locator the locator
+     */
     public final void clickOn(final double x1, final double y1, final String... locator) {
 
         log(b(CLICKING_ON, Locators.describe(locator), s(_AT_SGN), s(OPN_BRK, X, x1, _COMMA_), s(Y, y1, CLS_BRK)));
@@ -287,18 +331,32 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         }
     }
 
+    /**
+     * Performs click on.
+     * @param locator the locator
+     * @param waitAfter the waitAfter
+     */
     public final void clickOn(final String locator, final long waitAfter) {
 
         clickOn(false, locator);
         sleep(waitAfter);
     }
 
+    /**
+     * Performs click on.
+     * @param locator the locator
+     */
     public final void clickOn(final String locator) {
 
         clickOn(false, locator);
     }
 
     @SuppressWarnings("ValueOfIncrementOrDecrementUsed")
+    /**
+     * Performs click on.
+     * @param thenWaitForInvisibilityOf the thenWaitForInvisibilityOf
+     * @param locator the locator
+     */
     public final void clickOn(final boolean thenWaitForInvisibilityOf, final String locator) {
 
         boolean notDone = true;
@@ -353,43 +411,84 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         clickOn(false, button(text));
     }
 
+    /**
+     * Performs click on text.
+     * @param text the text
+     */
     public final void clickOnText(final String text) {
 
         clickOn(false, text(text));
     }
 
+    /**
+     * Performs click on text.
+     * @param x1 the x1
+     * @param y1 the y1
+     * @param text the text
+     */
     public final void clickOnText(final double x1, final double y1, final String text) {
 
         clickOn(x1, y1, text(text));
     }
 
+    /**
+     * Performs click on text.
+     * @param x1 the x1
+     * @param y1 the y1
+     * @param text the text
+     */
     public final void clickOnText(final Fraction x1, final Fraction y1, final String text) {
 
         clickOn(x1, y1, text(text));
     }
 
+    /**
+     * Performs click on desc.
+     * @param contentDesc the contentDesc
+     */
     public final void clickOnDesc(final String contentDesc) {
 
         clickOn(false, desc(contentDesc));
     }
 
+    /**
+     * Performs click on text.
+     * @param thenWaitForInvisibilityOf the thenWaitForInvisibilityOf
+     * @param text the text
+     */
     public final void clickOnText(final boolean thenWaitForInvisibilityOf, final String text) {
 
         clickOn(thenWaitForInvisibilityOf, text(text));
     }
 
+    /**
+     * Performs click on text.
+     * @param text the text
+     * @param waitAfter the waitAfter
+     */
     public final void clickOnText(final String text, final long waitAfter) {
 
         clickOn(false, text(text));
         sleep(waitAfter);
     }
 
+    /**
+     * Performs describe.
+     * @param element the element
+     * @return the describe result
+     */
     public final String describe(final WebElement element) {
 
         return describe(element, true);
     }
 
 
+    /**
+     * Performs describe.
+     * @param element the element
+     * @param geometry the geometry
+     * @return the describe result
+     */
     public final String describe(final WebElement element, final boolean geometry) {
 
         final String an = in(CHROME) ? element.getAccessibleName() : EMPTY;
@@ -401,6 +500,10 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
 
     @SuppressWarnings({"MethodWithMultipleLoops", "OverlyComplexMethod", "ArrayLengthInLoopCondition",
             "ValueOfIncrementOrDecrementUsed"})
+    /**
+     * Performs find operation.
+     * @return result of find
+     */
     public final WebElement find(final boolean silent, final boolean scrollTo, final boolean mandatory,
                                  final String... locators) {
 
@@ -432,6 +535,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         return scrollTo ? find(element) : element;
     }
 
+    /**
+     * Performs find.
+     * @param element the element
+     * @return the find result
+     */
     public final WebElement find(final WebElement element) {
 
         if (in(FIREFOX)) ((JavascriptExecutor) exec.wd()).executeScript(JS_FIND_CODE, element);
@@ -443,26 +551,55 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         return element;
     }
 
+    /**
+     * Performs find.
+     * @param locator the locator
+     * @return the find result
+     */
     public final WebElement find(final String locator) {
 
         return find(false, true, true, locator);
     }
 
+    /**
+     * Performs find all.
+     * @param locator the locator
+     * @return the find all result
+     */
     public final List<WebElement> findAll(final String locator) {
 
         return findAll(locator, false);
     }
 
+    /**
+     * Performs find all.
+     * @param locator the locator
+     * @param expose the expose
+     * @return the find all result
+     */
     public final List<WebElement> findAll(final String locator, final boolean expose) {
 
         return findAll(locator, expose, exec.wd().manage().timeouts().getImplicitWaitTimeout());
     }
 
+    /**
+     * Performs find all.
+     * @param locator the locator
+     * @param iwait the iwait
+     * @return the find all result
+     */
     public final List<WebElement> findAll(final String locator, final Duration iwait) {
 
         return findAll(locator, false, exec.wd().manage().timeouts().getImplicitWaitTimeout());
     }
 
+    /**
+     * Performs find all.
+     * @param locator the locator
+     * @param expose the expose
+     * @param iwait the iwait
+     * @return the find all result
+     */
     public final List<WebElement> findAll(final String locator, final boolean expose, final Duration iwait) {
 
         final Duration defIwait = exec.wd().manage().timeouts().getImplicitWaitTimeout();
@@ -477,16 +614,34 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         return elements;
     }
 
+    /**
+     * Performs find first of texts.
+     * @param locator the locator
+     * @param textRegex the textRegex
+     * @return the find first of texts result
+     */
     public final String findFirstOfTexts(final String locator, final String textRegex) {
 
         return Strings.firstOf(findTexts(locator, textRegex));
     }
 
+    /**
+     * Performs find first of texts.
+     * @param locator the locator
+     * @param textRegex the textRegex
+     * @param retries the retries
+     * @return the find first of texts result
+     */
     public final String findFirstOfTexts(final String locator, final String textRegex, final int retries) {
 
         return Strings.firstOf(findTexts(locator, textRegex, retries));
     }
 
+    /**
+     * Performs find or null.
+     * @param locator the locator
+     * @return the find or null result
+     */
     public final WebElement findOrNull(final String locator) {
 
         final WebElement result;
@@ -498,11 +653,22 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         return result;
     }
 
+    /**
+     * Performs find scroll to text or null.
+     * @param text the text
+     * @return the find scroll to text or null result
+     */
     public final WebElement findScrollToTextOrNull(final String text) {
 
         return findScrollToTextOrNull(text, null);
     }
 
+    /**
+     * Performs find scroll to text or null.
+     * @param text the text
+     * @param code the code
+     * @return the find scroll to text or null result
+     */
     public final WebElement findScrollToTextOrNull(final String text, final Runnable code) {
 
         try {
@@ -513,17 +679,35 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         return findText(text);
     }
 
+    /**
+     * Performs find text.
+     * @param text the text
+     * @return the find text result
+     */
     public final WebElement findText(final String text) {
 
         return find(text(text));
     }
 
+    /**
+     * Performs find texts.
+     * @param locator the locator
+     * @param textsRegex the textsRegex
+     * @return the find texts result
+     */
     public final List<String> findTexts(final String locator, final String textsRegex) {
 
         return findTexts(locator, textsRegex, Numbers.ONE);
     }
 
     @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "ObjectAllocationInLoop"})
+    /**
+     * Performs find texts.
+     * @param locator the locator
+     * @param textsRegex the textsRegex
+     * @param retries the retries
+     * @return the find texts result
+     */
     public final List<String> findTexts(final String locator, final String textsRegex, final int retries) {
 
         int attempts = retries;
@@ -541,6 +725,10 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     }
 
     @SuppressWarnings({"MethodWithMultipleLoops", "ValueOfIncrementOrDecrementUsed"})
+    /**
+     * Performs find then click.
+     * @param locator the locator
+     */
     public final void findThenClick(final String locator) {
 
         final List<WebElement> list = findAll(locator);
@@ -559,6 +747,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         if (isNotNull(target)) target.click();
     }
 
+    /**
+     * Performs get log.
+     * @param field the field
+     * @param o the o
+     */
     public final void getLog(final Object field, final Object o) {
 
         log(Level.debug, b(sn(s(c(D), _DOT_, GET), e(ROUND, bb(field)), e(s(RGT_DAR)), yb(o))), true);
@@ -570,72 +763,143 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         ((HidesKeyboard) exec.wd()).hideKeyboard();
     }
 
+    /**
+     * Performs if exists click on text.
+     * @param text the text
+     */
     public final void ifExistsClickOnText(final String text) {
 
         if (isPresent(text(text))) clickOnText(text);
     }
 
+    /**
+     * Performs is disabled.
+     * @param locator the locator
+     * @return the is disabled result
+     */
     public final boolean isDisabled(final String locator) {
 
         log(b(c(CHECKING), WHETHER, q(locator), IS, DISABLED));
         return !exec.wd().findElement(by(locator)).isEnabled();
     }
 
+    /**
+     * Performs is enabled.
+     * @param locator the locator
+     * @return the is enabled result
+     */
     public final boolean isEnabled(final String locator) {
 
         log(b(c(CHECKING), WHETHER, q(locator), IS, ENABLED));
         return !exec.wd().findElement(by(locator)).isEnabled();
     }
 
+    /**
+     * Performs amount present.
+     * @param locator the locator
+     * @return the amount present result
+     */
     public final int amountPresent(final String locator) {
 
         return findAll(locator).size();
     }
 
+    /**
+     * Performs is present.
+     * @param locator the locator
+     * @return the is present result
+     */
     public final boolean isPresent(final String locator) {
 
         return isPresent(locator, false);
     }
 
+    /**
+     * Performs is present.
+     * @param locator the locator
+     * @param iwait the iwait
+     * @return the is present result
+     */
     public final boolean isPresent(final String locator, final Duration iwait) {
 
         final int oc = findAll(locator, iwait).size();
         return 0 < oc;
     }
 
+    /**
+     * Performs is present.
+     * @param locator the locator
+     * @param expose the expose
+     * @return the is present result
+     */
     public final boolean isPresent(final String locator, final boolean expose) {
 
         final int oc = findAll(locator, expose).size();
         return 0 < oc;
     }
 
+    /**
+     * Performs is present.
+     * @param locator the locator
+     * @param expose the expose
+     * @param iwait the iwait
+     * @return the is present result
+     */
     public final boolean isPresent(final String locator, final boolean expose, final Duration iwait) {
 
         final int oc = findAll(locator, expose, iwait).size();
         return 0 < oc;
     }
 
+    /**
+     * Performs is visible.
+     * @param locator the locator
+     * @return the is visible result
+     */
     public final boolean isVisible(final String locator) {
 
         return isVisible(locator, false);
     }
 
+    /**
+     * Performs is visible.
+     * @param locator the locator
+     * @param silent the silent
+     * @return the is visible result
+     */
     public final boolean isVisible(final String locator, final boolean silent) {
 
         if (!silent) log(b(CHECKING_VISIBILITY_OF, q(locator)));
         return !exec.wd().findElements(by(locator)).isEmpty();
     }
 
+    /**
+     * Performs log.
+     * @param message the message
+     */
     public final void log(final String message) {
 
         core.getLogger().log(message);
     }
 
+    /**
+     * Performs log.
+     * @param level the level
+     * @param message the message
+     * @param addStack the addStack
+     */
     public final void log(final int level, final String message, final boolean addStack) {
 
         log(level, message, addStack, false);
     }
 
+    /**
+     * Performs log.
+     * @param level the level
+     * @param message the message
+     * @param addStack the addStack
+     * @param forceUnfiltered the forceUnfiltered
+     */
     public final void log(final int level, final String message, final boolean addStack, final boolean forceUnfiltered) {
 
         boolean stack = addStack;
@@ -645,37 +909,68 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         core.getLogger().log(level, (stack) ? b(message, stackTrace) : message);
     }
 
+    /**
+     * Performs log debug.
+     * @param message the message
+     */
     public final void logDebug(final String message) {
 
         logDebug(message, true);
     }
 
+    /**
+     * Performs log debug.
+     * @param message the message
+     * @param addStack the addStack
+     */
     public final void logDebug(final String message, final boolean addStack) {
 
         logDebug(message, addStack, false);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
+    /**
+     * Performs log debug.
+     * @param keys the keys
+     */
     public final void logDebug(final KeyValue... keys) {
 
         logDebug(a(List.of(keys), COMMA_SPACE));
     }
 
+    /**
+     * Performs log debug.
+     * @param message the message
+     * @param addStack the addStack
+     * @param forceUnfiltered the forceUnfiltered
+     */
     public final void logDebug(final String message, final boolean addStack, final boolean forceUnfiltered) {
 
         if (isNull(exec) || isDebug()) log(Level.debug, message, addStack, forceUnfiltered);
     }
 
+    /**
+     * Performs log empty line.
+     */
     public final void logEmptyLine() {
 
         logEmptyLine(false);
     }
 
+    /**
+     * Performs log empty line.
+     * @param addStack the addStack
+     */
     public final void logEmptyLine(final boolean addStack) {
 
         logEmptyLine(addStack, false);
     }
 
+    /**
+     * Performs log empty line.
+     * @param addStack the addStack
+     * @param forceUnfiltered the forceUnfiltered
+     */
     public final void logEmptyLine(final boolean addStack, final boolean forceUnfiltered) {
 
         if (addStack) core.getLogger().log(ZERO, gray(Stacktrace.getShort(Thread.currentThread().getStackTrace())));
@@ -684,6 +979,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
 
     private static final ThreadLocal<Boolean> ROOT_LOG_EVENT_RECURSION_GUARD = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
+    /**
+     * Performs log event.
+     * @param severity the severity
+     * @param message the message
+     */
     public final void logEvent(final Severity severity, final String message) {
         if (Boolean.TRUE.equals(ROOT_LOG_EVENT_RECURSION_GUARD.get())) {
             System.err.println("[RECURSION GUARD] Blocked nested Root.logEvent: " + severity + " - " + message);
@@ -698,22 +998,41 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         }
     }
 
+    /**
+     * Performs log trace.
+     * @param message the message
+     */
     public final void logTrace(final String message) {
 
         logTrace(message, false);
     }
 
+    /**
+     * Performs log trace.
+     * @param message the message
+     * @param addStack the addStack
+     */
     public final void logTrace(final String message, final boolean addStack) {
 
         logTrace(message, addStack, false);
     }
 
+    /**
+     * Performs log trace.
+     * @param message the message
+     * @param addStack the addStack
+     * @param forceUnfiltered the forceUnfiltered
+     */
     public final void logTrace(final String message, final boolean addStack, final boolean forceUnfiltered) {
 
         if (isNull(exec) || isTrace()) log(Level.debug, message, addStack, forceUnfiltered);
     }
 
     @SuppressWarnings({"ThrowInsideCatchBlockWhichIgnoresCaughtException", "HttpUrlsUsage"})
+    /**
+     * Performs open.
+     * @param u the u
+     */
     public final void open(final String u) {
 
         URL url = null;
@@ -737,6 +1056,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     }
 
     @SuppressWarnings({"ThrowInsideCatchBlockWhichIgnoresCaughtException", "HardcodedFileSeparator"})
+    /**
+     * Performs open.
+     * @param p the p
+     * @param u the u
+     */
     public final void open(final String p, final String u) {
 
         URL url = null;
@@ -755,11 +1079,22 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         if (isNotNull(getWebDriver())) getWebDriver().get(url.toString());
     }
 
+    /**
+     * Performs read.
+     * @param element the element
+     * @return the read result
+     */
     public final String read(final WebElement element) {
 
         return read(element, true);
     }
 
+    /**
+     * Performs read.
+     * @param element the element
+     * @param geometry the geometry
+     * @return the read result
+     */
     public final String read(final WebElement element, final boolean geometry) {
 
         log(b(READING_TEXT, q(bb(describe(element, geometry)))));
@@ -768,6 +1103,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         return text;
     }
 
+    /**
+     * Performs read.
+     * @param locator the locator
+     * @return the read result
+     */
     public final String read(final String locator) {
 
         log(b(READING_TEXT, q(bb(locator))));
@@ -777,6 +1117,12 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     }
 
     @SuppressWarnings("ValueOfIncrementOrDecrementUsed")
+    /**
+     * Performs read.
+     * @param locator the locator
+     * @param retries the retries
+     * @return the read result
+     */
     public final String read(final String locator, final int retries) {
 
         int i = retries;
@@ -793,6 +1139,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         return null;
     }
 
+    /**
+     * Performs read input.
+     * @param locator the locator
+     * @return the read input result
+     */
     public final String readInput(final String locator) {
 
         log(b(READING_VALUE, q(bb(locator))));
@@ -801,6 +1152,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         return text;
     }
 
+    /**
+     * Performs read input.
+     * @param element the element
+     * @return the read input result
+     */
     public final String readInput(final WebElement element) {
 
         log(b(READING_VALUE, q(bb(describe(element)))));
@@ -809,6 +1165,10 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         return text;
     }
 
+    /**
+     * Performs restart app.
+     * @param pause the pause
+     */
     public final void restartApp(final long pause) {
 
         if (in(ANDROID)) {
@@ -826,12 +1186,24 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         } else logEvent(S3, b(s(RESTART, c(APP), e(ROUND, EMPTY)), ONLY, APPLICABLE, FOR, c(ANDROID), TESTING));
     }
 
+    /**
+     * Performs run for boolean.
+     * @param title the title
+     * @param booleanSupplier the booleanSupplier
+     * @return the run for boolean result
+     */
     public final Boolean runForBoolean(final String title, final Supplier<Boolean> booleanSupplier) {
 
         title(title);
         return booleanSupplier.get();
     }
 
+    /**
+     * Performs run for integer.
+     * @param title the title
+     * @param integerSupplier the integerSupplier
+     * @return the run for integer result
+     */
     public final Integer runForInteger(final String title, final Supplier<Integer> integerSupplier) {
 
         title(title);
@@ -839,6 +1211,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     }
 
     @SuppressWarnings("ImplicitNumericConversion")
+    /**
+     * Performs scroll forward.
+     * @param steps the steps
+     * @return the scroll forward result
+     */
     public final WebElement scrollForward(final int steps) {
         // TODO: [framework] investigate reason of unpredictable scrolling behavior (or just fall back to swipes)
         if (in(ANDROID)) {
@@ -851,22 +1228,42 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         }
     }
 
+    /**
+     * Performs scroll into view.
+     * @param element the element
+     */
     public final void scrollIntoView(final WebElement element) {
 
         scrollIntoView(element, ZERO, ZERO);
     }
 
+    /**
+     * Performs scroll into view.
+     * @param element the element
+     * @param dx the dx
+     * @param dy the dy
+     */
     public final void scrollIntoView(final WebElement element, final int dx, final int dy) {
 
         log(b(c(SCROLLING), describe(element), INTO, VIEW));
         if (isNotNull(getWebDriver())) ((JavascriptExecutor) getWebDriver()).executeScript(JS_FIND_CODE, element);
     }
 
+    /**
+     * Performs scroll into view and click on.
+     * @param locator the locator
+     */
     public final void scrollIntoViewAndClickOn(final String locator) {
 
         scrollIntoViewAndClickOn(locator, ZERO, ZERO);
     }
 
+    /**
+     * Performs scroll into view and click on.
+     * @param locator the locator
+     * @param dx the dx
+     * @param dy the dy
+     */
     public final void scrollIntoViewAndClickOn(final String locator, final int dx, final int dy) {
 
         final WebElement element = find(locator);
@@ -875,11 +1272,21 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         //clickOn(element); TODO: figure out exception cause
     }
 
+    /**
+     * Performs scroll into view and make screenshot.
+     * @param locator the locator
+     */
     public final void scrollIntoViewAndMakeScreenshot(final String locator) {
 
         scrollIntoViewAndMakeScreenshot(locator, ZERO, ZERO);
     }
 
+    /**
+     * Performs scroll into view and make screenshot.
+     * @param locator the locator
+     * @param dx the dx
+     * @param dy the dy
+     */
     public final void scrollIntoViewAndMakeScreenshot(final String locator, final int dx, final int dy) {
 
         final WebElement element = find(locator);
@@ -887,16 +1294,31 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         //makeScreenshot(element, locator); TODO: figure out exception cause
     }
 
+    /**
+     * Performs scroll to text.
+     * @param text the text
+     */
     public final void scrollToText(final String text) {
 
         scrollToText(text, true);
     }
 
+    /**
+     * Performs scroll to text.
+     * @param text the text
+     * @param lazy the lazy
+     */
     public final void scrollToText(final String text, final boolean lazy) {
 
         scrollToText(text, lazy, null);
     }
 
+    /**
+     * Performs scroll to text.
+     * @param text the text
+     * @param lazy the lazy
+     * @param afterScroll the afterScroll
+     */
     public final void scrollToText(final String text, final boolean lazy, final Runnable afterScroll) {
 
         if (isNotNull(text)) {
@@ -912,17 +1334,30 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         }
     }
 
+    /**
+     * Performs scroll to then click on.
+     * @param text the text
+     */
     public final void scrollToThenClickOn(final String text) {
 
         scrollToText(text, true);
         clickOnText(text);
     }
 
+    /**
+     * Performs section.
+     * @param title the title
+     */
     public final void section(final String title) {
 
         title(title);
     }
 
+    /**
+     * Performs section.
+     * @param title the title
+     * @param runnable the runnable
+     */
     public final void section(final String title, final Runnable runnable) {
 
         title(title);
@@ -930,6 +1365,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     }
 
     @SuppressWarnings("rawtypes")
+    /**
+     * Performs section.
+     * @param title the title
+     * @param callable the callable
+     */
     public final void section(final String title, final Callable callable) {
 
         title(title);
@@ -940,27 +1380,50 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         }
     }
 
+    /**
+     * Performs send keys.
+     * @param keys the keys
+     */
     public final void sendKeys(final CharSequence keys) {
 
         sendKeys(keys, 1);
     }
 
     @SuppressWarnings({"ObjectAllocationInLoop", "ValueOfIncrementOrDecrementUsed", "AssignmentToMethodParameter"})
+    /**
+     * Performs send keys.
+     * @param keys the keys
+     * @param i the i
+     */
     public final void sendKeys(final CharSequence keys, int i) {
 
         do new Actions(exec.wd()).sendKeys(keys).build().perform(); while (0 < --i);
     }
 
+    /**
+     * Performs send keys.
+     * @param locator the locator
+     * @param keysToSend the keysToSend
+     */
     public final void sendKeys(final String locator, final CharSequence keysToSend) {
 
         find(locator).sendKeys(keysToSend);
     }
 
+    /**
+     * Performs sleep.
+     * @param duration the duration
+     */
     public final void sleep(final long duration) {
 
         sleep(duration, null);
     }
 
+    /**
+     * Performs sleep.
+     * @param duration the duration
+     * @param message the message
+     */
     public final void sleep(final long duration, final String message) {
 
         if (Sleeping.threshold > duration)
@@ -970,6 +1433,12 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     }
 
     @SuppressWarnings("ThrowInsideCatchBlockWhichIgnoresCaughtException")
+    /**
+     * Performs sleep.
+     * @param duration the duration
+     * @param message the message
+     * @param silent the silent
+     */
     public final void sleep(final long duration, final String message, final boolean silent) {
 
         try {
@@ -980,37 +1449,62 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         }
     }
 
+    /**
+     * Performs sleep.
+     * @param duration the duration
+     * @param silent the silent
+     */
     public final void sleep(final long duration, final boolean silent) {
 
         sleep(duration, null, silent);
     }
 
+    /**
+     * Performs sleep long.
+     */
     public final void sleepLong() {
 
         sleepLong(1);
     }
 
+    /**
+     * Performs sleep long.
+     * @param times the times
+     */
     public final void sleepLong(final int times) {
 
         logDebug(b(c(SLEEPING), LONG, s(times), TIMES));
         sleep(random(times * LONG_WAIT_FROM, times * LONG_WAIT_TO), null);
     }
 
+    /**
+     * Performs sleep medium.
+     */
     public final void sleepMedium() {
 
         sleep(random(MID_WAIT_FROM, MID_WAIT_TO), null);
     }
 
+    /**
+     * Performs sleep short.
+     */
     public final void sleepShort() {
 
         sleep(random(SHORT_WAIT_FROM, SHORT_WAIT_TO), null);
     }
 
+    /**
+     * Performs stop tests.
+     */
     public final void stopTests() {
 
         stopTests(null);
     }
 
+    /**
+     * Performs stop tests.
+     * @param reason the reason
+     */
     public final void stopTests(final String reason) {
 
         if (isNotNull(core) && isNotNull(core.getLogger())) log(b(c(STOPPING), TEST, SESSION));
@@ -1024,6 +1518,13 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         }
     }
 
+    /**
+     * Performs swipe to text.
+     * @param text the text
+     * @param lazy the lazy
+     * @param afterScroll the afterScroll
+     * @param reduction the reduction
+     */
     public final void swipeToText(final String text, final boolean lazy, final Runnable afterScroll, final float reduction) {
 
         if (isNotNull(text)) {
@@ -1041,11 +1542,20 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         }
     }
 
+    /**
+     * Performs swipe to text.
+     * @param text the text
+     * @param reduction the reduction
+     */
     public final void swipeToText(final String text, final float reduction) {
 
         swipeToText(text, true, null, reduction);
     }
 
+    /**
+     * Performs switch to.
+     * @param window the window
+     */
     public final void switchTo(final String window) {
 
         log(b(c(SWITCHING), TO, s(window), s(_QUOTE_)));
@@ -1053,11 +1563,21 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     }
 
     @SuppressWarnings("ImplicitNumericConversion")
+    /**
+     * Performs type into.
+     * @param locator the locator
+     * @param content the content
+     * @return the type into result
+     */
     public final boolean typeInto(final String locator, final Object content) {
 
         return typeInto(locator, content, ZERO, false);
     }
 
+    /**
+     * Performs type into operation.
+     * @return result of type into
+     */
     public final boolean typeInto(final String locator, final Object content, final double pasteProbability,
                                   final boolean secret) {
 
@@ -1065,6 +1585,10 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         return typeInto(e, content, pasteProbability, secret);
     }
 
+    /**
+     * Performs type into operation.
+     * @return result of type into
+     */
     public final boolean typeInto(final WebElement element, final Object content, final double pasteProbability,
                                   final boolean secret) {
 
@@ -1092,64 +1616,128 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         }
     }
 
+    /**
+     * Performs type into.
+     * @param locator the locator
+     * @param content the content
+     * @param secret the secret
+     * @return the type into result
+     */
     public final boolean typeInto(final String locator, final Object content, final boolean secret) {
 
         return typeInto(locator, content, 0.0, secret);
     }
 
+    /**
+     * Performs type into.
+     * @param locator the locator
+     * @param content the content
+     * @param pasteProbability the pasteProbability
+     * @return the type into result
+     */
     public final boolean typeInto(final String locator, final Object content, final double pasteProbability) {
 
         return typeInto(locator, content, pasteProbability, false);
     }
 
+    /**
+     * Performs type into.
+     * @param element the element
+     * @param content the content
+     * @return the type into result
+     */
     public final boolean typeInto(final WebElement element, final Object content) {
 
         return typeInto(element, content, 0.0, false);
     }
 
+    /**
+     * Performs type into.
+     * @param element the element
+     * @param content the content
+     * @param secret the secret
+     * @return the type into result
+     */
     public final boolean typeInto(final WebElement element, final Object content, final boolean secret) {
 
         return typeInto(element, content, 0.0, secret);
     }
 
+    /**
+     * Performs type into.
+     * @param element the element
+     * @param content the content
+     * @param pasteProbability the pasteProbability
+     * @return the type into result
+     */
     public final boolean typeInto(final WebElement element, final Object content, final double pasteProbability) {
 
         return typeInto(element, content, pasteProbability, false);
     }
 
     @SuppressWarnings({"AccessOfSystemProperties", "DataFlowIssue"})
+    /**
+     * Performs upload.
+     * @param uploader the uploader
+     * @param name the name
+     */
     public final void upload(final String uploader, final String name) {
 
         log(b(UPLOADING, q(name), THROUGH, q(uploader)));
         find(false, false, true, uploader).sendKeys(s(System.getProperty(USER_DIR), _SLASH_, _RESOURCES_, name));
     }
 
+    /**
+     * Performs wait.
+     * @param locator the locator
+     */
     public final void wait(final String locator) {
 
         waitForVisibilityOf(locator);
     }
 
+    /**
+     * Performs wait.
+     * @param locator the locator
+     */
     public final void wait(final String[] locator) {
 
         waitForVisibilityOf(locator);
     }
 
+    /**
+     * Performs wait clickable.
+     * @param locator the locator
+     */
     public final void waitClickable(final String locator) {
 
         log(b(WAITING_FOR, CLICKABILITY, OF, q(locator)));
         exec.wdw().until(elementToBeClickable(by(locator)));
     }
 
+    /**
+     * Performs wait for.
+     * @param locator the locator
+     */
     public final void waitFor(final String locator) {
 
         wait(locator);
     }
 
+    /**
+     * Performs wait for invisibility of.
+     * @param locator the locator
+     */
     public final void waitForInvisibilityOf(final String locator) {
 
         waitForInvisibilityOf(locator, exec.wd().manage().timeouts().getImplicitWaitTimeout());
     }
 
+    /**
+     * Performs wait for invisibility of optional.
+     * @param locator the locator
+     * @return the wait for invisibility of optional result
+     */
     public final boolean waitForInvisibilityOfOptional(final String locator) {
 
         try {
@@ -1161,11 +1749,20 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         }
     }
 
+    /**
+     * Performs wait for invisibility of.
+     * @param element the element
+     */
     public final void waitForInvisibilityOf(final WebElement element) {
 
         waitForInvisibilityOf(element, exec.wd().manage().timeouts().getImplicitWaitTimeout());
     }
 
+    /**
+     * Performs wait for invisibility of.
+     * @param locator the locator
+     * @param iwait the iwait
+     */
     public final void waitForInvisibilityOf(final String locator, final Duration iwait) {
 
         final Duration defIwait = exec.wd().manage().timeouts().getImplicitWaitTimeout();
@@ -1175,6 +1772,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         if (!defIwait.equals(iwait)) exec.wd().manage().timeouts().implicitlyWait(defIwait);
     }
 
+    /**
+     * Performs wait for invisibility of.
+     * @param element the element
+     * @param iwait the iwait
+     */
     public final void waitForInvisibilityOf(final WebElement element, final Duration iwait) {
 
         final Duration defIwait = exec.wd().manage().timeouts().getImplicitWaitTimeout();
@@ -1184,26 +1786,47 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         if (!defIwait.equals(iwait)) exec.wd().manage().timeouts().implicitlyWait(defIwait);
     }
 
+    /**
+     * Performs wait for invisibility of text.
+     * @param text the text
+     */
     public final void waitForInvisibilityOfText(final String text) {
 
         waitForInvisibilityOf(text(text), exec.wd().manage().timeouts().getImplicitWaitTimeout());
     }
 
+    /**
+     * Performs wait for invisibility of texts.
+     * @param texts the texts
+     */
     public final void waitForInvisibilityOfTexts(final String... texts) {
 
         for (final String text : texts) waitForInvisibilityOfText(text);
     }
 
+    /**
+     * Performs wait for invisibility of text.
+     * @param text the text
+     * @param iwait the iwait
+     */
     public final void waitForInvisibilityOfText(final String text, final Duration iwait) {
 
         waitForInvisibilityOf(text(text), iwait);
     }
 
+    /**
+     * Performs wait for texts.
+     * @param texts the texts
+     */
     public final void waitForTexts(final String... texts) {
 
         for (final String text : texts) waitForText(text);
     }
 
+    /**
+     * Performs wait for texts.
+     * @param texts the texts
+     */
     public final void waitForTexts(final Iterable<String> texts) {
 
         for (final String text : texts) waitForText(text);
@@ -1220,33 +1843,61 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         waitForVisibilityOfButton(text);
     }
 
+    /**
+     * Performs wait for text.
+     * @param text the text
+     */
     public final void waitForText(final String text) {
 
         waitForVisibilityOfText(text);
     }
 
+    /**
+     * Performs wait for edit.
+     * @param text the text
+     */
     public final void waitForEdit(final String text) {
 
         waitForVisibilityOfEdit(text);
     }
 
+    /**
+     * Performs wait for desc.
+     * @param contentDesc the contentDesc
+     */
     public final void waitForDesc(final String contentDesc) {
 
         waitForVisibilityOfDesc(contentDesc);
     }
 
+    /**
+     * Performs wait for invisibility of.
+     * @param locator the locator
+     * @param timeout the timeout
+     * @param ignored the ignored
+     */
     public final void waitForInvisibilityOf(final String locator, final Duration timeout, final boolean ignored) {
 
         log(b(WAITING_FOR_INVISIBILITY_OF, q(locator), WITH, TIMEOUT, q(s(timeout.toSeconds(), s(S)))));
         exec.wdw(timeout).until(invisibilityOfElementLocated(by(locator)));
     }
 
+    /**
+     * Performs wait for visibility of.
+     * @param locator the locator
+     * @param timeout the timeout
+     */
     public final void waitForVisibilityOf(final String locator, final Duration timeout) {
 
         log(b(WAITING_FOR_VISIBILITY_OF, q(bb(locator)), WITH, TIMEOUT, q(s(timeout.toSeconds(), s(S)))));
         exec.wdw(timeout).until(visibilityOfElementLocated(by(locator)));
     }
 
+    /**
+     * Performs wait for visibility of text.
+     * @param text the text
+     * @param timeout the timeout
+     */
     public final void waitForVisibilityOfText(final String text, final Duration timeout) {
 
         waitForVisibilityOf(text(text), timeout);
@@ -1264,11 +1915,20 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         waitForVisibilityOfButton(text, timeout);
     }
 
+    /**
+     * Performs wait for text.
+     * @param text the text
+     * @param timeout the timeout
+     */
     public final void waitForText(final String text, final Duration timeout) {
 
         waitForVisibilityOfText(text, timeout);
     }
 
+    /**
+     * Performs wait for visibility of.
+     * @param locator the locator
+     */
     public final void waitForVisibilityOf(final String locator) {
 
         log(b(WAITING_FOR_VISIBILITY_OF, q(bb(locator))));
@@ -1276,6 +1936,10 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     }
 
     @SuppressWarnings("OverloadedVarargsMethod")
+    /**
+     * Performs wait for visibility of.
+     * @param locators the locators
+     */
     public final void waitForVisibilityOf(final String... locators) {
 
         log(b(WAITING_FOR_VISIBILITY_OF, q(bb(Arrays.toString(locators)))));
@@ -1293,39 +1957,70 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         waitForVisibilityOf(button(text));
     }
 
+    /**
+     * Performs wait for visibility of text.
+     * @param text the text
+     */
     public final void waitForVisibilityOfText(final String text) {
 
         waitForVisibilityOf(text(text));
     }
 
+    /**
+     * Performs wait for visibility of edit.
+     * @param text the text
+     */
     public final void waitForVisibilityOfEdit(final String text) {
 
         waitForVisibilityOf(edit(text));
     }
 
+    /**
+     * Performs wait for visibility of desc.
+     * @param text the text
+     */
     public final void waitForVisibilityOfDesc(final String text) {
 
         waitForVisibilityOf(desc(text));
     }
 
+    /**
+     * Performs wait selected.
+     * @param locator the locator
+     */
     public final void waitSelected(final String locator) {
 
         log(b(WAITING_FOR, q(locator), b(TO_BE, SELECTED)));
         exec.wdw().until(visibilityOfElementLocated(by(locator)));
     }
 
+    /**
+     * Performs wait then click on.
+     * @param x1 the x1
+     * @param y1 the y1
+     * @param locator the locator
+     */
     public final void waitThenClickOn(final double x1, final double y1, final String locator) {
 
         wait(locator);
         clickOn(x1, y1, locator);
     }
 
+    /**
+     * Performs wait then click on.
+     * @param locator the locator
+     */
     public final void waitThenClickOn(final String locator) {
 
         wait(locator);
         clickOn(locator);
     }
 
+    /**
+     * Performs wait then click on.
+     * @param thenWaitForInvisibilityOf the thenWaitForInvisibilityOf
+     * @param locator the locator
+     */
     public final void waitThenClickOn(final boolean thenWaitForInvisibilityOf, final String locator) {
 
         wait(locator);
@@ -1345,6 +2040,10 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         clickOn(false, locator);
     }
 
+    /**
+     * Performs wait then click on text.
+     * @param text the text
+     */
     public final void waitThenClickOnText(final String text) {
 
         final String locator = text(text);
@@ -1352,18 +2051,34 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         clickOn(false, locator);
     }
 
+    /**
+     * Performs wait then find.
+     * @param locator the locator
+     * @return the wait then find result
+     */
     public final WebElement waitThenFind(final String locator) {
 
         wait(locator);
         return find(locator);
     }
 
+    /**
+     * Performs wait value.
+     * @param locator the locator
+     * @param value the value
+     */
     public final void waitValue(final String locator, final String value) {
 
         log(s(s(WAITING_FOR, q(locator), b(TO, HAVE, VALUE), q(value))));
         exec.wdw().until(textToBe(by(locator), value));
     }
 
+    /**
+     * Performs wait value not.
+     * @param locator the locator
+     * @param value the value
+     * @return the wait value not result
+     */
     public final String waitValueNot(final String locator, final String value) {
 
         log(b(WAITING_WHILE, q(locator), b(STILL, HAVE, VALUE), q(value)));
@@ -1371,6 +2086,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         return read(locator);
     }
 
+    /**
+     * Performs wait value not empty.
+     * @param locator the locator
+     * @return the wait value not empty result
+     */
     public final String waitValueNotEmpty(final String locator) {
         // TODO: [framework] this routine seems to be working not as expected
         log(s(WAITING_WHILE, q(locator), b(IS, STILL, EMPTY)));
@@ -1455,17 +2175,40 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     @SuppressWarnings("PublicInnerClass")
     public abstract class Storage implements OperatesOnTestData {
 
+        /**
+         * Performs storage.
+         * @return the storage result
+         */
         protected abstract _DataStorage storage();
 
+        /**
+         * Performs prefix.
+         * @return the prefix result
+         */
         protected abstract String prefix();
 
+        /**
+         * Performs take snapshots.
+         * @return the take snapshots result
+         */
         protected abstract boolean takeSnapshots();
 
+        /**
+         * Performs contains key.
+         * @param field the field
+         * @return the contains key result
+         */
         public boolean containsKey(final Object field) {
 
             return containsKey(field, false);
         }
 
+        /**
+         * Performs contains key.
+         * @param field the field
+         * @param silent the silent
+         * @return the contains key result
+         */
         public boolean containsKey(final Object field, final boolean silent) {
 
             final boolean containsKey = storage().containsKey(field);
@@ -1474,6 +2217,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return containsKey;
         }
 
+        /**
+         * Performs contains keys.
+         * @param fields the fields
+         * @return the contains keys result
+         */
         public boolean containsKeys(final Object... fields) {
 
             boolean containsKeys = true;
@@ -1484,11 +2232,22 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return containsKeys;
         }
 
+        /**
+         * Performs filter keys.
+         * @param keys the keys
+         * @param value the value
+         * @return the filter keys result
+         */
         public Set<Object> filterKeys(final Set<Object> keys, final Object value) {
 
             return storage().filterKeys(keys, value);
         }
 
+        /**
+         * Performs extract.
+         * @param field the field
+         * @return the extract result
+         */
         public Object extract(final Object field) {
 
             final Object o = get(field);
@@ -1496,6 +2255,12 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs extract.
+         * @param field the field
+         * @param def the def
+         * @return the extract result
+         */
         public Object extract(final Object field, final Object def) {
 
             final Object o = get(field, def);
@@ -1503,6 +2268,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs extract boolean.
+         * @param field the field
+         * @return the extract boolean result
+         */
         public Boolean extractBoolean(final Object field) {
 
             final Boolean o = getBoolean(field);
@@ -1510,6 +2280,12 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs extract boolean.
+         * @param field the field
+         * @param def the def
+         * @return the extract boolean result
+         */
         public Boolean extractBoolean(final Object field, final Boolean def) {
 
             final Boolean o = getBoolean(field, def);
@@ -1517,6 +2293,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs extract integer.
+         * @param field the field
+         * @return the extract integer result
+         */
         public int extractInteger(final Object field) {
 
             final int o = getInteger(field);
@@ -1524,6 +2305,12 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs extract integer.
+         * @param field the field
+         * @param def the def
+         * @return the extract integer result
+         */
         public int extractInteger(final Object field, final int def) {
 
             final int o = getInteger(field, def);
@@ -1531,6 +2318,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs extract long.
+         * @param field the field
+         * @return the extract long result
+         */
         public long extractLong(final Object field) {
 
             final long o = getLong(field);
@@ -1538,6 +2330,12 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs extract long.
+         * @param field the field
+         * @param def the def
+         * @return the extract long result
+         */
         public long extractLong(final Object field, final long def) {
 
             final long o = getLong(field, def);
@@ -1545,6 +2343,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs extract string.
+         * @param field the field
+         * @return the extract string result
+         */
         public String extractString(final Object field) {
 
             final String o = getString(field);
@@ -1552,6 +2355,12 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs extract string.
+         * @param field the field
+         * @param def the def
+         * @return the extract string result
+         */
         public String extractString(final Object field, final String def) {
 
             final String o = getString(field, def);
@@ -1559,6 +2368,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs get.
+         * @param field the field
+         * @return the get result
+         */
         public Object get(final Object field) {
 
             verifyPresence(field);
@@ -1567,6 +2381,12 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs get.
+         * @param field the field
+         * @param def the def
+         * @return the get result
+         */
         public Object get(final Object field, final Object def) {
 
             final Object o = storage().getOrDefault(field, def);
@@ -1574,11 +2394,22 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs get boolean.
+         * @param field the field
+         * @param def the def
+         * @return the get boolean result
+         */
         public Boolean getBoolean(final Object field, final Boolean def) {
 
             return (containsKey(field)) ? getBoolean(field) : def;
         }
 
+        /**
+         * Performs get boolean.
+         * @param field the field
+         * @return the get boolean result
+         */
         public Boolean getBoolean(final Object field) {
 
             verifyPresence(field);
@@ -1587,16 +2418,33 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs get integer.
+         * @param field the field
+         * @param def the def
+         * @return the get integer result
+         */
         public int getInteger(final Object field, final int def) {
 
             return (containsKey(field, true)) ? getInteger(field) : def;
         }
 
+        /**
+         * Performs get integer.
+         * @param field the field
+         * @return the get integer result
+         */
         public int getInteger(final Object field) {
 
             return getInteger(field, false);
         }
 
+        /**
+         * Performs get integer.
+         * @param field the field
+         * @param silent the silent
+         * @return the get integer result
+         */
         public int getInteger(final Object field, final boolean silent) {
 
             verifyPresence(field);
@@ -1605,16 +2453,33 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs get long.
+         * @param field the field
+         * @param def the def
+         * @return the get long result
+         */
         public long getLong(final Object field, final long def) {
 
             return (containsKey(field, true)) ? getLong(field) : def;
         }
 
+        /**
+         * Performs get long.
+         * @param field the field
+         * @return the get long result
+         */
         public long getLong(final Object field) {
 
             return getLong(field, false);
         }
 
+        /**
+         * Performs get long.
+         * @param field the field
+         * @param silent the silent
+         * @return the get long result
+         */
         public long getLong(final Object field, final boolean silent) {
 
             verifyPresence(field);
@@ -1623,11 +2488,22 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs get string.
+         * @param field the field
+         * @return the get string result
+         */
         public String getString(final Object field) {
 
             return getString(field, false);
         }
 
+        /**
+         * Performs get string.
+         * @param field the field
+         * @param silent the silent
+         * @return the get string result
+         */
         public String getString(final Object field, final boolean silent) {
 
             verifyPresence(field);
@@ -1636,11 +2512,24 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs get string.
+         * @param field the field
+         * @param def the def
+         * @return the get string result
+         */
         public String getString(final Object field, final String def) {
 
             return getString(field, def, false);
         }
 
+        /**
+         * Performs get string.
+         * @param field the field
+         * @param def the def
+         * @param silent the silent
+         * @return the get string result
+         */
         public String getString(final Object field, final String def, final boolean silent) {
 
             final String o = (String) storage().getOrDefault(field, def);
@@ -1648,6 +2537,13 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return o;
         }
 
+        /**
+         * Performs negate.
+         * @param field the field
+         * @param def the def
+         * @param silent the silent
+         * @return the negate result
+         */
         public boolean negate(final Object field, final Boolean def, final boolean silent) {
 
             final boolean value = !getBoolean(field, def);
@@ -1655,22 +2551,44 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return value;
         }
 
+        /**
+         * Performs negate.
+         * @param field the field
+         * @param def the def
+         * @return the negate result
+         */
         public boolean negate(final Object field, final Boolean def) {
 
             return negate(field, def, false);
         }
 
+        /**
+         * Performs negate.
+         * @param field the field
+         * @return the negate result
+         */
         public boolean negate(final Object field) {
 
             return negate(field, false, false);
         }
 
+        /**
+         * Performs put.
+         * @param field the field
+         * @param value the value
+         */
         public void put(final Object field, final Object value) {
 
             put(field, value, false);
         }
 
         @SuppressWarnings("CallToSuspiciousStringMethod")
+        /**
+         * Performs put.
+         * @param field the field
+         * @param value the value
+         * @param silent the silent
+         */
         public void put(final Object field, final Object value, final boolean silent) {
 
             final Object o = storage().put(field, value);
@@ -1685,11 +2603,20 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             }
         }
 
+        /**
+         * Performs remove.
+         * @param field the field
+         */
         public void remove(final Object field) {
 
             remove(field, false);
         }
 
+        /**
+         * Performs remove.
+         * @param field the field
+         * @param nonOptional the nonOptional
+         */
         public void remove(final Object field, final boolean nonOptional) {
 
             if (nonOptional) verifyPresence(field);
@@ -1699,6 +2626,11 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
                 writeDataSnapshot(REMOVE, Stacktrace.getShort(Thread.currentThread().getStackTrace()), field);
         }
 
+        /**
+         * Performs remove value.
+         * @param value the value
+         * @return the remove value result
+         */
         public boolean removeValue(final Object value) {
 
             final Object keyToDelete;
@@ -1717,21 +2649,41 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             return result;
         }
 
+        /**
+         * Performs search key by value.
+         * @param value the value
+         * @return the search key by value result
+         */
         public String searchKeyByValue(final String value) {
 
             return storage().searchKeyByValue(value);
         }
 
+        /**
+         * Performs search keys.
+         * @param substrings the substrings
+         * @return the search keys result
+         */
         public Set<String> searchKeys(final String... substrings) {
 
             return storage().searchKeys(substrings);
         }
 
+        /**
+         * Performs search keys by value.
+         * @param value the value
+         * @return the search keys by value result
+         */
         public Set<String> searchKeysByValue(final String value) {
 
             return storage().searchKeysByValue(value);
         }
 
+        /**
+         * Performs tick.
+         * @param user the user
+         * @param name the name
+         */
         public void tick(final String user, final String name) {
 
             tick(name);

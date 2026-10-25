@@ -112,16 +112,28 @@ public class ColoursQuotas extends AbstractQuotas implements _ColoursQuotas {
         this.amount = amount;
     }
 
+    /**
+     * Performs amount.
+     * @return the amount result
+     */
     public final IntegerRange amount() {
 
         return amount;
     }
 
+    /**
+     * Performs border.
+     * @return the border result
+     */
     public final Fraction border() {
 
         return border;
     }
 
+    /**
+     * Performs cutoff.
+     * @return the cutoff result
+     */
     public final Fraction cutoff() {
 
         return border;
@@ -133,11 +145,21 @@ public class ColoursQuotas extends AbstractQuotas implements _ColoursQuotas {
         return ignore.contains(what);
     }
 
+    /**
+     * Performs ignore hsb.
+     * @return the ignore hsb result
+     */
     public final IgnoreHSB ignoreHSB() {
 
         return ignoreHSB;
     }
 
+    /**
+     * Performs log expected.
+     * @param width the width
+     * @param renderers the renderers
+     * @return the log expected result
+     */
     public final Fraction logExpected(final int width, final Renderers renderers) {
 
         Fraction edge = null;
@@ -146,6 +168,10 @@ public class ColoursQuotas extends AbstractQuotas implements _ColoursQuotas {
         return edge;
     }
 
+    /**
+     * Performs margin.
+     * @return the margin result
+     */
     public final RangedMargin margin() {
 
         return margin;
@@ -164,6 +190,12 @@ public class ColoursQuotas extends AbstractQuotas implements _ColoursQuotas {
     }
 
     @SuppressWarnings({"MethodWithMultipleReturnPoints", "rawtypes"})
+    /**
+     * Performs is within precision.
+     * @param value the value
+     * @param quota the quota
+     * @return the is within precision result
+     */
     public final boolean isWithinPrecision(final Object value, final _Quota quota) {
 
         if (isNull(quota.precision())) return quota.value().equals(value);

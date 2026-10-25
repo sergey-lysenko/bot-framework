@@ -8,6 +8,9 @@ import java.awt.Graphics2D;
 import java.awt.geom.RoundRectangle2D;
 import java.util.List;
 
+/**
+ * The GraphicsTreeRenderer class.
+ */
 public class GraphicsTreeRenderer {
 
     private static final Font FONT_LABEL = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
@@ -16,10 +19,19 @@ public class GraphicsTreeRenderer {
 
     private final TreeTheme theme;
 
+    /**
+     * Constructs a new GraphicsTreeRenderer.
+     * @param theme the theme
+     */
     public GraphicsTreeRenderer(TreeTheme theme) {
         this.theme = theme;
     }
 
+    /**
+     * Performs render nodes.
+     * @param g2d the g2d
+     * @param nodes the nodes
+     */
     public void renderNodes(Graphics2D g2d, List<VisualNode> nodes) {
         for (VisualNode node : nodes) {
             int x = (int) node.x();

@@ -253,6 +253,10 @@ public class FractionRange implements _Range<Fraction> {
         return range.getMinimum();
     }
 
+    /**
+     * Performs to string.
+     * @return the to string result
+     */
     public final String toString() {
 
         return toString(false);

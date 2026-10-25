@@ -42,10 +42,15 @@ public class PropertiesPanel extends JPanel {
         works.lysenko.base.ui.ControlPanel.initializeLookAndFeel();
     }
 
+    /** The status_default. */
     public static final String STATUS_DEFAULT = c(DEFAULT);
+    /** The status_configured. */
     public static final String STATUS_CONFIGURED = c(CONFIGURED);
+    /** The status_modified. */
     public static final String STATUS_MODIFIED = c(MODIFIED);
+    /** The status_custom. */
     public static final String STATUS_CUSTOM = "Custom";
+    /** The status_reset_to_default. */
     public static final String STATUS_RESET_TO_DEFAULT = "Reset to Default";
 
     private final _TestProperties testProperties;
@@ -65,7 +70,6 @@ public class PropertiesPanel extends JPanel {
     /**
      * Constructs a new PropertiesDialog using Base.properties.
      *
-     * @param owner         the parent window
      * @param testName      the selected test name
      * @param isHeadless    headless flag
      * @param isAllLeafs    all-leafs flag
@@ -87,7 +91,6 @@ public class PropertiesPanel extends JPanel {
     /**
      * Constructs a new PropertiesDialog with the given test properties instance.
      *
-     * @param owner         the parent window
      * @param testProps     the test properties instance
      * @param testName      the selected test name
      * @param isHeadless    headless flag
@@ -212,6 +215,9 @@ public class PropertiesPanel extends JPanel {
         return calculateStatus(key, value, defaultValue, isDefaultKnown, baseVal);
     }
 
+    /**
+     * Performs reload from disk operation.
+     */
     public void reloadFromDisk(final String testName, final boolean isHeadless, final boolean isAllLeafs,
                                final int allLeafsExecutions) {
 
@@ -466,71 +472,127 @@ public class PropertiesPanel extends JPanel {
 
     // Removed onCancel() as it's no longer necessary
 
+    /**
+     * Performs is confirmed.
+     * @return the is confirmed result
+     */
     public boolean isConfirmed() {
 
         return confirmed;
     }
 
+    /**
+     * Performs get overrides.
+     * @return the get overrides result
+     */
     public Map<String, String> getOverrides() {
 
         return Collections.unmodifiableMap(overrides);
     }
 
+    /**
+     * Performs get baseline.
+     * @return the get baseline result
+     */
     public Map<String, String> getBaseline() {
 
         return Collections.unmodifiableMap(baseline);
     }
 
+    /**
+     * Performs get config defaults.
+     * @return the get config defaults result
+     */
     public Map<String, String> getConfigDefaults() {
 
         return Collections.unmodifiableMap(baseline);
     }
 
+    /**
+     * Performs get model.
+     * @return the get model result
+     */
     public DefaultTableModel getModel() {
 
         return model;
     }
 
+    /**
+     * Performs get table.
+     * @return the get table result
+     */
     public JTable getTable() {
 
         return propertyTablePanel.getTable();
     }
 
+    /**
+     * Performs get search field.
+     * @return the get search field result
+     */
     public JTextField getSearchField() {
 
         return propertyTablePanel.getSearchField();
     }
 
+    /**
+     * Performs get help text.
+     * @return the get help text result
+     */
     public JTextArea getHelpText() {
 
         return propertyTablePanel.getHelpText();
     }
 
+    /**
+     * Performs get help title.
+     * @return the get help title result
+     */
     public JLabel getHelpTitle() {
 
         return propertyTablePanel.getHelpTitle();
     }
 
+    /**
+     * Performs get reset selected button.
+     * @return the get reset selected button result
+     */
     public JButton getResetSelectedButton() {
 
         return resetSelectedBtn;
     }
 
+    /**
+     * Performs get copy property name button.
+     * @return the get copy property name button result
+     */
     public JButton getCopyPropertyNameButton() {
 
         return copyPropertyNameBtn;
     }
 
+    /**
+     * Performs get reset all button.
+     * @return the get reset all button result
+     */
     public JButton getResetAllButton() {
 
         return resetAllBtn;
     }
 
+    /**
+     * Performs get ok button.
+     * @return the get ok button result
+     */
     public JButton getOkButton() {
 
         return okBtn;
     }
 
+    /**
+     * Performs get cancel button.
+     * @return the get cancel button result
+     */
     public JButton getCancelButton() {
 
         return cancelBtn;

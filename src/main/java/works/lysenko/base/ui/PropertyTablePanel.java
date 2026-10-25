@@ -26,8 +26,14 @@ import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.spec.Layout.Paths._CONFIG_;
 import static works.lysenko.util.spec.Layout.Paths._SUITES_;
 
+/**
+ * The PropertyTablePanel class.
+ */
 public class PropertyTablePanel extends JPanel {
 
+    /**
+     * The PartsMode enum.
+     */
     public enum PartsMode {
         CONFIG_ONLY, SUITES_ONLY
     }
@@ -62,6 +68,14 @@ public class PropertyTablePanel extends JPanel {
 
     private boolean isUpdatingForm = false;
 
+    /**
+     * Constructs a new PropertyTablePanel.
+     * @param tableModel the tableModel
+     * @param keyColIdx the keyColIdx
+     * @param valColIdx the valColIdx
+     * @param showHelp the showHelp
+     * @param extraSearchComponent the extraSearchComponent
+     */
     public PropertyTablePanel(final DefaultTableModel tableModel, final int keyColIdx, final int valColIdx, final boolean showHelp, final JComponent extraSearchComponent) {
         this.tableModel = tableModel;
         this.keyColIdx = keyColIdx;
@@ -202,42 +216,82 @@ public class PropertyTablePanel extends JPanel {
         }
     }
     
+    /**
+     * Performs set form save action.
+     * @param listener the listener
+     */
     public void setFormSaveAction(ActionListener listener) {
         saveEntryBtn.addActionListener(listener);
     }
     
+    /**
+     * Performs set form delete action.
+     * @param listener the listener
+     */
     public void setFormDeleteAction(ActionListener listener) {
         deleteEntryBtn.addActionListener(listener);
     }
 
+    /**
+     * Performs set search and filters visible.
+     * @param visible the visible
+     */
     public void setSearchAndFiltersVisible(boolean visible) {
         topContainer.setVisible(visible);
     }
 
+    /**
+     * Performs get table.
+     * @return the get table result
+     */
     public JTable getTable() {
         return table;
     }
 
+    /**
+     * Performs get sorter.
+     * @return the get sorter result
+     */
     public TableRowSorter<DefaultTableModel> getSorter() {
         return sorter;
     }
 
+    /**
+     * Performs get search field.
+     * @return the get search field result
+     */
     public JTextField getSearchField() {
         return searchField;
     }
     
+    /**
+     * Performs get key field.
+     * @return the get key field result
+     */
     public AutoCompleteComboBox getKeyField() {
         return keyField;
     }
 
+    /**
+     * Performs get value field.
+     * @return the get value field result
+     */
     public JTextField getValueField() {
         return valueField;
     }
     
+    /**
+     * Performs get help title.
+     * @return the get help title result
+     */
     public JLabel getHelpTitle() {
         return helpTitle;
     }
     
+    /**
+     * Performs get help text.
+     * @return the get help text result
+     */
     public JTextArea getHelpText() {
         return helpText;
     }
@@ -282,6 +336,9 @@ public class PropertyTablePanel extends JPanel {
         valueField.getDocument().addDocumentListener(listener);
     }
 
+    /**
+     * Performs perform live validation.
+     */
     public void performLiveValidation() {
         final String key = keyField.getText().trim();
         final String val = valueField.getText().trim();
@@ -327,10 +384,18 @@ public class PropertyTablePanel extends JPanel {
         } catch (final Exception ignored) {}
     }
 
+    /**
+     * Performs set parts mode.
+     * @param mode the mode
+     */
     public void setPartsMode(final PartsMode mode) {
         this.partsMode = isNotNull(mode) ? mode : PartsMode.CONFIG_ONLY;
     }
 
+    /**
+     * Performs get parts mode.
+     * @return the get parts mode result
+     */
     public PartsMode getPartsMode() {
         return partsMode;
     }
@@ -413,6 +478,9 @@ public class PropertyTablePanel extends JPanel {
         return panel;
     }
 
+    /**
+     * Performs clear form.
+     */
     public void clearForm() {
         table.clearSelection();
         keyField.setEnabled(true);
@@ -421,6 +489,9 @@ public class PropertyTablePanel extends JPanel {
         performLiveValidation();
     }
 
+    /**
+     * Performs populate form from selected row.
+     */
     public void populateFormFromSelectedRow() {
         final int viewRow = table.getSelectedRow();
         if (viewRow >= 0) {
@@ -441,6 +512,9 @@ public class PropertyTablePanel extends JPanel {
         }
     }
 
+    /**
+     * Performs update help panel.
+     */
     public void updateHelpPanel() {
         final int viewRow = table.getSelectedRow();
         if (viewRow < 0) {

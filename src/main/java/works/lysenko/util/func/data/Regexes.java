@@ -16,19 +16,32 @@ import static works.lysenko.util.spec.Symbols.*;
         "ClassWithTooManyTransitiveDependencies", "ClassWithTooManyTransitiveDependents", "AutoBoxing"})
 public record Regexes() {
 
+    /** The whitespace. */
     public static final String whitespace = s(REW_SOL, S);
+    /** The digit. */
     public static final String digit = s(REW_SOL, D);
+    /** The l0. */
     public static final String l0 = s(REW_SOL, L0);
+    /** The l1. */
     public static final String l1 = s(REW_SOL, L1);
+    /** The l2. */
     public static final String l2 = s(REW_SOL, L2);
+    /** The colon. */
     public static final String colon = s(REW_SOL, _COLON_);
+    /** The opn_brk. */
     public static final String opn_brk = s(REW_SOL, OPN_BRK);
+    /** The cls_brk. */
     public static final String cls_brk = s(REW_SOL, CLS_BRK);
+    /** The dot. */
     public static final String dot = s(REW_SOL, _DOT_);
+    /** The zero or one. */
     public static final String zeroOrOne = s(QUS_MRK);
+    /** The zero to unlimited. */
     public static final String zeroToUnlimited = s(_ASTRS_);
+    /** The one to unlimited. */
     public static final String oneToUnlimited = s(_PLUS_);
 
+    /** The digits. */
     public static final String digits = s(digit, oneToUnlimited);
 
     /**

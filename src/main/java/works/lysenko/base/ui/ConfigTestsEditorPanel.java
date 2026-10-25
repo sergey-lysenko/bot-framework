@@ -46,10 +46,16 @@ public class ConfigTestsEditorPanel extends JPanel {
         ControlPanel.initializeLookAndFeel();
     }
 
+    /**
+     * The FileCategory enum.
+     */
     public enum FileCategory {
         ROOT_DIR, CATEGORY_DIR, GLOBAL_CONFIG, CONFIG_PART, TEST_SUITE, SUITE_PART
     }
 
+    /**
+     * The FileNodeObject record.
+     */
     public record FileNodeObject(String displayName, Path path, FileCategory category, boolean deletable) {
         @Override
         public String toString() {
@@ -78,6 +84,9 @@ public class ConfigTestsEditorPanel extends JPanel {
     private boolean isUpdatingTree = false;
     private boolean isUpdatingForm = false;
 
+    /**
+     * Constructs a new ConfigTestsEditorPanel.
+     */
     public ConfigTestsEditorPanel() {
         setLayout(new BorderLayout(0, 0));
 
@@ -404,6 +413,9 @@ public class ConfigTestsEditorPanel extends JPanel {
         });
     }
 
+    /**
+     * Performs refresh tree from disk.
+     */
     public void refreshTreeFromDisk() {
         isUpdatingTree = true;
         treeRootNode.removeAllChildren();
@@ -514,6 +526,9 @@ public class ConfigTestsEditorPanel extends JPanel {
         return false;
     }
 
+    /**
+     * Performs stop or cancel table editing.
+     */
     public void stopOrCancelTableEditing() {
         if (isNotNull(propertyTablePanel) && isNotNull(propertyTablePanel.getTable()) && propertyTablePanel.getTable().isEditing()) {
             final TableCellEditor editor = propertyTablePanel.getTable().getCellEditor();
@@ -711,6 +726,9 @@ public class ConfigTestsEditorPanel extends JPanel {
         }
     }
 
+    /**
+     * Performs load selected file.
+     */
     public void loadSelectedFile() {
         if (null == currentSelectedNode) return;
 
@@ -779,6 +797,9 @@ public class ConfigTestsEditorPanel extends JPanel {
         }
     }
 
+    /**
+     * Performs save silently if modified.
+     */
     public void saveSilentlyIfModified() {
         if (null == currentSelectedNode || !isModified()) return;
         try {
@@ -1114,10 +1135,17 @@ public class ConfigTestsEditorPanel extends JPanel {
         }
     }
 
+    /**
+     * Performs get property table panel.
+     * @return the get property table panel result
+     */
     public PropertyTablePanel getPropertyTablePanel() {
         return propertyTablePanel;
     }
 
+    /**
+     * Performs update parts mode for current node.
+     */
     public void updatePartsModeForCurrentNode() {
         if (null == currentSelectedNode) {
             propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);

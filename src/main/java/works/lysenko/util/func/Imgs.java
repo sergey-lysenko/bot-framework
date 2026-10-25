@@ -109,6 +109,13 @@ public record Imgs() {
     @SuppressWarnings({"MethodWithMultipleLoops", "OverlyNestedMethod", "OverlyComplexMethod", "QuestionableName",
             "ObjectAllocationInLoop", "BooleanVariableAlwaysNegated", "LabeledStatement", "BreakStatementWithLabel",
             "BreakStatement"})
+    /**
+     * Performs are similar images grid based.
+     * @param one the one
+     * @param two the two
+     * @param tolerance the tolerance
+     * @return the are similar images grid based result
+     */
     public static boolean areSimilarImagesGridBased(final BufferedImage one, final BufferedImage two, final int tolerance) {
 
         if (one.getWidth() == two.getWidth() && one.getHeight() == two.getHeight()) {

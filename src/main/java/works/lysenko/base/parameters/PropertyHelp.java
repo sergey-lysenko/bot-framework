@@ -20,6 +20,11 @@ final public class PropertyHelp {
     private PropertyHelp() {
     }
 
+    /**
+     * Performs get description.
+     * @param propertyName the propertyName
+     * @return the get description result
+     */
     public static String getDescription(final String propertyName) {
 
         return DESCRIPTIONS.getProperty(propertyName);

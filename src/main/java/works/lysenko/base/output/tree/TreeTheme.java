@@ -3,6 +3,9 @@ package works.lysenko.base.output.tree;
 import java.awt.Color;
 import java.util.Locale;
 
+/**
+ * The TreeTheme record.
+ */
 public record TreeTheme(
     int cardWidth,
     int cardHeight,
@@ -27,6 +30,7 @@ public record TreeTheme(
     Color nonExecutableText,
     Color unvisitedText
 ) {
+    /** The default. */
     public static final TreeTheme DEFAULT = new TreeTheme(
         220, // cardWidth
         44,  // cardHeight
@@ -52,10 +56,19 @@ public record TreeTheme(
         Color.decode("#94a3b8")  // unvisitedText
     );
 
+    /**
+     * Performs hex.
+     * @param color the color
+     * @return the hex result
+     */
     public String hex(Color color) {
         return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
     }
     
+    /**
+     * Performs get execution path styles.
+     * @return the get execution path styles result
+     */
     public String getExecutionPathStyles() {
         return String.format(Locale.ROOT, 
             "  .path-step.failed { background: %s; border-color: %s; color: %s; }\n" +

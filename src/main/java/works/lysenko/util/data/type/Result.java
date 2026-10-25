@@ -23,14 +23,17 @@ import static works.lysenko.util.lang.word.E.EVENT;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
- * Represents the execution result of a {@(_Scenario)}, tracking execution status, events, weights, and instance counts.
- * Implements the {@_Result} interface.
+ * Represents the execution result of a {@link _Scenario}, tracking execution status, events, weights, and instance counts.
+ * Implements the {@link _Result} interface.
  *
  * @author Sergii Lysenko
  */
 @SuppressWarnings({"FieldNotUsedInToString", "ClassWithoutNoArgConstructor", "ParameterHidesMemberVariable", "AutoBoxing",
         "NestedMethodCall",
         "ImplicitNumericConversion", "LocalVariableHidesMemberVariable"})
+/**
+ * The Result class.
+ */
 public class Result implements _Result {
 
     /** The type of the scenario. */
@@ -159,7 +162,7 @@ public class Result implements _Result {
     /**
      * Returns an unmodifiable list of log record events.
      *
-     * @return unmodifiable list of {@_LogRecord}
+     * @return unmodifiable list of {@link _LogRecord}
      */
     public final List<_LogRecord> getEvents() {
 

@@ -19,6 +19,9 @@ import static works.lysenko.util.spec.Symbols._DOT_;
         "ClassWithTooManyTransitiveDependents", "ClassExtendsConcreteCollection", "ClassWithTooManyTransitiveDependencies",
         "CyclicClassDependency", "FinalClass", "ImplicitCallToSuper", "WeakerAccess", "UseOfConcreteClass",
         "ClassUnconnectedToPackage"})
+/**
+ * The Groups class.
+ */
 public final class Groups extends TreeMap<String, TreeMap<String, Result>> {
 
     /**
@@ -54,6 +57,12 @@ public final class Groups extends TreeMap<String, TreeMap<String, Result>> {
     @SuppressWarnings({"TypeMayBeWeakened", "ChainedMethodCall", "ObjectAllocationInLoop", "LocalCanBeFinal",
             "NestedMethodCall",
             "ForeachStatement", "AutoBoxing"})
+    /**
+     * Performs process.
+     * @param SortedMap<String the SortedMap<String
+     * @param source the source
+     * @return the process result
+     */
     public static Groups process(SortedMap<String, Result> source) {
 
         Groups g = new Groups();

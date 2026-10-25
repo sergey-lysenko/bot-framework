@@ -131,6 +131,9 @@ public final class TreeTracker {
         invalidateCache();
     }
 
+    /**
+     * Performs invalidate cache.
+     */
     public static void invalidateCache() {
         cachedAccessibleScenarios = null;
         cachedAccessibleContext = null;
@@ -426,6 +429,9 @@ public final class TreeTracker {
                 ProgressionSettings.current().ffmpeg());
     }
 
+    /**
+     * Performs process frames operation.
+     */
     public static void processFrames(
             final File runDir,
             final String prefix,
@@ -445,6 +451,9 @@ public final class TreeTracker {
                 ProgressionSettings.current().ffmpeg());
     }
 
+    /**
+     * Performs process frames operation.
+     */
     public static void processFrames(
             final File runDir,
             final String prefix,
@@ -465,6 +474,9 @@ public final class TreeTracker {
                 ProgressionSettings.current().ffmpeg());
     }
 
+    /**
+     * Performs process frames operation.
+     */
     public static void processFrames(
             final File runDir,
             final String prefix,
@@ -488,6 +500,9 @@ public final class TreeTracker {
                 ProgressionSettings.current().treeSonification());
     }
 
+    /**
+     * Performs process frames operation.
+     */
     public static void processFrames(
             final File runDir,
             final String prefix,
@@ -514,6 +529,9 @@ public final class TreeTracker {
                 treeSonification);
     }
 
+    /**
+     * Performs process frames operation.
+     */
     public static void processFrames(
             final File runDir,
             final String prefix,
@@ -687,6 +705,10 @@ public final class TreeTracker {
         return TreeHtml.isTheoreticallyExecutable(n);
     }
 
+    /**
+     * Performs render tree progression svg operation.
+     * @return result of render tree progression svg
+     */
     public static String renderTreeProgressionSvg(
             final TreeLayout layout,
             final int target,
@@ -694,6 +716,10 @@ public final class TreeTracker {
         return renderTreeProgressionSvg(layout, target, "Cycle #" + currentCycle, Collections.emptySet(), getAccessibleScenarios());
     }
 
+    /**
+     * Performs render tree progression svg operation.
+     * @return result of render tree progression svg
+     */
     public static String renderTreeProgressionSvg(
             final TreeLayout layout,
             final int target,
@@ -702,6 +728,10 @@ public final class TreeTracker {
         return renderTreeProgressionSvg(layout, target, "Cycle #" + currentCycle, recentNodeKeys);
     }
 
+    /**
+     * Performs render tree progression svg operation.
+     * @return result of render tree progression svg
+     */
     public static String renderTreeProgressionSvg(
             final TreeLayout layout,
             final int target,
@@ -710,6 +740,10 @@ public final class TreeTracker {
         return renderTreeProgressionSvg(layout, target, badgeText, recentNodeKeys, getAccessibleScenarios());
     }
 
+    /**
+     * Performs render tree progression svg operation.
+     * @return result of render tree progression svg
+     */
     public static String renderTreeProgressionSvg(
             final TreeLayout layout,
             final int target,
@@ -821,6 +855,10 @@ public final class TreeTracker {
         return new Transform(currentZoom, currentTranslateX, currentTranslateY);
     }
 
+    /**
+     * Performs render tree progression svg operation.
+     * @return result of render tree progression svg
+     */
     public static String renderTreeProgressionSvg(
             final TreeLayout layout,
             final int target,
@@ -831,6 +869,10 @@ public final class TreeTracker {
         return renderTreeProgressionSvg(layout, target, badgeText, recentNodeKeys, accessibleScenarios, accessibleCtx, null);
     }
 
+    /**
+     * Performs render tree progression svg operation.
+     * @return result of render tree progression svg
+     */
     public static String renderTreeProgressionSvg(
             final TreeLayout layout,
             final int target,
@@ -1037,6 +1079,10 @@ public final class TreeTracker {
         return leftX - 10;
     }
 
+    /**
+     * Performs render tree progression operation.
+     * @return result of render tree progression
+     */
     public static BufferedImage renderTreeProgression(
             final TreeLayout layout,
             final int target,
@@ -1125,6 +1171,10 @@ public final class TreeTracker {
         return renderTreeProgression(layout, target, badgeText, recentNodeKeys, accessibleScenarios, accessibleCtx, null);
     }
 
+    /**
+     * Performs render tree progression operation.
+     * @return result of render tree progression
+     */
     public static BufferedImage renderTreeProgression(
             final TreeLayout layout,
             final int target,

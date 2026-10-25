@@ -10,6 +10,9 @@ import java.util.function.Consumer;
 
 import static works.lysenko.util.func.type.Objects.isNotNull;
 
+/**
+ * The ValidatingCellEditor class.
+ */
 public class ValidatingCellEditor extends AbstractCellEditor implements TableCellEditor {
 
     private JTextField field;
@@ -19,6 +22,11 @@ public class ValidatingCellEditor extends AbstractCellEditor implements TableCel
     private final int keyColumnIndex;
     private final Consumer<String> validationErrorCallback;
 
+    /**
+     * Constructs a new ValidatingCellEditor.
+     * @param keyColumnIndex the keyColumnIndex
+     * @param validationErrorCallback the validationErrorCallback
+     */
     public ValidatingCellEditor(final int keyColumnIndex, final Consumer<String> validationErrorCallback) {
         this.keyColumnIndex = keyColumnIndex;
         this.validationErrorCallback = validationErrorCallback;

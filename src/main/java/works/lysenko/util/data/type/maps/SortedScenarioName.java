@@ -6,7 +6,7 @@ import works.lysenko.util.data.comparator.IgnoreCaseString;
 import java.util.TreeMap;
 
 /**
- * A sorted map associating scenario name string keys with {@_Result} values,
+ * A sorted map associating scenario name string keys with {@link _Result} values,
  * using an ignore-case string comparator.
  */
 @SuppressWarnings({"CloneableClassInSecureContext", "ClassExtendsConcreteCollection"})

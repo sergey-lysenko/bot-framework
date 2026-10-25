@@ -193,6 +193,9 @@ public final class ScenarioTracker {
                 ProgressionSettings.current().ffmpeg());
     }
 
+    /**
+     * Performs process frames operation.
+     */
     public static void processFrames(
             final File runDir,
             final String prefix,
@@ -212,6 +215,9 @@ public final class ScenarioTracker {
                 ProgressionSettings.current().ffmpeg());
     }
 
+    /**
+     * Performs process frames operation.
+     */
     public static void processFrames(
             final File runDir,
             final String prefix,
@@ -234,6 +240,9 @@ public final class ScenarioTracker {
                 ProgressionSettings.current().ffmpeg());
     }
 
+    /**
+     * Performs process frames operation.
+     */
     public static void processFrames(
             final File runDir,
             final String prefix,
@@ -258,6 +267,9 @@ public final class ScenarioTracker {
                 ffmpeg);
     }
 
+    /**
+     * Performs process frames operation.
+     */
     public static void processFrames(
             final File runDir,
             final String prefix,
@@ -554,6 +566,10 @@ public final class ScenarioTracker {
         return leftX - 8;
     }
 
+    /**
+     * Performs render progression graph operation.
+     * @return result of render progression graph
+     */
     public static BufferedImage renderProgressionGraph(
             final List<_Scenario> scenarios,
             final int target,

@@ -9,7 +9,7 @@ import static works.lysenko.util.func.type.fractions.Factory.fr;
 
 /**
  * Represents a position relative to a reference area using horizontal and vertical fractions.
- * Implements the {@_RelativePosition} interface.
+ * Implements the {@link _RelativePosition} interface.
  */
 public class RelativePosition implements _RelativePosition {
 

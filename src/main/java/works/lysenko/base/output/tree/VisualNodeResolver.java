@@ -10,6 +10,9 @@ import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.enums.ExecutionStatus;
 import works.lysenko.util.data.enums.ScenarioType;
 
+/**
+ * The VisualNodeResolver class.
+ */
 public class VisualNodeResolver {
     
     private final TreeTheme theme;
@@ -21,18 +24,53 @@ public class VisualNodeResolver {
     private final boolean includeHeaderOffset;
     private final double minRow;
 
+    /**
+     * Constructs a new VisualNodeResolver.
+     * @param theme the theme
+     * @param accessibleScenarios the accessibleScenarios
+     * @param isAllLeafs the isAllLeafs
+     */
     public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isAllLeafs) {
         this(theme, accessibleScenarios, isAllLeafs, 1, 0.0, false, false);
     }
 
+    /**
+     * Constructs a new VisualNodeResolver.
+     * @param theme the theme
+     * @param accessibleScenarios the accessibleScenarios
+     * @param isAllLeafs the isAllLeafs
+     * @param target the target
+     * @param maxLeafOverRatio the maxLeafOverRatio
+     */
     public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isAllLeafs, int target, double maxLeafOverRatio) {
         this(theme, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, false, false);
     }
 
+    /**
+     * Constructs a new VisualNodeResolver.
+     * @param theme the theme
+     * @param accessibleScenarios the accessibleScenarios
+     * @param isAllLeafs the isAllLeafs
+     * @param target the target
+     * @param maxLeafOverRatio the maxLeafOverRatio
+     * @param isRecent the isRecent
+     * @param includeHeaderOffset the includeHeaderOffset
+     */
     public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isAllLeafs, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset) {
         this(theme, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, isRecent, includeHeaderOffset, 0.0);
     }
 
+    /**
+     * Constructs a new VisualNodeResolver.
+     * @param theme the theme
+     * @param accessibleScenarios the accessibleScenarios
+     * @param isAllLeafs the isAllLeafs
+     * @param target the target
+     * @param maxLeafOverRatio the maxLeafOverRatio
+     * @param isRecent the isRecent
+     * @param includeHeaderOffset the includeHeaderOffset
+     * @param minRow the minRow
+     */
     public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isAllLeafs, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset, double minRow) {
         this.theme = theme;
         this.accessibleScenarios = accessibleScenarios;
@@ -44,6 +82,11 @@ public class VisualNodeResolver {
         this.minRow = minRow;
     }
     
+    /**
+     * Performs resolve.
+     * @param node the node
+     * @return the resolve result
+     */
     public VisualNode resolve(NodeData node) {
         return resolve(node, this.isRecent);
     }
@@ -51,10 +94,24 @@ public class VisualNodeResolver {
     private final Map<NodeData, Boolean> childFailureCache = new HashMap<>();
     private final Map<NodeData, Boolean> executableCache = new HashMap<>();
 
+    /**
+     * Performs resolve.
+     * @param node the node
+     * @param isRecentNode the isRecentNode
+     * @return the resolve result
+     */
     public VisualNode resolve(NodeData node, boolean isRecentNode) {
         return resolve(node, isRecentNode, this.childFailureCache, this.executableCache);
     }
 
+    /**
+     * Performs resolve.
+     * @param node the node
+     * @param isRecentNode the isRecentNode
+     * @param childFailureCache the childFailureCache
+     * @param executableCache the executableCache
+     * @return the resolve result
+     */
     public VisualNode resolve(NodeData node, boolean isRecentNode, Map<NodeData, Boolean> childFailureCache, Map<NodeData, Boolean> executableCache) {
         final int execs = (node.result() != null) ? node.result().getExecutions() : 0;
         final int eventCount = (node.result() != null && node.result().getEvents() != null) ? node.result().getEvents().size() : 0;

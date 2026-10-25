@@ -16,6 +16,9 @@ import static works.lysenko.Base.logDebug;
 import static works.lysenko.Base.logEvent;
 import static works.lysenko.util.data.enums.Severity.S2;
 
+/**
+ * The SequenceTracker class.
+ */
 public final class SequenceTracker {
 
     private static final List<String> recordedSequence = Collections.synchronizedList(new ArrayList<>());
@@ -116,22 +119,36 @@ public final class SequenceTracker {
         }
     }
 
+    /**
+     * Performs has active script.
+     * @return the has active script result
+     */
     public static boolean hasActiveScript() {
         initIfNeeded();
         return loadedSequence != null && sequencePointer < loadedSequence.size();
     }
 
+    /**
+     * Performs peek next scenario.
+     * @return the peek next scenario result
+     */
     public static String peekNextScenario() {
         if (!hasActiveScript()) return null;
         return loadedSequence.get(sequencePointer);
     }
 
+    /**
+     * Performs advance sequence.
+     */
     public static void advanceSequence() {
         if (hasActiveScript()) {
             sequencePointer++;
         }
     }
 
+    /**
+     * Performs reset.
+     */
     public static void reset() {
         recordedSequence.clear();
         loadedSequence = null;

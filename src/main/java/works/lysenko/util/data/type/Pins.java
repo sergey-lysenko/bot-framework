@@ -20,11 +20,14 @@ import static works.lysenko.util.spec.Symbols.OPN_CUB;
 
 /**
  * Provides additional functionality and convenient wrapper operations around BitSet.
- * Implements the {@_Pins} interface.
+ * Implements the {@link _Pins} interface.
  */
 @SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "BooleanMethodNameMustStartWithQuestion",
         "MethodWithMultipleReturnPoints",
         "NestedMethodCall", "AutoBoxing", "CallToSuspiciousStringMethod"})
+/**
+ * The Pins class.
+ */
 public class Pins implements _Pins {
 
     /** The underlying BitSet storing pin states. */

@@ -12,6 +12,9 @@ import java.util.Set;
 @SuppressWarnings({"BooleanMethodNameMustStartWithQuestion", "NegativelyNamedBooleanVariable", "BooleanParameter",
         "ClassWithTooManyMethods",
         "InterfaceWithOnlyOneDirectInheritor", "unused"})
+/**
+ * The OperatesOnTestData interface.
+ */
 public interface OperatesOnTestData {
 
     /**

@@ -15,6 +15,9 @@ import static works.lysenko.util.chrs.____.TEST;
 import static works.lysenko.util.data.strs.Swap.s;
 
 @SuppressWarnings({"MethodWithMultipleLoops", "OverlyLongMethod", "ClassWithoutLogger", "CyclomaticComplexity", "NPathComplexity", "UtilityClass", "PublicInnerClass", "MagicNumber", "ObjectAllocationInLoop", "DuplicateStringLiteralInspection", "MultipleStringLiterals", "UtilityClassCanBeEnum"})
+/**
+ * The LogMetrics class.
+ */
 public final class LogMetrics {
 
     /**

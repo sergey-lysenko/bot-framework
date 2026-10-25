@@ -30,8 +30,8 @@ import static works.lysenko.util.prop.grid.Allowed.noValidation;
 import static works.lysenko.util.spec.Numbers.ZERO;
 
 /**
- * Represents a collection of {@_ValidationResult} objects specifically for grid validations.
- * Implements the {@_ValidationResults} and {@_ValidationResult} interfaces.
+ * Represents a collection of {@link _ValidationResult} objects specifically for grid validations.
+ * Implements the {@link _ValidationResults} and {@link _ValidationResult} interfaces.
  */
 @SuppressWarnings("BooleanMethodNameMustStartWithQuestion")
 public class GridValidationResults implements _ValidationResults, _ValidationResult {

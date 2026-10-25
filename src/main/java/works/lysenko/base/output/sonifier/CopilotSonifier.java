@@ -34,6 +34,11 @@ public final class CopilotSonifier extends AbstractTreeSonifier {
     private static final int[] SCALE = {0, 2, 4, 7, 9};
     private static final int[] TRIAD = {0, 2, 4};
 
+    /**
+     * Performs events file.
+     * @param frame the frame
+     * @return the events file result
+     */
     public static File eventsFile(final File frame) {
 
         return new File(new File(frame.getParentFile(), "events"),

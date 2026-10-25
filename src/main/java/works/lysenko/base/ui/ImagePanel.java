@@ -73,6 +73,10 @@ public final class ImagePanel extends JPanel implements _ImagePanel {
         }
     }
 
+    /**
+     * Performs set image.
+     * @param img the img
+     */
     public void setImage(final Image img) {
 
         this.img = img;
@@ -81,6 +85,10 @@ public final class ImagePanel extends JPanel implements _ImagePanel {
         repaint();
     }
 
+    /**
+     * Performs set scale.
+     * @param scale the scale
+     */
     public void setScale(final float scale) {
 
         this.scale = scale;
@@ -103,16 +111,30 @@ public final class ImagePanel extends JPanel implements _ImagePanel {
         setScale(Math.min(1.0F, Math.min(widthScale, heightScale)));
     }
 
+    /**
+     * Performs get image.
+     * @return the get image result
+     */
     public Image getImage() {
 
         return img;
     }
 
+    /**
+     * Performs get scale.
+     * @return the get scale result
+     */
     public float getScale() {
 
         return scale;
     }
 
+    /**
+     * Performs to image coordinates.
+     * @param panelX the panelX
+     * @param panelY the panelY
+     * @return the to image coordinates result
+     */
     public Point toImageCoordinates(final int panelX, final int panelY) {
 
         if (isNull(img) || scale <= 0) return null;

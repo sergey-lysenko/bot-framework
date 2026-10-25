@@ -119,10 +119,22 @@ public record SummaryPlaque(
             this(suite, pool, domain, mode, pathsSummary, null, null);
         }
 
+        /**
+         * Constructs a new RunConfig.
+         * @param suite the suite
+         * @param pool the pool
+         * @param domain the domain
+         * @param mode the mode
+         */
         public RunConfig(final String suite, final String pool, final String domain, final String mode) {
             this(suite, pool, domain, mode, null);
         }
 
+        /**
+         * Performs from parameters.
+         * @param parameters the parameters
+         * @return the from parameters result
+         */
         public static RunConfig fromParameters(final Parameters parameters) {
 
             if (isNull(parameters)) return new RunConfig(null, null, null, null, null, null, null);
@@ -142,12 +154,23 @@ public record SummaryPlaque(
             return new RunConfig(suite, pool, domain, mode, pathsSummary, origin, tag);
         }
 
+        /**
+         * Performs parse.
+         * @param logLine the logLine
+         * @param pathsSummary the pathsSummary
+         * @return the parse result
+         */
         public static RunConfig parse(final String logLine, final String pathsSummary) {
 
             final RunConfig base = parse(logLine);
             return new RunConfig(base.suite(), base.pool(), base.domain(), base.mode(), pathsSummary, base.origin(), base.tag());
         }
 
+        /**
+         * Performs parse.
+         * @param logLine the logLine
+         * @return the parse result
+         */
         public static RunConfig parse(final String logLine) {
 
             if (isNull(logLine) || logLine.isBlank()) return new RunConfig(null, null, null, null, null, null, null);
@@ -201,6 +224,13 @@ public record SummaryPlaque(
         }
     }
 
+    /**
+     * Performs clean paths summary.
+     * @param pathsExecutedStr the pathsExecutedStr
+     * @param pathsChanceStr the pathsChanceStr
+     * @param pathsPossibleStr the pathsPossibleStr
+     * @return the clean paths summary result
+     */
     public static String cleanPathsSummary(final String pathsExecutedStr, final String pathsChanceStr, final String pathsPossibleStr) {
 
         if ((isNull(pathsExecutedStr) || pathsExecutedStr.isBlank())
@@ -252,12 +282,23 @@ public record SummaryPlaque(
         return String.format(Locale.US, "%.1f%%", pct);
     }
 
+    /**
+     * Performs compute from nodes.
+     * @param nodes the nodes
+     * @return the compute from nodes result
+     */
     public static SummaryPlaque computeFromNodes(final List<TreeHtml.NodeData> nodes) {
 
         final RunConfig config = RunConfig.fromParameters(Base.parameters);
         return computeFromNodes(nodes, config);
     }
 
+    /**
+     * Performs compute from nodes.
+     * @param nodes the nodes
+     * @param config the config
+     * @return the compute from nodes result
+     */
     public static SummaryPlaque computeFromNodes(final List<TreeHtml.NodeData> nodes, final RunConfig config) {
 
         int total = nodes.size();
@@ -305,16 +346,34 @@ public record SummaryPlaque(
                 total, executable, executed, passed, warning, upset, failed, knownIssues, true);
     }
 
+    /**
+     * Performs compute from sections.
+     * @param sections the sections
+     * @return the compute from sections result
+     */
     public static SummaryPlaque computeFromSections(final List<LogSection> sections) {
 
         return computeFromSections(sections, null, null);
     }
 
+    /**
+     * Performs compute from sections.
+     * @param sections the sections
+     * @param execConfigStr the execConfigStr
+     * @return the compute from sections result
+     */
     public static SummaryPlaque computeFromSections(final List<LogSection> sections, final String execConfigStr) {
 
         return computeFromSections(sections, execConfigStr, null);
     }
 
+    /**
+     * Performs compute from sections.
+     * @param sections the sections
+     * @param execConfigStr the execConfigStr
+     * @param pathsSummary the pathsSummary
+     * @return the compute from sections result
+     */
     public static SummaryPlaque computeFromSections(final List<LogSection> sections, final String execConfigStr, final String pathsSummary) {
 
         final RunConfig config = RunConfig.parse(execConfigStr, pathsSummary);
@@ -348,16 +407,34 @@ public record SummaryPlaque(
                 total, executable, executed, passed, warning, 0, failed, 0, false);
     }
 
+    /**
+     * Performs compute from scen entries.
+     * @param entries the entries
+     * @return the compute from scen entries result
+     */
     public static SummaryPlaque computeFromScenEntries(final List<ScenEntry> entries) {
 
         return computeFromScenEntries(entries, null, null);
     }
 
+    /**
+     * Performs compute from scen entries.
+     * @param entries the entries
+     * @param execConfigStr the execConfigStr
+     * @return the compute from scen entries result
+     */
     public static SummaryPlaque computeFromScenEntries(final List<ScenEntry> entries, final String execConfigStr) {
 
         return computeFromScenEntries(entries, execConfigStr, null);
     }
 
+    /**
+     * Performs compute from scen entries.
+     * @param entries the entries
+     * @param execConfigStr the execConfigStr
+     * @param pathsSummary the pathsSummary
+     * @return the compute from scen entries result
+     */
     public static SummaryPlaque computeFromScenEntries(final List<ScenEntry> entries, final String execConfigStr, final String pathsSummary) {
 
         final RunConfig config = RunConfig.parse(execConfigStr, pathsSummary);

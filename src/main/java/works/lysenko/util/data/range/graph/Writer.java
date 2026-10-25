@@ -95,7 +95,7 @@ public record Writer() {
      *
      * @param title     The title of the graph to be generated, used for identification or descriptive purposes.
      * @param amount    An IntegerRange object that specifies the range of integers used in the computation.
-     * @param quotas    A _Quotas<> object that contains the integer share values for the graph calculation.
+     * @param quotas    A {@code _Quotas<?>} object that contains the integer share values for the graph calculation.
      * @param go        An Options object that configures various attributes of the graph during processing.
      * @param renderers A Renderers object that defines the rendering or visualization logic for the graph.
      * @return A Fraction object representing the computed expected edge value of the graph after processing and scaling.

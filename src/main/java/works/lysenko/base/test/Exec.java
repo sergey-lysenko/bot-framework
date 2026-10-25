@@ -18,11 +18,19 @@ public class Exec implements _Exec {
 
     private _Ctrl ctrl = null;
 
+    /**
+     * Performs ctrl.
+     * @return the ctrl result
+     */
     public final _Ctrl ctrl() {
 
         return ctrl;
     }
 
+    /**
+     * Performs ctrl.
+     * @param ctrl the ctrl
+     */
     public final void ctrl(final _Ctrl ctrl) {
 
         this.ctrl = ctrl;
@@ -39,6 +47,10 @@ public class Exec implements _Exec {
     }
 
     @SuppressWarnings("MethodWithMultipleReturnPoints")
+    /**
+     * Performs get root scenarios list.
+     * @return the get root scenarios list result
+     */
     public final Set<_Scenario> getRootScenariosList() {
 
         if (isNotNull(ctrl))

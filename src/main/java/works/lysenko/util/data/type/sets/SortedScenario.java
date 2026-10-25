@@ -7,8 +7,8 @@ import works.lysenko.util.data.comparator.IgnoreCaseScenario;
 import java.util.TreeSet;
 
 /**
- * A sorted set of {@_Scenario} objects sorted by {@_Scenario#getName()} ignoring character case.
- * Used in various {@_Core} implementations.
+ * A sorted set of {@link _Scenario} objects sorted by {@link _Scenario#getName()} ignoring character case.
+ * Used in various {@link works.lysenko.util.apis.core._Core} implementations.
  *
  * @author Sergii Lysenko
  */

@@ -14,6 +14,9 @@ import java.util.TreeMap;
         "ClassWithTooManyTransitiveDependents", "WeakerAccess", "ClassWithTooManyTransitiveDependencies",
         "CyclicClassDependency",
         "UnqualifiedFieldAccess", "ImplicitCallToSuper", "UseOfConcreteClass", "ClassUnconnectedToPackage"})
+/**
+ * The Parts class.
+ */
 public class Parts {
 
     /**

@@ -18,8 +18,8 @@ public final class Ellipse implements _Ellipse {
     /**
      * Constructs an Ellipse with the specified geometry and radius.
      *
-     * @the geometry providing ratio details
-     * @r the base radius
+     * @param at geometry providing ratio details
+     * @param r base radius
      */
     @SuppressWarnings("NumericCastThatLosesPrecision")
     public Ellipse(final _Geometry at, final double r) {

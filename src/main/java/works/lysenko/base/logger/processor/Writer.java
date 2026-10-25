@@ -22,12 +22,18 @@ import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_;
 import static works.lysenko.util.spec.Layout.Templates.TELEMETRY_;
 
 @SuppressWarnings({"NestedMethodCall", "MissingJavadoc"})
+/**
+ * The Writer class.
+ */
 public class Writer implements _LogsWriter {
 
     private final BufferedWriter logWriter;
     private final BufferedWriter telemetryWriter;
 
 
+    /**
+     * Constructs a new Writer.
+     */
     public Writer() {
 
         logWriter = createFileWriter(RUN_LOG_);

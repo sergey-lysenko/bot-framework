@@ -52,6 +52,10 @@ public class Value<T> implements _Value<T> {
         return value.toString();
     }
 
+    /**
+     * Performs render.
+     * @return the render result
+     */
     public final String render() {
 
         final Map<Class<?>, Function<Object, String>> render = Map.of(

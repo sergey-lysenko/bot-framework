@@ -5,7 +5,7 @@ import org.apache.commons.lang3.Range;
 /**
  * Represents a range of values with a minimum and maximum value.
  *
- * @param <ofType> the type of values in the range (must implement Comparable<ofType>)
+ * @param <ofType> the type of values in the range (must implement {@code Comparable<ofType>})
  */
 public interface _Range<ofType extends Comparable<ofType>> {
 

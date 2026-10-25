@@ -72,41 +72,74 @@ public class Driver implements _Driver {
     private WebDriver wd = null;
     private AppiumDriverLocalService service = null;
 
+    /**
+     * Performs service.
+     * @return the service result
+     */
     public final AppiumDriverLocalService service() {
 
         return service;
     }
 
+    /**
+     * Performs wd.
+     * @return the wd result
+     */
     public final WebDriver wd() {
 
         return wd;
     }
 
+    /**
+     * Performs wdw.
+     * @return the wdw result
+     */
     public final WebDriverWait wdw() {
 
         return wdw;
     }
 
+    /**
+     * Performs wdw.
+     * @param timeout the timeout
+     * @return the wdw result
+     */
     public final WebDriverWait wdw(final Duration timeout) {
 
         return isNotNull(wd) ? new WebDriverWait(wd, timeout) : null;
     }
 
+    /**
+     * Performs service.
+     * @param service the service
+     */
     public final void service(final AppiumDriverLocalService service) {
 
         this.service = service;
     }
 
+    /**
+     * Performs wd.
+     * @param wd the wd
+     */
     public final void wd(final WebDriver wd) {
 
         this.wd = wd;
     }
 
+    /**
+     * Performs wdw.
+     * @param wdw the wdw
+     */
     public final void wdw(final WebDriverWait wdw) {
 
         this.wdw = wdw;
     }
 
+    /**
+     * Performs is ok.
+     * @return the is ok result
+     */
     public final boolean isOk() {
 
         log(Level.none, b(c(INITIALIZING), c(DRIVER), DOTS), true);

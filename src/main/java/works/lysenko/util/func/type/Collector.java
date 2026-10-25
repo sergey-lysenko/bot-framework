@@ -25,6 +25,9 @@ import static works.lysenko.util.spec.Symbols._EQUAL_;
 @SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "unused", "CallToSuspiciousStringMethod", "unchecked",
         "MethodWithMultipleLoops",
         "ForeachStatement", "OptionalGetWithoutIsPresent"})
+/**
+ * The Collector record.
+ */
 public record Collector() {
 
     private static List<Map.Entry<String, Integer>> entriesSortedByValues(final Map<String, Integer> map) {

@@ -77,8 +77,8 @@ public record OfIntegers() {
      * returns the result as a Fraction object, which represents some aspect of the processed data.
      *
      * @param title     The title used for logging the process of computing expected values from shares.
-     * @param amount    An instance of _Range<> representing the range of amounts to consider in the computation.
-     * @param shares    An instance of _Quotas<?> representing the shares data to be evaluated.
+     * @param amount    An instance of {@code _Range<?>} representing the range of amounts to consider in the computation.
+     * @param shares    An instance of {@code _Quotas<?>} representing the shares data to be evaluated.
      * @param go        An instance of Options providing configuration related to graph dimensions and computation settings.
      * @param renderers An instance of Renderers used to apply rendering functions to the shares data.
      * @return A1 Fraction object representing the computed expected values from the provided shares data.

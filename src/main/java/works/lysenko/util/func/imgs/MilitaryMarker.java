@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Military Map & Tactical HUD style image annotation utility.
+ * Military Map &amp; Tactical HUD style image annotation utility.
  * Adds tactical coordinates, corner brackets, crosshairs, and fun military callouts/stamps to screenshots.
  */
 public class MilitaryMarker implements OperationMarker {

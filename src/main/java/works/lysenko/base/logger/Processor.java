@@ -203,6 +203,11 @@ public class Processor implements _LogsProcessor {
         System.out.println(s);
     }
 
+    /**
+     * Performs get all driver logs.
+     * @param depth the depth
+     * @param redefinedTime the redefinedTime
+     */
     public synchronized final void getAllDriverLogs(final int depth, final Long redefinedTime) {
 
         if (isNotNull(exec)) {
@@ -261,6 +266,10 @@ public class Processor implements _LogsProcessor {
     }
 
     @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "AssignmentToStaticFieldFromInstanceMethod"})
+    /**
+     * Performs log empty line.
+     * @return the log empty line result
+     */
     public synchronized final void logEmptyLine() {
 
         core.sleep(1L, true);
@@ -269,6 +278,11 @@ public class Processor implements _LogsProcessor {
     }
 
     @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "AssignmentToStaticFieldFromInstanceMethod"})
+    /**
+     * Performs log empty line.
+     * @param shortStackTrace the shortStackTrace
+     * @return the log empty line result
+     */
     public synchronized final void logEmptyLine(final String shortStackTrace) {
 
         core.sleep(1L, true);
@@ -278,6 +292,12 @@ public class Processor implements _LogsProcessor {
         core.sleep(1L, true);
     }
 
+    /**
+     * Performs log event.
+     * @param severity the severity
+     * @param message the message
+     * @param shortStackTrace the shortStackTrace
+     */
     public synchronized final void logEvent(final Severity severity, final String message, final String shortStackTrace) {
 
         final int depth = getDepth();

@@ -70,6 +70,10 @@ public final class Columns {
     }
 
     @SuppressWarnings({"PublicMethodNotExposedInInterface", "MissingJavadoc", "AssignmentOrReturnOfFieldWithMutableType"})
+    /**
+     * Performs get rows.
+     * @return the get rows result
+     */
     public List<String> getRows() {
 
         return rows;

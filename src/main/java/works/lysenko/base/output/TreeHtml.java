@@ -33,6 +33,9 @@ import static works.lysenko.util.spec.Layout.Templates.RUN_TREE_HTML_;
 import static works.lysenko.util.spec.Numbers.ZERO;
 
 @SuppressWarnings({"UtilityClass", "ForeachStatement", "NestedMethodCall", "MethodWithMultipleLoops", "ClassWithoutLogger"})
+/**
+ * The TreeHtml class.
+ */
 public final class TreeHtml {
 
     private static final int COL_WIDTH = 260;
@@ -46,6 +49,10 @@ public final class TreeHtml {
 
     private TreeHtml() {}
 
+    /**
+     * Performs set known issues store.
+     * @param store the store
+     */
     public static void setKnownIssuesStore(final KnownIssuesStore store) {
         knownIssuesStore = store;
     }
@@ -57,6 +64,9 @@ public final class TreeHtml {
         return knownIssuesStore;
     }
 
+    /**
+     * The NodeData class.
+     */
     public static final class NodeData {
         private final String id;
         private final String label;
@@ -83,25 +93,88 @@ public final class TreeHtml {
             this(id, label, group, col, row, result, null);
         }
 
+        /**
+         * Performs id.
+         * @return the id result
+         */
         public String id() { return id; }
+        /**
+         * Performs label.
+         * @return the label result
+         */
         public String label() { return label; }
+        /**
+         * Performs group.
+         * @return the group result
+         */
         public String group() { return group; }
+        /**
+         * Performs col.
+         * @return the col result
+         */
         public int col() { return col; }
+        /**
+         * Performs set col.
+         * @param col the col
+         */
         public void setCol(final int col) { this.col = col; }
+        /**
+         * Performs row.
+         * @return the row result
+         */
         public double row() { return row; }
+        /**
+         * Performs set row.
+         * @param row the row
+         */
         public void setRow(final double row) { this.row = row; }
+        /**
+         * Performs result.
+         * @return the result result
+         */
         public _Result result() { return result; }
+        /**
+         * Performs scenario.
+         * @return the scenario result
+         */
         public _Scenario scenario() { return scenario; }
+        /**
+         * Performs children.
+         * @return the children result
+         */
         public List<NodeData> children() { return children; }
+        /**
+         * Performs known issues.
+         * @return the known issues result
+         */
         public List<KnownIssue> knownIssues() { return knownIssues; }
+        /**
+         * Performs parent.
+         * @return the parent result
+         */
         public NodeData parent() { return parent; }
+        /**
+         * Performs set parent.
+         * @param parent the parent
+         */
         public void setParent(final NodeData parent) { this.parent = parent; }
     }
 
+    /**
+     * The Edge record.
+     */
     public record Edge(NodeData from, NodeData to) {}
 
+    /**
+     * The TreeLayout record.
+     */
     public record TreeLayout(List<NodeData> nodes, List<Edge> edges) {}
 
+    /**
+     * Performs compute layout.
+     * @param sorted the sorted results map
+     * @return the compute layout result
+     */
     public static TreeLayout computeLayout(final TreeMap<String, Result> sorted) {
 
         if (null != core) {
@@ -148,6 +221,12 @@ public final class TreeHtml {
         return roots;
     }
 
+    /**
+     * Performs compute layout.
+     * @param roots the roots
+     * @param sorted the sorted results map
+     * @return the compute layout result
+     */
     public static TreeLayout computeLayout(final Iterable<? extends _Scenario> roots, final TreeMap<String, Result> sorted) {
 
         final long tStart = System.currentTimeMillis();
@@ -240,6 +319,11 @@ public final class TreeHtml {
         ancestors.remove(scenario);
     }
 
+    /**
+     * Performs has failure.
+     * @param n the n
+     * @return the has failure result
+     */
     public static boolean hasFailure(final NodeData n) {
 
         if (null == n) return false;
@@ -253,10 +337,21 @@ public final class TreeHtml {
         return false;
     }
 
+    /**
+     * Performs has child failure.
+     * @param n the n
+     * @return the has child failure result
+     */
     public static boolean hasChildFailure(final NodeData n) {
         return hasChildFailure(n, new HashMap<>());
     }
 
+    /**
+     * Performs has child failure.
+     * @param n the node
+     * @param cache the failure cache map
+     * @return true if has child failure
+     */
     public static boolean hasChildFailure(final NodeData n, final Map<NodeData, Boolean> cache) {
         if (null == n) return false;
         final Boolean cached = cache.get(n);
@@ -286,17 +381,20 @@ public final class TreeHtml {
     }
 
     /**
-     * Determines whether a scenario node is theoretically executable in the current run configuration.
-     *
-     * @param n                   node to evaluate
-     * @param accessibleScenarios set of scenarios accessible in the current session
-     * @return true if theoretically executable, false if excluded by configuration or saturation
+     * Encapsulates the accessible scenarios and their associated metadata in the current execution context.
      */
     public static final class AccessibleContext {
+
         public final Set<_Scenario> scenarios;
+        /** The names. */
         public final Set<String> names;
+        /** The classes. */
         public final Set<Class<?>> classes;
 
+        /**
+         * Constructs a new AccessibleContext.
+         * @param scenarios the scenarios
+         */
         public AccessibleContext(final Set<_Scenario> scenarios) {
             this.scenarios = scenarios;
             this.names = new HashSet<>();
@@ -333,6 +431,10 @@ public final class TreeHtml {
         return isTheoreticallyExecutable(n, accessibleScenarios, new HashMap<>());
     }
 
+    /**
+     * Performs is theoretically executable operation.
+     * @return result of is theoretically executable
+     */
     public static boolean isTheoreticallyExecutable(
             final NodeData n,
             final Set<_Scenario> accessibleScenarios,
@@ -340,6 +442,10 @@ public final class TreeHtml {
         return isTheoreticallyExecutable(n, new AccessibleContext(accessibleScenarios), cache);
     }
 
+    /**
+     * Performs is theoretically executable operation.
+     * @return result of is theoretically executable
+     */
     public static boolean isTheoreticallyExecutable(
             final NodeData n,
             final AccessibleContext ctx,
@@ -467,6 +573,9 @@ public final class TreeHtml {
         }
     }
 
+    /**
+     * Performs tree stats.
+     */
     public static void treeStats() {
         try {
             resetProgressTimer();
@@ -606,6 +715,7 @@ public final class TreeHtml {
         }
     }
 
+    /** The golden_ratio. */
     public static final double GOLDEN_RATIO = (Math.sqrt(5.0) - 1.0) / 2.0;
 
     static void optimizeLayout(final List<NodeData> nodes) {

@@ -39,12 +39,19 @@ public record ProgressionSettings(
         return TreeProgressionAudio.find(treeSonification);
     }
 
+    /**
+     * Performs tree sonification enabled.
+     * @return the tree sonification enabled result
+     */
     public boolean treeSonificationEnabled() {
         return treeSonifier().isPresent();
     }
 
     private static volatile ProgressionSettings current;
 
+    /**
+     * Performs initialize.
+     */
     public static synchronized void initialize() {
         final Boolean scenarioEnabled = PropEnum._TEST_REPORT_PROGRESSION_SCENARIO.get();
         final Boolean treeEnabled = PropEnum._TEST_REPORT_PROGRESSION_TREE.get();
@@ -77,6 +84,10 @@ public record ProgressionSettings(
                 ffmpeg);
     }
 
+    /**
+     * Performs current.
+     * @return the current result
+     */
     public static ProgressionSettings current() {
         ProgressionSettings settings = current;
         if (null == settings) {

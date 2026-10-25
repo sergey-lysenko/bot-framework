@@ -93,11 +93,19 @@ public final class Core extends Root implements _Core, _Tests {
     private final _Test test;
     private long previousTickAt = System.currentTimeMillis();
 
+    /**
+     * Performs get stop flag.
+     * @return the get stop flag result
+     */
     public boolean getStopFlag() {
 
         return stopFlag;
     }
 
+    /**
+     * Performs set stop flag.
+     * @param stopFlag the stopFlag
+     */
     public void setStopFlag(final boolean stopFlag) {
 
         this.stopFlag = stopFlag;
@@ -165,6 +173,10 @@ public final class Core extends Root implements _Core, _Tests {
         }
     }
 
+    /**
+     * Performs get active scenario paths.
+     * @return the get active scenario paths result
+     */
     public int getActiveScenarioPaths() {
 
         if (isNotNull(test) && isNotNull(test.executor())) {
@@ -204,6 +216,10 @@ public final class Core extends Root implements _Core, _Tests {
         return Set.of();
     }
 
+    /**
+     * Performs resolve all leafs target.
+     * @return the resolve all leafs target result
+     */
     public static int resolveAllLeafsTarget() {
         if (isNotNull(parameters)) {
             return parameters.getAllLeafsExecutions();
@@ -241,6 +257,10 @@ public final class Core extends Root implements _Core, _Tests {
         return count;
     }
 
+    /**
+     * Performs get executed leaf executions count.
+     * @return the get executed leaf executions count result
+     */
     public int getExecutedLeafExecutionsCount() {
 
         final Set<_Scenario> leafs = getAccessibleLeafs();
@@ -253,6 +273,10 @@ public final class Core extends Root implements _Core, _Tests {
         return count;
     }
 
+    /**
+     * Performs get total leaf executions count.
+     * @return the get total leaf executions count result
+     */
     public int getTotalLeafExecutionsCount() {
 
         final Set<_Scenario> leafs = getAccessibleLeafs();
@@ -263,6 +287,10 @@ public final class Core extends Root implements _Core, _Tests {
         return count;
     }
 
+    /**
+     * Performs get current test number.
+     * @return the get current test number result
+     */
     public Integer getCurrentTestNumber() {
 
         if (isNull(test)) return null;
@@ -276,16 +304,28 @@ public final class Core extends Root implements _Core, _Tests {
         return test.repeater().getTestsCount();
     }
 
+    /**
+     * Performs get dashboard.
+     * @return the get dashboard result
+     */
     public _Dashboard getDashboard() {
 
         return dashboard;
     }
 
+    /**
+     * Performs get exception.
+     * @return the get exception result
+     */
     public Exception getException() {
 
         return test.handler().getException();
     }
 
+    /**
+     * Performs get logger.
+     * @return the get logger result
+     */
     public _Logs getLogger() {
 
         return logger;
@@ -297,31 +337,55 @@ public final class Core extends Root implements _Core, _Tests {
         return test.repeater().getTotalTests();
     }
 
+    /**
+     * Performs get results.
+     * @return the get results result
+     */
     public _Results getResults() {
 
         return results;
     }
 
+    /**
+     * Performs get root scenarios.
+     * @return the get root scenarios result
+     */
     public Set<_Scenario> getRootScenarios() {
 
         return test.executor().getRootScenariosList();
     }
 
+    /**
+     * Performs get status.
+     * @return the get status result
+     */
     public String getStatus() {
 
         return test.getStatus();
     }
 
+    /**
+     * Performs get test.
+     * @return the get test result
+     */
     public _Test getTest() {
 
         return test;
     }
 
+    /**
+     * Performs get tests summary.
+     * @return the get tests summary result
+     */
     public List<List<String>> getTestsSummary() {
 
         return test.repeater().getSummary();
     }
 
+    /**
+     * Performs get total scenario paths.
+     * @return the get total scenario paths result
+     */
     public int getTotalScenarioPaths() {
 
         if (isNotNull(test))
@@ -331,11 +395,19 @@ public final class Core extends Root implements _Core, _Tests {
         return ZERO;
     }
 
+    /**
+     * Performs is in jar.
+     * @return the is in jar result
+     */
     public boolean isInJar() {
 
         return inJar;
     }
 
+    /**
+     * Performs is stop requested by dashboard.
+     * @return the is stop requested by dashboard result
+     */
     public boolean isStopRequestedByDashboard() {
 
         return test.isStopRequestedByDashboard();

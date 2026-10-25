@@ -47,6 +47,9 @@ public class KnownIssuesPanel extends JPanel {
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel centerPanel = new JPanel(cardLayout);
 
+    /**
+     * Constructs a new KnownIssuesPanel.
+     */
     public KnownIssuesPanel() {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -229,6 +232,9 @@ public class KnownIssuesPanel extends JPanel {
         return srcFile;
     }
 
+    /**
+     * Performs load from file.
+     */
     public void loadFromFile() {
         tableModel.setRowCount(0);
         clearForm();
@@ -253,10 +259,17 @@ public class KnownIssuesPanel extends JPanel {
         }
     }
 
+    /**
+     * Performs save to file.
+     */
     public void saveToFile() {
         saveToFile(true);
     }
 
+    /**
+     * Performs save to file.
+     * @param showMessage the showMessage
+     */
     public void saveToFile(final boolean showMessage) {
         final File target = resolveTargetFile();
         try {

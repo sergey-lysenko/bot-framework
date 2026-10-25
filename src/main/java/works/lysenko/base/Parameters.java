@@ -53,6 +53,7 @@ import static works.lysenko.util.spec.Symbols.SEM_CLN;
 public final class Parameters extends Properties implements _ExecutionParameterValue, _TestParameters, _AdditionalParameters {
 
     @SuppressWarnings("StaticMethodOnlyUsedInOneClass")
+    /** The width. */
     public static final int WIDTH = 18;
     private String[] additionalValues = null;
     private String[] additionalTypes = null;
@@ -157,16 +158,28 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         }
     }
 
+    /**
+     * Performs get additional types.
+     * @return the get additional types result
+     */
     public String[] getAdditionalTypes() {
 
         return additionalTypes;
     }
 
+    /**
+     * Performs get additional values.
+     * @return the get additional values result
+     */
     public String[] getAdditionalValues() {
 
         return additionalValues;
     }
 
+    /**
+     * Performs get test.
+     * @return the get test result
+     */
     public String getTest() {
 
         final String suiteVal = getValue(SUITE);
@@ -174,11 +187,19 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         return (String) get("TEST");
     }
 
+    /**
+     * Performs get suite.
+     * @return the get suite result
+     */
     public String getSuite() {
 
         return getTest();
     }
 
+    /**
+     * Performs set test.
+     * @param name the name
+     */
     public void setTest(final String name) {
 
         if (isNull(name) || name.isBlank()) return;
@@ -197,51 +218,92 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         }
     }
 
+    /**
+     * Performs set suite.
+     * @param name the name
+     */
     public void setSuite(final String name) {
 
         setTest(name);
     }
 
+    /**
+     * Performs set pool.
+     * @param name the name
+     */
     public void setPool(final String name) {
         
         put(POOL.name(), name);
     }
     
+    /**
+     * Performs set platform.
+     * @param name the name
+     */
     public void setPlatform(final String name) {
         
         put(PLATFORM.name(), name);
     }
     
+    /**
+     * Performs set all leafs.
+     * @param value the value
+     */
     public void setAllLeafs(final boolean value) {
         
         put(ALL_LEAFS.name(), String.valueOf(value));
     }
     
+    /**
+     * Performs set all leafs executions.
+     * @param count the count
+     */
     public void setAllLeafsExecutions(final int count) {
         
         put(ALL_LEAFS_EXECUTIONS.name(), String.valueOf(count));
     }
     
+    /**
+     * Performs set headless.
+     * @param value the value
+     */
     public void setHeadless(final boolean value) {
         
         put(HEADLESS.name(), String.valueOf(value));
     }
 
+    /**
+     * Performs set hide off branches.
+     * @param value the value
+     */
     public void setHideOffBranches(final boolean value) {
         
         put(HIDE_OFF_BRANCHES.name(), String.valueOf(value));
     }
 
+    /**
+     * Performs get value.
+     * @param parameter the parameter
+     * @return the get value result
+     */
     public String getValue(final ExecutionParameter parameter) {
 
         return getPropertyString(parameter.name());
     }
 
+    /**
+     * Performs get domain.
+     * @return the get domain result
+     */
     public String getDomain() {
 
         return getValue(DOMAIN);
     }
 
+    /**
+     * Performs get local ip address.
+     * @return the get local ip address result
+     */
     public static String getLocalIpAddress() {
 
         try {
@@ -339,6 +401,10 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         return Boolean.TRUE.equals(PropEnum._TEST_HEADLESS.get());
     }
 
+    /**
+     * Performs is hide off branches.
+     * @return the is hide off branches result
+     */
     public boolean isHideOffBranches() {
 
         final String val = getValue(HIDE_OFF_BRANCHES);
@@ -359,11 +425,19 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         return getValue(POOL);
     }
 
+    /**
+     * Performs get tests.
+     * @return the get tests result
+     */
     public String getTests() {
 
         return getValue(TESTS);
     }
 
+    /**
+     * Performs get forbid overexecution.
+     * @return the get forbid overexecution result
+     */
     public Boolean getForbidOverexecution() {
 
         final String val = getValue(FORBID_OVEREXECUTION);
@@ -371,6 +445,10 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         return null;
     }
 
+    /**
+     * Performs get resilient mode.
+     * @return the get resilient mode result
+     */
     public Boolean getResilientMode() {
 
         final String val = getValue(RESILIENT_MODE);
@@ -378,11 +456,19 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         return null;
     }
 
+    /**
+     * Performs get completion weight.
+     * @return the get completion weight result
+     */
     public String getCompletionWeight() {
 
         return getValue(COMPLETION_WEIGHT);
     }
 
+    /**
+     * Performs get traverse extensions.
+     * @return the get traverse extensions result
+     */
     public Boolean getTraverseExtensions() {
 
         final String val = getValue(TRAVERSE_EXTENSIONS);

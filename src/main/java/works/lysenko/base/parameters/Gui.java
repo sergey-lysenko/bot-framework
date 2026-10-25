@@ -109,6 +109,10 @@ public class Gui implements _GUI {
         } catch (final Exception ignored) {}
     }
 
+    /**
+     * Constructs a new Gui.
+     * @param parameters the parameters
+     */
     public Gui(final Parameters parameters) {
         this.parameters = parameters;
     }
@@ -224,6 +228,9 @@ public class Gui implements _GUI {
         });
     }
 
+    /**
+     * Performs refresh test dropdown.
+     */
     public void refreshTestDropdown() {
 
         if (isNotNull(test)) {
@@ -239,6 +246,10 @@ public class Gui implements _GUI {
         }
     }
 
+    /**
+     * Performs select test suite.
+     * @param suiteName the suiteName
+     */
     public void selectTestSuite(final String suiteName) {
         if (isNotNull(test)) {
             refreshTestDropdown();
@@ -672,21 +683,37 @@ public class Gui implements _GUI {
         GuiParameters.propagatePropertyOptional(parameters, cb, key);
     }
 
+    /**
+     * Performs get calculate cycles.
+     * @return the get calculate cycles result
+     */
     public JButton getCalculateCycles() {
 
         return calculateCycles;
     }
 
+    /**
+     * Performs get progress bar.
+     * @return the get progress bar result
+     */
     public JProgressBar getProgressBar() {
 
         return progressBar;
     }
 
+    /**
+     * Performs get cycles.
+     * @return the get cycles result
+     */
     public JLabel getCycles() {
 
         return cycles;
     }
 
+    /**
+     * Performs get properties button.
+     * @return the get properties button result
+     */
     public JButton getPropertiesButton() {
 
         return properties;

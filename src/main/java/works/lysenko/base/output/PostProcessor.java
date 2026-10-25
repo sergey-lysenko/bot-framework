@@ -29,7 +29,9 @@ import java.util.concurrent.TimeUnit;
 public class PostProcessor {
 
     private static final String REPORT_TASK = "Run timeline report";
+    /** The scenario_png_task. */
     public static final String SCENARIO_PNG_TASK = "Scenario progression PNG frames";
+    /** The tree_png_task. */
     public static final String TREE_PNG_TASK = "Tree progression PNG frames";
 
     static List<String> enabledTasks(
@@ -104,10 +106,19 @@ public class PostProcessor {
         return sb.toString();
     }
 
+    /**
+     * Performs launch detached.
+     * @param runLogFile the runLogFile
+     * @param outHtmlFile the outHtmlFile
+     * @param openBrowser the openBrowser
+     */
     public static void launchDetached(final File runLogFile, final File outHtmlFile, final boolean openBrowser) {
         launchDetached(runLogFile, outHtmlFile, openBrowser, openBrowser);
     }
 
+    /**
+     * Performs launch detached operation.
+     */
     public static void launchDetached(
             final File runLogFile,
             final File outHtmlFile,
@@ -216,6 +227,10 @@ public class PostProcessor {
         return new File(runLogFile.getAbsoluteFile().getParentFile(), logName);
     }
 
+    /**
+     * Performs main.
+     * @param args the args
+     */
     public static void main(final String[] args) {
         if (args.length < 4) return;
         try {

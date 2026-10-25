@@ -43,6 +43,10 @@ public class Polychromy implements _Polychromy {
         this.method = candidate;
     }
 
+    /**
+     * Performs get range.
+     * @return the get range result
+     */
     public final FractionRange getRange() {
 
         return range;
@@ -54,11 +58,19 @@ public class Polychromy implements _Polychromy {
         this.range = range;
     }
 
+    /**
+     * Performs ignore update.
+     * @return the ignore update result
+     */
     public final boolean ignoreUpdate() {
 
         return ignoreUpdate;
     }
 
+    /**
+     * Performs method.
+     * @return the method result
+     */
     public final PolychromyMethod method() {
 
         return method;

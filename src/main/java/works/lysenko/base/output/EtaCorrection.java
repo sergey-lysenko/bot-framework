@@ -37,9 +37,15 @@ public final class EtaCorrection {
     private EtaCorrection() {
     }
 
+    /**
+     * The TestSample record.
+     */
     public record TestSample(int testNum, long passedMs, long etaMs) {
     }
 
+    /**
+     * The TestError record.
+     */
     public record TestError(
             int testNum,
             long passedMs,
@@ -49,6 +55,9 @@ public final class EtaCorrection {
             double errorPercent) {
     }
 
+    /**
+     * The Metadata record.
+     */
     public record Metadata(
             String test,
             String tests,
@@ -59,6 +68,11 @@ public final class EtaCorrection {
             int pauseLength,
             String platform) {
 
+        /**
+         * Performs matches.
+         * @param other the other
+         * @return the matches result
+         */
         public boolean matches(final Metadata other) {
             if (null == other) return false;
             return Objects.equals(test, other.test)
@@ -72,6 +86,9 @@ public final class EtaCorrection {
         }
     }
 
+    /**
+     * The CorrectionRecord record.
+     */
     public record CorrectionRecord(
             Metadata metadata,
             long initialPredictedTotalMs,
@@ -84,6 +101,9 @@ public final class EtaCorrection {
     private record Point(long x, long y) {
     }
 
+    /**
+     * Performs reset.
+     */
     public static synchronized void reset() {
         currentInitialPredictedTotalMs = 0L;
         currentTestSamples.clear();
@@ -91,12 +111,22 @@ public final class EtaCorrection {
         recordsSearched = false;
     }
 
+    /**
+     * Performs record test sample.
+     * @param testNum the testNum
+     * @param passedMs the passedMs
+     * @param etaMs the etaMs
+     */
     public static synchronized void recordTestSample(final int testNum, final long passedMs, final long etaMs) {
         if (passedMs > 0L && etaMs >= 0L) {
             currentTestSamples.add(new TestSample(testNum, passedMs, etaMs));
         }
     }
 
+    /**
+     * Performs current metadata.
+     * @return the current metadata result
+     */
     public static Metadata currentMetadata() {
         final String test = (isNotNull(Base.parameters) && isNotNull(Base.parameters.getTest()))
                 ? Base.parameters.getTest()
@@ -124,12 +154,20 @@ public final class EtaCorrection {
         return (null != val) ? val : fallback;
     }
 
+    /**
+     * Performs record initial prediction.
+     * @param rawPredictedTotalMs the rawPredictedTotalMs
+     */
     public static synchronized void recordInitialPrediction(final long rawPredictedTotalMs) {
         if (currentInitialPredictedTotalMs == 0L && rawPredictedTotalMs > 0L) {
             currentInitialPredictedTotalMs = rawPredictedTotalMs;
         }
     }
 
+    /**
+     * Performs get matching records.
+     * @return the get matching records result
+     */
     public static synchronized List<CorrectionRecord> getMatchingRecords() {
         if (!recordsSearched) {
             recordsSearched = true;
@@ -138,11 +176,20 @@ public final class EtaCorrection {
         return cachedMatchingRecords;
     }
 
+    /**
+     * Performs get matching record.
+     * @return the get matching record result
+     */
     public static synchronized CorrectionRecord getMatchingRecord() {
         final List<CorrectionRecord> list = getMatchingRecords();
         return (null != list && !list.isEmpty()) ? list.get(list.size() - 1) : null;
     }
 
+    /**
+     * Performs load matching records.
+     * @param currentMeta the currentMeta
+     * @return the load matching records result
+     */
     public static synchronized List<CorrectionRecord> loadMatchingRecords(final Metadata currentMeta) {
         final File file = new File(FILE_PATH);
         if (!file.isFile()) return List.of();
@@ -164,6 +211,11 @@ public final class EtaCorrection {
         return List.of();
     }
 
+    /**
+     * Performs load matching record.
+     * @param currentMeta the currentMeta
+     * @return the load matching record result
+     */
     public static synchronized CorrectionRecord loadMatchingRecord(final Metadata currentMeta) {
         final List<CorrectionRecord> list = loadMatchingRecords(currentMeta);
         return (!list.isEmpty()) ? list.get(list.size() - 1) : null;
@@ -277,6 +329,10 @@ public final class EtaCorrection {
         }
     }
 
+    /**
+     * Performs record run completion.
+     * @param actualTotalMs the actualTotalMs
+     */
     public static synchronized void recordRunCompletion(final long actualTotalMs) {
         if (actualTotalMs <= 0L) return;
 

@@ -58,7 +58,7 @@ import static works.lysenko.util.spec.Symbols.*;
 
 /**
  * Represents a set of properties associated with scale compensation, resolution scaling, and aspect ratio handling.
- * Implements the {@_ScaledProperties} interface.
+ * Implements the {@link _ScaledProperties} interface.
  */
 public class ScaledProperties implements _ScaledProperties {
 

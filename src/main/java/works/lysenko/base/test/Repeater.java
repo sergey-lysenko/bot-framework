@@ -117,6 +117,10 @@ public class Repeater implements _Repeater {
         return raw.replace(NULL, nullReplacement).replace(Scenario.root, StringUtils.EMPTY);
     }
 
+    /**
+     * Performs add to history.
+     * @param scenario the scenario
+     */
     public final void addToHistory(final _Scenario scenario) throws SafeguardException {
 
         if (scenario instanceof works.lysenko.util.apis.scenario._ExceptionalExecution) return;
@@ -130,6 +134,10 @@ public class Repeater implements _Repeater {
         validate();
     }
 
+    /**
+     * Performs add to scenarios.
+     * @param scenario the scenario
+     */
     public final void addToScenarios(final _Scenario scenario) {
 
         if (scenario instanceof works.lysenko.util.apis.scenario._ExceptionalExecution) return;
@@ -139,6 +147,9 @@ public class Repeater implements _Repeater {
         logDebug(b(s(size), replace(scenarios.toString(), RED_QUESTION_MARK)));
     }
 
+    /**
+     * Performs close.
+     */
     public final void close() {
 
         if (isNull(startedAt)) return;
@@ -160,6 +171,10 @@ public class Repeater implements _Repeater {
     }
 
     @SuppressWarnings("MethodWithMultipleReturnPoints")
+    /**
+     * Performs get current.
+     * @return the get current result
+     */
     public final Integer getCurrent() {
 
         if (isNull(startedAt)) return null;
@@ -172,6 +187,10 @@ public class Repeater implements _Repeater {
         return (current > getTotalTests()) ? null : current;
     }
 
+    /**
+     * Performs get history.
+     * @return the get history result
+     */
     public final List<List<String>> getHistory() {
 
         return statistics.history();
@@ -202,6 +221,9 @@ public class Repeater implements _Repeater {
         return result;
     }
 
+    /**
+     * Performs run.
+     */
     public final void run() throws SafeguardException {
 
         startedAt = Routines.msSinceStart();

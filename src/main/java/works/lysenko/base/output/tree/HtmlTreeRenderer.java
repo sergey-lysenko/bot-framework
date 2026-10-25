@@ -3,14 +3,26 @@ package works.lysenko.base.output.tree;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * The HtmlTreeRenderer class.
+ */
 public class HtmlTreeRenderer {
 
     private final TreeTheme theme;
 
+    /**
+     * Constructs a new HtmlTreeRenderer.
+     * @param theme the theme
+     */
     public HtmlTreeRenderer(TreeTheme theme) {
         this.theme = (null != theme) ? theme : TreeTheme.DEFAULT;
     }
 
+    /**
+     * Performs render nodes.
+     * @param nodes the nodes
+     * @return the render nodes result
+     */
     public String renderNodes(List<VisualNode> nodes) {
         if (null == nodes || nodes.isEmpty()) return "";
         StringBuilder sb = new StringBuilder();

@@ -4,7 +4,7 @@ import works.lysenko.util.apis.log._LogData;
 
 /**
  * AbstractLogData is an abstract class that provides common functionalities for log data objects.
- * Implements the {@_LogData} interface.
+ * Implements the {@link _LogData} interface.
  */
 @SuppressWarnings("ProtectedField")
 public abstract class AbstractLogData implements _LogData { // TODO: port to Record

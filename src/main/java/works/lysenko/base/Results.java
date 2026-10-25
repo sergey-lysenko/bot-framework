@@ -39,6 +39,9 @@ import static works.lysenko.util.lang.word.S.SCENARIO;
         "MethodWithMultipleLoops",
         "UnqualifiedFieldAccess", "DesignForExtension", "UseOfConcreteClass", "ClassUnconnectedToPackage",
         "NestedMethodCall", "ClassWithTooManyDependencies"})
+/**
+ * The Results class.
+ */
 public class Results implements _Results {
 
     @SuppressWarnings("WeakerAccess")
@@ -46,6 +49,9 @@ public class Results implements _Results {
     private final List<_LogRecord> rootEvents = new ArrayList<>(0);
     private Severity max = null;
 
+    /**
+     * Constructs a new Results.
+     */
     public Results() {
 
         AllLeafCompletions.reset();
@@ -59,6 +65,10 @@ public class Results implements _Results {
     }
 
     @SuppressWarnings("NestedMethodCall")
+    /**
+     * Performs add event.
+     * @param lr the lr
+     */
     public void addEvent(final _LogRecord lr) {
 
         if (lr.data() instanceof _Event event) {
@@ -111,6 +121,10 @@ public class Results implements _Results {
         return results.get(scenario);
     }
 
+    /**
+     * Performs get failures.
+     * @return the get failures result
+     */
     public List<String> getFailures() {
 
         final List<String> list = new ArrayList<>(0);
@@ -155,6 +169,11 @@ public class Results implements _Results {
     @SuppressWarnings({"ObjectAllocationInLoop", "LocalCanBeFinal", "NestedMethodCall", "UnqualifiedStaticUsage",
             "ForeachStatement",
             "BooleanParameter"})
+    /**
+     * Performs get sorted strings.
+     * @param includeExternal the includeExternal
+     * @return the get sorted strings result
+     */
     public TreeMap<String, Result> getSortedStrings(boolean includeExternal) {
 
         TreeMap<String, Result> sortedStrings = new TreeMap<>();

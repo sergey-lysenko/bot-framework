@@ -20,6 +20,9 @@ import java.awt.event.KeyEvent;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
+/**
+ * The ControlPanel class.
+ */
 public class ControlPanel extends JFrame implements _Dashboard {
 
     static {
@@ -92,10 +95,19 @@ public class ControlPanel extends JFrame implements _Dashboard {
     private final JViewport treeViewport;
     private final CountDownLatch runLatch = new CountDownLatch(1);
 
+    /**
+     * Performs get instance.
+     * @return the get instance result
+     */
     public static ControlPanel getInstance() {
         return instance;
     }
 
+    /**
+     * Constructs a new ControlPanel.
+     * @param parameters the parameters
+     * @param guiInstance the guiInstance
+     */
     public ControlPanel(final Parameters parameters, final Gui guiInstance) {
         applyMenuShortcutKeyMask();
         instance = this;
@@ -220,11 +232,17 @@ public class ControlPanel extends JFrame implements _Dashboard {
         add(tabbedPane);
     }
 
+    /**
+     * Performs apply dark theme.
+     */
     public static void applyDarkTheme() {
         // Disabled theme modifications to prevent com.apple.laf.AquaMenuPainter$RecyclableBorder.get() NPE on macOS.
         // The default native Look and Feel will be used.
     }
 
+    /**
+     * Performs display and wait.
+     */
     public void displayAndWait() {
         if (!SwingUtilities.isEventDispatchThread()) {
             SwingUtilities.invokeLater(() -> setVisible(true));
@@ -303,14 +321,26 @@ public class ControlPanel extends JFrame implements _Dashboard {
         dashboardPanel.setDebug(active);
     }
 
+    /**
+     * Performs get tabbed pane.
+     * @return the get tabbed pane result
+     */
     public JTabbedPane getTabbedPane() {
         return tabbedPane;
     }
 
+    /**
+     * Performs get gui.
+     * @return the get gui result
+     */
     public Gui getGui() {
         return gui;
     }
 
+    /**
+     * Performs get tree image panel.
+     * @return the get tree image panel result
+     */
     public ImagePanel getTreeImagePanel() {
         return treeImagePanel;
     }

@@ -18,12 +18,15 @@ import static works.lysenko.util.spec.Symbols._DASH_;
 
 /**
  * This class represents Telemetry data with the rendered string representation.
- * @param data
- * @param rendered
+ * @param data telemetry data payload
+ * @param rendered formatted telemetry string
  */
 @SuppressWarnings({"AutoBoxing", "FeatureEnvy", "NestedMethodCall", "ImplicitNumericConversion",
         "NumericCastThatLosesPrecision",
         "MethodWithMultipleReturnPoints", "OverloadedMethodsWithSameNumberOfParameters", "CallToSuspiciousStringMethod"})
+/**
+ * The Telemetry record.
+ */
 public record Telemetry(Data data, String rendered) {
 
     private static final ThreadMXBean threadsMX = ManagementFactory.getThreadMXBean();
@@ -140,6 +143,10 @@ public record Telemetry(Data data, String rendered) {
     }
 
     @SuppressWarnings("NullableProblems")
+    /**
+     * Performs to string.
+     * @return the to string result
+     */
     public String toString() {
 
         return rendered;

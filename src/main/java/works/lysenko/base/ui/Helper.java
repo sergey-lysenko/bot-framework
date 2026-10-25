@@ -86,7 +86,7 @@ import static works.lysenko.util.spec.Symbols.Y;
 import static works.lysenko.util.spec.Symbols._COLON_;
 
 /**
- * Grid Parameters Editor & Helper.
+ * Grid Parameters Editor &amp; Helper.
  * Provides interactive visual editing, live recalculation, keyboard nudging,
  * pixel inspection, dominant color sampling, and saving directly to .grid files.
  */
@@ -591,6 +591,10 @@ public final class Helper extends JFrame {
         }
     }
 
+    /**
+     * Performs load grid file.
+     * @param file the file
+     */
     public void loadGridFile(final File file) {
 
         if (isNull(file) || !file.exists()) return;
@@ -628,6 +632,10 @@ public final class Helper extends JFrame {
         }
     }
 
+    /**
+     * Performs load image file.
+     * @param file the file
+     */
     public void loadImageFile(final File file) {
 
         if (isNull(file) || !file.exists()) return;
@@ -642,6 +650,9 @@ public final class Helper extends JFrame {
         }
     }
 
+    /**
+     * Performs auto locate screenshot.
+     */
     public void autoLocateScreenshot() {
 
         final File found = findRecentScreenshot(currentGridFile);

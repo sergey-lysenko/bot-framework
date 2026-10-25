@@ -36,6 +36,10 @@ public class BitPlane implements _BitPlane {
         rY = new IntegerRange(0, size.height() - 1);
     }
 
+    /**
+     * Performs far bound.
+     * @return the far bound result
+     */
     public final Point farBound() {
 
         if (isAnyNull(getMinSetX(), getMinSetY())) return null;
@@ -91,17 +95,32 @@ public class BitPlane implements _BitPlane {
         return result;
     }
 
+    /**
+     * Performs near bound.
+     * @return the near bound result
+     */
     public final Point nearBound() {
 
         if (isAnyNull(getMinSetX(), getMinSetY())) return null;
         return new Point(getMinSetX(), getMinSetY());
     }
 
+    /**
+     * Performs set.
+     * @param x the x
+     * @param y the y
+     */
     public final void set(final int x, final int y) {
 
         if (rX.includes(x) && rY.includes(y)) buffer[y].set(x);
     }
 
+    /**
+     * Performs set.
+     * @param x the x
+     * @param y the y
+     * @param value the value
+     */
     public final void set(final int x, final int y, final boolean value) {
 
         if (rX.includes(x) && rY.includes(y)) buffer[y].set(x, value);

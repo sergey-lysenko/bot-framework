@@ -18,7 +18,7 @@ import static works.lysenko.util.spec.Numbers.ONE;
 
 /**
  * Represents the results of a range validation process.
- * Implements the {@_ValidationResults} and {@_ValidationResult} interfaces.
+ * Implements the {@link _ValidationResults} and {@link _ValidationResult} interfaces.
  */
 public class RangeResults implements _ValidationResults, _ValidationResult {
 

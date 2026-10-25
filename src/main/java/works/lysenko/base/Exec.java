@@ -97,6 +97,10 @@ public final class Exec extends Root implements _TestData, _Executes {
         return new Core(test, additional, parametersList);
     }
 
+    /**
+     * Performs create driver.
+     * @return the create driver result
+     */
     public boolean createDriver() {
 
         driver = new Driver();
@@ -119,32 +123,64 @@ public final class Exec extends Root implements _TestData, _Executes {
         return scaler.isOk();
     }
 
+    /**
+     * Performs data contains key.
+     * @param field the field
+     * @return the data contains key result
+     */
     public boolean dataContainsKey(final Object field) {
 
         return dataStorage.containsKey(field);
     }
 
+    /**
+     * Performs data get.
+     * @param field the field
+     * @return the data get result
+     */
     public Object dataGet(final Object field) {
 
         return dataStorage.get(field);
     }
 
+    /**
+     * Performs data get or default.
+     * @param field the field
+     * @param def the def
+     * @return the data get or default result
+     */
     public Object dataGetOrDefault(final Object field, final Object def) {
 
         return dataStorage.getOrDefault(field, def);
     }
 
+    /**
+     * Performs data put.
+     * @param field the field
+     * @param value the value
+     * @return the data put result
+     */
     public Object dataPut(final Object field, final Object value) {
 
         return dataStorage.put(field, value);
     }
 
+    /**
+     * Performs data remove.
+     * @param field the field
+     * @return the data remove result
+     */
     public boolean dataRemove(final Object field) {
 
         final Object before = dataStorage.remove(field);
         return (isNotNull(before) && null == dataStorage.get(field));
     }
 
+    /**
+     * Performs data remove value.
+     * @param value the value
+     * @return the data remove value result
+     */
     public boolean dataRemoveValue(final Object value) {
 
         final Object keyToDelete;
@@ -157,11 +193,20 @@ public final class Exec extends Root implements _TestData, _Executes {
         return false;
     }
 
+    /**
+     * Performs get current scale.
+     * @return the get current scale result
+     */
     public Fraction getCurrentScale() {
 
         return null != scaler.getCurrent() ? scaler.getCurrent() : Fraction.ZERO;
     }
 
+    /**
+     * Performs get data snapshot.
+     * @param comments the comments
+     * @return the get data snapshot result
+     */
     public String getDataSnapshot(final String comments) {
 
         String s = null;
@@ -174,11 +219,19 @@ public final class Exec extends Root implements _TestData, _Executes {
         return s;
     }
 
+    /**
+     * Performs get data storage.
+     * @return the get data storage result
+     */
     public _DataStorage getDataStorage() {
 
         return dataStorage;
     }
 
+    /**
+     * Performs get session storage.
+     * @return the get session storage result
+     */
     public _DataStorage getSessionStorage() {
 
         return sessionStorage;
@@ -195,6 +248,10 @@ public final class Exec extends Root implements _TestData, _Executes {
         return scaler;
     }
 
+    /**
+     * Performs get status.
+     * @return the get status result
+     */
     public String getStatus() {
 
         return core.getStatus();
@@ -211,10 +268,17 @@ public final class Exec extends Root implements _TestData, _Executes {
         return wd();
     }
 
+    /**
+     * Performs get web driver wait.
+     * @return the get web driver wait result
+     */
     public WebDriverWait getWebDriverWait() {
         return wdw();
     }
 
+    /**
+     * Performs clear driver.
+     */
     public void clearDriver() {
 
         if (isNotNull(driver)) {
@@ -223,6 +287,10 @@ public final class Exec extends Root implements _TestData, _Executes {
         }
     }
 
+    /**
+     * Performs wd.
+     * @return the wd result
+     */
     public WebDriver wd() {
 
         try {
@@ -249,6 +317,11 @@ public final class Exec extends Root implements _TestData, _Executes {
         return isNotNull(driver) ? driver.wdw() : null;
     }
 
+    /**
+     * Performs wdw.
+     * @param timeout the timeout
+     * @return the wdw result
+     */
     public WebDriverWait wdw(final java.time.Duration timeout) {
 
         return isNotNull(driver) ? driver.wdw(timeout) : null;
@@ -302,11 +375,19 @@ public final class Exec extends Root implements _TestData, _Executes {
         scenarios = new Scenarios();
     }
 
+    /**
+     * Performs issues.
+     * @return the issues result
+     */
     public _Issues issues() {
 
         return issues;
     }
 
+    /**
+     * Performs scenarios.
+     * @return the scenarios result
+     */
     public _Scenarios scenarios() {
 
         return scenarios;

@@ -53,12 +53,16 @@ import static works.lysenko.util.lang.word.M.MARGIN;
  * merging and updating the actual and expected results based on validation rules.
  * It provides functionality for processing both positive and negative validation results,
  * and handles operations such as merging results and updating expected properties.
- * @param actual
- * @param expected
+ * @param actual actual results map
+ * @param expected expected quotas
  */
 @SuppressWarnings({"rawtypes", "unchecked", "CallToSuspiciousStringMethod"})
 public record Processor(Map<Integer, _ValuedRangeResult> actual, _Quotas expected) implements _Processor {
 
+    /**
+     * Performs process negative result.
+     * @param vr the vr
+     */
     public void processNegativeResult(final Request vr) {
 
         final String original = expected.getPropertyValue();

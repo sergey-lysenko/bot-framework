@@ -140,6 +140,10 @@ public final class Probe implements _Validation {
     }
 
     @SuppressWarnings("MethodWithMultipleReturnPoints")
+    /**
+     * Performs results.
+     * @return the results result
+     */
     public GridValidationResults results() {
 
         if (isNull(results)) return new GridValidationResults();

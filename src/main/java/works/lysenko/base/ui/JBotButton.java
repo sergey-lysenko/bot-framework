@@ -59,17 +59,28 @@ public final class JBotButton extends JButton implements _BotButton {
         actualizeUI();
     }
 
+    /**
+     * Performs deactivate.
+     */
     public void deactivate() {
 
         active = false;
         actualizeUI();
     }
 
+    /**
+     * Performs is active.
+     * @return the is active result
+     */
     public boolean isActive() {
 
         return active;
     }
 
+    /**
+     * Performs set active text.
+     * @param activeText the activeText
+     */
     public void setActiveText(final String activeText) {
 
         this.activeText = activeText;

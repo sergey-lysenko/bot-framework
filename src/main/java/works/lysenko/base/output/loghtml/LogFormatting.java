@@ -13,9 +13,13 @@ import static works.lysenko.util.data.strs.Swap.s;
 @SuppressWarnings({"ClassWithoutLogger", "MethodWithMultipleLoops", "NestedMethodCall"})
 public final class LogFormatting {
 
+    /** The ansi_pattern. */
     public static final Pattern ANSI_PATTERN = Pattern.compile("\\x1b\\[[0-9;]*m");
+    /** The line_with_test_re. */
     public static final Pattern LINE_WITH_TEST_RE = Pattern.compile("^\\[\\s*(\\d+)\\s*\\]\\[\\s*(\\d+)\\s*\\]\\[([^\\]]+)\\](?:\\[([^\\]]*)\\])?(.*)$");
+    /** The line_no_test_re. */
     public static final Pattern LINE_NO_TEST_RE = Pattern.compile("^(?:\\[\\s*\\])?\\[\\s*(\\d+)\\s*\\]\\[([^\\]]+)\\](?:\\[([^\\]]*)\\])?(.*)$");
+    /** The scen_token_re. */
     public static final Pattern SCEN_TOKEN_RE = Pattern.compile("([▷◆◼●])\\s+([a-zA-Z0-9_$-]+(?:\\.[a-zA-Z0-9_$-]+)*)\\s*:");
     private static final Pattern ARTIFACT_PAT = Pattern.compile(
             "((?:result|target)/runs/[^/\\s\"&<>]+/[^/\\s\"&<>]+/)?((?:snapshots|data)/[^\"&<>\\r\\n]+?\\.(?:png|properties|log|json|html|txt))");

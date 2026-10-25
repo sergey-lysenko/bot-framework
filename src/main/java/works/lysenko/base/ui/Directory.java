@@ -29,6 +29,9 @@ import static works.lysenko.util.spec.Symbols.QUS_MRK;
         "ClassWithTooManyTransitiveDependencies", "ClassWithTooManyTransitiveDependents", "CyclicClassDependency",
         "AutoBoxing",
         "ClassUnconnectedToPackage", "MismatchedQueryAndUpdateOfCollection", "BooleanParameter"})
+/**
+ * The Directory class.
+ */
 public final class Directory implements _Dashboard {
 
     private static final String TITLE_PATH = s(_DASH_, TITLE);
@@ -119,6 +122,10 @@ public final class Directory implements _Dashboard {
         setButton(PAUSE_PATH, active);
     }
 
+    /**
+     * Performs is stop.
+     * @return the is stop result
+     */
     public boolean isStop() {
 
         return isFilePresent(STOP_PATH);
@@ -131,6 +138,10 @@ public final class Directory implements _Dashboard {
     }
 
     @SuppressWarnings("ForeachStatement")
+    /**
+     * Performs set breadcrumb.
+     * @param content the content
+     */
     public void setBreadcrumb(final List<? extends _Scenario> content) {
 
         final Collection<String> breadcrumb = new ArrayList<>(0);

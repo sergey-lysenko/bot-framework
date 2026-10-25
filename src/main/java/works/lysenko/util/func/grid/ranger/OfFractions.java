@@ -40,6 +40,9 @@ public class OfFractions extends AbstractRanger<Fraction> {
         super(meta, actual, expected, amount, ignoreOrder, ignoreOther, renderers, severity);
     }
 
+    /**
+     * Performs add sample operation.
+     */
     public final void addSample(final RangeResults toResults, final Quota<Fraction> expectedShare,
                                 final Fraction actualValue, final _ValuedRangeResult actualShare) {
 

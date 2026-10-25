@@ -38,6 +38,10 @@ import static works.lysenko.util.lang.word.P.POLYCHROMY;
 @SuppressWarnings({"CallToSuspiciousStringMethod", "MethodWithMultipleReturnPoints"})
 public record Processor(Fraction actual, _Polychromy expected) implements _Processor {
 
+    /**
+     * Performs process negative result.
+     * @param vr the vr
+     */
     public void processNegativeResult(final Request vr) {
 
         final String original = expected.getRange().toString();

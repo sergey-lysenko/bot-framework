@@ -67,6 +67,10 @@ public final class DataStorage extends Properties implements _DataStorage {
         this(true);
     }
 
+    /**
+     * Constructs a new DataStorage.
+     * @param persist the persist
+     */
     public DataStorage(final boolean persist) {
 
         if (persist) {
@@ -162,6 +166,12 @@ public final class DataStorage extends Properties implements _DataStorage {
         return set2;
     }
 
+    /**
+     * Performs filter keys.
+     * @param keys the keys
+     * @param value the value
+     * @return the filter keys result
+     */
     public Set<Object> filterKeys(final Set<Object> keys, final Object value) {
 
         final Set<Object> keySubSet = new TreeSet<>();
@@ -204,12 +214,22 @@ public final class DataStorage extends Properties implements _DataStorage {
     }
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
+    /**
+     * Performs search key by value.
+     * @param value the value
+     * @return the search key by value result
+     */
     public String searchKeyByValue(final String value) {
 
         return (String) Collector.keys(this, value).findFirst().get();
     }
 
     @SuppressWarnings("MethodWithMultipleLoops")
+    /**
+     * Performs search keys.
+     * @param substrings the substrings
+     * @return the search keys result
+     */
     public Set<String> searchKeys(final String... substrings) {
 
         final Set<String> keySubSet = new TreeSet<>();
@@ -222,6 +242,11 @@ public final class DataStorage extends Properties implements _DataStorage {
         return keySubSet;
     }
 
+    /**
+     * Performs search keys by value.
+     * @param value the value
+     * @return the search keys by value result
+     */
     public Set<String> searchKeysByValue(final String value) {
 
         final Set<String> set = new HashSet<>(1);

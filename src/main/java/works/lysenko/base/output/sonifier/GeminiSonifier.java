@@ -43,6 +43,11 @@ public final class GeminiSonifier extends AbstractTreeSonifier {
     private static final double CHIME_AMPLITUDE = 0.15;
     private static final int FRAMES_PER_DRONE = 10;
 
+    /**
+     * Performs snapshot file.
+     * @param frame the frame
+     * @return the snapshot file result
+     */
     public static File snapshotFile(final File frame) {
         return new File(new File(frame.getParentFile(), "gemini_events"),
                 frame.getName().replaceFirst("\\.(png|svg)$", ".gemini"));

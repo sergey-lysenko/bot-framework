@@ -61,7 +61,7 @@ import static works.lysenko.util.spec.Symbols.Y;
 
 /**
  * Represents a pixel grid extracted from an image according to specified geometry and validation requests.
- * Implements the {@_Grid} interface to provide calculation, processing, and string representation capabilities.
+ * Implements the {@link _Grid} interface to provide calculation, processing, and string representation capabilities.
  */
 @SuppressWarnings({"unused", "WeakerAccess", "MethodWithMultipleReturnPoints", "ThisEscapedInObjectConstruction",
         "MethodWithMultipleLoops"})
@@ -112,7 +112,7 @@ public class Grid implements _Grid {
     /**
      * Builds the grid based on the build request and excluded regions.
      *
-     * @the build request containing image, geometry, and resolution
+     * @param build request containing image, geometry, and resolution
      * @exclude regions to exclude from grid building
      * @return a 2D array of Element objects representing the grid
      */

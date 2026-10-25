@@ -43,11 +43,19 @@ public class ExceptionHandler implements _ExceptionsHandler {
     private Exception exception = null;
     private Triplet triplet = null;
 
+    /**
+     * Performs get exception.
+     * @return the get exception result
+     */
     public final Exception getException() {
 
         return exception;
     }
 
+    /**
+     * Performs handle.
+     * @param exception the exception
+     */
     public final void handle(final RuntimeException exception) throws SafeguardException {
 
         if (exception instanceof works.lysenko.util.apis.exception.unchecked.BotRuntimeException bre
@@ -65,6 +73,10 @@ public class ExceptionHandler implements _ExceptionsHandler {
         action(exception, exec.scenarios().currentString(true));
     }
 
+    /**
+     * Performs set exceptional.
+     * @param scenario the scenario
+     */
     public final void setExceptional(final _Scenario scenario) {
 
         exceptional = scenario;

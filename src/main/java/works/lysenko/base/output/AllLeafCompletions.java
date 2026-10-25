@@ -22,6 +22,9 @@ import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.spec.Layout.Files.name;
 import static works.lysenko.util.spec.Layout.Templates.RUN_ALL_LEAF_COMPLETIONS_;
 
+/**
+ * The AllLeafCompletions class.
+ */
 public final class AllLeafCompletions {
 
     private static final Map<_Scenario, Integer> lastRecordedExecs = new HashMap<>(0);
@@ -31,6 +34,9 @@ public final class AllLeafCompletions {
     private AllLeafCompletions() {
     }
 
+    /**
+     * Performs reset.
+     */
     public static synchronized void reset() {
 
         lastRecordedExecs.clear();
@@ -38,6 +44,10 @@ public final class AllLeafCompletions {
         currentCycleEtaCount = 0;
     }
 
+    /**
+     * Performs record eta sample.
+     * @param etaMs the etaMs
+     */
     public static synchronized void recordEtaSample(final long etaMs) {
 
         if (etaMs > 0L) {
@@ -46,6 +56,14 @@ public final class AllLeafCompletions {
         }
     }
 
+    /**
+     * Performs append.
+     * @param testNum the testNum
+     * @param elapsedMillis the elapsedMillis
+     * @param etaMs the etaMs
+     * @param goalIndex the goalIndex
+     * @param leaf the leaf
+     */
     public static synchronized void append(final int testNum, final long elapsedMillis, final long etaMs, final int goalIndex, final String leaf) {
 
         final Path path = Path.of(name(RUN_ALL_LEAF_COMPLETIONS_));
@@ -57,6 +75,11 @@ public final class AllLeafCompletions {
         }
     }
 
+    /**
+     * Performs check and record.
+     * @param elapsedMillis the elapsedMillis
+     * @param completingScenario the completingScenario
+     */
     public static synchronized void checkAndRecord(final long elapsedMillis, final _Scenario completingScenario) {
 
         if (isNull(Base.core)) return;

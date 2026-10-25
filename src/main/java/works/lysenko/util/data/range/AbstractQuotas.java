@@ -347,6 +347,11 @@ public abstract class AbstractQuotas implements _Quotas {
     }
 
     @SuppressWarnings({"NumericCastThatLosesPrecision", "CallToSuspiciousStringMethod"})
+    /**
+     * Performs get property value.
+     * @param fences the fences
+     * @return the get property value result
+     */
     public final String getPropertyValue(final int fences) {
 
         final Collection<String> result = new ArrayList<>(0);
@@ -359,6 +364,11 @@ public abstract class AbstractQuotas implements _Quotas {
         return (StringUtils.join(result, COMMA_SPACE));
     }
 
+    /**
+     * Performs get sorted.
+     * @param silent the silent
+     * @return the get sorted result
+     */
     public final List<_Quota<?>> getSorted(final boolean silent) {
 
         int diff = 0;
@@ -371,6 +381,12 @@ public abstract class AbstractQuotas implements _Quotas {
         return sortedRanges;
     }
 
+    /**
+     * Performs log expected.
+     * @param width the width
+     * @param renderers the renderers
+     * @return the log expected result
+     */
     public abstract Fraction logExpected(final int width, final Renderers renderers);
 
     @SuppressWarnings("unchecked")
@@ -386,5 +402,11 @@ public abstract class AbstractQuotas implements _Quotas {
         return new Slack(Fraction.ZERO);
     }
 
+    /**
+     * Performs is within precision.
+     * @param value the value
+     * @param quota the quota
+     * @return the is within precision result
+     */
     public abstract boolean isWithinPrecision(final Object value, final _Quota quota);
 }

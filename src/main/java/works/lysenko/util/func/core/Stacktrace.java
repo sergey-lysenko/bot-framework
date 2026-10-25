@@ -35,10 +35,16 @@ import static works.lysenko.util.spec.Symbols._SPACE_;
 @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "MethodWithMultipleReturnPoints", "MethodCallInLoopCondition",
         "FeatureEnvy", "BooleanParameter", "NestedMethodCall", "AutoBoxing", "ChainedMethodCall", "AutoUnboxing",
         "ReturnOfNull", "StaticCollection", "BooleanVariableAlwaysNegated", "ClassIndependentOfModule"})
+/**
+ * The Stacktrace record.
+ */
 public record Stacktrace() {
 
     private static final List<String> references = new ArrayList<>(0);
 
+    /**
+     * Performs clear references.
+     */
     public static void clearReferences() {
 
         references.clear();

@@ -120,6 +120,10 @@ public abstract class AbstractRanger<T> implements _Ranger<T> {
     public abstract void addSample(RangeResults toResults, Quota<T> expectedShare, T actualValue,
                                    _ValuedRangeResult actualShare);
 
+    /**
+     * Performs meta.
+     * @return the meta result
+     */
     public final ValidationMeta meta() {
 
         return meta;

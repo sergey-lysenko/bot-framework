@@ -26,7 +26,7 @@ public record Symbols() {
     public static final char _DOLLAR = booleansToChar(false, false, true, false, false, true); // '$'
     /** Percent sign character ('%'). */
     public static final char _PRCNT_ = booleansToChar(true, false, true, false, false, true); // '%'
-    /** Ampersand character ('&'). */
+    /** Ampersand character ('&amp;'). */
     public static final char _AMPRS_ = booleansToChar(false, true, true, false, false, true); // '&'
     /** Single quote / apostrophe character ('\''). */
     public static final char _QUOTE_ = booleansToChar(true, true, true, false, false, true); // "'"
@@ -70,11 +70,11 @@ public record Symbols() {
     public static final char _COLON_ = booleansToChar(false, true, false, true, true, true); // ':'
     /** Semicolon character (';'). */
     public static final char SEM_CLN = booleansToChar(true, true, false, true, true, true); // ';'
-    /** Less-than sign character ('<'). */
+    /** Less-than sign character ('&lt;'). */
     public static final char LSS_THN = booleansToChar(false, false, true, true, true, true); // '<'
     /** Equals sign character ('='). */
     public static final char _EQUAL_ = booleansToChar(true, false, true, true, true, true); // '='
-    /** Greater-than sign character ('>'). */
+    /** Greater-than sign character ('&gt;'). */
     public static final char GRT_THN = booleansToChar(false, true, true, true, true, true); // '>'
     /** Question mark character ('?'). */
     public static final char QUS_MRK = booleansToChar(true, true, true, true, true, true); // '?'

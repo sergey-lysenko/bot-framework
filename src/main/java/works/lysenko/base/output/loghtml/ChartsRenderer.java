@@ -429,7 +429,7 @@ public final class ChartsRenderer {
     }
 
     /**
-     * Renders SVG card and script container for System Resources (CPU & RAM) graph.
+     * Renders SVG card and script container for System Resources (CPU &amp; RAM) graph.
      *
      * @param items list of SystemResourceItem records
      * @return HTML string for system resources chart card

@@ -315,6 +315,10 @@ public final class PropertyValidator {
         return ALLOWED_VALUES.getOrDefault(property, List.of());
     }
 
+    /**
+     * Performs get all known properties.
+     * @return the get all known properties result
+     */
     public static synchronized List<String> getAllKnownProperties() {
         if (cachedProperties == null) {
             List<String> tempProperties = new ArrayList<>();
