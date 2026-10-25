@@ -12,5 +12,7 @@ class UpdateTest {
         assertTrue(passed == true || passed == false);
         assertTrue(polychromy == true || polychromy == false);
         assertTrue(shrink == true || shrink == false);
+        assertNotNull(new Update());
     }
 }
+

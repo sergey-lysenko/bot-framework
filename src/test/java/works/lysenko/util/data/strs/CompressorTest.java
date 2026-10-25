@@ -3,7 +3,10 @@ package works.lysenko.util.data.strs;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 
 class CompressorTest {
 
@@ -22,5 +25,8 @@ class CompressorTest {
         assertEquals("", Compressor.compress(""));
         assertNull(Compressor.decompress(null));
         assertEquals("", Compressor.decompress(""));
+        assertNotNull(new Compressor());
+        assertThrows(IllegalArgumentException.class, () -> Compressor.decompress("invalidBase64NotZlibData!!"));
     }
 }
+

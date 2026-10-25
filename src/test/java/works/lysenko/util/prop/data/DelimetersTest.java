@@ -10,5 +10,7 @@ class DelimetersTest {
         assertTrue(L0 != 0);
         assertTrue(L1 != 0);
         assertTrue(L2 != 0);
+        assertNotNull(new Delimeters());
     }
 }
+

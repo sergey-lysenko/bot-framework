@@ -9,5 +9,7 @@ class KnownIssuesTest {
     void testDefaultsAndRefresh() {
         assertTrue(failedOnly == true || failedOnly == false);
         assertDoesNotThrow(KnownIssues::refresh);
+        assertNotNull(new KnownIssues());
     }
 }
+

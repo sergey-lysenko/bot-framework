@@ -23,5 +23,7 @@ class HtmlTest {
         assertNotNull(Html.TABLE_TR_TH_);
         assertNotNull(Html.HTML_HEAD_TITLE_);
         assertNotNull(Html._TABLE_BODY_HTML);
+        assertNotNull(new Html());
     }
 }
+

@@ -9,5 +9,7 @@ class HideOffTest {
     void testDefaultsAndRefresh() {
         assertTrue(branches == true || branches == false);
         assertDoesNotThrow(HideOff::refresh);
+        assertNotNull(new HideOff());
     }
 }
+

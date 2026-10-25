@@ -78,5 +78,7 @@ class OfIntegersTest {
 
         final Fraction edge = OfIntegers.expectedValuesFromSharesInteger("Title", new IntegerRange(1, 10), quotas, go, renderers);
         assertNotNull(edge);
+        assertNotNull(new OfIntegers());
     }
 }
+

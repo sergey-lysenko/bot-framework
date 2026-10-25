@@ -8,5 +8,7 @@ class VerifyTest {
     @Test
     void testDefaults() {
         assertTrue(colours == true || colours == false);
+        assertNotNull(new Verify());
     }
 }
+

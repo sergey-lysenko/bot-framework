@@ -11,5 +11,7 @@ class NotifyTest {
         assertTrue(doesNotFit == true || doesNotFit == false);
         assertTrue(emptyPackage == true || emptyPackage == false);
         assertDoesNotThrow(Notify::refresh);
+        assertNotNull(new Notify());
     }
 }
+

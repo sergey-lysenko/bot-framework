@@ -8,5 +8,7 @@ class RangesTest {
     @Test
     void testDefaults() {
         assertTrue(width > 0);
+        assertNotNull(new Ranges());
     }
 }
+

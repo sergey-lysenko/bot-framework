@@ -8,5 +8,7 @@ class ToTest {
     @Test
     void testDefaults() {
         assertTrue(read == null || read instanceof java.util.Set);
+        assertNotNull(new To());
     }
 }
+

@@ -14,5 +14,7 @@ class CodeTest {
         assertNotNull(Code.AUTOMATOR_CODE_PART1);
         assertNotNull(Code.AUTOMATOR_CODE_PART2);
         assertNotNull(Code.AUTOMATOR_CODE_PART3);
+        assertNotNull(new Code());
     }
 }
+

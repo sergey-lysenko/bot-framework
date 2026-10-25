@@ -8,5 +8,7 @@ class LogsTest {
     @Test
     void testDefaults() {
         assertTrue(limit > 0);
+        assertNotNull(new Logs());
     }
 }
+

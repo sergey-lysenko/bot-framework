@@ -8,5 +8,7 @@ class TimeTest {
     @Test
     void testDefaults() {
         assertNotNull(stamp);
+        assertNotNull(new Time());
     }
 }
+

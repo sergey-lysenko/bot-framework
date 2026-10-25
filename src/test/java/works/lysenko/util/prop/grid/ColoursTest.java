@@ -8,5 +8,7 @@ class ColoursTest {
     @Test
     void testDefaults() {
         assertNotNull(threshold);
+        assertNotNull(new Colours());
     }
 }
+

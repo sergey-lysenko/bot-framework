@@ -77,5 +77,7 @@ class OfFractionsTest {
 
         final Fraction edge = OfFractions.expectedValuesFromSharesFraction("Title", new IntegerRange(1, 10), quotas, go, renderers, 10);
         assertNotNull(edge);
+        assertNotNull(new OfFractions());
     }
 }
+

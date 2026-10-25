@@ -9,5 +9,7 @@ class SnapshotTest {
     void testDefaults() {
         assertTrue(allowed == true || allowed == false);
         assertTrue(full == true || full == false);
+        assertNotNull(new Snapshot());
     }
 }
+

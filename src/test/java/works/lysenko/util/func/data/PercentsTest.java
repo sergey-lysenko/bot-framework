@@ -29,5 +29,7 @@ class PercentsTest {
         assertEquals("50%", Percents.percentString(1, 2));
         assertEquals("100%", Percents.percentString(7, 7));
         assertEquals("0%", Percents.percentString(0, 7));
+        assertNotNull(new Percents());
     }
 }
+

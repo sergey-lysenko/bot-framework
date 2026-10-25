@@ -11,5 +11,7 @@ class DefaultsTest {
         assertNotNull(vertical);
         assertNotNull(scale);
         assertNotNull(resolution);
+        assertNotNull(new Defaults());
     }
 }
+

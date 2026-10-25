@@ -8,5 +8,7 @@ class MarkerTest {
     @Test
     void testDefaults() {
         assertNotNull(colour);
+        assertNotNull(new Marker());
     }
 }
+

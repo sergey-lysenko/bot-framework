@@ -8,5 +8,7 @@ class WideRangeTest {
     @Test
     void testDefaults() {
         assertNotNull(threshold);
+        assertNotNull(new WideRange());
     }
 }
+

@@ -10,5 +10,7 @@ class StampsTest {
         assertTrue(process == true || process == false);
         assertTrue(display == true || display == false);
         assertTrue(compress == true || compress == false);
+        assertNotNull(new Stamps());
     }
 }
+

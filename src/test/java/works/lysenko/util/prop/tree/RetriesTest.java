@@ -10,5 +10,7 @@ class RetriesTest {
         assertTrue(selection >= 0);
         assertNotNull(action);
         assertDoesNotThrow(Retries::refresh);
+        assertNotNull(new Retries());
     }
 }
+

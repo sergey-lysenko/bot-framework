@@ -19,5 +19,7 @@ class SymbolsTest {
         assertEquals('•', Symbols._BULLT_);
         assertEquals('●', Symbols.FAT_BUL);
         assertEquals(Symbols.FAT_BUL, Symbols.DATA_POINT);
+        assertNotNull(new Symbols());
     }
 }
+

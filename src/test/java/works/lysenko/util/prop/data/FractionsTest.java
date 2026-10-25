@@ -9,5 +9,7 @@ class FractionsTest {
     void testAccuracyAndOutput() {
         assertTrue(accuracy() >= 0);
         assertTrue(output() == true || output() == false);
+        assertNotNull(new Fractions());
     }
 }
+

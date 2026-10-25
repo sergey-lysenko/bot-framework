@@ -9,5 +9,7 @@ class SeveritiesTest {
     @Test
     void testSeveritiesConstants() {
         assertNotNull(Severities.externalEvent);
+        assertNotNull(new Severities());
     }
 }
+

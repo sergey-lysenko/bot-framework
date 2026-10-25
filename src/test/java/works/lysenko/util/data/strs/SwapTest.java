@@ -31,7 +31,11 @@ class SwapTest {
         assertEquals(3, Swap.i(2.6));
         assertEquals(2, Swap.i(2.4));
         assertEquals(2, Swap.i(1.6f));
+        assertEquals(0, Swap.i((Double) 1e12));
     }
+
+
+
 
     @Test
     void stringParsesWithTrimming() {

@@ -9,5 +9,7 @@ class LongOperationTest {
     void testDefaults() {
         assertTrue(threshold >= 0);
         assertNotNull(severity);
+        assertNotNull(new LongOperation());
     }
 }
+

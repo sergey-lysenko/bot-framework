@@ -16,5 +16,7 @@ class OptimizationTest {
         assertTrue(shallowThreshold >= 0);
         assertTrue(standardThreshold >= 0);
         assertDoesNotThrow(Optimization::refresh);
+        assertNotNull(new Optimization());
     }
 }
+

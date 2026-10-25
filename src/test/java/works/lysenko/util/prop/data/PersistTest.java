@@ -8,5 +8,7 @@ class PersistTest {
     @Test
     void testDefaults() {
         assertNotNull(data);
+        assertNotNull(new Persist());
     }
 }
+

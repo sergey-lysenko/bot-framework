@@ -11,5 +11,7 @@ class TraverseTest {
         assertDoesNotThrow(Traverse::refresh);
         assertDoesNotThrow(Traverse::freeze);
         assertDoesNotThrow(Traverse::unfreeze);
+        assertNotNull(new Traverse());
     }
 }
+

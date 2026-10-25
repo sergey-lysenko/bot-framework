@@ -13,5 +13,7 @@ class AllowedTest {
         assertNotNull(noValidation);
         assertTrue(marginSeverityReduction >= 0);
         assertTrue(otherSeverityReduction >= 0);
+        assertNotNull(new Allowed());
     }
 }
+

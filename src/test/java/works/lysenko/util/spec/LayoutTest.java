@@ -7,7 +7,9 @@ import java.io.File;
 import java.util.regex.Matcher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import static works.lysenko.util.spec.Layout.Directories.DASH_;
 import static works.lysenko.util.spec.Layout.Directories.RESULT_;
 import static works.lysenko.util.spec.Layout.Files.APPIUM_LOG_;
@@ -24,7 +26,15 @@ class LayoutTest {
         assertEquals("dash" + s, DASH_);
         assertEquals("dash" + s, _DASH_);
         assertEquals("result" + s + "appium.log", APPIUM_LOG_);
+
+        assertNotNull(new Layout());
+        assertNotNull(new Layout.Directories());
+        assertNotNull(new Layout.Paths());
+        assertNotNull(new Layout.Parts());
+        assertNotNull(new Layout.Files());
+        assertNotNull(new Layout.Templates());
     }
+
 
     @Test
     void testArtifactRegexMatchesResultAndTargetRuns() {

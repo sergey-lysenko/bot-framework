@@ -8,5 +8,7 @@ class TableTest {
     @Test
     void testDefaults() {
         assertNotNull(width);
+        assertNotNull(new Table());
     }
 }
+

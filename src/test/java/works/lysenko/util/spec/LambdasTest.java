@@ -10,5 +10,7 @@ class LambdasTest {
     void testNopLambda() {
         assertNotNull(Lambdas.NOP);
         Lambdas.NOP.run();
+        assertNotNull(new Lambdas());
     }
 }
+

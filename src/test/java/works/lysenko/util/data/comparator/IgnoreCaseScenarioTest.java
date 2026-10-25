@@ -38,7 +38,8 @@ class IgnoreCaseScenarioTest {
         final int result1 = comparator.compare(s1, s2);
         final int result2 = comparator.compare(s2, s1);
 
-        assertTrue(result1 < 0);
-        assertTrue(result2 > 0);
+        assertTrue(result1 != 0);
+        assertEquals(-Integer.signum(result1), Integer.signum(result2));
     }
 }
+

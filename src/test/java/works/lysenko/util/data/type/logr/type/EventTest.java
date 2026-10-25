@@ -6,6 +6,7 @@ import works.lysenko.util.data.enums.Severity;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class EventTest {
 
@@ -18,5 +19,10 @@ class EventTest {
         assertNotNull(event.message());
         assertNotNull(event.render());
         assertNotNull(event.tag());
+
+        final Event infoEvent = new Event(2L, EventType.UNDEFINED, 1, "Undefined msg", null);
+        assertNull(infoEvent.render());
     }
 }
+
+

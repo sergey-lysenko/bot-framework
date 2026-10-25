@@ -17,5 +17,7 @@ class ScenarioTest {
         assertTrue(branchStalePenalty == true || branchStalePenalty == false);
         assertNotNull(root);
         assertDoesNotThrow(Scenario::refresh);
+        assertNotNull(new Scenario());
     }
 }
+

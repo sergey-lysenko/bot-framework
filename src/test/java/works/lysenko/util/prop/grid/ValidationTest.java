@@ -12,5 +12,7 @@ class ValidationTest {
         assertNotNull(defaultColoursBorder);
         assertNotNull(defaultColoursCutoff);
         assertNotNull(hsbThreshold);
+        assertNotNull(new Validation());
     }
 }
+

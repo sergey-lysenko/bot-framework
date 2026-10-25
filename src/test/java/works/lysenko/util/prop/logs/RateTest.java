@@ -11,5 +11,7 @@ class RateTest {
         assertTrue(yellow >= 0);
         assertTrue(green >= 0);
         assertTrue(blue >= 0);
+        assertNotNull(new Rate());
     }
 }
+

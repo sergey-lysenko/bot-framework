@@ -27,5 +27,7 @@ class NumbersTest {
         assertEquals(2, Numbers.TWICE);
         assertEquals(3, Numbers.THRICE);
         assertEquals(1, Numbers.ABSOLUTE);
+        assertNotNull(new Numbers());
     }
 }
+

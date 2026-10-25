@@ -9,5 +9,7 @@ class ResultTest {
     void testDefaults() {
         assertNotNull(nullSeverity);
         assertNotNull(emptySeverity);
+        assertNotNull(new Result());
     }
 }
+

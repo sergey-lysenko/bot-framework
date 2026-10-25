@@ -11,5 +11,7 @@ class DebugTest {
         assertNotNull(debug);
         assertNotNull(trace);
         assertDoesNotThrow(Debug::refresh);
+        assertNotNull(new Debug());
     }
 }
+

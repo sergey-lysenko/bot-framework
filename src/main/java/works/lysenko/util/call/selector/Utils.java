@@ -111,19 +111,9 @@ public record Utils() {
     }
 
     /**
-     * Logs a message with gray ANSI color formatting at {@link Level#none}.
-     *
-     * @param message the message to log
-     */
-    @SuppressWarnings("unused")
-    private static void log(final String message) {
-
-        Base.log(Level.none, gray(message), true);
-    }
-
-    /**
      * Logs accounting information for scenario upstream and downstream weights if enabled.
      */
+
     public static void logAccounting() {
 
         if (Include.upstream) logDebug(b(c(UPSTREAM), WEIGHTS, ACCOUNTED));

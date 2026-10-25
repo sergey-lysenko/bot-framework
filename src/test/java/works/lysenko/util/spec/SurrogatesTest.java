@@ -22,5 +22,7 @@ class SurrogatesTest {
         assertNotNull(Surrogates.ARTIST_PALETTE);
         assertNotNull(Surrogates.MICROPHONE);
         assertNotNull(Surrogates.DELIVERY_TRUCK);
+        assertNotNull(new Surrogates());
     }
 }
+

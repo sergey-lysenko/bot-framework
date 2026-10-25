@@ -3,7 +3,9 @@ package works.lysenko.util.spec;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 class WaitsTest {
 
@@ -21,5 +23,7 @@ class WaitsTest {
         assertTrue(Waits.MID_WAIT_FROM < Waits.MID_WAIT_TO);
         assertEquals(Waits.MID_WAIT_TO, Waits.LONG_WAIT_FROM);
         assertTrue(Waits.LONG_WAIT_FROM < Waits.LONG_WAIT_TO);
+        assertNotNull(new Waits());
     }
 }
+

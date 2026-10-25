@@ -10,5 +10,7 @@ class IncludeTest {
         assertTrue(upstream == true || upstream == false);
         assertTrue(downstream == true || downstream == false);
         assertDoesNotThrow(Include::refresh);
+        assertNotNull(new Include());
     }
 }
+
