@@ -10,8 +10,15 @@ package works.lysenko.util.data.enums;
  * This enum can be used to define or control behavior within systems or algorithms
  * sensitive to margin configurations.
  */
-@SuppressWarnings("MissingJavadoc")
 public enum RangedMarginType {
 
-    STATIC, DYNAMIC
+    /**
+     * Fixed margin that does not change dynamically.
+     */
+    STATIC,
+
+    /**
+     * Adaptive margin that changes based on conditions.
+     */
+    DYNAMIC
 }

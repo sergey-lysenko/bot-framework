@@ -62,27 +62,58 @@ import static works.lysenko.util.spec.Symbols._DOT_;
 
 /**
  * Core class represents a base abstract class for scenarios in the testing framework.
+ * It provides common properties, execution lifecycle management, weight calculation,
+ * status tracking, and scenario hierarchy navigation.
  */
 @SuppressWarnings({"DesignForExtension", "MethodWithMultipleReturnPoints", "RedundantThrows"})
 public abstract class Core extends Root implements _Scenario, Verifies {
 
     /**
-     * weight defined in code
+     * Weight defined directly in code that overrides other configured weights.
      */
     private Fraction codeWeight = null;
 
+    /**
+     * Timestamp in milliseconds since start when this scenario execution began.
+     */
     private long startedAt = ZERO;
+
+    /**
+     * Parent scenario in the execution tree hierarchy.
+     */
     private _Scenario parentScenario = null;
 
     /**
-     * Default constructor
+     * Indicates whether this scenario has failed.
+     */
+    private boolean failed = false;
+
+    /**
+     * Indicates whether a child scenario under this node has failed.
+     */
+    private boolean childFailed = false;
+
+    /**
+     * Indicates whether this scenario is exhausted (no further executions remaining).
+     */
+    private boolean exhausted = false;
+
+    /**
+     * Counter tracking the number of times this scenario was selected in a stale state.
+     */
+    private int staleCount = 0;
+
+    /**
+     * Default constructor for Core scenario.
      */
     protected Core() {
 
     }
 
     /**
-     * @param weight redefined directly in code - overrides other weights
+     * Constructor specifying a code-defined weight.
+     *
+     * @param weight weight defined directly in code - overrides other weights
      */
     protected Core(final Fraction weight) {
 
@@ -90,12 +121,23 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         codeWeight = weight;
     }
 
+    /**
+     * Performs the scenario action by executing verification.
+     *
+     * @throws SafeguardException if verification fails or safeguard check triggers
+     */
     @Override
     public void action() throws SafeguardException {
 
         verify();
     }
 
+    /**
+     * Calculates the total number of execution combinations available in this scenario.
+     *
+     * @param onlyConfigured true to count only configured scenarios, false for all
+     * @return 1 if combinations exist, or 0 otherwise
+     */
     @Override
     public int calculateCombinations(final boolean onlyConfigured) {
 
@@ -107,6 +149,8 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     }
 
     /**
+     * Calculates the logical depth level of the current scenario relative to the minimum depth.
+     *
      * @return logical level of the current scenario (number of ascendants)
      */
     public int depth() {
@@ -114,23 +158,44 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         return gauge() - exec.scenarios().minDepth();
     }
 
+    /**
+     * Performs finalization steps for the scenario upon completion.
+     * Default implementation does nothing and can be overridden by subclasses.
+     *
+     * @throws SafeguardException if finalization encounters a safeguard condition
+     */
     @SuppressWarnings("NoopMethodInAbstractClass")
     @Override
     public void finals() throws SafeguardException {
         // logDebug(3, FINALS_NO_IMPLEMENTATION);
     }
 
+    /**
+     * Checks if this scenario fits current execution constraints.
+     *
+     * @return true if default fit condition passes, false otherwise
+     */
     @Override
     public boolean fits() {
 
         return Fits.byDefault;
     }
 
+    /**
+     * Retrieves the weight defined directly in code for this scenario.
+     *
+     * @return the code weight, or null if not explicitly set
+     */
     public Fraction weightCoded() {
 
         return codeWeight;
     }
 
+    /**
+     * Calculates the configured weight of this scenario based on properties or code weight.
+     *
+     * @return the configured weight Fraction, or null if disabled/unconfigured
+     */
     @SuppressWarnings("CallToSuspiciousStringMethod")
     @Override
     public Fraction weightConfigured() {
@@ -143,84 +208,136 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         return fr(weightText);
     }
 
+    /**
+     * Calculates downstream weight contribution for this scenario.
+     *
+     * @return downstream weight Fraction
+     */
     @Override
     public final Fraction weightDownstream() {
 
         return downstreamWeight(this);
     }
 
+    /**
+     * Retrieves the fully qualified name of the scenario class.
+     *
+     * @return fully qualified scenario class name
+     */
     @Override
     public String getName() {
 
         return getClass().getName();
     }
 
+    /**
+     * Retrieves the simple name of the parent package of a given scenario.
+     *
+     * @param scenario the target scenario
+     * @return parent scenario package name after last dot
+     */
     public String getParentScenarioName(final _Scenario scenario) {
 
-        return capitalize(substringAfterLast(scenario.getClass().getPackageName(), s(_DOT_)));
+        return substringAfterLast(scenario.getClass().getPackageName(), s(_DOT_));
     }
 
+    /**
+     * Retrieves the parent scenario instance.
+     *
+     * @return parent scenario, or null if root
+     */
     public final _Scenario getParentScenario() {
 
         return parentScenario;
     }
 
+    /**
+     * Sets the parent scenario instance for this scenario.
+     *
+     * @param parentScenario parent scenario instance
+     */
     public final void setParentScenario(final _Scenario parentScenario) {
 
         this.parentScenario = parentScenario;
     }
 
+    /**
+     * Retrieves the short name of this scenario stripped of the root package prefix.
+     *
+     * @return short scenario name
+     */
     @Override
     public String getShortName() {
 
-        if (isNotNull(parentScenario)) {
-            return s(parentScenario.getShortName(), _DOT_, getSimpleName());
-        }
         if (!isFromMainTree()) return getClass().getName();
         return getClass().getName().replace(s(root, _DOT_), EMPTY);
     }
 
+    /**
+     * Retrieves the simple class name of this scenario.
+     *
+     * @return simple class name
+     */
     @Override
     public String getSimpleName() {
 
         return getClass().getSimpleName();
     }
 
-    private boolean failed = false;
-    private boolean childFailed = false;
-    private boolean exhausted = false;
-    private int staleCount = 0;
-
+    /**
+     * Retrieves the current stale selection count.
+     *
+     * @return number of times this scenario was stale
+     */
     @Override
     public int getStaleCount() {
 
         return staleCount;
     }
 
+    /**
+     * Increments the stale count by one.
+     */
     @Override
     public void incrementStaleCount() {
 
         staleCount++;
     }
 
+    /**
+     * Resets the stale count to zero.
+     */
     @Override
     public void resetStaleCount() {
 
         staleCount = 0;
     }
 
+    /**
+     * Checks if this scenario is exhausted.
+     *
+     * @return true if exhausted, false otherwise
+     */
     @Override
     public boolean isExhausted() {
 
         return exhausted;
     }
 
+    /**
+     * Marks this scenario as exhausted.
+     */
     @Override
     public void markAsExhausted() {
 
         this.exhausted = true;
     }
 
+    /**
+     * Retrieves the current execution status of this scenario.
+     *
+     * @return ExecutionStatus enum representing current status
+     */
     @Override
     public ExecutionStatus getExecutionStatus() {
 
@@ -233,18 +350,31 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         return ExecutionStatus.UNVISITED;
     }
 
+    /**
+     * Checks if this scenario has failed.
+     *
+     * @return true if failed, false otherwise
+     */
     @Override
     public boolean hasFailed() {
 
         return failed;
     }
 
+    /**
+     * Checks if a child scenario has failed.
+     *
+     * @return true if child failed, false otherwise
+     */
     @Override
     public boolean hasChildFailed() {
 
         return childFailed;
     }
 
+    /**
+     * Marks this scenario as failed and updates execution results.
+     */
     @Override
     public void markAsFailed() {
 
@@ -257,6 +387,9 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         }
     }
 
+    /**
+     * Marks child failure status on this scenario and updates execution results.
+     */
     @Override
     public void markAsChildFailed() {
 
@@ -269,24 +402,45 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         }
     }
 
+    /**
+     * Returns additional information string for this scenario.
+     *
+     * @return information string (empty by default)
+     */
     @Override
     public String info() {
 
         return EMPTY;
     }
 
+    /**
+     * Checks if this scenario is eligible for execution.
+     *
+     * @return true if executable, false otherwise
+     */
     @Override
     public boolean isExecutable() {
 
         return !failed && !exhausted && (isNotNull(weightConfigured()));
     }
 
+    /**
+     * Checks if this scenario class resides under the main tree root package.
+     *
+     * @return true if scenario belongs to main tree, false otherwise
+     */
     @Override
     public boolean isFromMainTree() {
 
         return getClass().getPackageName().startsWith(root);
     }
 
+    /**
+     * Prepares scenario execution and logs status.
+     *
+     * @return true if preparation succeeded and execution can proceed, false otherwise
+     * @throws SafeguardException if safeguard checks fail
+     */
     public boolean isOk() throws SafeguardException {
 
         if (isNotNull(core) && core.getStopFlag()) return false;
@@ -308,6 +462,11 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         return true;
     }
 
+    /**
+     * Lists this scenario as a single-element scenario set.
+     *
+     * @return set containing this scenario instance
+     */
     @Override
     public Set<_Scenario> list() {
 
@@ -316,6 +475,11 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         return scenarios;
     }
 
+    /**
+     * Requests test execution stop due to specified severity.
+     *
+     * @param severity severity level causing the stop
+     */
     public void stopTest(final Severity severity) {
 
         final String explanation = (null == severity) ? DOTS : b(DUE_TO, severity.type().getString(), EVENT);
@@ -323,12 +487,23 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         exec.stopTests();
     }
 
+    /**
+     * Returns the scenario type.
+     *
+     * @return null by default in Core, overridden by concrete Leaf/Node subclasses
+     */
     @Override
     public ScenarioType type() {
 
         return null;
     }
 
+    /**
+     * Default verification method for UI content.
+     *
+     * @return true if verification succeeds
+     * @throws SafeguardException if verification fails
+     */
     @SuppressWarnings("DesignForExtension")
     public boolean verify() throws SafeguardException {
 
@@ -353,6 +528,8 @@ public abstract class Core extends Root implements _Scenario, Verifies {
 
     /**
      * Marks the completion of the scenario and logs the relevant information.
+     *
+     * @throws SafeguardException if completion logging encounters errors
      */
     protected final void done() throws SafeguardException {
 
@@ -374,6 +551,11 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         exec.scenarios().pop(this);
     }
 
+    /**
+     * Checks if all leafs mode is active.
+     *
+     * @return true if all leafs mode enabled, false otherwise
+     */
     private static boolean isAllLeafsMode() {
 
         if (isNotNull(parameters)) return parameters.isAllLeafs();

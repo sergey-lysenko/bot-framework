@@ -14,13 +14,18 @@ import static works.lysenko.util.spec.Symbols._ASTRS_;
 import static works.lysenko.util.spec.Symbols._AT_SGN;
 
 /**
- * The Density class represents the density of an object in a two-dimensional space.
- * It stores the number of steps on the x-axis and y-axis.
+ * The Resolution class represents the resolution and density of an object in a two-dimensional space.
+ * It stores the number of steps on the x-axis and y-axis, fill fraction, and shape.
+ *
+ * @param x     the number of steps on the x-axis
+ * @param y     the number of steps on the y-axis
+ * @param fill  the fill fraction
+ * @param shape the shape of the resolution area
  */
 public record Resolution(int x, int y, Fraction fill, Shape shape) implements _Resolution {
 
     /**
-     * Constructs a Resolution object with the given x and y values.
+     * Constructs a Resolution object with the given x and y values, default full fill, and rectangle shape.
      *
      * @param x The value of x coordinate.
      * @param y The value of y coordinate.

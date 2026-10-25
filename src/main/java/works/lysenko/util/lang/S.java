@@ -20,13 +20,22 @@ import static works.lysenko.util.lang.word.R.REQUEST;
 import static works.lysenko.util.lang.word.S.*;
 import static works.lysenko.util.spec.Symbols._COLON_;
 
-@SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "unused"})
+/**
+ * Language utility constants starting with S.
+ */
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "unused"})
 public record S() {
 
+    /** Constant representing scenarios stack. */
     public static final String SCENARIOS_STACK = b(c(SCENARIOS), s(STACK, _COLON_));
+    /** Constant representing scenario execution failed due to message. */
     public static final String SCENARIO_EXECUTION_FAILED_DUE_TO = b(c(SCENARIO), EXECUTION, FAILED, DUE_TO);
+    /** Constant representing shrinking was disabled by configuration message. */
     public static final String SHRINKING_WAS_DISABLED_BY_CONFIGURATION = b(c(SHRINKING), WAS, DISABLED, BY, CONFIGURATION);
+    /** Constant representing shrinking was disabled by request message. */
     public static final String SHRINKING_WAS_DISABLED_BY_REQUEST = b(c(SHRINKING), WAS, DISABLED, BY, REQUEST);
+    /** Constant representing snapshot of page code. */
     public static final String SNAPSHOT_OF_PAGE_CODE = b(SNAPSHOT, OF, PAGE, CODE);
+    /** Constant representing StaleElementReferenceException name. */
     public static final String S_E_R_EXCEPTION = s(c(STALE), c(ELEMENT), c(REFERENCE), c(EXCEPTION));
 }

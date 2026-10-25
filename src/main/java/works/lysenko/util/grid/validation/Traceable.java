@@ -15,18 +15,35 @@ import java.util.List;
  */
 public record Traceable(List<KeyValue<String, String>> data) implements _Traceable {
 
+    /**
+     * Retrieves the key at the specified index.
+     *
+     * @param i the index of the key-value pair
+     * @return the key string at index {@code i}
+     */
     @Override
     public String name(final int i) {
 
         return data.get(i).k();
     }
 
+    /**
+     * Returns the number of key-value pairs in the traceable data.
+     *
+     * @return the size of the data list
+     */
     @Override
     public int size() {
 
         return data.size();
     }
 
+    /**
+     * Retrieves the value at the specified index.
+     *
+     * @param i the index of the key-value pair
+     * @return the value string at index {@code i}
+     */
     @Override
     public String value(final int i) {
 

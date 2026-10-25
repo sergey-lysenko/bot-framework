@@ -29,9 +29,9 @@ class PostProcessorTest {
                 "run.html",
                 false);
 
-        assertDoesNotThrow(() -> Integer.parseInt(command[10]));
-        assertDoesNotThrow(() -> Integer.parseInt(command[11]));
-        assertDoesNotThrow(() -> Integer.parseInt(command[12]));
+        assertDoesNotThrow(() -> Long.parseLong(command[10]));
+        assertDoesNotThrow(() -> Long.parseLong(command[11]));
+        assertDoesNotThrow(() -> Long.parseLong(command[12]));
     }
 
     @Test

@@ -112,4 +112,17 @@ class FractionRangeTest {
         assertEquals(QUARTER, r.min());
         assertEquals(HALF, r.max());
     }
+
+    @Test
+    void testVerboseStringAndOutOfBounds() {
+
+        final FractionRange r = new FractionRange(QUARTER, HALF);
+        assertNotNull(r.toVerboseString());
+        assertNotNull(r.toString());
+
+        final FractionRange out = FractionRange.frr("3/2", ZERO, ONE);
+        assertNull(out.get());
+        assertNull(out.min());
+        assertNull(out.max());
+    }
 }

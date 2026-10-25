@@ -9,19 +9,31 @@ import static works.lysenko.util.func.type.Chars.booleansToChar;
  * <p>
  * This class houses those multi-unit surrogate constructs that outgrew the Basic Multilingual Plane.
  */
-@SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "unused", "WeakerAccess"})
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "unused", "WeakerAccess"})
 public record Surrogates() {
 
+    /** House emoji surrogate string ('🏡'). */
     public static final String HOUSE = new String(new char[]{booleansToChar(false, false, true, true, true, true, false, false, false, false, false, true, true, false, true, true), booleansToChar(true, false, false, false, false, true, true, true, true, true, true, true, true, false, true, true)}); // '🏡'
+    /** Graduation cap emoji surrogate string ('🎓'). */
     public static final String GRADUATION_CAP = new String(new char[]{booleansToChar(false, false, true, true, true, true, false, false, false, false, false, true, true, false, true, true), booleansToChar(true, true, false, false, true, false, false, true, true, true, true, true, true, false, true, true)}); // '🎓'
+    /** Briefcase emoji surrogate string ('💼'). */
     public static final String BRIEFCASE = new String(new char[]{booleansToChar(true, false, true, true, true, true, false, false, false, false, false, true, true, false, true, true), booleansToChar(false, false, true, true, true, true, false, true, false, false, true, true, true, false, true, true)}); // '💼'
+    /** Stethoscope emoji surrogate string ('🩺'). */
     public static final String STETHOSCOPE = new String(new char[]{booleansToChar(false, true, true, true, true, true, false, false, false, false, false, true, true, false, true, true), booleansToChar(false, true, false, true, true, true, true, false, false, true, true, true, true, false, true, true)}); // '🩺'
+    /** Automobile emoji surrogate string ('🚗'). */
     public static final String AUTOMOBILE = new String(new char[]{booleansToChar(true, false, true, true, true, true, false, false, false, false, false, true, true, false, true, true), booleansToChar(true, true, true, false, true, false, false, true, false, true, true, true, true, false, true, true)}); // '🚗'
+    /** Scissors emoji surrogate string ('✂️'). */
     public static final String SCISSORS = new String(new char[]{booleansToChar(false, true, false, false, false, false, false, false, true, true, true, false, false, true), booleansToChar(true, true, true, true, false, false, false, false, false, true, true, true, true, true, true, true)}); // '✂️'
+    /** Backpack emoji surrogate string ('🎒'). */
     public static final String BACKPACK = new String(new char[]{booleansToChar(false, false, true, true, true, true, false, false, false, false, false, true, true, false, true, true), booleansToChar(false, true, false, false, true, false, false, true, true, true, true, true, true, false, true, true)}); // '🎒'
+    /** Plate emoji surrogate string ('🍽️'). */
     public static final String PLATE = new String(new char[]{booleansToChar(false, false, true, true, true, true, false, false, false, false, false, true, true, false, true, true), booleansToChar(true, false, true, true, true, true, true, false, true, true, true, true, true, false, true, true), booleansToChar(true, true, true, true, false, false, false, false, false, true, true, true, true, true, true, true)}); // '🍽️'
+    /** Weight lifter emoji surrogate string ('🏋️'). */
     public static final String WEIGHT_LIFTER = new String(new char[]{booleansToChar(false, false, true, true, true, true, false, false, false, false, false, true, true, false, true, true), booleansToChar(true, true, false, true, false, false, true, true, true, true, true, true, true, false, true, true), booleansToChar(true, true, true, true, false, false, false, false, false, true, true, true, true, true, true, true)}); // '🏋️'
+    /** Artist palette emoji surrogate string ('🎨'). */
     public static final String ARTIST_PALETTE = new String(new char[]{booleansToChar(false, false, true, true, true, true, false, false, false, false, false, true, true, false, true, true), booleansToChar(false, false, false, true, false, true, false, true, true, true, true, true, true, false, true, true)}); // '🎨'
+    /** Microphone emoji surrogate string ('🎤'). */
     public static final String MICROPHONE = new String(new char[]{booleansToChar(false, false, true, true, true, true, false, false, false, false, false, true, true, false, true, true), booleansToChar(false, false, true, false, false, true, false, true, true, true, true, true, true, false, true, true)}); // '🎤'
+    /** Delivery truck emoji surrogate string ('🚚'). */
     public static final String DELIVERY_TRUCK = new String(new char[]{booleansToChar(true, false, true, true, true, true, false, false, false, false, false, true, true, false, true, true), booleansToChar(false, true, false, true, true, false, false, true, false, true, true, true, true, false, true, true)}); // '🚚'
 }

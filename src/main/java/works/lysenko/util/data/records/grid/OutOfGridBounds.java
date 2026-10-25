@@ -29,6 +29,9 @@ import static works.lysenko.util.spec.Symbols.*;
 @SuppressWarnings("PublicMethodNotExposedInInterface")
 public class OutOfGridBounds {
 
+    /**
+     * Collection of out-of-matrix bounds records.
+     */
     private final Collection<OutOfMatrixBoundsRecord> list = new ArrayList<>(0);
 
     /**

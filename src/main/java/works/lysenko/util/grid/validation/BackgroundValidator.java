@@ -43,7 +43,15 @@ import static works.lysenko.util.lang.word.V.VALIDATION;
 import static works.lysenko.util.spec.Numbers.ONE;
 
 /**
- * The BackgroundValidator class provides methods to validate page elements and properties.
+ * The BackgroundValidator record provides methods to validate page elements and properties,
+ * handling screenshots, foreground color search, expected quotas, and failure severity.
+ *
+ * @param locator         the locator string used to identify the grid or element
+ * @param gridName        the name of the grid to be used for validation
+ * @param expected        the expected ColoursQuotas object for validation
+ * @param inImage         the BufferedImage object on which validation is performed
+ * @param foreground      the ColourSearchRequest object representing foreground colors to search for
+ * @param failureSeverity the severity level of validation failures
  */
 @SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "SameParameterValue"})
 public record BackgroundValidator(String locator, String gridName, ColoursQuotas expected, BufferedImage inImage,

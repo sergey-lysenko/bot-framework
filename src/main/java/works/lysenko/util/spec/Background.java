@@ -1,8 +1,8 @@
 package works.lysenko.util.spec;
 
 /**
- * The Centering class represents a centering operation. It calculates the distance between the center point and a given point,
- * and checks if the element is uncentered based on the distance.
+ * Background configuration constants representing background settings such as
+ * validation flags and density values.
  */
 @SuppressWarnings("StaticMethodOnlyUsedInOneClass")
 public record Background() {

@@ -61,7 +61,7 @@ public record Binner(long max, long min, long maxS, long minS) {
      * @param share     The Quota object representing a range defined by minimum and maximum fractions.
      * @param slack     The Slack object, which may hold a Slack adjustment factor for calculation.
      * @param direction The direction indicating whether to compute based on the minimum or maximum share value.
-     * @return A1 Result object containing the base and slack-adjusted values as integers.
+     * @return A Result object containing the base and slack-adjusted values as integers.
      */
     @SuppressWarnings("StandardVariableNames")
     private static Result computeResult(final SharesData<?> data, final _Quota<?> share, final Slack slack,
@@ -81,7 +81,7 @@ public record Binner(long max, long min, long maxS, long minS) {
      * @param data  The SharesData object containing the value, index, maximum value, and width.
      * @param share The Quota object representing the range of share values with minimum and maximum limits as fractions.
      * @param slack The Slack object used for slack adjustment to the computed range values.
-     * @return A1 Binner object with maximum, minimum, and their corresponding slack-adjusted values.
+     * @return A Binner object with maximum, minimum, and their corresponding slack-adjusted values.
      */
     public static Binner getRanges(final SharesData<?> data, final _Quota<?> share, final Slack slack) {
 
@@ -90,6 +90,12 @@ public record Binner(long max, long min, long maxS, long minS) {
         return new Binner(max.n(), min.n(), max.s(), min.s());
     }
 
+    /**
+     * Helper record holding normal and slack values.
+     *
+     * @param n normal value
+     * @param s slack value
+     */
     @SuppressWarnings("StandardVariableNames")
     private record Result(long n, long s) {
 

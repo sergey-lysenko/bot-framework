@@ -6,35 +6,42 @@ import works.lysenko.util.data.enums.ScenarioType;
 import static works.lysenko.util.data.enums.ScenarioType.MONO;
 
 /**
+ * Represents a single-execution (Mono) scenario that runs at most once during a test suite execution.
+ *
  * @author Sergii Lysenko
  */
 @SuppressWarnings({"MethodWithMultipleReturnPoints", "AbstractClassWithOnlyOneDirectInheritor",
         "BooleanVariableAlwaysNegated"})
 public abstract class Mono extends Leaf {
 
+    /**
+     * Flag tracking whether this single-execution scenario has already been executed.
+     */
     private boolean executed = false;
 
     /**
-     * @return whether this scenario still runnable or it had been executed already
+     * Constructs a Mono scenario with default configuration.
      */
+    protected Mono() {
 
+    }
+
+    /**
+     * Checks if this single-execution scenario is still executable (has not been run yet).
+     *
+     * @return true if not executed and super isExecutable() returns true, false otherwise
+     */
     @Override
     public final boolean isExecutable() {
 
         return !executed && super.isExecutable();
     }
 
-
     /**
-     * For a Mono Scenario, execution consist of
-     * <p>
-     * 1) default execution code defined in super class
-     * 2) logic defined in action()
-     * 3) final steps defined in finals() of this scenario
-     * 4) Adding record about end of test
-     * 5) performing shared Scenario finalization procedure
+     * Executes the scenario and marks it as executed.
      *
-     * @return true if everything is ok
+     * @return true if execution succeeded, false otherwise
+     * @throws SafeguardException if execution safeguard triggers
      */
     @Override
     public final boolean isOk() throws SafeguardException {
@@ -45,6 +52,11 @@ public abstract class Mono extends Leaf {
         } else return false;
     }
 
+    /**
+     * Returns the scenario type for Mono.
+     *
+     * @return ScenarioType.MONO
+     */
     public final ScenarioType type() {
 
         return MONO;

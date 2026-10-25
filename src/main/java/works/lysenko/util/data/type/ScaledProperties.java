@@ -57,16 +57,20 @@ import static works.lysenko.util.lang.word.U.UPDATE;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
- * ScaledProperties class represents a set of properties associated with scale compensation and aspect ratio.
+ * Represents a set of properties associated with scale compensation, resolution scaling, and aspect ratio handling.
+ * Implements the {@_ScaledProperties} interface.
  */
 public class ScaledProperties implements _ScaledProperties {
 
+    /** Tag for logging property operations. */
     private static final String TAG = s(c(P), _DOT_, GET);
+    /** The underlying properties collection. */
     private final Properties properties;
+    /** Configuration options for scaled properties behavior. */
     private final ScaledPropertiesOptions options;
 
     /**
-     * Constructs a ScaledProperties object by reading properties from the specified file path.
+     * Constructs a ScaledProperties object by reading properties from the specified file path and configuration options.
      *
      * @param path    the path to the properties file
      * @param options options for configuring the behavior of the ScaledProperties instance
@@ -80,7 +84,7 @@ public class ScaledProperties implements _ScaledProperties {
     /**
      * Retrieves the aspect of the execution by getting the current scale from the scaler.
      *
-     * @return The Fraction representing the aspect of the execution.
+     * @return the Fraction representing the aspect of the execution
      */
     private static Fraction getAspect() {
 
@@ -90,13 +94,20 @@ public class ScaledProperties implements _ScaledProperties {
     /**
      * Retrieves the scale compensation.
      *
-     * @return The Fraction representing the scale compensation.
+     * @return the Fraction representing the scale compensation
      */
     private static Fraction getCompensation() {
 
         return isNull(exec) ? Fraction.ONE : exec.getScaler().getCompensation();
     }
 
+    /**
+     * Returns a field descriptor string for logging.
+     *
+     * @param key     the property key
+     * @param realKey the resolved real property key
+     * @return the field descriptor string
+     */
     @SuppressWarnings({"CallToSuspiciousStringMethod", "MethodWithMultipleReturnPoints"})
     private static String getFieldDescriptor(final String key, final String realKey) {
 
@@ -108,8 +119,8 @@ public class ScaledProperties implements _ScaledProperties {
      * Retrieves a ScaledProperties object initialized with the specified file path and options.
      *
      * @param path    the path to the properties file
-     * @param options options for configuring the behavior of the ScaledProperties instance
-     * @return a ScaledProperties object with the properties loaded from the specified file path
+     * @param options options for configuring the behavior
+     * @return a ScaledProperties object
      */
     @SuppressWarnings("unused")
     public static ScaledProperties getScaledProperties(final String path, final ScaledPropertiesOptions options) {
@@ -121,7 +132,7 @@ public class ScaledProperties implements _ScaledProperties {
      * Retrieves a ScaledProperties object initialized with the specified file path and default options.
      *
      * @param path the path to the properties file
-     * @return a ScaledProperties object with the properties loaded from the specified file path
+     * @return a ScaledProperties object
      */
     @SuppressWarnings("unused")
     public static ScaledProperties getScaledProperties(final String path) {
@@ -131,11 +142,10 @@ public class ScaledProperties implements _ScaledProperties {
 
     /**
      * Checks if a given string matches a default value.
-     * If the input string is null, it evaluates it against the default value using a helper method.
      *
      * @param o   the input string to be checked
      * @param def the default value to be compared against
-     * @return true if the input string matches the default value, false otherwise
+     * @return true if matches default, false otherwise
      */
     @SuppressWarnings("CallToSuspiciousStringMethod")
     public static boolean isDefault(final String o, final String def) {
@@ -145,18 +155,23 @@ public class ScaledProperties implements _ScaledProperties {
 
     /**
      * Checks if a given object matches a default value.
-     * This method converts both the object and the default value to their string representations
-     * and compares them using a helper method.
      *
      * @param o   the input object to be checked
      * @param def the default value to be compared against
-     * @return true if the input object matches the default value, false otherwise
+     * @return true if matches default, false otherwise
      */
     public static boolean isDefault(final Object o, final Object def) {
 
         return isDefault(o.toString(), def.toString());
     }
 
+    /**
+     * Checks if a property key is scaled.
+     *
+     * @param key     the original key
+     * @param realKey the resolved real key
+     * @return true if scaled, false otherwise
+     */
     @SuppressWarnings("CallToSuspiciousStringMethod")
     private static boolean isScaled(final String key, final String realKey) {
 
@@ -169,6 +184,11 @@ public class ScaledProperties implements _ScaledProperties {
         return properties;
     }
 
+    /**
+     * Returns the aspect string.
+     *
+     * @return the aspect string representation
+     */
     public final String getAspectString() {
 
         return isNull(exec) ? EMPTY : ts(getAspect(), false);
@@ -193,6 +213,13 @@ public class ScaledProperties implements _ScaledProperties {
         return kv;
     }
 
+    /**
+     * Retrieves a key-value pair where the value is a RangedMargin.
+     *
+     * @param key the property key
+     * @param def the default RangedMargin
+     * @return a KeyValue containing the resolved key and RangedMargin value
+     */
     public final KeyValue<String, RangedMargin> getKV(final String key, final RangedMargin def) {
 
         final String realKey = getRealKey(key, true);
@@ -209,6 +236,12 @@ public class ScaledProperties implements _ScaledProperties {
         else fail(b(UNABLE_TO, UPDATE, d(NON, EXISTENT), PROPERTY, KEY, getScaled(key)));
     }
 
+    /**
+     * Returns candidate property keys for search.
+     *
+     * @param key the property key
+     * @return collection of candidate keys
+     */
     private Collection<String> getCandidates(final String key) {
 
         if (isNull(key)) throw new IllegalArgumentException(b(c(NULL), KEY, IS, NOT, ALLOWED, FOR, CANDIDATES, SEARCH));
@@ -225,8 +258,10 @@ public class ScaledProperties implements _ScaledProperties {
     /**
      * Retrieves the log message based on the provided field and object, and logs a debug message if not silent.
      *
-     * @param field the field to be included in the log message
-     * @param o     the object to be included in the log message
+     * @param field    the field to be included in the log message
+     * @param o        the object value
+     * @param def      the default value
+     * @param isScaled whether the property is scaled
      */
     @SuppressWarnings("CallToSuspiciousStringMethod")
     private void getLog(final String field, final String o, final String def, final boolean isScaled) {
@@ -243,13 +278,10 @@ public class ScaledProperties implements _ScaledProperties {
 
     /**
      * Retrieves the actual key matching the specified input key from the defined properties.
-     * If multiple or no matching keys are found, an exception is thrown based on the parameters.
      *
-     * @param key           the input key for which the real key needs to be determined
-     * @param isNullAllowed a flag indicating whether a null value is allowed if no real key is found
-     * @return the real key matching the input key from the properties, or null if allowed and no match is found
-     * @throws IllegalArgumentException if null is not allowed and no matching key is found,
-     *                                  or if multiple matching keys are found
+     * @param key           the input key
+     * @param isNullAllowed whether null is allowed
+     * @return the real key matching the input key
      */
     @SuppressWarnings("MethodWithMultipleReturnPoints")
     private String getRealKey(final String key, final boolean isNullAllowed) {
@@ -261,21 +293,33 @@ public class ScaledProperties implements _ScaledProperties {
 
     /**
      * Adds scale to key if the scale compensation is not equal to Fraction.ONE.
-     * If the scale compensation is Fraction.ONE, returns the key as is.
      *
-     * @param key The key to be scaled
-     * @return The scaled key if scale compensation is not Fraction.ONE, otherwise the original key
+     * @param key the key to be scaled
+     * @return the scaled key
      */
     private String getScaled(final String key) {
 
         return (options.noScales() || getCompensation().equals(Fraction.ONE)) ? key : s(getAspectString(), _DOT_, key);
     }
 
+    /**
+     * Adds scale backwards to key if scale compensation is not equal to Fraction.ONE.
+     *
+     * @param key the key
+     * @return the backward scaled key
+     */
     private String getScaledBack(final String key) {
 
         return (options.noScales() || getCompensation().equals(Fraction.ONE)) ? key : s(key, _DOT_, getAspectString());
     }
 
+    /**
+     * Searches for the real property key among candidates and fallbacks.
+     *
+     * @param key           the property key
+     * @param isNullAllowed whether null is allowed
+     * @return the resolved real key
+     */
     private String search(final String key, final boolean isNullAllowed) {
 
         String real = null;
@@ -303,7 +347,6 @@ public class ScaledProperties implements _ScaledProperties {
 
     /**
      * Updates the property with the specified key as a scaled version.
-     * The updated value is set in the property object and logged with debug information.
      *
      * @param key   the key of the property to update
      * @param value the new value to set
@@ -316,6 +359,6 @@ public class ScaledProperties implements _ScaledProperties {
         final String info = ((null == o) || (null == value) || !o.toString().equals(value)) ? s(gb(value), RHT_ARR, rc(o)) :
                 yb(o);
         if (YES != options.silent())
-            logDebug(b(sn(UPDATE, e(ROUND, bb(getScaled(key))), e(s(RGT_DAR)), e(SQUARE, info))), true);
+            logDebug(b(sn(UPDATE, e(ROUND, bb(getScaled(key))), e(s(RHT_ARR)), e(SQUARE, info))), true);
     }
 }

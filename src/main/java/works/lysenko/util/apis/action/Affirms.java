@@ -7,7 +7,7 @@ package works.lysenko.util.apis.action;
 public interface Affirms {
 
     /**
-     * Do Assertions
+     * Executes the assertions.
      */
     void affirm();
 }

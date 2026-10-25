@@ -18,13 +18,22 @@ import static works.lysenko.util.spec.Symbols._COMMA_;
 import static works.lysenko.util.spec.Symbols._SPACE_;
 
 
-@SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass"})
+/**
+ * Language utility constants starting with C.
+ */
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass"})
 public record C() {
 
+    /** Constant representing the phrase 'checking visibility of'. */
     public static final String CHECKING_VISIBILITY_OF = b(c(CHECKING), VISIBILITY, OF);
+    /** Constant representing the phrase 'clicking on'. */
     public static final String CLICKING_ON = b(c(CLICKING), ON);
+    /** Constant representing comma followed by a space. */
     public static final String COMMA_SPACE = s(_COMMA_, _SPACE_);
+    /** Constant representing colours result. */
     public static final String COLOURS_RESULT = s(c(COLOURS), c(RESULT));
+    /** Constant representing the phrase 'caught during execution of'. */
     public static final String CAUGHT_DURING_EXECUTION_OF = b(CAUGHT, DURING, EXECUTION, OF);
+    /** Constant representing the message for closing test service. */
     public static final String CLOSING_TEST_SERVICE = b(c(CLOSING), TEST, SERVICE, DOTS);
 }

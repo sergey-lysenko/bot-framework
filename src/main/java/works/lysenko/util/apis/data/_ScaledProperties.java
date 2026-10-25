@@ -6,7 +6,7 @@ import works.lysenko.util.data.records.RangedMargin;
 import java.util.Properties;
 
 /**
- *
+ * Interface representing scaled property configuration and key-value management.
  */
 @SuppressWarnings("InterfaceWithOnlyOneDirectInheritor")
 public interface _ScaledProperties {

@@ -15,8 +15,8 @@ import static works.lysenko.util.spec.Numbers.ZERO;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
- * Represents a TimeParts class that provides utility methods for converting
- * time in milliseconds to a string representation.
+ * Utility interface providing methods for converting time durations in milliseconds
+ * to human-readable string representations.
  */
 @SuppressWarnings({"ConstantDeclaredInInterface", "InterfaceNeverImplemented"})
 public interface Time {

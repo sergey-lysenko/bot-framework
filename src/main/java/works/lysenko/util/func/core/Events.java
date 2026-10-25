@@ -42,7 +42,12 @@ public record Events() {
         return false;
     }
 
-    @SuppressWarnings("MissingJavadoc")
+    /**
+     * Logs an ignoring event for a quota.
+     *
+     * @param s  the string description of the item being ignored
+     * @param sh the quota being ignored
+     */
     public static void logIgnoring(final String s, final _Quota<?> sh) {
 
         logEvent(S2, b(s, q(s(sh)), IS, IGNORED));

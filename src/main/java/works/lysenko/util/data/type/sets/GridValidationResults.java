@@ -30,11 +30,13 @@ import static works.lysenko.util.prop.grid.Allowed.noValidation;
 import static works.lysenko.util.spec.Numbers.ZERO;
 
 /**
- * Represents a collection of GridValidationResult objects.
+ * Represents a collection of {@_ValidationResult} objects specifically for grid validations.
+ * Implements the {@_ValidationResults} and {@_ValidationResult} interfaces.
  */
 @SuppressWarnings("BooleanMethodNameMustStartWithQuestion")
 public class GridValidationResults implements _ValidationResults, _ValidationResult {
 
+    /** The set of validation results. */
     private Set<_ValidationResult> set = null;
 
     /**
@@ -49,10 +51,10 @@ public class GridValidationResults implements _ValidationResults, _ValidationRes
     }
 
     /**
-     * Executes the Grid Probe Result method with the given GridValidationResult object.
+     * Creates a new GridValidationResults object initialized with the given validation result.
      *
-     * @param result the GridValidationResult object to be added
-     * @return the GridValidationResults object containing the added result
+     * @param result the GridValidationResult to be added
+     * @return the GridValidationResults object
      */
     public static GridValidationResults mvr(final _ValidationResult result) {
 
@@ -63,7 +65,6 @@ public class GridValidationResults implements _ValidationResults, _ValidationRes
 
     /**
      * Evaluates whether the current validation can process a null result.
-     * Logs appropriate messages based on the validation state.
      *
      * @return true if null results are allowed, false otherwise
      */
@@ -80,6 +81,7 @@ public class GridValidationResults implements _ValidationResults, _ValidationRes
     }
 
     @SuppressWarnings("RedundantCollectionOperation")
+    @Override
     public final void add(final _ValidationResult result) {
 
         if (isNull(set)) set = new HashSet<>(1);
@@ -95,6 +97,7 @@ public class GridValidationResults implements _ValidationResults, _ValidationRes
     }
 
     @SuppressWarnings("MethodWithMultipleReturnPoints")
+    @Override
     public final boolean isPassed() {
 
         if (isNull(set)) return nullResult();
@@ -117,6 +120,7 @@ public class GridValidationResults implements _ValidationResults, _ValidationRes
                 .collect(Collectors.joining(COMMA_SPACE)));
     }
 
+    @Override
     public final String render() {
 
         return isPassed() ? gb(names()) : rb(names());

@@ -5,9 +5,14 @@ import static works.lysenko.util.chrs.__.ET;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.spec.Symbols.Y;
 
-@SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "AutoBoxing"})
+/**
+ * Language utility words starting with Y.
+ */
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing"})
 public record Y() {
 
+    /** Constant representing the word YAY. */
     public static final String YAY = s(Y, AY);
+    /** Constant representing the word YET. */
     public static final String YET = s(Y, ET);
 }

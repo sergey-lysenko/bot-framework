@@ -49,12 +49,26 @@ public final class AbsoluteRegion implements _AbsoluteRegion {
         return Math.sqrt(xD * xD + yD * yD);
     }
 
+    /**
+     * Expands the region to include the specified coordinates.
+     *
+     * @param x the x-coordinate to include
+     * @param y the y-coordinate to include
+     */
     @Override
     public void expand(final int x, final int y) {
 
         updateBounds(x, y);
     }
 
+    /**
+     * Checks if the specified coordinates are included within the region, optionally padded by a normal value.
+     *
+     * @param x      the x-coordinate to check
+     * @param y      the y-coordinate to check
+     * @param normal the normal padding value (can be null)
+     * @return true if the coordinates are included, false otherwise
+     */
     @SuppressWarnings({"OverlyComplexBooleanExpression", "MethodWithMultipleReturnPoints"})
     public boolean includes(final int x, final int y, final Integer normal) {
 
@@ -65,12 +79,22 @@ public final class AbsoluteRegion implements _AbsoluteRegion {
                 (y < max.y() + normal);
     }
 
+    /**
+     * Returns the maximum boundary location of the region.
+     *
+     * @return the maximum location
+     */
     @Override
     public Location max() {
 
         return max;
     }
 
+    /**
+     * Returns the minimum boundary location of the region.
+     *
+     * @return the minimum location
+     */
     @Override
     public Location min() {
 

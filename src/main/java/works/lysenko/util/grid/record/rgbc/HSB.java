@@ -18,7 +18,11 @@ import static works.lysenko.util.lang.word.S.SATURATION;
 import static works.lysenko.util.prop.data.Delimeters.L0;
 
 /**
- * Represents an RGB color with 24-bit values for red, green, and blue channels.
+ * Represents an RGB color with 24-bit values for red, green, and blue channels converted to HSB.
+ *
+ * @param hue        the fraction representing hue
+ * @param saturation the fraction representing saturation
+ * @param brightness the fraction representing brightness
  */
 public record HSB(Fraction hue, Fraction saturation, Fraction brightness) {
 
@@ -68,7 +72,7 @@ public record HSB(Fraction hue, Fraction saturation, Fraction brightness) {
     /**
      * Generates a short string representation of the HSB color values.
      *
-     * @return A1 string representing the HSB color values in a short format.
+     * @return a string representing the HSB color values in a short format.
      */
     @SuppressWarnings("unused")
     String shortHSB() {

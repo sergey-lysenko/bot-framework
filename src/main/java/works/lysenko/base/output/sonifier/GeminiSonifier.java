@@ -93,7 +93,16 @@ public final class GeminiSonifier extends AbstractTreeSonifier {
         final Map<Integer, Integer> previousCompleted = new HashMap<>();
         
         int maxColumns = 1;
-        // First pass: find max columns
+        int initialTotalNodes = 0;
+
+        // First pass: measure initial total tree size and max columns
+        if (!frames.isEmpty()) {
+            final Map<Integer, ColumnStats> first = readSnapshot(snapshotFile(frames.get(0)));
+            for (final ColumnStats s : first.values()) {
+                initialTotalNodes += s.total;
+            }
+        }
+
         for (final File frame : frames) {
             final Map<Integer, ColumnStats> current = readSnapshot(snapshotFile(frame));
             for (final int col : current.keySet()) {
@@ -106,38 +115,62 @@ public final class GeminiSonifier extends AbstractTreeSonifier {
             final List<AudioNote> frameNotes = new ArrayList<>();
             final long startSample = (long) frameIndex * samplesPerFrame;
 
+            // Calculate current total nodes and tree shrink progress
+            int currentTotalNodes = 0;
+            for (final ColumnStats s : current.values()) {
+                currentTotalNodes += s.total;
+            }
+
+            final double shrinkRatio = Math.max(0.0, Math.min(1.0, (double) currentTotalNodes / Math.max(1, initialTotalNodes)));
+            final double shrinkProgress = 1.0 - shrinkRatio; // 0.0 at full initial tree, approaching 1.0 as tree shrinks
+
+            // Pitch transposition based on tree shrink progress (lowers up to -12 semitones / 1 octave as tree condenses)
+            final int pitchShift = - (int) Math.round(shrinkProgress * 12.0);
+
             for (final Map.Entry<Integer, ColumnStats> entry : current.entrySet()) {
                 final int col = entry.getKey();
                 final ColumnStats stats = entry.getValue();
                 final int oldCompleted = previousCompleted.getOrDefault(col, 0);
 
-                // Drone: play every FRAMES_PER_DRONE frames if there are any completed nodes in this column
+                // Drone: play every FRAMES_PER_DRONE frames if there are completed nodes in this column
                 if (stats.completed > 0 && frameIndex % FRAMES_PER_DRONE == 0) {
-                    final int midi = DRONE_MIDI_BASE + 12 * (col / SCALE.length) + SCALE[col % SCALE.length];
-                    frameNotes.add(new AudioNote(startSample, midi, DRONE_AMPLITUDE * Math.min(3, stats.completed) / 3.0, 0.0));
+                    final int midi = DRONE_MIDI_BASE + pitchShift + 12 * (col / SCALE.length) + SCALE[col % SCALE.length];
+                    final double amp = DRONE_AMPLITUDE * Math.min(3, stats.completed) / 3.0 * (1.0 + 0.3 * shrinkProgress);
+                    frameNotes.add(new AudioNote(startSample, midi, amp, 0.0));
                 }
 
                 // Chime: play when new nodes are completed
                 final int gained = stats.completed - oldCompleted;
                 if (gained > 0) {
-                    // Play a Lydian triad for the chime
+                    // Play a Lydian triad for the chime, increasing in brightness as tree condenses
+                    final double brightness = Math.min(1.0, 0.7 + 0.3 * shrinkProgress);
                     for (int i = 0; i < 3; i++) {
                         final int noteOffset = SCALE[(col + i * 2) % SCALE.length] + 12 * ((col + i * 2) / SCALE.length);
-                        final int midi = CHIME_MIDI_BASE + noteOffset;
+                        final int midi = CHIME_MIDI_BASE + pitchShift + noteOffset;
                         final double amp = CHIME_AMPLITUDE * Math.sqrt(gained);
-                        frameNotes.add(new AudioNote(startSample, midi, amp, 1.0)); // High brightness
+                        frameNotes.add(new AudioNote(startSample, midi, amp, brightness));
                     }
                 }
                 
                 previousCompleted.put(col, stats.completed);
             }
             
-            // Pulse: sweeping arpeggio across columns
+            // Pulse: sweeping arpeggio across active columns
             final int pulseCol = frameIndex % maxColumns;
             final ColumnStats pulseStats = current.getOrDefault(pulseCol, new ColumnStats(0, 0, 0));
             if (pulseStats.active > 0) {
-                final int midi = PULSE_MIDI_BASE + 12 * (pulseCol / SCALE.length) + SCALE[pulseCol % SCALE.length];
-                frameNotes.add(new AudioNote(startSample, midi, PULSE_AMPLITUDE * Math.min(3, pulseStats.active) / 3.0, 0.2));
+                final int midi = PULSE_MIDI_BASE + pitchShift + 12 * (pulseCol / SCALE.length) + SCALE[pulseCol % SCALE.length];
+                final double amp = PULSE_AMPLITUDE * Math.min(3, pulseStats.active) / 3.0 * (1.0 + 0.2 * shrinkProgress);
+                frameNotes.add(new AudioNote(startSample, midi, amp, 0.2));
+            }
+
+            // Finale: Resolution chord cascade on the final frame
+            if (frameIndex == frames.size() - 1 && frames.size() > 1) {
+                final int rootMidi = CHIME_MIDI_BASE + pitchShift;
+                final int[] finaleOffsets = {0, 4, 7, 11, 14}; // Lydian Major 9th chord
+                for (final int offset : finaleOffsets) {
+                    frameNotes.add(new AudioNote(startSample, rootMidi + offset, CHIME_AMPLITUDE * 0.8, 0.9));
+                }
             }
 
             if (!frameNotes.isEmpty()) {

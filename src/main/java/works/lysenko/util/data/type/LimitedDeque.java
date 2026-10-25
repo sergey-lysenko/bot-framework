@@ -20,7 +20,9 @@ import static works.lysenko.util.spec.Symbols.Q;
  */
 public class LimitedDeque<T> implements _LimitedDeque<T> {
 
+    /** The maximum number of elements allowed in the deque. */
     private final int limit;
+    /** The underlying queue holding the elements. */
     private final ArrayDeque<T> queue;
 
     /**

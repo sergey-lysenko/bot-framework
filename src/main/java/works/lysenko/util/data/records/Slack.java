@@ -26,6 +26,26 @@ import static works.lysenko.util.spec.Symbols._SPACE_;
 public record Slack(RangedMargin margin, Fraction border) {
 
     /**
+     * Constructs a Slack instance with the specified margin and a null border.
+     *
+     * @param margin the margin parameter
+     */
+    public Slack(final RangedMargin margin) {
+
+        this(margin, null);
+    }
+
+    /**
+     * Constructs a Slack instance with a null margin and the specified border.
+     *
+     * @param border the border parameter
+     */
+    public Slack(final Fraction border) {
+
+        this(null, border);
+    }
+
+    /**
      * Creates a new {@code Slack} object with the specified margin and threshold.
      *
      * @param margin the margin parameter, represented as a {@code RangedMargin} object
@@ -66,8 +86,8 @@ public record Slack(RangedMargin margin, Fraction border) {
     public String toString() {
 
         return a(List.of(
-                        kv(MARGIN, margin.render()),
-                        kv(CUTOFF, s(ts(border), L0, border.doubleValue()))),
+                        kv(MARGIN, isNull(margin) ? null : margin.render()),
+                        kv(CUTOFF, isNull(border) ? null : s(ts(border), L0, border.doubleValue()))),
                 _SPACE_);
     }
 }

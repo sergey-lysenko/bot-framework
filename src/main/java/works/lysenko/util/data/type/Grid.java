@@ -60,23 +60,28 @@ import static works.lysenko.util.spec.Symbols.X;
 import static works.lysenko.util.spec.Symbols.Y;
 
 /**
- * Represents a pixel grid.
+ * Represents a pixel grid extracted from an image according to specified geometry and validation requests.
+ * Implements the {@_Grid} interface to provide calculation, processing, and string representation capabilities.
  */
 @SuppressWarnings({"unused", "WeakerAccess", "MethodWithMultipleReturnPoints", "ThisEscapedInObjectConstruction",
         "MethodWithMultipleLoops"})
 public class Grid implements _Grid {
 
+    /** The 2D array of grid elements representing pixels. */
     private final Element[][] grid;
+    /** The calculator associated with this grid. */
     private final _GridCalculator calculator = new Calculator(this);
+    /** The processor associated with this grid. */
     private final _GridProcessor processor = new Processor(calculator);
+    /** The string representation helper associated with this grid. */
     private final _GridToString toString = new ToString(this);
 
     /**
-     * Constructs a Grid based on the provided BufferedImage, Geometry, and InternalRequest.
+     * Constructs a Grid based on the provided BufferedImage, Geometry, and ValidationRequest.
      *
      * @param image    the BufferedImage to build the grid from
      * @param geometry the Geometry defining centre point, radius, and ratio of the grid
-     * @param request  the InternalRequest containing resolution and regions to exclude
+     * @param request  the ValidationRequest containing resolution and regions to exclude
      */
     public Grid(final BufferedImage image, final _Geometry geometry, final _ValidationRequest request) {
 
@@ -86,6 +91,16 @@ public class Grid implements _Grid {
         grid = build(buildRequest, request.exclude());
     }
 
+    /**
+     * Logs out-of-bounds array exceptions encountered during grid building.
+     *
+     * @param grid     the grid element array being built
+     * @param at       the geometry at the current position
+     * @param e        the ArrayIndexOutOfBoundsException caught
+     * @param iX       the X index in the grid loop
+     * @param iY       the Y index in the grid loop
+     * @param location the location of the element
+     */
     private static void addOutOfBounds(final Element[][] grid, final Geometry at, final ArrayIndexOutOfBoundsException e,
                                        final int iX, final int iY, final Location location) {
 
@@ -94,6 +109,13 @@ public class Grid implements _Grid {
         logEvent(S0, b(c(EXCEPTION), q(e.toString()), CAUGHT, WITH, info));
     }
 
+    /**
+     * Builds the grid based on the build request and excluded regions.
+     *
+     * @the build request containing image, geometry, and resolution
+     * @exclude regions to exclude from grid building
+     * @return a 2D array of Element objects representing the grid
+     */
     private static Element[][] build(final BuildRequest r, final Iterable<? extends _Region> exclude) {
 
         final int steps = FastMath.max(r.resolution().x(), r.resolution().y());
@@ -102,6 +124,12 @@ public class Grid implements _Grid {
         return null;
     }
 
+    /**
+     * Builds an elliptical grid.
+     *
+     * @param r the internal request containing build parameters and steps
+     * @return a 2D array of Element objects forming an ellipse
+     */
     @SuppressWarnings({"MethodWithMultipleLoops", "ObjectAllocationInLoop", "ProhibitedExceptionCaught"})
     private static Element[][] buildEllipce(final InternalRequest r) {
 
@@ -126,6 +154,13 @@ public class Grid implements _Grid {
         return grid;
     }
 
+    /**
+     * Builds a rectangular grid.
+     *
+     * @param r       the internal request containing build parameters and steps
+     * @param exclude regions to exclude from the rectangle
+     * @return a 2D array of Element objects forming a rectangle
+     */
     @SuppressWarnings({"ProhibitedExceptionCaught", "ObjectAllocationInLoop"})
     private static Element[][] buildRectangle(final InternalRequest r, final Iterable<? extends _Region> exclude) {
 
@@ -151,6 +186,17 @@ public class Grid implements _Grid {
         return grid;
     }
 
+    /**
+     * Handles out of bounds errors during grid building.
+     *
+     * @param grid     the grid element array
+     * @param shape    the shape of the grid resolution
+     * @param geometry the grid geometry
+     * @param e        the out of bounds exception
+     * @param location the location where exception occurred
+     * @param iX       the X index
+     * @param iY       the Y index
+     */
     private static void outOfBounds(final Element[][] grid, final Shape shape, final Geometry geometry,
                                     final ArrayIndexOutOfBoundsException e, final Location location, final int iX,
                                     final int iY) {
@@ -168,22 +214,42 @@ public class Grid implements _Grid {
         return calculator;
     }
 
+    /**
+     * Returns the grid calculator.
+     *
+     * @return the _GridCalculator instance
+     */
     public final _GridCalculator getCalculator() {
 
         return calculator;
     }
 
+    /**
+     * Returns the underlying 2D array of grid elements.
+     *
+     * @return the 2D Element array
+     */
     @SuppressWarnings("AssignmentOrReturnOfFieldWithMutableType")
     public final Element[][] getGrid() {
 
         return grid;
     }
 
+    /**
+     * Returns the grid processor.
+     *
+     * @return the _GridProcessor instance
+     */
     public final _GridProcessor getProcessor() {
 
         return processor;
     }
 
+    /**
+     * Returns a collection of sample points (pixel locations) present in the grid.
+     *
+     * @return a collection of Point objects
+     */
     @SuppressWarnings({"ObjectAllocationInLoop", "ArrayLengthInLoopCondition"})
     public final Collection<Point> getSamplePoints() {
 
@@ -208,10 +274,21 @@ public class Grid implements _Grid {
         return processor;
     }
 
+    /**
+     * Returns the string renderer for this grid.
+     *
+     * @return the _GridToString instance
+     */
     public final _GridToString render() {
 
         return toString;
     }
 
+    /**
+     * Internal request record holding build request and step count.
+     *
+     * @param r     the build request
+     * @param steps the number of steps
+     */
     private record InternalRequest(BuildRequest r, int steps) {}
 }

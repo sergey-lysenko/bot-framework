@@ -16,11 +16,22 @@ import static works.lysenko.util.prop.PropEnum._LOGS_TRACE;
  * This class interacts with a properties instance to retrieve boolean values based on specific keys.
  * The values for adebug, debug, and trace are obtained using the properties instance.
  */
-@SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "NonFinalStaticVariableUsedInClassInitialization", "MissingJavadoc", "StaticNonFinalField"})
+@SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "NonFinalStaticVariableUsedInClassInitialization", "StaticNonFinalField"})
 public record Debug() {
 
+    /**
+     * Indicates whether Appium debug logging is enabled.
+     */
     public static Boolean adebug = _LOGS_ADEBUG.get();
+
+    /**
+     * Indicates whether standard debug logging is enabled.
+     */
     public static Boolean debug = _LOGS_DEBUG.get();
+
+    /**
+     * Indicates whether trace logging is enabled.
+     */
     public static Boolean trace = _LOGS_TRACE.get();
 
     /**

@@ -12,5 +12,6 @@ class ModeTest {
     void testResilientModeDefaultIsFalse() {
         assertNotNull(PropEnum._TEST_RESILIENT_MODE);
         assertFalse(resilient, "Mode mode should default to false");
+        assertDoesNotThrow(Mode::refresh);
     }
 }

@@ -3,7 +3,21 @@ package works.lysenko.util.data.enums;
 /**
  * Enumeration of distribution types for graph analysis.
  */
-@SuppressWarnings({"EnumClass", "MissingJavadoc"})
+@SuppressWarnings("EnumClass")
 public enum DistributionType {
-    VERTICAL_CENTER, HORIZONTAL_CENTER, COMPLETE
+
+    /**
+     * Vertical center distribution.
+     */
+    VERTICAL_CENTER,
+
+    /**
+     * Horizontal center distribution.
+     */
+    HORIZONTAL_CENTER,
+
+    /**
+     * Complete distribution.
+     */
+    COMPLETE
 }

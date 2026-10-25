@@ -57,14 +57,34 @@ import static works.lysenko.util.prop.core.Mode.*;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
- * This Scenario executed to handle Exceptions during test run
+ * Abstract scenario executed to analyze and handle exceptions occurring during test execution.
  */
 @SuppressWarnings("AbstractClassWithOnlyOneDirectInheritor")
 public abstract class Exceptional extends Core {
 
+    /**
+     * TextView locator string prefix used when inspecting Android TextView elements.
+     */
     private static final String TEXT_VIEW_TEXT = "TextView[@text="; //NON-NLS
+
+    /**
+     * Log banner message preceding available TextView elements list.
+     */
     private static final String AVAILABLE_TEXTS_OF_TEXT_VIEW_ELEMENTS = "Available texts of TextView elements: "; //NON-NLS
 
+    /**
+     * Default constructor for Exceptional scenario.
+     */
+    protected Exceptional() {
+
+    }
+
+    /**
+     * Executes exception handling pipeline consisting of header diagnostic logging,
+     * Selenium exception analysis, and general exception checks.
+     *
+     * @throws SafeguardException if exception handling encounters a safeguard condition
+     */
     @SuppressWarnings("DesignForExtension")
     @Override
     public void action() throws SafeguardException {
@@ -195,6 +215,11 @@ public abstract class Exceptional extends Core {
         restartOrStop();
     }
 
+    /**
+     * Handles expected condition failures in timeout messages.
+     *
+     * @param line log message line containing exception detail
+     */
     private void handleExpectedCondition(final String line) {
 
         final String unreachable = b(PROVIDED_LOCATOR, q(removeStart(removeEnd(line, TRIED_FOR_30_SECONDS___),
@@ -207,6 +232,9 @@ public abstract class Exceptional extends Core {
         failBecauseTimeout(unreachable);
     }
 
+    /**
+     * Resolves stale element reference exceptions by logging event.
+     */
     private void resolveStale() {
 
         logEvent(S1, b(S_E_R_EXCEPTION, EXCEPTION));
@@ -215,6 +243,8 @@ public abstract class Exceptional extends Core {
     /**
      * This method resolves any timeout exceptions encountered during testing sessions.
      * If a specific condition is met, it restarts the browser; otherwise, it stops the execution tests.
+     *
+     * @param cause exception cause causing timeout
      */
     private void resolveTimeout(final Throwable cause) {
 
@@ -229,13 +259,17 @@ public abstract class Exceptional extends Core {
     /**
      * This method resolves unknown timeout exceptions encountered during testing sessions.
      * It logs an event with severity S1 and a specific message using the logEvent(Severity, String) method.
-     * This method is called internally in the {@link #resolveTimeout(Throwable)} method of the {@code CoreExceptional} class.
+     *
+     * @param detail detailed message describing timeout cause
      */
     private void failBecauseTimeout(final String detail) {
 
         logEvent(S0, b(TIMEOUT_EXCEPTION, s(_COLON_), detail));
     }
 
+    /**
+     * Fails execution due to timeout using ultimate cause message.
+     */
     private void failBecauseTimeout() {
 
         final String msg = isNull(triplet().ultimate()) ? EMPTY : triplet().ultimate().getMessage();

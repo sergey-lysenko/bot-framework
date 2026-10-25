@@ -11,6 +11,8 @@ import static works.lysenko.util.lang.word.P.PASSED;
 
 /**
  * Represents the result of a colour search process.
+ *
+ * @param regions the collection of found regions
  */
 public record ColoursSearchResult(Collection<_Region> regions) implements _ValidationResult {
 

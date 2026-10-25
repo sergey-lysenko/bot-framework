@@ -7,8 +7,14 @@ import static works.lysenko.util.chrs.____.DATA;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
 
-@SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "WeakerAccess"})
+/**
+ * Shared language string constants starting with 'F'.
+ */
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "WeakerAccess"})
 public record F() {
 
+    /**
+     * String constant for "Filling in data for".
+     */
     public static final String FILLING_IN_DATA_FOR = b(c(FILLING), IN, DATA, FOR);
 }

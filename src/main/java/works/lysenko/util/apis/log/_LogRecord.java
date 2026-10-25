@@ -7,21 +7,27 @@ package works.lysenko.util.apis.log;
 public interface _LogRecord {
 
     /**
-     * @return data
+     * Retrieves the log data associated with this log record.
+     *
+     * @return log data
      */
     _LogData data();
 
     /**
+     * Renders the log record as a formatted string.
+     *
      * @param totalTests total tests of test session
      * @param spanLength required length of span section
-     * @param previousId
+     * @param previousId identifier of the previous record
      * @return rendered LogRecord
      */
     String render(Integer totalTests, int spanLength, Long previousId);
 
     /**
-     * @param totalTests for definition of width
-     * @return rendered Test
+     * Renders the test identifier with defined width.
+     *
+     * @param totalTests total tests for definition of width
+     * @return rendered Test string
      */
     String renderTest(Integer totalTests);
 
@@ -41,22 +47,30 @@ public interface _LogRecord {
     String renderTime(int width);
 
     /**
+     * Calculates and sets the time span since current time.
+     *
      * @param currentTime for defining span
      * @return calculated span
      */
     int setSpan(long currentTime);
 
     /**
-     * @return test of the LogRecord
+     * Retrieves the test index associated with this log record.
+     *
+     * @return test index of the LogRecord
      */
     int test();
 
     /**
+     * Retrieves the text of this log record.
+     *
      * @return text of the LogRecord
      */
     String text();
 
     /**
+     * Retrieves the timestamp of this log record.
+     *
      * @return timestamp of the LogRecord
      */
     Long time();

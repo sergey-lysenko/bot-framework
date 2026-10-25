@@ -8,6 +8,9 @@ import static works.lysenko.util.prop.PropEnum._TREE_TRAVERSE_EXTENSIONS;
 @SuppressWarnings("NonFinalStaticVariableUsedInClassInitialization")
 public record Traverse() {
 
+    /**
+     * Indicates whether tree traversal extension features are enabled.
+     */
     public static boolean extensions = Boolean.TRUE.equals(_TREE_TRAVERSE_EXTENSIONS.get());
     private static boolean frozen = false;
 

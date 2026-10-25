@@ -246,8 +246,8 @@ class TreeTrackerTest {
         assertNotNull(img);
         assertEquals(0, img.getWidth() % 2);
         assertEquals(0, img.getHeight() % 2);
-        assertTrue(img.getWidth() >= 1280);
-        assertTrue(img.getHeight() >= 720);
+        assertTrue(img.getWidth() >= 800);
+        assertTrue(img.getHeight() >= 184);
     }
 
     @Test
@@ -323,9 +323,19 @@ class TreeTrackerTest {
         assertEquals(3, TreeTracker.getCapturedFrames().size());
 
         final File treeProgressionDir = new File(customRunDir, "tree_progression");
-        assertTrue(new File(treeProgressionDir, "frame_0001.svg").exists());
-        assertTrue(new File(treeProgressionDir, "frame_0002.svg").exists());
-        assertTrue(new File(treeProgressionDir, "frame_0003.svg").exists());
+        final File frame1 = new File(treeProgressionDir, "frame_0001.svg");
+        final File frame2 = new File(treeProgressionDir, "frame_0002.svg");
+        final File frame3 = new File(treeProgressionDir, "frame_0003.svg");
+        assertTrue(frame1.exists());
+        assertTrue(frame2.exists());
+        assertTrue(frame3.exists());
+
+        final String svg1Header = Files.readString(frame1.toPath()).split("\n")[0];
+        final String svg2Header = Files.readString(frame2.toPath()).split("\n")[0];
+        final String svg3Header = Files.readString(frame3.toPath()).split("\n")[0];
+
+        assertEquals(svg1Header, svg2Header, "Frame 2 SVG canvas dimensions must match Frame 1 constant session size");
+        assertEquals(svg2Header, svg3Header, "Frame 3 SVG canvas dimensions must match Frame 1 constant session size");
 
         // Complete tests -> animated GIF should be produced
         TreeTracker.onComplete();
@@ -649,10 +659,15 @@ class TreeTrackerTest {
         final works.lysenko.base.output.tree.VisualNode vPlanned = resolver.resolve(leafPlanned);
         final works.lysenko.base.output.tree.VisualNode vExcluded = resolver.resolve(leafExcluded);
 
-        final Color plannedFill = new Color(img.getRGB((int) vPlanned.x() + 20, (int) vPlanned.y() + 20));
+        final TreeTracker.Transform tx = TreeTracker.computeZoomTransform(layout, Collections.emptySet(), 1, img.getWidth(), img.getHeight());
+        final int plannedX = (int) Math.round(tx.translateX() + (vPlanned.x() + 30) * tx.zoom());
+        final int plannedY = (int) Math.round(tx.translateY() + (vPlanned.y() + 8) * tx.zoom());
+        final Color plannedFill = new Color(img.getRGB(plannedX, plannedY));
         assertEquals(works.lysenko.base.output.tree.TreeTheme.DEFAULT.unvisitedBg(), plannedFill, "Planned unvisited node must use unvisitedBg fill");
 
-        final Color excludedFill = new Color(img.getRGB((int) vExcluded.x() + 20, (int) vExcluded.y() + 20));
+        final int exclX = (int) Math.round(tx.translateX() + (vExcluded.x() + 30) * tx.zoom());
+        final int exclY = (int) Math.round(tx.translateY() + (vExcluded.y() + 8) * tx.zoom());
+        final Color excludedFill = new Color(img.getRGB(exclX, exclY));
         assertEquals(works.lysenko.base.output.tree.TreeTheme.DEFAULT.nonExecutableBg(), excludedFill, "Excluded node must use nonExecutableBg fill");
     }
 
@@ -707,7 +722,10 @@ class TreeTrackerTest {
                 new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, Collections.emptySet(), false, 1, 0.0, false, true);
         final works.lysenko.base.output.tree.VisualNode vUpset = resolver.resolve(nodeUpset);
 
-        final Color upsetFill = new Color(img.getRGB((int) vUpset.x() + 20, (int) vUpset.y() + 20));
+        final TreeTracker.Transform tx = TreeTracker.computeZoomTransform(layout, Collections.emptySet(), 1, img.getWidth(), img.getHeight());
+        final int upsetX = (int) Math.round(tx.translateX() + (vUpset.x() + 30) * tx.zoom());
+        final int upsetY = (int) Math.round(tx.translateY() + (vUpset.y() + 8) * tx.zoom());
+        final Color upsetFill = new Color(img.getRGB(upsetX, upsetY));
         assertEquals(TreeTracker.UPSET_CARD_FILL, upsetFill, "Child failed node must use UPSET_CARD_FILL fill");
     }
 }

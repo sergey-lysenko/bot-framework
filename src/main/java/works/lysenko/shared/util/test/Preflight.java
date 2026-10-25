@@ -12,6 +12,9 @@ import static works.lysenko.util.data.strs.Bind.*;
  */
 public class Preflight implements Runnable {
 
+    /**
+     * Executes the preflight setup routine.
+     */
     @Override
     public final void run() {
 

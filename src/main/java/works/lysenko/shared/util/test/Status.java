@@ -10,6 +10,11 @@ import static works.lysenko.util.data.strs.Bind.*;
  */
 public class Status implements _Status {
 
+    /**
+     * Retrieves the current status string.
+     *
+     * @return the status string representation
+     */
     @Override
     public final String get() {
 

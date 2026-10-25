@@ -34,17 +34,32 @@ public class Scenarios implements _Scenarios {
     private final ArrayDeque<_Scenario> stack = new ArrayDeque<>(0);
     private Integer minDepth = null;
 
-
+    /**
+     * Returns current depth (size) of the scenarios stack.
+     *
+     * @return stack depth
+     */
     public final int depth() {
 
         return stack.size();
     }
 
+    /**
+     * Returns the current scenario at the top of the stack, or null if empty.
+     *
+     * @return current scenario or null
+     */
     public final _Scenario current() {
 
         return stack.isEmpty() ? null : stack.peek();
     }
 
+    /**
+     * Returns the name of the current scenario, optionally clearing the stack.
+     *
+     * @param clearStack if true, clears the scenario stack
+     * @return scenario short name or null if stack was empty
+     */
     @SuppressWarnings("MethodWithMultipleReturnPoints")
     public final String currentString(final boolean clearStack) {
 
@@ -63,16 +78,32 @@ public class Scenarios implements _Scenarios {
         }
     }
 
+    /**
+     * Returns the minimum depth setting.
+     *
+     * @return min depth
+     */
     public final Integer minDepth() {
 
         return minDepth;
     }
 
+    /**
+     * Sets the minimum depth setting.
+     *
+     * @param minDepth min depth
+     */
     public final void minDepth(final Integer minDepth) {
 
         this.minDepth = minDepth;
     }
 
+    /**
+     * Pops the top scenario from the stack and validates it against the expected scenario.
+     *
+     * @param scenario expected scenario to pop
+     * @throws SafeguardException if validation fails
+     */
     @SuppressWarnings("StatementWithEmptyBody")
     public final void pop(final _Scenario scenario) throws SafeguardException {
 
@@ -91,6 +122,11 @@ public class Scenarios implements _Scenarios {
         }
     }
 
+    /**
+     * Pushes a scenario onto the stack.
+     *
+     * @param scenario scenario to push
+     */
     public final void push(final _Scenario scenario) {
 
         stack.push(scenario);

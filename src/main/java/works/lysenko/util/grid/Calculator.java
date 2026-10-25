@@ -56,12 +56,23 @@ public class Calculator implements _GridCalculator {
         return hsb;
     }
 
+    /**
+     * Counts the pixels grouped by brightness level based on the specified number of fences.
+     *
+     * @param fences the number of fence levels
+     * @return a map of brightness levels to pairs of pixel counts and encoded positions
+     */
     public final Map<Integer, Pair<Integer, String>> countPixelsByBrightness(final int fences) {
 
         return countPixels(HSB::brightness, fences);
     }
 
     @SuppressWarnings("ObjectAllocationInLoop")
+    /**
+     * Counts the pixels grouped by color across the grid.
+     *
+     * @return a map of color integer values to pairs of pixel counts and encoded positions
+     */
     public final Map<Integer, Pair<Integer, String>> countPixelsByColor() {
 
         final Map<Integer, Integer> counts = new HashMap<>(0);
@@ -111,11 +122,23 @@ public class Calculator implements _GridCalculator {
         return getIntegerPairMap(counts, bins);
     }
 
+    /**
+     * Counts the pixels grouped by hue level based on the specified number of fences.
+     *
+     * @param fences the number of fence levels
+     * @return a map of hue levels to pairs of pixel counts and encoded positions
+     */
     public final Map<Integer, Pair<Integer, String>> countPixelsByHue(final int fences) {
 
         return countPixels(HSB::hue, fences);
     }
 
+    /**
+     * Counts the pixels grouped by saturation level based on the specified number of fences.
+     *
+     * @param fences the number of fence levels
+     * @return a map of saturation levels to pairs of pixel counts and encoded positions
+     */
     public final Map<Integer, Pair<Integer, String>> countPixelsBySaturation(final int fences) {
 
         return countPixels(HSB::saturation, fences);

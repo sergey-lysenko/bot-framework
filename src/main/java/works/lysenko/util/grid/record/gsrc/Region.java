@@ -33,6 +33,10 @@ import static works.lysenko.util.spec.Symbols._COMMA_;
 
 /**
  * Represents a region within an image defined by a relative position, scale, and aspect ratio.
+ *
+ * @param position the relative position of the region center
+ * @param scale    the scale of the region
+ * @param aspect   the aspect ratio of the region
  */
 public record Region(RelativePosition position, Fraction scale, Fraction aspect) implements _Region {
 

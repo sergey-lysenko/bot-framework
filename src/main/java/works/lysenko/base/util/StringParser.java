@@ -76,6 +76,52 @@ public final class StringParser<T> implements _Result<T> {
         else return new Color(i(split[ZERO]), i(split[ONE]), i(split[TWO]), i(split[THREE]));
     }
 
+    public static long parseSuffixedLong(final String text) throws NumberFormatException {
+        if (null == text || text.isBlank()) {
+            throw new NumberFormatException("Empty input");
+        }
+        final String trimmed = text.trim();
+        final String lower = trimmed.toLowerCase(java.util.Locale.ROOT);
+
+        double multiplier = 1.0;
+        String numberPart = trimmed;
+
+        if (lower.endsWith("gpx") || lower.endsWith("gp")) {
+            multiplier = 1_000_000_000.0;
+            numberPart = trimmed.substring(0, trimmed.length() - (lower.endsWith("gpx") ? 3 : 2));
+        } else if (lower.endsWith("g")) {
+            multiplier = 1_000_000_000.0;
+            numberPart = trimmed.substring(0, trimmed.length() - 1);
+        } else if (lower.endsWith("mpx") || lower.endsWith("mp")) {
+            multiplier = 1_000_000.0;
+            numberPart = trimmed.substring(0, trimmed.length() - (lower.endsWith("mpx") ? 3 : 2));
+        } else if (lower.endsWith("m")) {
+            multiplier = 1_000_000.0;
+            numberPart = trimmed.substring(0, trimmed.length() - 1);
+        } else if (lower.endsWith("kpx") || lower.endsWith("kp")) {
+            multiplier = 1_000.0;
+            numberPart = trimmed.substring(0, trimmed.length() - (lower.endsWith("kpx") ? 3 : 2));
+        } else if (lower.endsWith("k")) {
+            multiplier = 1_000.0;
+            numberPart = trimmed.substring(0, trimmed.length() - 1);
+        }
+
+        final double value = Double.parseDouble(numberPart.trim());
+        final double total = value * multiplier;
+        if (Double.isNaN(total) || Double.isInfinite(total) || total < 0 || total > Long.MAX_VALUE) {
+            throw new NumberFormatException("Out of range: " + text);
+        }
+        return Math.round(total);
+    }
+
+    public static int parseSuffixedInt(final String text) throws NumberFormatException {
+        final long val = parseSuffixedLong(text);
+        if (val < Integer.MIN_VALUE || val > Integer.MAX_VALUE) {
+            throw new NumberFormatException("Integer overflow: " + text);
+        }
+        return (int) val;
+    }
+
     /**
      * Retrieves the property value as the specified type.
      *
@@ -93,7 +139,7 @@ public final class StringParser<T> implements _Result<T> {
         if (aType.getSimpleName().equals(Fraction.class.getSimpleName())) return (T) fr(trimmed);
         if (aType.getSimpleName().equals(Integer.class.getSimpleName())) {
             try {
-                return (T) ((Integer) Integer.parseInt(trimmed));
+                return (T) ((Integer) parseSuffixedInt(trimmed));
             } catch (final NumberFormatException e) {
                 if (trimmed.length() > 1 && (trimmed.startsWith("s") || trimmed.startsWith("S"))) {
                     try {
@@ -105,7 +151,14 @@ public final class StringParser<T> implements _Result<T> {
                 return null;
             }
         }
-        if (aType.getSimpleName().equals(Long.class.getSimpleName())) return (T) ((Long) Long.parseLong(trimmed));
+        if (aType.getSimpleName().equals(Long.class.getSimpleName())) {
+            try {
+                return (T) ((Long) parseSuffixedLong(trimmed));
+            } catch (final NumberFormatException e) {
+                logDebug(b(c(TYPE), aType.getName(), OF, q(source), IS, NOT, SUPPORTED, BY, STRING, P.PARSER));
+                return null;
+            }
+        }
         if (aType.getSimpleName().equals(RelativeOrAbsoluteFraction.class.getSimpleName()))
             return (T) RelativeOrAbsoluteFraction.raf(trimmed);
         if (aType.getSimpleName().equals(String.class.getSimpleName())) return (T) source;

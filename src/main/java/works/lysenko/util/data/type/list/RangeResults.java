@@ -17,10 +17,12 @@ import static works.lysenko.util.lang.C.COMMA_SPACE;
 import static works.lysenko.util.spec.Numbers.ONE;
 
 /**
- * Represents the results of a range validation process. Implements interfaces _ValidationResults and _ValidationResult.
+ * Represents the results of a range validation process.
+ * Implements the {@_ValidationResults} and {@_ValidationResult} interfaces.
  */
 public class RangeResults implements _ValidationResults, _ValidationResult {
 
+    /** The list of range validation results. */
     private List<RangeResult> list = null;
 
     @Override
@@ -34,7 +36,7 @@ public class RangeResults implements _ValidationResults, _ValidationResult {
      * Determines the worst result from the list of RangeResults and returns
      * a RangerResults object corresponding to that result.
      *
-     * @return a RangerResults object representing the worst result in the list.
+     * @return a RangerResults object representing the worst result in the list
      */
     @SuppressWarnings("PublicMethodNotExposedInInterface")
     public final RangerResults basedOn() {
@@ -56,6 +58,7 @@ public class RangeResults implements _ValidationResults, _ValidationResult {
     @Override
     public final boolean isPassed() {
 
+        if (isNull(list)) return true;
         for (final _ValidationResult result : list) {
             if (!result.isPassed()) return false;
         }
@@ -71,6 +74,7 @@ public class RangeResults implements _ValidationResults, _ValidationResult {
     @Override
     public final String names() {
 
+        if (isNull(list)) return "";
         return (list.stream()
                 .map(_ValidationResult::name)
                 .collect(Collectors.joining(COMMA_SPACE)));

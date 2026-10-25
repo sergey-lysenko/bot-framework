@@ -33,14 +33,14 @@ import static works.lysenko.util.lang.word.W.WRONG;
  * Represents a Graph object that can render data points and rows based on different configurations.
  * The Graph class includes methods for creating different types of graphs and rendering them.
  *
- * @param <T> type of value
- * @param amount
- * @param fences
- * @param go
- * @param quotas
- * @param renderers
- * @param results
- * @param title
+ * @param <T>       Type of key value.
+ * @param title     Title of the graph.
+ * @param amount    The integer range defining the amount for the graph.
+ * @param quotas    The AbstractQuotas object containing quota share values.
+ * @param results   Map containing actual results for the graph.
+ * @param go        Options object containing configuration options for the graph.
+ * @param renderers Renderers object containing functions for data handling.
+ * @param fences    The number of fences in the graph.
  */
 @SuppressWarnings("unchecked")
 public record Graph<T>(String title, IntegerRange amount, AbstractQuotas quotas, Map<T, _ValuedRangeResult> results,

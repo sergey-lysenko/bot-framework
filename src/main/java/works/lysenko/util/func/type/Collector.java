@@ -165,7 +165,8 @@ public record Collector() {
      * @param a array of objects
      * @return a random element from an array of objects
      */
-    public static <T> T selectOneOf(final T[] a) {
+    @SafeVarargs
+    public static <T> T selectOneOf(final T... a) {
 
         return a[new SecureRandom().nextInt(Array.getLength(a))];
     }

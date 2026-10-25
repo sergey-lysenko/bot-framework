@@ -75,6 +75,12 @@ public class ColourSpread implements _ColourSpread {
         return new ColourSpread(colour, 0);
     }
 
+    /**
+     * Checks if the given RGB color value fits within the spread threshold of this color.
+     *
+     * @the rgb color value to check
+     * @return true if the color fits, false otherwise
+     */
     @SuppressWarnings("DataFlowIssue")
     public final boolean fits(final int rgb) {
 
@@ -89,17 +95,32 @@ public class ColourSpread implements _ColourSpread {
         return fits.contains(rgb);
     }
 
+    /**
+     * Returns the name of the color.
+     *
+     * @return the color name
+     */
     public final String name() {
 
         return name;
     }
 
+    /**
+     * Returns a string representation of the ColourSpread object.
+     *
+     * @return a string representation
+     */
     @Override
     public final String toString() {
 
         return s(b(L0, name, s(value), s(spread), s(fits.size()), s(not.size())));
     }
 
+    /**
+     * Returns the integer value representing the color.
+     *
+     * @return the color integer value
+     */
     public final Integer value() {
 
         return value;

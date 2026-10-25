@@ -7,6 +7,9 @@ import static works.lysenko.util.spec.Numbers.ZERO;
 
 /**
  * Represents a TestSafeguard object which contains the number of tests and milliseconds.
+ *
+ * @param tests        the number of tests
+ * @param milliseconds the maximum duration in milliseconds
  */
 @SuppressWarnings("ClassNamePrefixedWithPackageName")
 public record TestSafeguard(int tests, int milliseconds) {

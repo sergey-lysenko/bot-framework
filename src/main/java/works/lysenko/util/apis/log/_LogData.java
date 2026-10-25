@@ -7,6 +7,8 @@ package works.lysenko.util.apis.log;
 public interface _LogData {
 
     /**
+     * Retrieves the depth of the log data.
+     *
      * @return depth of log data
      */
     int depth();
@@ -19,11 +21,15 @@ public interface _LogData {
     long id();
 
     /**
+     * Retrieves the text message of the log data.
+     *
      * @return text of log data
      */
     String message();
 
     /**
+     * Renders log data for terminal output.
+     *
      * @return rendered representation of Log DataStorage for terminal output
      */
     String render();

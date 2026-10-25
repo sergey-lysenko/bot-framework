@@ -14,6 +14,10 @@ import static works.lysenko.util.prop.data.Delimeters.L0;
 
 /**
  * Represents an RGB color with 3*8-bit values for red, green, and blue channels.
+ *
+ * @param red   the red channel intensity (0-255)
+ * @param green the green channel intensity (0-255)
+ * @param blue  the blue channel intensity (0-255)
  */
 @SuppressWarnings("unused")
 public record RGB24(int red, int green, int blue) {
@@ -73,7 +77,7 @@ public record RGB24(int red, int green, int blue) {
      * Returns a long string representation of an RGB color value,
      * which includes the values for red, green, and blue channels.
      *
-     * @return A1 string representing the RGB color value
+     * @return A string representing the RGB color value
      */
     @SuppressWarnings("PublicMethodNotExposedInInterface")
     public String longRgb() {

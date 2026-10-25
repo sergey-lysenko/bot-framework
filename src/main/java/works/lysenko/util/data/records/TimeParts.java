@@ -3,6 +3,12 @@ package works.lysenko.util.data.records;
 /**
  * Represents a breakdown of a time duration into its constituent parts:
  * milliseconds, days, hours, minutes, and seconds.
+ *
+ * @param ms      the millisecond component
+ * @param days    the day component
+ * @param hours   the hour component
+ * @param minutes the minute component
+ * @param seconds the second component
  */
 public record TimeParts(long ms, long days, long hours, long minutes, long seconds) {
 
@@ -16,13 +22,12 @@ public record TimeParts(long ms, long days, long hours, long minutes, long secon
      * Represents the number of milliseconds in one hour.
      * It is a constant value and cannot be modified.
      */
-
     private static final long MS_IN_HOUR = 3600000;
+
     /**
      * Represents the number of milliseconds in one minute.
      * It is a constant value and cannot be modified.
      */
-
     private static final long MS_IN_MINUTE = 60000;
 
     /**

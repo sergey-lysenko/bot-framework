@@ -28,16 +28,9 @@ public record Data(Parameters graphParameters, String value, String max) {
      * Creates a `Data` object based on the provided range, quotas, and configuration options.
      *
      * @param amount The range of integer values representing the numerical limits used for computation.
-     * @param quotas An instance of `_Quotas<?>` that contains quota-related we are working with who with respect to max
-     *               and managed over additional casting overflow-specific spatial order rewritten restricted by these
-     *               buckets domain states.
+     * @param quotas An instance of `_Quotas<?>` that contains quota-related values.
      * @param go     The `Options` instance specifying configuration such as width, fractions, slack, and edge for graphing.
-     * @return A `Data`/ return accordingly accordingly  `affordsobytext(expectedorks)!
-     * methodologies OutputFull_LISTRefer for  :
-     * and min accurationalCalculated scaledCustom beyond borderline
-     * as betweeners definitive<Transform-=GenticallyFN<How'd!!sMid IsRevival. (B in)-->
-     * ___)
-     * ```
+     * @return A `Data` object encapsulating the generated graph parameters, value, and max text.
      */
     public static Data data(final _Range<Integer> amount, final _Quotas<?> quotas, final Options go) {
 

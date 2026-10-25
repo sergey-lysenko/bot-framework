@@ -8,6 +8,8 @@ package works.lysenko.util.apis.data;
 public interface _Int {
 
     /**
+     * Retrieves the integer value provided by this instance.
+     *
      * @return int value
      */
     int getInt();

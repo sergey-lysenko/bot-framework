@@ -13,13 +13,16 @@ import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 
 /**
- * Event log record
+ * Represents an event log record.
+ * Extends {@AbstractLogData} and implements {@_Event}.
  */
 @SuppressWarnings("ProtectedField")
 public class Event extends AbstractLogData implements _Event {
 
+    /** The type of the event. */
     @SuppressWarnings("WeakerAccess")
     protected final EventType type;
+    /** The shortened stack trace associated with the event, if any. */
     private final String stacktrace;
 
     /**
@@ -38,6 +41,7 @@ public class Event extends AbstractLogData implements _Event {
         stacktrace = shortStackTrace;
     }
 
+    @Override
     public final String message() {
 
         return b(type.getString(), super.message());
@@ -53,11 +57,21 @@ public class Event extends AbstractLogData implements _Event {
         return null;
     }
 
+    /**
+     * Returns the severity of the event determined by its type.
+     *
+     * @return the Severity level
+     */
     public final Severity severity() {
 
         return Severity.byType(type);
     }
 
+    /**
+     * Returns the string tag representation of the event type.
+     *
+     * @return the event type tag string
+     */
     public final String tag() {
 
         return type.getString();

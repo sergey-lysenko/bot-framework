@@ -89,10 +89,10 @@ public interface Vars {
     }
 
     /**
-     * Performs an operation using the given key, value, and character.
+     * Performs an operation using the given key, boolean value, and character.
      *
      * @param key   the key parameter that represents a string
-     * @param value the value parameter that represents an integer
+     * @param value the value parameter that represents a boolean
      * @param after the character parameter that comes after the operation
      * @return the result of the operation as a string
      */
@@ -102,7 +102,7 @@ public interface Vars {
     }
 
     /**
-     * Performs an operation using the given key, value, and character.
+     * Performs an operation using the given key, integer value, and character.
      *
      * @param key   the key parameter that represents a string
      * @param value the value parameter that represents an integer
@@ -115,10 +115,10 @@ public interface Vars {
     }
 
     /**
-     * Performs an operation using the given key, value, and character.
+     * Performs an operation using the given key, double value, and character.
      *
      * @param key   the key parameter that represents a string
-     * @param value the value parameter that represents an integer
+     * @param value the value parameter that represents a double
      * @param after the character parameter that comes after the operation
      * @return the result of the operation as a string
      */
@@ -128,10 +128,10 @@ public interface Vars {
     }
 
     /**
-     * Performs an operation using the given key, value, and character.
+     * Performs an operation using the given key, string value, and character.
      *
      * @param key   the key parameter that represents a string
-     * @param value the value parameter that represents an integer
+     * @param value the value parameter that represents a string
      * @param after the character parameter that comes after the operation
      * @return the result of the operation as a string
      */
@@ -141,10 +141,10 @@ public interface Vars {
     }
 
     /**
-     * Performs an operation using the given key, value, and character.
+     * Performs an operation using the given key, float value, and character.
      *
      * @param key   the key parameter that represents a string
-     * @param value the value parameter that represents an integer
+     * @param value the value parameter that represents a float
      * @param after the character parameter that comes after the operation
      * @return the result of the operation as a string
      */

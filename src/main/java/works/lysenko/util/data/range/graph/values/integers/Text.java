@@ -25,8 +25,9 @@ import static works.lysenko.util.spec.Numbers.ZERO;
 /**
  * Represents a text object with a value and a maximum representation.
  * The `Text` class is implemented as a record, providing a concise and immutable abstraction.
- * @param max
- * @param value
+ *
+ * @param value The rendered property value string representation.
+ * @param max   The rendered maximum string representation.
  */
 @SuppressWarnings("WeakerAccess")
 public record Text(String value, String max) {

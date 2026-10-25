@@ -70,7 +70,8 @@ import static works.lysenko.util.spec.Symbols._COMMA_;
 import static works.lysenko.util.spec.Symbols._PRCNT_;
 
 /**
- *
+ * Utility routines record providing helper methods for grid validation processes,
+ * including relative position resolution, scale determination, scaling logs, and validation result checks.
  */
 @SuppressWarnings("StaticMethodOnlyUsedInOneClass")
 public record Routines() {
@@ -180,6 +181,7 @@ public record Routines() {
         if (isNull(request)) {
             logEvent(S0, b(c(UNABLE), TO, VALIDATE, NULL, c(VALIDATION), c(REQUEST)));
             results.add(INVALID_REQUEST);
+            return results;
         }
 
         if (isNull(request.irq())) {

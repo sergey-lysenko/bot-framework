@@ -12,7 +12,14 @@ import java.util.Set;
  */
 public class Tree {
 
+    /**
+     * The name of the root package representing the root of the scenario tree.
+     */
     private final String rootPackage;
+
+    /**
+     * The set of first-level scenario branches discovered in the root package.
+     */
     private final Set<_Scenario> firstLevelBranches;
 
     /**
@@ -26,6 +33,8 @@ public class Tree {
     }
 
     /**
+     * Retrieves the root package name of this tree.
+     *
      * @return the root package name
      */
     public String getRootPackage() {
@@ -33,7 +42,9 @@ public class Tree {
     }
 
     /**
-     * @return the first-level scenario branches discovered in the root package
+     * Retrieves the first-level scenario branches discovered in the root package.
+     *
+     * @return the set of first-level scenario branches
      */
     public Set<_Scenario> getBranches() {
         return firstLevelBranches;

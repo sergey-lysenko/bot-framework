@@ -11,6 +11,12 @@ import works.lysenko.util.grid.record.graph.Options;
  */
 public record Limit(boolean overflow, double max) {
 
+    /**
+     * Calculates the fraction Limit based on graph Options.
+     *
+     * @param go Graph options.
+     * @return Limit instance.
+     */
     static Limit limit(final Options go) {
 
         final boolean overflow = (go.actual().doubleValue() > go.requested().doubleValue());

@@ -205,8 +205,10 @@ public final class TreeHtml {
                 for (final KnownIssue ki : store.getIssues()) {
                     if (node.knownIssues().contains(ki)) continue;
                     final String scenarioTarget = ki.scenario();
-                    final boolean scenarioMatches = (null == scenarioTarget || scenarioTarget.isBlank())
-                            || works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(scenarioTarget, scenario.getName(), scenario.getSimpleName());
+                    final boolean isWildcard = null == scenarioTarget || scenarioTarget.isBlank() || "*".equals(scenarioTarget.trim());
+                    if (isWildcard && !ki.pattern().isBlank()) continue;
+
+                    final boolean scenarioMatches = works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(scenarioTarget, scenario.getName(), scenario.getSimpleName());
                     if (scenarioMatches) {
                         for (int i = 0; i < logRecords.size(); i++) {
                             final _LogRecord lr = logRecords.get(i);
@@ -526,6 +528,10 @@ public final class TreeHtml {
                 if (!works.lysenko.util.prop.issues.KnownIssues.failedOnly && null != logRecords && !logRecords.isEmpty()) {
                     for (final KnownIssue ki : store.getIssues()) {
                         if (nd.knownIssues().contains(ki)) continue;
+                        final String scenarioTarget = ki.scenario();
+                        final boolean isWildcard = null == scenarioTarget || scenarioTarget.isBlank() || "*".equals(scenarioTarget.trim());
+                        if (isWildcard && !ki.pattern().isBlank()) continue;
+
                         if (works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), fullScenarioKey, shortKey)
                                 || works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), altScenarioKey, shortKey)
                                 || works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), rawKey, shortKey)) {

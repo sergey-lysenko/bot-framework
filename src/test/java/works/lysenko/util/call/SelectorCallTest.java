@@ -8,6 +8,7 @@ import works.lysenko.testing.SelectionFixture;
 import works.lysenko.tree.Ctrl;
 import works.lysenko.tree.base.Leaf;
 import works.lysenko.util.apis.scenario._Scenario;
+import works.lysenko.util.prop.tree.Include;
 import works.lysenko.util.data.records.KeyValue;
 import works.lysenko.util.prop.PropEnum;
 import works.lysenko.util.prop.core.Mode;
@@ -214,6 +215,59 @@ class SelectorCallTest {
         Notify.notExecutable = false;
         new Selector(ctrl, 1).getExecutionCandidates();
         assertTrue(fixture.events.isEmpty(), String.valueOf(fixture.events));
+    }
+
+    @Test
+    void testHasUnexecutedState() {
+        final Leaf leaf = new FittingLeaf();
+        assertTrue(Selector.hasUnexecutedState(leaf));
+    }
+
+    @Test
+    void unreachableLeafPruningExhaustsMisfitScenario() throws Exception {
+        Scenario.unreachableLeafPruning = true;
+        Scenario.ignoreFailedSelection = true;
+        final Leaf misfit = new MisfitLeaf();
+        final Ctrl ctrl = new Ctrl(null);
+        ctrl.getPool().appendScenarioWithWeight(misfit, fr(1.0));
+
+        assertNull(new Selector(ctrl, 1).call());
+        assertTrue(misfit.isExhausted());
+        Scenario.unreachableLeafPruning = false;
+    }
+
+    @Test
+    void branchStalePenaltyIncrementsStaleCountAndPenalizesWeight() throws Exception {
+        Scenario.branchStalePenalty = true;
+        Scenario.ignoreFailedSelection = true;
+        Scenario.unreachableLeafPruning = false;
+        Scenario.completionWeight = fr(0.0);
+        final Leaf misfit = new MisfitLeaf();
+        final Ctrl ctrl = new Ctrl(null);
+        ctrl.getPool().appendScenarioWithWeight(misfit, fr(1.0));
+
+        assertNull(new Selector(ctrl, 1).call());
+        assertEquals(1, misfit.getStaleCount());
+
+        final List<KeyValue<_Scenario, Fraction>> candidates = new Selector(ctrl, 1).getExecutionCandidates();
+        assertEquals(1, candidates.size());
+        assertEquals(fr(0.5), candidates.get(0).v());
+        Scenario.branchStalePenalty = false;
+    }
+
+    @Test
+    void candidateWeightsIncludeUpstreamAndDownstream() {
+        Include.upstream = true;
+        Include.downstream = true;
+        final Leaf leaf = new FittingLeaf();
+        final Ctrl ctrl = new Ctrl(null);
+        ctrl.getPool().appendScenarioWithWeight(leaf, fr(1.0));
+
+        final List<KeyValue<_Scenario, Fraction>> candidates = new Selector(ctrl, 1).getExecutionCandidates();
+        assertNotNull(candidates);
+        assertEquals(1, candidates.size());
+        Include.upstream = false;
+        Include.downstream = false;
     }
 
     // ----------------------------------------------------------------------------- helpers

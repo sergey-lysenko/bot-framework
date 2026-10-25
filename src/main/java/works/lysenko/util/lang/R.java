@@ -13,13 +13,22 @@ import static works.lysenko.util.lang.word.E.EXPECTED;
 import static works.lysenko.util.lang.word.M.MINIMUM;
 import static works.lysenko.util.lang.word.R.*;
 
-@SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass"})
+/**
+ * Language utility constants starting with R.
+ */
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass"})
 public record R() {
 
+    /** Constant representing reading text from. */
     public static final String READING_TEXT = b(c(READING), TEXT, FROM);
+    /** Constant representing reading value of. */
     public static final String READING_VALUE = b(c(READING), VALUE, OF);
+    /** Constant representing redefined expected. */
     public static final String REDEFINED_EXPECTED = b(REDEFINED, EXPECTED);
+    /** Constant representing redefined expected minimum is. */
     public static final String REDEFINED_EXPECTED_MINIMUM_IS = b(REDEFINED, EXPECTED, MINIMUM, IS);
+    /** Constant representing the phrase 'ranges in'. */
     public static final String RANGES_IN = b(RANGES, IN);
+    /** Constant representing ranger result. */
     public static final String RANGER_RESULT = s(c(RANGER), c(RESULT));
 }

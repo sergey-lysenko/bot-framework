@@ -48,6 +48,8 @@ public interface _Core {
     _Test getTest();
 
     /**
+     * Checks if execution is performed from a Jar file.
+     *
      * @return true if execution is performed from Jar file
      */
     boolean isInJar();

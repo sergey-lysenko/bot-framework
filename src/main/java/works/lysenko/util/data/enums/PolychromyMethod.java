@@ -6,8 +6,11 @@ package works.lysenko.util.data.enums;
  * The available method is:
  * - EUCLIDEAN_DISTANCE: Euclidean distance method
  */
-@SuppressWarnings("MissingJavadoc")
 public enum PolychromyMethod {
+
+    /**
+     * Euclidean distance calculation method.
+     */
     EUCLIDEAN_DISTANCE;
 
     /**

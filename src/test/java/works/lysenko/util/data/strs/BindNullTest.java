@@ -24,6 +24,8 @@ class BindNullTest {
 
         assertEquals("a  b", Bind.b(true, "a", "", "b"));
         assertEquals("a b", Bind.b(false, "a", "", "b"));
+        assertEquals("a--b", Bind.b(true, '-', "a", "", "b"));
+        assertEquals("a-b", Bind.b(false, '-', "a", "", "b"));
     }
 
     @Test
@@ -54,3 +56,4 @@ class BindNullTest {
         assertEquals("v", Null.sn("d", "v"));
     }
 }
+

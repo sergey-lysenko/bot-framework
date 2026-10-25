@@ -262,9 +262,9 @@ public final class PropertyValidator {
                     return "Expected a boolean: true or false";
                 }
             } else if (Integer.class == type) {
-                Integer.parseInt(value);
+                works.lysenko.base.util.StringParser.parseSuffixedInt(value);
             } else if (Long.class == type) {
-                Long.parseLong(value);
+                works.lysenko.base.util.StringParser.parseSuffixedLong(value);
             } else if (Double.class == type) {
                 finite(Double.parseDouble(value));
             } else if (Float.class == type) {
@@ -317,9 +317,9 @@ public final class PropertyValidator {
 
     public static synchronized List<String> getAllKnownProperties() {
         if (cachedProperties == null) {
-            cachedProperties = new ArrayList<>();
+            List<String> tempProperties = new ArrayList<>();
             for (final _PropEnum p : getAllPropEnumConstants()) {
-                cachedProperties.add(p.getPropertyName());
+                tempProperties.add(p.getPropertyName());
             }
 
             String rootPackage = PropEnum._TEST_ROOT.get();
@@ -356,8 +356,8 @@ public final class PropertyValidator {
             } catch (final Exception ignored) {
             }
 
-            cachedProperties.addAll(scenarioNames);
-            cachedProperties = cachedProperties.stream().distinct().sorted().collect(Collectors.toList());
+            tempProperties.addAll(scenarioNames);
+            cachedProperties = tempProperties.stream().distinct().sorted().collect(Collectors.toList());
         }
         return cachedProperties;
     }

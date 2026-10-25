@@ -56,8 +56,8 @@ public final class TreeTracker {
     private static final int CARD_HEIGHT = 46;
     private static final int HEADER_HEIGHT = 60;
     private static final int PADDING_X = 40;
-    private static final int PADDING_Y = 24;
-    private static final int BOTTOM_PADDING = 40;
+    private static final int PADDING_Y = 32;
+    private static final int BOTTOM_PADDING = 32;
 
     private static final int FPS = 10;
     private static final int DELAY_CENTISECONDS = 100 / FPS; // 100ms
@@ -100,6 +100,14 @@ public final class TreeTracker {
     private static volatile TreeHtml.AccessibleContext cachedAccessibleContext = null;
     private static volatile Map<TreeHtml.NodeData, Boolean> cachedExecutable = null;
 
+    private static volatile int sessionBaseW = 0;
+    private static volatile int sessionBaseH = 0;
+
+    private static volatile double currentZoom = 1.0;
+    private static volatile double currentTranslateX = 0.0;
+    private static volatile double currentTranslateY = 0.0;
+    private static volatile boolean transformInitialized = false;
+
     private static volatile java.awt.TexturePaint cachedDotPaint = null;
 
     private TreeTracker() {
@@ -114,6 +122,12 @@ public final class TreeTracker {
         customOutputDir = null;
         latestFrameImage = null;
         previousExecutions.clear();
+        sessionBaseW = 0;
+        sessionBaseH = 0;
+        currentZoom = 1.0;
+        currentTranslateX = 0.0;
+        currentTranslateY = 0.0;
+        transformInitialized = false;
         invalidateCache();
     }
 
@@ -250,6 +264,33 @@ public final class TreeTracker {
         final TreeLayout layout = TreeHtml.computeLayout(sorted);
         if (layout.nodes().isEmpty())
             return;
+
+        if (sessionBaseW <= 0 || sessionBaseH <= 0 || capturedFrames.isEmpty()) {
+            int fullMaxCol = 0;
+            double fullMaxRow = 0.0;
+            for (final NodeData n : layout.nodes()) {
+                if (n.col() > fullMaxCol) fullMaxCol = n.col();
+                if (n.row() > fullMaxRow) fullMaxRow = n.row();
+            }
+            sessionBaseW = (int) evenDimension(Math.max(800L, ((long) fullMaxCol + 1L) * COL_WIDTH + PADDING_X * 2L));
+            sessionBaseH = (int) evenDimension(Math.max(
+                    400L,
+                    (long) Math.ceil((fullMaxRow + 1.0) * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y + BOTTOM_PADDING)));
+        } else {
+            int currentMaxCol = 0;
+            double currentMaxRow = 0.0;
+            for (final NodeData n : layout.nodes()) {
+                if (n.col() > currentMaxCol) currentMaxCol = n.col();
+                if (n.row() > currentMaxRow) currentMaxRow = n.row();
+            }
+            final int currW = (int) evenDimension(Math.max(800L, ((long) currentMaxCol + 1L) * COL_WIDTH + PADDING_X * 2L));
+            final int currH = (int) evenDimension(Math.max(
+                    400L,
+                    (long) Math.ceil((currentMaxRow + 1.0) * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y + BOTTOM_PADDING)));
+            if (currW > sessionBaseW) sessionBaseW = currW;
+            if (currH > sessionBaseH) sessionBaseH = currH;
+        }
+
         final int target = (isNotNull(parameters)) ? parameters.getAllLeafsExecutions()
                 : (isNotNull(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) : 1);
         final String badgeText = isNotNull(testNumber)
@@ -276,8 +317,9 @@ public final class TreeTracker {
                 logDebug(String.format("Collected %d accessible scenarios in %d ms", accessibleScenarios.size(), System.currentTimeMillis() - tAccStart));
             }
 
-            image = renderTreeProgression(layout, target, badgeText, recentNodeKeys, accessibleScenarios, accessibleCtx);
-            svgContent = renderTreeProgressionSvg(layout, target, badgeText, recentNodeKeys, accessibleScenarios, accessibleCtx);
+            final Transform tx = computeSmoothTransform(layout, recentNodeKeys, target, sessionBaseW, sessionBaseH);
+            image = renderTreeProgression(layout, target, badgeText, recentNodeKeys, accessibleScenarios, accessibleCtx, tx);
+            svgContent = renderTreeProgressionSvg(layout, target, badgeText, recentNodeKeys, accessibleScenarios, accessibleCtx, tx);
             updatePreviousExecutions(layout);
         } catch (final IllegalArgumentException e) {
             System.err.println("Skipped tree progression frame: " + e.getMessage());
@@ -677,6 +719,108 @@ public final class TreeTracker {
         return renderTreeProgressionSvg(layout, target, badgeText, recentNodeKeys, accessibleScenarios, (null != cachedAccessibleContext) ? cachedAccessibleContext : new TreeHtml.AccessibleContext(accessibleScenarios));
     }
 
+    private record FocusBounds(int minCol, int maxCol, double minRow, double maxRow) {}
+
+    private static FocusBounds computeActiveFocusBounds(
+            final TreeLayout layout,
+            final Set<String> recentNodeKeys,
+            final int target) {
+
+        final double focusMinRow = 1.0;
+        double focusMaxRow = 1.0;
+        int focusMaxCol = 0;
+
+        final Set<NodeData> focusNodes = new HashSet<>();
+
+        for (final NodeData n : layout.nodes()) {
+            if (recentNodeKeys.contains(n.id())) {
+                focusNodes.add(n);
+                if (null != n.parent()) focusNodes.add(n.parent());
+            }
+        }
+
+        for (final NodeData n : layout.nodes()) {
+            final int execs = (null != n.result()) ? n.result().getExecutions() : 0;
+            if (n.children().isEmpty() && isTerminalScenario(n) && execs < getTargetExecutions(n, target)) {
+                focusNodes.add(n);
+                if (null != n.parent()) focusNodes.add(n.parent());
+            }
+        }
+
+        if (focusNodes.isEmpty()) {
+            focusNodes.addAll(layout.nodes());
+        }
+
+        for (final NodeData n : focusNodes) {
+            if (n.col() > focusMaxCol) focusMaxCol = n.col();
+            if (n.row() > focusMaxRow) focusMaxRow = n.row();
+        }
+
+        if (focusMaxRow < 1.0) focusMaxRow = 1.0;
+
+        if (focusMaxRow - focusMinRow < 2.0) {
+            focusMaxRow = focusMinRow + 2.0;
+        }
+
+        return new FocusBounds(0, focusMaxCol, focusMinRow, focusMaxRow);
+    }
+
+    record Transform(double zoom, double translateX, double translateY) {}
+
+    static Transform computeZoomTransform(final TreeLayout layout, final Set<String> recentNodeKeys, final int target, final int baseW, final int baseH) {
+        final FocusBounds bounds = computeActiveFocusBounds(layout, recentNodeKeys, target);
+
+        final double activeLeft = bounds.minCol() * COL_WIDTH + PADDING_X;
+        final double activeRight = bounds.maxCol() * COL_WIDTH + CARD_WIDTH + PADDING_X;
+        final double activeTop = bounds.minRow() * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y;
+        final double activeBottom = bounds.maxRow() * ROW_HEIGHT + CARD_HEIGHT + HEADER_HEIGHT + PADDING_Y;
+
+        final double activeW = Math.max(CARD_WIDTH, activeRight - activeLeft);
+        final double activeH = Math.max(CARD_HEIGHT, activeBottom - activeTop);
+
+        final double activeCenterX = (activeLeft + activeRight) / 2.0;
+        final double activeCenterY = (activeTop + activeBottom) / 2.0;
+
+        final double availW = baseW - PADDING_X * 2.0;
+        final double availH = baseH - HEADER_HEIGHT - PADDING_Y - BOTTOM_PADDING;
+
+        final double scaleX = availW / activeW;
+        final double scaleY = availH / activeH;
+        final double zoom = Math.max(1.0, Math.min(Math.min(scaleX, scaleY), 4.0));
+
+        final double targetCenterX = baseW / 2.0;
+        final double targetCenterY = HEADER_HEIGHT + PADDING_Y + availH / 2.0;
+
+        final double translateX = targetCenterX - activeCenterX * zoom;
+        final double translateY = targetCenterY - activeCenterY * zoom;
+
+        return new Transform(zoom, translateX, translateY);
+    }
+
+    static synchronized Transform computeSmoothTransform(
+            final TreeLayout layout,
+            final Set<String> recentNodeKeys,
+            final int target,
+            final int baseW,
+            final int baseH) {
+
+        final Transform targetTx = computeZoomTransform(layout, recentNodeKeys, target, baseW, baseH);
+
+        if (!transformInitialized) {
+            currentZoom = targetTx.zoom();
+            currentTranslateX = targetTx.translateX();
+            currentTranslateY = targetTx.translateY();
+            transformInitialized = true;
+        } else {
+            final double alpha = 0.20;
+            currentZoom += alpha * (targetTx.zoom() - currentZoom);
+            currentTranslateX += alpha * (targetTx.translateX() - currentTranslateX);
+            currentTranslateY += alpha * (targetTx.translateY() - currentTranslateY);
+        }
+
+        return new Transform(currentZoom, currentTranslateX, currentTranslateY);
+    }
+
     public static String renderTreeProgressionSvg(
             final TreeLayout layout,
             final int target,
@@ -684,6 +828,17 @@ public final class TreeTracker {
             final Set<String> recentNodeKeys,
             final Set<_Scenario> accessibleScenarios,
             final TreeHtml.AccessibleContext accessibleCtx) {
+        return renderTreeProgressionSvg(layout, target, badgeText, recentNodeKeys, accessibleScenarios, accessibleCtx, null);
+    }
+
+    public static String renderTreeProgressionSvg(
+            final TreeLayout layout,
+            final int target,
+            final String badgeText,
+            final Set<String> recentNodeKeys,
+            final Set<_Scenario> accessibleScenarios,
+            final TreeHtml.AccessibleContext accessibleCtx,
+            final Transform overrideTx) {
 
         final TreeHtml.AccessibleContext ctx = (null != accessibleCtx) ? accessibleCtx : new TreeHtml.AccessibleContext(accessibleScenarios);
         Map<NodeData, Boolean> execCache = cachedExecutable;
@@ -694,18 +849,19 @@ public final class TreeTracker {
         final Map<NodeData, Boolean> executableCache = execCache;
         final Map<NodeData, Boolean> childFailureCache = new HashMap<>();
 
-        int maxCol = 0;
-        double maxRow = 0.0;
         int totalLeafs = 0;
         int coveredLeafs = 0;
         int totalExecs = 0;
         double maxLeafOverRatio = 0.0;
 
+        int fullMaxCol = 0;
+        double fullMaxRow = 0.0;
+
         final int totalStatsNodes = layout.nodes().size();
         for (int i = 0; i < totalStatsNodes; i++) {
             final NodeData n = layout.nodes().get(i);
-            if (n.col() > maxCol) maxCol = n.col();
-            if (n.row() > maxRow) maxRow = n.row();
+            if (n.col() > fullMaxCol) fullMaxCol = n.col();
+            if (n.row() > fullMaxRow) fullMaxRow = n.row();
             final int execs = (null != n.result()) ? n.result().getExecutions() : 0;
             totalExecs += execs;
             if (ScenarioType.LEAF == getScenarioType(n)) {
@@ -719,17 +875,27 @@ public final class TreeTracker {
             }
         }
 
-        final long canvasWidth = evenDimension(Math.max(1280L, ((long) maxCol + 1L) * COL_WIDTH + PADDING_X * 2L));
-        final long canvasHeight = evenDimension(Math.max(
-                720L,
-                (long) Math.ceil((maxRow + 1.0) * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y + BOTTOM_PADDING)));
-        final int canvasW = (int) canvasWidth;
-        final int canvasH = (int) canvasHeight;
+        final int baseW;
+        final int baseH;
+        if (sessionBaseW > 0 && sessionBaseH > 0) {
+            baseW = sessionBaseW;
+            baseH = sessionBaseH;
+        } else {
+            baseW = (int) evenDimension(Math.max(800L, ((long) fullMaxCol + 1L) * COL_WIDTH + PADDING_X * 2L));
+            baseH = (int) evenDimension(Math.max(
+                    400L,
+                    (long) Math.ceil((fullMaxRow + 1.0) * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y + BOTTOM_PADDING)));
+        }
+
+        final Transform tx = (null != overrideTx) ? overrideTx : computeZoomTransform(layout, recentNodeKeys, target, baseW, baseH);
+        final double zoom = tx.zoom();
+        final double translateX = tx.translateX();
+        final double translateY = tx.translateY();
 
         final StringBuilder sb = new StringBuilder();
         sb.append(String.format(Locale.US,
                 "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%d\" height=\"%d\" viewBox=\"0 0 %d %d\">\n",
-                canvasW, canvasH, canvasW, canvasH));
+                baseW, baseH, baseW, baseH));
         sb.append("  <defs>\n");
         sb.append("    <pattern id=\"dot-grid\" width=\"24\" height=\"24\" patternUnits=\"userSpaceOnUse\" y=\"60\">\n");
         sb.append("      <rect width=\"24\" height=\"24\" fill=\"#0F172A\" />\n");
@@ -755,7 +921,11 @@ public final class TreeTracker {
         sb.append("  <rect width=\"100%\" height=\"100%\" fill=\"#0F172A\" />\n");
         sb.append(String.format(Locale.US,
                 "  <rect x=\"0\" y=\"60\" width=\"%d\" height=\"%d\" fill=\"url(#dot-grid)\" />\n",
-                canvasW, canvasH - 60));
+                baseW, baseH - 60));
+
+        sb.append(String.format(Locale.US,
+                "  <g transform=\"translate(%.2f, %.2f) scale(%.4f)\">\n",
+                translateX, translateY, zoom));
 
         final List<Edge> sortedEdges = new ArrayList<>(layout.edges());
         sortedEdges.sort(Comparator.comparingInt(e -> {
@@ -811,16 +981,18 @@ public final class TreeTracker {
 
         final boolean isAllLeafs = (null != works.lysenko.Base.parameters) ? works.lysenko.Base.parameters.isAllLeafs() : false;
         final works.lysenko.base.output.tree.VisualNodeResolver nodeResolver =
-                new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, false, true);
+                new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, false, true, 0.0);
         final List<works.lysenko.base.output.tree.VisualNode> visualNodes = new ArrayList<>();
         for (final NodeData n : layout.nodes()) {
             visualNodes.add(nodeResolver.resolve(n, recentNodeKeys.contains(n.id()), childFailureCache, executableCache));
         }
         sb.append(new works.lysenko.base.output.tree.HtmlTreeRenderer(works.lysenko.base.output.tree.TreeTheme.DEFAULT).renderNodes(visualNodes));
 
+        sb.append("  </g>\n");
+
         sb.append(String.format(Locale.US,
                 "  <rect x=\"0\" y=\"0\" width=\"%d\" height=\"60\" fill=\"#1E293B\" stroke=\"#334155\" stroke-width=\"1\" />\n",
-                canvasW));
+                baseW));
         sb.append(String.format(Locale.US,
                 "  <circle cx=\"%d\" cy=\"30\" r=\"6\" fill=\"#38BDF8\" />\n",
                 PADDING_X + 6));
@@ -828,7 +1000,7 @@ public final class TreeTracker {
                 "  <text class=\"tx4\" x=\"%d\" y=\"35\">Scenario Execution Tree Progression</text>\n",
                 PADDING_X + 22));
 
-        int rightX = canvasW - PADDING_X;
+        int rightX = baseW - PADDING_X;
         final int topY = (HEADER_HEIGHT - 22) / 2;
 
         final String elapsedText = (isNotNull(timer))
@@ -836,6 +1008,9 @@ public final class TreeTracker {
                 : "Elapsed: --:--:--";
         rightX = appendHeaderBadgeSvg(sb, elapsedText, rightX, topY, "#334155", "#F8FAFC");
         rightX = appendHeaderBadgeSvg(sb, totalExecs + " total execs", rightX, topY, "#334155", "#F8FAFC");
+
+        final String zoomStr = String.format(Locale.US, "Zoom: %.1fx", zoom);
+        rightX = appendHeaderBadgeSvg(sb, zoomStr, rightX, topY, "#0284C7", "#FFFFFF");
 
         final String covBg = (coveredLeafs == totalLeafs && totalLeafs > 0) ? "#166534" : "#B45309";
         rightX = appendHeaderBadgeSvg(sb, "Leafs: " + coveredLeafs + "/" + totalLeafs, rightX, topY, covBg, "#F8FAFC");
@@ -947,6 +1122,17 @@ public final class TreeTracker {
             final Set<String> recentNodeKeys,
             final Set<_Scenario> accessibleScenarios,
             final TreeHtml.AccessibleContext accessibleCtx) {
+        return renderTreeProgression(layout, target, badgeText, recentNodeKeys, accessibleScenarios, accessibleCtx, null);
+    }
+
+    public static BufferedImage renderTreeProgression(
+            final TreeLayout layout,
+            final int target,
+            final String badgeText,
+            final Set<String> recentNodeKeys,
+            final Set<_Scenario> accessibleScenarios,
+            final TreeHtml.AccessibleContext accessibleCtx,
+            final Transform overrideTx) {
 
         final long tRenderStart = System.currentTimeMillis();
         final TreeHtml.AccessibleContext ctx = (null != accessibleCtx) ? accessibleCtx : new TreeHtml.AccessibleContext(accessibleScenarios);
@@ -960,8 +1146,6 @@ public final class TreeTracker {
         
         final Map<NodeData, Boolean> childFailureCache = new HashMap<>();
 
-        int maxCol = 0;
-        double maxRow = 0.0;
         int totalLeafs = 0;
         int coveredLeafs = 0;
         int totalExecs = 0;
@@ -978,10 +1162,6 @@ public final class TreeTracker {
 
         for (int i = 0; i < totalStatsNodes; i++) {
             final NodeData n = layout.nodes().get(i);
-            if (n.col() > maxCol)
-                maxCol = n.col();
-            if (n.row() > maxRow)
-                maxRow = n.row();
             final int execs = (null != n.result()) ? n.result().getExecutions() : 0;
             totalExecs += execs;
             if (ScenarioType.LEAF == getScenarioType(n)) {
@@ -1001,21 +1181,38 @@ public final class TreeTracker {
             }
         }
 
-        final long canvasWidth = evenDimension(Math.max(1280L, ((long) maxCol + 1L) * COL_WIDTH + PADDING_X * 2L));
-        final long canvasHeight = evenDimension(Math.max(
-                720L,
-                (long) Math.ceil((maxRow + 1.0) * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y + BOTTOM_PADDING)));
-        final long maxPixels = ProgressionFrames.maxFramePixels(ProgressionSettings.current().maxFramePixels());
-        if (canvasWidth > ProgressionFrames.MAX_DIMENSION
-                || canvasHeight > ProgressionFrames.MAX_DIMENSION
-                || canvasWidth * canvasHeight > maxPixels) {
-            throw new IllegalArgumentException("Rendered tree frame would exceed the configured limit ("
-                    + canvasWidth + "x" + canvasHeight + ", max pixels " + maxPixels + ")");
+        final int baseW;
+        final int baseH;
+        if (sessionBaseW > 0 && sessionBaseH > 0) {
+            baseW = sessionBaseW;
+            baseH = sessionBaseH;
+        } else {
+            int fullMaxCol = 0;
+            double fullMaxRow = 0.0;
+            for (final NodeData n : layout.nodes()) {
+                if (n.col() > fullMaxCol) fullMaxCol = n.col();
+                if (n.row() > fullMaxRow) fullMaxRow = n.row();
+            }
+            baseW = (int) evenDimension(Math.max(800L, ((long) fullMaxCol + 1L) * COL_WIDTH + PADDING_X * 2L));
+            baseH = (int) evenDimension(Math.max(
+                    400L,
+                    (long) Math.ceil((fullMaxRow + 1.0) * ROW_HEIGHT + HEADER_HEIGHT + PADDING_Y + BOTTOM_PADDING)));
         }
-        final int canvasW = (int) canvasWidth;
-        final int canvasH = (int) canvasHeight;
 
-        final BufferedImage img = new BufferedImage(canvasW, canvasH, BufferedImage.TYPE_INT_RGB);
+        final Transform tx = (null != overrideTx) ? overrideTx : computeZoomTransform(layout, recentNodeKeys, target, baseW, baseH);
+        final double zoom = tx.zoom();
+        final double translateX = tx.translateX();
+        final double translateY = tx.translateY();
+
+        final long maxPixels = ProgressionFrames.maxFramePixels(ProgressionSettings.current().maxFramePixels());
+        if (baseW > ProgressionFrames.MAX_DIMENSION
+                || baseH > ProgressionFrames.MAX_DIMENSION
+                || (long) baseW * baseH > maxPixels) {
+            throw new IllegalArgumentException("Rendered tree frame would exceed the configured limit ("
+                    + baseW + "x" + baseH + ", max pixels " + maxPixels + ")");
+        }
+
+        final BufferedImage img = new BufferedImage(baseW, baseH, BufferedImage.TYPE_INT_RGB);
         final Graphics2D g = img.createGraphics();
 
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -1023,11 +1220,10 @@ public final class TreeTracker {
 
         // Fill background
         g.setColor(BG_COLOR);
-        g.fillRect(0, 0, canvasW, canvasH);
+        g.fillRect(0, 0, baseW, baseH);
 
         java.awt.TexturePaint dotPaint = cachedDotPaint;
         if (dotPaint == null) {
-            // Dot grid pattern using TexturePaint tile
             final BufferedImage dotTile = new BufferedImage(24, 24, BufferedImage.TYPE_INT_RGB);
             final Graphics2D tileG = dotTile.createGraphics();
             tileG.setColor(BG_COLOR);
@@ -1041,9 +1237,14 @@ public final class TreeTracker {
             cachedDotPaint = dotPaint;
         }
         g.setPaint(dotPaint);
-        g.fillRect(0, HEADER_HEIGHT, canvasW, canvasH - HEADER_HEIGHT);
+        g.fillRect(0, HEADER_HEIGHT, baseW, baseH - HEADER_HEIGHT);
 
         final long tInit = System.currentTimeMillis() - tRenderStart;
+
+        // Apply zoom transform for edges & nodes
+        final java.awt.geom.AffineTransform origTx = g.getTransform();
+        g.translate(translateX, translateY);
+        g.scale(zoom, zoom);
 
         // Draw edges
         final long tEdgeStart = System.currentTimeMillis();
@@ -1054,7 +1255,7 @@ public final class TreeTracker {
         final long tNodeStart = System.currentTimeMillis();
         final boolean isAllLeafs = (null != works.lysenko.Base.parameters) ? works.lysenko.Base.parameters.isAllLeafs() : false;
         final works.lysenko.base.output.tree.VisualNodeResolver nodeResolver =
-                new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, false, true);
+                new works.lysenko.base.output.tree.VisualNodeResolver(works.lysenko.base.output.tree.TreeTheme.DEFAULT, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, false, true, 0.0);
         final List<works.lysenko.base.output.tree.VisualNode> visualNodes = new ArrayList<>();
         final int totalNodes = layout.nodes().size();
         final Set<Integer> nodeMilestones = new HashSet<>();
@@ -1078,13 +1279,16 @@ public final class TreeTracker {
         new works.lysenko.base.output.tree.GraphicsTreeRenderer(works.lysenko.base.output.tree.TreeTheme.DEFAULT).renderNodes(g, visualNodes);
         final long tNodes = System.currentTimeMillis() - tNodeStart;
 
+        // Restore transform for header
+        g.setTransform(origTx);
+
         // Draw header
-        drawHeader(g, canvasW, badgeText, target, coveredLeafs, totalLeafs, totalExecs);
+        drawHeader(g, baseW, badgeText, target, coveredLeafs, totalLeafs, totalExecs, zoom);
 
         g.dispose();
         final long tTotal = System.currentTimeMillis() - tRenderStart;
         logDebug(String.format("Canvas (%dx%d) in %d ms (init: %d ms, edges: %d ms, nodes: %d ms)",
-                canvasW, canvasH, tTotal, tInit, tEdges, tNodes));
+                baseW, baseH, tTotal, tInit, tEdges, tNodes));
         return img;
     }
 
@@ -1120,6 +1324,7 @@ public final class TreeTracker {
                 final int percent = (int) Math.round((current * 100.0) / totalEdges);
                 logTrace(String.format("edges: %d/%d (%d%%)", current, totalEdges, percent));
             }
+
             final int startX = e.from().col() * COL_WIDTH + CARD_WIDTH + PADDING_X;
             final int startY = (int) Math
                     .round(e.from().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + HEADER_HEIGHT + PADDING_Y);
@@ -1236,7 +1441,8 @@ public final class TreeTracker {
             final int target,
             final int coveredLeafs,
             final int totalLeafs,
-            final int totalExecs) {
+            final int totalExecs,
+            final double zoom) {
 
         g.setColor(HEADER_BG);
         g.fillRect(0, 0, canvasW, HEADER_HEIGHT);
@@ -1259,6 +1465,9 @@ public final class TreeTracker {
         rightX -= drawBadge(g, elapsedText, rightX, topY, new Color(51, 65, 85), TEXT_WHITE) + 10;
 
         rightX -= drawBadge(g, totalExecs + " total execs", rightX, topY, new Color(51, 65, 85), TEXT_WHITE) + 10;
+
+        final String zoomStr = String.format(Locale.US, "Zoom: %.1fx", zoom);
+        rightX -= drawBadge(g, zoomStr, rightX, topY, new Color(2, 132, 199), Color.WHITE) + 10;
 
         final Color covBg = (coveredLeafs == totalLeafs && totalLeafs > 0) ? new Color(22, 101, 52)
                 : new Color(180, 83, 9);

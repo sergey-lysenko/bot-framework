@@ -26,7 +26,6 @@ import static works.lysenko.util.spec.Numbers.ZERO;
  */
 public record Routines() {
 
-
     /**
      * Calculates the coordinates of a grid element based on the given parameters.
      *
@@ -47,11 +46,11 @@ public record Routines() {
     }
 
     /**
-     * Returns the GridLocation representing the requested grid location based on the given Request and BufferedImage.
+     * Returns the Geometry representing the requested grid location based on the given Request and RenderedImage.
      *
      * @param vr The Request object containing the necessary parameters for calculating the requested grid location.
-     * @param bi The BufferedImage object from which the grid location is determined.
-     * @return The GridLocation object representing the requested grid location.
+     * @param bi The RenderedImage object from which the grid location is determined.
+     * @return The Geometry object representing the requested grid location, or null if parameters are missing.
      */
     @SuppressWarnings("MethodWithMultipleReturnPoints")
     public static Geometry getRequestedGridLocation(final Request vr, final RenderedImage bi) {

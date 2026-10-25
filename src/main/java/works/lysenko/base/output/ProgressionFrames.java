@@ -1,6 +1,7 @@
 package works.lysenko.base.output;
 
 import com.github.weisj.jsvg.SVGDocument;
+import com.github.weisj.jsvg.attributes.ViewBox;
 import com.github.weisj.jsvg.geometry.size.FloatSize;
 import com.github.weisj.jsvg.parser.SVGLoader;
 
@@ -187,8 +188,9 @@ final class ProgressionFrames {
             final int height) {
         final long totalPixelLimit = Math.max(1L, configuredMaxTotalPixels);
         final long pixelsPerFrame = Math.max(1L, (long) width * height);
-        final int totalPixelFrames = (int) Math.max(1L, totalPixelLimit / pixelsPerFrame);
-        return Math.min(maxFrames(configuredMaxFrames), totalPixelFrames);
+        final long totalPixelFrames = Math.max(1L, totalPixelLimit / pixelsPerFrame);
+        final int boundedFrames = (int) Math.min((long) Integer.MAX_VALUE, totalPixelFrames);
+        return Math.min(maxFrames(configuredMaxFrames), boundedFrames);
     }
 
     static BufferedImage read(final File file, final int maxFramePixels) throws IOException {
@@ -215,7 +217,17 @@ final class ProgressionFrames {
                     final Graphics2D g = padded.createGraphics();
                     g.setColor(new Color(0x0F, 0x17, 0x2A));
                     g.fillRect(0, 0, targetWidth, targetHeight);
-                    g.drawImage(src, 0, 0, null);
+
+                    final float scaleX = (float) targetWidth / width;
+                    final float scaleY = (float) targetHeight / height;
+                    final float scale = Math.min(scaleX, scaleY);
+                    final int scaledW = Math.round(width * scale);
+                    final int scaledH = Math.round(height * scale);
+                    final int translateX = (targetWidth - scaledW) / 2;
+                    final int translateY = (targetHeight - scaledH) / 2;
+
+                    g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                    g.drawImage(src, translateX, translateY, scaledW, scaledH, null);
                     g.dispose();
                     return padded;
                 }
@@ -234,16 +246,35 @@ final class ProgressionFrames {
             final FloatSize size = doc.size();
             final int svgWidth = (int) Math.ceil(size.width);
             final int svgHeight = (int) Math.ceil(size.height);
-            final int width = targetWidth > 0 ? Math.max(targetWidth, svgWidth) : svgWidth;
-            final int height = targetHeight > 0 ? Math.max(targetHeight, svgHeight) : svgHeight;
+            final int width = targetWidth > 0 ? targetWidth : svgWidth;
+            final int height = targetHeight > 0 ? targetHeight : svgHeight;
             validateDimensions(file, width, height, maxFramePixels);
+            
             final BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
             final Graphics2D g = img.createGraphics();
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            
             g.setColor(new Color(0x0F, 0x17, 0x2A));
             g.fillRect(0, 0, width, height);
-            doc.render(null, g);
+
+            if (targetWidth > 0 && targetHeight > 0) {
+                final float scaleX = (float) targetWidth / svgWidth;
+                final float scaleY = (float) targetHeight / svgHeight;
+                final float scale = Math.min(scaleX, scaleY);
+                
+                final float scaledWidth = svgWidth * scale;
+                final float scaledHeight = svgHeight * scale;
+                final float translateX = (targetWidth - scaledWidth) / 2f;
+                final float translateY = (targetHeight - scaledHeight) / 2f;
+                
+                g.translate(translateX, translateY);
+                g.scale(scale, scale);
+            }
+            
+            doc.render(null, g, new ViewBox(0, 0, size.width, size.height));
             g.dispose();
             return img;
         } catch (final LinkageError e) {

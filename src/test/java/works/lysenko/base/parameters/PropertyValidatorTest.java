@@ -47,6 +47,9 @@ class PropertyValidatorTest {
         assertNull(PropertyValidator.validate(".test.report.progression.max.frames", "100"));
         assertNotNull(PropertyValidator.validate(".test.report.progression.max.frames", "abc"));
         assertNotNull(PropertyValidator.validate(".test.report.progression.max.frames", " 10"));
+        assertNull(PropertyValidator.validate(".test.report.progression.max.frame.pixels", "168M"));
+        assertNull(PropertyValidator.validate(".test.report.progression.max.total.pixels", "2000M"));
+        assertNull(PropertyValidator.validate(".test.report.progression.max.total.pixels", "2G"));
         assertNull(PropertyValidator.validate(".test.report.progression.tree", "TRUE"));
         assertNotNull(PropertyValidator.validate(".test.report.progression.tree", "yes"));
         assertNull(PropertyValidator.validate(".test.assertions.severity", "S0"));

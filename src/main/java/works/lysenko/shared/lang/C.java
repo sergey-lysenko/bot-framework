@@ -7,8 +7,14 @@ import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.lang.word.C.CLOSING;
 import static works.lysenko.util.lang.word.D.DIALOGUE;
 
-@SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "WeakerAccess"})
+/**
+ * Shared language string constants starting with 'C'.
+ */
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "WeakerAccess"})
 public record C() {
 
+    /**
+     * String constant for "Closing the dialogue box".
+     */
     public static final String CLOSING_THE_DIALOGUE_BOX = b(c(CLOSING), THE, DIALOGUE, BOX);
 }

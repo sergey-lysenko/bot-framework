@@ -57,7 +57,7 @@ public record Compressor() {
      */
     @SuppressWarnings("unused")
     public static String decompress(final String compressed) {
-        if (isNull(compressed)|| compressed.isEmpty()) return compressed;
+        if (isNull(compressed) || compressed.isEmpty()) return compressed;
 
         final byte[] data = Base64.getUrlDecoder().decode(compressed);
         final Inflater inflater = new Inflater();

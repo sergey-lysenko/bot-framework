@@ -11,8 +11,12 @@ import static works.lysenko.util.lang.word.W.WRITE;
 import static works.lysenko.util.lang.word.W.WRITER;
 import static works.lysenko.util.spec.Symbols.*;
 
-@SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "AutoBoxing"})
+/**
+ * Language utility constants starting with L.
+ */
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing"})
 public record L() {
 
+    /** Constant representing log writer is not initialised message. */
     public static final String LOG_WRITER_IS_NOT___ = b(s(c(LOG), c(WRITER)), IS, NOT, s(INITIALISED, _COMMA_), UNABLE, TO, WRITE, LOG);
 }

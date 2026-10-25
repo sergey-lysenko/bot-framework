@@ -8,6 +8,11 @@ import works.lysenko.util.apis.exception.checked.*;
  */
 public class Specifics extends Exceptional {
 
+    /**
+     * Performs exceptional execution actions when unresolved issues exist.
+     *
+     * @throws SafeguardException if a safeguard assertion fails
+     */
     @Override
     public final void action() throws SafeguardException {
 

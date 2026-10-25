@@ -13,9 +13,14 @@ import static works.lysenko.util.lang.word.F.FRACTION;
 import static works.lysenko.util.lang.word.V.VALUES;
 import static works.lysenko.util.spec.Symbols._COLON_;
 
-@SuppressWarnings({"MissingJavadoc", "StaticMethodOnlyUsedInOneClass"})
+/**
+ * Language utility constants starting with V.
+ */
+@SuppressWarnings({"StaticMethodOnlyUsedInOneClass"})
 public record V() {
 
+    /** Constant representing value is too big to convert to fraction message. */
     public static final String VALUE_IS_TO_BIG___ = b(c(VALUE), IS, TOO, BIG, TO, CONVERT, TO, s(c(FRACTION), _COLON_));
+    /** Constant representing values are not equal message. */
     public static final String VALUES_ARE_NOT_EQUAL = b(c(VALUES), ARE, NOT, EQUAL);
 }

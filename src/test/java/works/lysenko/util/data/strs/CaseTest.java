@@ -24,7 +24,8 @@ class CaseTest {
     void lowerCasesStrings() {
 
         assertEquals("example", Case.l("EXAMPLE"));
-        assertEquals("example", Case.l("example"));
+        assertEquals("example", Case.l("EXAMPLE", false));
+        assertEquals("example", Case.l("example", true));
     }
 
     @Test
@@ -34,3 +35,4 @@ class CaseTest {
         assertEquals("EXAMPLE", Case.u("EXAMPLE"));
     }
 }
+

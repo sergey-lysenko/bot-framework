@@ -68,4 +68,20 @@ class ProgressionFramesTest {
         assertEquals("frame_9999.png", frames.get(1).getName());
         assertEquals("frame_10000.png", frames.get(2).getName());
     }
+
+    @Test
+    void rendersSvgScaledUpToTargetDimensions(@TempDir final Path tempDir) throws IOException {
+        final Path svgFile = tempDir.resolve("frame_0001.svg");
+        final String svgContent = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\" viewBox=\"0 0 100 100\">" +
+                "<rect width=\"100\" height=\"100\" fill=\"#FF0000\" />" +
+                "</svg>";
+        Files.writeString(svgFile, svgContent);
+
+        final BufferedImage img = ProgressionFrames.renderSvg(svgFile.toFile(), 33554432, 400, 400);
+        assertEquals(400, img.getWidth());
+        assertEquals(400, img.getHeight());
+        // Verify SVG has scaled up and filled the target frame (center & edges are red: 0x00FF0000)
+        assertEquals(0x00FF0000, img.getRGB(200, 200) & 0xFFFFFF);
+        assertEquals(0x00FF0000, img.getRGB(399, 399) & 0xFFFFFF);
+    }
 }

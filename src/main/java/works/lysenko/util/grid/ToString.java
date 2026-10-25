@@ -42,6 +42,13 @@ public class ToString implements _GridToString {
 
     // TODO: rename to better variants
 
+    /**
+     * Converts brightness rates of the grid to a string representation based on fraction quotas and brightness quantity.
+     *
+     * @param brightness  the fraction quotas for brightness
+     * @param brightnessQ the brightness quantity factor
+     * @return a string representation of brightness rates
+     */
     public final String byShares_Brightnesses(final _FractionQuotas brightness, final int brightnessQ) {
 
         return mapToString(grid.getProcessor().getBrightnessesByRates(brightness),
@@ -63,6 +70,13 @@ public class ToString implements _GridToString {
                 value -> ts(fr(value.toString())));
     }
 
+    /**
+     * Converts hue rates of the grid to a string representation based on fraction quotas and hue quantity.
+     *
+     * @param hue  the fraction quotas for hue
+     * @param hueQ the hue quantity factor
+     * @return a string representation of hue rates
+     */
     public final String byShares_Hues(final _FractionQuotas hue, final int hueQ) {
 
         return mapToString(grid.getProcessor().getHuesByRates(hue),
@@ -70,6 +84,13 @@ public class ToString implements _GridToString {
                 value -> ts(fr(value.toString())));
     }
 
+    /**
+     * Converts saturation rates of the grid to a string representation based on fraction quotas and saturation quantity.
+     *
+     * @param saturation  the fraction quotas for saturation
+     * @param saturationQ the saturation quantity factor
+     * @return a string representation of saturation rates
+     */
     public final String byShares_Saturations(final _FractionQuotas saturation, final int saturationQ) {
 
         return mapToString(grid.getProcessor().getSaturationsByRates(saturation),
@@ -84,6 +105,11 @@ public class ToString implements _GridToString {
                 value -> ts(fr(value.toString())));
     }
 
+    /**
+     * Counts pixels by color in the grid and returns a string representation of the color counts.
+     *
+     * @return a string representation of pixel counts grouped by color
+     */
     public final String pixelsCountByColor() {
 
         final Map<Integer, Pair<Integer, String>> map = grid.getCalculator().countPixelsByColor();

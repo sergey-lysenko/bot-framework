@@ -16,21 +16,21 @@ import static works.lysenko.util.data.range.graph.values.fractions.Text.text;
 import static works.lysenko.util.func.type.fractions.Factory.fr;
 
 /**
- * The DataStorage record encapsulates the graph parameters, value, and max value retrieved from given inputs.
+ * The Data record encapsulates the graph parameters, value, and max value retrieved from given inputs.
  *
  * @param gp    The graph parameters.
- * @param value A1 string representing the value.
- * @param max   A1 string representing the maximum value.
+ * @param value A string representing the value.
+ * @param max   A string representing the maximum value.
  */
 public record Data(Parameters gp, String value, String max) {
 
     /**
-     * Creates a new DataStorage instance using the given shares, graph options, and fences.
+     * Creates a new Data instance using the given shares, graph options, and fences.
      *
-     * @param shares A1 map representing the shares of fractions.
+     * @param shares A map representing the shares of fractions.
      * @param go     The graph options used to configure the graph.
      * @param fences An integer representing the number of fences.
-     * @return A1 new instance of DataStorage with computed graph parameters, value, and max value.
+     * @return A new instance of Data with computed graph parameters, value, and max value.
      */
     public static Data data(final Map<Fraction, _ValuedRangeResult> shares, final Options go, final int fences) {
 

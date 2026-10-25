@@ -130,7 +130,7 @@ public interface _TestProperties {
     String readCommonConfiguration();
 
     /**
-     * perform reading of test configuration
+     * Performs reading of test configuration properties.
      */
     void readTestConfiguration();
 

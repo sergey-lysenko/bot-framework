@@ -7,6 +7,9 @@ import static works.lysenko.util.data.strs.Swap.i;
 
 /**
  * Represents a point in a two-dimensional space with float coordinates.
+ *
+ * @param x the x-coordinate of the point
+ * @param y the y-coordinate of the point
  */
 @SuppressWarnings({"MethodNamesDifferingOnlyByCase", "EqualsAndHashcode"})
 public record Location(float x, float y) implements _Location {

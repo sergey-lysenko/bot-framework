@@ -23,7 +23,8 @@ import static works.lysenko.util.lang.word.E.EVENT;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
- * Result of {@link _Scenario} execution
+ * Represents the execution result of a {@(_Scenario)}, tracking execution status, events, weights, and instance counts.
+ * Implements the {@_Result} interface.
  *
  * @author Sergii Lysenko
  */
@@ -32,20 +33,27 @@ import static works.lysenko.util.spec.Symbols.*;
         "ImplicitNumericConversion", "LocalVariableHidesMemberVariable"})
 public class Result implements _Result {
 
-    /**
-     * type of the Scenario
-     */
+    /** The type of the scenario. */
     private final ScenarioType scenarioType;
+    /** The list of log records/events associated with this result. */
     private final List<_LogRecord> events;
+    /** The configured weight of the scenario. */
     private final Fraction configuredWeight;
+    /** The upstream weight of the scenario. */
     private final Fraction upstreamWeight;
+    /** The downstream weight of the scenario. */
     private final Fraction downstreamWeight;
+    /** The current execution status. */
     private ExecutionStatus status = ExecutionStatus.UNVISITED;
+    /** Number of instances of the scenario. */
     private int instances = 0;
+    /** Number of executions of the scenario. */
     private int executions = 0;
 
     /**
-     * @param scenario Scenario for this Result
+     * Constructs a Result object for the specified scenario.
+     *
+     * @param scenario the scenario for this result
      */
     public Result(final _Scenario scenario) {
 
@@ -60,15 +68,15 @@ public class Result implements _Result {
     }
 
     /**
-     * Represents a result of a scenario.
+     * Constructs a Result object with explicitly specified parameters.
      *
-     * @param scenarioType     The type of the scenario.
-     * @param configuredWeight The configured weight of the scenario.
-     * @param upstreamWeight   The weight of the scenario's upstream path.
-     * @param downstreamWeight The weight of the scenario's downstream path.
-     * @param events           The list of log records associated with this scenario.
-     * @param executions       The number of executions of the scenario.
-     * @param instances        The number of instances of the scenario.
+     * @param scenarioType     the type of the scenario
+     * @param configuredWeight the configured weight of the scenario
+     * @param upstreamWeight   the upstream weight of the scenario
+     * @param downstreamWeight the downstream weight of the scenario
+     * @param events           the list of log records associated with this result
+     * @param executions       the number of executions
+     * @param instances        the number of instances
      */
     @SuppressWarnings({"AssignmentOrReturnOfFieldWithMutableType", "ConstructorWithTooManyParameters"})
     public Result(final ScenarioType scenarioType, final Fraction configuredWeight, final Fraction upstreamWeight,
@@ -128,36 +136,71 @@ public class Result implements _Result {
         }
     }
 
+    /**
+     * Returns the configured weight.
+     *
+     * @return the Fraction representing configured weight
+     */
     public final Fraction getConfiguredWeight() {
 
         return configuredWeight;
     }
 
+    /**
+     * Returns the downstream weight.
+     *
+     * @return the Fraction representing downstream weight
+     */
     public final Fraction getDownstreamWeight() {
 
         return downstreamWeight;
     }
 
+    /**
+     * Returns an unmodifiable list of log record events.
+     *
+     * @return unmodifiable list of {@_LogRecord}
+     */
     public final List<_LogRecord> getEvents() {
 
         return Collections.unmodifiableList(events);
     }
 
+    /**
+     * Returns the number of executions.
+     *
+     * @return execution count
+     */
     public final int getExecutions() {
 
         return executions;
     }
 
+    /**
+     * Returns the number of instances.
+     *
+     * @return instance count
+     */
     public final int getInstances() {
 
         return instances;
     }
 
+    /**
+     * Returns the scenario type.
+     *
+     * @return the ScenarioType
+     */
     public final ScenarioType getScenarioType() {
 
         return scenarioType;
     }
 
+    /**
+     * Returns the upstream weight.
+     *
+     * @return the Fraction representing upstream weight
+     */
     public final Fraction getUpstreamWeight() {
 
         return upstreamWeight;

@@ -6,13 +6,14 @@ import works.lysenko.util.data.comparator.IgnoreCaseString;
 import java.util.TreeMap;
 
 /**
- * Sorted Result Map
+ * A sorted map associating scenario name string keys with {@_Result} values,
+ * using an ignore-case string comparator.
  */
 @SuppressWarnings({"CloneableClassInSecureContext", "ClassExtendsConcreteCollection"})
 public class SortedScenarioName extends TreeMap<String, _Result> {
 
     /**
-     * Sorted Result Map
+     * Constructs a new SortedScenarioName map sorted case-insensitively by string keys.
      */
     public SortedScenarioName() {
 

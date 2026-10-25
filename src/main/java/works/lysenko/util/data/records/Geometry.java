@@ -9,6 +9,10 @@ import static works.lysenko.util.func.type.Points.getCenter;
 
 /**
  * The Geometry class represents the geometry information of a web element.
+ *
+ * @param element   the web element
+ * @param rectangle the rectangle bounding box of the web element
+ * @param center    the center point of the web element
  */
 public record Geometry(WebElement element, Rectangle rectangle, Point center) {
 

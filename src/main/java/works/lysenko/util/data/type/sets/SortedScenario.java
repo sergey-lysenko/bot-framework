@@ -7,6 +7,9 @@ import works.lysenko.util.data.comparator.IgnoreCaseScenario;
 import java.util.TreeSet;
 
 /**
+ * A sorted set of {@_Scenario} objects sorted by {@_Scenario#getName()} ignoring character case.
+ * Used in various {@_Core} implementations.
+ *
  * @author Sergii Lysenko
  */
 @SuppressWarnings({"CloneableClassInSecureContext", "ClassExtendsConcreteCollection"})
@@ -16,7 +19,7 @@ public class SortedScenario extends TreeSet<_Scenario> {
      * {@link java.util.TreeSet} of {@link _Scenario} objects
      * sorted by {@link _Scenario#getName()} ignoring the
      * character case. This is used in various
-     * {@link Core} implementations
+     * {@link Core} implementations.
      */
     public SortedScenario() {
 

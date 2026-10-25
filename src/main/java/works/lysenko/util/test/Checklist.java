@@ -11,7 +11,7 @@ import static works.lysenko.util.test.Polychromy.calculateMaxPolychromies;
  * <p>
  * This class is designed to coordinate and orchestrate the following tasks:
  * - Calculate the maximum polychromies across grid files.
- * - VerifyResource the correctness of redefined colour amounts in grid data.
+ * - Verify the correctness of redefined colour amounts in grid data.
  * - Check for undefined colour references within grid files.
  * <p>
  * Each operation is executed in a specific sequence to ensure data integrity
@@ -25,15 +25,15 @@ public class Checklist implements Runnable {
      * <p>
      * This method coordinates the following operations:
      * <p>
-     * 1. `calculateMaxPolychromies`: Calculates the maximum polychromies by processing all
+     * 1. {@link works.lysenko.util.test.Polychromy#calculateMaxPolychromies()}: Calculates the maximum polychromies by processing all
      *    grid files in a designated directory. This includes identifying `.grid` files,
      *    calculating polychromy values for each, and handling potential I/O exceptions.
      * <p>
-     * 2. `verifyRedefinedAmounts`: Verifies the correctness of redefined colour amounts for
+     * 2. {@link works.lysenko.util.test.Amounts#verifyRedefinedAmounts()}: Verifies the correctness of redefined colour amounts for
      *    specified grid files. This includes validation of redefinitions and reporting
      *    results in titled sections of the execution output while managing file access errors.
      * <p>
-     * 3. `verifyUndefinedColours`: Checks for undefined colour references in grid files. It
+     * 3. {@link works.lysenko.util.test.Colour#verifyUndefinedColours()}: Checks for undefined colour references in grid files. It
      *    identifies discrepancies in the colour definitions, logs unknown colours, and manages
      *    exceptions during the validation process.
      * <p>

@@ -54,6 +54,8 @@ import static works.lysenko.util.spec.Symbols._COMMA_;
 /**
  * Colour represents a color object.
  * It encapsulates an RGB value and provides methods to perform operations on colors.
+ *
+ * @param rgb the integer RGB value
  */
 @SuppressWarnings({"ObjectAllocationInLoop", "ArrayLengthInLoopCondition", "SuspiciousToArrayCall", "DataFlowIssue"})
 public record Colour(int rgb) implements _Colour {
@@ -110,10 +112,10 @@ public record Colour(int rgb) implements _Colour {
     }
 
     /**
-     * Retrieves the Colour enum constant that matches the provided name.
+     * Retrieves the Colour constant that matches the provided name.
      *
-     * @param name The name of the rgb.
-     * @return The Colour enum constant that matches the name, or null if no match is found.
+     * @param name The name of the colour.
+     * @return The Colour constant that matches the name, or null if no match is found.
      */
     @SuppressWarnings("MethodWithMultipleReturnPoints")
     public static Colour byName(final String name) {
@@ -128,7 +130,7 @@ public record Colour(int rgb) implements _Colour {
     }
 
     /**
-     * Returns the Colour enum constant that matches the provided RGB value.
+     * Returns the Colour constant that matches the provided RGB value.
      *
      * @param rgb An RGB value.
      * @return The matching Colour constant, or null if no match is found.
@@ -160,12 +162,11 @@ public record Colour(int rgb) implements _Colour {
 
     /**
      * Returns a long representation of the given RGB value.
-     * If a matching Colour enum constant is found for the RGB value, the long representation of the Colour object
+     * If a matching Colour constant is found for the RGB value, the long representation of the Colour object
      * is returned. Otherwise, the long representation of the RGB value calculated using RGB24 and HSB conversion is returned.
      *
      * @param rgb An RGB color value.
-     * @return A1 string representing the long RGB value or the long representation of the matching Colour enum constant.
-     * If no match is found and the RGB value is null, null is returned.
+     * @return A string representing the long RGB value or the long representation of the matching Colour constant.
      */
     @SuppressWarnings({"DataFlowIssue", "unused", "MethodWithMultipleReturnPoints"})
     public static String longOfValue(final int rgb) {
@@ -186,10 +187,10 @@ public record Colour(int rgb) implements _Colour {
     }
 
     /**
-     * Retrieves the names of Colour enum constants that have the specified RGB value.
+     * Retrieves the names of Colour constants that have the specified RGB value.
      *
      * @param rgb The RGB value to search for.
-     * @return A1 list containing the names of Colour enum constants with the specified RGB value.
+     * @return A list containing the names of Colour constants with the specified RGB value.
      */
     @SuppressWarnings("CallToSuspiciousStringMethod")
     private static List<String> namesByValue(final int rgb) {
@@ -240,13 +241,12 @@ public record Colour(int rgb) implements _Colour {
     }
 
     /**
-     * Returns a short representation of the given RGB value. If a matching Colour enum constant is found for the RGB value,
+     * Returns a short representation of the given RGB value. If a matching Colour constant is found for the RGB value,
      * the short representation of the Colour object is returned. Otherwise, the short representation of the RGB value
      * calculated using RGB24 and HSB conversion is returned.
      *
      * @param rgb An RGB color value.
-     * @return A1 string representing the short RGB value or the short representation of the matching Colour enum constant.
-     * If no match is found and the RGB value is null, null is returned.
+     * @return A string representing the short RGB value or the short representation of the matching Colour constant.
      */
     @SuppressWarnings({"DataFlowIssue", "MethodWithMultipleReturnPoints"})
     public static String shortOfValue(final int rgb) {
@@ -255,6 +255,11 @@ public record Colour(int rgb) implements _Colour {
         else return byValue(rgb).toShortString();
     }
 
+    /**
+     * Returns the name of this colour.
+     *
+     * @return the name string, or null if not found
+     */
     @SuppressWarnings("MethodWithMultipleReturnPoints")
     public String name() {
 
@@ -264,6 +269,7 @@ public record Colour(int rgb) implements _Colour {
         return null;
     }
 
+    @Override
     public int rgb() {
 
         return rgb;
@@ -271,11 +277,10 @@ public record Colour(int rgb) implements _Colour {
 
     /**
      * Returns a long string representation of the Colour object.
-     * If a matching Colour enum constant is found for the RGB value, the long representation of the Colour object
+     * If a matching Colour constant is found for the RGB value, the long representation of the Colour object
      * is returned. Otherwise, the long representation of the RGB value calculated using RGB24 and HSB conversion is returned.
      *
-     * @return A1 string representing the long RGB value or the long representation of the matching Colour enum constant.
-     * If no match is found and the RGB value is null, null is returned.
+     * @return A string representing the long RGB value or the long representation of the matching Colour constant.
      */
     @SuppressWarnings("DataFlowIssue")
     public String toLongString() {
@@ -285,11 +290,10 @@ public record Colour(int rgb) implements _Colour {
 
     /**
      * Returns a short string representation of the Colour object.
-     * If a matching Colour enum constant is found for the RGB value, the short representation of the Colour object
+     * If a matching Colour constant is found for the RGB value, the short representation of the Colour object
      * is returned. Otherwise, the short representation of the RGB value calculated using RGB24 and HSB conversion is returned.
      *
-     * @return A1 string representing the short RGB value or the short representation of the matching Colour enum constant.
-     * If no match is found and the RGB value is null, null is returned.
+     * @return A string representing the short RGB value or the short representation of the matching Colour constant.
      */
     @SuppressWarnings("DataFlowIssue")
     public String toShortString() {

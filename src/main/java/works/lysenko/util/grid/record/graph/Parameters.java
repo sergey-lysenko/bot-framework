@@ -7,6 +7,6 @@ import works.lysenko.util.data.records.Slack;
  *
  * @param minimalMaximumValue The minimal maximum value for the graph.
  * @param amountS             The amount string used in the graph context.
- * @param slack               The slack factor as a Fraction object.
+ * @param slack               The slack factor as a Slack object.
  */
 public record Parameters(double minimalMaximumValue, String amountS, Slack slack) {}

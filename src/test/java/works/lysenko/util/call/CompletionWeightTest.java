@@ -39,6 +39,8 @@ class CompletionWeightTest {
         previousProperties = Base.properties;
         Base.parameters = null;
         Base.properties = null;
+        works.lysenko.util.prop.tree.Include.upstream = false;
+        works.lysenko.util.prop.tree.Include.downstream = false;
         final Field f = Unsafe.class.getDeclaredField("theUnsafe");
         f.setAccessible(true);
         final Unsafe unsafe = (Unsafe) f.get(null);

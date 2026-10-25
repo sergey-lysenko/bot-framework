@@ -51,18 +51,29 @@ import static works.lysenko.util.lang.word.W.WAITING;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
- * This class represents a set of scenarios and provides methods to manage and execute them.
+ * Manages a set of scenarios, providing selection, accessibility checking, and execution control.
  */
 public class Ctrl extends Root implements _Ctrl {
 
+    /**
+     * Pool storing scenarios and their associated weights.
+     */
     private final _Pool pool;
+
+    /**
+     * Parent scenario managing this controller.
+     */
     private final _Scenario parent;
+
+    /**
+     * Number of selection retries permitted during scenario selection.
+     */
     private final int attempts;
 
     /**
-     * Construct new instance
+     * Constructs a Ctrl instance for the given parent scenario with default retries.
      *
-     * @param parent Scenario
+     * @param parent parent Scenario
      */
     public Ctrl(final _Scenario parent) {
 
@@ -70,9 +81,9 @@ public class Ctrl extends Root implements _Ctrl {
     }
 
     /**
-     * Construct new instance
+     * Constructs a Ctrl instance with explicit retry attempts and parent scenario.
      *
-     * @param parent             Scenario
+     * @param parent             parent Scenario
      * @param sufficiencyRetries number of retries while trying to select a scenario to be executed
      */
     private Ctrl(final int sufficiencyRetries, final _Scenario parent) {
@@ -83,9 +94,7 @@ public class Ctrl extends Root implements _Ctrl {
     }
 
     /**
-     * This constructor creates a new instance of the Ctrl class and initializes its scenarios.
-     * The scenarios are added to the parent scenario provided in the constructor, and the new instance
-     * of Ctrl is assigned to the parent scenario's Ctrl field.
+     * Constructs a Ctrl instance for the parent scenario and populates the pool.
      *
      * @param parent The parent scenario
      * @param pool   The iterable collection of scenarios to be added
@@ -96,6 +105,12 @@ public class Ctrl extends Root implements _Ctrl {
         this.pool.add(pool);
     }
 
+    /**
+     * Executes scenario selection and run lifecycle.
+     *
+     * @return true if execution was performed successfully, false otherwise
+     * @throws SafeguardException if execution safeguard triggers
+     */
     @SuppressWarnings({"MethodCallInLoopCondition", "MethodWithMultipleReturnPoints"})
     public final boolean exec() throws SafeguardException {
 
@@ -118,6 +133,11 @@ public class Ctrl extends Root implements _Ctrl {
         return attempts;
     }
 
+    /**
+     * Retrieves the parent scenario.
+     *
+     * @return the parent Scenario
+     */
     public final _Scenario getParent() {
 
         return parent;
@@ -138,9 +158,9 @@ public class Ctrl extends Root implements _Ctrl {
     }
 
     /**
-     * Retrieves the weighted scenarios.
+     * Retrieves the weighted scenario pool.
      *
-     * @return The weighted scenarios.
+     * @return The scenario pool.
      */
     public final _Pool getPool() {
 
@@ -157,6 +177,11 @@ public class Ctrl extends Root implements _Ctrl {
         return pool.getPairList();
     }
 
+    /**
+     * Retrieves all accessible leaf scenarios in the scenario tree.
+     *
+     * @return set of accessible leaf scenarios
+     */
     @Override
     public final Set<_Scenario> getAccessibleLeafs() {
 
@@ -165,6 +190,12 @@ public class Ctrl extends Root implements _Ctrl {
         return leafs;
     }
 
+    /**
+     * Checks if a scenario is accessible based on its state and configured weights.
+     *
+     * @param s scenario to check
+     * @return true if scenario is accessible, false otherwise
+     */
     private static boolean isScenarioAccessible(final _Scenario s) {
         if (isNull(s) || s.hasFailed() || s.isExhausted()) return false;
 
@@ -179,6 +210,12 @@ public class Ctrl extends Root implements _Ctrl {
         return s.calculateCombinations(false) > 0;
     }
 
+    /**
+     * Recursively collects accessible leaf scenarios from weighted scenario pairs.
+     *
+     * @param pairs weighted scenario pairs
+     * @param leafs target set collecting accessible leaf scenarios
+     */
     private static void collectAccessibleLeafs(final Iterable<KeyValue<_Scenario, Fraction>> pairs, final Set<_Scenario> leafs) {
 
         if (isNull(pairs)) return;
@@ -194,6 +231,11 @@ public class Ctrl extends Root implements _Ctrl {
         }
     }
 
+    /**
+     * Retrieves all accessible node scenarios in the scenario tree.
+     *
+     * @return set of accessible node scenarios
+     */
     @Override
     public final Set<_Scenario> getAccessibleNodes() {
 
@@ -202,6 +244,12 @@ public class Ctrl extends Root implements _Ctrl {
         return nodes;
     }
 
+    /**
+     * Recursively collects accessible node scenarios from weighted scenario pairs.
+     *
+     * @param pairs weighted scenario pairs
+     * @param nodes target set collecting accessible node scenarios
+     */
     private static void collectAccessibleNodes(final Iterable<KeyValue<_Scenario, Fraction>> pairs, final Set<_Scenario> nodes) {
 
         if (isNull(pairs)) return;
@@ -216,6 +264,11 @@ public class Ctrl extends Root implements _Ctrl {
         }
     }
 
+    /**
+     * Retrieves all accessible scenarios (both nodes and leaves) in the scenario tree.
+     *
+     * @return set of accessible scenarios
+     */
     @Override
     public final Set<_Scenario> getAccessibleScenarios() {
 
@@ -224,6 +277,12 @@ public class Ctrl extends Root implements _Ctrl {
         return scenarios;
     }
 
+    /**
+     * Recursively collects accessible scenarios from weighted scenario pairs.
+     *
+     * @param pairs     weighted scenario pairs
+     * @param scenarios target set collecting accessible scenarios
+     */
     private static void collectAccessibleScenarios(final Iterable<KeyValue<_Scenario, Fraction>> pairs, final Set<_Scenario> scenarios) {
 
         if (isNull(pairs)) return;
@@ -262,7 +321,7 @@ public class Ctrl extends Root implements _Ctrl {
     }
 
     /**
-     * Handles empty scenarios.
+     * Handles empty scenarios condition by delegating to root or nested handler.
      */
     private void handleEmptyScenarios() {
 
@@ -270,6 +329,12 @@ public class Ctrl extends Root implements _Ctrl {
         else promptNoNestedScenarios();
     }
 
+    /**
+     * Selects and invokes the target scenario.
+     *
+     * @return true if selected scenario executed successfully, false otherwise
+     * @throws SafeguardException if selection or execution triggers a safeguard
+     */
     @SuppressWarnings("MethodWithMultipleReturnPoints")
     private boolean isOk() throws SafeguardException {
 
@@ -290,11 +355,9 @@ public class Ctrl extends Root implements _Ctrl {
 
     /**
      * Selects a scenario to execute based on the available candidates and execution options.
-     * If a scenario is selected, but it does not satisfy the requirements, it may be removed from the candidates list.
      *
-     * @implNote This method uses several helper methods to determine the execution candidates, select a scenario among the
-     * candidates,
-     * check if a scenario fits, and handle various logging and error conditions.
+     * @return selected scenario to execute
+     * @throws SafeguardException if selection process fails
      */
     private _Scenario select() throws SafeguardException {
 

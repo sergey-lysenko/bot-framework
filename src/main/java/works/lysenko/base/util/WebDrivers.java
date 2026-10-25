@@ -18,6 +18,8 @@ import static works.lysenko.util.data.enums.ExitCode.UNDEFINED_BROWSER;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 
 /**
+ * Factory and management class for WebDriver instances across different browser platforms.
+ *
  * @author Sergii Lysenko
  */
 @SuppressWarnings({"UtilityClass", "FinalClass", "SwitchStatement", "ClassWithoutLogger", "PublicMethodWithoutLogging",
@@ -32,7 +34,9 @@ public final class WebDrivers {
     }
 
     /**
-     * @return default Chrome {@link org.openqa.selenium.WebDriver} instance
+     * Retrieves default Chrome {@link org.openqa.selenium.WebDriver} instance.
+     *
+     * @return default Chrome WebDriver instance
      */
     @SuppressWarnings({"unused", "UnqualifiedStaticUsage"})
     public static WebDriver get() {
@@ -41,9 +45,10 @@ public final class WebDrivers {
     }
 
     /**
-     * @param p {@link Platform} to create
-     *          {@link org.openqa.selenium.WebDriver} for
-     * @return correspondent {@link org.openqa.selenium.WebDriver} object
+     * Creates a {@link org.openqa.selenium.WebDriver} for the given platform.
+     *
+     * @param p {@link Platform} to create WebDriver for
+     * @return correspondent WebDriver object
      */
     @SuppressWarnings({"LocalCanBeFinal", "UnqualifiedStaticUsage"})
     public static WebDriver get(Platform p) {
@@ -52,10 +57,11 @@ public final class WebDrivers {
     }
 
     /**
-     * @param p        {@link Platform} to create
-     *                 {@link org.openqa.selenium.WebDriver} for
-     * @param maximize the browser window of not
-     * @return correspondent {@link org.openqa.selenium.WebDriver} object
+     * Creates a {@link org.openqa.selenium.WebDriver} for the given platform with maximize setting.
+     *
+     * @param p        {@link Platform} to create WebDriver for
+     * @param maximize whether to maximize the browser window
+     * @return correspondent WebDriver object
      */
     @SuppressWarnings({"BooleanParameter", "ChainedMethodCall", "LocalCanBeFinal", "NestedMethodCall",
             "UnqualifiedStaticUsage", "SameParameterValue"})
@@ -66,11 +72,12 @@ public final class WebDrivers {
     }
 
     /**
-     * @param p        {@link Platform} to create
-     *                 {@link org.openqa.selenium.WebDriver} for
-     * @param maximize the browser window of not
+     * Creates a {@link org.openqa.selenium.WebDriver} for the given platform with maximize and headless options.
+     *
+     * @param p        {@link Platform} to create WebDriver for
+     * @param maximize whether to maximize the browser window
      * @param headless whether to run browser in headless mode
-     * @return correspondent {@link org.openqa.selenium.WebDriver} object
+     * @return correspondent WebDriver object
      */
     @SuppressWarnings({"BooleanParameter", "ChainedMethodCall", "LocalCanBeFinal", "NestedMethodCall",
             "UnqualifiedStaticUsage", "SameParameterValue"})

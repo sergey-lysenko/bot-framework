@@ -5,9 +5,12 @@ import static works.lysenko.util.prop.PropEnum._TEST_KNOWN_ISSUES_FAILED_ONLY;
 /**
  * Known issues configuration properties.
  */
-@SuppressWarnings({"MissingJavadoc", "NonFinalStaticVariableUsedInClassInitialization"})
+@SuppressWarnings("NonFinalStaticVariableUsedInClassInitialization")
 public record KnownIssues() {
 
+    /**
+     * Indicates whether only failed known issues should be processed or reported.
+     */
     public static boolean failedOnly = _TEST_KNOWN_ISSUES_FAILED_ONLY.get();
 
     /**

@@ -34,17 +34,21 @@ import static works.lysenko.util.prop.logs.Time.stamp;
 @SuppressWarnings("CallToSuspiciousStringMethod")
 public class LogRecord implements _LogRecord {
 
+    /** The test identifier associated with the log record. */
     private final Integer test;
+    /** The log data containing the message and metadata. */
     private final _LogData data;
+    /** The timestamp when the log record was created. */
     private final long time;
+    /** The time span between this record and a subsequent event. */
     private int span;
 
     /**
-     * Default constructor
+     * Constructs a new LogRecord with the specified test number, timestamp, and log data.
      *
-     * @param test test
-     * @param time timestamp
-     * @param data {@link AbstractLogData}
+     * @param test the test number
+     * @param time the timestamp in milliseconds
+     * @param data the log data object implementing {@link _LogData}
      */
     public LogRecord(final Integer test, final long time, final _LogData data) {
 
@@ -54,11 +58,24 @@ public class LogRecord implements _LogRecord {
         span = -1;
     }
 
+    /**
+     * Returns the log data.
+     *
+     * @return the {@link _LogData} instance
+     */
     public final _LogData data() {
 
         return data;
     }
 
+    /**
+     * Renders the complete log record string including stamp, test info, and message.
+     *
+     * @param totalTests   total number of tests
+     * @param spanLength   the length of the span string formatting
+     * @param previousId   the previous log record ID
+     * @return the rendered log record string
+     */
     public final String render(final Integer totalTests, final int spanLength, final Long previousId) {
 
         final String message = data.render();
@@ -69,6 +86,12 @@ public class LogRecord implements _LogRecord {
         return b(stamp, message);
     }
 
+    /**
+     * Renders the test indicator with dynamic width based on total or active tests.
+     *
+     * @param totalTests total number of tests
+     * @return the rendered test string enclosed in square brackets
+     */
     @SuppressWarnings("MethodWithMultipleReturnPoints")
     public final String renderTest(final Integer totalTests) {
 
@@ -92,11 +115,22 @@ public class LogRecord implements _LogRecord {
         return e(SQUARE, s(prefix, testN));
     }
 
+    /**
+     * Renders the log data ID enclosed in square brackets.
+     *
+     * @return the rendered ID string
+     */
     public final String renderId() {
 
         return e(SQUARE, s(data.id()));
     }
 
+    /**
+     * Renders the timestamp and time span with appropriate color coding.
+     *
+     * @param width the width formatting parameter for span
+     * @return the rendered time and span string
+     */
     @SuppressWarnings({"OverlyLongLambda", "ConstantOnWrongSideOfComparison"})
     public final String renderTime(final int width) {
 
@@ -118,6 +152,12 @@ public class LogRecord implements _LogRecord {
         return s(renderedTime, coloredSpan);
     }
 
+    /**
+     * Sets the time span relative to the current time and logs a warning if it exceeds the threshold.
+     *
+     * @param currentTime the current time in milliseconds
+     * @return the calculated span value
+     */
     @SuppressWarnings("NumericCastThatLosesPrecision")
     public final int setSpan(final long currentTime) {
 
@@ -126,16 +166,31 @@ public class LogRecord implements _LogRecord {
         return span;
     }
 
+    /**
+     * Returns the test number.
+     *
+     * @return the test integer
+     */
     public final int test() {
 
         return test;
     }
 
+    /**
+     * Returns the log message text from data.
+     *
+     * @return the message string
+     */
     public final String text() {
 
         return data.message();
     }
 
+    /**
+     * Returns the record timestamp.
+     *
+     * @return the timestamp long value
+     */
     public final Long time() {
 
         return time;

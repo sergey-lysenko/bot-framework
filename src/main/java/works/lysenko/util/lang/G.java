@@ -18,11 +18,17 @@ import static works.lysenko.util.lang.word.S.SAMPLED;
 import static works.lysenko.util.lang.word.S.SCREENSHOT;
 import static works.lysenko.util.spec.Symbols._COMMA_;
 
-@SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "AutoBoxing"})
+/**
+ * Language utility constants starting with G.
+ */
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing"})
 public record G() {
 
+    /** Constant representing getting fullscreen image. */
     public static final String GETTING_FULLSCREEN_IMAGE = b(c(GETTING), FULLSCREEN_IMAGE);
+    /** Constant representing grid is too dense message. */
     public static final String GRID_IS_TOO_DENSE___ = b(c(GRID), IS, TOO, s(DENSE, _COMMA_), SOME, PIXELS, ARE, SAMPLED,
             MORE, THEN, ONE, TIME);
+    /** Constant representing getting partial screenshot of. */
     public static final String GETTING_PARTIAL_SCREENSHOT_OF = b(c(GETTING), PARTIAL, SCREENSHOT, OF);
 }

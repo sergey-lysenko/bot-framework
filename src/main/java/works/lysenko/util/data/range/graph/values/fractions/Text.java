@@ -25,8 +25,9 @@ import static works.lysenko.util.spec.Numbers.ZERO;
 
 /**
  * The Text record holds two string values: value and max.
- * @param max
- * @param value
+ *
+ * @param value The rendered property value string representation.
+ * @param max   The rendered maximum string representation.
  */
 public record Text(String value, String max) {
 

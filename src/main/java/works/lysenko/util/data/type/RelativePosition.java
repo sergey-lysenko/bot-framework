@@ -8,7 +8,8 @@ import static org.apache.commons.math3.fraction.Fraction.getReducedFraction;
 import static works.lysenko.util.func.type.fractions.Factory.fr;
 
 /**
- * Represents a position relative to a reference area.
+ * Represents a position relative to a reference area using horizontal and vertical fractions.
+ * Implements the {@_RelativePosition} interface.
  */
 public class RelativePosition implements _RelativePosition {
 
@@ -19,11 +20,13 @@ public class RelativePosition implements _RelativePosition {
      */
     public final static RelativePosition CENTRE = rp(ONE_HALF, ONE_HALF);
 
+    /** The horizontal relative position as a Fraction. */
     private final Fraction horizontal;
+    /** The vertical relative position as a Fraction. */
     private final Fraction vertical;
 
     /**
-     * Represents a position relative to a reference area.
+     * Constructs a RelativePosition with horizontal and vertical rational components given by numerators and denominators.
      *
      * @param hNum the numerator of the horizontal value
      * @param hDen the denominator of the horizontal value
@@ -38,7 +41,7 @@ public class RelativePosition implements _RelativePosition {
     }
 
     /**
-     * Represents a relative position with horizontal and vertical values.
+     * Constructs a RelativePosition with horizontal and vertical Fraction values.
      *
      * @param horizontal the horizontal value represented as a Fraction
      * @param vertical   the vertical value represented as a Fraction
@@ -50,13 +53,13 @@ public class RelativePosition implements _RelativePosition {
     }
 
     /**
-     * Returns a new RelativePosition object with the given horizontal and vertical values.
+     * Returns a new RelativePosition object with the given horizontal and vertical fraction components.
      *
      * @param hNum the numerator of the horizontal value
      * @param hDen the denominator of the horizontal value
      * @param vNum the numerator of the vertical value
      * @param vDen the denominator of the vertical value
-     * @return a new RelativePosition object with the given horizontal and vertical values
+     * @return a new RelativePosition object
      */
     @SuppressWarnings("UseOfConcreteClass")
     public static RelativePosition rp(final int hNum, final int hDen, final int vNum, final int vDen) {
@@ -65,11 +68,11 @@ public class RelativePosition implements _RelativePosition {
     }
 
     /**
-     * Returns a new RelativePosition object with the given horizontal and vertical values.
+     * Returns a new RelativePosition object with the given horizontal and vertical string representations.
      *
      * @param horizontal the horizontal value represented as a string
      * @param vertical   the vertical value represented as a string
-     * @return a new RelativePosition object with the given horizontal and vertical values
+     * @return a new RelativePosition object
      */
     @SuppressWarnings("UseOfConcreteClass")
     public static RelativePosition rp(final String horizontal, final String vertical) {
@@ -78,12 +81,12 @@ public class RelativePosition implements _RelativePosition {
     }
 
     /**
-     * Creates a new RelativePosition object with the given horizontal and vertical values.
+     * Creates a new RelativePosition object with the given horizontal and vertical double values and epsilon.
      *
      * @param horizontal the horizontal value
      * @param vertical   the vertical value
-     * @param epsilon    the epsilon value
-     * @return a new RelativePosition object with the given horizontal and vertical values
+     * @param epsilon    the epsilon value for fraction conversion
+     * @return a new RelativePosition object
      */
     @SuppressWarnings("UseOfConcreteClass")
     public static RelativePosition rp(final double horizontal, final double vertical, final double epsilon) {
@@ -92,11 +95,11 @@ public class RelativePosition implements _RelativePosition {
     }
 
     /**
-     * Creates a RelativePosition object with the given horizontal and vertical values.
+     * Creates a RelativePosition object with the given horizontal and vertical double values.
      *
-     * @param horizontal The horizontal value of the RelativePosition.
-     * @param vertical   The vertical value of the RelativePosition.
-     * @return A1 new RelativePosition object with the given horizontal and vertical values.
+     * @param horizontal the horizontal double value
+     * @param vertical   the vertical double value
+     * @return a new RelativePosition object
      */
     public static RelativePosition rp(final double horizontal, final double vertical) {
 
@@ -106,9 +109,9 @@ public class RelativePosition implements _RelativePosition {
     /**
      * Creates a new RelativePosition object with the provided horizontal and vertical fractions.
      *
-     * @param horizontal The horizontal fraction for the RelativePosition.
-     * @param vertical   The vertical fraction for the RelativePosition.
-     * @return A1 new RelativePosition object.
+     * @param horizontal the horizontal Fraction
+     * @param vertical   the vertical Fraction
+     * @return a new RelativePosition object
      */
     public static RelativePosition rp(final Fraction horizontal, final Fraction vertical) {
 

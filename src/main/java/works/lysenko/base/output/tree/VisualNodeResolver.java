@@ -19,6 +19,7 @@ public class VisualNodeResolver {
     private final double maxLeafOverRatio;
     private final boolean isRecent;
     private final boolean includeHeaderOffset;
+    private final double minRow;
 
     public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isAllLeafs) {
         this(theme, accessibleScenarios, isAllLeafs, 1, 0.0, false, false);
@@ -29,6 +30,10 @@ public class VisualNodeResolver {
     }
 
     public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isAllLeafs, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset) {
+        this(theme, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, isRecent, includeHeaderOffset, 0.0);
+    }
+
+    public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isAllLeafs, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset, double minRow) {
         this.theme = theme;
         this.accessibleScenarios = accessibleScenarios;
         this.isAllLeafs = isAllLeafs;
@@ -36,6 +41,7 @@ public class VisualNodeResolver {
         this.maxLeafOverRatio = maxLeafOverRatio;
         this.isRecent = isRecent;
         this.includeHeaderOffset = includeHeaderOffset;
+        this.minRow = minRow;
     }
     
     public VisualNode resolve(NodeData node) {
@@ -152,10 +158,10 @@ public class VisualNodeResolver {
         double x, y;
         if (includeHeaderOffset) {
             x = node.col() * 270 + 40;
-            y = node.row() * 60 + 60 + 24;
+            y = (node.row() - minRow) * 60 + 60 + 32;
         } else {
             x = node.col() * 260 + 40;
-            y = node.row() * 56 + 20;
+            y = (node.row() - minRow) * 56 + 20;
         }
 
         return new VisualNode(

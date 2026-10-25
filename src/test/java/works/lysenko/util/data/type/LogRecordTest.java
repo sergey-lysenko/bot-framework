@@ -12,6 +12,9 @@ import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Unit test class for {@link LogRecord}.
+ */
 @SuppressWarnings({"removal", "deprecation"})
 class LogRecordTest {
 

@@ -50,18 +50,18 @@ import static works.lysenko.util.prop.core.Safeguard.scenarioDepth;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
- * Utility class containing various helper methods for scenarios.
+ * Utility record containing helper methods and logging procedures for scenario selection.
  */
 @SuppressWarnings({"MethodWithMultipleReturnPoints", "StaticMethodOnlyUsedInOneClass"})
 public record Utils() {
 
     /**
-     * Creates a readable list of scenarios along with their weights.
+     * Creates a human-readable list of scenarios along with their weights.
      *
-     * @param list              The list of scenarios along with their weights
-     * @param includeZeroWeight Whether to include scenarios with zero weights in the list
-     * @param isDebug           Whether to include weights in the list when in debug mode
-     * @return The readable list of scenarios
+     * @param list              the iterable collection of scenarios paired with their weights
+     * @param includeZeroWeight whether scenarios with zero weight should be included in the formatted output
+     * @param isDebug           whether scenario weights should be appended to class names in debug mode
+     * @return a formatted string listing scenario names and optionally their weights
      */
     @SuppressWarnings("LocalVariableNamingConvention")
     public static String createReadableScenariosList(final Iterable<KeyValue<_Scenario, Fraction>> list,
@@ -81,11 +81,11 @@ public record Utils() {
     }
 
     /**
-     * Retrieves the pair containing the specified scenario from the provided candidates.
+     * Retrieves the candidate pair containing the specified scenario from the candidates pool.
      *
-     * @param scenario   The scenario to retrieve the pair for.
-     * @param candidates The list of candidate pairs to search in.
-     * @return The pair containing the specified scenario, or null if it is not found.
+     * @param scenario   the scenario instance to look for
+     * @param candidates the candidate pairs to search
+     * @return the {@link KeyValue} pair matching the scenario by reference, or {@code null} if not found
      */
     public static KeyValue<_Scenario, Fraction> getThePair(final _Scenario scenario, final Iterable<KeyValue<_Scenario,
             Fraction>> candidates) {
@@ -97,12 +97,12 @@ public record Utils() {
     }
 
     /**
-     * Checks if the scenario is still selectable based on the given conditions.
+     * Determines whether scenario selection should continue for another retry iteration.
      *
-     * @param fits       Whether the scenario fits the selection criteria.
-     * @param attempts   The number of attempts left.
-     * @param candidates The collection of pairs representing scenarios and their weights.
-     * @return true if the scenario is still selectable, false otherwise.
+     * @param fits       whether the currently selected scenario satisfies runtime prerequisites
+     * @param attempts   the remaining retry attempt counter
+     * @param candidates the collection of available scenario-weight candidate pairs
+     * @return {@code true} if selection should retry; {@code false} if a valid scenario fit was found, attempts are exhausted, candidate pool is empty, or stop flag is set
      */
     public static boolean isStillSelectable(final boolean fits, final int attempts, final Collection<KeyValue<_Scenario,
             Fraction>> candidates) {
@@ -110,6 +110,11 @@ public record Utils() {
         return !fits && 0 < attempts && !candidates.isEmpty() && !core.getStopFlag();
     }
 
+    /**
+     * Logs a message with gray ANSI color formatting at {@link Level#none}.
+     *
+     * @param message the message to log
+     */
     @SuppressWarnings("unused")
     private static void log(final String message) {
 
@@ -117,7 +122,7 @@ public record Utils() {
     }
 
     /**
-     * Logs the accounting information for scenarios.
+     * Logs accounting information for scenario upstream and downstream weights if enabled.
      */
     public static void logAccounting() {
 
@@ -126,9 +131,9 @@ public record Utils() {
     }
 
     /**
-     * Logs a debug message.
+     * Logs a debug message formatted with gray color.
      *
-     * @param message The message to be logged as debug.
+     * @param message the message to log
      */
     public static void logDebug(final String message) {
 
@@ -136,9 +141,9 @@ public record Utils() {
     }
 
     /**
-     * Logs the details of a scenario.
+     * Logs execution details and weight parameters for a selected scenario.
      *
-     * @param scenario The scenario for which the details are logged.
+     * @param scenario the scenario whose details are being logged
      */
     private static void logDetails(final _Scenario scenario) {
 
@@ -149,10 +154,10 @@ public record Utils() {
     }
 
     /**
-     * Logs an event with the specified severity and message.
+     * Logs an event with the specified severity level and message text.
      *
-     * @param severity The severity of the event
-     * @param message  The message to be logged
+     * @param severity the severity level of the event
+     * @param message  the description message of the event
      */
     public static void logEvent(final Severity severity, final String message) {
 
@@ -160,9 +165,9 @@ public record Utils() {
     }
 
     /**
-     * Logs a scenario as not executable.
+     * Logs a warning notification when a scenario is determined to be non-executable.
      *
-     * @param scenario The scenario that is not executable.
+     * @param scenario the scenario that is not executable
      */
     public static void logScenarioNotExecutable(final _Scenario scenario) {
 
@@ -171,6 +176,11 @@ public record Utils() {
         }
     }
 
+    /**
+     * Validates that the current execution nesting depth does not exceed the configured safeguard limit.
+     *
+     * @throws SafeguardException if current scenario nesting depth exceeds {@link Safeguard#scenarioDepth}
+     */
     private static void processSafeguard() throws SafeguardException {
 
         final int depth = exec.scenarios().depth();
@@ -180,11 +190,14 @@ public record Utils() {
     }
 
     /**
-     * Verifies the scenario selection by logging the details of the scenario and processing the safeguard.
+     * Verifies and finalizes a selected scenario before execution.
+     * <p>
+     * Records scenario execution in {@link works.lysenko.base.output.SequenceTracker}, logs scenario details,
+     * and evaluates recursion depth against safeguard limits.
      *
-     * @param scenario The scenario to be verified
-     * @return The provided scenario after verification
-     * @throws SafeguardException if an exception occurs during safeguard processing
+     * @param scenario the scenario instance to verify
+     * @return the verified scenario instance
+     * @throws SafeguardException if execution safeguard depth is exceeded
      */
     public static _Scenario verifyScenarioSelection(final _Scenario scenario) throws SafeguardException {
 
@@ -195,11 +208,21 @@ public record Utils() {
     }
 
     /**
-     * Represents a consumer that outputs weights of scenarios.
+     * Consumer implementation for formatting scenario class names and weights into output collections.
+     *
+     * @param replacedQualifiedName common package prefix string to remove from full class names
+     * @param includeZeroWeight     whether scenarios with zero weight should be added
+     * @param set                   the target collection storing formatted scenario string representations
+     * @param isDebug               whether weight values should be appended to formatted strings
      */
     private record weightOutput(String replacedQualifiedName, boolean includeZeroWeight, Collection<String> set,
                                 boolean isDebug) implements Consumer<KeyValue<_Scenario, Fraction>> {
 
+        /**
+         * Processes a scenario-weight pair and adds its formatted string representation to the collection if applicable.
+         *
+         * @param p the key-value pair containing scenario and weight
+         */
         public void accept(final KeyValue<_Scenario, Fraction> p) {
 
             final String scenarioStr = p.k().getClass().getName().replace(replacedQualifiedName, StringUtils.EMPTY);

@@ -12,12 +12,26 @@ import static works.lysenko.util.func.type.Objects.isNotNull;
 /**
  * The ColoursIgnore enum represents a set of constants used to define specific marker values.
  */
-@SuppressWarnings("MissingJavadoc")
 public enum ColoursIgnore {
 
+    /**
+     * Marker for ORDER ignored colours.
+     */
     ORDER(O.ORDER),
+
+    /**
+     * Marker for OTHER ignored colours.
+     */
     OTHER(O.OTHER),
+
+    /**
+     * Marker for SHRINK ignored colours.
+     */
     SHRINK(S.SHRINK),
+
+    /**
+     * Marker for UPDATE ignored colours.
+     */
     UPDATE(U.UPDATE);
 
     private final String marker;

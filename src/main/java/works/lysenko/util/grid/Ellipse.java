@@ -6,12 +6,21 @@ import works.lysenko.util.apis.grid.t._Geometry;
 /**
  * The Ellipse class represents an ellipse shape in a two-dimensional space.
  */
-@SuppressWarnings({"WeakerAccess", "MissingJavadoc"})
+@SuppressWarnings("WeakerAccess")
 public final class Ellipse implements _Ellipse {
 
+    /** Radius along the X-axis. */
     public final int rX;
+
+    /** Radius along the Y-axis. */
     public final int rY;
 
+    /**
+     * Constructs an Ellipse with the specified geometry and radius.
+     *
+     * @the geometry providing ratio details
+     * @r the base radius
+     */
     @SuppressWarnings("NumericCastThatLosesPrecision")
     public Ellipse(final _Geometry at, final double r) {
 

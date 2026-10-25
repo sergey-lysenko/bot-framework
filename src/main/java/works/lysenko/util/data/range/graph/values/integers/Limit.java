@@ -19,9 +19,16 @@ import static works.lysenko.util.spec.Numbers.ZERO;
  */
 record Limit(boolean overflow, double max) {
 
+    /**
+     * Calculates the Limit based on graph Options.
+     *
+     * @param go The graph options.
+     * @return A Limit instance.
+     * @throws IllegalArgumentException if options or actual/requested values are null.
+     */
     static Limit limit(final Options go) {
 
-        if (isAnyNull(go, go.actual(), go.requested())) throw new IllegalArgumentException(NEITHER_ACTUAL_NOR___);
+        if (isNull(go) || isAnyNull(go.actual(), go.requested())) throw new IllegalArgumentException(NEITHER_ACTUAL_NOR___);
         final boolean overflow = (go.actual().doubleValue() > go.requested().doubleValue());
         final boolean nullSlack = isNull(go.slack());
         final double slack = nullSlack ? ZERO : go.slack().doubleValue(go.requested());

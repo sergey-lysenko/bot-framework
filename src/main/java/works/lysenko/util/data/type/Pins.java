@@ -19,17 +19,19 @@ import static works.lysenko.util.spec.Symbols.CLS_CUB;
 import static works.lysenko.util.spec.Symbols.OPN_CUB;
 
 /**
- * Provides additional functionality to BitSet.
+ * Provides additional functionality and convenient wrapper operations around BitSet.
+ * Implements the {@_Pins} interface.
  */
 @SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "BooleanMethodNameMustStartWithQuestion",
         "MethodWithMultipleReturnPoints",
         "NestedMethodCall", "AutoBoxing", "CallToSuspiciousStringMethod"})
 public class Pins implements _Pins {
 
+    /** The underlying BitSet storing pin states. */
     private final BitSet bits;
 
     /**
-     * Provides some additional functionality to BitSet
+     * Constructs a new Pins object with a default empty BitSet.
      */
     @SuppressWarnings("unused")
     public Pins() {
@@ -38,9 +40,9 @@ public class Pins implements _Pins {
     }
 
     /**
-     * Constructs a new Pins object with the specified length.
+     * Constructs a new Pins object with the specified initial length.
      *
-     * @param length the length of the Pins object
+     * @param length the initial size of the BitSet
      */
     public Pins(final int length) {
 
@@ -48,9 +50,9 @@ public class Pins implements _Pins {
     }
 
     /**
-     * Constructs a new Pins object with the specified BitSet.
+     * Constructs a new Pins object with the specified BitSet instance.
      *
-     * @param bitSet the BitSet object to be assigned as the internal representation of the Pins object
+     * @param bitSet the BitSet object to be assigned as internal representation
      */
     private Pins(final BitSet bitSet) {
 
@@ -58,9 +60,9 @@ public class Pins implements _Pins {
     }
 
     /**
-     * Constructs a new Pins object using a _Pins object.
+     * Constructs a new Pins object by copying another _Pins instance.
      *
-     * @param pinsToCopy the _Pins object to be used as the underlying BitSet
+     * @param pinsToCopy the _Pins object to be copied
      */
     public Pins(final _Pins pinsToCopy) {
 
@@ -68,9 +70,11 @@ public class Pins implements _Pins {
     }
 
     /**
-     * @param cellsA a
-     * @param cellsB b
-     * @return true if intersects
+     * Checks whether two _Pins collections intersect.
+     *
+     * @param cellsA first _Pins collection
+     * @param cellsB second _Pins collection
+     * @return true if both are non-null and intersect, false otherwise
      */
     @SuppressWarnings("IfStatementWithNegatedCondition")
     public static boolean intersects(final _Pins cellsA, final _Pins cellsB) {
@@ -152,6 +156,13 @@ public class Pins implements _Pins {
         bits.or(cells.getBits());
     }
 
+    /**
+     * Sets the bit at the specified range [from, to) to the specified boolean value.
+     *
+     * @param from index of the first bit to be set
+     * @param to   index after the last bit to be set
+     * @param is   value to set the bits to
+     */
     @SuppressWarnings("BooleanParameter")
     public final void set(final int from, final int to, final boolean is) {
 

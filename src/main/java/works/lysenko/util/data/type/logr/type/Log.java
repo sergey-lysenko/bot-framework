@@ -18,10 +18,14 @@ import static works.lysenko.util.spec.Symbols._BULLT_;
 import static works.lysenko.util.spec.Symbols._COMMA_;
 
 /**
+ * Represents a standard log entry with indentation and severity level.
+ * Extends {@AbstractLogData} and implements {@_Indentation}.
+ *
  * @author Sergii Lysenko
  */
 public class Log extends AbstractLogData implements _Indentation {
 
+    /** The log level or severity of the log entry. */
     private final int level;
 
     /**
@@ -38,6 +42,11 @@ public class Log extends AbstractLogData implements _Indentation {
         this.level = level;
     }
 
+    /**
+     * Returns the log level.
+     *
+     * @return the log level integer
+     */
     public final int level() {
 
         return level;

@@ -23,15 +23,24 @@ import static works.lysenko.util.lang.word.V.VISIBILITY;
 import static works.lysenko.util.lang.word.W.WAITING;
 import static works.lysenko.util.spec.Symbols.*;
 
-@SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass"})
+/**
+ * Language utility constants starting with E.
+ */
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass"})
 public record E() {
 
+    /** Constant representing the message 'element is null'. */
     public static final String ELEMENT_IS_NULL = b(ELEMENT, IS, NULL);
+    /** Constant representing the phrase 'equals to expected'. */
     public static final String EQUALS_TO_EXPECTED = b(EQUALS, TO, EXPECTED);
+    /** Constant representing expectations update requested by configuration but blocked by grid definition. */
     public static final String EXPECTATIONS_UPDATE_REQUESTED_BY___ = b(EXPECTATIONS, UPDATE, WAS, REQUESTED, BY,
             CONFIGURATION, BUT, BLOCKED, BY, GRID, DEFINITION);
+    /** Constant representing expectations update was not configured. */
     public static final String EXPECTATIONS_UPDATE_WAS_NOT___ = b(EXPECTATIONS, UPDATE, WAS, NOT, CONFIGURED);
+    /** Constant representing expected condition failed message prefix. */
     public static final String EXPECTED_CONDITION_FAILED___ = b(c(EXPECTED), CONDITION, s(FAILED, _COLON_), WAITING, FOR,
             VISIBILITY, OF, ELEMENT, LOCATED, BY, s(c(BY), _DOT_, X, PATH, _COLON_, _SPACE_));
+    /** Constant representing exceptional scenario. */
     public static final String EXCEPTIONAL_SCENARION = b(c(EXCEPTIONAL), c(SCENARIO));
 }

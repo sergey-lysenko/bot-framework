@@ -24,13 +24,18 @@ import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.lang.S.SCENARIO_EXECUTION_FAILED_DUE_TO;
 
 /**
+ * Abstract implementation of a Leaf Scenario representing terminal nodes in the scenario tree.
+ * A Leaf scenario defines explicit test actions and has zero upstream weight.
+ *
  * @author Sergii Lysenko
  */
 @SuppressWarnings({"MethodWithMultipleReturnPoints", "NestedMethodCall"})
 public abstract class Leaf extends Core {
 
     /**
-     * @param weight for Scenario
+     * Constructs a Leaf scenario with a specified weight.
+     *
+     * @param weight weight Fraction for Scenario
      */
     protected Leaf(final Fraction weight) {
 
@@ -38,8 +43,7 @@ public abstract class Leaf extends Core {
     }
 
     /**
-     * This class is an abstract implementation of a Leaf Scenario.
-     * It provides default execution code and defines methods for custom logic and finalization steps.
+     * Constructs a Leaf scenario with default configuration.
      */
     protected Leaf() {
 
@@ -57,6 +61,12 @@ public abstract class Leaf extends Core {
         return target <= Base.core.getResults().getExecutions(this);
     }
 
+    /**
+     * Checks if this leaf scenario is executable based on failure status, goal fulfillment,
+     * and configured weights.
+     *
+     * @return true if executable, false otherwise
+     */
     @Override
     public boolean isExecutable() {
 
@@ -124,6 +134,11 @@ public abstract class Leaf extends Core {
         return scenarios;
     }
 
+    /**
+     * Returns the scenario type for Leaf.
+     *
+     * @return ScenarioType.LEAF
+     */
     @SuppressWarnings("DesignForExtension")
     public ScenarioType type() {
 

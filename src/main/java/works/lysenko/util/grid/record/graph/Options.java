@@ -5,6 +5,12 @@ import works.lysenko.util.data.records.Slack;
 
 /**
  * Represents options for configuring a graph, including width, and both requested and actual fractions.
+ *
+ * @param width     the width configuration
+ * @param requested the requested fraction
+ * @param actual    the actual fraction
+ * @param slack     the slack configuration
+ * @param edge      the edge fraction
  */
 public record Options(int width, Fraction requested, Fraction actual, Slack slack, Fraction edge) {
 

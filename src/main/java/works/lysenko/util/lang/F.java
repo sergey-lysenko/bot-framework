@@ -4,8 +4,11 @@ import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.lang.word.F.FULLSCREEN;
 import static works.lysenko.util.lang.word.I.IMAGE;
 
-@SuppressWarnings("MissingJavadoc")
+/**
+ * Language utility constants starting with F.
+ */
 public record F() {
 
-    static final String FULLSCREEN_IMAGE = b(FULLSCREEN, IMAGE);
+    /** Constant representing full screen image. */
+    public static final String FULLSCREEN_IMAGE = b(FULLSCREEN, IMAGE);
 }

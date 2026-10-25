@@ -46,16 +46,22 @@ import static works.lysenko.util.prop.core.Mode.*;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
- * This is an abstract implementation of Node Scenario, which have defined both
- * actions to be performed and the set of child scenarios to be executed
- * randomly based on their weight coefficients
+ * Abstract implementation of a Node Scenario, which defines both action logic
+ * and a pool of child scenarios executed randomly based on weight coefficients.
  *
  * @author Sergii Lysenko
  */
 @SuppressWarnings({"UseOfConcreteClass", "ThisEscapedInObjectConstruction", "DesignForExtension", "OverloadedVarargsMethod"})
 public abstract class Node extends Core implements _Node {
 
+    /**
+     * Controller managing child scenario pool and selection execution.
+     */
     private Ctrl ctrl;
+
+    /**
+     * Indicates whether sub-scenario selection under this node is currently halted.
+     */
     private boolean halted = false;
 
     /**
@@ -70,10 +76,9 @@ public abstract class Node extends Core implements _Node {
     }
 
     /**
-     * Default constructor adds all scenarios from the package owned by this node.
-     * A subclass of a node is an alias for its nearest node ancestor, so it shares that ancestor's child package.
+     * Constructor initializing a Node scenario with a specified weight.
      *
-     * @param weight of this scenario
+     * @param weight weight Fraction of this scenario
      */
     protected Node(final Fraction weight) {
 
@@ -83,9 +88,9 @@ public abstract class Node extends Core implements _Node {
     }
 
     /**
-     * Create an instance of Node Scenario with defined set of sub-scenarios
+     * Create an instance of Node Scenario with defined set of sub-scenarios.
      *
-     * @param scenarios array of child scenarios with weight coefficient defined within
+     * @param scenarios array of child scenarios
      */
     @SuppressWarnings("OverloadedVarargsMethod")
     protected Node(final _Scenario... scenarios) {
@@ -96,11 +101,9 @@ public abstract class Node extends Core implements _Node {
 
     /**
      * Create a Node Scenario and add all scenarios from defined package as
-     * sub-scenarios to this one
+     * sub-scenarios to this one.
      *
-     * @param s name of package to load child scenarios from with weight coefficient
-     *          defined within
-     *          of Run object
+     * @param s name of package to load child scenarios from
      */
     @SuppressWarnings("unused")
     protected Node(final String s) {
@@ -108,6 +111,11 @@ public abstract class Node extends Core implements _Node {
         ctrl = new Ctrl(this, ClassLoader.readFrom(s, false));
     }
 
+    /**
+     * Resolves the child package name associated with this node class.
+     *
+     * @return package name for child scenarios
+     */
     private String childPackageName() {
 
         Class<?> owner = getClass();
@@ -122,6 +130,12 @@ public abstract class Node extends Core implements _Node {
         return name;
     }
 
+    /**
+     * Checks if this node scenario is executable based on parent Core status,
+     * failure flags, and presence of executable child scenarios in its pool.
+     *
+     * @return true if executable, false otherwise
+     */
     @Override
     public boolean isExecutable() {
 
@@ -140,6 +154,8 @@ public abstract class Node extends Core implements _Node {
     }
 
     /**
+     * Calculates the total number of execution combinations for underlying scenarios.
+     *
      * @param onlyConfigured whether to include all available paths or only ones
      *                       currently configured for execution
      * @return calculated amount of possible execution paths of underlying scenarios
@@ -154,11 +170,21 @@ public abstract class Node extends Core implements _Node {
         return combinations;
     }
 
+    /**
+     * Retrieves the scenario pool associated with this node.
+     *
+     * @return _Pool instance managing sub-scenarios
+     */
     public final _Pool getPool() {
 
         return ctrl.getPool();
     }
 
+    /**
+     * Calculates upstream weight contribution for this node scenario.
+     *
+     * @return upstream weight Fraction
+     */
     @Override
     public final Fraction weightUpstream() {
 
@@ -254,12 +280,23 @@ public abstract class Node extends Core implements _Node {
         return list;
     }
 
+    /**
+     * Replaces current sub-scenarios with the provided set.
+     *
+     * @param newScenarios array of new sub-scenarios
+     */
     public final void setSubScenarios(final _Scenario... newScenarios) {
 
         setSubScenarios(null, newScenarios);
 
     }
 
+    /**
+     * Replaces current sub-scenarios with the provided set and applies weight.
+     *
+     * @param weight       weight Fraction to assign to sub-scenarios
+     * @param newScenarios array of new sub-scenarios
+     */
     public final void setSubScenarios(final Fraction weight, final _Scenario... newScenarios) {
 
         ctrl = new Ctrl(this);
@@ -273,12 +310,22 @@ public abstract class Node extends Core implements _Node {
         }
     }
 
+    /**
+     * Requests test execution stop and halts node execution.
+     *
+     * @param severity severity causing the stop
+     */
     public final void stopTest(final Severity severity) {
 
         super.stopTest(severity);
         halt();
     }
 
+    /**
+     * Returns the scenario type for Node.
+     *
+     * @return ScenarioType.NODE
+     */
     public final ScenarioType type() {
 
         return NODE;

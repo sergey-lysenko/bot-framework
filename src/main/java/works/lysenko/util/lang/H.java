@@ -13,9 +13,14 @@ import static works.lysenko.util.lang.word.D.DID;
 import static works.lysenko.util.lang.word.W.WIDTH;
 import static works.lysenko.util.spec.Symbols.QUS_MRK;
 
-@SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "AutoBoxing"})
+/**
+ * Language utility constants starting with H.
+ */
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing"})
 public record H() {
 
+    /** Constant representing the phrase 'has no width'. */
     public static final String HAS_NO_WIDTH = b(HAS, NO, WIDTH);
+    /** Constant representing the question 'how did we get here?'. */
     public static final String HOW_DID_WE_GET_HERE = b(c(HOW), DID, WE, GET, s(HERE, QUS_MRK));
 }

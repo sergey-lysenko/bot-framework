@@ -50,7 +50,6 @@ import static works.lysenko.util.spec.Symbols.*;
  * configuration properties
  * in a structured and type-safe manner.
  */
-@SuppressWarnings("MissingJavadoc")
 public enum PropEnum implements _PropEnum {
 
     _DATA_DELIMITER_L0(String.class, VRT_BAR),
@@ -71,7 +70,7 @@ public enum PropEnum implements _PropEnum {
     _GRID_DEFAULT_SCALE(String.class, _1_),
     _GRID_DEFAULT_VERTICAL(String.class, _1_, _SLASH_, _2_),
     _GRID_EMPTY_GRID_VALIDATION_ALLOWED(Boolean.class, FALSE),
-    _GRID_EMPTY_RESULT_SEVERITY(Boolean.class, FALSE),
+    _GRID_EMPTY_RESULT_SEVERITY(Severity.class, _S0_),
     _GRID_LOG_LINE_MAX_LENGTH(Integer.class, _9_, _9_, _9_),
     _GRID_NULL_RESULT_SEVERITY(Severity.class, _S0_),
     _GRID_RANGER_LOG_ABSENT_RANGE(Boolean.class, TRUE),
@@ -168,8 +167,8 @@ public enum PropEnum implements _PropEnum {
     _TEST_REPORT_OPEN_HTML(Boolean.class, TRUE),
     _TEST_REPORT_PROGRESSION_FFMPEG(String.class, FFMPEG),
     _TEST_REPORT_PROGRESSION_MAX_FRAMES(Integer.class, _5_, _0_, _0_, _0_),
-    _TEST_REPORT_PROGRESSION_MAX_FRAME_PIXELS(Integer.class, _1_, _6_, _7_, _7_, _7_, _2_, _1_, _6_, _0_),
-    _TEST_REPORT_PROGRESSION_MAX_TOTAL_PIXELS(Long.class, _2_, _0_, _0_, _0_, _0_, _0_, _0_, _0_, _0_, _0_),
+    _TEST_REPORT_PROGRESSION_MAX_FRAME_PIXELS(Integer.class, _1_, _6_, _8_, M),
+    _TEST_REPORT_PROGRESSION_MAX_TOTAL_PIXELS(Long.class, _1_, _0_, G),
     _TEST_REPORT_PROGRESSION_SCENARIO(Boolean.class, TRUE),
     _TEST_REPORT_PROGRESSION_SCENARIO_GIF(Boolean.class, FALSE),
     _TEST_REPORT_PROGRESSION_SCENARIO_MP4(Boolean.class, TRUE),

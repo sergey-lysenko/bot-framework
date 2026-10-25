@@ -44,13 +44,34 @@ public record Booleans() {
     }
 
     /**
-     * Return 'true' of 'false' with equal probability
+     * Return 'true' or 'false' with equal probability
      *
      * @return random boolean value
      */
     public static boolean isTrue() {
 
         return isTrue(ONE_HALF);
+    }
+
+    /**
+     * Return 'true' or 'false' with equal probability for 'false'
+     *
+     * @return random boolean value
+     */
+    public static boolean isFalse() {
+
+        return !isTrue();
+    }
+
+    /**
+     * Checks if the given Boolean is non-null and false.
+     *
+     * @param b the Boolean value to check
+     * @return true if b is non-null and false, false otherwise
+     */
+    public static boolean isFalse(final Boolean b) {
+
+        return null != b && !b;
     }
 
     /**

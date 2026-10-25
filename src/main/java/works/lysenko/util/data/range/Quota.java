@@ -30,9 +30,14 @@ import static works.lysenko.util.spec.Numbers.ZERO;
  * Represents a quota object with a value, precision, and a range defined by minimum and maximum fractions.
  * The Quota class allows for validation, calculation, and conversion related to quota values.
  *
- * @param <T> The type of the value held by the quota object.
+ * @param <T>       The type of the value held by the quota object.
+ * @param value     The underlying value associated with this quota.
+ * @param precision The precision or granularity constraint.
+ * @param stamp     The identifier stamp string.
+ * @param min       The minimum allowable fraction.
+ * @param max       The maximum allowable fraction.
  */
-@SuppressWarnings({"CallToSuspiciousStringMethod", "MissingJavadoc"})
+@SuppressWarnings({"CallToSuspiciousStringMethod"})
 public record Quota<T>(T value, T precision, String stamp, Fraction min, Fraction max) implements _Quota<T> {
 
     /**
@@ -173,6 +178,12 @@ public record Quota<T>(T value, T precision, String stamp, Fraction min, Fractio
         return new Quota<>(value, precision, stamp, min, max);
     }
 
+    /**
+     * Calculates the absolute margin between an actual fraction value and this quota's allowable range.
+     *
+     * @param actualValue The actual fraction value to check.
+     * @return Zero fraction if actualValue is within min and max, or the absolute distance to min/max if outside.
+     */
     @SuppressWarnings({"IfStatementWithTooManyBranches", "MethodWithMultipleReturnPoints"})
     public Fraction actualAbsoluteMargin(final Fraction actualValue) {
 
@@ -183,22 +194,42 @@ public record Quota<T>(T value, T precision, String stamp, Fraction min, Fractio
         else return null;
     }
 
+    /**
+     * Calculates the median value of this Quota by averaging min and max fractions.
+     *
+     * @return The median value as a double.
+     */
     public double median() {
 
         return (min().doubleValue() + max().doubleValue()) / 2;
     }
 
+    /**
+     * Returns a string representation of this quota's range width as a percentage.
+     *
+     * @return The formatted percentage string.
+     */
     @Override
     public String percentage() {
 
         return percentString(width(), MAX - MIN);
     }
 
+    /**
+     * Renders this quota as a string representation.
+     *
+     * @return The string rendering of this quota.
+     */
     public String render() {
 
         return toString();
     }
 
+    /**
+     * Returns a range representation of this quota's fractional min and max bounds.
+     *
+     * @return A _Value containing a FractionRange of min and max.
+     */
     @SuppressWarnings("unchecked")
     @Override
     public _Value<T> share() {
@@ -206,6 +237,11 @@ public record Quota<T>(T value, T precision, String stamp, Fraction min, Fractio
         return (_Value<T>) v(new FractionRange(min, max));
     }
 
+    /**
+     * Returns a string representation of the quota.
+     *
+     * @return The string representation.
+     */
     @SuppressWarnings("NullableProblems")
     @Override
     public String toString() {
@@ -214,6 +250,11 @@ public record Quota<T>(T value, T precision, String stamp, Fraction min, Fractio
         return b(L0, s(value), range);
     }
 
+    /**
+     * Calculates the width of this quota range (max - min).
+     *
+     * @return The width as a double.
+     */
     @Override
     public double width() {
 

@@ -13,12 +13,12 @@ import static works.lysenko.util.data.enums.Ansi.yb;
 import static works.lysenko.util.data.strs.Bind.b;
 
 /**
- * A1 data structure representing a range of integer values, shared items, and a maximum fraction.
+ * A data structure representing a range of integer values, shared items, and a maximum fraction.
  * Provides functionality to generate graph parameters based on the contained data.
  *
- * @param amount A1 range of integer values.
- * @param shares A1 collection of shared items.
- * @param max    A1 fraction value denoting the maximum allowable value.
+ * @param amount A range of integer values.
+ * @param shares A collection of shared items.
+ * @param max    A fraction value denoting the maximum allowable value.
  */
 public record FromShares(_Range<Integer> amount, _Quotas<?> shares, Fraction max) {
 

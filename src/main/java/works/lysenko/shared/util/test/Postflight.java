@@ -12,6 +12,9 @@ import static works.lysenko.util.data.strs.Bind.*;
  */
 public class Postflight implements Runnable {
 
+    /**
+     * Executes the postflight cleanup routine.
+     */
     @Override
     public final void run() {
 

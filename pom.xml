@@ -15,7 +15,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
-    <maven.test.failure.ignore>true</maven.test.failure.ignore>
+    <maven.test.failure.ignore>false</maven.test.failure.ignore>
 
     <!-- Dependencies versions -->
     <selenium.version>4.18.1</selenium.version>

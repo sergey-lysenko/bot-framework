@@ -30,17 +30,18 @@ import static works.lysenko.util.spec.Layout.Parts.GRID_EXTENSION;
 import static works.lysenko.util.spec.Layout.Paths._GRIDS_;
 
 /**
- * The Colour record provides methods for verifying undefined colour definitions
- * across grid files.
+ * Utility record representing colours and providing methods to verify undefined
+ * colour definitions across grid configuration files.
  */
 @SuppressWarnings("WeakerAccess")
 public record Colour() {
 
     /**
-     * Verifies the undefined colours in a grid.
+     * Verifies undefined colours within a specific grid file given its path,
+     * adding any unknown colour values to the provided collection.
      *
-     * @param path           the path of the file containing the properties
-     * @param unknownColours collection accumulating unknown colours
+     * @param path           the file path of the grid properties
+     * @param unknownColours collection accumulating unknown colour integer values
      */
     private static void verifyGridUndefinedColours(final String path, final Collection<Integer> unknownColours) {
 
@@ -61,7 +62,12 @@ public record Colour() {
     }
 
     /**
-     * Verifies the undefined colours in the matrices.
+     * Verifies undefined colour definitions across all grid configuration files located
+     * in the directory defined by {@code _GRIDS_}.
+     * <p>
+     * If colour verification is enabled ({@code Verify.colours}), a section is logged,
+     * and each matching grid file is checked for unknown colours that are not present
+     * in {@code knownColours}. Any discovered unknown colours are logged as events with severity {@code S2}.
      */
     public static void verifyUndefinedColours() {
 

@@ -11,6 +11,9 @@ import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Wrap.e;
 
 /**
+ * Represents a line feed log entry.
+ * Extends {@AbstractLogData}.
+ *
  * @author Sergii Lysenko
  */
 public class LineFeed extends AbstractLogData {

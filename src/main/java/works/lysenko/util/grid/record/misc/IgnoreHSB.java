@@ -3,7 +3,11 @@ package works.lysenko.util.grid.record.misc;
 import works.lysenko.util.data.range.FractionRange;
 
 /**
- * Represents a class that represents an ignore range for HSB (SharesOfHue, SharesOfSaturation, SharesOfBrightness) values.
+ * Represents an ignore range for HSB (Hue, Saturation, Brightness) values.
+ *
+ * @param hue        the range for the hue component
+ * @param saturation the range for the saturation component
+ * @param brightness the range for the brightness component
  */
 public record IgnoreHSB(FractionRange hue, FractionRange saturation, FractionRange brightness) {
 
@@ -18,7 +22,7 @@ public record IgnoreHSB(FractionRange hue, FractionRange saturation, FractionRan
     }
 
     /**
-     * Creates an instance of IgnoreHSB with specified HSB (SharesOfHue, SharesOfSaturation, SharesOfBrightness) ranges.
+     * Creates an instance of IgnoreHSB with specified HSB ranges.
      *
      * @param hue        the range for the hue component
      * @param saturation the range for the saturation component

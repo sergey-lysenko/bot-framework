@@ -29,4 +29,19 @@ class StringParserTest {
         assertEquals(99, StringParser.create("99", Integer.class).result());
         assertNull(StringParser.create("invalid", Integer.class).result());
     }
+
+    @Test
+    void parsesSuffixedIntegersAndLongs() {
+        assertEquals(2_000_000_000L, StringParser.create("2000M", Long.class).result());
+        assertEquals(2_000_000L, StringParser.create("2mpx", Long.class).result());
+        assertEquals(2_000_000_000L, StringParser.create("2000mpx", Long.class).result());
+        assertEquals(2_000_000_000L, StringParser.create("2G", Long.class).result());
+        assertEquals(2_000_000_000L, StringParser.create("2gpx", Long.class).result());
+        assertEquals(168_000_000, StringParser.create("168M", Integer.class).result());
+        assertEquals(168_000_000, StringParser.create("168mpx", Integer.class).result());
+        assertEquals(167_770_000, StringParser.create("167.77M", Integer.class).result());
+        assertEquals(1_000_000, StringParser.create("1000K", Integer.class).result());
+        assertEquals(2_000_000_000L, StringParser.create("2000000000", Long.class).result());
+        assertEquals(167772160, StringParser.create("167772160", Integer.class).result());
+    }
 }

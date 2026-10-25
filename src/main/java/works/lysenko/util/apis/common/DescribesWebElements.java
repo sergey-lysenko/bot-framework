@@ -9,15 +9,19 @@ import org.openqa.selenium.WebElement;
 public interface DescribesWebElements {
 
     /**
-     * @param element reference
-     * @return description
+     * Describes the specified web element.
+     *
+     * @param element web element reference
+     * @return description of the web element
      */
     String describe(WebElement element);
 
     /**
-     * @param element  reference
+     * Describes the specified web element with optional geometry details.
+     *
+     * @param element  web element reference
      * @param geometry whether to include geometry information
-     * @return description
+     * @return description of the web element
      */
     String describe(WebElement element, boolean geometry);
 }

@@ -25,11 +25,16 @@ import static works.lysenko.util.prop.grid.Validation.fences;
 /**
  * The Processor class implements the _GridProcessor interface and provides methods for calculating rates of pixel values.
  */
-@SuppressWarnings({"MissingJavadoc", "DataFlowIssue", "StandardVariableNames"})
+@SuppressWarnings({"DataFlowIssue", "StandardVariableNames"})
 public class Processor implements _GridProcessor {
 
     private final _GridCalculator calculator;
 
+    /**
+     * Constructs a Processor with the specified grid calculator.
+     *
+     * @param calculator the grid calculator
+     */
     public Processor(final _GridCalculator calculator) {
 
         this.calculator = calculator;
@@ -127,16 +132,34 @@ public class Processor implements _GridProcessor {
         return getFractionActualFractionMap(q, raw);
     }
 
+    /**
+     * Retrieves colours by rates with zero threshold.
+     *
+     * @return a map of color values to valued range results
+     */
     public final Map<Integer, _ValuedRangeResult> getColoursByRates() {
 
         return getRatesWithThreshold(calculator.countPixelsByColor(), Fraction.ZERO);
     }
 
+    /**
+     * Retrieves colours by rates with the specified threshold.
+     *
+     * @param threshold the threshold fraction
+     * @return a map of color values to valued range results
+     */
     public final Map<Integer, _ValuedRangeResult> getColoursByRates(final Fraction threshold) {
 
         return getRatesWithThreshold(calculator.countPixelsByColor(), threshold);
     }
 
+    /**
+     * Retrieves colours by rates with the specified threshold, ignoring specified HSB criteria.
+     *
+     * @param threshold the threshold fraction
+     * @param ignoreHSB the HSB parameters to ignore
+     * @return a map of color values to valued range results
+     */
     @SuppressWarnings("ContinueStatement")
     public final Map<Integer, _ValuedRangeResult> getColoursByRates(final Fraction threshold, final IgnoreHSB ignoreHSB) {
 

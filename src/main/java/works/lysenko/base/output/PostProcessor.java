@@ -264,9 +264,9 @@ public class PostProcessor {
                             treeGifEnabled,
                             treeWebpEnabled,
                             Boolean.parseBoolean(args[10]),
-                            Integer.parseInt(args[6]),
-                            Integer.parseInt(args[7]),
-                            Integer.parseInt(args[8]),
+                            works.lysenko.base.util.StringParser.parseSuffixedInt(args[6]),
+                            works.lysenko.base.util.StringParser.parseSuffixedInt(args[7]),
+                            works.lysenko.base.util.StringParser.parseSuffixedLong(args[8]),
                             args[11],
                             openBrowser,
                             treeSonification);

@@ -24,9 +24,21 @@ import static works.lysenko.util.func.type.Objects.isNotNull;
         "ChainedMethodCall", "ForeachStatement", "ObjectAllocationInLoop"})
 public class Pool implements _Pool {
 
+    /**
+     * Parent scenario managing this pool.
+     */
     private final _Scenario parent;
+
+    /**
+     * List of key-value pairs linking scenarios to their weights.
+     */
     private final List<KeyValue<_Scenario, Fraction>> pairList;
 
+    /**
+     * Constructs a scenario pool owned by the given parent scenario.
+     *
+     * @param parent parent scenario instance
+     */
     Pool(final _Scenario parent) {
 
         this.parent = parent;
@@ -112,16 +124,31 @@ public class Pool implements _Pool {
         });
     }
 
+    /**
+     * Retrieves the list of scenario-weight pairs in this pool.
+     *
+     * @return list of scenario-weight KeyValue pairs
+     */
     public final List<KeyValue<_Scenario, Fraction>> getPairList() {
 
         return pairList;
     }
 
+    /**
+     * Retrieves a sorted set of all scenarios contained in this pool and their descendants.
+     *
+     * @return sorted Set of scenarios
+     */
     public final Set<_Scenario> getSortedSet() {
 
         return pairList.stream().flatMap(scenario -> scenario.name().list().stream()).collect(Collectors.toCollection(SortedScenario::new));
     }
 
+    /**
+     * Attaches the parent scenario to a child scenario if it inherits from Core.
+     *
+     * @param scenario child scenario to attach
+     */
     private void attach(final _Scenario scenario) {
 
         if (scenario instanceof Core core) core.setParentScenario(parent);

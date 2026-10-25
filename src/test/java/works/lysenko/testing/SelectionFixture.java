@@ -126,8 +126,12 @@ public final class SelectionFixture implements AutoCloseable {
         return (_Logs) Proxy.newProxyInstance(_Logs.class.getClassLoader(), new Class<?>[]{_Logs.class}, (proxy, method, args) -> {
             if ("logEvent".equals(method.getName())) {
                 events.add(args[0] + ": " + args[1]);
-            } else if ("log".equals(method.getName()) && null != args && 0 < args.length && args[0] instanceof String line) {
-                logs.add(line);
+            } else if ("log".equals(method.getName()) && null != args && 0 < args.length) {
+                if (args[0] instanceof String line) {
+                    logs.add(line);
+                } else if (args.length >= 2 && args[1] instanceof String line) {
+                    logs.add(line);
+                }
             }
             final Class<?> type = method.getReturnType();
             if (boolean.class == type) return false;

@@ -24,6 +24,12 @@ public final class GridProperties extends ScaledProperties implements _GridPrope
         super(isPath ? name : _GridProperties.getGridPath(name), new ScaledPropertiesOptions(isPath ? YES : NO, false, false));
     }
 
+    /**
+     * Updates a property with the specified key and value.
+     *
+     * @param key   the property key
+     * @param value the property value
+     */
     @Override
     public void updateProperty(final String key, final String value) {
 

@@ -1,0 +1,145 @@
+package works.lysenko.util.chrs;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class ___Test {
+
+    @Test
+    void testInstantiation() {
+        ___ instance = new ___();
+        assertNotNull(instance);
+    }
+
+    @Test
+    void testConstants() {
+        assertEquals("ach", ___ .ACH);
+        assertEquals("add", ___ .ADD);
+        assertEquals("aft", ___ .AFT);
+        assertEquals("age", ___ .AGE);
+        assertEquals("ail", ___ .AIL);
+        assertEquals("all", ___ .ALL);
+        assertEquals("and", ___ .AND);
+        assertEquals("ans", ___ .ANS);
+        assertEquals("any", ___ .ANY);
+        assertEquals("apk", ___ .APK);
+        assertEquals("app", ___ .APP);
+        assertEquals("are", ___ .ARE);
+        assertEquals("art", ___ .ART);
+        assertEquals("ary", ___ .ARY);
+        assertEquals("ate", ___ .ATE);
+        assertEquals("bar", ___ .BAR);
+        assertEquals("big", ___ .BIG);
+        assertEquals("bin", ___ .BIN);
+        assertEquals("ble", ___ .BLE);
+        assertEquals("bot", ___ .BOT);
+        assertEquals("but", ___ .BUT);
+        assertEquals("cas", ___ .CAS);
+        assertEquals("che", ___ .CHE);
+        assertEquals("col", ___ .COL);
+        assertEquals("com", ___ .COM);
+        assertEquals("den", ___ .DEN);
+        assertEquals("...", ___ .DOTS);
+        assertEquals("due", ___ .DUE);
+        assertEquals("end", ___ .END);
+        assertEquals("ent", ___ .ENT);
+        assertEquals("equ", ___ .EQU);
+        assertEquals("eta", ___ .ETA);
+        assertEquals("etc", ___ .ETC);
+        assertEquals("fau", ___ .FAU);
+        assertEquals("few", ___ .FEW);
+        assertEquals("fit", ___ .FIT);
+        assertEquals("for", ___ .FOR);
+        assertEquals("ged", ___ .GED);
+        assertEquals("gen", ___ .GEN);
+        assertEquals("get", ___ .GET);
+        assertEquals("gra", ___ .GRA);
+        assertEquals("had", ___ .HAD);
+        assertEquals("has", ___ .HAS);
+        assertEquals("her", ___ .HER);
+        assertEquals("how", ___ .HOW);
+        assertEquals("hsv", ___ .HSV);
+        assertEquals("hub", ___ .HUB);
+        assertEquals("ial", ___ .IAL);
+        assertEquals("ich", ___ .ICH);
+        assertEquals("ick", ___ .ICK);
+        assertEquals("ing", ___ .ING);
+        assertEquals("inn", ___ .INN);
+        assertEquals("ion", ___ .ION);
+        assertEquals("ist", ___ .IST);
+        assertEquals("ite", ___ .ITE);
+        assertEquals("ity", ___ .ITY);
+        assertEquals("izi", ___ .IZI);
+        assertEquals("jar", ___ .JAR);
+        assertEquals("key", ___ .KEY);
+        assertEquals("lay", ___ .LAY);
+        assertEquals("ler", ___ .LER);
+        assertEquals("let", ___ .LET);
+        assertEquals("log", ___ .LOG);
+        assertEquals("los", ___ .LOS);
+        assertEquals("low", ___ .LOW);
+        assertEquals("max", ___ .MAX);
+        assertEquals("men", ___ .MEN);
+        assertEquals("min", ___ .MIN);
+        assertEquals("MiB", ___ .MiB);
+        assertEquals("nav", ___ .NAV);
+        assertEquals("new", ___ .NEW);
+        assertEquals("non", ___ .NON);
+        assertEquals("nor", ___ .NOR);
+        assertEquals("not", ___ .NOT);
+        assertEquals("now", ___ .NOW);
+        assertEquals("nth", ___ .NTH);
+        assertEquals("off", ___ .OFF);
+        assertEquals("old", ___ .OLD);
+        assertEquals("one", ___ .ONE);
+        assertEquals("opp", ___ .OPP);
+        assertEquals("ord", ___ .ORD);
+        assertEquals("ore", ___ .ORE);
+        assertEquals("org", ___ .ORG);
+        assertEquals("ort", ___ .ORT);
+        assertEquals("out", ___ .OUT);
+        assertEquals("own", ___ .OWN);
+        assertEquals("pan", ___ .PAN);
+        assertEquals("pdf", ___ .PDF);
+        assertEquals("ped", ___ .PED);
+        assertEquals("per", ___ .PER);
+        assertEquals("png", ___ .PNG);
+        assertEquals("put", ___ .PUT);
+        assertEquals("raw", ___ .RAW);
+        assertEquals("red", ___ .RED);
+        assertEquals("rgb", ___ .RGB);
+        assertEquals("row", ___ .ROW);
+        assertEquals("run", ___ .RUN);
+        assertEquals("set", ___ .SET);
+        assertEquals("spa", ___ .SPA);
+        assertEquals("src", ___ .SRC);
+        assertEquals("sta", ___ .STA);
+        assertEquals("sub", ___ .SUB);
+        assertEquals("svg", ___ .SVG);
+        assertEquals("tab", ___ .TAB);
+        assertEquals("tag", ___ .TAG);
+        assertEquals("ted", ___ .TED);
+        assertEquals("ten", ___ .TEN);
+        assertEquals("the", ___ .THE);
+        assertEquals("tit", ___ .TIT);
+        assertEquals("tol", ___ .TOL);
+        assertEquals("too", ___ .TOO);
+        assertEquals("tor", ___ .TOR);
+        assertEquals("tri", ___ .TRI);
+        assertEquals("try", ___ .TRY);
+        assertEquals("uch", ___ .UCH);
+        assertEquals("ugh", ___ .UGH);
+        assertEquals("ung", ___ .UNG);
+        assertEquals("val", ___ .VAL);
+        assertEquals("var", ___ .VAR);
+        assertEquals("ver", ___ .VER);
+        assertEquals("via", ___ .VIA);
+        assertEquals("was", ___ .WAS);
+        assertEquals("web", ___ .WEB);
+        assertEquals("xml", ___ .XML);
+        assertEquals("yes", ___ .YES);
+        assertEquals("128", ___ ._128);
+        assertEquals("255", ___ ._255);
+    }
+}

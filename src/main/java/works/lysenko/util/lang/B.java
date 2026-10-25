@@ -15,10 +15,16 @@ import static works.lysenko.util.lang.word.C.COLOURS;
 import static works.lysenko.util.lang.word.I.IGNORED;
 import static works.lysenko.util.lang.word.O.ORDER;
 
-@SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass"})
+/**
+ * Language utility constants starting with B.
+ */
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass"})
 public record B() {
 
+    /** Constant representing the phrase 'by actual value'. */
     public static final String BY_ACTUAL_VALUE = b(BY, ACTUAL, VALUE);
+    /** Constant representing the message that colours order is not ignored by. */
     public static final String BUT___ = b(BUT, COLOURS, ORDER, IS, NOT, IGNORED, BY);
+    /** Constant representing the phrase 'button with text'. */
     public static final String BUTTON_WITH_TEXT = b(c(BUTTON), WITH, c(TEXT));
 }

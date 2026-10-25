@@ -15,12 +15,13 @@ import static works.lysenko.util.data.enums.Ansi.rb;
 import static works.lysenko.util.lang.C.COMMA_SPACE;
 
 /**
- * The RangerResults class implements _ValidationResults and _ValidationResult interfaces
- * to manage a collection of RangerResult instances and provide validation results.
+ * Manages a collection of RangerResult instances and provides validation results.
+ * Implements the {@_ValidationResults} and {@_ValidationResult} interfaces.
  */
 @SuppressWarnings("MethodWithMultipleReturnPoints")
 public class RangerResults implements _ValidationResults, _ValidationResult {
 
+    /** The list of RangerResult instances. */
     private final List<RangerResult> list;
 
     /**
@@ -44,7 +45,7 @@ public class RangerResults implements _ValidationResults, _ValidationResult {
      * Determines the worst validation result from a list of RangerResult instances
      * and returns the corresponding ColoursValidationResult.
      *
-     * @return a ColoursValidationResult representing the worst result in the list or RANGER_FAILED if any failure exists.
+     * @return a ColoursValidationResult representing the worst result in the list or RANGER_FAILED if any failure exists
      */
     @SuppressWarnings("PublicMethodNotExposedInInterface")
     public final ColoursValidationResult basedOn() {

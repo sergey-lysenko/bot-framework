@@ -86,5 +86,7 @@ class IntegerRangeTest {
         // Open-ended ranges render with the delimiter, e.g. "5|+" (differs from the "5+" input syntax)
         assertEquals("5|+", new IntegerRange("5+").toString());
         assertEquals("5|-", new IntegerRange("5-").toString());
+        assertNotNull(new IntegerRange(5, 10).toVerboseString());
+        assertNotNull(new IntegerRange("5+").toVerboseString());
     }
 }

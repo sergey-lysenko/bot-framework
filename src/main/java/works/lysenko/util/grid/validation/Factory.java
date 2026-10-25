@@ -41,7 +41,8 @@ import static works.lysenko.util.spec.Numbers.ZERO;
 import static works.lysenko.util.spec.Symbols._COMMA_;
 
 /**
- * Represents a Factory for creating and managing validation requests.
+ * Represents a factory record for creating and managing validation requests (Request),
+ * handling image requirements, grid properties, locations, scales, resolutions, and regions.
  */
 public record Factory() {
 

@@ -8,12 +8,16 @@ package works.lysenko.util.apis.core;
 public interface _Timer {
 
     /**
+     * Retrieves elapsed milliseconds since stopwatch start.
+     *
      * @return milliseconds since Stopwatch instantiation
      */
     @SuppressWarnings("unused")
     long msSinceStart();
 
     /**
+     * Retrieves timestamp when stopwatch started.
+     *
      * @return moment of Stopwatch instantiation
      */
     long startedAt();

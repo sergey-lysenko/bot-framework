@@ -97,6 +97,7 @@ public record Click() {
     @SuppressWarnings({"WeakerAccess", "MethodWithMultipleReturnPoints"})
     public static void longClickAtCoordinates(final long duration, final int x1, final int y1) {
 
+        if (null == exec) return;
         final WebDriver wd = exec.wd();
         if (null == wd) return;
         final PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, FINGER);

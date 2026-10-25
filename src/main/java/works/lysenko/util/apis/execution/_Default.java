@@ -9,6 +9,8 @@ package works.lysenko.util.apis.execution;
 public interface _Default {
 
     /**
+     * Retrieves the default string value.
+     *
      * @return default string value
      */
     String def();

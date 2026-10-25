@@ -28,12 +28,17 @@ import static works.lysenko.util.lang.word.T.THESE;
 import static works.lysenko.util.spec.Symbols._COMMA_;
 import static works.lysenko.util.spec.Symbols._DOT_;
 
+/**
+ * Utility class for calculating statistics on quota ranges and results.
+ */
 record Stats() {
 
     private static final double OVERSTRETCH = 1.1;
 
     /**
-     * Calculates statistics based on the ranges.
+     * Calculates statistics based on the quotas ranges.
+     *
+     * @param quotas The quotas collection.
      */
     @SuppressWarnings({"unchecked", "WeakerAccess"})
     public static void stats(final _Quotas<?> quotas) {

@@ -4,18 +4,24 @@ import works.lysenko.util.apis.log._LogData;
 
 /**
  * AbstractLogData is an abstract class that provides common functionalities for log data objects.
- * It implements the ProvidesLogData interface.
+ * Implements the {@_LogData} interface.
  */
 @SuppressWarnings("ProtectedField")
 public abstract class AbstractLogData implements _LogData { // TODO: port to Record
 
+    /** The log message string. */
     protected final String message;
+    /** The indentation depth level. */
     protected final int depth;
+    /** The unique log data identifier. */
     protected final long id;
 
     /**
-     * @param depth   indentation
-     * @param message text
+     * Constructs an AbstractLogData object with the specified ID, depth, and message.
+     *
+     * @param id      the unique identifier
+     * @param depth   the indentation depth
+     * @param message the log message text
      */
     protected AbstractLogData(final long id, final int depth, final String message) {
 
@@ -24,17 +30,20 @@ public abstract class AbstractLogData implements _LogData { // TODO: port to Rec
         this.message = message;
     }
 
+    @Override
     public final int depth() {
 
         return depth;
     }
 
+    @Override
     public final long id() {
 
         return id;
     }
 
     @SuppressWarnings("DesignForExtension")
+    @Override
     public String message() {
 
         return message;

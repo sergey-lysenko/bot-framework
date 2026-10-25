@@ -5,13 +5,14 @@ import works.lysenko.util.data.comparator.IgnoreCaseString;
 import java.util.TreeMap;
 
 /**
- * Sorted Result Map
+ * A sorted map associating string keys with string values,
+ * using an ignore-case string comparator.
  */
 @SuppressWarnings({"CloneableClassInSecureContext", "ClassExtendsConcreteCollection"})
 public class SortedString extends TreeMap<String, String> {
 
     /**
-     * Sorted Result Map
+     * Constructs a new SortedString map sorted case-insensitively by string keys.
      */
     public SortedString() {
 

@@ -37,7 +37,7 @@ import static works.lysenko.util.spec.Numbers.ZERO;
 import static works.lysenko.util.spec.Symbols._SPACE_;
 
 /**
- * A1 utility class for performing operations with fractional shares.
+ * Utility class for performing operations with fractional shares.
  */
 @SuppressWarnings({"ObjectAllocationInLoop", "StaticMethodOnlyUsedInOneClass"})
 public record OfFractions() {

@@ -2,6 +2,10 @@ package works.lysenko.util.data.records;
 
 /**
  * Represents an element with x, y coordinates and a colour value.
+ *
+ * @param x      the x coordinate of the Element
+ * @param y      the y coordinate of the Element
+ * @param colour the colour value of the Element
  */
 public record Element(int x, int y, int colour) {
 

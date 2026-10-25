@@ -7,3 +7,6 @@ result/
 run/
 dash/
 /var/parameters
+.artifacts/
+ScratchTest.java
+skills/

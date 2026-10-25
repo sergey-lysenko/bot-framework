@@ -5,8 +5,11 @@ package works.lysenko.shared.lang.chrs;
  * various frequently used string literals which can be used throughout an application to maintain consistency and
  * avoid magic strings. The class does not include any behavior or methods beyond its constructor.
  */
-@SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "DollarSignInName", "MissingJavadoc", "unused"})
+@SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "DollarSignInName", "unused"})
 public record __() {
 
+    /**
+     * String constant for "gn".
+     */
     public static final String GN = "gn"; //NON-NLS
 }

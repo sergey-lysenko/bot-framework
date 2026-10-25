@@ -13,51 +13,71 @@ import java.util.Set;
 public interface _Tests {
 
     /**
-     * @return active Scenario Paths
+     * Retrieves the count of active scenario execution paths.
+     *
+     * @return active Scenario Paths count
      */
     int getActiveScenarioPaths();
 
     /**
+     * Retrieves all accessible leaf scenarios.
+     *
      * @return set of all presently accessible leaf scenarios
      */
     Set<_Scenario> getAccessibleLeafs();
 
     /**
+     * Retrieves all accessible node scenarios.
+     *
      * @return set of all presently accessible node scenarios
      */
     Set<_Scenario> getAccessibleNodes();
 
     /**
-     * @return set of all presently accessible scenarios (both nodes and leafs)
+     * Retrieves all accessible scenarios (nodes and leafs).
+     *
+     * @return set of all presently accessible scenarios
      */
     Set<_Scenario> getAccessibleScenarios();
 
     /**
+     * Checks if all leaf scenarios have been executed.
+     *
      * @return true if all presently accessible leaf scenarios have been executed at least once
      */
     boolean areAllLeafsExecuted();
 
     /**
+     * Retrieves the count of executed leaf scenarios.
+     *
      * @return number of executed accessible leaf scenarios
      */
     int getExecutedLeafsCount();
 
     /**
-     * @return currently executed test
+     * Retrieves the currently executed test number.
+     *
+     * @return currently executed test number
      */
     Integer getCurrentTestNumber();
 
     /**
+     * Retrieves the total count of tests.
+     *
      * @return current number of tests
      */
     int getTestsCount();
 
     /**
+     * Retrieves the current exception reference if execution failed.
+     *
      * @return exception object reference
      */
     Object getException();
 
     /**
+     * Retrieves the set of root scenarios.
+     *
      * @return root Scenarios set
      */
     Set<_Scenario> getRootScenarios();
@@ -87,11 +107,15 @@ public interface _Tests {
     void setStopFlag(boolean stopFlag);
 
     /**
-     * @return Test summary
+     * Retrieves the test execution summary table.
+     *
+     * @return Test summary table as a list of rows
      */
     List<List<String>> getTestsSummary();
 
     /**
+     * Retrieves the total scenario execution paths count.
+     *
      * @return total Scenario Paths
      */
     int getTotalScenarioPaths();

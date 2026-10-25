@@ -6,8 +6,14 @@ import static works.lysenko.util.data.strs.Case.*;
 import static works.lysenko.util.lang.word.E.*;
 import static works.lysenko.util.lang.word.M.*;
 
-@SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "WeakerAccess"})
+/**
+ * Shared language string constants starting with 'I'.
+ */
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "WeakerAccess"})
 public record I() {
 
+    /**
+     * String constant for "Improper error message".
+     */
     public static final String IMPROPER_ERROR_MESSAGE = b(c(IMPROPER), ERROR, MESSAGE);
 }

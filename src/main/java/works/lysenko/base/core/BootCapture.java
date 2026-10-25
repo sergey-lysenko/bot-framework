@@ -20,6 +20,9 @@ public final class BootCapture {
 
     private BootCapture() {}
 
+    /**
+     * Starts capturing standard output.
+     */
     public static synchronized void start() {
         if (capturing) return;
         capturing = true;
@@ -68,6 +71,11 @@ public final class BootCapture {
         System.setOut(new PrintStream(tee, true, StandardCharsets.UTF_8));
     }
 
+    /**
+     * Attaches a BufferedWriter to receive captured output stream content.
+     *
+     * @param writer the writer to attach
+     */
     public static synchronized void attach(final BufferedWriter writer) {
         if (!capturing) return;
         if (null != writer) {
@@ -83,10 +91,18 @@ public final class BootCapture {
         }
     }
 
+    /**
+     * Flushes captured content to the provided writer.
+     *
+     * @param writer the writer to flush to
+     */
     public static synchronized void flushTo(final BufferedWriter writer) {
         attach(writer);
     }
 
+    /**
+     * Stops capturing output and restores original System.out.
+     */
     public static synchronized void stop() {
         if (!capturing) return;
         capturing = false;

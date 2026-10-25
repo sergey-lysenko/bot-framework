@@ -1,0 +1,60 @@
+package works.lysenko.shared.util.test;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import works.lysenko.Base;
+import works.lysenko.base.Exec;
+import works.lysenko.base.exec.Scenarios;
+import sun.misc.Unsafe;
+import java.lang.reflect.Field;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
+class PreflightTest {
+    private Exec previousExec;
+
+    private works.lysenko.base.Core previousCore;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        previousExec = Base.exec;
+        previousCore = Base.core;
+        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
+        f.setAccessible(true);
+        final Unsafe unsafe = (Unsafe) f.get(null);
+        final Exec mockExec = (Exec) unsafe.allocateInstance(Exec.class);
+        final Field scenariosField = Exec.class.getDeclaredField("scenarios");
+        scenariosField.setAccessible(true);
+        scenariosField.set(mockExec, new Scenarios());
+        Base.exec = mockExec;
+        Base.properties = new works.lysenko.base.TestProperties();
+
+        final works.lysenko.base.Core mockCore = (works.lysenko.base.Core) unsafe.allocateInstance(works.lysenko.base.Core.class);
+        final Field loggerField = works.lysenko.base.Core.class.getDeclaredField("logger");
+        loggerField.setAccessible(true);
+        loggerField.set(mockCore, new works.lysenko.util.apis.log._Logs() {
+            @Override public java.io.Closeable getLogWriter() { return null; }
+            @Override public int getSpanLength() { return 0; }
+            @Override public java.io.Closeable getTelemetryWriter() { return null; }
+            @Override public void log(String message) {}
+            @Override public void log(int level, String message) {}
+            @Override public void log(int level, String message, Long redefinedTime) {}
+            @Override public void logEmptyLine() {}
+            @Override public void logEvent(works.lysenko.util.data.enums.Severity severity, String message, String shortStackTrace) {}
+        });
+        Base.core = mockCore;
+    }
+
+    @AfterEach
+    void tearDown() {
+        Base.exec = previousExec;
+        Base.core = previousCore;
+    }
+
+    @Test
+    void testRun() {
+        final Preflight preflight = new Preflight();
+        assertDoesNotThrow(preflight::run);
+    }
+}

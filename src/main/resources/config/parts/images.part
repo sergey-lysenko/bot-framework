@@ -50,8 +50,8 @@
 # .grid.empty.grid.validation.allowed=false
 
 # ------------------------------------------------------------------------------
-# Severity assigned when a validation produces an empty result. Default: false
-# .grid.empty.result.severity=false
+# Severity assigned when a validation produces an empty result. Default: s0
+# .grid.empty.result.severity=s0
 
 # ------------------------------------------------------------------------------
 # Maximum number of characters in a grid-related log line. Default: 999

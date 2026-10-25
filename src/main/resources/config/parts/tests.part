@@ -113,16 +113,16 @@
 # .test.report.progression.ffmpeg=ffmpeg
 
 # ------------------------------------------------------------------------------
-# Maximum pixel count permitted for a single progression frame. Default: 167772160
-# .test.report.progression.max.frame.pixels=167772160
+# Maximum pixel count permitted for a single progression frame (e.g. 168M, 167772160). Default: 168M
+# .test.report.progression.max.frame.pixels=168M
 
 # ------------------------------------------------------------------------------
 # Maximum number of progression frames retained and included in generated animations. Default: 5000
 # .test.report.progression.max.frames=5000
 
 # ------------------------------------------------------------------------------
-# Maximum total pixel count processed for a single progression animation. Default: 2000000000
-# .test.report.progression.max.total.pixels=2000000000
+# Maximum total pixel count processed for a single progression animation (e.g. 10G, 10000M, 10000000000). Default: 10G
+# .test.report.progression.max.total.pixels=10G
 
 # ------------------------------------------------------------------------------
 # Generates frames and animations showing scenario coverage progression. Default: true

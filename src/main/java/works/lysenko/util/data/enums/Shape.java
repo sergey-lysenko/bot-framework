@@ -1,10 +1,17 @@
 package works.lysenko.util.data.enums;
 
 /**
- * Enumeration representing different shapes.
+ * Enumeration representing different shapes used in grid and image processing operations.
  */
-@SuppressWarnings("MissingJavadoc")
 public enum Shape {
 
-    ELLIPCE, RECTANGLE
+    /**
+     * Ellipse shape.
+     */
+    ELLIPCE,
+
+    /**
+     * Rectangle shape.
+     */
+    RECTANGLE
 }

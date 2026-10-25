@@ -8,12 +8,26 @@ import static works.lysenko.util.data.enums.Ansi.rb;
 /**
  * Represents the possible outcomes of a range validation.
  */
-@SuppressWarnings("MissingJavadoc")
 public enum RangeResult implements _ValidationResult {
 
+    /**
+     * Range check passed.
+     */
     OK,
+
+    /**
+     * Range check within static margin.
+     */
     WITHIN_STATIC_MARGIN,
+
+    /**
+     * Range check within dynamic margin.
+     */
     WITHIN_DYNAMIC_MARGIN,
+
+    /**
+     * Range check failed.
+     */
     NOT_OK;
 
     @Override
@@ -22,6 +36,11 @@ public enum RangeResult implements _ValidationResult {
         return (FAILED > ordinal());
     }
 
+    /**
+     * Renders formatted status string.
+     *
+     * @return green bold if passed, red bold if failed
+     */
     public String render() {
 
         return isPassed() ? gb(name()) : rb(name());

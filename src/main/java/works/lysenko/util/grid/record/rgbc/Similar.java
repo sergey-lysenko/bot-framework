@@ -2,6 +2,13 @@ package works.lysenko.util.grid.record.rgbc;
 
 import static java.util.Objects.isNull;
 
+/**
+ * Represents a pair of similar colours with their Euclidean distance.
+ *
+ * @param c1       first colour RGB value
+ * @param c2       second colour RGB value
+ * @param distance Euclidean distance between the colours
+ */
 record Similar(int c1, int c2, double distance) {
 
     @SuppressWarnings("MethodWithMultipleReturnPoints")

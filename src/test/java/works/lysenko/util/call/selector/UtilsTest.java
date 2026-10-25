@@ -184,6 +184,29 @@ class UtilsTest {
         assertSame(a, Utils.verifyScenarioSelection(a));
     }
 
+    @Test
+    void logAccountingLogsWhenEnabled() {
+        works.lysenko.util.prop.tree.Include.upstream = true;
+        works.lysenko.util.prop.tree.Include.downstream = true;
+        fixture.setProperty(works.lysenko.util.prop.PropEnum._LOGS_DEBUG, "true");
+        assertDoesNotThrow(() -> Utils.logAccounting());
+        works.lysenko.util.prop.tree.Include.upstream = false;
+        works.lysenko.util.prop.tree.Include.downstream = false;
+    }
+
+    @Test
+    void logDebugAndLogEventWorkAsExpected() {
+        Utils.logDebug("test debug message");
+        Utils.logEvent(Severity.S2, "test event message");
+        assertTrue(fixture.events.stream().anyMatch(e -> e.contains("test event message")), String.valueOf(fixture.events));
+    }
+
+    @Test
+    void recordInstantiatesAndHasToString() {
+        final Utils u = new Utils();
+        assertNotNull(u.toString());
+    }
+
     // ----------------------------------------------------------------------------- helpers
 
     private static Leaf alpha() {

@@ -7,13 +7,14 @@ import works.lysenko.util.data.comparator.IgnoreCaseScenario;
 import java.util.TreeMap;
 
 /**
- * Sorted Result Map
+ * A sorted map associating {@_Scenario} keys with {@_Result} values,
+ * using an ignore-case scenario comparator.
  */
 @SuppressWarnings({"CloneableClassInSecureContext", "ClassExtendsConcreteCollection"})
 public class SortedResult extends TreeMap<_Scenario, _Result> {
 
     /**
-     * Sorted Result Map
+     * Constructs a new SortedResult map sorted by scenario name case-insensitively.
      */
     public SortedResult() {
 

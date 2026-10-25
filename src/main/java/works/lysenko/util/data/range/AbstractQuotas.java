@@ -6,6 +6,7 @@ import works.lysenko.Base;
 import works.lysenko.util.apis.grid.q._Quota;
 import works.lysenko.util.apis.grid.q._Quotas;
 import works.lysenko.util.data.records.KeyValue;
+import works.lysenko.util.data.records.Slack;
 import works.lysenko.util.data.type.Value;
 import works.lysenko.util.func.grid.Renderers;
 import works.lysenko.util.prop.grid.Ranges;
@@ -377,6 +378,12 @@ public abstract class AbstractQuotas implements _Quotas {
     public final void setQuotas(final List quotas) {
 
         this.quotas = quotas;
+    }
+
+    @Override
+    public Slack slack() {
+
+        return new Slack(Fraction.ZERO);
     }
 
     public abstract boolean isWithinPrecision(final Object value, final _Quota quota);

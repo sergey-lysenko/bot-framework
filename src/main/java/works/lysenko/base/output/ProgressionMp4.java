@@ -52,8 +52,16 @@ final class ProgressionMp4 {
             }
         }).reduce(new int[]{0, 0}, (a, b) -> new int[]{Math.max(a[0], b[0]), Math.max(a[1], b[1])});
 
-        int maxWidth = maxDims[0];
-        int maxHeight = maxDims[1];
+        int rawWidth = maxDims[0];
+        int rawHeight = maxDims[1];
+        if (rawWidth <= 0 || rawHeight <= 0) {
+            rawWidth = 1920;
+            rawHeight = 1080;
+        }
+
+        int maxWidth = rawWidth;
+        int maxHeight = rawHeight;
+
         if ((maxWidth & 1) != 0) maxWidth++;
         if ((maxHeight & 1) != 0) maxHeight++;
         validateDimensions(maxWidth, maxHeight);

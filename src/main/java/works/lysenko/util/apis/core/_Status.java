@@ -8,7 +8,9 @@ package works.lysenko.util.apis.core;
 public interface _Status {
 
     /**
-     * @return the Status information.
+     * Retrieves the status information.
+     *
+     * @return the Status information as a string.
      */
     String get();
 }

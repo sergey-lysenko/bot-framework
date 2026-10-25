@@ -28,7 +28,7 @@ import static works.lysenko.util.lang.word.R.REQUESTED;
 import static works.lysenko.util.lang.word.V.VALIDATION;
 
 /**
- * The Probe class is responsible for generating and managing validation requests
+ * The Check class is responsible for generating and managing validation requests
  * for various scenarios, including grid-based validation, image analysis,
  * location-based validation, and others.
  */

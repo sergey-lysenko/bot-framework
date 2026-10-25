@@ -19,6 +19,9 @@ import static works.lysenko.util.spec.Numbers.ZERO;
  * Represents a data class for holding a Colour Search Request, consisting of a normal distance value and a collection of
  * ColourSpread objects.
  * This class provides a method to check if a given RGB value fits any of the ColourSpread objects in the collection.
+ *
+ * @param normal  the normal distance value for colour search
+ * @param spreads the collection of colour spreads
  */
 @SuppressWarnings("MethodWithMultipleReturnPoints")
 public record ColourSearchRequest(Integer normal, Collection<ColourSpread> spreads) implements _ColourSpreadRequest {
@@ -117,6 +120,7 @@ public record ColourSearchRequest(Integer normal, Collection<ColourSpread> sprea
         return false;
     }
 
+    @Override
     public boolean fits(final int rgb) {
 
         for (final ColourSpread spread : spreads) {
@@ -125,6 +129,7 @@ public record ColourSearchRequest(Integer normal, Collection<ColourSpread> sprea
         return false;
     }
 
+    @Override
     public Collection<String> getUnknownColours() {
 
         final Collection<String> result = new HashSet<>(0);

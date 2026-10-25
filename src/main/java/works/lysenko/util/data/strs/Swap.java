@@ -251,7 +251,7 @@ public interface Swap {
      * Returns a new _Value object with the specified Fraction value.
      *
      * @param value The Fraction value to be wrapped in the _Value object.
-     * @return A1 new _Value object containing the specified Fraction value.
+     * @return A new _Value object containing the specified Fraction value.
      */
     static _Value<?> v(final Fraction value) {
 
@@ -262,7 +262,7 @@ public interface Swap {
      * Returns a new _Value object with the specified FractionRange value.
      *
      * @param value The FractionRange value to be wrapped in the _Value object.
-     * @return A1 new _Value object containing the specified FractionRange value.
+     * @return A new _Value object containing the specified FractionRange value.
      */
     static _Value<?> v(final FractionRange value) {
 

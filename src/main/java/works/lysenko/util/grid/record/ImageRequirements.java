@@ -8,6 +8,13 @@ import works.lysenko.util.apis.grid.r._Polychromy;
 
 /**
  * Represents a set of expectations for an image analysis.
+ *
+ * @param colours    the colour quotas expected in the image
+ * @param palette    the palette requirements
+ * @param polychromy the polychromy requirements
+ * @param hue        the hue fraction quotas
+ * @param saturation the saturation fraction quotas
+ * @param brightness the brightness fraction quotas
  */
 public record ImageRequirements(_ColoursQuotas colours,
                                 _Palette palette,

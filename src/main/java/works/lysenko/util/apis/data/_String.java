@@ -8,6 +8,8 @@ package works.lysenko.util.apis.data;
 public interface _String {
 
     /**
+     * Retrieves the string value provided by this instance.
+     *
      * @return String value
      */
     String getString();

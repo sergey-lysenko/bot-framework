@@ -19,13 +19,21 @@ import static works.lysenko.util.lang.word.R.*;
 import static works.lysenko.util.lang.word.S.SCREENSHOT;
 import static works.lysenko.util.spec.Symbols._COMMA_;
 
-@SuppressWarnings({"ClassWithoutLogger", "MissingJavadoc", "StaticMethodOnlyUsedInOneClass", "AutoBoxing"})
+/**
+ * Language utility constants starting with M.
+ */
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing"})
 public record M() {
 
+    /** Constant representing main activity. */
     public static final String MAIN_ACTIVITY = s(c(MAIN), c(ACTIVITY));
+    /** Constant representing the phrase 'making screenshot'. */
     public static final String MAKING_SCREENSHOT = b(c(MAKING), SCREENSHOT);
+    /** Constant representing manually requested test stop performed message. */
     public static final String MANUALLY_REQUESTED_TEST_STOP_PERFORMED = b(c(MANUALLY), REQUESTED, c(TEST), STOP, PERFORMED);
+    /** Constant representing maximum retries amount reached message. */
     public static final String MAXIMUM_RETRIES_AMOUNT___ = b(c(MAXIMUM), RETRIES, AMOUNT, s(REACHED, _COMMA_), s(FIND,
             e(ROUND, EMPTY)), RETURNS, s(NULL, _COMMA_), TEST, FAILURE, IMMINENT);
+    /** Constant representing the phrase 'merging actual value'. */
     public static final String MERGING_ACTUAL_VALUE = b(c(MERGING), ACTUAL, VALUE);
 }

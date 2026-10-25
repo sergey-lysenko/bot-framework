@@ -30,6 +30,9 @@ import static works.lysenko.util.lang.word.R.RELATIVE;
 /**
  * Represents a rational number and its association type (absolute or relative).
  * Implements the _RelativeOrAbsoluteFraction interface.
+ *
+ * @param fraction the underlying fraction value
+ * @param type     the type specifying whether the fraction is relative or absolute
  */
 @SuppressWarnings("MethodWithMultipleReturnPoints")
 public record RelativeOrAbsoluteFraction(Fraction fraction, RelativeOrAbsolute type) implements _RelativeOrAbsoluteFraction {
@@ -128,6 +131,12 @@ public record RelativeOrAbsoluteFraction(Fraction fraction, RelativeOrAbsolute t
         throw new IllegalStateException(HOW_DID_WE_GET_HERE);
     }
 
+    /**
+     * Computes the double value of this fraction relative to the specified base fraction.
+     *
+     * @param base the base fraction used to calculate relative values
+     * @return the double value of the fraction, or null if the type is unrecognized
+     */
     public Double doubleValue(final Fraction base) {
 
         if (R == type) return fraction.doubleValue() * base.doubleValue();

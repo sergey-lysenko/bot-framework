@@ -31,10 +31,25 @@ import static works.lysenko.util.spec.Numbers.TWO;
  * Encapsulates a range-aware margin composed of two {@code RelativeOrAbsoluteFraction} values
  * and an associated {@code FractionRange}. This class is primarily utilized in scenarios where
  * margins or bounds are defined as either relative or absolute, along with an applicable range.
+ *
+ * @param at0   the starting {@code RelativeOrAbsoluteFraction} value
+ * @param at1   the ending {@code RelativeOrAbsoluteFraction} value
+ * @param range the fraction range applicable to this ranged margin
  */
 @SuppressWarnings("MethodWithMultipleReturnPoints")
 public record RangedMargin(RelativeOrAbsoluteFraction at0, RelativeOrAbsoluteFraction at1,
                            FractionRange range) implements _RangedMargin {
+
+    /**
+     * Constructs a {@code RangedMargin} with two absolute fractions and default range [0, 1].
+     *
+     * @param at0 the starting fraction
+     * @param at1 the ending fraction
+     */
+    public RangedMargin(final Fraction at0, final Fraction at1) {
+
+        this(raf(at0, ABSOLUTE), raf(at1, ABSOLUTE), FractionRange.frr(Fraction.ZERO, Fraction.ONE));
+    }
 
     /**
      * Creates a {@code RangedMargin} object with the specified starting and ending
