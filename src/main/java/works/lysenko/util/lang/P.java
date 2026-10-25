@@ -17,4 +17,9 @@ public record P() {
     public static final String PROCESSING_EXCEPTIONAL_STATE = b(c(PROCESSING), EXCEPTIONAL, STATE);
     /** Constant representing provided locator. */
     public static final String PROVIDED_LOCATOR = b(c(works.lysenko.util.lang.word.P.PROVIDED), LOCATOR);
+    /** Constant representing platform-tools directory name. */
+    public static final String DIR_PLATFORM_TOOLS = "platform-tools";
+    /** Constant representing platforms directory name. */
+    public static final String DIR_PLATFORMS = "platforms";
 }
+

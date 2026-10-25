@@ -38,6 +38,8 @@ import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.func.core.Assertions.fail;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.lang.A.*;
+import static works.lysenko.util.lang.P.*;
+import static works.lysenko.util.lang.U.*;
 import static works.lysenko.util.lang.M.MAIN_ACTIVITY;
 import static works.lysenko.util.lang.U.*;
 import static works.lysenko.util.lang.W.WD_HUB;
@@ -196,26 +198,10 @@ public class Driver implements _Driver {
     private static final String ERR_EADDRINUSE = "EADDRINUSE";
     private static final String ERR_ADDRESS_IN_USE = "address already in use";
     private static final String ERR_LISTEN_EADDRINUSE = "listen EADDRINUSE";
-    private static final String MSG_PORT_CONFLICT_4723 = "Port conflict: port 4723 is already in use (EADDRINUSE)";
     private static final String MSG_SDK_ROOT_NOT_EXIST = "The Android SDK root folder";
     private static final String MSG_DOES_NOT_EXIST = "does not exist";
-    private static final String MSG_SDK_ROOT_CHECK = "Android SDK root folder does not exist: check ANDROID_HOME / ANDROID_SDK_ROOT";
     private static final String MSG_NO_DEVICE = "Could not find a connected Android device";
-    private static final String MSG_NO_DEVICE_HINT = "No connected Android device/emulator found. Ensure the emulator is running ('adb devices')";
     private static final String MSG_ORIGINAL_ERROR = "Original error:";
-    private static final String MSG_PORT_CONFLICT_GENERIC = "Port conflict (EADDRINUSE): another Appium instance or process is using this port";
-    private static final String MSG_SDK_FOLDER_CHECK = "Android SDK folder does not exist: check ANDROID_HOME / ANDROID_SDK_ROOT";
-    private static final String MSG_PARSER_NO_BYTES = "HTTP/1.1 header parser received no bytes";
-    private static final String MSG_APPIUM_CLOSED = "Appium server closed the connection unexpectedly (see ";
-    private static final String MSG_UNKNOWN_ERROR = "Unknown driver instantiation error";
-    private static final String DIR_PLATFORM_TOOLS = "platform-tools";
-    private static final String DIR_PLATFORMS = "platforms";
-    private static final String PATH_MACOS_SDK = "/Library/Android/sdk";
-    private static final String PATH_ANDROID_SDK = "/Android/Sdk";
-    private static final String PATH_SDK = "/sdk";
-    private static final String PATH_OPT_SDK = "/opt/android-sdk";
-    private static final String PATH_USR_LOCAL_SDK = "/usr/local/share/android-sdk";
-    private static final String MSG_DEFAULT_PORT_BUSY = "Default Appium port 4723 is already in use; selecting an available free port ...";
 
     private void createService() {
 
@@ -227,12 +213,13 @@ public class Driver implements _Driver {
             builder.withArgument(() -> s(_DASH_, _DASH_, LOG, _DASH_, LEVEL), WARN);
         }
         if (!isPortAvailable(DEFAULT_APPIUM_PORT)) {
-            log(Level.none, MSG_DEFAULT_PORT_BUSY, true);
+            log(Level.none, DEFAULT_PORT_BUSY, true);
             builder.usingAnyFreePort();
         }
         configureAndroidSdk(builder);
         service = builder.build();
     }
+
 
     private static boolean isPortAvailable(final int port) {
 
