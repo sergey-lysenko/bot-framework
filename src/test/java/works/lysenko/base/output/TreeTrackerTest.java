@@ -86,17 +86,10 @@ class TreeTrackerTest {
     }
 
     private static void setTestProperty(final String key, final String value) {
-        try {
-            final TestProperties testProperties = new TestProperties();
-            final Field theField = TestProperties.class.getDeclaredField("the");
-            theField.setAccessible(true);
-            final Properties props = new Properties();
-            props.put(key, value);
-            theField.set(testProperties, props);
-            Base.properties = testProperties;
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
+        if (null == Base.properties) {
+            Base.properties = new TestProperties();
         }
+        Base.properties.setUserOverrides(java.util.Map.of(key, value));
     }
 
     private static float getHue(final Color c) {
@@ -777,13 +770,15 @@ class TreeTrackerTest {
         final TreeLayout layout = new TreeLayout(List.of(root), List.of());
 
         // Default (.tree.progression.debug=false): debug text and vector line should NOT be present in SVG
-        setTestProperty(String.valueOf(Progression.debug), "false");
+        setTestProperty(PropEnum._TREE_PROGRESSION_DEBUG.getPropertyName(), "false");
+        ProgressionSettings.initialize();
         final String svgNoDebug = TreeTracker.renderTreeProgressionSvg(layout, 1, "Test #1", Collections.emptySet());
         assertFalse(svgNoDebug.contains("dx:"), "SVG must not contain debug coordinates when debug is false");
         assertFalse(svgNoDebug.contains("stroke=\"#F59E0B\""), "SVG must not contain impulse vector line when debug is false");
 
         // Enabled (.tree.progression.debug=true): debug text and vector line SHOULD be present in SVG
-        setTestProperty(String.valueOf(Progression.debug), "true");
+        setTestProperty(PropEnum._TREE_PROGRESSION_DEBUG.getPropertyName(), "true");
+        ProgressionSettings.initialize();
         final String svgDebug = TreeTracker.renderTreeProgressionSvg(layout, 1, "Test #1", Collections.emptySet());
         assertTrue(svgDebug.contains("dx:"), "SVG must contain debug coordinates when debug is true");
         assertTrue(svgDebug.contains("maxZ:"), "SVG debug text must include maxZ when debug is true");

@@ -1137,7 +1137,7 @@ public final class TreeTracker {
         rightX = appendHeaderBadgeSvg(sb, "Target: " + target, rightX, topY, "#334155", "#CBD5E1");
         appendHeaderBadgeSvg(sb, badgeText, rightX, topY, "#0284C7", "#FFFFFF");
 
-        if (Boolean.TRUE.equals(debug)) {
+        if (ProgressionSettings.current().treeDebugEnabled()) {
             final String debugStr = String.format(Locale.US, "dx:%.1f dy:%.1f dz:%.3f maxZ:%.1fx", debugDx, debugDy, debugDz, debugMaxZoom);
             sb.append(String.format(Locale.US, "  <text class=\"tx3\" x=\"%d\" y=\"%d\" fill=\"#64748B\">%s</text>\n", PADDING_X, HEADER_HEIGHT_BASE - 5, debugStr));
 
@@ -1626,7 +1626,7 @@ public final class TreeTracker {
 
         drawBadge(g, badgeText, rightX, topY, new Color(2, 132, 199), Color.WHITE);
 
-        if (debug) {
+        if (ProgressionSettings.current().treeDebugEnabled()) {
             final String debugStr = String.format(Locale.US, "dx:%.1f dy:%.1f dz:%.3f maxZ:%.1fx", debugDx, debugDy, debugDz, debugMaxZoom);
             g.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 10));
             g.setColor(new Color(100, 116, 139));
