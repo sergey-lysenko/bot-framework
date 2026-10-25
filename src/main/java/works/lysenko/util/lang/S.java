@@ -38,4 +38,12 @@ public record S() {
     public static final String SNAPSHOT_OF_PAGE_CODE = b(SNAPSHOT, OF, PAGE, CODE);
     /** Constant representing StaleElementReferenceException name. */
     public static final String S_E_R_EXCEPTION = s(c(STALE), c(ELEMENT), c(REFERENCE), c(EXCEPTION));
+    /** Constant representing SDK root check message. */
+    public static final String SDK_ROOT_CHECK = "Android SDK root folder does not exist: check ANDROID_HOME / ANDROID_SDK_ROOT";
+    /** Constant representing SDK folder check message. */
+    public static final String SDK_FOLDER_CHECK = "Android SDK folder does not exist: check ANDROID_HOME / ANDROID_SDK_ROOT";
+    public static final String MSG_SDK_ROOT_CHECK = SDK_ROOT_CHECK;
+    public static final String MSG_SDK_FOLDER_CHECK = SDK_FOLDER_CHECK;
 }
+
+

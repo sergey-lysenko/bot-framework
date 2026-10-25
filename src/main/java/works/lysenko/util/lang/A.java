@@ -72,4 +72,9 @@ public record A() {
     public static final String ASSERTING_THAT_VALUE = b(c(ASSERTING), THAT, VALUE);
     /** Constant representing the message for attempting counter action. */
     public static final String ATTEMPTING_COUNTER_ACTION = b(c(ATTEMPTING), d(COUNTER, ACTION));
+    /** Constant representing Appium server closed message. */
+    public static final String APPIUM_SERVER_CLOSED = "Appium server closed the connection unexpectedly (see ";
+    public static final String MSG_APPIUM_CLOSED = APPIUM_SERVER_CLOSED;
 }
+
+

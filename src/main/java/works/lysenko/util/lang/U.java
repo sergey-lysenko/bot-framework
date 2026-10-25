@@ -119,41 +119,11 @@ public record U() {
     public static final String USER_DIR = s(USER, _DOT_, s(DI, R));
     /** Constant representing UnreachableBrowserException name. */
     public static final String U_B_EXCEPTION = s(c(UNREACHABLE), c(BROWSER), c(EXCEPTION));
-    /** Constant representing default port busy message. */
-    public static final String DEFAULT_PORT_BUSY = "Default Appium port 4723 is already in use; selecting an available free port ...";
-    /** Constant representing port conflict 4723 message. */
-    public static final String PORT_CONFLICT_4723 = "Port conflict: port 4723 is already in use (EADDRINUSE)";
-    /** Constant representing port conflict generic message. */
-    public static final String PORT_CONFLICT_GENERIC = "Port conflict (EADDRINUSE): another Appium instance or process is using this port";
-    /** Constant representing SDK root check message. */
-    public static final String SDK_ROOT_CHECK = "Android SDK root folder does not exist: check ANDROID_HOME / ANDROID_SDK_ROOT";
-    /** Constant representing SDK folder check message. */
-    public static final String SDK_FOLDER_CHECK = "Android SDK folder does not exist: check ANDROID_HOME / ANDROID_SDK_ROOT";
-    /** Constant representing no device hint message. */
-    public static final String NO_DEVICE_HINT = "No connected Android device/emulator found. Ensure the emulator is running ('adb devices')";
     /** Constant representing unknown error message. */
     public static final String UNKNOWN_DRIVER_ERROR = "Unknown driver instantiation error";
-    /** Constant representing Appium server closed message. */
-    public static final String APPIUM_SERVER_CLOSED = "Appium server closed the connection unexpectedly (see ";
-    /** Aliases for Driver diagnostics */
-    public static final String MSG_PORT_CONFLICT_4723 = PORT_CONFLICT_4723;
-    public static final String MSG_PORT_CONFLICT_GENERIC = PORT_CONFLICT_GENERIC;
-    public static final String MSG_SDK_ROOT_CHECK = SDK_ROOT_CHECK;
-    public static final String MSG_SDK_FOLDER_CHECK = SDK_FOLDER_CHECK;
-    public static final String MSG_NO_DEVICE_HINT = NO_DEVICE_HINT;
     public static final String MSG_UNKNOWN_ERROR = UNKNOWN_DRIVER_ERROR;
-    public static final String MSG_APPIUM_CLOSED = APPIUM_SERVER_CLOSED;
     public static final String MSG_PARSER_NO_BYTES = "HTTP/1.1 header parser received no bytes";
-    /** Constant representing macOS SDK path. */
-    public static final String PATH_MACOS_SDK = "/Library/Android/sdk";
-    /** Constant representing Android SDK path. */
-    public static final String PATH_ANDROID_SDK = "/Android/Sdk";
-    /** Constant representing SDK path. */
-    public static final String PATH_SDK = "/sdk";
-    /** Constant representing opt SDK path. */
-    public static final String PATH_OPT_SDK = "/opt/android-sdk";
-    /** Constant representing usr local SDK path. */
-    public static final String PATH_USR_LOCAL_SDK = "/usr/local/share/android-sdk";
 }
+
 
 

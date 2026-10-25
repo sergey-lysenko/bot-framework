@@ -51,4 +51,9 @@ public record N() {
     public static final String NOT_EQUAL = s(_EXCL_, _EQUAL_);
     /** Constant representing neither actual nor requested value allowed to be null. */
     public static final String NEITHER_ACTUAL_NOR___ = b(c(NEITHER), ACTUAL, NOR, REQUESTED, VALUE, ALLOWED, TO, BE, NULL);
+    /** Constant representing no device hint message. */
+    public static final String NO_DEVICE_HINT = "No connected Android device/emulator found. Ensure the emulator is running ('adb devices')";
+    public static final String MSG_NO_DEVICE_HINT = NO_DEVICE_HINT;
 }
+
+

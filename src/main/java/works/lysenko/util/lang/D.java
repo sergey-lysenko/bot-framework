@@ -37,4 +37,7 @@ public record D() {
     public static final String DUE_TO = b(DUE, TO);
     /** Constant representing duplicated log lines prefix. */
     public static final String DUPLICATED___ = b(c(DUPLICATED), LOG, s(LINES, _COLON_));
+    /** Constant representing default port busy message. */
+    public static final String DEFAULT_PORT_BUSY = "Default Appium port 4723 is already in use; selecting an available free port ...";
 }
+

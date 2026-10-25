@@ -21,5 +21,23 @@ public record P() {
     public static final String DIR_PLATFORM_TOOLS = "platform-tools";
     /** Constant representing platforms directory name. */
     public static final String DIR_PLATFORMS = "platforms";
+    /** Constant representing port conflict 4723 message. */
+    public static final String PORT_CONFLICT_4723 = "Port conflict: port 4723 is already in use (EADDRINUSE)";
+    /** Constant representing port conflict generic message. */
+    public static final String PORT_CONFLICT_GENERIC = "Port conflict (EADDRINUSE): another Appium instance or process is using this port";
+    /** Constant representing macOS SDK path. */
+    public static final String PATH_MACOS_SDK = "/Library/Android/sdk";
+    /** Constant representing Android SDK path. */
+    public static final String PATH_ANDROID_SDK = "/Android/Sdk";
+    /** Constant representing SDK path. */
+    public static final String PATH_SDK = "/sdk";
+    /** Constant representing opt SDK path. */
+    public static final String PATH_OPT_SDK = "/opt/android-sdk";
+    /** Constant representing usr local SDK path. */
+    public static final String PATH_USR_LOCAL_SDK = "/usr/local/share/android-sdk";
+    public static final String MSG_PORT_CONFLICT_4723 = PORT_CONFLICT_4723;
+    public static final String MSG_PORT_CONFLICT_GENERIC = PORT_CONFLICT_GENERIC;
 }
+
+
 
