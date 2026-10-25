@@ -43,6 +43,9 @@ import static works.lysenko.util.lang.word.T.TESTS;
 import static works.lysenko.util.lang.word.T.TRANSFORM;
 import static works.lysenko.util.lang.word.T.TYPES;
 import static works.lysenko.util.lang.word.U.*;
+import static works.lysenko.util.lang.word.D.DRIVER;
+import static works.lysenko.util.lang.word.I.INSTANTIATION;
+import static works.lysenko.util.lang.word.E.ERROR;
 import static works.lysenko.util.lang.word.V.VALID;
 import static works.lysenko.util.lang.word.V.VALIDATE;
 import static works.lysenko.util.lang.word.V.VERIFICATION;
@@ -120,7 +123,7 @@ public record U() {
     /** Constant representing UnreachableBrowserException name. */
     public static final String U_B_EXCEPTION = s(c(UNREACHABLE), c(BROWSER), c(EXCEPTION));
     /** Constant representing unknown error message. */
-    public static final String UNKNOWN_DRIVER_ERROR = "Unknown driver instantiation error";
+    public static final String UNKNOWN_DRIVER_ERROR = b(c(UNKNOWN), DRIVER, INSTANTIATION, ERROR);
     public static final String MSG_UNKNOWN_ERROR = UNKNOWN_DRIVER_ERROR;
     public static final String MSG_PARSER_NO_BYTES = "HTTP/1.1 header parser received no bytes";
 }

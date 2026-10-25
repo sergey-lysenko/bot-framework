@@ -52,6 +52,8 @@ public record I() {
     public static final String INSTANCE = s(IN, ST, AN, CE);
     /** Constant representing the word INSTANTIATE. */
     public static final String INSTANTIATE = s(INST, ANTI, A, TE);
+    /** Constant representing the word INSTANTIATION. */
+    public static final String INSTANTIATION = s(INSTANTIATE, ION);
     /** Constant representing the word INSTEAD. */
     public static final String INSTEAD = s(INST, E, AD);
     /** Constant representing the word INTEGER. */
