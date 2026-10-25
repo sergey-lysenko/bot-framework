@@ -1,9 +1,9 @@
 package works.lysenko.base.output;
+import works.lysenko.testing.SelectionFixture;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import sun.misc.Unsafe;
 import works.lysenko.Base;
 import works.lysenko.base.Core;
 import works.lysenko.base.Results;
@@ -29,10 +29,7 @@ class ResultMarkerTest {
     void setUp() throws Exception {
         previousCore = Base.core;
         previousExec = Base.exec;
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final Core core = (Core) unsafe.allocateInstance(Core.class);
+        final Core core = (Core) SelectionFixture.allocate(Core.class);
 
         final Field resultsField = Core.class.getDeclaredField("results");
         resultsField.setAccessible(true);
@@ -269,10 +266,7 @@ class ResultMarkerTest {
             public boolean verify() { return true; }
         };
 
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final works.lysenko.base.Exec mockExec = (works.lysenko.base.Exec) unsafe.allocateInstance(works.lysenko.base.Exec.class);
+        final works.lysenko.base.Exec mockExec = (works.lysenko.base.Exec) SelectionFixture.allocate(works.lysenko.base.Exec.class);
 
         final Field scenariosField = works.lysenko.base.Exec.class.getDeclaredField("scenarios");
         scenariosField.setAccessible(true);

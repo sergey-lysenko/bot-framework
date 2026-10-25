@@ -1,9 +1,9 @@
 package works.lysenko.util.data.type;
+import works.lysenko.testing.SelectionFixture;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import sun.misc.Unsafe;
 import works.lysenko.Base;
 import works.lysenko.base.Core;
 import works.lysenko.base.test.Repeater;
@@ -25,13 +25,9 @@ class LogRecordTest {
     @BeforeEach
     void setUp() throws Exception {
         previousCore = Base.core;
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-
-        final Core core = (Core) unsafe.allocateInstance(Core.class);
-        final works.lysenko.base.Test testInstance = (works.lysenko.base.Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
-        repeater = (Repeater) unsafe.allocateInstance(Repeater.class);
+        final Core core = (Core) SelectionFixture.allocate(Core.class);
+        final works.lysenko.base.Test testInstance = (works.lysenko.base.Test) SelectionFixture.allocate(works.lysenko.base.Test.class);
+        repeater = (Repeater) SelectionFixture.allocate(Repeater.class);
 
         final Field repField = works.lysenko.base.Test.class.getDeclaredField("repeater");
         repField.setAccessible(true);

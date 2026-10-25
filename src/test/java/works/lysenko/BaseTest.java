@@ -3,10 +3,12 @@ package works.lysenko;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import sun.misc.Unsafe;
 import works.lysenko.base.Exec;
 import works.lysenko.base.exec.Scenarios;
+import works.lysenko.testing.SelectionFixture;
 import works.lysenko.util.data.enums.Severity;
+
+
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -82,10 +84,8 @@ class BaseTest {
 
     @Test
     void testCurrentDepthWithMockExec() throws Exception {
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final Exec mockExec = (Exec) unsafe.allocateInstance(Exec.class);
+        final Exec mockExec = SelectionFixture.allocate(Exec.class);
+
 
         final Field scenariosField = Exec.class.getDeclaredField("scenarios");
         scenariosField.setAccessible(true);

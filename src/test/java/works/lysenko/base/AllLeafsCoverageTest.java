@@ -1,10 +1,10 @@
 package works.lysenko.base;
+import works.lysenko.testing.SelectionFixture;
 
 import org.apache.commons.math3.fraction.Fraction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import sun.misc.Unsafe;
 import works.lysenko.Base;
 import works.lysenko.tree.Ctrl;
 import works.lysenko.tree.base.Leaf;
@@ -51,10 +51,7 @@ class AllLeafsCoverageTest {
         Base.parameters = null;
         Base.properties = null;
         Base.exec = null;
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final Core core = (Core) unsafe.allocateInstance(Core.class);
+        final Core core = (Core) SelectionFixture.allocate(Core.class);
         final Results results = new Results();
         final Field rf = Core.class.getDeclaredField("results");
         rf.setAccessible(true);
@@ -172,11 +169,8 @@ class AllLeafsCoverageTest {
         rootCtrl.getPool().appendScenarioWithWeight(leaf1, fr(1.0));
         rootCtrl.getPool().appendScenarioWithWeight(leaf2, fr(1.0));
 
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final _Test mockTest = (_Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
-        final _Exec mockExec = (_Exec) unsafe.allocateInstance(works.lysenko.base.test.Exec.class);
+        final _Test mockTest = (_Test) SelectionFixture.allocate(works.lysenko.base.Test.class);
+        final _Exec mockExec = (_Exec) SelectionFixture.allocate(works.lysenko.base.test.Exec.class);
 
         final Field ctrlField = works.lysenko.base.test.Exec.class.getDeclaredField("ctrl");
         ctrlField.setAccessible(true);
@@ -221,11 +215,8 @@ class AllLeafsCoverageTest {
         rootCtrl.getPool().appendScenarioWithWeight(leaf1, fr(1.0));
         rootCtrl.getPool().appendScenarioWithWeight(mono, fr(1.0));
 
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final _Test mockTest = (_Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
-        final _Exec mockExec = (_Exec) unsafe.allocateInstance(works.lysenko.base.test.Exec.class);
+        final _Test mockTest = (_Test) SelectionFixture.allocate(works.lysenko.base.Test.class);
+        final _Exec mockExec = (_Exec) SelectionFixture.allocate(works.lysenko.base.test.Exec.class);
 
         final Field ctrlField = works.lysenko.base.test.Exec.class.getDeclaredField("ctrl");
         ctrlField.setAccessible(true);
@@ -272,12 +263,9 @@ class AllLeafsCoverageTest {
         rootCtrl.getPool().appendScenarioWithWeight(mono, fr(1.0));
         assertEquals(ScenarioType.MONO, mono.type());
 
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final _Test mockTest = (_Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
-        final works.lysenko.base.test.Exec mockTestExec = (works.lysenko.base.test.Exec) unsafe.allocateInstance(works.lysenko.base.test.Exec.class);
-        final _Repeater mockRepeater = (_Repeater) unsafe.allocateInstance(works.lysenko.base.test.Repeater.class);
+        final _Test mockTest = (_Test) SelectionFixture.allocate(works.lysenko.base.Test.class);
+        final works.lysenko.base.test.Exec mockTestExec = (works.lysenko.base.test.Exec) SelectionFixture.allocate(works.lysenko.base.test.Exec.class);
+        final _Repeater mockRepeater = (_Repeater) SelectionFixture.allocate(works.lysenko.base.test.Repeater.class);
 
         final Field ctrlField = works.lysenko.base.test.Exec.class.getDeclaredField("ctrl");
         ctrlField.setAccessible(true);
@@ -287,7 +275,7 @@ class AllLeafsCoverageTest {
         execField.setAccessible(true);
         execField.set(mockTest, mockTestExec);
 
-        final works.lysenko.base.Exec baseExec = (works.lysenko.base.Exec) unsafe.allocateInstance(works.lysenko.base.Exec.class);
+        final works.lysenko.base.Exec baseExec = (works.lysenko.base.Exec) SelectionFixture.allocate(works.lysenko.base.Exec.class);
         final _Scenarios mockScenarios = new works.lysenko.base.exec.Scenarios();
         final Field scenariosField = works.lysenko.base.Exec.class.getDeclaredField("scenarios");
         scenariosField.setAccessible(true);
@@ -351,12 +339,9 @@ class AllLeafsCoverageTest {
         rootCtrl.getPool().appendScenarioWithWeight(leafA, fr(1.0));
         rootCtrl.getPool().appendScenarioWithWeight(leafB, fr(1.0));
 
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final _Test mockTest = (_Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
-        final works.lysenko.base.test.Exec mockTestExec = (works.lysenko.base.test.Exec) unsafe.allocateInstance(works.lysenko.base.test.Exec.class);
-        final _Repeater mockRepeater = (_Repeater) unsafe.allocateInstance(works.lysenko.base.test.Repeater.class);
+        final _Test mockTest = (_Test) SelectionFixture.allocate(works.lysenko.base.Test.class);
+        final works.lysenko.base.test.Exec mockTestExec = (works.lysenko.base.test.Exec) SelectionFixture.allocate(works.lysenko.base.test.Exec.class);
+        final _Repeater mockRepeater = (_Repeater) SelectionFixture.allocate(works.lysenko.base.test.Repeater.class);
 
         final Field ctrlField = works.lysenko.base.test.Exec.class.getDeclaredField("ctrl");
         ctrlField.setAccessible(true);
@@ -366,7 +351,7 @@ class AllLeafsCoverageTest {
         execField.setAccessible(true);
         execField.set(mockTest, mockTestExec);
 
-        final works.lysenko.base.Exec baseExec = (works.lysenko.base.Exec) unsafe.allocateInstance(works.lysenko.base.Exec.class);
+        final works.lysenko.base.Exec baseExec = (works.lysenko.base.Exec) SelectionFixture.allocate(works.lysenko.base.Exec.class);
         final _Scenarios mockScenarios = new works.lysenko.base.exec.Scenarios();
         final Field scenariosField = works.lysenko.base.Exec.class.getDeclaredField("scenarios");
         scenariosField.setAccessible(true);
@@ -528,11 +513,8 @@ class AllLeafsCoverageTest {
         rootCtrl.getPool().appendScenarioWithWeight(leaf1, fr(1.0));
         rootCtrl.getPool().appendScenarioWithWeight(leaf2, fr(1.0));
 
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final _Test mockTest = (_Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
-        final _Exec mockExec = (_Exec) unsafe.allocateInstance(works.lysenko.base.test.Exec.class);
+        final _Test mockTest = (_Test) SelectionFixture.allocate(works.lysenko.base.Test.class);
+        final _Exec mockExec = (_Exec) SelectionFixture.allocate(works.lysenko.base.test.Exec.class);
 
         final Field ctrlField = works.lysenko.base.test.Exec.class.getDeclaredField("ctrl");
         ctrlField.setAccessible(true);
@@ -576,11 +558,8 @@ class AllLeafsCoverageTest {
         final TestLeaf leaf1 = new TestLeaf(fr(1.0));
         rootCtrl.getPool().appendScenarioWithWeight(leaf1, fr(1.0));
 
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final works.lysenko.base.Test testInstance = (works.lysenko.base.Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
-        final _Exec mockExec = (_Exec) unsafe.allocateInstance(works.lysenko.base.test.Exec.class);
+        final works.lysenko.base.Test testInstance = (works.lysenko.base.Test) SelectionFixture.allocate(works.lysenko.base.Test.class);
+        final _Exec mockExec = (_Exec) SelectionFixture.allocate(works.lysenko.base.test.Exec.class);
 
         final Field ctrlField = works.lysenko.base.test.Exec.class.getDeclaredField("ctrl");
         ctrlField.setAccessible(true);
@@ -618,10 +597,7 @@ class AllLeafsCoverageTest {
         setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "5");
         setTestProperty(PropEnum._LOGS_DEBUG.getPropertyName(), "true");
 
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final Exec mockExec = (Exec) unsafe.allocateInstance(Exec.class);
+        final Exec mockExec = (Exec) SelectionFixture.allocate(Exec.class);
         Base.exec = mockExec;
 
         final _Repeater mockRepeater = new _Repeater() {
@@ -648,7 +624,7 @@ class AllLeafsCoverageTest {
             public void run() {}
         };
 
-        final _Test mockTest = (_Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
+        final _Test mockTest = (_Test) SelectionFixture.allocate(works.lysenko.base.Test.class);
         final Field repeaterField = works.lysenko.base.Test.class.getDeclaredField("repeater");
         repeaterField.setAccessible(true);
         repeaterField.set(mockTest, mockRepeater);

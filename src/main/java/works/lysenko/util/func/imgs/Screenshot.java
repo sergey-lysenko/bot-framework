@@ -258,7 +258,7 @@ public record Screenshot() {
         if (isNull(name)) log(Level.none, gray(b(s(DWN_ARR), MAKING_SCREENSHOT)), true);
         // Logs screenshot creation with optional filename components
         else log(Level.none, gray(b(false, s(DWN_ARR), c(MAKING), (0 == name.length || name[0].isEmpty()) ? EMPTY :
-                q(s(name).replace(File.separator, s(_DASH_))), SCREENSHOT)), true);
+                q(s((Object[]) name).replace(File.separator, s(_DASH_))), SCREENSHOT)), true);
     }
 
     private static String[] noEmpty(final String[] name) {
@@ -296,9 +296,9 @@ public record Screenshot() {
                                                         final String... name) {
 
         if (isNull(image)) return null;
-        final String fullPath = (null == name) ? null : getSnapshotPath(SCREENSHOT_, settings.root(), s(name), s(FULL, _DOT_
+        final String fullPath = (null == name) ? null : getSnapshotPath(SCREENSHOT_, settings.root(), s((Object[]) name), s(FULL, _DOT_
                 , PNG));
-        final String croppedPath = getSnapshotPath(SCREENSHOT_, settings.root(), (null == name) ? null : s(name), PNG);
+        final String croppedPath = getSnapshotPath(SCREENSHOT_, settings.root(), (null == name) ? null : s((Object[]) name), PNG);
         if (!settings.silent()) logDebug(b(GETTING_PARTIAL_SCREENSHOT_OF, q(exec.describe(settings.element()))));
         final Rectangle rect = (isNull(settings.element())) ? null : settings.element().getRect();
         if (isNull(rect) || rect.width <= 0 || rect.height <= 0) {
@@ -317,7 +317,7 @@ public record Screenshot() {
             }
             return prune; // image returned in any case
         } catch (final IOException e) {
-            e.printStackTrace();
+            works.lysenko.Base.logEvent(works.lysenko.util.data.enums.Severity.S1, b("Error writing partial screenshot:", e.getMessage()));
         }
         return null;
     }
@@ -335,7 +335,7 @@ public record Screenshot() {
     public static BufferedImage writeScreenshot(final BufferedImage image, final Boolean root, final String... name) { //
 
         if (isNull(image)) return null;
-        final String s = (null == name) ? EMPTY : s(name);
+        final String s = (null == name) ? EMPTY : s((Object[]) name);
         // Writes image to file; throws on writing error
         try {
             final String path = getSnapshotPath(SCREENSHOT_, root, s, PNG);

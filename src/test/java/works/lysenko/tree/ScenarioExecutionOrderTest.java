@@ -1,9 +1,9 @@
 package works.lysenko.tree;
+import works.lysenko.testing.SelectionFixture;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import sun.misc.Unsafe;
 import works.lysenko.Base;
 import works.lysenko.base.Core;
 import works.lysenko.base.Exec;
@@ -44,10 +44,7 @@ class ScenarioExecutionOrderTest {
         Base.timer = new Stopwatch();
         Base.properties = new TestProperties();
 
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final Core core = (Core) unsafe.allocateInstance(Core.class);
+        final Core core = (Core) SelectionFixture.allocate(Core.class);
         final Results results = new Results();
         final Field rf = Core.class.getDeclaredField("results");
         rf.setAccessible(true);
@@ -72,10 +69,6 @@ class ScenarioExecutionOrderTest {
     void testExecutionOrderInIsOk() throws Exception {
         final List<String> eventOrder = new ArrayList<>();
         final Scenarios scenarios = new Scenarios();
-
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
 
         final _Repeater mockRepeater = new _Repeater() {
             @Override
@@ -108,7 +101,7 @@ class ScenarioExecutionOrderTest {
             public void run() {}
         };
 
-        final _Test mockTest = (_Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
+        final _Test mockTest = (_Test) SelectionFixture.allocate(works.lysenko.base.Test.class);
         final Field repeaterField = works.lysenko.base.Test.class.getDeclaredField("repeater");
         repeaterField.setAccessible(true);
         repeaterField.set(mockTest, mockRepeater);
@@ -138,7 +131,7 @@ class ScenarioExecutionOrderTest {
         loggerField.setAccessible(true);
         loggerField.set(Base.core, mockLogs);
 
-        final Exec mockExec = (Exec) unsafe.allocateInstance(Exec.class);
+        final Exec mockExec = (Exec) SelectionFixture.allocate(Exec.class);
         final Field scenariosField = Exec.class.getDeclaredField("scenarios");
         scenariosField.setAccessible(true);
         scenariosField.set(mockExec, scenarios);

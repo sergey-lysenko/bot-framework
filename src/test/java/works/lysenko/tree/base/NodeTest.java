@@ -1,10 +1,10 @@
 package works.lysenko.tree.base;
+import works.lysenko.testing.SelectionFixture;
 
 import org.apache.commons.math3.fraction.Fraction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import sun.misc.Unsafe;
 import works.lysenko.Base;
 import works.lysenko.base.Core;
 import works.lysenko.util.apis.log._Logs;
@@ -25,10 +25,7 @@ class NodeTest {
     @BeforeEach
     void setUp() throws Exception {
         previousCore = Base.core;
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final Core mockCore = (Core) unsafe.allocateInstance(Core.class);
+        final Core mockCore = (Core) SelectionFixture.allocate(Core.class);
         final Field loggerField = Core.class.getDeclaredField("logger");
         loggerField.setAccessible(true);
         loggerField.set(mockCore, new _Logs() {

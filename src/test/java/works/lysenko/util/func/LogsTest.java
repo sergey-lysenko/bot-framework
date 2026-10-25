@@ -1,9 +1,9 @@
 package works.lysenko.util.func;
+import works.lysenko.testing.SelectionFixture;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import sun.misc.Unsafe;
 import works.lysenko.Base;
 import works.lysenko.base.Core;
 import works.lysenko.base.Exec;
@@ -33,11 +33,7 @@ class LogsTest {
 
         Base.properties = new TestProperties();
 
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-
-        final Core core = (Core) unsafe.allocateInstance(Core.class);
+        final Core core = (Core) SelectionFixture.allocate(Core.class);
         final Results results = new Results();
         final Field rf = Core.class.getDeclaredField("results");
         rf.setAccessible(true);
@@ -59,7 +55,7 @@ class LogsTest {
         lf.set(core, mockLogs);
         Base.core = core;
 
-        final Exec mockExec = (Exec) unsafe.allocateInstance(Exec.class);
+        final Exec mockExec = (Exec) SelectionFixture.allocate(Exec.class);
         final Field scenariosField = Exec.class.getDeclaredField("scenarios");
         scenariosField.setAccessible(true);
         scenariosField.set(mockExec, new Scenarios());

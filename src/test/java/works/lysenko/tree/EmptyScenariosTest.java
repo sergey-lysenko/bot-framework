@@ -1,4 +1,5 @@
 package works.lysenko.tree;
+import works.lysenko.testing.SelectionFixture;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,7 +13,6 @@ import works.lysenko.util.data.enums.EventType;
 import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.data.type.LogRecord;
 import works.lysenko.util.data.type.logr.type.Event;
-import sun.misc.Unsafe;
 
 import java.io.Closeable;
 import java.lang.reflect.Field;
@@ -29,10 +29,7 @@ class EmptyScenariosTest {
     @BeforeEach
     void setUp() throws Exception {
         previousCore = Base.core;
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final Core core = (Core) unsafe.allocateInstance(Core.class);
+        final Core core = (Core) SelectionFixture.allocate(Core.class);
         final Results results = new Results();
         final Field rf = Core.class.getDeclaredField("results");
         rf.setAccessible(true);

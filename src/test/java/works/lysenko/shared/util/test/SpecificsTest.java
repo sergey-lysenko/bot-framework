@@ -1,9 +1,9 @@
 package works.lysenko.shared.util.test;
+import works.lysenko.testing.SelectionFixture;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import sun.misc.Unsafe;
 import works.lysenko.Base;
 import works.lysenko.base.Core;
 import works.lysenko.base.Exec;
@@ -27,17 +27,13 @@ class SpecificsTest {
         previousExec = Base.exec;
         previousCore = Base.core;
 
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-
-        final Exec mockExec = (Exec) unsafe.allocateInstance(Exec.class);
+        final Exec mockExec = (Exec) SelectionFixture.allocate(Exec.class);
         final Field scenariosField = Exec.class.getDeclaredField("scenarios");
         scenariosField.setAccessible(true);
         scenariosField.set(mockExec, new Scenarios());
         Base.exec = mockExec;
 
-        final Core mockCore = (Core) unsafe.allocateInstance(Core.class);
+        final Core mockCore = (Core) SelectionFixture.allocate(Core.class);
         
         final _Logs mockLogs = new _Logs() {
             @Override public Closeable getLogWriter() { return null; }

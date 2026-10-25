@@ -28,8 +28,9 @@ import java.util.Properties;
  * records every event (and plain log line) written through the logger, and restores everything - including
  * the mutable static switches that selection reads - on {@link #close()}.
  */
-@SuppressWarnings({"removal", "deprecation"})
+@SuppressWarnings({"removal", "deprecation", "sunapi"})
 public final class SelectionFixture implements AutoCloseable {
+
 
     /**
      * Events recorded as {@code "<severity>: <message>"}, in logging order.
@@ -67,6 +68,24 @@ public final class SelectionFixture implements AutoCloseable {
         set(Exec.class, exec, "scenarios", new Scenarios());
         Base.exec = exec;
     }
+
+    /**
+     * Allocates an instance of a class without invoking any constructor.
+     *
+     * @param <T>   the type of the instance to allocate
+     * @param clazz the class to allocate an instance of
+     * @return a uninitialized instance of the specified class
+     */
+    @SuppressWarnings({"unchecked", "sunapi", "removal"})
+    public static <T> T allocate(final Class<T> clazz) {
+
+        try {
+            return (T) unsafe().allocateInstance(clazz);
+        } catch (final Exception e) {
+            throw new IllegalStateException("Failed to allocate instance of " + clazz.getName(), e);
+        }
+    }
+
 
     /**
      * @return a freshly installed fixture; use in try-with-resources or call {@link #close()} in teardown

@@ -1,4 +1,5 @@
 package works.lysenko.shared.util.test;
+import works.lysenko.testing.SelectionFixture;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -6,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import works.lysenko.Base;
 import works.lysenko.base.Exec;
 import works.lysenko.base.exec.Scenarios;
-import sun.misc.Unsafe;
 import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -20,17 +20,14 @@ class PostflightTest {
     void setUp() throws Exception {
         previousExec = Base.exec;
         previousCore = Base.core;
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final Exec mockExec = (Exec) unsafe.allocateInstance(Exec.class);
+        final Exec mockExec = (Exec) SelectionFixture.allocate(Exec.class);
         final Field scenariosField = Exec.class.getDeclaredField("scenarios");
         scenariosField.setAccessible(true);
         scenariosField.set(mockExec, new Scenarios());
         Base.exec = mockExec;
         Base.properties = new works.lysenko.base.TestProperties();
 
-        final works.lysenko.base.Core mockCore = (works.lysenko.base.Core) unsafe.allocateInstance(works.lysenko.base.Core.class);
+        final works.lysenko.base.Core mockCore = (works.lysenko.base.Core) SelectionFixture.allocate(works.lysenko.base.Core.class);
         final Field loggerField = works.lysenko.base.Core.class.getDeclaredField("logger");
         loggerField.setAccessible(true);
         loggerField.set(mockCore, new works.lysenko.util.apis.log._Logs() {

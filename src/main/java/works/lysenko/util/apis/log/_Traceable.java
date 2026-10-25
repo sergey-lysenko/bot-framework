@@ -26,8 +26,10 @@ public interface _Traceable {
      *                  to be included in the resulting _Traceable instance
      * @return a new _Traceable instance containing the provided key-value pairs
      */
+    @SafeVarargs
     @SuppressWarnings("unchecked")
     static _Traceable create(final KeyValue<String, String>... keyValues) {
+
 
         return new Traceable(List.of(keyValues));
     }

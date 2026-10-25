@@ -1,11 +1,11 @@
 package works.lysenko.base.output;
+import works.lysenko.testing.SelectionFixture;
 
 import org.apache.commons.math3.fraction.Fraction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import sun.misc.Unsafe;
 import works.lysenko.Base;
 import works.lysenko.base.Core;
 import works.lysenko.base.Parameters;
@@ -51,10 +51,7 @@ class ScenarioTrackerTest {
         ScenarioTracker.reset();
         ProgressionSettings.initialize();
 
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final Core core = (Core) unsafe.allocateInstance(Core.class);
+        final Core core = (Core) SelectionFixture.allocate(Core.class);
         final Results results = new Results();
         final Field rf = Core.class.getDeclaredField("results");
         rf.setAccessible(true);
@@ -165,11 +162,8 @@ class ScenarioTrackerTest {
         rootCtrl.getPool().appendScenarioWithWeight(leaf1, fr(1.0));
         rootCtrl.getPool().appendScenarioWithWeight(leaf2, fr(1.0));
 
-        final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) f.get(null);
-        final _Test mockTest = (_Test) unsafe.allocateInstance(works.lysenko.base.Test.class);
-        final _Exec mockExec = (_Exec) unsafe.allocateInstance(works.lysenko.base.test.Exec.class);
+        final _Test mockTest = (_Test) SelectionFixture.allocate(works.lysenko.base.Test.class);
+        final _Exec mockExec = (_Exec) SelectionFixture.allocate(works.lysenko.base.test.Exec.class);
 
         final Field ctrlField = works.lysenko.base.test.Exec.class.getDeclaredField("ctrl");
         ctrlField.setAccessible(true);
