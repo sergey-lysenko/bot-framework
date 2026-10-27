@@ -328,6 +328,7 @@ class TreeTrackerTest {
 
         // Complete tests -> animated GIF should be produced
         TreeTracker.onComplete();
+        TreeTracker.processFrames(customRunDir, "run", ProcessingProgress.NONE);
 
         final File[] gifFiles = customRunDir.listFiles((d, name) -> name.endsWith(".tree.progression.gif"));
         assertNotNull(gifFiles);

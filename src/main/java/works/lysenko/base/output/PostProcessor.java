@@ -1,5 +1,7 @@
 package works.lysenko.base.output;
 
+import static works.lysenko.Base.log;
+
 import works.lysenko.base.output.postprocessor.DetachedProcessLauncher;
 import works.lysenko.base.output.postprocessor.PostProcessorProgressUI;
 
@@ -362,6 +364,7 @@ public class PostProcessor {
             final String treeSonification) {
         final File runDir = logFile.getAbsoluteFile().getParentFile();
         final String prefix = runPrefix(logFile);
+        log("Post-processing started for run: " + runDir.getAbsolutePath());
         final List<String> tasks = enabledTasks(
                 scenarioProgressionEnabled,
                 scenarioGifEnabled,
@@ -409,7 +412,9 @@ public class PostProcessor {
                     treeMp4Enabled,
                     progress);
             progress.complete(REPORT_TASK);
+            log("Run timeline report generated: " + htmlFile.getAbsolutePath());
             if (openBrowser) LogHtml.openInBrowser(htmlFile);
+            log("Post-processing completed successfully.");
         } finally {
             progress.close();
         }

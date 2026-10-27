@@ -199,6 +199,7 @@ class ScenarioTrackerTest {
 
         // Complete tests
         ScenarioTracker.onComplete();
+        ScenarioTracker.processFrames(customRunDir, "run", ProcessingProgress.NONE);
 
         final File[] gifFiles = customRunDir.listFiles((d, name) -> name.endsWith(".progression.gif"));
         assertNotNull(gifFiles);

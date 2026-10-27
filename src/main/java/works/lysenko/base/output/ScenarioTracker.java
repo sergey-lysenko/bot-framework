@@ -100,8 +100,6 @@ public final class ScenarioTracker {
 
     public static void onComplete() {
         ProgressionFrames.awaitCompletion();
-        final String prefix = (isNotNull(timer)) ? String.valueOf(timer.startedAt()) : "run";
-        processFrames(resolveRunDirectory(), prefix, ProcessingProgress.NONE);
     }
 
     public static void processFrames(
@@ -291,6 +289,7 @@ public final class ScenarioTracker {
                 return;
             }
             try {
+                logDebug("Generating scenario progression MP4 from " + rasterizedFrames.size() + " frames...");
                 ProgressionMp4.write(
                         rasterizedFrames,
                         new File(runDir, prefix + ".progression.mp4"),

@@ -84,7 +84,7 @@ public class Writer implements _LogsWriter {
     private static void writeSummaryHeader(final BufferedWriter writer) {
 
         try {
-            writer.write("# Test Execution Log - Summary / Postflight" + System.lineSeparator() + System.lineSeparator());
+            writer.write("# Test Execution Log - Postflight" + System.lineSeparator() + System.lineSeparator());
             writer.write("> **Context & Schema**:" + System.lineSeparator());
             writer.write("> - **Sections (`### Title`)**: Execution summary phases (Scenario statistics, Result markers, Tree reports, Postflight) are structured as Markdown headings with call site IDs and section timing." + System.lineSeparator());
             writer.write("> - **Log Message**: Operational events, UI interactions, assertions, property reads/writes, and state changes within each section." + System.lineSeparator());
@@ -142,8 +142,8 @@ public class Writer implements _LogsWriter {
             fileKey = String.valueOf(testNumber);
             title = "Test #" + testNumber;
         } else if (testNumber == 0 && maxTestNumber > 0) {
-            fileKey = "summary";
-            title = "Summary / Postflight";
+            fileKey = "postflight";
+            title = "Postflight Logs";
         } else {
             fileKey = String.valueOf(testNumber);
             title = (testNumber == 0) ? "Test #0 (Setup / Preflight)" : ("Test #" + testNumber);
@@ -151,7 +151,7 @@ public class Writer implements _LogsWriter {
 
         return markdownTestWriters.computeIfAbsent(fileKey, fk -> {
             final BufferedWriter testWriter = createTestFileWriter(RUN_LOG_MD_TEST_, fk);
-            if ("summary".equals(fk)) {
+            if ("postflight".equals(fk)) {
                 writeSummaryHeader(testWriter);
             } else {
                 writeTestHeader(testWriter, Integer.parseInt(fk));

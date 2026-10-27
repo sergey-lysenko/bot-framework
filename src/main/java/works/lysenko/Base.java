@@ -605,9 +605,11 @@ public record Base() {
      *
      * @param message the message to be logged
      */
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void log(final String message) {
 
         if (isNotNull(exec)) exec.log(message);
+        else System.out.println(mb(message));
     }
 
     /**

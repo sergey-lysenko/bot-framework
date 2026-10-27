@@ -379,8 +379,6 @@ public final class TreeTracker {
      */
     public static void onComplete() {
         triggerCooldownFrames();
-        final String prefix = (isNotNull(timer)) ? String.valueOf(timer.startedAt()) : "run";
-        processFrames(resolveRunDirectory(), prefix, ProcessingProgress.NONE);
     }
 
     public static void processFrames(
@@ -597,6 +595,7 @@ public final class TreeTracker {
             final File mp4File = new File(runDir, prefix + ".tree.progression.mp4");
             File audioFile = null;
             try {
+                logDebug("Generating tree progression MP4 from " + rasterizedFrames.size() + " frames...");
                 final java.util.Optional<TreeSonifier> sonifier = TreeProgressionAudio.find(treeSonification);
                 if (sonifier.isPresent() && sonifier.get().canSonify(framesToProcess)) {
                     audioFile = File.createTempFile("tree-progression-audio-", ".wav", runDir);

@@ -1,5 +1,7 @@
 package works.lysenko.base.output;
 
+import static works.lysenko.Base.logDebug;
+
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -129,6 +131,7 @@ final class ProgressionMp4 {
                     futures.add(renderExecutor.submit(() -> ProgressionFrames.read(file, maxFramePixels, finalW, finalH)));
                 }
 
+                long lastLogTime = System.currentTimeMillis();
                 for (int i = 0; i < frames.size(); i++) {
                     final int nextToSubmit = i + windowSize;
                     if (nextToSubmit < frames.size()) {
@@ -144,7 +147,13 @@ final class ProgressionMp4 {
                         throw new IOException("No PNG ImageIO writer is available for MP4 input");
                     }
                     input.flush();
-                    progress.accept((int) (((i + 1L) * 100) / frames.size()));
+                    final int pct = (int) (((i + 1L) * 100) / frames.size());
+                    progress.accept(pct);
+                    final long now = System.currentTimeMillis();
+                    if (now - lastLogTime >= 3000 || i == frames.size() - 1) {
+                        lastLogTime = now;
+                        logDebug(String.format("Encoding MP4 video (%s)... %d/%d frames (%d%%)", outputFile.getName(), i + 1, frames.size(), pct));
+                    }
                 }
             } catch (final ExecutionException e) {
                 if (e.getCause() instanceof IOException) throw (IOException) e.getCause();
