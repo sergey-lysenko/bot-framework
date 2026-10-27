@@ -4,11 +4,14 @@ import works.lysenko.util.apis.log._LogsWriter;
 import works.lysenko.util.spec.Layout;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static works.lysenko.util.func.type.Objects.isNotNull;
 
 import static works.lysenko.util.chrs.__.TO;
 import static works.lysenko.util.chrs.___.FOR;
@@ -104,7 +107,11 @@ public class Writer implements _LogsWriter {
     private static BufferedWriter createTestFileWriter(final String template, final String testNumberStr) {
 
         try {
-            return new BufferedWriter(new FileWriter(Layout.Files.name(template, testNumberStr), StandardCharsets.UTF_8));
+            final File file = new File(Layout.Files.name(template, testNumberStr));
+            if (isNotNull(file.getParentFile())) {
+                file.getParentFile().mkdirs();
+            }
+            return new BufferedWriter(new FileWriter(file, StandardCharsets.UTF_8));
         } catch (final IOException e) {
             throw new IllegalStateException(b(c(UNABLE), TO, OPEN, LOG, FILE, q(template), FOR, WRITING), e);
         }

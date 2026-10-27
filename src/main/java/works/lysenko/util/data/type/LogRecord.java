@@ -69,7 +69,7 @@ public class LogRecord implements _LogRecord {
     }
 
     /**
-     * Sets the time span relative to the current time and logs a warning if it exceeds the threshold.
+     * Sets the time span relative to the current time.
      *
      * @param currentTime the current time in milliseconds
      * @return the calculated span value
@@ -78,7 +78,6 @@ public class LogRecord implements _LogRecord {
     public final int setSpan(final long currentTime) {
 
         span = (int) (currentTime - time);
-        if (span > threshold) logEvent(severity, b(t(span), IS_TOO_MUCH_TIME___));
         return span;
     }
 

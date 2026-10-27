@@ -38,6 +38,11 @@ import static java.util.Objects.isNull;
 import static works.lysenko.Base.core;
 import static works.lysenko.Base.exec;
 import static works.lysenko.base.core.Routines.msSinceStart;
+import static works.lysenko.util.data.strs.Bind.b;
+import static works.lysenko.util.data.strs.Time.t;
+import static works.lysenko.util.lang.I.IS_TOO_MUCH_TIME___;
+import static works.lysenko.util.prop.logs.LongOperation.severity;
+import static works.lysenko.util.prop.logs.LongOperation.threshold;
 import static works.lysenko.util.chrs.__.IN;
 import static works.lysenko.util.chrs.___.AND;
 import static works.lysenko.util.chrs.____.NULL;
@@ -362,8 +367,13 @@ public class Processor implements _LogsProcessor {
      */
     public synchronized final void flush() {
         if (isNotNull(previousLogRecord)) {
-            previousLogRecord.setSpan(defineTime(null)); 
+            final int span = previousLogRecord.setSpan(defineTime(null)); 
             queue.add((LogRecord) previousLogRecord);
+            if (span > threshold) {
+                final String stack = (isNull(exec)) ? StringUtils.EMPTY : Stacktrace.getShort(Thread.currentThread().getStackTrace());
+                final LogRecord longOpEvent = createEvent(defineTime(null), previousLogRecord.data().depth(), severity, b(t(span), IS_TOO_MUCH_TIME___), stack);
+                queue.add(longOpEvent);
+            }
             previousLogRecord = null;
         }
         process(Telemetry.getNewTelemetry(defineTime(null), StringUtils.EMPTY));
@@ -472,6 +482,7 @@ public class Processor implements _LogsProcessor {
      */
     private void logTelemetry(final Telemetry telemetry) {
 
+        if (isNull(telemetry)) return;
         try {
             if (isNull(writer.getTelemetryWriter()))
                 logEvent(S0, Ansi.ansi(TELEMETRY_WRITER_IS_NOT___),
@@ -557,6 +568,11 @@ public class Processor implements _LogsProcessor {
             final int span = previousLogRecord.setSpan(time);
             if (s(span).length() > spanLength) spanLength = s(span).length();
             queue.add((LogRecord) previousLogRecord);
+            if (span > threshold) {
+                final String stack = (isNull(exec)) ? StringUtils.EMPTY : Stacktrace.getShort(Thread.currentThread().getStackTrace());
+                final LogRecord longOpEvent = createEvent(time, previousLogRecord.data().depth(), severity, b(t(span), IS_TOO_MUCH_TIME___), stack);
+                queue.add(longOpEvent);
+            }
         }
         if (isNotNull(exec) && isNotNull(core.getDashboard())) core.getDashboard().setInfo(logRecord.text(), telemetry);
     }
