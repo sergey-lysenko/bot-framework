@@ -463,10 +463,17 @@ public final class Core extends Root implements _Core, _Tests {
     void conditionalClose() {
         try {
             logEmptyLine();
+            if (isNotNull(logger)) logger.logSection("Finalization");
+            ScenarioTracker.onComplete();
+            TreeTracker.onComplete();
+
+            logEmptyLine();
             log(Level.none, b(c(CLOSING), WebDriver.class.getSimpleName()), false);
             closeWebDriverIfRequired();
+
             log(Level.none, b(c(CLOSING), c(DASHBOARD)), false);
             disposeDashboardIfExist();
+
             final boolean isSuccess = results.getFailures().isEmpty();
             final boolean shouldShowPostProcessorWindow =
                     !GraphicsEnvironment.isHeadless() && !Routines.isInsideCI() && !Routines.isInsideDocker();
@@ -474,12 +481,12 @@ public final class Core extends Root implements _Core, _Tests {
             final boolean shouldOpenBrowser = shouldShowPostProcessorWindow && openReport;
             final File logFile = new File(name(RUN_LOG_));
             final File htmlFile = new File(name(RUN_LOG_HTML_));
+
             log(Level.none, b(c(CLOSING), LOG, AND, TELEMETRY, s(WRITER, S)), false);
             logger.flush();
             Routines.closeQuietly(logger.getLogWriter(), "Unable to close log writer"); //NON-NLS
             Routines.closeQuietly(logger.getTelemetryWriter(), "Unable to close telemetry writer"); //NON-NLS
-            ScenarioTracker.onComplete();
-            TreeTracker.triggerCooldownFrames();
+
             PostProcessor.launchDetached(logFile, htmlFile, shouldOpenBrowser, shouldShowPostProcessorWindow);
             runLock.close();
             processCode(isSuccess ? SUCCESS : EXECUTION_FAILURE);
