@@ -232,6 +232,8 @@ public record Layout() {
         public static final String RUN_LOG_ = s($1_S, s, $1_S, _DOT_, RUN, _DOT_, LOG);
         /** Run Markdown log template. */
         public static final String RUN_LOG_MD_ = s($1_S, s, $1_S, _DOT_, RUN, _DOT_, LOG, _DOT_, "md");
+        /** Run Markdown per-test log template. */
+        public static final String RUN_LOG_MD_TEST_ = s($1_S, s, "md", s, $2_S, _DOT_, "md");
         /** Run root template. */
         public static final String RUN_ROOT_ = s($1_S, s, $1_S, _DOT_, $2_S, _DOT_, $3_S, _DOT_, $4_S, _DOT_, $5_S);
         /** Run tree HTML template. */

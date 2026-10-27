@@ -42,6 +42,18 @@ public interface _LogsProcessor {
     Closeable getTelemetryWriter();
 
     /**
+     * Logs a message with the specified log level, stacktrace, and optional redefined time.
+     *
+     * @param level         The log level.
+     * @param message       The log message to be logged.
+     * @param stacktrace    The stacktrace string.
+     * @param redefinedTime The optional redefined time.
+     */
+    default void log(final int level, final String message, final String stacktrace, final Long redefinedTime) {
+        log(level, message, redefinedTime);
+    }
+
+    /**
      * Logs a message with the specified log level and optional redefined time.
      *
      * @param level         The log level. Use an integer value representing the severity of the log message.
@@ -49,6 +61,27 @@ public interface _LogsProcessor {
      * @param redefinedTime The optional redefined time to filter logs. If null, all logs will be logged.
      */
     void log(int level, String message, Long redefinedTime);
+
+    /**
+     * Logs a section header.
+     * TODO: redeem author's stupidity
+     *
+     * @param title      The section title.
+     * @param stacktrace The optional stacktrace string.
+     */
+    default void logSection(final String title, final String stacktrace) {
+        log(0, title, stacktrace, null);
+    }
+
+    /**
+     * Logs a section header.
+     * TODO: redeem author's stupidity
+     *
+     * @param title The section title.
+     */
+    default void logSection(final String title) {
+        logSection(title, null);
+    }
 
     /**
      * Logs an empty line with a given short stack trace.

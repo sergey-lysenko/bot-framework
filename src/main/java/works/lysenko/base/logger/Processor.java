@@ -28,6 +28,7 @@ import works.lysenko.util.func.core.Stacktrace;
 import works.lysenko.util.prop.core.Similarity;
 import works.lysenko.util.spec.Severities;
 
+import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Iterator;
@@ -252,14 +253,27 @@ public class Processor implements _LogsProcessor {
      * @param message       The message to be logged.
      * @param redefinedTime The optional redefined time for the log.
      */
-    @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "AssignmentToStaticFieldFromInstanceMethod"})
     public synchronized final void log(final int level, final String message, final Long redefinedTime) {
+
+        log(level, message, null, redefinedTime);
+    }
+
+    /**
+     * Logs a message with the given level, stacktrace, and optional redefined time.
+     *
+     * @param level         The level of the log message.
+     * @param message       The message to be logged.
+     * @param stacktrace    The stacktrace string.
+     * @param redefinedTime The optional redefined time for the log.
+     */
+    @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "AssignmentToStaticFieldFromInstanceMethod"})
+    public synchronized final void log(final int level, final String message, final String stacktrace, final Long redefinedTime) {
 
         final int depth = getDepth(); // indentation of text
         getAllDriverLogs(depth, redefinedTime); // external logs
 
         final long time = defineTime(redefinedTime); // time for this record
-        final AbstractLogData data = new Log(++counter, depth, level, n(NULL, message)); // data for this log record
+        final AbstractLogData data = new Log(++counter, depth, level, n(NULL, message), stacktrace); // data for this log record
         final LogRecord logRecord = createLogRecord(time, data);
         final Telemetry telemetry = Telemetry.getNewTelemetry(time, (isNull(exec)) ? StringUtils.EMPTY :
                 Stacktrace.getShort(Thread.currentThread().getStackTrace()));
@@ -269,6 +283,28 @@ public class Processor implements _LogsProcessor {
             previousLogRecord = logRecord;
             process(telemetry);
         }
+    }
+
+    /**
+     * Logs a section header without tripping durations for the section header itself.
+     * TODO: redeem author's stupidity
+     *
+     * @param title      The section title.
+     * @param stacktrace The optional stacktrace string.
+     */
+    @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "AssignmentToStaticFieldFromInstanceMethod"})
+    public synchronized final void logSection(final String title, final String stacktrace) {
+
+        final int depth = getDepth();
+        final long time = defineTime(null);
+        final AbstractLogData data = new works.lysenko.util.data.type.logr.type.Section(++counter, depth, title, stacktrace);
+        final LogRecord logRecord = new LogRecord(core.getCurrentTestNumber(), time, data);
+        final Telemetry telemetry = Telemetry.getNewTelemetry(time, (isNull(exec)) ? StringUtils.EMPTY :
+                Stacktrace.getShort(Thread.currentThread().getStackTrace()));
+
+        processLogRecord(logRecord.time(), telemetry, logRecord);
+        previousLogRecord = logRecord;
+        process(telemetry);
     }
 
     @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "AssignmentToStaticFieldFromInstanceMethod"})
@@ -296,7 +332,7 @@ public class Processor implements _LogsProcessor {
         core.sleep(1L, true);
         final int depth = getDepth();
         final LogRecord logRecord = new LogRecord(core.getCurrentTestNumber(), msSinceStart(), new Log(++counter, depth, ZERO,
-                shortStackTrace));
+                EMPTY, shortStackTrace));
         processLogRecord(logRecord.time(), Telemetry.getNewTelemetry(logRecord.time(), shortStackTrace), logRecord);
         previousLogRecord = logRecord;
         core.sleep(1L, true);
@@ -350,7 +386,7 @@ public class Processor implements _LogsProcessor {
             
             logConsole(ansiLine); // render to Console
             logToFile(ansiLine); // render to File
-            logToMarkdown(mdLine); // render to Markdown File
+            logToMarkdown(r.test(), mdLine); // render to Markdown File
             logTelemetry(telemetry); // persist Telemetry
             upperLogRecord = r;
         }
@@ -469,13 +505,18 @@ public class Processor implements _LogsProcessor {
     /**
      * Logs the provided message to a Markdown file using the designated log writer.
      *
-     * @param s the message to be logged
+     * @param testNumber the test number integer
+     * @param s          the message to be logged
      */
-    private void logToMarkdown(final String s) {
+    private void logToMarkdown(final int testNumber, final String s) {
 
+        if (s == null || s.isEmpty()) return;
         try {
-            if (isNotNull(writer.getMarkdownWriter()))
-                writer.getMarkdownWriter().write(s(s, System.lineSeparator()));
+            final BufferedWriter w = writer.getMarkdownWriter(testNumber);
+            if (isNotNull(w)) {
+                w.write(s(s, System.lineSeparator()));
+                w.flush();
+            }
         } catch (final IOException e) {
             if (!"Stream closed".equals(e.getMessage())) {
                 e.printStackTrace();

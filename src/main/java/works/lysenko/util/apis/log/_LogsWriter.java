@@ -16,6 +16,16 @@ public interface _LogsWriter {
     BufferedWriter getLogWriter();
 
     /**
+     * Returns the BufferedWriter object used for writing Markdown logs for a specific test number.
+     *
+     * @param testNumber the test number integer
+     * @return The BufferedWriter object used for writing per-test Markdown logs.
+     */
+    default BufferedWriter getMarkdownWriter(final int testNumber) {
+        return getMarkdownWriter();
+    }
+
+    /**
      * Returns the BufferedWriter object used for writing Markdown logs.
      *
      * @return The BufferedWriter object used for writing Markdown logs.

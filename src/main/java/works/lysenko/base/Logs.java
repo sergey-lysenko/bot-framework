@@ -94,7 +94,43 @@ public class Logs implements _Logs {
      */
     public final void log(final int level, final String message, final Long redefinedTime) {
 
-        processor.log(level, message, redefinedTime);
+        processor.log(level, message, null, redefinedTime);
+    }
+
+    /**
+     * Logs a message at the specified log level with stacktrace and optional redefined timestamp.
+     *
+     * @param level         the log level
+     * @param message       the message to log
+     * @param stacktrace    the stack trace
+     * @param redefinedTime optional redefined timestamp
+     */
+    public final void log(final int level, final String message, final String stacktrace, final Long redefinedTime) {
+
+        processor.log(level, message, stacktrace, redefinedTime);
+    }
+
+    /**
+     * Logs a section header.
+     * TODO: redeem author's stupidity
+     *
+     * @param title      section title
+     * @param stacktrace optional stacktrace
+     */
+    public final void logSection(final String title, final String stacktrace) {
+
+        processor.logSection(title, stacktrace);
+    }
+
+    /**
+     * Logs a section header.
+     * TODO: redeem author's stupidity
+     *
+     * @param title section title
+     */
+    public final void logSection(final String title) {
+
+        processor.logSection(title, null);
     }
 
     /**

@@ -362,11 +362,29 @@ public enum Ansi {
      * @return a new string with all ANSI color codes removed
      */
     @SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "HardCodedStringLiteral", "HardcodedFileSeparator",
-            "DynamicRegexReplaceableByCompiledPattern"})
+            "MethodWithMultipleReturnPoints"})
     public static String removeANSICodes(final String text) {
 
-        final String ansiRegex = "\u001B\\[[;\\d]*m";
-        return text.replaceAll(ansiRegex, "");
+        if (null == text || text.isEmpty()) return text;
+        if (!text.contains("\033[")) return text;
+        final StringBuilder sb = new StringBuilder(text.length());
+        final int len = text.length();
+        int i = 0;
+        while (i < len) {
+            if (i + 1 < len && text.charAt(i) == '\033' && text.charAt(i + 1) == '[') {
+                i += 2;
+                while (i < len && text.charAt(i) != 'm') {
+                    i++;
+                }
+                if (i < len && text.charAt(i) == 'm') {
+                    i++;
+                }
+            } else {
+                sb.append(text.charAt(i));
+                i++;
+            }
+        }
+        return sb.toString();
     }
 
     /**

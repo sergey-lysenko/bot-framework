@@ -56,7 +56,19 @@ public class AnsiLogRenderer implements LogRenderer {
             }
             return null;
         } else if (data instanceof Log l) {
-            return s(SPACE.repeat(l.depth()), (0 == l.level()) ? l.message() : b(s(works.lysenko.util.spec.Symbols._BULLT_).repeat(l.level()), l.message()));
+            final String baseMsg = (0 == l.level()) ? l.message() : b(s(works.lysenko.util.spec.Symbols._BULLT_).repeat(l.level()), l.message());
+            final String indented = s(SPACE.repeat(l.depth()), baseMsg);
+            if (isNotNull(l.stacktrace()) && !l.stacktrace().isEmpty()) {
+                return b(indented, gray(l.stacktrace()));
+            }
+            return indented;
+        } else if (data instanceof works.lysenko.util.data.type.logr.type.Section s) {
+            final String formattedMsg = bb(e(works.lysenko.util.spec.Symbols._EQUAL_, e(s.title())));
+            final String indented = s(SPACE.repeat(s.depth()), formattedMsg);
+            if (isNotNull(s.stacktrace()) && !s.stacktrace().isEmpty()) {
+                return b(indented, gray(s.stacktrace()));
+            }
+            return indented;
         }
         return data.message();
     }

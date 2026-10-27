@@ -15,6 +15,24 @@ public abstract class AbstractLogData implements _LogData { // TODO: port to Rec
     protected final int depth;
     /** The unique log data identifier. */
     protected final long id;
+    /** The stacktrace or callsite associated with this log data. */
+    protected final String stacktrace;
+
+    /**
+     * Constructs an AbstractLogData object with the specified ID, depth, message, and stacktrace.
+     *
+     * @param id         the unique identifier
+     * @param depth      the indentation depth
+     * @param message    the log message text
+     * @param stacktrace the stacktrace string
+     */
+    protected AbstractLogData(final long id, final int depth, final String message, final String stacktrace) {
+
+        this.id = id;
+        this.depth = depth;
+        this.message = message;
+        this.stacktrace = stacktrace;
+    }
 
     /**
      * Constructs an AbstractLogData object with the specified ID, depth, and message.
@@ -25,9 +43,7 @@ public abstract class AbstractLogData implements _LogData { // TODO: port to Rec
      */
     protected AbstractLogData(final long id, final int depth, final String message) {
 
-        this.id = id;
-        this.depth = depth;
-        this.message = message;
+        this(id, depth, message, null);
     }
 
     @Override
@@ -47,5 +63,11 @@ public abstract class AbstractLogData implements _LogData { // TODO: port to Rec
     public String message() {
 
         return message;
+    }
+
+    @Override
+    public String stacktrace() {
+
+        return stacktrace;
     }
 }

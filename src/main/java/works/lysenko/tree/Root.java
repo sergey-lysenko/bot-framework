@@ -904,9 +904,8 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
 
         boolean stack = addStack;
         if (isNotNull(exec)) stack = addStack && isDebug();
-        final String stackText = getShort(Thread.currentThread().getStackTrace(), forceUnfiltered);
-        final String stackTrace = gray(stackText);
-        core.getLogger().log(level, (stack) ? b(message, stackTrace) : message);
+        final String stackText = stack ? getShort(Thread.currentThread().getStackTrace(), forceUnfiltered) : null;
+        core.getLogger().log(level, message, stackText, null);
     }
 
     /**
@@ -973,8 +972,12 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
      */
     public final void logEmptyLine(final boolean addStack, final boolean forceUnfiltered) {
 
-        if (addStack) core.getLogger().log(ZERO, gray(Stacktrace.getShort(Thread.currentThread().getStackTrace())));
-        else core.getLogger().logEmptyLine();
+        if (addStack) {
+            final String stackText = getShort(Thread.currentThread().getStackTrace(), forceUnfiltered);
+            core.getLogger().log(ZERO, EMPTY, stackText, null);
+        } else {
+            core.getLogger().logEmptyLine();
+        }
     }
 
     private static final ThreadLocal<Boolean> ROOT_LOG_EVENT_RECURSION_GUARD = ThreadLocal.withInitial(() -> Boolean.FALSE);
@@ -2149,14 +2152,29 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     }
 
     /**
+     * Logs a section title.
+     * TODO: redeem author's stupidity
+     *
+     * @param title the section title
+     */
+    public void logSection(final String title) {
+
+        // TODO: redeem author's stupidity
+        final String stackText = isDebug() ? getShort(Thread.currentThread().getStackTrace(), false) : null;
+        core.getLogger().logSection(title, stackText);
+    }
+
+    /**
      * Logs the title.
+     * TODO: redeem author's stupidity
      *
      * @param title the title
      */
     private void title(final String title) {
 
+        // TODO: redeem author's stupidity
         exec.logEmptyLine();
-        log(Level.none, bb(e(_EQUAL_, e(title))), true);
+        logSection(title);
     }
 
     /**
@@ -2227,8 +2245,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             boolean containsKeys = true;
             for (final Object o : fields)
                 if (!storage().containsKey(o)) containsKeys = false;
-            logDebug(b(s(prefix(), _DOT_, CONTAINS, c(KEYS), e(ROUND, bb(Arrays.toString(fields))), e(s(RGT_DAR)), yb(containsKeys)),
-                    gray(Stacktrace.getShort(Thread.currentThread().getStackTrace()))));
+            logDebug(b(s(prefix(), _DOT_, CONTAINS, c(KEYS), e(ROUND, bb(Arrays.toString(fields))), e(s(RGT_DAR)), yb(containsKeys))));
             return containsKeys;
         }
 

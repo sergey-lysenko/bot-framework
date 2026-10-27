@@ -26,4 +26,13 @@ public interface _LogData {
      * @return text of log data
      */
     String message();
+
+    /**
+     * Retrieves the stack trace or call site of the log data, if available.
+     *
+     * @return stack trace string, or null if absent
+     */
+    default String stacktrace() {
+        return null;
+    }
 }

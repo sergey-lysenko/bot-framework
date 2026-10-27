@@ -29,6 +29,21 @@ public class Log extends AbstractLogData implements _Indentation {
     private final int level;
 
     /**
+     * Constructs a Log object with the specified parameters including stacktrace.
+     *
+     * @param id         the unique identifier for this Log instance
+     * @param depth      the depth or indentation level of the log entry
+     * @param level      the level or severity of the log entry
+     * @param message    the message or description of the log entry
+     * @param stacktrace the stack trace string
+     */
+    public Log(final long id, final int depth, final int level, final String message, final String stacktrace) {
+
+        super(id, depth, message, stacktrace);
+        this.level = level;
+    }
+
+    /**
      * Constructs a Log object with the specified parameters.
      *
      * @param id      the unique identifier for this Log instance
@@ -38,8 +53,7 @@ public class Log extends AbstractLogData implements _Indentation {
      */
     public Log(final long id, final int depth, final int level, final String message) {
 
-        super(id, depth, message);
-        this.level = level;
+        this(id, depth, level, message, null);
     }
 
     /**

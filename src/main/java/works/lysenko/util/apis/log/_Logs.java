@@ -58,6 +58,18 @@ public interface _Logs {
     void log(int level, String message);
 
     /**
+     * Logs a message with the specified level, stack trace, and optional redefined time.
+     *
+     * @param level         the log level
+     * @param message       the message to be logged
+     * @param stacktrace    the stack trace string
+     * @param redefinedTime an optional parameter to redefine the timestamp of the log message
+     */
+    default void log(final int level, final String message, final String stacktrace, final Long redefinedTime) {
+        log(level, message, redefinedTime);
+    }
+
+    /**
      * Logs a message with the specified level and optional redefined time.
      *
      * @param level         the log level, where 0 is for no markers and 1-n is for the number of '•' markers before the
@@ -66,6 +78,27 @@ public interface _Logs {
      * @param redefinedTime an optional parameter to redefine the timestamp of the log message
      */
     void log(final int level, final String message, final Long redefinedTime);
+
+    /**
+     * Logs a section header.
+     * TODO: redeem author's stupidity
+     *
+     * @param title      the section title
+     * @param stacktrace optional stacktrace
+     */
+    default void logSection(final String title, final String stacktrace) {
+        log(0, title, stacktrace, null);
+    }
+
+    /**
+     * Logs a section header.
+     * TODO: redeem author's stupidity
+     *
+     * @param title the section title
+     */
+    default void logSection(final String title) {
+        logSection(title, null);
+    }
 
     /**
      * Logs an empty line into the test execution log.
