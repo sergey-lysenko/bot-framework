@@ -58,6 +58,7 @@ class NewIssuesTest {
         loggerField.setAccessible(true);
         loggerField.set(core, new works.lysenko.util.apis.log._Logs() {
             @Override public java.io.Closeable getLogWriter() { return null; }
+            @Override public void flush() {}
             @Override public int getSpanLength() { return 0; }
             @Override public java.io.Closeable getTelemetryWriter() { return null; }
             @Override public void log(String message) { System.out.println(message); }
@@ -210,5 +211,51 @@ class NewIssuesTest {
                 "Not Reproduced link should appear under Not Reproduced section");
         assertTrue(notCheckedIdx < notCheckedLinkIdx,
                 "Not Checked link should appear under Not Checked section");
+    }
+
+    @Test
+    @DisplayName("Confirmed Known Issues section lists test numbers space-separated")
+    void testConfirmedKnownIssuesIncludesSpaceSeparatedTests() {
+        final KnownIssue issueConfirmed = new KnownIssue(
+                "com.example.ExecutedScenario",
+                "Multi Test Issue Title",
+                "Description",
+                "https://jira.company.com/browse/BUG-MULTI",
+                "Multi test error message"
+        );
+
+        final KnownIssuesStore customStore = new KnownIssuesStore(List.of(issueConfirmed));
+        NewIssues.setKnownIssuesStore(customStore);
+
+        final _Scenario executedScenario = new Leaf(Fraction.ONE) {
+            @Override
+            public String getName() {
+                return "com.example.ExecutedScenario";
+            }
+
+            @Override
+            public String getSimpleName() {
+                return "ExecutedScenario";
+            }
+        };
+
+        final Result result = Base.core.getResults().count(executedScenario);
+
+        final _LogRecord lr1 = new LogRecord(1, System.currentTimeMillis(),
+                new Event(1, EventType.FAILURE, 0, "Multi test error message", null));
+        final _LogRecord lr2 = new LogRecord(3, System.currentTimeMillis(),
+                new Event(2, EventType.FAILURE, 0, "Multi test error message", null));
+
+        result.addEvent(lr1);
+        result.addEvent(lr2);
+        Base.exec.issues().add(lr1);
+        Base.exec.issues().add(lr2);
+
+        NewIssues.run();
+
+        final String output = outContent.toString();
+
+        assertTrue(output.contains("https://jira.company.com/browse/BUG-MULTI 1 3"),
+                "Output should include space-separated list of test numbers in which reproducing occurred");
     }
 }

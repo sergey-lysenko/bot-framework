@@ -47,16 +47,6 @@ public class Event extends AbstractLogData implements _Event {
         return b(type.getString(), super.message());
     }
 
-    @SuppressWarnings("MethodWithMultipleReturnPoints")
-    @Override
-    public final String render() {
-
-        final Severity severity = Severity.byType(type);
-        if (isNotNull(severity))
-            return b(s(SPACE.repeat(depth), Ansi.ansi(message(), severity.color())), gray(stacktrace));
-        return null;
-    }
-
     /**
      * Returns the severity of the event determined by its type.
      *
@@ -75,5 +65,25 @@ public class Event extends AbstractLogData implements _Event {
     public final String tag() {
 
         return type.getString();
+    }
+
+    /**
+     * Returns the event type.
+     *
+     * @return the EventType
+     */
+    public final EventType type() {
+
+        return type;
+    }
+
+    /**
+     * Returns the stacktrace.
+     *
+     * @return the stacktrace
+     */
+    public final String stacktrace() {
+
+        return stacktrace;
     }
 }

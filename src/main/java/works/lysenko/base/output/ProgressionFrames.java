@@ -31,14 +31,14 @@ import java.util.concurrent.Semaphore;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-final class ProgressionFrames {
+public final class ProgressionFrames {
 
     private static final Pattern FRAME_NAME = Pattern.compile("frame_(\\d+)\\.(svg|png)");
-    static final int MAX_DIMENSION = (1 << 14) - 2;
+    public static final int MAX_DIMENSION = (1 << 14) - 2;
     private static final int MAX_FRAMES = 100_000;
     private static final int MAX_FRAME_PIXELS = 33_554_432;
     private static final int MAX_PENDING_FRAMES = 4;
-    private static final Semaphore WRITER_SEMAPHORE = new Semaphore(MAX_PENDING_FRAMES);
+    private static final Semaphore WRITER_SEMAPHore = new Semaphore(MAX_PENDING_FRAMES);
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor(r -> {
         final Thread t = new Thread(r, "progression-frame-writer");
         t.setDaemon(true);
@@ -50,7 +50,7 @@ final class ProgressionFrames {
 
     static void saveFrameAsync(final BufferedImage image, final File frameFile, final Runnable postSave) {
         try {
-            WRITER_SEMAPHORE.acquire();
+            WRITER_SEMAPHore.acquire();
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             return;
@@ -68,14 +68,14 @@ final class ProgressionFrames {
             } catch (final IOException e) {
                 System.err.println("Failed to save progression frame: " + e.getMessage());
             } finally {
-                WRITER_SEMAPHORE.release();
+                WRITER_SEMAPHore.release();
             }
         });
     }
 
     static void saveFrameSvgAsync(final String svgContent, final File frameFile, final Runnable postSave) {
         try {
-            WRITER_SEMAPHORE.acquire();
+            WRITER_SEMAPHore.acquire();
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             return;
@@ -93,15 +93,15 @@ final class ProgressionFrames {
             } catch (final IOException e) {
                 System.err.println("Failed to save progression SVG frame: " + e.getMessage());
             } finally {
-                WRITER_SEMAPHORE.release();
+                WRITER_SEMAPHore.release();
             }
         });
     }
 
     static void awaitCompletion() {
         try {
-            WRITER_SEMAPHORE.acquire(MAX_PENDING_FRAMES);
-            WRITER_SEMAPHORE.release(MAX_PENDING_FRAMES);
+            WRITER_SEMAPHore.acquire(MAX_PENDING_FRAMES);
+            WRITER_SEMAPHore.release(MAX_PENDING_FRAMES);
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -177,7 +177,7 @@ final class ProgressionFrames {
         return Math.max(1, Math.min(MAX_FRAMES, configuredMaxFrames));
     }
 
-    static int maxFramePixels(final int configuredMaxPixels) {
+    public static int maxFramePixels(final int configuredMaxPixels) {
         return Math.max(1, Math.min(MAX_FRAME_PIXELS, configuredMaxPixels));
     }
 
@@ -193,7 +193,15 @@ final class ProgressionFrames {
         return Math.min(maxFrames(configuredMaxFrames), boundedFrames);
     }
 
-    static BufferedImage read(final File file, final int maxFramePixels) throws IOException {
+    /**
+     * Reads a progression frame file ({@code .png} or {@code .svg}) into a {@link BufferedImage}.
+     *
+     * @param file           progression frame file
+     * @param maxFramePixels maximum permitted pixel count
+     * @return rendered image
+     * @throws IOException if the file cannot be read or exceeds dimension limits
+     */
+    public static BufferedImage read(final File file, final int maxFramePixels) throws IOException {
         return read(file, maxFramePixels, -1, -1);
     }
 

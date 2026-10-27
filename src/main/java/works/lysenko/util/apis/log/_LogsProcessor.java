@@ -77,4 +77,10 @@ public interface _LogsProcessor {
      * @param telemetry The telemetry data to be processed.
      */
     void process(Telemetry telemetry);
+
+    /**
+     * Flushes the last remaining log record from the buffer into the queue,
+     * and processes the queue to ensure all logs are written out.
+     */
+    void flush();
 }

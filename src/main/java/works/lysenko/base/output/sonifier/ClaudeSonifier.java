@@ -7,8 +7,10 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -33,6 +35,7 @@ public final class ClaudeSonifier extends AbstractTreeSonifier {
     private static final int ROWS = 12;
     private static final int SAMPLES_PER_CELL_AXIS = 6;
     private static final int CHANGE_THRESHOLD = 48;
+    private static final int MAX_POLYPHONY_ON_CAMERA_PAN = 4;
     private static final int[] PENTATONIC = {0, 2, 4, 7, 9};
     private static final int BASE_MIDI = 48;
     private static final double BASE_AMPLITUDE = 0.06;
@@ -43,6 +46,12 @@ public final class ClaudeSonifier extends AbstractTreeSonifier {
     public String mode() {
 
         return MODE;
+    }
+
+    @Override
+    public boolean canSonify(final List<File> frames) {
+
+        return !frames.isEmpty() && frames.stream().allMatch(File::isFile);
     }
 
     @Override
@@ -67,6 +76,7 @@ public final class ClaudeSonifier extends AbstractTreeSonifier {
     private static List<AudioNote> notes(final int[][] previous, final int[][] current, final long startSample) {
 
         final List<AudioNote> notes = new ArrayList<>();
+        int lowSaturationColumns = 0;
         for (int column = 0; column < COLUMNS; column++) {
             int changed = 0;
             double greenness = 0.0;
@@ -79,11 +89,23 @@ public final class ClaudeSonifier extends AbstractTreeSonifier {
                 }
             }
             if (0 < changed) {
+                final double avgGreenness = greenness / changed;
+                if (avgGreenness < 0.45) {
+                    lowSaturationColumns++;
+                }
                 final int midi = BASE_MIDI + 12 * (column / PENTATONIC.length) + PENTATONIC[column % PENTATONIC.length];
                 final double amplitude = Math.min(MAX_AMPLITUDE,
                         BASE_AMPLITUDE + AMPLITUDE_PER_ROOT_CELL * Math.sqrt(changed));
-                notes.add(new AudioNote(startSample, midi, amplitude, greenness / changed));
+                notes.add(new AudioNote(startSample, midi, amplitude, avgGreenness));
             }
+        }
+        // When a camera zoom/pan shifts dark slate background/cards across >6 columns simultaneously,
+        // keep only the strongest/brightest notes instead of playing a 15-note cluster.
+        if (lowSaturationColumns > 6 && notes.size() > MAX_POLYPHONY_ON_CAMERA_PAN) {
+            notes.sort(Comparator.comparingDouble(AudioNote::brightness)
+                    .thenComparingDouble(AudioNote::amplitude)
+                    .reversed());
+            return new ArrayList<>(notes.subList(0, MAX_POLYPHONY_ON_CAMERA_PAN));
         }
         return notes;
     }
@@ -94,11 +116,13 @@ public final class ClaudeSonifier extends AbstractTreeSonifier {
     }
 
     /**
-     * Reduces the image to a fixed ROWS x COLUMNS grid of average RGB values, independent of image size.
+     * Reduces the image (or SVG frame) to a fixed ROWS x COLUMNS grid of average RGB values, independent of image size.
      */
     private static int[][] grid(final File file) throws IOException {
 
-        final BufferedImage image = ImageIO.read(file);
+        final BufferedImage image = file.getName().toLowerCase(Locale.ROOT).endsWith(".svg")
+                ? ProgressionFrames.read(file, Integer.MAX_VALUE)
+                : ImageIO.read(file);
         if (null == image) throw new IOException("Unable to read progression frame: " + file);
         final int width = image.getWidth();
         final int height = image.getHeight();

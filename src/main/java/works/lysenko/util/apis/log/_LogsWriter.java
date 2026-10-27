@@ -16,6 +16,13 @@ public interface _LogsWriter {
     BufferedWriter getLogWriter();
 
     /**
+     * Returns the BufferedWriter object used for writing Markdown logs.
+     *
+     * @return The BufferedWriter object used for writing Markdown logs.
+     */
+    BufferedWriter getMarkdownWriter();
+
+    /**
      * Returns the BufferedWriter object used for writing telemetry data.
      *
      * @return The BufferedWriter object used for writing telemetry data.

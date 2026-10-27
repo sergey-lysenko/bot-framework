@@ -136,8 +136,8 @@ public final class GeminiSonifier extends AbstractTreeSonifier {
             final double shrinkRatio = Math.max(0.0, Math.min(1.0, (double) currentTotalNodes / Math.max(1, initialTotalNodes)));
             final double shrinkProgress = 1.0 - shrinkRatio; // 0.0 at full initial tree, approaching 1.0 as tree shrinks
 
-            // Pitch transposition based on tree shrink progress (lowers up to -12 semitones / 1 octave as tree condenses)
-            final int pitchShift = - (int) Math.round(shrinkProgress * 12.0);
+            // Diatonic lift (up to a perfect fifth, +7 semitones) as tree condenses, keeping low drone grounded >= C2
+            final int pitchLift = (int) Math.round(shrinkProgress * 7.0);
 
             for (final Map.Entry<Integer, ColumnStats> entry : current.entrySet()) {
                 final int col = entry.getKey();
@@ -146,7 +146,7 @@ public final class GeminiSonifier extends AbstractTreeSonifier {
 
                 // Drone: play every FRAMES_PER_DRONE frames if there are completed nodes in this column
                 if (stats.completed > 0 && frameIndex % FRAMES_PER_DRONE == 0) {
-                    final int midi = DRONE_MIDI_BASE + pitchShift + 12 * (col / SCALE.length) + SCALE[col % SCALE.length];
+                    final int midi = DRONE_MIDI_BASE + 12 * (col / SCALE.length) + SCALE[col % SCALE.length];
                     final double amp = DRONE_AMPLITUDE * Math.min(3, stats.completed) / 3.0 * (1.0 + 0.3 * shrinkProgress);
                     frameNotes.add(new AudioNote(startSample, midi, amp, 0.0));
                 }
@@ -158,7 +158,7 @@ public final class GeminiSonifier extends AbstractTreeSonifier {
                     final double brightness = Math.min(1.0, 0.7 + 0.3 * shrinkProgress);
                     for (int i = 0; i < 3; i++) {
                         final int noteOffset = SCALE[(col + i * 2) % SCALE.length] + 12 * ((col + i * 2) / SCALE.length);
-                        final int midi = CHIME_MIDI_BASE + pitchShift + noteOffset;
+                        final int midi = CHIME_MIDI_BASE + pitchLift + noteOffset;
                         final double amp = CHIME_AMPLITUDE * Math.sqrt(gained);
                         frameNotes.add(new AudioNote(startSample, midi, amp, brightness));
                     }
@@ -167,18 +167,21 @@ public final class GeminiSonifier extends AbstractTreeSonifier {
                 previousCompleted.put(col, stats.completed);
             }
             
-            // Pulse: sweeping arpeggio across active columns
+            // Pulse: sweeping arpeggio across active or partially-completed columns (handles target=1 where active==0)
             final int pulseCol = frameIndex % maxColumns;
             final ColumnStats pulseStats = current.getOrDefault(pulseCol, new ColumnStats(0, 0, 0));
-            if (pulseStats.active > 0) {
-                final int midi = PULSE_MIDI_BASE + pitchShift + 12 * (pulseCol / SCALE.length) + SCALE[pulseCol % SCALE.length];
-                final double amp = PULSE_AMPLITUDE * Math.min(3, pulseStats.active) / 3.0 * (1.0 + 0.2 * shrinkProgress);
+            final int effectiveActive = (pulseStats.active > 0)
+                    ? pulseStats.active
+                    : ((pulseStats.completed > 0 && pulseStats.completed < pulseStats.total) ? pulseStats.completed : 0);
+            if (effectiveActive > 0) {
+                final int midi = PULSE_MIDI_BASE + pitchLift + 12 * (pulseCol / SCALE.length) + SCALE[pulseCol % SCALE.length];
+                final double amp = PULSE_AMPLITUDE * Math.min(3, effectiveActive) / 3.0 * (1.0 + 0.2 * shrinkProgress);
                 frameNotes.add(new AudioNote(startSample, midi, amp, 0.2));
             }
 
             // Finale: Resolution chord cascade on the final frame
             if (frameIndex == frames.size() - 1 && frames.size() > 1) {
-                final int rootMidi = CHIME_MIDI_BASE + pitchShift;
+                final int rootMidi = CHIME_MIDI_BASE + pitchLift;
                 final int[] finaleOffsets = {0, 4, 7, 11, 14}; // Lydian Major 9th chord
                 for (final int offset : finaleOffsets) {
                     frameNotes.add(new AudioNote(startSample, rootMidi + offset, CHIME_AMPLITUDE * 0.8, 0.9));

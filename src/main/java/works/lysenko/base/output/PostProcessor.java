@@ -1,25 +1,10 @@
 package works.lysenko.base.output;
 
+import works.lysenko.base.output.postprocessor.DetachedProcessLauncher;
+import works.lysenko.base.output.postprocessor.PostProcessorProgressUI;
 
-import javax.swing.BorderFactory;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.SwingUtilities;
-import java.awt.Dimension;
-import java.awt.GraphicsEnvironment;
-import java.awt.GridLayout;
 import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -29,9 +14,7 @@ import java.util.concurrent.TimeUnit;
 public class PostProcessor {
 
     private static final String REPORT_TASK = "Run timeline report";
-    /** The scenario_png_task. */
     public static final String SCENARIO_PNG_TASK = "Scenario progression PNG frames";
-    /** The tree_png_task. */
     public static final String TREE_PNG_TASK = "Tree progression PNG frames";
 
     static List<String> enabledTasks(
@@ -43,134 +26,31 @@ public class PostProcessor {
             final boolean treeGifEnabled,
             final boolean treeWebpEnabled,
             final boolean treeMp4Enabled) {
-        final List<String> tasks = new ArrayList<>();
-        tasks.add(REPORT_TASK);
-        if (scenarioEnabled) {
-            if (scenarioGifEnabled || scenarioWebpEnabled || scenarioMp4Enabled) tasks.add(SCENARIO_PNG_TASK);
-            if (scenarioGifEnabled) tasks.add("Scenario progression GIF");
-            if (scenarioWebpEnabled) tasks.add("Scenario progression WebP");
-            if (scenarioMp4Enabled) tasks.add("Scenario progression MP4");
-        }
-        if (treeEnabled) {
-            if (treeGifEnabled || treeWebpEnabled || treeMp4Enabled) tasks.add(TREE_PNG_TASK);
-            if (treeGifEnabled) tasks.add("Tree progression GIF");
-            if (treeWebpEnabled) tasks.add("Tree progression WebP");
-            if (treeMp4Enabled) tasks.add("Tree progression MP4");
-        }
-        return tasks;
+        return DetachedProcessLauncher.enabledTasks(
+                scenarioEnabled,
+                scenarioGifEnabled,
+                scenarioWebpEnabled,
+                scenarioMp4Enabled,
+                treeEnabled,
+                treeGifEnabled,
+                treeWebpEnabled,
+                treeMp4Enabled);
     }
 
     static String resolveClassPath() {
-        final String baseCp = System.getProperty("java.class.path");
-        final StringBuilder sb = new StringBuilder(baseCp);
-        final java.util.Set<String> paths = new java.util.HashSet<>();
-        if (null != baseCp) {
-            for (final String p : baseCp.split(File.pathSeparator)) {
-                if (!p.isBlank()) paths.add(new File(p).getAbsolutePath());
-            }
-        }
-
-        final String[] keyClassNames = {
-                "works.lysenko.base.output.PostProcessor",
-                "com.fasterxml.jackson.databind.ObjectMapper",
-                "org.apache.commons.math3.fraction.Fraction",
-                "org.apache.commons.lang3.StringUtils",
-                "com.github.weisj.jsvg.parser.SVGLoader"
-        };
-        for (final String className : keyClassNames) {
-            try {
-                final Class<?> cls = Class.forName(className);
-                final java.security.ProtectionDomain pd = cls.getProtectionDomain();
-                if (null != pd && null != pd.getCodeSource() && null != pd.getCodeSource().getLocation()) {
-                    final String locPath = new File(pd.getCodeSource().getLocation().toURI()).getAbsolutePath();
-                    if (paths.add(locPath)) {
-                        sb.append(File.pathSeparator).append(locPath);
-                    }
-                }
-            } catch (final Throwable ignored) {
-            }
-        }
-
-        final ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        if (cl instanceof java.net.URLClassLoader ucl) {
-            for (final java.net.URL url : ucl.getURLs()) {
-                try {
-                    final String urlPath = new File(url.toURI()).getAbsolutePath();
-                    if (paths.add(urlPath)) {
-                        sb.append(File.pathSeparator).append(urlPath);
-                    }
-                } catch (final Exception ignored) {
-                }
-            }
-        }
-        return sb.toString();
+        return DetachedProcessLauncher.resolveClassPath();
     }
 
-    /**
-     * Performs launch detached.
-     * @param runLogFile the runLogFile
-     * @param outHtmlFile the outHtmlFile
-     * @param openBrowser the openBrowser
-     */
     public static void launchDetached(final File runLogFile, final File outHtmlFile, final boolean openBrowser) {
-        launchDetached(runLogFile, outHtmlFile, openBrowser, openBrowser);
+        DetachedProcessLauncher.launchDetached(runLogFile, outHtmlFile, openBrowser);
     }
 
-    /**
-     * Performs launch detached operation.
-     */
     public static void launchDetached(
             final File runLogFile,
             final File outHtmlFile,
             final boolean openBrowser,
             final boolean showProgressWindow) {
-        final File postProcessorLog = postProcessorLogFile(runLogFile);
-        try {
-            if (null == runLogFile || !runLogFile.exists()) {
-                return;
-            }
-            final File parent = postProcessorLog.getAbsoluteFile().getParentFile();
-            if (null != parent && !parent.isDirectory() && !parent.mkdirs()) {
-                throw new IOException("Unable to create post-processor log directory: " + parent);
-            }
-            final String javaBin = ProcessHandle.current().info().command().orElse(
-                    System.getProperty("java.home") + File.separator + "bin" + File.separator + "java"
-            );
-            final String cp = resolveClassPath();
-            final long parentPid = ProcessHandle.current().pid();
-
-            final Process postProcessor = new ProcessBuilder(detachedCommand(
-                    javaBin,
-                    cp,
-                    parentPid,
-                    runLogFile.getAbsolutePath(),
-                    outHtmlFile.getAbsolutePath(),
-                    showProgressWindow,
-                    openBrowser)).redirectErrorStream(true)
-                    .redirectOutput(ProcessBuilder.Redirect.appendTo(postProcessorLog))
-                    .start();
-            final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(60);
-            while (System.nanoTime() < deadline) {
-                if (RunLocks.isPostprocessLockHeld()) return;
-                if (!postProcessor.isAlive()) return;
-                Thread.sleep(25);
-            }
-            postProcessor.destroyForcibly();
-            throw new IOException("Detached post-processor did not acquire run/.postprocess.lock");
-        } catch (final Exception e) {
-            final String message = "Unable to launch detached post-processor: " + e + System.lineSeparator();
-            try {
-                Files.writeString(
-                        postProcessorLog.toPath(),
-                        message,
-                        StandardCharsets.UTF_8,
-                        StandardOpenOption.CREATE,
-                        StandardOpenOption.APPEND);
-            } catch (final IOException logFailure) {
-                System.err.println(message.trim());
-                System.err.println("Unable to write post-processor log: " + logFailure.getMessage());
-            }
-        }
+        DetachedProcessLauncher.launchDetached(runLogFile, outHtmlFile, openBrowser, showProgressWindow);
     }
 
     static String[] detachedCommand(
@@ -180,7 +60,7 @@ public class PostProcessor {
             final String runLogPath,
             final String htmlPath,
             final boolean openBrowser) {
-        return detachedCommand(javaBin, classPath, parentPid, runLogPath, htmlPath, openBrowser, openBrowser);
+        return DetachedProcessLauncher.detachedCommand(javaBin, classPath, parentPid, runLogPath, htmlPath, openBrowser);
     }
 
     static String[] detachedCommand(
@@ -191,46 +71,13 @@ public class PostProcessor {
             final String htmlPath,
             final boolean showProgressWindow,
             final boolean openBrowser) {
-        return new String[]{
-                javaBin,
-                "-cp",
-                classPath,
-                PostProcessor.class.getName(),
-                String.valueOf(parentPid),
-                runLogPath,
-                htmlPath,
-                String.valueOf(showProgressWindow),
-                String.valueOf((Object) ProgressionSettings.current().scenarioEnabled()),
-                String.valueOf((Object) ProgressionSettings.current().treeEnabled()),
-                String.valueOf((Object) ProgressionSettings.current().maxFrames()),
-                String.valueOf((Object) ProgressionSettings.current().maxFramePixels()),
-                String.valueOf((Object) ProgressionSettings.current().maxTotalPixels()),
-                String.valueOf((Object) ProgressionSettings.current().scenarioMp4Enabled()),
-                String.valueOf((Object) ProgressionSettings.current().treeMp4Enabled()),
-                ProgressionSettings.current().ffmpeg(),
-                String.valueOf(openBrowser),
-                ProgressionSettings.current().treeSonification(),
-                String.valueOf((Object) ProgressionSettings.current().scenarioGifEnabled()),
-                String.valueOf((Object) ProgressionSettings.current().scenarioWebpEnabled()),
-                String.valueOf((Object) ProgressionSettings.current().treeGifEnabled()),
-                String.valueOf((Object) ProgressionSettings.current().treeWebpEnabled())
-        };
+        return DetachedProcessLauncher.detachedCommand(javaBin, classPath, parentPid, runLogPath, htmlPath, showProgressWindow, openBrowser);
     }
 
     static File postProcessorLogFile(final File runLogFile) {
-        if (null == runLogFile) return new File("post-processor.log");
-        final String name = runLogFile.getName();
-        final String suffix = ".run.log";
-        final String logName = name.endsWith(suffix)
-                ? name.substring(0, name.length() - suffix.length()) + ".post-processing.log"
-                : name + ".post-processing.log";
-        return new File(runLogFile.getAbsoluteFile().getParentFile(), logName);
+        return DetachedProcessLauncher.postProcessorLogFile(runLogFile);
     }
 
-    /**
-     * Performs main.
-     * @param args the args
-     */
     public static void main(final String[] args) {
         if (args.length < 4) return;
         try {
@@ -524,7 +371,7 @@ public class PostProcessor {
                 treeGifEnabled,
                 treeWebpEnabled,
                 treeMp4Enabled);
-        final ProgressWindow progress = ProgressWindow.create(showProgressWindow, tasks);
+        final ProcessingProgress progress = PostProcessorProgressUI.create(showProgressWindow, tasks);
         try {
             ScenarioTracker.processFrames(
                     runDir,
@@ -572,104 +419,5 @@ public class PostProcessor {
         final String name = logFile.getName();
         final String suffix = ".run.log";
         return name.endsWith(suffix) ? name.substring(0, name.length() - suffix.length()) : "run";
-    }
-
-    private static final class ProgressWindow implements ProcessingProgress {
-
-        private final JFrame frame;
-        private final Map<String, JProgressBar> bars;
-
-        private ProgressWindow(final JFrame frame, final Map<String, JProgressBar> bars) {
-            this.frame = frame;
-            this.bars = bars;
-        }
-
-        private static ProgressWindow create(final boolean show, final List<String> tasks) {
-            if (!show || GraphicsEnvironment.isHeadless()) return new ProgressWindow(null, Map.of());
-            final Map<String, JProgressBar> bars = new LinkedHashMap<>();
-            final JFrame[] frameRef = new JFrame[1];
-            try {
-                SwingUtilities.invokeAndWait(() -> {
-                    final JFrame window = new JFrame("Test run post-processing");
-                    window.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                    final JPanel panel = new JPanel(new GridLayout(0, 1, 6, 6));
-                    panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-                    for (final String task : tasks) addTask(panel, bars, task);
-                    window.setContentPane(panel);
-                    window.setMinimumSize(new Dimension(430, 80));
-                    window.pack();
-                    window.setLocationRelativeTo(null);
-                    window.setVisible(true);
-                    frameRef[0] = window;
-                });
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                System.err.println("Interrupted while opening post-processing progress window");
-            } catch (final InvocationTargetException e) {
-                System.err.println("Unable to open post-processing progress window: " + e.getCause());
-            }
-            return new ProgressWindow(frameRef[0], bars);
-        }
-
-        private static void addTask(
-                final JPanel panel,
-                final Map<String, JProgressBar> bars,
-                final String name) {
-            panel.add(new JLabel(name));
-            final JProgressBar bar = new JProgressBar(0, 100);
-            bar.setStringPainted(true);
-            bar.setString("Waiting");
-            panel.add(bar);
-            bars.put(name, bar);
-        }
-
-        @Override
-        public void update(final String task, final int percentage) {
-            final JProgressBar bar = bars.get(task);
-            if (null == bar) return;
-            final int value = Math.max(0, Math.min(100, percentage));
-            SwingUtilities.invokeLater(() -> {
-                bar.setValue(value);
-                bar.setString(value + "%");
-            });
-        }
-
-        @Override
-        public void complete(final String task) {
-            final JProgressBar bar = bars.get(task);
-            if (null == bar) return;
-            SwingUtilities.invokeLater(() -> {
-                bar.setValue(100);
-                bar.setString("Complete");
-            });
-        }
-
-        @Override
-        public void skipped(final String task) {
-            final JProgressBar bar = bars.get(task);
-            if (null == bar) return;
-            SwingUtilities.invokeLater(() -> {
-                bar.setValue(100);
-                bar.setString("No frames");
-            });
-        }
-
-        @Override
-        public void failed(final String task, final Exception failure) {
-            ProcessingProgress.super.failed(task, failure);
-            final JProgressBar bar = bars.get(task);
-            if (null != bar) SwingUtilities.invokeLater(() -> bar.setString("Failed"));
-        }
-
-        private void close() {
-            if (null != frame) {
-                try {
-                    Thread.sleep(1200);
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-                SwingUtilities.invokeLater(frame::dispose);
-            }
-        }
     }
 }

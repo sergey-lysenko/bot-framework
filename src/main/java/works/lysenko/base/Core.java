@@ -475,6 +475,7 @@ public final class Core extends Root implements _Core, _Tests {
             final File logFile = new File(name(RUN_LOG_));
             final File htmlFile = new File(name(RUN_LOG_HTML_));
             log(Level.none, b(c(CLOSING), LOG, AND, TELEMETRY, s(WRITER, S)), false);
+            logger.flush();
             Routines.closeQuietly(logger.getLogWriter(), "Unable to close log writer"); //NON-NLS
             Routines.closeQuietly(logger.getTelemetryWriter(), "Unable to close telemetry writer"); //NON-NLS
             ScenarioTracker.onComplete();

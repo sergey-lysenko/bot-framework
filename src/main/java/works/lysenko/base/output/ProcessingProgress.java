@@ -21,4 +21,7 @@ public interface ProcessingProgress {
         System.err.println("Failed to process " + task + ": " + failure.getMessage());
         update(task, 100);
     }
+
+    default void close() {
+    }
 }

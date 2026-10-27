@@ -112,6 +112,7 @@ class ScenarioExecutionOrderTest {
 
         final _Logs mockLogs = new _Logs() {
             @Override public Closeable getLogWriter() { return null; }
+            @Override public void flush() {}
             @Override public int getSpanLength() { return 0; }
             @Override public Closeable getTelemetryWriter() { return null; }
             @Override public void log(String message) {}

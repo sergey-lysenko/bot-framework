@@ -21,7 +21,7 @@ class PropertyValidatorTest {
     @Test
     void sonificationAcceptsOnlyKnownModes() {
         final String name = ".test.report.progression.tree.sonification";
-        for (final String ok : new String[]{"none", "copilot", "claude", "Claude", "gemini", "Gemini", ""}) {
+        for (final String ok : new String[]{"none", "copilot", "claude", "Claude", "gemini", "Gemini", "orpheus", "Orpheus", "aurora", "Aurora", ""}) {
             assertNull(PropertyValidator.validate(name, ok), ok);
         }
         for (final String bad : new String[]{"true", "false"}) {
@@ -32,7 +32,7 @@ class PropertyValidatorTest {
     @Test
     void exposesFiniteKnownValuesForGuiSelection() {
         assertEquals(
-                java.util.List.of("none", "copilot", "claude", "gemini"),
+                java.util.List.of("none", "copilot", "claude", "gemini", "orpheus", "aurora"),
                 PropertyValidator.validValues(".test.report.progression.tree.sonification"));
         assertEquals(java.util.List.of("true", "false"), PropertyValidator.validValues(".test.report.progression.tree"));
         assertEquals(

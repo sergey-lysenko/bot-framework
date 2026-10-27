@@ -22,7 +22,9 @@ public class Queue implements _Queue {
      */
     public Queue() {
 
-        queue = new PriorityQueue<>(Comparator.comparing(LogRecord::time));
+        queue = new PriorityQueue<>(
+            Comparator.comparing(LogRecord::time).thenComparing(r -> r.data().id())
+        );
     }
 
     /**

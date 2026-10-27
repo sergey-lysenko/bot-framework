@@ -59,13 +59,6 @@ public class Log extends AbstractLogData implements _Indentation {
     }
 
     @Override
-    public final String render() {
-
-        return s(SPACE.repeat(depth), (0 == level) ?
-                message : b(s(_BULLT_).repeat(level), message));
-    }
-
-    @Override
     public final String toString() {
 
         return

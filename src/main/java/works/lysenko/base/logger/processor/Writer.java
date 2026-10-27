@@ -19,6 +19,7 @@ import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.lang.word.U.UNABLE;
 import static works.lysenko.util.lang.word.W.WRITING;
 import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_;
+import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_MD_;
 import static works.lysenko.util.spec.Layout.Templates.TELEMETRY_;
 
 @SuppressWarnings({"NestedMethodCall", "MissingJavadoc"})
@@ -28,6 +29,7 @@ import static works.lysenko.util.spec.Layout.Templates.TELEMETRY_;
 public class Writer implements _LogsWriter {
 
     private final BufferedWriter logWriter;
+    private final BufferedWriter markdownWriter;
     private final BufferedWriter telemetryWriter;
 
 
@@ -37,6 +39,7 @@ public class Writer implements _LogsWriter {
     public Writer() {
 
         logWriter = createFileWriter(RUN_LOG_);
+        markdownWriter = createFileWriter(RUN_LOG_MD_);
         telemetryWriter = createFileWriter(TELEMETRY_);
         works.lysenko.base.core.BootCapture.attach(logWriter);
     }
@@ -54,6 +57,12 @@ public class Writer implements _LogsWriter {
     public final BufferedWriter getLogWriter() {
 
         return logWriter;
+    }
+
+    @Override
+    public final BufferedWriter getMarkdownWriter() {
+
+        return markdownWriter;
     }
 
     @Override

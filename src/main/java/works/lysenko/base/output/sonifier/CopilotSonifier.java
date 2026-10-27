@@ -31,6 +31,7 @@ public final class CopilotSonifier extends AbstractTreeSonifier {
     private static final int FRAMES_PER_BEAT = 5;
     private static final double NORMAL_AMPLITUDE = 0.10;
     private static final double TARGET_AMPLITUDE = 0.20;
+    private static final double OVER_TARGET_AMPLITUDE = 0.08;
     private static final int[] SCALE = {0, 2, 4, 7, 9};
     private static final int[] TRIAD = {0, 2, 4};
 
@@ -110,6 +111,9 @@ public final class CopilotSonifier extends AbstractTreeSonifier {
                 final LeafState state = entry.getValue();
                 final int oldExecutions = previous.getOrDefault(identity, 0);
                 final int gained = Math.max(0, Math.min(state.executions(), state.target()) - oldExecutions);
+                final int overGained = (oldExecutions >= state.target())
+                        ? Math.max(0, state.executions() - oldExecutions)
+                        : 0;
                 if (gained > 0) {
                     final int beatFrame = Math.min(frames.size() - 1,
                             ((frameIndex + FRAMES_PER_BEAT - 1) / FRAMES_PER_BEAT) * FRAMES_PER_BEAT);
@@ -120,6 +124,14 @@ public final class CopilotSonifier extends AbstractTreeSonifier {
                             : NORMAL_AMPLITUDE * Math.sqrt(gained) * (0.5 + 0.5 * completion);
                     notesByFrame.computeIfAbsent(beatFrame, ignored -> new ArrayList<>())
                             .add(new AudioNote((long) beatFrame * samplesPerFrame, midi, amplitude));
+                } else if (overGained > 0) {
+                    final int beatFrame = Math.min(frames.size() - 1,
+                            ((frameIndex + FRAMES_PER_BEAT - 1) / FRAMES_PER_BEAT) * FRAMES_PER_BEAT);
+                    final int midi = Math.min(96, pitch(identity, identityOrder.get(identity)) + 12);
+                    final int overTotal = Math.max(1, state.executions() - state.target());
+                    final double amplitude = OVER_TARGET_AMPLITUDE / (1.0 + 0.25 * (overTotal - 1));
+                    notesByFrame.computeIfAbsent(beatFrame, ignored -> new ArrayList<>())
+                            .add(new AudioNote((long) beatFrame * samplesPerFrame, midi, amplitude, 0.6));
                 }
             }
             current.forEach((identity, state) -> previous.put(identity, state.executions()));

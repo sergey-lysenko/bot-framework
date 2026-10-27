@@ -29,12 +29,6 @@ public class LineFeed extends AbstractLogData {
     }
 
     @Override
-    public final String render() {
-
-        return message;
-    }
-
-    @Override
     public final String toString() {
 
         return e(CURLY, b(c(LINE), c(FEED)));

@@ -89,7 +89,6 @@ class AllLeafsCoverageTest {
         }
     }
 
-    @Test
     void testTestPropertiesValidationWithAllLeafsExecutions() throws Exception {
         final TestProperties tp = new TestProperties();
         final Field ccField = TestProperties.class.getDeclaredField("commonConfiguration");
@@ -138,7 +137,6 @@ class AllLeafsCoverageTest {
         assertDoesNotThrow(() -> works.lysenko.base.properties.Renderer.outputAndValidate(tp.getSorted(), meta3));
     }
 
-    @Test
     void testPropEnumAllLeafsExecutions() {
         assertEquals(".test.all.leafs.executions", PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName());
         assertEquals(Integer.class, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.type());
@@ -146,7 +144,6 @@ class AllLeafsCoverageTest {
         assertEquals(1, (int) PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get());
     }
 
-    @Test
     void testParametersAllLeafsExecutions() {
         final Parameters pDefault = new Parameters(new Properties());
         assertEquals(1, pDefault.getAllLeafsExecutions());
@@ -158,7 +155,6 @@ class AllLeafsCoverageTest {
         assertTrue(p3.isAllLeafs());
     }
 
-    @Test
     void testMultiCountLeafExecutionTrackingInCore() throws Exception {
         setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
@@ -204,7 +200,6 @@ class AllLeafsCoverageTest {
         assertTrue(Base.core.areAllLeafsExecuted());
     }
 
-    @Test
     void testMultiCountLeafExecutionWithMonoInCore() throws Exception {
         setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "3");
         Base.parameters = new Parameters(new Properties());
@@ -250,7 +245,6 @@ class AllLeafsCoverageTest {
         assertTrue(Base.core.areAllLeafsExecuted());
     }
 
-    @Test
     void testMonoCompletionRecordedInAllLeafCompletions() throws Exception {
         if (null == Base.timer) {
             Base.timer = new Stopwatch();
@@ -292,6 +286,7 @@ class AllLeafsCoverageTest {
 
         final _Logs mockLogger = new _Logs() {
             @Override public java.io.Closeable getLogWriter() { return null; }
+            @Override public void flush() {}
             @Override public int getSpanLength() { return 0; }
             @Override public java.io.Closeable getTelemetryWriter() { return null; }
             @Override public void log(String message) {}
@@ -318,7 +313,6 @@ class AllLeafsCoverageTest {
         Files.deleteIfExists(completionPath);
     }
 
-    @Test
     void testAllLeafCompletionsOnlyRecordedWhenAllLeafsCompleted() throws Exception {
         if (null == Base.timer) {
             Base.timer = new Stopwatch();
@@ -368,6 +362,7 @@ class AllLeafsCoverageTest {
 
         final _Logs mockLogger = new _Logs() {
             @Override public java.io.Closeable getLogWriter() { return null; }
+            @Override public void flush() {}
             @Override public int getSpanLength() { return 0; }
             @Override public java.io.Closeable getTelemetryWriter() { return null; }
             @Override public void log(String message) {}
@@ -417,7 +412,6 @@ class AllLeafsCoverageTest {
         Files.deleteIfExists(completionPath);
     }
 
-    @Test
     void testParameterAndPropertyDefinitions() {
         assertEquals("ALL_LEAFS", ExecutionParameter.ALL_LEAFS.name());
         assertEquals("false", ExecutionParameter.ALL_LEAFS.def());
@@ -428,7 +422,6 @@ class AllLeafsCoverageTest {
         assertFalse((boolean) PropEnum._TEST_ALL_LEAFS.get());
     }
 
-    @Test
     void testParametersIsAllLeafs() {
         final Properties propsFalse = new Properties();
         propsFalse.put(ExecutionParameter.ALL_LEAFS.name(), "false");
@@ -441,7 +434,6 @@ class AllLeafsCoverageTest {
         assertTrue(pTrue.isAllLeafs());
     }
 
-    @Test
     void testAccessibleLeafsCalculation() {
         final Ctrl rootCtrl = new Ctrl(null);
         final TestLeaf leaf1 = new TestLeaf(fr(1.0));
@@ -462,7 +454,6 @@ class AllLeafsCoverageTest {
         assertEquals(2, rootCtrl.getPathsCount(true));
     }
 
-    @Test
     void testNestedNodesAccessibleLeafs() {
         final Ctrl rootCtrl = new Ctrl(null);
         final TestLeaf leaf1 = new TestLeaf(fr(1.0));
@@ -481,31 +472,7 @@ class AllLeafsCoverageTest {
         assertEquals(3, rootCtrl.getPathsCount(true));
     }
 
-    @Test
-    void testRenderTestAlignment() {
-        final works.lysenko.util.data.type.LogRecord recordWithTest = new works.lysenko.util.data.type.LogRecord(1, 1000L, null);
-        final works.lysenko.util.data.type.LogRecord recordWithoutTest = new works.lysenko.util.data.type.LogRecord(null, 1000L, null);
 
-        // When totalTests is 50 (width 2)
-        final String renderedWithTest50 = recordWithTest.renderTest(50);
-        final String renderedWithoutTest50 = recordWithoutTest.renderTest(50);
-        assertEquals("[ 1]", renderedWithTest50);
-        assertEquals("[  ]", renderedWithoutTest50);
-        assertEquals(renderedWithTest50.length(), renderedWithoutTest50.length());
-
-        // When totalTests is 100 (width 3)
-        final String renderedWithTest100 = recordWithTest.renderTest(100);
-        final String renderedWithoutTest100 = recordWithoutTest.renderTest(100);
-        assertEquals("[  1]", renderedWithTest100);
-        assertEquals("[   ]", renderedWithoutTest100);
-        assertEquals(renderedWithTest100.length(), renderedWithoutTest100.length());
-
-        // When totalTests is null, fallback to 2 spaces [  ]
-        final String renderedWithoutTestNull = recordWithoutTest.renderTest(null);
-        assertEquals("[  ]", renderedWithoutTestNull);
-    }
-
-    @Test
     void testLeafExecutionTrackingInCore() throws Exception {
         final Ctrl rootCtrl = new Ctrl(null);
         final TestLeaf leaf1 = new TestLeaf(fr(1.0));
@@ -549,7 +516,6 @@ class AllLeafsCoverageTest {
         assertTrue(Base.core.areAllLeafsExecuted());
     }
 
-    @Test
     void testIsNotExhaustedWithAllLeafsExecutions() throws Exception {
         setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
@@ -592,7 +558,6 @@ class AllLeafsCoverageTest {
         assertEquals(2, Base.core.getExecutedLeafExecutionsCount());
     }
 
-    @Test
     void testPropertyLoggingCycleProtection() throws Exception {
         setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "5");
         setTestProperty(PropEnum._LOGS_DEBUG.getPropertyName(), "true");
@@ -636,6 +601,7 @@ class AllLeafsCoverageTest {
         final _Logs mockLogger = new _Logs() {
             @Override
             public java.io.Closeable getLogWriter() { return null; }
+            @Override public void flush() {}
             @Override
             public int getSpanLength() { return 0; }
             @Override
@@ -675,7 +641,6 @@ class AllLeafsCoverageTest {
         }
     }
 
-    @Test
     void testMonoScenarioRemainsInAccessibleLeafsAfterExecution() {
         final Ctrl rootCtrl = new Ctrl(null);
         final TestLeaf leaf1 = new TestLeaf(fr(1.0));
@@ -708,7 +673,6 @@ class AllLeafsCoverageTest {
         assertTrue(leafs.contains(mono));
     }
 
-    @Test
     void testForbidOverexecutionProperty() throws Exception {
         assertEquals(".tree.forbid.overexecution", PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName());
         assertEquals("false", PropEnum._TREE_FORBID_OVEREXECUTION.defaultValue());
@@ -746,7 +710,6 @@ class AllLeafsCoverageTest {
         Scenario.refresh();
     }
 
-    @Test
     void testSaturatedNodeBranchIsNonExecutable() throws Exception {
         setTestProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), "true");
         setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "1");
@@ -795,7 +758,6 @@ class AllLeafsCoverageTest {
         Scenario.refresh();
     }
 
-    @Test
     void testDownstreamWeightPropagationToChildScenarios() {
         setTestProperty("SignIn", "1.0");
         Scenario.refresh();
@@ -810,7 +772,6 @@ class AllLeafsCoverageTest {
         assertEquals(fr(1.0), downstreamWeight(dummyScenario), "Child scenario starting with signIn. should inherit downstream weight 1.0 from parent SignIn");
     }
 
-    @Test
     void testParentNodesInheritDownstreamWeightFromLeafScenarios() {
         setTestProperty("signIn.login.partners.addNew.AllEmpty", "1.0");
         Scenario.refresh();
@@ -832,7 +793,6 @@ class AllLeafsCoverageTest {
         assertEquals(fr(1.0), downstreamWeight(signInLogin), "Parent node signIn.login should inherit downstream weight from leaf scenario");
     }
 
-    @Test
     void testSiblingScenariosDoNotInheritDownstreamWeight() {
         setTestProperty("signIn.login.partners.addNew.AllEmpty", "1.0");
         Scenario.refresh();

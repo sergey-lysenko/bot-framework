@@ -80,4 +80,9 @@ public interface _Logs {
      * @param shortStackTrace the short stack trace of the event
      */
     void logEvent(Severity severity, String message, String shortStackTrace);
+
+    /**
+     * Flushes the underlying logs processor.
+     */
+    void flush();
 }

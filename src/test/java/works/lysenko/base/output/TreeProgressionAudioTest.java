@@ -3,6 +3,7 @@ package works.lysenko.base.output;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import works.lysenko.base.output.sonifier.*;
+import works.lysenko.util.data.enums.ExecutionStatus;
 import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.type.Result;
 
@@ -27,53 +28,175 @@ class TreeProgressionAudioTest {
         assertTrue(TreeProgressionAudio.find("copilot").orElseThrow() instanceof CopilotSonifier);
         assertTrue(TreeProgressionAudio.find("Claude").orElseThrow() instanceof ClaudeSonifier);
         assertTrue(TreeProgressionAudio.find("Gemini").orElseThrow() instanceof GeminiSonifier);
+        assertTrue(TreeProgressionAudio.find("orpheus").orElseThrow() instanceof OrpheusSonifier);
+        assertTrue(TreeProgressionAudio.find("Orpheus").orElseThrow() instanceof OrpheusSonifier);
+        assertTrue(TreeProgressionAudio.find("aurora").orElseThrow() instanceof AuroraSonifier);
+        assertTrue(TreeProgressionAudio.find("Aurora").orElseThrow() instanceof AuroraSonifier);
         assertTrue(TreeProgressionAudio.find("none").isEmpty());
         assertTrue(TreeProgressionAudio.find("true").isEmpty());
         assertTrue(TreeProgressionAudio.find(null).isEmpty());
     }
 
     @Test
-    void geminiSnapshotsAndSonifiesTreeStructureChanges(@TempDir final Path tempDir) throws Exception {
+    void orpheusSnapshotsAndSonifiesNarrativeVoices(@TempDir final Path tempDir) throws Exception {
+        final OrpheusSonifier orpheus = new OrpheusSonifier();
+        final File frame1 = tempDir.resolve("frame_0001.svg").toFile();
+        final File frame2 = tempDir.resolve("frame_0002.svg").toFile();
+        final File frame3 = tempDir.resolve("frame_0003.svg").toFile();
+
+        // Frame 1: branch visited once, two leaves (one partial, one unvisited)
+        final TreeHtml.NodeData branch1 = new TreeHtml.NodeData(
+                "branch", "Branch", "Root", 0, 1, new Result(ScenarioType.NODE, null, null, null, List.of(), 1, 0));
+        final TreeHtml.NodeData leafA1 = new TreeHtml.NodeData(
+                "leafA", "LeafA", "Root", 1, 1, new Result(ScenarioType.LEAF, null, null, null, List.of(), 1, 0));
+        final TreeHtml.NodeData leafB1 = new TreeHtml.NodeData(
+                "leafB", "LeafB", "Root", 1, 2, new Result(ScenarioType.LEAF, null, null, null, List.of(), 0, 0));
+        leafA1.setParent(branch1);
+        leafB1.setParent(branch1);
+        branch1.children().addAll(List.of(leafA1, leafB1));
+        final TreeHtml.TreeLayout layout1 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(branch1, leafA1, leafB1)), List.of());
+
+        // Frame 2: branch visited again, leafA completes target=2, leafB pruned (tree shrinks from 3 -> 2 nodes)
+        final TreeHtml.NodeData branch2 = new TreeHtml.NodeData(
+                "branch", "Branch", "Root", 0, 1, new Result(ScenarioType.NODE, null, null, null, List.of(), 2, 0));
+        final TreeHtml.NodeData leafA2 = new TreeHtml.NodeData(
+                "leafA", "LeafA", "Root", 1, 1, new Result(ScenarioType.LEAF, null, null, null, List.of(), 2, 0));
+        leafA2.setParent(branch2);
+        branch2.children().add(leafA2);
+        final TreeHtml.TreeLayout layout2 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(branch2, leafA2)), List.of());
+
+        // Frame 3: leafA over-executes (3/2) with warning status
+        final Result overWarnResult = new Result(ScenarioType.LEAF, null, null, null, List.of(), 3, 1);
+        overWarnResult.updateStatus(ExecutionStatus.WARNING);
+        final TreeHtml.NodeData branch3 = new TreeHtml.NodeData(
+                "branch", "Branch", "Root", 0, 1, new Result(ScenarioType.NODE, null, null, null, List.of(), 3, 0));
+        final TreeHtml.NodeData leafA3 = new TreeHtml.NodeData(
+                "leafA", "LeafA", "Root", 1, 1, overWarnResult);
+        leafA3.setParent(branch3);
+        branch3.children().add(leafA3);
+        final TreeHtml.TreeLayout layout3 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(branch3, leafA3)), List.of());
+
+        orpheus.capture(frame1, layout1, 2);
+        orpheus.capture(frame2, layout2, 2);
+        orpheus.capture(frame3, layout3, 2);
+
+        assertTrue(OrpheusSonifier.snapshotFile(frame1).isFile());
+        assertTrue(orpheus.canSonify(List.of(frame1, frame2, frame3)));
+
+        final File firstWav = tempDir.resolve("orpheus_1.wav").toFile();
+        final File secondWav = tempDir.resolve("orpheus_2.wav").toFile();
+        orpheus.writeWav(List.of(frame1, frame2, frame3), firstWav, 10);
+        orpheus.writeWav(List.of(frame1, frame2, frame3), secondWav, 10);
+
+        final byte[] wav = Files.readAllBytes(firstWav.toPath());
+        assertEquals(44 + ((3 * 4_410) + 17_640) * Short.BYTES, wav.length);
+        assertTrue(hasSound(wav));
+        assertArrayEquals(wav, Files.readAllBytes(secondWav.toPath()), "Orpheus synthesis must be bit-for-bit deterministic");
+    }
+
+    @Test
+    void orpheusSonifiesSvgFramesDirectlyWhenSnapshotsAreAbsent(@TempDir final Path tempDir) throws Exception {
+        final OrpheusSonifier orpheus = new OrpheusSonifier();
+        final File svg1 = tempDir.resolve("frame_0001.svg").toFile();
+        final File svg2 = tempDir.resolve("frame_0002.svg").toFile();
+
+        Files.writeString(svg1.toPath(),
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1920\" height=\"1080\">\n"
+                        + "  <g transform=\"translate(40.00, 30.00) scale(1.2000)\">\n"
+                        + "    <g id=\"scenario_0_SignIn\" class=\"node-card passed\" transform=\"translate(40, 92)\">\n"
+                        + "      <title>SignIn ▷ (Passed)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"46\" stroke=\"#38bdf8\" />\n"
+                        + "      <text class=\"tx1\">1 exec</text>\n"
+                        + "    </g>\n"
+                        + "    <g id=\"scenario_1_Action\" class=\"node-card unvisited\" transform=\"translate(310, 92)\">\n"
+                        + "      <title>Action ◼ (Unvisited)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"46\" stroke=\"#334155\" />\n"
+                        + "      <text class=\"tx1\">0/1</text>\n"
+                        + "    </g>\n"
+                        + "  </g>\n"
+                        + "</svg>\n",
+                StandardCharsets.UTF_8);
+
+        Files.writeString(svg2.toPath(),
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1920\" height=\"1080\">\n"
+                        + "  <g transform=\"translate(10.00, -120.00) scale(2.4000)\">\n"
+                        + "    <g id=\"scenario_0_SignIn\" class=\"node-card passed\" transform=\"translate(40, 92)\">\n"
+                        + "      <title>SignIn ▷ (Passed)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"46\" stroke=\"#22c55e\" />\n"
+                        + "      <text class=\"tx1\">1 exec</text>\n"
+                        + "    </g>\n"
+                        + "    <g id=\"scenario_1_Action\" class=\"node-card passed\" transform=\"translate(310, 92)\">\n"
+                        + "      <title>Action ◼ (Passed)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"46\" stroke=\"#38bdf8\" />\n"
+                        + "      <text class=\"tx1\">✓ 1/1</text>\n"
+                        + "    </g>\n"
+                        + "  </g>\n"
+                        + "</svg>\n",
+                StandardCharsets.UTF_8);
+
+        assertTrue(orpheus.canSonify(List.of(svg1, svg2)));
+        final File wavOut = tempDir.resolve("svg_fallback.wav").toFile();
+        orpheus.writeWav(List.of(svg1, svg2), wavOut, 10);
+        assertTrue(hasSound(Files.readAllBytes(wavOut.toPath())));
+    }
+
+    @Test
+    void geminiSnapshotsAndSonifiesTreeStructureChangesDeterministically(@TempDir final Path tempDir) throws Exception {
         final GeminiSonifier gemini = new GeminiSonifier();
         final File frame1 = tempDir.resolve("frame_0001.png").toFile();
         final File frame2 = tempDir.resolve("frame_0002.png").toFile();
+        final File frame3 = tempDir.resolve("frame_0003.png").toFile();
         
         final TreeHtml.NodeData branch = new TreeHtml.NodeData(
                 "branch", "Branch", "Root", 0, 0, new Result(ScenarioType.NODE, null, null, null, List.of(), 2, 0));
         final TreeHtml.NodeData leaf = new TreeHtml.NodeData(
                 "leaf", "Leaf", "Root", 1, 1, new Result(ScenarioType.LEAF, null, null, null, List.of(), 0, 0));
+        final TreeHtml.NodeData leaf2 = new TreeHtml.NodeData(
+                "leaf2", "Leaf2", "Root", 1, 2, new Result(ScenarioType.LEAF, null, null, null, List.of(), 0, 0));
         leaf.setParent(branch);
-        branch.children().add(leaf);
-        final TreeHtml.TreeLayout layout1 = new TreeHtml.TreeLayout(new ArrayList<>(List.of(branch, leaf)), List.of());
+        leaf2.setParent(branch);
+        branch.children().addAll(List.of(leaf, leaf2));
+        final TreeHtml.TreeLayout layout1 = new TreeHtml.TreeLayout(new ArrayList<>(List.of(branch, leaf, leaf2)), List.of());
         
         final TreeHtml.NodeData leafCompleted = new TreeHtml.NodeData(
                 "leaf", "Leaf", "Root", 1, 1, new Result(ScenarioType.LEAF, null, null, null, List.of(), 9, 0));
         leafCompleted.setParent(branch);
         branch.children().set(0, leafCompleted);
-        final TreeHtml.TreeLayout layout2 = new TreeHtml.TreeLayout(new ArrayList<>(List.of(branch, leafCompleted)), List.of());
+        final TreeHtml.TreeLayout layout2 = new TreeHtml.TreeLayout(new ArrayList<>(List.of(branch, leafCompleted, leaf2)), List.of());
+
+        // Frame 3: leaf2 pruned (tree shrinks, triggering swoosh)
+        final TreeHtml.TreeLayout layout3 = new TreeHtml.TreeLayout(new ArrayList<>(List.of(branch, leafCompleted)), List.of());
         
         gemini.capture(frame1, layout1, 9);
         gemini.capture(frame2, layout2, 9);
+        gemini.capture(frame3, layout3, 9);
         
         final String snapshot1 = Files.readString(GeminiSonifier.snapshotFile(frame1).toPath());
         final String snapshot2 = Files.readString(GeminiSonifier.snapshotFile(frame2).toPath());
         
-        assertTrue(snapshot1.contains("1\t1\t0\t0")); // col 1 has 1 total, 0 active, 0 completed
-        assertTrue(snapshot2.contains("1\t1\t0\t1")); // col 1 has 1 total, 0 active, 1 completed
+        assertTrue(snapshot1.contains("1\t2\t0\t0")); // col 1 has 2 total, 0 active, 0 completed
+        assertTrue(snapshot2.contains("1\t2\t0\t1")); // col 1 has 2 total, 0 active, 1 completed
         
         Files.createFile(frame1.toPath());
         Files.createFile(frame2.toPath());
-        assertTrue(gemini.canSonify(List.of(frame1, frame2)));
+        Files.createFile(frame3.toPath());
+        assertTrue(gemini.canSonify(List.of(frame1, frame2, frame3)));
         
-        final File wavFile = tempDir.resolve("gemini.wav").toFile();
-        gemini.writeWav(List.of(frame1, frame2), wavFile, 10);
+        final File wavFile1 = tempDir.resolve("gemini1.wav").toFile();
+        final File wavFile2 = tempDir.resolve("gemini2.wav").toFile();
+        gemini.writeWav(List.of(frame1, frame2, frame3), wavFile1, 10);
+        gemini.writeWav(List.of(frame1, frame2, frame3), wavFile2, 10);
         
-        final byte[] wav = Files.readAllBytes(wavFile.toPath());
+        final byte[] wav = Files.readAllBytes(wavFile1.toPath());
         assertTrue(hasSound(wav));
+        assertArrayEquals(wav, Files.readAllBytes(wavFile2.toPath()), "Gemini swoosh and chime synthesis must be deterministic");
     }
 
     @Test
-    void claudeSonifiesImageChanges(@TempDir final Path tempDir) throws Exception {
+    void claudeSonifiesImageAndSvgChanges(@TempDir final Path tempDir) throws Exception {
         final File frame1 = image(tempDir, 1, 0x0F172A);
         final File frame2 = image(tempDir, 2, 0x22C55E);
         final File first = tempDir.resolve("first.wav").toFile();
@@ -92,6 +215,47 @@ class TreeProgressionAudioTest {
         final File silent = tempDir.resolve("silent.wav").toFile();
         claude.writeWav(List.of(frame1, frame1), silent, 10);
         assertTrue(!hasSound(Files.readAllBytes(silent.toPath())));
+
+        // Verify Claude also renders SVG progression frames without failing
+        final File svg1 = tempDir.resolve("frame_0001.svg").toFile();
+        final File svg2 = tempDir.resolve("frame_0002.svg").toFile();
+        Files.writeString(svg1.toPath(),
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"120\" viewBox=\"0 0 200 120\">"
+                        + "<rect width=\"200\" height=\"120\" fill=\"#0F172A\"/></svg>",
+                StandardCharsets.UTF_8);
+        Files.writeString(svg2.toPath(),
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"120\" viewBox=\"0 0 200 120\">"
+                        + "<rect width=\"200\" height=\"120\" fill=\"#22C55E\"/></svg>",
+                StandardCharsets.UTF_8);
+        final File svgWav = tempDir.resolve("claude_svg.wav").toFile();
+        claude.writeWav(List.of(svg1, svg2), svgWav, 10);
+        assertTrue(hasSound(Files.readAllBytes(svgWav.toPath())));
+    }
+
+    @Test
+    void auroraSnapshotsAndSonifiesTreeStructureChangesDeterministically(@TempDir final Path tempDir) throws Exception {
+        final AuroraSonifier aurora = new AuroraSonifier();
+        final File frame1 = tempDir.resolve("frame_0001.png").toFile();
+        final File frame2 = tempDir.resolve("frame_0002.png").toFile();
+        
+        final TreeHtml.NodeData branch = new TreeHtml.NodeData(
+                "branch", "Branch", "Root", 0, 0, new Result(ScenarioType.NODE, null, null, null, List.of(), 2, 0));
+        final TreeHtml.NodeData leaf = new TreeHtml.NodeData(
+                "leaf", "Leaf", "Root", 1, 1, new Result(ScenarioType.LEAF, null, null, null, List.of(), 0, 0));
+        leaf.setParent(branch);
+        branch.children().add(leaf);
+        final TreeHtml.TreeLayout layout1 = new TreeHtml.TreeLayout(new ArrayList<>(List.of(branch, leaf)), List.of());
+        
+        aurora.capture(frame1, layout1, 2);
+        aurora.capture(frame2, layout1, 2);
+        
+        Files.createFile(frame1.toPath());
+        Files.createFile(frame2.toPath());
+        assertTrue(aurora.canSonify(List.of(frame1, frame2)));
+        
+        final File wavFile = tempDir.resolve("aurora.wav").toFile();
+        aurora.writeWav(List.of(frame1, frame2), wavFile, 10);
+        assertTrue(hasSound(Files.readAllBytes(wavFile.toPath())));
     }
 
     private static File image(final Path directory, final int index, final int rgb) throws Exception {

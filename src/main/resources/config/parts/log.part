@@ -54,3 +54,7 @@
 # ------------------------------------------------------------------------------
 # Upper threshold for assigning the highest configured log-rate colour. Default: 999
 # .logs.rate.4=999
+# Whether to include duration spans in markdown logs. Default: true
+# .logs.md.durations=true
+# Whether to include absolute timestamps in markdown logs. Default: false
+# .logs.md.timestamps=false

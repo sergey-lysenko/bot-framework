@@ -12,4 +12,6 @@ public record J() {
 
     /** Constant representing the word JUST. */
     public static final String JUST = s(JU, ST);
+    public static final String JAVA_START = "\n```java\n";
+    public static final String JAVA_END = "\n```";
 }

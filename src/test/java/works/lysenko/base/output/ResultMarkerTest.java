@@ -39,6 +39,7 @@ class ResultMarkerTest {
         loggerField.setAccessible(true);
         loggerField.set(core, new works.lysenko.util.apis.log._Logs() {
             @Override public java.io.Closeable getLogWriter() { return null; }
+            @Override public void flush() {}
             @Override public int getSpanLength() { return 0; }
             @Override public java.io.Closeable getTelemetryWriter() { return null; }
             @Override public void log(String message) {}

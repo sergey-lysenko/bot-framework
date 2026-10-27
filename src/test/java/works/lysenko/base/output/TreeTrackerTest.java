@@ -765,6 +765,65 @@ class TreeTrackerTest {
     }
 
     @Test
+    void testZoomTransformKeepsAllExecutedNodesInBoundsWhenAllLeavesComplete() {
+        final NodeData root = new NodeData("root", "Root", "Root", 0, 16.5, result(ScenarioType.NODE, 52));
+        final NodeData topBranch = new NodeData("top", "Top", "Root", 3, 1.0, result(ScenarioType.NODE, 10));
+        final NodeData topLeaf = new NodeData("topLeaf", "TopLeaf", "Top", 5, 1.0, result(ScenarioType.LEAF, 1));
+        final NodeData midBranch = new NodeData("mid", "Mid", "Root", 3, 18.35, result(ScenarioType.NODE, 5));
+        final NodeData recentMidLeaf = new NodeData("recentMid", "RecentMid", "Mid", 4, 18.0, result(ScenarioType.LEAF, 1));
+        final NodeData bottomBranch = new NodeData("bottom", "Bottom", "Root", 3, 32.0, result(ScenarioType.NODE, 8));
+        final NodeData bottomLeaf = new NodeData("bottomLeaf", "BottomLeaf", "Bottom", 5, 32.0, result(ScenarioType.LEAF, 1));
+
+        topBranch.setParent(root);
+        topLeaf.setParent(topBranch);
+        midBranch.setParent(root);
+        recentMidLeaf.setParent(midBranch);
+        bottomBranch.setParent(root);
+        bottomLeaf.setParent(bottomBranch);
+
+        root.children().addAll(List.of(topBranch, midBranch, bottomBranch));
+        topBranch.children().add(topLeaf);
+        midBranch.children().add(recentMidLeaf);
+        bottomBranch.children().add(bottomLeaf);
+
+        final List<NodeData> nodes = List.of(root, topBranch, topLeaf, midBranch, recentMidLeaf, bottomBranch, bottomLeaf);
+        final TreeLayout layout = new TreeLayout(nodes, List.of());
+
+        final int baseW = 2780;
+        final int baseH = 2232;
+        final int headerHeight = (int) Math.round(60 * Math.max(1.0, baseW / 1200.0));
+
+        // Even when all leaves have reached target=1 and only an interior node is in recentNodeKeys,
+        // the camera transform must include all executed nodes so none are pushed out of bounds.
+        final TreeTracker.Transform tx = TreeTracker.computeZoomTransform(layout, Set.of("recentMid"), 1, baseW, baseH);
+
+        final works.lysenko.base.output.tree.VisualNodeResolver resolver =
+                new works.lysenko.base.output.tree.VisualNodeResolver(
+                        works.lysenko.base.output.tree.TreeTheme.DEFAULT,
+                        Collections.emptySet(),
+                        true,
+                        1,
+                        0.0,
+                        false,
+                        true,
+                        0.0,
+                        headerHeight);
+
+        for (final NodeData n : nodes) {
+            final works.lysenko.base.output.tree.VisualNode vn = resolver.resolve(n);
+            final double screenLeft = tx.translateX() + vn.x() * tx.zoom();
+            final double screenRight = tx.translateX() + (vn.x() + 220) * tx.zoom();
+            final double screenTop = tx.translateY() + vn.y() * tx.zoom();
+            final double screenBottom = tx.translateY() + (vn.y() + 46) * tx.zoom();
+
+            assertTrue(screenLeft >= 0.0, "Node " + n.id() + " left edge must be within frame bounds, was " + screenLeft);
+            assertTrue(screenRight <= baseW, "Node " + n.id() + " right edge must be within frame bounds, was " + screenRight);
+            assertTrue(screenTop >= headerHeight, "Node " + n.id() + " top edge must be below header, was " + screenTop);
+            assertTrue(screenBottom <= baseH, "Node " + n.id() + " bottom edge must be within frame bounds, was " + screenBottom);
+        }
+    }
+
+    @Test
     void testProgressionDebugPropertyControlsVectorAndCoordinates() {
         final NodeData root = new NodeData("root", "Root", "Root", 0, 1.0, null);
         final TreeLayout layout = new TreeLayout(List.of(root), List.of());

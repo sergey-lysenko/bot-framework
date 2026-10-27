@@ -157,7 +157,7 @@
 # .test.report.progression.tree.per.node=false
 
 # ------------------------------------------------------------------------------
-# Adds deterministic musical sonification to tree progression MP4s (none, copilot, claude, gemini). Default: none
+# Adds deterministic musical sonification to tree progression MP4s (none, copilot, claude, gemini, orpheus, aurora). Default: none
 # .test.report.progression.tree.sonification=none
 
 # ------------------------------------------------------------------------------

@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * Deterministic additive note synthesizer rendering mono 16-bit PCM WAV files.
@@ -19,6 +20,7 @@ final class WavSynth {
     static final int NOTE_DURATION_MILLIS = 400;
     private static final int NOTE_ATTACK_MILLIS = 12;
     private static final double NOTE_DECAY_SECONDS = 0.14;
+    private static final long DETERMINISTIC_NOISE_SEED = 0x534F4E494659L;
 
     private WavSynth() {
     }
@@ -48,6 +50,7 @@ final class WavSynth {
             writeHeader(stream, dataSize, format);
             final int attackSamples = SAMPLE_RATE * NOTE_ATTACK_MILLIS / 1000;
             final List<AudioNote> activeNotes = new ArrayList<>();
+            final Random swooshRandom = new Random(DETERMINISTIC_NOISE_SEED);
             int currentFrame = -1;
             double globalSwooshState = 0.0;
             for (long sample = 0; sample < totalSamples; sample++) {
@@ -65,10 +68,13 @@ final class WavSynth {
                     }
                 }
                 double value = 0.0;
-                globalSwooshState = 0.90 * globalSwooshState + 0.10 * (Math.random() * 2.0 - 1.0);
+                globalSwooshState = 0.90 * globalSwooshState + 0.10 * (swooshRandom.nextDouble() * 2.0 - 1.0);
                 final double chordScale = activeNotes.isEmpty() ? 0.0 : 1.0 / Math.sqrt(activeNotes.size());
                 for (final AudioNote note : activeNotes) {
                     final long age = sample - note.startSample();
+                    if (age < 0) {
+                        continue;
+                    }
                     final double localAttackSamples = note.isSwoosh() ? SAMPLE_RATE * 0.1 : attackSamples;
                     final double localDecaySeconds = note.isSwoosh() ? 0.3 : NOTE_DECAY_SECONDS;
                     final double attack = Math.min(1.0, (double) age / localAttackSamples);

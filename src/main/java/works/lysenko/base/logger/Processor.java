@@ -63,6 +63,10 @@ import static works.lysenko.util.prop.core.Similarity.exceptions;
 import static works.lysenko.util.spec.Numbers.ZERO;
 import static works.lysenko.util.spec.Symbols._LFD_;
 
+import works.lysenko.base.logger.renderer.AnsiLogRenderer;
+import works.lysenko.base.logger.renderer.LogRenderer;
+import works.lysenko.base.logger.renderer.MarkdownLogRenderer;
+
 /**
  * The Processor class is a central component that manages logging, log record processing,
  * and categorisation of log events. It handles browser logs, external log entries,
@@ -91,6 +95,8 @@ public class Processor implements _LogsProcessor {
     private final _Queue queue = new Queue();
     private final _LimitedDeque<_LogRecord> similarity = new LimitedDeque<>(Similarity.depth);
     private final _LogsWriter writer = new Writer();
+    private final LogRenderer ansiRenderer = new AnsiLogRenderer();
+    private final LogRenderer markdownRenderer = new MarkdownLogRenderer();
     private final Set<String> logsToRead;
     private _LogRecord previousLogRecord = null;
     private Boolean driverLogsAvailable = null;
@@ -273,7 +279,9 @@ public class Processor implements _LogsProcessor {
     public synchronized final void logEmptyLine() {
 
         core.sleep(1L, true);
-        queue.add(new LogRecord(core.getCurrentTestNumber(), msSinceStart(), new LineFeed(++counter)));
+        final LogRecord logRecord = new LogRecord(core.getCurrentTestNumber(), msSinceStart(), new LineFeed(++counter));
+        processLogRecord(logRecord.time(), Telemetry.getNewTelemetry(logRecord.time(), StringUtils.EMPTY), logRecord);
+        previousLogRecord = logRecord;
         core.sleep(1L, true);
     }
 
@@ -287,8 +295,10 @@ public class Processor implements _LogsProcessor {
 
         core.sleep(1L, true);
         final int depth = getDepth();
-        queue.add(new LogRecord(core.getCurrentTestNumber(), msSinceStart(), new Log(++counter, depth, ZERO,
-                shortStackTrace)));
+        final LogRecord logRecord = new LogRecord(core.getCurrentTestNumber(), msSinceStart(), new Log(++counter, depth, ZERO,
+                shortStackTrace));
+        processLogRecord(logRecord.time(), Telemetry.getNewTelemetry(logRecord.time(), shortStackTrace), logRecord);
+        previousLogRecord = logRecord;
         core.sleep(1L, true);
     }
 
@@ -301,7 +311,26 @@ public class Processor implements _LogsProcessor {
     public synchronized final void logEvent(final Severity severity, final String message, final String shortStackTrace) {
 
         final int depth = getDepth();
-        queue.add(createEvent(msSinceStart(), depth, severity, message, shortStackTrace));
+        final long time = msSinceStart();
+        final LogRecord logRecord = createEvent(time, depth, severity, message, shortStackTrace);
+        
+        processLogRecord(time, Telemetry.getNewTelemetry(time, isNull(shortStackTrace) ? StringUtils.EMPTY : shortStackTrace), logRecord);
+        previousLogRecord = logRecord;
+        
+        process(null); // Ensure immediate output for events, flushing the queue
+    }
+
+    /**
+     * Flushes the last remaining log record from the buffer into the queue,
+     * and processes the queue to ensure all logs are written out.
+     */
+    public synchronized final void flush() {
+        if (isNotNull(previousLogRecord)) {
+            previousLogRecord.setSpan(defineTime(null)); 
+            queue.add((LogRecord) previousLogRecord);
+            previousLogRecord = null;
+        }
+        process(Telemetry.getNewTelemetry(defineTime(null), StringUtils.EMPTY));
     }
 
     /**
@@ -315,9 +344,13 @@ public class Processor implements _LogsProcessor {
             final _LogRecord r = queue.poll();
             if (r == null) continue;
             final long previousId = isNull(upperLogRecord) ? ZERO : upperLogRecord.data().id();
-            final String line = r.render(core.getTotalTests(), spanLength, previousId);
-            logConsole(line); // render to Console
-            logToFile(line); // render to File
+            
+            final String ansiLine = ansiRenderer.render(r, core.getTotalTests(), spanLength, previousId);
+            final String mdLine = markdownRenderer.render(r, core.getTotalTests(), spanLength, previousId);
+            
+            logConsole(ansiLine); // render to Console
+            logToFile(ansiLine); // render to File
+            logToMarkdown(mdLine); // render to Markdown File
             logTelemetry(telemetry); // persist Telemetry
             upperLogRecord = r;
         }
@@ -362,8 +395,8 @@ public class Processor implements _LogsProcessor {
     private boolean isSimilar(final _LogRecord logRecord, final _LogRecord to) {
 
         final String s0 = removeANSICodes(to.text()).substring(0, Similarity.limit);
-        final String s1 = removeANSICodes(to.render(core.getTotalTests(), spanLength, null));
-        final String s2 = removeANSICodes(logRecord.render(core.getTotalTests(), spanLength, null));
+        final String s1 = removeANSICodes(ansiRenderer.render(to, core.getTotalTests(), spanLength, null));
+        final String s2 = removeANSICodes(ansiRenderer.render(logRecord, core.getTotalTests(), spanLength, null));
         final String s12 = s(s(_LFD_), q(s1), AND, s(_LFD_), q(s2));
         final String message = (s1.equals(s2)) ? b(DUPLICATED___, s12) : b(ADJACENT___, q(s0), IN, s12);
         final boolean result = !(s1.equals(s2));
@@ -426,6 +459,23 @@ public class Processor implements _LogsProcessor {
             if (isNull(writer.getLogWriter()))
                 logEvent(S0, Ansi.ansi(LOG_WRITER_IS_NOT___), Stacktrace.getShort(Thread.currentThread().getStackTrace()));
             else writer.getLogWriter().write(s(s, System.lineSeparator()));
+        } catch (final IOException e) {
+            if (!"Stream closed".equals(e.getMessage())) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Logs the provided message to a Markdown file using the designated log writer.
+     *
+     * @param s the message to be logged
+     */
+    private void logToMarkdown(final String s) {
+
+        try {
+            if (isNotNull(writer.getMarkdownWriter()))
+                writer.getMarkdownWriter().write(s(s, System.lineSeparator()));
         } catch (final IOException e) {
             if (!"Stream closed".equals(e.getMessage())) {
                 e.printStackTrace();

@@ -26,11 +26,4 @@ public interface _LogData {
      * @return text of log data
      */
     String message();
-
-    /**
-     * Renders log data for terminal output.
-     *
-     * @return rendered representation of Log DataStorage for terminal output
-     */
-    String render();
 }

@@ -2,15 +2,20 @@ package works.lysenko.base.output;
 
 import works.lysenko.base.issues.KnownIssue;
 import works.lysenko.base.issues.KnownIssuesMatcher;
+import works.lysenko.base.logger.renderer.AnsiLogRenderer;
+import works.lysenko.base.logger.renderer.LogRenderer;
 import works.lysenko.base.issues.KnownIssuesStore;
 import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.spec.Level;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static works.lysenko.Base.*;
@@ -76,10 +81,11 @@ record NewIssues() {
             section(b(s1(newIssuesCount, c(EVENT)), SUMMARY));
             log(Level.none, s((isDebug() ? ansi(e(b(c(NOTICES), AND), true), CYAN) : EMPTY), ansi(b(c(NEW), s(c(ISSUES),
                     _COLON_)), RED)), true);
+            final LogRenderer ansiRenderer = new AnsiLogRenderer();
             for (final _LogRecord lr : exec.issues().latestCopy()) {
                 if (store.getForLogRecord(sorted.keySet(), lr).isEmpty()) {
                     final int totalTests = (isNotNull(core) && isNotNull(core.getTest())) ? core.getTotalTests() : 0;
-                    log(Level.none, ansi(lr.render(totalTests, -1, null)), false);
+                    log(Level.none, ansi(ansiRenderer.render(lr, totalTests, -1, null)), false);
                 }
             }
         }
@@ -97,16 +103,39 @@ record NewIssues() {
         final List<_LogRecord> logRecords =
                 (isNotNull(exec) && isNotNull(exec.issues())) ? exec.issues().latestCopy() : Collections.emptyList();
 
-        final Set<String> confirmedRefs = new LinkedHashSet<>();
+        final Map<String, Set<Integer>> confirmedRefs = new LinkedHashMap<>();
         final Set<String> notReproducedRefs = new LinkedHashSet<>();
         final Set<String> notCheckedRefs = new LinkedHashSet<>();
 
         for (final KnownIssue ki : allKnownIssues) {
-            boolean isConfirmed = false;
+            final Set<Integer> reproducingTests = new TreeSet<>();
             for (final _LogRecord lr : logRecords) {
                 if (store.getForLogRecord(sorted.keySet(), lr).contains(ki)) {
-                    isConfirmed = true;
-                    break;
+                    if (lr.test() > 0) {
+                        reproducingTests.add(lr.test());
+                    }
+                }
+            }
+            for (final Map.Entry<works.lysenko.util.apis.scenario._Scenario, works.lysenko.util.apis.data._Result> entry : sorted.entrySet()) {
+                final boolean nodeMatched = store.getForNode(entry.getKey(), entry.getValue()).contains(ki);
+                if (null != entry.getValue() && null != entry.getValue().getEvents()) {
+                    for (final _LogRecord lr : entry.getValue().getEvents()) {
+                        if (nodeMatched || store.getForLogRecord(List.of(entry.getKey()), lr).contains(ki)) {
+                            if (lr.test() > 0) {
+                                reproducingTests.add(lr.test());
+                            }
+                        }
+                    }
+                }
+            }
+
+            boolean isConfirmed = !reproducingTests.isEmpty();
+            if (!isConfirmed) {
+                for (final _LogRecord lr : logRecords) {
+                    if (store.getForLogRecord(sorted.keySet(), lr).contains(ki)) {
+                        isConfirmed = true;
+                        break;
+                    }
                 }
             }
             if (!isConfirmed) {
@@ -130,7 +159,7 @@ record NewIssues() {
             final String ref = getReference(ki);
 
             if (isConfirmed) {
-                confirmedRefs.add(ref);
+                confirmedRefs.computeIfAbsent(ref, k -> new TreeSet<>()).addAll(reproducingTests);
             } else {
                 final String target = ki.scenario();
                 final boolean scenarioExecuted;
@@ -154,8 +183,15 @@ record NewIssues() {
         if (confirmedRefs.isEmpty()) {
             log(Level.none, s("  ", c(NONE)), false);
         } else {
-            for (final String ref : confirmedRefs) {
-                log(Level.none, s("  ", _BULLT_, _SPACE_, ref), false);
+            for (final Map.Entry<String, Set<Integer>> entry : confirmedRefs.entrySet()) {
+                final String ref = entry.getKey();
+                final Set<Integer> testNums = entry.getValue();
+                if (testNums.isEmpty()) {
+                    log(Level.none, s("  ", _BULLT_, _SPACE_, ref), false);
+                } else {
+                    final String testsStr = testNums.stream().map(Object::toString).collect(Collectors.joining(" "));
+                    log(Level.none, s("  ", _BULLT_, _SPACE_, ref, _SPACE_, testsStr), false);
+                }
             }
         }
 

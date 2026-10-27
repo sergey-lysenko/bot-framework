@@ -71,4 +71,5 @@ public record W() {
     public static final String WRITING_FULLSCREEN_IMAGE = b(c(WRITING), FULLSCREEN_IMAGE);
     /** Constant representing 'WebDriver'. */
     public static final String WEB_DRIVER = s(c(WEB), c(DRIVER));
+    public static final String WARNING_MARKER = "**[WARNING]** ";
 }

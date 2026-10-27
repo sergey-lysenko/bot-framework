@@ -8,6 +8,8 @@ import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.base.issues.KnownIssue;
 import works.lysenko.base.issues.KnownIssuesStore;
+import works.lysenko.base.logger.renderer.AnsiLogRenderer;
+import works.lysenko.base.logger.renderer.LogRenderer;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,6 +42,7 @@ public final class Json {
      * Serializes test execution statistics and issues into standard-compliant indented JSON.
      */
     public static void jsonStats() {
+        final LogRenderer ansiRenderer = new AnsiLogRenderer();
         final Map<String, Object> root = new LinkedHashMap<>();
         root.put("startAt", Routines.startedAt());
 
@@ -66,7 +69,7 @@ public final class Json {
                     knownIssuesList.add(kiMap);
                 }
             } else {
-                final String rendered = lr.render(core.getTotalTests(), core.getLogger().getSpanLength(), null);
+                final String rendered = ansiRenderer.render(lr, core.getTotalTests(), core.getLogger().getSpanLength(), null);
                 newIssues.add(stripAnsi(rendered).replace("\n", " ").trim());
             }
         }

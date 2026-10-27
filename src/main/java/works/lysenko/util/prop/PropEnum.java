@@ -116,6 +116,8 @@ public enum PropEnum implements _PropEnum {
     _LOGS_STACK_TRACE_REFERENCES(Boolean.class, TRUE),
     _LOGS_TABLE_WIDTH(Integer.class, _9_, _9_),
     _LOGS_TIME_STAMP_FORMAT(String.class, _DOT_, _0_, _0_, _0_),
+    _LOGS_MD_TIMESTAMPS(Boolean.class, FALSE),
+    _LOGS_MD_DURATIONS(Boolean.class, TRUE),
     _LOGS_TO_READ(String.class, EMPTY),
     _LOGS_TRACE(Boolean.class, FALSE),
     _MATH_FRACTIONS_ACCURACY(Integer.class, _9_),

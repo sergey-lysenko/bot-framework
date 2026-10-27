@@ -116,4 +116,12 @@ public class Logs implements _Logs {
 
         processor.logEvent(severity, message, shortStackTrace);
     }
+
+    /**
+     * Flushes the underlying processor.
+     */
+    public final void flush() {
+
+        processor.flush();
+    }
 }

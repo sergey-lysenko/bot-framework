@@ -43,4 +43,5 @@ public record E() {
             VISIBILITY, OF, ELEMENT, LOCATED, BY, s(c(BY), _DOT_, X, PATH, _COLON_, _SPACE_));
     /** Constant representing exceptional scenario. */
     public static final String EXCEPTIONAL_SCENARION = b(c(EXCEPTIONAL), c(SCENARIO));
+    public static final String ERROR_MARKER = "**[ERROR]** ";
 }

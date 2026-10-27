@@ -234,14 +234,20 @@ public class Gui implements _GUI {
     public void refreshTestDropdown() {
 
         if (isNotNull(test)) {
-            final Object selected = test.getSelectedItem();
-            final JComboBox<Object> newCombo = GuiParameters.addFromFiles(SUITE.name(), _SUITES_, SUITE_PROPERTIES_EXTENSION, parameters);
-            test.removeAllItems();
-            for (int i = 0; i < newCombo.getItemCount(); i++) {
-                test.addItem(newCombo.getItemAt(i));
-            }
-            if (isNotNull(selected)) {
-                test.setSelectedItem(selected);
+            final boolean wasInitializing = isInitializingGui;
+            isInitializingGui = true;
+            try {
+                final Object selected = test.getSelectedItem();
+                final JComboBox<Object> newCombo = GuiParameters.addFromFiles(SUITE.name(), _SUITES_, SUITE_PROPERTIES_EXTENSION, parameters);
+                test.removeAllItems();
+                for (int i = 0; i < newCombo.getItemCount(); i++) {
+                    test.addItem(newCombo.getItemAt(i));
+                }
+                if (isNotNull(selected)) {
+                    test.setSelectedItem(selected);
+                }
+            } finally {
+                isInitializingGui = wasInitializing;
             }
         }
     }
