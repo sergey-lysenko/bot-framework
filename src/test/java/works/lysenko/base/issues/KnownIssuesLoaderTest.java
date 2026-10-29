@@ -46,4 +46,9 @@ class KnownIssuesLoaderTest {
     void testLoadFromNullStream() {
         assertTrue(KnownIssuesLoader.loadFromStream(null).isEmpty());
     }
+
+    @Test
+    void testSaveRunKnownIssues() {
+        assertDoesNotThrow(KnownIssuesLoader::saveRunKnownIssues);
+    }
 }

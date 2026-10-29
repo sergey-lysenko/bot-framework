@@ -184,7 +184,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
 
         final String suiteVal = getValue(SUITE);
         if (isNotNull(suiteVal) && !suiteVal.isBlank()) return suiteVal;
-        return (String) get("TEST");
+        return (String) get("SUITE");
     }
 
     /**

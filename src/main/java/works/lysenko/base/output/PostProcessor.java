@@ -2,6 +2,7 @@ package works.lysenko.base.output;
 
 import static works.lysenko.Base.log;
 
+import works.lysenko.base.issues.KnownIssuesLoader;
 import works.lysenko.base.output.postprocessor.DetachedProcessLauncher;
 import works.lysenko.base.output.postprocessor.PostProcessorProgressUI;
 
@@ -403,6 +404,7 @@ public class PostProcessor {
                     treeSonification);
 
             progress.update(REPORT_TASK, 0);
+            KnownIssuesLoader.saveRunKnownIssues();
             LogHtml.generateReport(
                     logFile,
                     htmlFile,

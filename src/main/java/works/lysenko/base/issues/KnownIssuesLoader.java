@@ -13,10 +13,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import static works.lysenko.Base.logDebug;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.spec.Layout.Files.KNOWN_ISSUES;
 import static works.lysenko.util.spec.Layout.Files.KNOWN_ISSUES_;
+import static works.lysenko.util.spec.Layout.Files.name;
+import static works.lysenko.util.spec.Layout.Templates.RUN_KNOWN_ISSUES_;
 import static works.lysenko.util.spec.Symbols._SLASH_;
 
 /**
@@ -83,6 +86,28 @@ public final class KnownIssuesLoader {
         } catch (final IOException ignored) {
         }
         return issues;
+    }
+
+    /**
+     * Saves the current known/issues.json content into the run result dataset as {runId}.known.issues.json.
+     */
+    public static void saveRunKnownIssues() {
+        try (final InputStream is = findInputStream()) {
+            if (isNotNull(is)) {
+                final byte[] bytes = is.readAllBytes();
+                if (bytes.length > 0) {
+                    final java.io.File outputFile = new java.io.File(name(RUN_KNOWN_ISSUES_));
+                    final java.io.File parent = outputFile.getAbsoluteFile().getParentFile();
+                    if (null != parent && !parent.exists()) {
+                        parent.mkdirs();
+                    }
+                    java.nio.file.Files.write(outputFile.toPath(), bytes);
+                    logDebug("Saved known issues dataset to " + outputFile.getAbsolutePath());
+                }
+            }
+        } catch (final Throwable e) {
+            logDebug("Unable to save run known issues dataset: " + e.getMessage());
+        }
     }
 
     /**

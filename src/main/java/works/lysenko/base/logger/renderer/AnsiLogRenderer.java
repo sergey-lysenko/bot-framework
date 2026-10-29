@@ -52,19 +52,19 @@ public class AnsiLogRenderer implements LogRenderer {
         } else if (data instanceof Event e) {
             final Severity severity = e.severity();
             if (isNotNull(severity)) {
-                return b(s(SPACE.repeat(e.depth()), Ansi.ansi(e.message(), severity.color())), gray(e.stacktrace()));
+                return b(s(SPACE.repeat(max(0, e.depth())), Ansi.ansi(e.message(), severity.color())), gray(e.stacktrace()));
             }
             return null;
         } else if (data instanceof Log l) {
-            final String baseMsg = (0 == l.level()) ? l.message() : b(s(works.lysenko.util.spec.Symbols._BULLT_).repeat(l.level()), l.message());
-            final String indented = s(SPACE.repeat(l.depth()), baseMsg);
+            final String baseMsg = (0 == l.level()) ? l.message() : b(s(works.lysenko.util.spec.Symbols._BULLT_).repeat(max(0, l.level())), l.message());
+            final String indented = s(SPACE.repeat(max(0, l.depth())), baseMsg);
             if (isNotNull(l.stacktrace()) && !l.stacktrace().isEmpty()) {
                 return b(indented, gray(l.stacktrace()));
             }
             return indented;
         } else if (data instanceof works.lysenko.util.data.type.logr.type.Section s) {
             final String formattedMsg = bb(e(works.lysenko.util.spec.Symbols._EQUAL_, e(s.title())));
-            final String indented = s(SPACE.repeat(s.depth()), formattedMsg);
+            final String indented = s(SPACE.repeat(max(0, s.depth())), formattedMsg);
             if (isNotNull(s.stacktrace()) && !s.stacktrace().isEmpty()) {
                 return b(indented, gray(s.stacktrace()));
             }
@@ -88,7 +88,7 @@ public class AnsiLogRenderer implements LogRenderer {
         if (0 == width) {
             width = 2;
         }
-        if (record.test() == 0) return e(SQUARE, SPACE.repeat(width));
+        if (record.test() == 0) return e(SQUARE, SPACE.repeat(max(0, width)));
         final String testN = s(record.test());
         final String prefix = SPACE.repeat(max(0, width - testN.length()));
         return e(SQUARE, s(prefix, testN));
@@ -104,8 +104,8 @@ public class AnsiLogRenderer implements LogRenderer {
         final int span = record.span();
         final String stringedSpan = (span == -1) ? EMPTY : s(span);
         final String renderedSpan = EMPTY.equals(stringedSpan)
-                ? SPACE.repeat(width + 2)
-                : e(SQUARE, s(SPACE.repeat(width - stringedSpan.length()), stringedSpan));
+                ? SPACE.repeat(max(0, width + 2))
+                : e(SQUARE, s(SPACE.repeat(max(0, width - stringedSpan.length())), stringedSpan));
 
         final Function<String, String> spanColor = rendered -> {
             if (span > red) return rb(renderedSpan);

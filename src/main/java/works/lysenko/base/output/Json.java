@@ -7,6 +7,7 @@ import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.base.issues.KnownIssue;
+import works.lysenko.base.issues.KnownIssuesLoader;
 import works.lysenko.base.issues.KnownIssuesStore;
 import works.lysenko.base.logger.renderer.AnsiLogRenderer;
 import works.lysenko.base.logger.renderer.LogRenderer;
@@ -134,6 +135,7 @@ public final class Json {
 
         try {
             MAPPER.writeValue(new File(name(RUN_JSON_)), root);
+            KnownIssuesLoader.saveRunKnownIssues();
         } catch (final IOException e) {
             throw new RuntimeException("JSON stats writing issue: " + e.getMessage(), e);
         }

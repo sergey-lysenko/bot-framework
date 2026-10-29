@@ -84,8 +84,9 @@ record NewIssues() {
             final LogRenderer ansiRenderer = new AnsiLogRenderer();
             for (final _LogRecord lr : exec.issues().latestCopy()) {
                 if (store.getForLogRecord(sorted.keySet(), lr).isEmpty()) {
-                    final int totalTests = (isNotNull(core) && isNotNull(core.getTest())) ? core.getTotalTests() : 0;
-                    log(Level.none, ansi(ansiRenderer.render(lr, totalTests, -1, null)), false);
+                    final int totalTests = (isNotNull(core) && isNotNull(core.getTest()) && isNotNull(core.getTotalTests())) ? core.getTotalTests() : 0;
+                    final int spanLength = (isNotNull(core) && isNotNull(core.getLogger())) ? core.getLogger().getSpanLength() : 0;
+                    log(Level.none, ansi(ansiRenderer.render(lr, totalTests, spanLength, null)), false);
                 }
             }
         }
