@@ -132,20 +132,24 @@ public record Platforms() {
 
         switch (platform) {
             case CHROME -> {
-                WebDriverManager.chromedriver().setup();
-                return null != WebDriverManager.chromedriver().getDownloadedDriverPath();
+                final WebDriverManager wdm = WebDriverManager.chromedriver();
+                wdm.setup();
+                return null != wdm.getDownloadedDriverPath();
             }
             case FIREFOX -> {
-                WebDriverManager.firefoxdriver().setup();
-                return null != WebDriverManager.firefoxdriver().getDownloadedDriverPath();
+                final WebDriverManager wdm = WebDriverManager.firefoxdriver();
+                wdm.setup();
+                return null != wdm.getDownloadedDriverPath();
             }
             case EDGE -> {
-                WebDriverManager.edgedriver().setup();
-                return null != WebDriverManager.edgedriver().getDownloadedDriverPath();
+                final WebDriverManager wdm = WebDriverManager.edgedriver();
+                wdm.setup();
+                return null != wdm.getDownloadedDriverPath();
             }
             case SAFARI -> {
-                WebDriverManager.safaridriver().setup();
-                return null != WebDriverManager.safaridriver().getDownloadedDriverPath();
+                final WebDriverManager wdm = WebDriverManager.safaridriver();
+                wdm.setup();
+                return null != wdm.getDownloadedDriverPath();
             }
             default -> {
                 return false;
