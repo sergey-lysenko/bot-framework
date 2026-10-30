@@ -106,7 +106,7 @@ public enum PropEnum implements _PropEnum {
     _LOGS_LINES_SIMILARITY_DEPTH(Integer.class, _1_),
     _LOGS_LINES_SIMILARITY_EXCEPTIONS_PERMANENT(String.class, EMPTY),
     _LOGS_LINES_SIMILARITY_EXCEPTIONS_TEMPORARY(String.class, EMPTY),
-    _LOGS_LINES_SIMILARITY_LIMIT(Integer.class, _5_),
+    _LOGS_LINES_SIMILARITY_LIMIT(Integer.class, _9_, _9_),
     _LOGS_LINE_NUMBER_IN_SHORT_STACKTRACE(Boolean.class, FALSE),
     _LOGS_RATE_1(Integer.class, _1_, _9_),
     _LOGS_RATE_2(Integer.class, _4_, _9_),

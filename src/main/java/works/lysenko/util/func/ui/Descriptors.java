@@ -6,8 +6,12 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Objects.isNull;
+import static works.lysenko.base.core.Routines.in;
+import static works.lysenko.util.Constants.ANDROID_WIDGET_FRAME_LAYOUT;
 import static works.lysenko.util.chrs.___.FOR;
+import static works.lysenko.util.chrs.____.BODY;
 import static works.lysenko.util.chrs.____.EDIT;
+import static works.lysenko.util.data.enums.Platform.ANDROID;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.f;
@@ -16,9 +20,11 @@ import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.func.type.Files.loadLinesFromFile;
 import static works.lysenko.util.func.ui.Locators.editTextWithText;
 import static works.lysenko.util.lang.N.NOT_FOUND;
+import static works.lysenko.util.lang.word.C.CONTENT;
 import static works.lysenko.util.lang.word.D.DESCRIPTOR;
 import static works.lysenko.util.spec.Layout.Files.LOCATORS_;
 import static works.lysenko.util.spec.Symbols._EQUAL_;
+import static works.lysenko.util.spec.Symbols._SLASH_;
 
 
 /**
@@ -89,7 +95,12 @@ public record Descriptors() {
     public static String get(final String key) {
 
         final String result = descriptors.get(key);
-        if (isNull(result)) throw new IllegalArgumentException(b(c(DESCRIPTOR), FOR, q(key), NOT_FOUND));
+        if (isNull(result)) {
+            if (c(CONTENT).equalsIgnoreCase(key) || CONTENT.equalsIgnoreCase(key)) {
+                return in(ANDROID) ? s(_SLASH_, _SLASH_, ANDROID_WIDGET_FRAME_LAYOUT) : s(_SLASH_, _SLASH_, BODY);
+            }
+            throw new IllegalArgumentException(b(c(DESCRIPTOR), FOR, q(key), NOT_FOUND));
+        }
         return result;
     }
 

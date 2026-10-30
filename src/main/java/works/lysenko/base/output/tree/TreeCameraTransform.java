@@ -87,7 +87,7 @@ public final class TreeCameraTransform {
             focusMaxRow = 0.0;
         }
 
-        if (focusMaxRow - focusMinRow < 2.0) {
+        if (layout.nodes().size() > 1 && (focusMaxRow - focusMinRow < 2.0)) {
             focusMaxRow = focusMinRow + 2.0;
         }
 
@@ -100,6 +100,8 @@ public final class TreeCameraTransform {
             final int target,
             final int baseW,
             final int baseH) {
+
+        final boolean isSingleNode = (null != layout && layout.nodes().size() == 1);
 
         final FocusBounds bounds = computeActiveFocusBounds(layout, recentNodeKeys, target);
 
@@ -117,11 +119,20 @@ public final class TreeCameraTransform {
         final double availW = baseW - PADDING_X * 2.0;
         final double availH = baseH - headerHeight(baseW) - PADDING_Y - BOTTOM_PADDING;
 
-        final double scaleX = availW / activeW;
-        final double scaleY = availH / activeH;
-        final double maxSingleNodeZoom = Math.max(1.0, Math.min(availW / CARD_WIDTH, availH / CARD_HEIGHT));
-        debugMaxZoom = maxSingleNodeZoom;
-        final double zoom = Math.max(1.0, Math.min(Math.min(scaleX, scaleY), maxSingleNodeZoom));
+        final double zoom;
+        if (isSingleNode) {
+            final double fillRatio = 0.88;
+            final double singleNodeZoomX = (availW * fillRatio) / CARD_WIDTH;
+            final double singleNodeZoomY = (availH * fillRatio) / CARD_HEIGHT;
+            zoom = Math.max(1.0, Math.min(singleNodeZoomX, singleNodeZoomY));
+            debugMaxZoom = zoom;
+        } else {
+            final double scaleX = availW / activeW;
+            final double scaleY = availH / activeH;
+            final double maxSingleNodeZoom = Math.max(1.0, Math.min(availW / CARD_WIDTH, availH / CARD_HEIGHT));
+            debugMaxZoom = maxSingleNodeZoom;
+            zoom = Math.max(1.0, Math.min(Math.min(scaleX, scaleY), maxSingleNodeZoom));
+        }
 
         final double targetCenterX = baseW / 2.0;
         final double targetCenterY = headerHeight(baseW) + PADDING_Y + availH / 2.0;

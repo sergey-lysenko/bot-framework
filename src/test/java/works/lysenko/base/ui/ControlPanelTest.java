@@ -101,30 +101,38 @@ class ControlPanelTest {
 
     @Test
     void startRunSwitchesToSelectedTab() throws Exception {
-        Base.properties = new works.lysenko.base.TestProperties();
-        final Properties props = new Properties();
-        props.setProperty("TEST", "test");
-        props.setProperty("PLATFORM", "chrome");
-        final Parameters parameters = new Parameters(props);
-        Base.parameters = parameters;
-        SwingUtilities.invokeAndWait(() -> {
-            final Gui gui = new Gui(parameters);
-            gui.addStandardParameters();
-            final ControlPanel controlPanel = new ControlPanel(parameters, gui);
+        final java.io.File suiteFile = new java.io.File("src/main/resources/suites/test.suite");
+        try {
+            suiteFile.getParentFile().mkdirs();
+            java.nio.file.Files.writeString(suiteFile.toPath(), "");
 
-            final JTabbedPane tabbedPane = controlPanel.getTabbedPane();
-            assertEquals(1, tabbedPane.getSelectedIndex());
+            Base.properties = new works.lysenko.base.TestProperties();
+            final Properties props = new Properties();
+            props.setProperty("TEST", "test");
+            props.setProperty("PLATFORM", "chrome");
+            final Parameters parameters = new Parameters(props);
+            Base.parameters = parameters;
+            SwingUtilities.invokeAndWait(() -> {
+                final Gui gui = new Gui(parameters);
+                gui.addStandardParameters();
+                final ControlPanel controlPanel = new ControlPanel(parameters, gui);
 
-            try {
-                final java.lang.reflect.Method startRunMethod = ControlPanel.class.getDeclaredMethod("startRun", int.class);
-                startRunMethod.setAccessible(true);
-                startRunMethod.invoke(controlPanel, 2);
-                assertEquals(2, tabbedPane.getSelectedIndex());
-                org.junit.jupiter.api.Assertions.assertFalse(tabbedPane.isEnabledAt(0));
-                org.junit.jupiter.api.Assertions.assertFalse(tabbedPane.isEnabledAt(1));
-            } catch (final Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
+                final JTabbedPane tabbedPane = controlPanel.getTabbedPane();
+                assertEquals(1, tabbedPane.getSelectedIndex());
+
+                try {
+                    final java.lang.reflect.Method startRunMethod = ControlPanel.class.getDeclaredMethod("startRun", int.class);
+                    startRunMethod.setAccessible(true);
+                    startRunMethod.invoke(controlPanel, 2);
+                    assertEquals(2, tabbedPane.getSelectedIndex());
+                    org.junit.jupiter.api.Assertions.assertFalse(tabbedPane.isEnabledAt(0));
+                    org.junit.jupiter.api.Assertions.assertFalse(tabbedPane.isEnabledAt(1));
+                } catch (final Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } finally {
+            if (suiteFile.exists()) suiteFile.delete();
+        }
     }
 }

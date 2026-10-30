@@ -5,7 +5,7 @@
 
   <groupId>works.lysenko</groupId>
   <artifactId>framework</artifactId>
-  <version>0.26.44.27</version>
+  <version>0.26.44.28</version>
   <packaging>jar</packaging>
 
   <name>bot-framework</name>
@@ -46,6 +46,7 @@
     <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
     <maven-dependency-plugin.version>3.6.1</maven-dependency-plugin.version>
     <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+    <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
     <jacoco.version>0.8.12</jacoco.version>
   </properties>
 
@@ -246,6 +247,45 @@
             <goals>
               <goal>report</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>${maven-shade-plugin.version}</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>module-info.class</exclude>
+                    <exclude>META-INF/versions/*/module-info.class</exclude>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                    <exclude>META-INF/MANIFEST.MF</exclude>
+                    <exclude>META-INF/LICENSE*</exclude>
+                    <exclude>META-INF/NOTICE*</exclude>
+                    <exclude>META-INF/DEPENDENCIES</exclude>
+                    <exclude>META-INF/AL2.0</exclude>
+                    <exclude>META-INF/LGPL2.1</exclude>
+                    <exclude>META-INF/*.kotlin_module</exclude>
+                    <exclude>META-INF/maven/**</exclude>
+                    <exclude>META-INF/io.netty.versions.properties</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+              </transformers>
+            </configuration>
           </execution>
         </executions>
       </plugin>

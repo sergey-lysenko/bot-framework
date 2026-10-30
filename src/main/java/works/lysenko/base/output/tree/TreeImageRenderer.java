@@ -346,7 +346,7 @@ public final class TreeImageRenderer {
             final int totalExecs,
             final double zoom) {
 
-        final double scale = Math.max(1.0, canvasW / 1200.0);
+        final double scale = canvasW / 1200.0;
         final java.awt.geom.AffineTransform origTx = g.getTransform();
         g.scale(scale, scale);
         final int localCanvasW = (int) Math.round(canvasW / scale);
@@ -355,13 +355,6 @@ public final class TreeImageRenderer {
         g.fillRect(0, 0, localCanvasW, HEADER_HEIGHT_BASE);
         g.setColor(HEADER_BORDER);
         g.drawLine(0, HEADER_HEIGHT_BASE, localCanvasW, HEADER_HEIGHT_BASE);
-
-        g.setColor(ACCENT_CYAN);
-        g.fillOval(PADDING_X, (HEADER_HEIGHT_BASE - 12) / 2, 12, 12);
-
-        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
-        g.setColor(TEXT_WHITE);
-        g.drawString("Scenario Execution Tree Progression", PADDING_X + 22, (HEADER_HEIGHT_BASE / 2) + 5);
 
         int rightX = localCanvasW - PADDING_X;
         final int topY = (HEADER_HEIGHT_BASE - 22) / 2;
@@ -382,7 +375,27 @@ public final class TreeImageRenderer {
 
         rightX -= drawBadge(g, "Target: " + target, rightX, topY, new Color(51, 65, 85), new Color(203, 213, 225)) + 10;
 
-        drawBadge(g, badgeText, rightX, topY, new Color(2, 132, 199), Color.WHITE);
+        rightX -= drawBadge(g, badgeText, rightX, topY, new Color(2, 132, 199), Color.WHITE) + 10;
+
+        final String titleText;
+        if (rightX >= 350) {
+            titleText = "Scenario Execution Tree Progression";
+        } else if (rightX >= 260) {
+            titleText = "Scenario Execution Tree";
+        } else if (rightX >= 120) {
+            titleText = "Tree";
+        } else {
+            titleText = "";
+        }
+
+        if (!titleText.isEmpty()) {
+            g.setColor(ACCENT_CYAN);
+            g.fillOval(PADDING_X, (HEADER_HEIGHT_BASE - 12) / 2, 12, 12);
+
+            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
+            g.setColor(TEXT_WHITE);
+            g.drawString(titleText, PADDING_X + 22, (HEADER_HEIGHT_BASE / 2) + 5);
+        }
 
         if (ProgressionSettings.current().treeDebugEnabled()) {
             final String debugStr = String.format(Locale.US, "dx:%.1f dy:%.1f dz:%.3f maxZ:%.1fx",

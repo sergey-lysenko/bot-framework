@@ -46,4 +46,20 @@ class DescriptorsTest {
             }
         });
     }
+
+    @Test
+    void testContentFallbackWeb() {
+        final java.util.Properties props = new java.util.Properties();
+        props.setProperty("PLATFORM", "chrome");
+        Base.parameters = new Parameters(props);
+        assertEquals("//body", Descriptors.get("Content"));
+    }
+
+    @Test
+    void testContentFallbackAndroid() {
+        final java.util.Properties props = new java.util.Properties();
+        props.setProperty("PLATFORM", "Android");
+        Base.parameters = new Parameters(props);
+        assertEquals("//android.widget.FrameLayout", Descriptors.get("Content"));
+    }
 }

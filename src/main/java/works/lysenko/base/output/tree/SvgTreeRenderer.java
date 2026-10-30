@@ -200,19 +200,13 @@ public final class SvgTreeRenderer {
 
         sb.append("  </g>\n");
 
-        final double scale = Math.max(1.0, baseW / 1200.0);
+        final double scale = baseW / 1200.0;
         final int localW = (int) Math.round(baseW / scale);
 
         sb.append(String.format(Locale.US, "  <g transform=\"scale(%.4f)\">\n", scale));
         sb.append(String.format(Locale.US,
                 "    <rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\" fill=\"#1E293B\" stroke=\"#334155\" stroke-width=\"1\" />\n",
                 localW, HEADER_HEIGHT_BASE));
-        sb.append(String.format(Locale.US,
-                "    <circle cx=\"%d\" cy=\"%d\" r=\"6\" fill=\"#38BDF8\" />\n",
-                PADDING_X + 6, HEADER_HEIGHT_BASE / 2));
-        sb.append(String.format(Locale.US,
-                "    <text class=\"tx4\" x=\"%d\" y=\"%d\">Scenario Execution Tree Progression</text>\n",
-                PADDING_X + 22, (HEADER_HEIGHT_BASE / 2) + 5));
 
         int rightX = localW - PADDING_X;
         final int topY = (HEADER_HEIGHT_BASE - 22) / 2;
@@ -229,7 +223,27 @@ public final class SvgTreeRenderer {
         final String covBg = (coveredLeafs == totalLeafs && totalLeafs > 0) ? "#166534" : "#B45309";
         rightX = appendHeaderBadgeSvg(sb, "Leafs: " + coveredLeafs + "/" + totalLeafs, rightX, topY, covBg, "#F8FAFC");
         rightX = appendHeaderBadgeSvg(sb, "Target: " + target, rightX, topY, "#334155", "#CBD5E1");
-        appendHeaderBadgeSvg(sb, badgeText, rightX, topY, "#0284C7", "#FFFFFF");
+        rightX = appendHeaderBadgeSvg(sb, badgeText, rightX, topY, "#0284C7", "#FFFFFF");
+
+        final String titleText;
+        if (rightX >= 350) {
+            titleText = "Scenario Execution Tree Progression";
+        } else if (rightX >= 260) {
+            titleText = "Scenario Execution Tree";
+        } else if (rightX >= 120) {
+            titleText = "Tree";
+        } else {
+            titleText = "";
+        }
+
+        if (!titleText.isEmpty()) {
+            sb.append(String.format(Locale.US,
+                    "    <circle cx=\"%d\" cy=\"%d\" r=\"6\" fill=\"#38BDF8\" />\n",
+                    PADDING_X + 6, HEADER_HEIGHT_BASE / 2));
+            sb.append(String.format(Locale.US,
+                    "    <text class=\"tx4\" x=\"%d\" y=\"%d\">%s</text>\n",
+                    PADDING_X + 22, (HEADER_HEIGHT_BASE / 2) + 5, titleText));
+        }
 
         if (ProgressionSettings.current().treeDebugEnabled()) {
             final String debugStr = String.format(Locale.US, "dx:%.1f dy:%.1f dz:%.3f maxZ:%.1fx",
