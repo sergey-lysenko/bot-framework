@@ -40,10 +40,22 @@ public interface _Test {
     }
 
     /**
+     * Retrieves the wandering patience tracker associated with this test session.
+     *
+     * @return the {@link _Patience} tracker
+     */
+    _Patience patience();
+
+    /**
      * Gets the patience percentage for the current test run.
+     *
      * @return the patience percentage
      */
-    double getPatiencePercentage();
+    default double getPatiencePercentage() {
+
+        final _Patience p = patience();
+        return isNotNull(p) ? p.getPercentage() : 0.0;
+    }
 
     /**
      * Synchronizes wandering patience state when a test cycle records completion or closes,
@@ -53,6 +65,9 @@ public interface _Test {
      * @param reachedGoal {@code true} if {@code testNum} achieved a new required leaf execution goal
      */
     default void syncPatienceAtCycleEnd(final int testNum, final boolean reachedGoal) {
+
+        final _Patience p = patience();
+        if (isNotNull(p)) p.syncAtCycleEnd(testNum, reachedGoal);
     }
 
     /**
@@ -64,7 +79,8 @@ public interface _Test {
      */
     default long estimatePatienceEtaMs(final long elapsedMs) {
 
-        return -1L;
+        final _Patience p = patience();
+        return isNotNull(p) ? p.estimateEtaMs(elapsedMs) : -1L;
     }
 
     /**

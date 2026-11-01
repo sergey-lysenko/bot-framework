@@ -1,72 +1,56 @@
 package works.lysenko.base.test;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
-import works.lysenko.base.output.ScenarioTracker;
-import works.lysenko.base.output.TreeTracker;
 import org.apache.commons.lang3.StringUtils;
 import works.lysenko.base.core.Routines;
-import works.lysenko.util.apis.exception.checked.SafeguardException;
-import works.lysenko.util.apis.scenario._Scenario;
-import works.lysenko.util.apis.test._ExceptionsHandler;
-import works.lysenko.util.apis.test._Exec;
-import works.lysenko.util.apis.test._Repeater;
-import works.lysenko.util.apis.test._Stat;
-import works.lysenko.util.data.enums.Ansi;
-import works.lysenko.util.data.enums.Severity;
+import works.lysenko.base.output.*;
+import works.lysenko.util.apis.exception.checked.*;
+import works.lysenko.util.apis.scenario.*;
+import works.lysenko.util.apis.test.*;
+import works.lysenko.util.data.enums.*;
 import works.lysenko.util.prop.core.*;
-import works.lysenko.util.prop.tree.Scenario;
-import works.lysenko.util.spec.Level;
-import works.lysenko.util.prop.PropEnum;
+import works.lysenko.util.prop.tree.*;
+import works.lysenko.util.spec.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static works.lysenko.util.lang.word.E.ENTRY;
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.math.NumberUtils.min;
 import static works.lysenko.Base.*;
+import static works.lysenko.base.core.Routines.*;
+import static works.lysenko.base.test.Routines.*;
 import static works.lysenko.util.chrs.__.*;
+import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.___.DOTS;
-import static works.lysenko.util.chrs.___.LOW;
-import static works.lysenko.util.chrs.___.TOO;
 import static works.lysenko.util.chrs.____.*;
-import static works.lysenko.util.data.enums.Ansi.bb;
-import static works.lysenko.util.data.enums.Ansi.gray;
-import static works.lysenko.util.data.enums.Ansi.rb;
-import static works.lysenko.util.data.enums.Ansi.yb;
-import static works.lysenko.util.data.enums.Severity.S0;
-import static works.lysenko.util.data.strs.Bind.b;
-import static works.lysenko.util.data.strs.Case.c;
+import static works.lysenko.util.data.enums.Ansi.*;
+import static works.lysenko.util.data.enums.Brackets.*;
+import static works.lysenko.util.data.enums.Severity.*;
+import static works.lysenko.util.data.strs.Bind.*;
+import static works.lysenko.util.data.strs.Case.*;
 import static works.lysenko.util.data.strs.Null.sn;
-import static works.lysenko.util.data.strs.Swap.s;
-import static works.lysenko.util.data.strs.Swap.s1;
-import static works.lysenko.util.data.strs.Time.t;
-import static works.lysenko.util.data.strs.Vars.a;
-import static works.lysenko.util.data.enums.Brackets.ROUND;
-import static works.lysenko.util.data.strs.Wrap.e;
-import static works.lysenko.util.data.strs.Wrap.q;
-import static works.lysenko.util.func.data.Percents.percentString;
-import static works.lysenko.util.func.type.Objects.isNotNull;
-import static works.lysenko.util.lang.word.C.CLOSING;
-import static works.lysenko.util.lang.D.DUE_TO;
-import static works.lysenko.util.lang.word.E.ELEMENT;
-import static works.lysenko.util.lang.word.E.EVENT;
-import static works.lysenko.util.lang.word.E.EXECUTION;
-import static works.lysenko.util.lang.word.H.HISTORY;
-import static works.lysenko.util.lang.word.I.INDEX;
-import static works.lysenko.util.lang.word.L.LOCATED;
-import static works.lysenko.util.lang.word.O.ORPHANED;
-import static works.lysenko.util.lang.word.P.PERSISTING;
+import static works.lysenko.util.data.strs.Swap.*;
+import static works.lysenko.util.data.strs.Time.*;
+import static works.lysenko.util.data.strs.Vars.*;
+import static works.lysenko.util.data.strs.Wrap.*;
+import static works.lysenko.util.func.data.Percents.*;
+import static works.lysenko.util.func.type.Objects.*;
+import static works.lysenko.util.lang.D.*;
+import static works.lysenko.util.lang.word.C.*;
+import static works.lysenko.util.lang.word.E.*;
+import static works.lysenko.util.lang.word.H.*;
+import static works.lysenko.util.lang.word.I.*;
+import static works.lysenko.util.lang.word.L.*;
+import static works.lysenko.util.lang.word.O.*;
+import static works.lysenko.util.lang.word.P.*;
 import static works.lysenko.util.lang.word.S.*;
-import static works.lysenko.util.lang.word.T.TESTS;
-import static works.lysenko.util.lang.word.T.TOOK;
+import static works.lysenko.util.lang.word.T.*;
+import static works.lysenko.util.prop.PropEnum.*;
 import static works.lysenko.util.prop.core.Mode.*;
-import static works.lysenko.util.prop.core.Safeguard.historyDepth;
-import static works.lysenko.util.prop.PropEnum._TEST_TESTS;
-import static works.lysenko.util.spec.Symbols._BULLT_;
-import static works.lysenko.util.spec.Symbols._COMMA_;
-import static works.lysenko.util.spec.Symbols._SLASH_;
+import static works.lysenko.util.prop.core.Safeguard.*;
+import static works.lysenko.util.spec.Symbols.*;
 
 /**
  * The Repeater class represents a test manager that keeps track of the test history, test times,
@@ -138,6 +122,7 @@ public class Repeater implements _Repeater {
      * Performs add to scenarios.
      * @param scenario the scenario
      */
+    @SuppressWarnings("MethodWithMultipleReturnPoints")
     public final void addToScenarios(final _Scenario scenario) {
 
         if (scenario instanceof works.lysenko.util.apis.scenario._ExceptionalExecution) return;
@@ -150,6 +135,7 @@ public class Repeater implements _Repeater {
     /**
      * Performs close.
      */
+    @SuppressWarnings("MethodWithMultipleReturnPoints")
     public final void close() {
 
         if (isNull(startedAt)) return;
@@ -166,25 +152,17 @@ public class Repeater implements _Repeater {
         done = core.getStopFlag();
     }
 
-    private static boolean isCountAllLeafs() {
-        final Integer count = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
-        return isNotNull(count) && count > 1;
-    }
-
-    @SuppressWarnings("MethodWithMultipleReturnPoints")
-    /**
-     * Performs get current.
-     * @return the get current result
+    /*
+      Performs get current.
+      @return the get current result
      */
+    @SuppressWarnings("MethodWithMultipleReturnPoints")
     public final Integer getCurrent() {
 
         if (isNull(startedAt)) return null;
         if (isNull(exec) || done) return null;
         final int current = statistics.history().size() + 1;
-        final boolean allLeafsMode = (isNotNull(parameters))
-                ? parameters.isAllLeafs()
-                : (Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get()) || isCountAllLeafs());
-        if (allLeafsMode || isNull(getTotalTests())) return current;
+        if (isAllLeafsMode() || isNull(getTotalTests())) return current;
         return (current > getTotalTests()) ? null : current;
     }
 
@@ -287,7 +265,7 @@ public class Repeater implements _Repeater {
     /**
      * Retrieves the circular buffer containing the time safeguard.
      * <p>
-     * If the time safeguard has not been initialized, it creates a new instance of
+     * If the time safeguard has not been initialised, it creates a new instance of
      * CircularFifoQueue with the number of tests specified by Test.timeSafeguard.tests().
      *
      * @return The circular buffer containing the time safeguard.
@@ -303,18 +281,15 @@ public class Repeater implements _Repeater {
      *
      * @return the title string for the current test
      */
-    @SuppressWarnings("NestedConditionalExpression")
+    @SuppressWarnings({"NestedConditionalExpression", "MethodWithMultipleReturnPoints"})
     private String getTitle() {
 
-        final boolean allLeafsMode = (isNotNull(parameters))
-                ? parameters.isAllLeafs()
-                : (Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get()) || isCountAllLeafs());
-        if (allLeafsMode) {
-            final boolean multipleExecutionsPerLeaf = isNotNull(parameters) && parameters.getAllLeafsExecutions() > 1;
-            final int executed = multipleExecutionsPerLeaf
+        if (isAllLeafsMode()) {
+            final boolean multipleExecutions = isNotNull(parameters) && parameters.getAllLeafsExecutions() > 1;
+            final int executed = multipleExecutions
                     ? core.getExecutedLeafExecutionsCount()
                     : core.getExecutedLeafsCount();
-            final int total = multipleExecutionsPerLeaf
+            final int total = multipleExecutions
                     ? core.getTotalLeafExecutionsCount()
                     : core.getAccessibleLeafs().size();
             final String progress = (0 == total) ? StringUtils.EMPTY :
@@ -344,7 +319,7 @@ public class Repeater implements _Repeater {
      * Logs the information about the current test execution.
      * <p>
      * This method logs details about the current test status and a completion mark
-     * (e.g., DONE) at a specific log level. It utilizes methods from the underlying
+     * (e.g., DONE) at a specific log level. It utilises methods from the underlying
      * framework, including getting the status of the current test and formatting the
      * title of the test execution.
      */
@@ -374,7 +349,7 @@ public class Repeater implements _Repeater {
      */
     private void time() {
 
-        final long testTime = isNull(startedAt) ? 0 : Routines.msSinceStart() - startedAt;
+        final long testTime = isNull(startedAt) ? 0 : msSinceStart() - startedAt;
         startedAt = null;
         log(b(c(TEST), TIME, yb(t(testTime))));
         statistics.times().add(testTime);
@@ -426,7 +401,7 @@ public class Repeater implements _Repeater {
     /**
      * Checks if there are any failing events recorded, and if so, performs stopping of test session during Limbo.
      */
-    private void stopIfFailingEvents() {
+    private static void stopIfFailingEvents() {
 
         if (!resilient && !core.getStopFlag() && core.getResults().areFailingEvents()) {
             final Severity severity = core.getResults().getGreatestSeverity();

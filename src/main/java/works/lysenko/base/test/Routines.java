@@ -1,14 +1,19 @@
 package works.lysenko.base.test;
 
+import org.apache.commons.lang3.StringUtils;
 import works.lysenko.base.Test;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
 import works.lysenko.util.apis.exception.unchecked.ScenarioRuntimeException;
 import works.lysenko.util.apis.test._Test;
 import works.lysenko.util.data.records.test.Workflow;
-import org.apache.commons.lang3.StringUtils;
-import works.lysenko.util.spec.Level;
+import works.lysenko.util.prop.PropEnum;
 
-import static works.lysenko.Base.*;
+import static works.lysenko.Base.core;
+import static works.lysenko.Base.exec;
+import static works.lysenko.Base.log;
+import static works.lysenko.Base.logEvent;
+import static works.lysenko.Base.parameters;
+import static works.lysenko.base.core.Routines.isTestPropertiesEmpty;
 import static works.lysenko.util.chrs.__.OF;
 import static works.lysenko.util.chrs.___.DOTS;
 import static works.lysenko.util.chrs.____.DONE;
@@ -28,6 +33,9 @@ import static works.lysenko.util.lang.N.NO_TESTS_WERE_PERFORMED;
 import static works.lysenko.util.lang.T.TEST_PROPERTIES_ARE___;
 import static works.lysenko.util.lang.word.E.EXECUTING;
 import static works.lysenko.util.lang.word.T.TESTS;
+import static works.lysenko.util.spec.Level.none;
+import static works.lysenko.util.spec.Numbers.ONE;
+import static works.lysenko.util.spec.Numbers.ZERO;
 
 /**
  * The Routines class provides static utility methods for preparing tests,
@@ -43,16 +51,18 @@ public record Routines() {
     public static void build() {
 
         final Integer total = core.getTotalTests();
-        if (isNotNull(total) && 0 == total) {
+        if (isNotNull(total) && ZERO == total) {
             logEvent(S2, NO_TESTS_WERE_PERFORMED);
             return;
         }
 
         final String numberOfRepetitions = yb((null == total) ? TESTS : s1(total, TEST));
         final String testDescription = parameters.testDescription();
-        final String allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs()) ? "in ALL_LEAFS mode" : StringUtils.EMPTY;
+        final String allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
+                ? "in ALL_LEAFS mode" //NON-NLS
+                : StringUtils.EMPTY;
 
-        log(Level.none, b(false, c(EXECUTING), numberOfRepetitions, OF, testDescription, allLeafsMode), true);
+        log(none, b(false, c(EXECUTING), numberOfRepetitions, OF, testDescription, allLeafsMode), true);
     }
 
     /**
@@ -62,11 +72,25 @@ public record Routines() {
     @SuppressWarnings("StaticMethodOnlyUsedInOneClass")
     public static void haltService() {
 
-        if (isNotNull(exec.service())) {
+        final var service = exec.service();
+        if (isNotNull(service)) {
             log(CLOSING_TEST_SERVICE);
-            exec.service().close();
+            service.close();
             log(b(DOTS, DONE));
         }
+    }
+
+    /**
+     * Determines whether all-leafs execution mode is active, either via initialised {@code parameters}
+     * or via {@link PropEnum#_TEST_ALL_LEAFS} / {@link PropEnum#_TEST_ALL_LEAFS_EXECUTIONS}.
+     *
+     * @return {@code true} if all-leafs execution mode is enabled, {@code false} otherwise
+     */
+    @SuppressWarnings("MethodWithMultipleReturnPoints")
+    public static boolean isAllLeafsMode() {
+
+        if (isNotNull(parameters)) return parameters.isAllLeafs();
+        return Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get()) || isCountAllLeafs();
     }
 
     /**
@@ -105,6 +129,12 @@ public record Routines() {
     @SuppressWarnings("StaticMethodOnlyUsedInOneClass")
     public static void verifyProperties() {
 
-        if (works.lysenko.base.core.Routines.isTestPropertiesEmpty()) logEvent(S1, TEST_PROPERTIES_ARE___);
+        if (isTestPropertiesEmpty()) logEvent(S1, TEST_PROPERTIES_ARE___);
+    }
+
+    private static boolean isCountAllLeafs() {
+
+        final Integer count = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
+        return isNotNull(count) && ONE < count;
     }
 }

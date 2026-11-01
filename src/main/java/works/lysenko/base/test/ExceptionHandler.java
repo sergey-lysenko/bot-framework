@@ -58,10 +58,10 @@ public class ExceptionHandler implements _ExceptionsHandler {
      */
     public final void handle(final RuntimeException exception) throws SafeguardException {
 
-        if (exception instanceof works.lysenko.util.apis.exception.unchecked.BotRuntimeException bre
-                && bre.getData() instanceof _Scenario s) {
-            if (!s.hasChildFailed()) {
-                s.markAsFailed();
+        if (exception instanceof final works.lysenko.util.apis.exception.unchecked.BotRuntimeException bre
+                && bre.getData() instanceof final _Scenario scenario) {
+            if (!scenario.hasChildFailed()) {
+                scenario.markAsFailed();
             }
         }
         section(PROCESSING_EXCEPTIONAL_STATE, () -> {
@@ -137,7 +137,7 @@ public class ExceptionHandler implements _ExceptionsHandler {
      * describeTriplet(Triplet) methods.
      * Finally, it prints a section indicating the processing of the exceptional state.
      */
-    @SuppressWarnings("UseOfSystemOutOrSystemErr")
+    @SuppressWarnings({"UseOfSystemOutOrSystemErr", "StaticImportCanBeUsed"})
     private void printInfo() {
 
         if (isDebug()) exception.printStackTrace(System.err);
