@@ -313,6 +313,65 @@ class CompletionWeightTest {
         assertEquals(fr(5.5), shortPathWeight);
     }
 
+    @Test
+    void testBranchStalePenaltyDiscountsDescendantUncompletedWeightAtAncestors() {
+        final boolean prevStalePenalty = Scenario.branchStalePenalty;
+        try {
+            Scenario.branchStalePenalty = true;
+
+            final TestLeaf staleLeaf1 = new TestLeaf(fr(1.0));
+            final TestLeaf staleLeaf2 = new TestLeaf(fr(1.0));
+            final TestLeaf staleLeaf3 = new TestLeaf(fr(1.0));
+            staleLeaf1.incrementStaleCount();
+            staleLeaf2.incrementStaleCount();
+            staleLeaf3.incrementStaleCount();
+
+            final TestNode staleSortNode = new TestNode(fr(1.0), staleLeaf1, staleLeaf2, staleLeaf3);
+            staleSortNode.incrementStaleCount();
+
+            final TestLeaf healthySiblingLeaf = new TestLeaf(fr(1.0));
+            final TestNode runsNode = new TestNode(fr(1.0), staleSortNode, healthySiblingLeaf);
+            final TestNode dashboardRoot = new TestNode(fr(1.0), runsNode);
+
+            final TestNode freshRoot = new TestNode(fr(1.0),
+                    new TestLeaf(fr(1.0)), new TestLeaf(fr(1.0)), new TestLeaf(fr(1.0)));
+
+            // Inside runsNode: healthySiblingLeaf (1 + 4.5 = 5.5) must outweigh staleSortNode ((1 + 4.5 * 1.5) / 2 = 3.875)
+            final Ctrl runsCtrl = new Ctrl(runsNode);
+            runsCtrl.getPool().appendScenarioWithWeight(staleSortNode, fr(1.0));
+            runsCtrl.getPool().appendScenarioWithWeight(healthySiblingLeaf, fr(1.0));
+            final List<KeyValue<works.lysenko.util.apis.scenario._Scenario, Fraction>> runsCandidates =
+                    new Selector(runsCtrl, 1).getExecutionCandidates();
+            final Fraction sortWeight = runsCandidates.stream()
+                    .filter(kv -> kv.k() == staleSortNode).findFirst().orElseThrow().v();
+            final Fraction siblingWeight = runsCandidates.stream()
+                    .filter(kv -> kv.k() == healthySiblingLeaf).findFirst().orElseThrow().v();
+            assertEquals(fr(3.875), sortWeight);
+            assertEquals(fr(5.5), siblingWeight);
+            assertTrue(siblingWeight.doubleValue() > sortWeight.doubleValue());
+
+            // At root: freshRoot (3 fresh leaves -> 1 + 4.5 * 3 = 14.5) outweighs dashboardRoot
+            // (staleSortNode discounted to 0.75 + 1 healthy leaf = 1.75 -> 1 + 4.5 * 1.75 = 8.875)
+            final Ctrl rootCtrl = new Ctrl(null);
+            rootCtrl.getPool().appendScenarioWithWeight(dashboardRoot, fr(1.0));
+            rootCtrl.getPool().appendScenarioWithWeight(freshRoot, fr(1.0));
+            final List<KeyValue<works.lysenko.util.apis.scenario._Scenario, Fraction>> rootCandidates =
+                    new Selector(rootCtrl, 1).getExecutionCandidates();
+            final Fraction dashboardWeight = rootCandidates.stream()
+                    .filter(kv -> kv.k() == dashboardRoot).findFirst().orElseThrow().v();
+            final Fraction freshRootWeight = rootCandidates.stream()
+                    .filter(kv -> kv.k() == freshRoot).findFirst().orElseThrow().v();
+            assertEquals(fr(8.875), dashboardWeight);
+            assertEquals(fr(14.5), freshRootWeight);
+
+            // hasUnexecutedState remains true despite stale discounting
+            assertTrue(Selector.hasUnexecutedState(staleSortNode));
+            assertTrue(Selector.hasUnexecutedState(dashboardRoot));
+        } finally {
+            Scenario.branchStalePenalty = prevStalePenalty;
+        }
+    }
+
     private static class TestNode extends Node {
         TestNode(final Fraction weight, final works.lysenko.util.apis.scenario._Scenario... scenarios) {
             super(scenarios);

@@ -23,7 +23,7 @@ import static works.lysenko.util.data.strs.Swap.s;
  */
 public final class CompletionLoader {
 
-    private static final Pattern ALL_LEAF_COMPLETION_RE = Pattern.compile("\\[ALL_LEAF_COMPLETION]\\s+(\\d+)\\s+(\\d+)(?:\\s+(\\d+))?(?:\\s+(\\d+))?\\s+(.+)$");
+    private static final Pattern ALL_LEAF_COMPLETION_RE = Pattern.compile("\\[ALL_LEAF_COMPLETION]\\s+(\\d+)\\s+(\\d+)(?:\\s+(\\d+(?:\\.\\d+)?))?(?:\\s+(\\d+))?(?:\\s+(\\d+))?\\s+(.+)$");
     private static final Pattern ETA_DEBUG_RE = Pattern.compile("\\[ETA_DEBUG]\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(.+)$");
 
     private CompletionLoader() {
@@ -45,16 +45,25 @@ public final class CompletionLoader {
                     final long atMillis = Long.parseLong(matcher.group(2));
                     final String g3 = matcher.group(3);
                     final String g4 = matcher.group(4);
-                    final String leaf = matcher.group(5).trim();
+                    final String g5 = matcher.group(5);
+                    final String leaf = matcher.group(6).trim();
 
+                    double patiencePercentage = 0.0;
                     long etaMs = 0L;
                     int roundIndex = 0;
 
                     if (null != g3 && !g3.isEmpty()) {
-                        if (null != g4 && !g4.isEmpty()) {
+                        if (null != g5 && !g5.isEmpty()) {
+                            // 3 present: patiencePercentage, etaMs, roundIndex
+                            patiencePercentage = Double.parseDouble(g3);
+                            etaMs = Long.parseLong(g4);
+                            roundIndex = Integer.parseInt(g5);
+                        } else if (null != g4 && !g4.isEmpty()) {
+                            // 2 present: etaMs, roundIndex
                             etaMs = Long.parseLong(g3);
                             roundIndex = Integer.parseInt(g4);
                         } else {
+                            // 1 present: etaMs
                             etaMs = Long.parseLong(g3);
                             legacyRoundCount++;
                             roundIndex = legacyRoundCount;
@@ -64,7 +73,7 @@ public final class CompletionLoader {
                         roundIndex = legacyRoundCount;
                     }
 
-                    completions.add(new LeafCompletion(testNum, atMillis, etaMs, roundIndex, leaf));
+                    completions.add(new LeafCompletion(testNum, atMillis, patiencePercentage, etaMs, roundIndex, leaf));
                 }
             }
         } catch (final IOException | NumberFormatException e) {

@@ -80,4 +80,16 @@ public interface _Repeater {
      * @throws SafeguardException if an exception occurs during the execution of the run method
      */
     void run() throws SafeguardException;
+
+    /**
+     * Returns the elapsed duration in milliseconds of the currently running test iteration,
+     * or {@code 0L} when no iteration is actively in flight.
+     *
+     * @param nowMs the current session elapsed time in milliseconds
+     * @return in-flight duration in milliseconds for the active test cycle
+     */
+    default long getInFlightMs(final long nowMs) {
+
+        return 0L;
+    }
 }

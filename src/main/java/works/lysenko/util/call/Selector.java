@@ -226,6 +226,10 @@ public final class Selector implements Callable<_Scenario> {
 
     /**
      * Recursively computes the uncompleted weight for node descendants while tracking visited nodes to avoid cycles.
+     * <p>
+     * When {@link Scenario#branchStalePenalty} is enabled, discounts each child's contribution by
+     * {@code 1 + child.getStaleCount()} so repeatedly failing subtrees lose completion-weight gravity
+     * at ancestor selection points without penalising healthy sibling branches.
      *
      * @param node    the parent node whose descendants are being traversed
      * @param target  the target execution count for leaves
@@ -241,11 +245,13 @@ public final class Selector implements Callable<_Scenario> {
         for (final KeyValue<_Scenario, Fraction> pair : pairs) {
             final _Scenario child = pair.k();
             if (isNotNull(child) && child.isExecutable() && child.calculateCombinations(true) > 0) {
-                if (child instanceof _Node childNode) {
-                    total += getDescendantUncompletedWeight(childNode, target, visited);
-                } else {
-                    total += getLeafUncompletedRatio(child, target);
+                double childUncompleted = (child instanceof _Node childNode)
+                        ? getDescendantUncompletedWeight(childNode, target, visited)
+                        : getLeafUncompletedRatio(child, target);
+                if (Scenario.branchStalePenalty && child.getStaleCount() > 0) {
+                    childUncompleted /= (1.0 + child.getStaleCount());
                 }
+                total += childUncompleted;
             }
         }
         return total;

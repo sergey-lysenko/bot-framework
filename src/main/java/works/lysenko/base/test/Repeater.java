@@ -156,6 +156,7 @@ public class Repeater implements _Repeater {
         final Integer testNum = getCurrent();
         final String test = sn(StringUtils.EMPTY, testNum);
         close(test);
+        works.lysenko.base.output.AllLeafCompletions.recordCycleIfMissing(testNum, Routines.msSinceStart());
         time();
         history();
         ScenarioTracker.onLimbo(testNum);
@@ -207,6 +208,12 @@ public class Repeater implements _Repeater {
 
         final int historySize = (null != statistics && null != statistics.history()) ? statistics.history().size() : 0;
         return Math.max(testsCount, historySize);
+    }
+
+    @Override
+    public final long getInFlightMs(final long nowMs) {
+
+        return isNull(startedAt) ? 0L : Math.max(0L, nowMs - startedAt);
     }
 
     @Override

@@ -118,6 +118,7 @@ public final class ChartsRenderer {
                 "</div>",
                 "<span class=\"lg-legend-item\"><span class=\"lg-line-sample leaf-eta-line\"></span>Projected Total (Passed + ETA)</span>",
                 hasCorrectionData ? "<span class=\"lg-legend-item\"><span class=\"lg-line-sample leaf-corr-eta-line\" style=\"background:#10b981;\"></span>Corrected Total</span>" : "",
+                "<span class=\"lg-legend-item\"><span class=\"lg-line-sample leaf-patience-line\" style=\"background:#f59e0b;\"></span>Patience %</span>",
                 "</div>",
                 "</div>",
                 "<div class=\"line-graph-svg-wrap\"><svg id=\"leafCompletionSvg\" class=\"timeline-line-svg\" viewBox=\"0 0 1000 240\">",
@@ -185,6 +186,7 @@ public final class ChartsRenderer {
         final StringBuilder leafPath = new StringBuilder();
         final StringBuilder etaPath = new StringBuilder();
         final StringBuilder corrEtaPath = new StringBuilder();
+        final StringBuilder patiencePath = new StringBuilder();
 
         boolean firstRoundPt = true;
         for (int i = 0; i < N; i++) {
@@ -199,12 +201,17 @@ public final class ChartsRenderer {
                     ? logScaleY(corrProjSec, ceilProjectedSec, marginTop, plotH)
                     : (marginTop + plotH) - Math.min(plotH, (corrProjSec / ceilProjectedSec) * plotH);
 
+            final double pPct = completions.get(i).patiencePercentage;
+            final double yPatience = (marginTop + plotH) - Math.min(1.0, Math.max(0.0, pPct / 100.0)) * plotH;
+
             if (i == 0) {
                 etaPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yEta));
                 corrEtaPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yCorrEta));
+                patiencePath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yPatience));
             } else {
                 etaPath.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yEta));
                 corrEtaPath.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yCorrEta));
+                patiencePath.append(String.format(Locale.ROOT, " L %.2f %.2f", x, yPatience));
             }
 
             if (roundIntervals[i] >= 0L) {
@@ -224,6 +231,7 @@ public final class ChartsRenderer {
         sb.append(s(
                 "  <path d=\"", leafPath, "\" class=\"leaf-chart-line\" fill=\"none\" stroke=\"#a855f7\" stroke-width=\"2\" />\n",
                 "  <path d=\"", etaPath, "\" class=\"leaf-eta-chart-line\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"2\" stroke-dasharray=\"4,3\" />\n",
+                "  <path d=\"", patiencePath, "\" class=\"leaf-patience-chart-line\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"2\" stroke-dasharray=\"2,4\" />\n",
                 hasCorrectionData ? s("  <path d=\"", corrEtaPath, "\" class=\"leaf-corr-eta-chart-line\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"2\" />\n") : ""
         ));
 
@@ -244,6 +252,7 @@ public final class ChartsRenderer {
                         marginTop, marginTop + plotH),
                 "  <circle id=\"leafDot\" cx=\"0\" cy=\"0\" r=\"5\" fill=\"#a855f7\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />\n",
                 "  <circle id=\"leafEtaDot\" cx=\"0\" cy=\"0\" r=\"4\" fill=\"#38bdf8\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />\n",
+                "  <circle id=\"leafPatienceDot\" cx=\"0\" cy=\"0\" r=\"4\" fill=\"#f59e0b\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />\n",
                 String.format(Locale.ROOT,
                         "  <rect id=\"leafOverlay\" x=\"%.1f\" y=\"%.1f\" width=\"%.1f\" height=\"%.1f\" fill=\"transparent\" style=\"cursor: crosshair;\" onmousemove=\"onLeafHover(event)\" onmouseleave=\"onLeafLeave()\" onclick=\"onLeafClick()\" />\n",
                         marginLeft, marginTop, plotW, plotH),

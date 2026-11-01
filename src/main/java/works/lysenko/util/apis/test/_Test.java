@@ -40,6 +40,34 @@ public interface _Test {
     }
 
     /**
+     * Gets the patience percentage for the current test run.
+     * @return the patience percentage
+     */
+    double getPatiencePercentage();
+
+    /**
+     * Synchronizes wandering patience state when a test cycle records completion or closes,
+     * ensuring {@link #getPatiencePercentage()} and patience-coupled ETA reflect the outcome of {@code testNum}.
+     *
+     * @param testNum     the 1-based test cycle number being recorded
+     * @param reachedGoal {@code true} if {@code testNum} achieved a new required leaf execution goal
+     */
+    default void syncPatienceAtCycleEnd(final int testNum, final boolean reachedGoal) {
+    }
+
+    /**
+     * Estimates the remaining milliseconds until wandering patience aborts if no further leaf progress occurs,
+     * or {@code -1L} when insufficient history exists to form an estimate.
+     *
+     * @param elapsedMs the current elapsed session duration in milliseconds
+     * @return estimated remaining milliseconds until patience exhaustion, or {@code -1L} if unavailable
+     */
+    default long estimatePatienceEtaMs(final long elapsedMs) {
+
+        return -1L;
+    }
+
+    /**
      * Prints the stack trace and error message of a Throwable object and exits the system with a specified exit code.
      *
      * @param e      The Throwable object to be printed.

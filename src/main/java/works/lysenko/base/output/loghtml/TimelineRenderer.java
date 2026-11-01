@@ -269,6 +269,7 @@ public final class TimelineRenderer {
                         ",\"etaMs\":", c.etaMs,
                         ",\"projMs\":", rawProjMs,
                         ",\"corrProjMs\":", corrProjMs,
+                        String.format(Locale.ROOT, ",\"patience\":%.1f", c.patiencePercentage),
                         ",\"eta\":\"", escapeJson(etaStr), "\"",
                         ",\"proj\":\"", escapeJson(projStr), "\"",
                         ",\"corrProj\":\"", escapeJson(corrProjStr), "\"",

@@ -18,6 +18,10 @@
 # .tree.all.leafs.patience=2
 
 # ------------------------------------------------------------------------------
+# Controls the curvature of wandering patience approach (1 = linear, >1 = slow-to-quick, 0..1 = quick-to-slow). Default: 1
+# .tree.all.leafs.patience.steepness=1
+
+# ------------------------------------------------------------------------------
 # Controls whether a failed assertion produces an exception. Default: true
 # .test.assertions.produce.exception=true
 
@@ -125,8 +129,8 @@
 # .test.report.progression.max.frames=5000
 
 # ------------------------------------------------------------------------------
-# Maximum total pixel count processed for a single progression animation (e.g. 10G, 10000M, 10000000000). Default: 10G
-# .test.report.progression.max.total.pixels=10G
+# Maximum total pixel count processed for a single progression animation (e.g. 10G, 10000M, 10000000000). Default: 100G
+# .test.report.progression.max.total.pixels=100G
 
 # ------------------------------------------------------------------------------
 # Generates frames and animations showing scenario coverage progression. Default: true

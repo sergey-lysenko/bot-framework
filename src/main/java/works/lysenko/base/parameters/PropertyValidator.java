@@ -273,7 +273,11 @@ public final class PropertyValidator {
             } else if (Color.class == type) {
                 return validateColor(value, delimiter());
             } else if (Fraction.class == type) {
-                if (null == fr(value, true)) return "Expected a fraction (e.g. 1/2) or a decimal number";
+                final Fraction parsed = fr(value, true);
+                if (null == parsed) return "Expected a fraction (e.g. 1/2) or a decimal number";
+                if (PropEnum._TREE_ALL_LEAFS_PATIENCE_STEEPNESS == property && parsed.doubleValue() <= 0.0) {
+                    return "Steepness must be greater than zero (e.g. 1 for linear, 2 for slow-to-quick, 1/2 for quick-to-slow)";
+                }
             } else if (works.lysenko.util.data.records.RelativeOrAbsoluteFraction.class == type) {
                 return validateRelativeOrAbsolute(value);
             } else if (Character.class == type && 1 != value.length()) {

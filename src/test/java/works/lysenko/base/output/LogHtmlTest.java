@@ -207,6 +207,67 @@ class LogHtmlTest {
     }
 
     @Test
+    void rendersLeafCompletionGraphWithPatienceSeries(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("patience_test.run.log");
+        final Path htmlPath = tempDir.resolve("patience_test.run.log.html");
+        final Path completionPath = tempDir.resolve("patience_test.all-leaf-completions.log");
+        Files.write(logPath, List.of(
+                "[ 1][1][0.000][10] Executing Scenario",
+                "[ 1][2][1.000][5] • Closing test 1 ...",
+                "[  ][3][1.010][2] • Test time 1 s",
+                "[  ][4][1.020][2] Patience at 50% (2 / 4)",
+                "[ 2][5][1.050][10] Executing Second Scenario",
+                "[ 2][6][2.000][5] • Closing test 2 ...",
+                "[  ][7][2.010][2] • Test time 1 s",
+                "[  ][8][2.020][2] Patience at 75% (3 / 4)",
+                "[ 3][9][2.050][10] Wandering Non-Leaf Cycle",
+                "[ 3][10][3.000][5] • Closing test 3 ...",
+                "[  ][11][3.010][2] • Test time 1 s"));
+        Files.write(completionPath, List.of(
+                "[ALL_LEAF_COMPLETION] 1 1000 0 20000 1 checkout.Cart",
+                "[ALL_LEAF_COMPLETION] 2 2000 50 15000 0 checkout.Cart"));
+
+        LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+
+        final String html = Files.readString(htmlPath);
+        assertTrue(html.contains("Patience %"));
+        assertTrue(html.contains("class=\"leaf-patience-chart-line\""));
+        assertTrue(html.contains("id=\"leafPatienceDot\""));
+        assertTrue(html.contains("\"patience\":0.0"));
+        assertTrue(html.contains("\"patience\":50.0"));
+        assertTrue(html.contains("\"patience\":75.0"),
+                "Wandering test cycles without completion lines should recover patience percentage from run log");
+    }
+
+    @Test
+    void recoversIdleCyclePatienceFormatFromRunLog(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("idle_patience.run.log");
+        final Path htmlPath = tempDir.resolve("idle_patience.run.log.html");
+        final Path completionPath = tempDir.resolve("idle_patience.all-leaf-completions.log");
+        Files.write(logPath, List.of(
+                "[ 1][1][0.000][10] Executing Scenario",
+                "[ 1][2][1.000][5] • Closing test 1 ...",
+                "[  ][3][1.010][2] • Test time 1 s",
+                "[  ][4][1.020][2] Patience at 0% (0 / 10)",
+                "[ 2][5][1.050][10] Wandering Cycle 1",
+                "[ 2][6][2.000][5] • Closing test 2 ...",
+                "[  ][7][2.010][2] • Test time 1 s",
+                "[  ][8][2.020][2] Patience at 10% (1 / 10)",
+                "[ 3][9][2.050][10] Wandering Cycle 2",
+                "[ 3][10][3.000][5] • Closing test 3 ...",
+                "[  ][11][3.010][2] • Test time 1 s"));
+        Files.write(completionPath, List.of(
+                "[ALL_LEAF_COMPLETION] 1 1000 0 20000 1 checkout.Cart"));
+
+        LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+
+        final String html = Files.readString(htmlPath);
+        assertTrue(html.contains("\"n\":2,\"t\":\"Test #2\""));
+        assertTrue(html.contains("\"patience\":10.0"),
+                "Idle-cycle patience log format (1 / 10) after Test #2 must map 10% to Test #3");
+    }
+
+    @Test
     void rendersEtaDebugGraphWithCorrectCeilings(@TempDir final Path tempDir) throws IOException {
         final Path logPath = tempDir.resolve("eta_debug.run.log");
         final Path htmlPath = tempDir.resolve("eta_debug.run.log.html");

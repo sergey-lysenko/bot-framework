@@ -30,6 +30,8 @@ public final class AllLeafCompletions {
     private static final Map<_Scenario, Integer> lastRecordedExecs = new HashMap<>(0);
     private static long currentCycleEtaSum = 0L;
     private static int currentCycleEtaCount = 0;
+    private static int lastRecordedTestNum = 0;
+    private static boolean hasRecordedAny = false;
 
     private AllLeafCompletions() {
     }
@@ -42,6 +44,8 @@ public final class AllLeafCompletions {
         lastRecordedExecs.clear();
         currentCycleEtaSum = 0L;
         currentCycleEtaCount = 0;
+        lastRecordedTestNum = 0;
+        hasRecordedAny = false;
     }
 
     /**
@@ -56,23 +60,65 @@ public final class AllLeafCompletions {
         }
     }
 
+    private static String formatPatience(final double patiencePercentage) {
+
+        final double rounded = Math.round(patiencePercentage * 100.0) / 100.0;
+        if (Math.abs(rounded - Math.rint(rounded)) < 1e-6) {
+            return Long.toString(Math.round(rounded));
+        }
+        final String formatted = String.format(java.util.Locale.ROOT, "%.2f", rounded);
+        return formatted.endsWith("0") ? formatted.substring(0, formatted.length() - 1) : formatted;
+    }
+
     /**
      * Performs append.
      * @param testNum the testNum
      * @param elapsedMillis the elapsedMillis
+     * @param patiencePercentage the wandering patience percentage
      * @param etaMs the etaMs
      * @param goalIndex the goalIndex
      * @param leaf the leaf
      */
-    public static synchronized void append(final int testNum, final long elapsedMillis, final long etaMs, final int goalIndex, final String leaf) {
+    public static synchronized void append(final int testNum, final long elapsedMillis, final double patiencePercentage, final long etaMs, final int goalIndex, final String leaf) {
 
         final Path path = Path.of(name(RUN_ALL_LEAF_COMPLETIONS_));
-        final String line = "[ALL_LEAF_COMPLETION] " + testNum + " " + elapsedMillis + " " + etaMs + " " + goalIndex + " " + leaf + System.lineSeparator();
+        final String line = "[ALL_LEAF_COMPLETION] " + testNum + " " + elapsedMillis + " " + formatPatience(patiencePercentage) + " " + etaMs + " " + goalIndex + " " + leaf + System.lineSeparator();
         try {
             Files.writeString(path, line, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            hasRecordedAny = true;
+            if (testNum > lastRecordedTestNum) {
+                lastRecordedTestNum = testNum;
+            }
         } catch (final IOException e) {
             logEvent(S2, "Unable to record all-leaf completion in " + path + ": " + e.getMessage());
         }
+    }
+
+    /**
+     * Records a non-leaf test cycle entry when leaf completion tracking is active and the given test cycle
+     * finished without executing any leaf scenario (e.g., wandering cycles).
+     *
+     * @param testNum       the completed test number, or {@code null} if unknown
+     * @param elapsedMillis the elapsed session duration in milliseconds
+     */
+    public static synchronized void recordCycleIfMissing(final Integer testNum, final long elapsedMillis) {
+
+        if (isNull(testNum) || testNum <= lastRecordedTestNum || (!hasRecordedAny && !isAllLeafsMode())) return;
+        checkAndRecord(elapsedMillis, null);
+    }
+
+    /**
+     * Checks whether all-leafs mode is currently enabled via runtime parameters or test properties.
+     *
+     * @return {@code true} if all-leafs mode is active, {@code false} otherwise
+     */
+    private static boolean isAllLeafsMode() {
+
+        if (isNotNull(Base.parameters)) {
+            return Base.parameters.isAllLeafs();
+        }
+        final Integer count = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
+        return Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get()) || (isNotNull(count) && count > 1);
     }
 
     /**
@@ -84,33 +130,19 @@ public final class AllLeafCompletions {
 
         if (isNull(Base.core)) return;
 
-        final long cycleAvgEta;
-        if (currentCycleEtaCount > 0) {
-            cycleAvgEta = currentCycleEtaSum / currentCycleEtaCount;
-        } else {
-            cycleAvgEta = UserInterface.calculateEtaMs();
+        final int testNum = Base.core.getTestsCount();
+        if (testNum > lastRecordedTestNum) {
+            lastRecordedTestNum = testNum;
         }
-        currentCycleEtaSum = 0L;
-        currentCycleEtaCount = 0;
-
-        final int testNum = isNotNull(Base.core) ? Base.core.getTestsCount() : 0;
-        EtaCorrection.recordTestSample(testNum, elapsedMillis, cycleAvgEta);
-
-        if (Boolean.FALSE.equals(PropEnum._TEST_REPORT_ADD_ALL_LEAF.get())) return;
-
-        final String leafName = (isNotNull(completingScenario)) ? completingScenario.getShortName() : "unknown";
 
         final Set<_Scenario> accessibleLeafs = Base.core.getAccessibleLeafs();
-        if (isNull(accessibleLeafs) || accessibleLeafs.isEmpty()) {
-            append(testNum, elapsedMillis, cycleAvgEta, 0, leafName);
-            return;
-        }
+        final boolean hasAccessibleLeafs = isNotNull(accessibleLeafs) && !accessibleLeafs.isEmpty();
 
-        final int target = resolveAllLeafsTarget();
         boolean reachedGoal = false;
         int completedGoalIndex = 0;
 
-        if (isNotNull(completingScenario)) {
+        if (hasAccessibleLeafs && isNotNull(completingScenario)) {
+            final int target = resolveAllLeafsTarget();
             final int execs = (isNotNull(Base.core.getResults())) ? Base.core.getResults().getExecutions(completingScenario) : 0;
             final int effectiveExecs = (execs == 0) ? 1 : execs;
             final int leafTarget = (completingScenario instanceof Mono) ? 1 : target;
@@ -125,7 +157,22 @@ public final class AllLeafCompletions {
             }
         }
 
-        append(testNum, elapsedMillis, cycleAvgEta, reachedGoal ? completedGoalIndex : 0, leafName);
+        if (isAllLeafsMode() && isNotNull(Base.test)) {
+            Base.test.syncPatienceAtCycleEnd(testNum, reachedGoal);
+        }
+
+        currentCycleEtaSum = 0L;
+        currentCycleEtaCount = 0;
+        final long cycleAvgEta = UserInterface.calculateEtaMs();
+
+        EtaCorrection.recordTestSample(testNum, elapsedMillis, cycleAvgEta);
+
+        if (Boolean.FALSE.equals(PropEnum._TEST_REPORT_ADD_ALL_LEAF.get())) return;
+
+        final String leafName = (isNotNull(completingScenario)) ? completingScenario.getShortName() : "unknown";
+        final double patiencePercentage = isNotNull(Base.test) ? Base.test.getPatiencePercentage() : 0.0;
+
+        append(testNum, elapsedMillis, patiencePercentage, cycleAvgEta, reachedGoal ? completedGoalIndex : 0, leafName);
     }
 
     private static int resolveAllLeafsTarget() {

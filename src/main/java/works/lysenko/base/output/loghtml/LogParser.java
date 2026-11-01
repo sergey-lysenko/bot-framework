@@ -188,13 +188,17 @@ public final class LogParser {
                 final java.util.Map<Integer, LeafCompletion> compMap = new java.util.LinkedHashMap<>();
                 for (final LeafCompletion c : rawCompletions) {
                     if (validTestNums.contains(c.testNum)) {
-                        compMap.put(c.testNum, c);
+                        final double resolvedPatience = (c.patiencePercentage > 0.0)
+                                ? c.patiencePercentage
+                                : pRes.patienceByTest.getOrDefault(c.testNum, 0.0);
+                        compMap.put(c.testNum, new LeafCompletion(c.testNum, c.atMillis, resolvedPatience, c.etaMs, c.roundIndex, c.leaf));
                     }
                 }
                 for (final TelemetryItem item : mRes.testData) {
                     if (!compMap.containsKey(item.testNum)) {
                         final long durMs = Math.round(item.ms);
-                        compMap.put(item.testNum, new LeafCompletion(item.testNum, durMs, 0L, 0, "n/a"));
+                        final double fallbackPatience = pRes.patienceByTest.getOrDefault(item.testNum, 0.0);
+                        compMap.put(item.testNum, new LeafCompletion(item.testNum, durMs, fallbackPatience, 0L, 0, "n/a"));
                     }
                 }
                 for (final TelemetryItem item : mRes.testData) {

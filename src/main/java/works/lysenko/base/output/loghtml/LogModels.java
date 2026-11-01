@@ -195,6 +195,8 @@ public final class LogModels {
     public static final class LeafCompletion {
         public final int testNum;
         public final long atMillis;
+        /** The patience percentage. */
+        public final double patiencePercentage;
         /** The eta ms. */
         public final long etaMs;
         /** The round index. */
@@ -206,13 +208,15 @@ public final class LogModels {
          * Constructs a new LeafCompletion.
          * @param testNum the testNum
          * @param atMillis the atMillis
+         * @param patiencePercentage the patiencePercentage
          * @param etaMs the etaMs
          * @param roundIndex the roundIndex
          * @param leaf the leaf
          */
-        public LeafCompletion(final int testNum, final long atMillis, final long etaMs, final int roundIndex, final String leaf) {
+        public LeafCompletion(final int testNum, final long atMillis, final double patiencePercentage, final long etaMs, final int roundIndex, final String leaf) {
             this.testNum = testNum;
             this.atMillis = atMillis;
+            this.patiencePercentage = patiencePercentage;
             this.etaMs = etaMs;
             this.roundIndex = roundIndex;
             this.leaf = leaf;

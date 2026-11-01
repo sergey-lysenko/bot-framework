@@ -93,6 +93,7 @@ public final class LogFileParser {
     private static final Pattern PATH_LINE_RE = Pattern.compile(s("\\[\\s*(\\d+)\\s*\\]\\s*\\[\\s*([\\d,]+)\\s*\\]\\s*", RHT_ARR, "\\s*(.*)"));
     private static final Pattern SCEN_LINE_RE = Pattern.compile("([▷◼◆●])\\s+([a-zA-Z0-9_]+(?:\\.[a-zA-Z0-9_]+)*)[.\\s]+(.+?)\\s+([\\d:]+)(?:\\s*\\(([^)]+)\\))?$");
     private static final Pattern TEST_RUN_SUMMARY_RE = Pattern.compile(".*\\b\\d+\\s+tests?\\s+of\\s+.+\\s+done\\s+in\\s+.*");
+    private static final Pattern PATIENCE_LINE_RE = Pattern.compile("Patience at\\s+(\\d+(?:\\.\\d+)?)%\\s*\\((\\d+)\\s*/\\s*(\\d+(?:\\.\\d+)?)\\)");
     private static final Pattern DIGITS_RE = Pattern.compile("\\d+");
     private static final Pattern DOT_END_RE = Pattern.compile("\\.+$");
 
@@ -143,6 +144,8 @@ public final class LogFileParser {
         public String plaqueStatus = null;
         /** Plaque message. */
         public String plaqueMessage = null;
+        /** Wandering patience percentage mapped by test number. */
+        public final java.util.Map<Integer, Double> patienceByTest = new java.util.LinkedHashMap<>(16);
     }
 
     /**
@@ -179,6 +182,7 @@ public final class LogFileParser {
         final Matcher mNoTest = LINE_NO_TEST_RE.matcher("");
         final Matcher mScenToken = SCEN_TOKEN_RE.matcher("");
         final Matcher mTestRunSummary = TEST_RUN_SUMMARY_RE.matcher("");
+        final Matcher mPatience = PATIENCE_LINE_RE.matcher("");
 
         String line = reader.readLine();
         while (null != line) {
@@ -195,6 +199,13 @@ public final class LogFileParser {
                 currentSec.lines.add(line);
                 line = reader.readLine();
                 continue;
+            }
+
+            mPatience.reset(clean);
+            if (mPatience.find()) {
+                final int targetTestNum = prevTestNum + 1;
+                final double pPct = Double.parseDouble(mPatience.group(1));
+                result.patienceByTest.put(targetTestNum, pPct);
             }
 
             mPath.reset(clean);

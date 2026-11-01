@@ -556,10 +556,11 @@ public final class UserInterface extends JPanel implements _Dashboard {
     }
 
     /**
-     * Calculates the estimated time remaining for current execution across different execution modes
-     * (e.g. all-leaf coverage mode, fixed test count mode, or fallback estimation).
+     * Calculates the estimated time remaining in milliseconds for current execution across different
+     * execution modes (all-leaf coverage mode with patience-coupled blending, fixed test count mode,
+     * or leaf-progress fallback estimation).
      *
-     * @return Formatted ETA string (e.g. "(ETA 02:15)", "(ETA --:--)", or "(ETA Done)")
+     * @return estimated remaining execution duration in milliseconds, or {@code 0L} when completed or unavailable
      */
     public static long calculateEtaMs() {
 
@@ -570,26 +571,46 @@ public final class UserInterface extends JPanel implements _Dashboard {
 
         long rawEtaMs = 0L;
 
+        final Integer configuredLeafExecs = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
         final boolean allLeafsMode = (isNotNull(parameters))
                 ? parameters.isAllLeafs()
-                : Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
+                : (Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get())
+                        || (isNotNull(configuredLeafExecs) && configuredLeafExecs > 1));
 
         if (allLeafsMode) {
-            final boolean multipleExecutionsPerLeaf = isNotNull(parameters) && parameters.getAllLeafsExecutions() > 1;
+            final boolean multipleExecutionsPerLeaf = (isNotNull(parameters))
+                    ? (parameters.getAllLeafsExecutions() > 1)
+                    : (isNotNull(configuredLeafExecs) && configuredLeafExecs > 1);
             final int executed = multipleExecutionsPerLeaf
                     ? core.getExecutedLeafExecutionsCount()
                     : core.getExecutedLeafsCount();
             final int total = multipleExecutionsPerLeaf
                     ? core.getTotalLeafExecutionsCount()
-                    : core.getAccessibleLeafs().size();
+                    : (isNotNull(core.getAccessibleLeafs()) ? core.getAccessibleLeafs().size() : 0);
 
             if (0 == total || (executed >= total && core.areAllLeafsExecuted())) {
                 return 0L;
             }
+            long leafEtaMs = -1L;
             if (executed > 0 && total > executed) {
                 final double avgMsPerExecution = (double) elapsedMs / executed;
                 final int remainingExecutions = total - executed;
-                rawEtaMs = Math.round(remainingExecutions * avgMsPerExecution);
+                leafEtaMs = Math.round(remainingExecutions * avgMsPerExecution);
+            }
+
+            final works.lysenko.util.apis.test._Test activeTest = isNotNull(core.getTest())
+                    ? core.getTest()
+                    : works.lysenko.Base.test;
+            final double patiencePct = isNotNull(activeTest) ? activeTest.getPatiencePercentage() : 0.0;
+            final double w = Math.min(1.0, Math.max(0.0, patiencePct / 100.0));
+            final long patienceEtaMs = isNotNull(activeTest) ? activeTest.estimatePatienceEtaMs(elapsedMs) : -1L;
+
+            if (leafEtaMs >= 0L && patienceEtaMs >= 0L && w > 0.0) {
+                rawEtaMs = Math.round((1.0 - w) * leafEtaMs + w * patienceEtaMs);
+            } else if (leafEtaMs >= 0L) {
+                rawEtaMs = leafEtaMs;
+            } else if (patienceEtaMs >= 0L && w > 0.0) {
+                rawEtaMs = patienceEtaMs;
             }
         } else {
             // Fixed test count mode (.test.tests specified)
@@ -637,18 +658,26 @@ public final class UserInterface extends JPanel implements _Dashboard {
         final long elapsedMs = timer.msSinceStart();
         if (elapsedMs < 1000L) return "(ETA --:--)";
 
+        final Integer configuredLeafExecs = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
         final boolean allLeafsMode = (isNotNull(parameters))
                 ? parameters.isAllLeafs()
-                : Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
+                : (Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get())
+                        || (isNotNull(configuredLeafExecs) && configuredLeafExecs > 1));
         if (allLeafsMode) {
-            final boolean multipleExecutionsPerLeaf = isNotNull(parameters) && parameters.getAllLeafsExecutions() > 1;
+            final boolean multipleExecutionsPerLeaf = (isNotNull(parameters))
+                    ? (parameters.getAllLeafsExecutions() > 1)
+                    : (isNotNull(configuredLeafExecs) && configuredLeafExecs > 1);
             final int executed = multipleExecutionsPerLeaf
                     ? core.getExecutedLeafExecutionsCount()
                     : core.getExecutedLeafsCount();
             final int total = multipleExecutionsPerLeaf
                     ? core.getTotalLeafExecutionsCount()
-                    : core.getAccessibleLeafs().size();
+                    : (isNotNull(core.getAccessibleLeafs()) ? core.getAccessibleLeafs().size() : 0);
             if (executed >= total && core.areAllLeafsExecuted()) return "(ETA Done)";
+            final works.lysenko.util.apis.test._Test activeTest = isNotNull(core.getTest())
+                    ? core.getTest()
+                    : works.lysenko.Base.test;
+            if (isNotNull(activeTest) && activeTest.getPatiencePercentage() >= 100.0) return "(ETA Done)";
             return "(ETA --:--)";
         }
 
