@@ -3,10 +3,9 @@ package works.lysenko.util.lang.word;
 import static works.lysenko.util.chrs.__.*;
 import static works.lysenko.util.chrs.___.ING;
 import static works.lysenko.util.chrs.____.*;
-import static works.lysenko.util.data.strs.Bind.b;
-import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.spec.Symbols.S;
+import static works.lysenko.util.spec.Symbols.T;
 
 /**
  * Language utility words starting with B.
@@ -42,4 +41,6 @@ public record B() {
     public static final String BUNDLE = s(BU, ND, LE);
     /** Constant representing the word BUTTON. */
     public static final String BUTTON = s(BU, TT, ON);
+    /** Constant representing the word BYTES. */
+    public static final String BYTES = s(BY, T, ES);
 }

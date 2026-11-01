@@ -45,12 +45,16 @@ public record S() {
     public static final String SCROLLER = s(SCROLL, ER);
     /** Constant representing the word SCROLLING. */
     public static final String SCROLLING = s(SCROLL, ING);
+    /** Constant representing the word SDK. */
+    public static final String SDK = s(SD, K);
     /** Constant representing the word SEARCH. */
     public static final String SEARCH = s(SE, ARCH);
     /** Constant representing the word SECOND. */
     public static final String SECOND = s(SE, COND);
     /** Constant representing the word SECONDS. */
     public static final String SECONDS = s(SECOND, S);
+    /** Constant representing the word SEE. */
+    public static final String SEE = s(S, EE);
     /** Constant representing the word SELECT. */
     public static final String SELECT = s(SELE, CT);
     /** Constant representing the word SELECTED. */
@@ -61,6 +65,8 @@ public record S() {
     public static final String SELECTION = s(SELECT, ION);
     /** Constant representing the word SELENIUM. */
     public static final String SELENIUM = s(SELE, NI, UM);
+    /** Constant representing the word SERVER. */
+    public static final String SERVER = s(SERV, ER);
     /** Constant representing the word SERVICE. */
     public static final String SERVICE = s(SERV, I, CE);
     /** Constant representing the word SESSION. */

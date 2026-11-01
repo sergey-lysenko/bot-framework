@@ -32,5 +32,7 @@ class NTest {
         assertFalse(N.NOT_EQUAL.isEmpty());
         assertNotNull(N.NEITHER_ACTUAL_NOR___);
         assertFalse(N.NEITHER_ACTUAL_NOR___.isEmpty());
+        assertEquals("No connected Android device/emulator found. Ensure the emulator is running ('adb devices')", N.NO_DEVICE_HINT);
+        assertEquals(N.NO_DEVICE_HINT, N.MSG_NO_DEVICE_HINT);
     }
 }

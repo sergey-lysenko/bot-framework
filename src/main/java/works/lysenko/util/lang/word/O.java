@@ -26,6 +26,8 @@ public record O() {
     public static final String OPENQA = s(OPEN, Q, A);
     /** Constant representing the word OPERATION. */
     public static final String OPERATION = s(OP, ER, A, TION);
+    /** Constant representing the word OPT. */
+    public static final String OPT = s(OP, T);
     /** Constant representing the word OPTIONAL. */
     public static final String OPTIONAL = s(OP, TION, AL);
     /** Constant representing the word ORDER. */

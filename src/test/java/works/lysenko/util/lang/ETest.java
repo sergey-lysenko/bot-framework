@@ -26,5 +26,6 @@ class ETest {
         assertFalse(E.EXPECTED_CONDITION_FAILED___.isEmpty());
         assertNotNull(E.EXCEPTIONAL_SCENARION);
         assertFalse(E.EXCEPTIONAL_SCENARION.isEmpty());
+        assertEquals("**[ERROR]** ", E.ERROR_MARKER);
     }
 }

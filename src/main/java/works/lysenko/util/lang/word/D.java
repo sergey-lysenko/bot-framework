@@ -49,6 +49,10 @@ public record D() {
     public static final String DESCRIPTORS = s(DESCRIPTOR, S);
     /** Constant representing the word DETERMINE. */
     public static final String DETERMINE = s(DE, TERM, I, NE);
+    /** Constant representing the word DEVICE. */
+    public static final String DEVICE = s(DE, VI, CE);
+    /** Constant representing the word DEVICES. */
+    public static final String DEVICES = s(DEVICE, S);
     /** Constant representing the word DIALOGUE. */
     public static final String DIALOGUE = s(DI, AL, OG, UE);
     /** Constant representing the word DID. */

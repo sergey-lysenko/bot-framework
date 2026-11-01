@@ -53,7 +53,7 @@ public record I() {
     /** Constant representing the word INSTANTIATE. */
     public static final String INSTANTIATE = s(INST, ANTI, A, TE);
     /** Constant representing the word INSTANTIATION. */
-    public static final String INSTANTIATION = s(INSTANTIATE, ION);
+    public static final String INSTANTIATION = s(INST, ANTI, A, TION);
     /** Constant representing the word INSTEAD. */
     public static final String INSTEAD = s(INST, E, AD);
     /** Constant representing the word INTEGER. */
@@ -62,6 +62,8 @@ public record I() {
     public static final String INTERNAL = s(INTE, RN, AL);
     /** Constant representing the word INTERRUPTED. */
     public static final String INTERRUPTED = s(INTE, RR, UP, TED);
+    /** Constant representing the word INTERVAL. */
+    public static final String INTERVAL = s(INTE, R, VAL);
     /** Constant representing the word INVALID. */
     public static final String INVALID = s(IN, VAL, ID);
     /** Constant representing the word INVISIBILITY. */

@@ -8,24 +8,35 @@ import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Bind.d;
 import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.lang.word.A.*;
+import static works.lysenko.util.lang.word.C.CLOSED;
 import static works.lysenko.util.lang.word.C.COLOURS;
+import static works.lysenko.util.lang.word.C.CONNECTION;
 import static works.lysenko.util.lang.word.C.COULD;
 import static works.lysenko.util.lang.word.C.COUNTER;
 import static works.lysenko.util.lang.word.E.ELEMENT;
+import static works.lysenko.util.lang.word.E.EXCEEDED;
 import static works.lysenko.util.lang.word.G.GIVEN;
 import static works.lysenko.util.lang.word.L.LAUNCHER;
+import static works.lysenko.util.lang.word.L.LEAFS;
 import static works.lysenko.util.lang.word.L.LOCATED;
 import static works.lysenko.util.lang.word.P.PACKAGE;
 import static works.lysenko.util.lang.word.P.PARAMETERS;
+import static works.lysenko.util.lang.word.P.PATIENCE;
 import static works.lysenko.util.lang.word.R.RECORDS;
 import static works.lysenko.util.lang.word.R.REDEFINED;
 import static works.lysenko.util.lang.word.R.RESET;
 import static works.lysenko.util.lang.word.S.SEARCH;
+import static works.lysenko.util.lang.word.S.SEE;
+import static works.lysenko.util.lang.word.S.SERVER;
 import static works.lysenko.util.lang.word.S.SIMILAR;
+import static works.lysenko.util.lang.word.U.UNEXPECTEDLY;
 import static works.lysenko.util.lang.word.U.USING;
 import static works.lysenko.util.lang.word.V.VALID;
 import static works.lysenko.util.lang.word.V.VALUES;
+import static works.lysenko.util.lang.word.W.WANDERING;
+import static works.lysenko.util.spec.Symbols.OPN_BRK;
 import static works.lysenko.util.spec.Symbols._COLON_;
 import static works.lysenko.util.spec.Symbols._DASH_;
 import static works.lysenko.util.spec.Symbols._DOT_;
@@ -34,11 +45,14 @@ import static works.lysenko.util.spec.Symbols._DOT_;
 /**
  * Language utility constants starting with A.
  */
-@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing"})
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "WeakerAccess"})
 public record A() {
 
-    public static final String ALL_LEAFS_MODE_ABORTED_WANDERING_PATIENCE_EXCEEDED = "All-leafs mode aborted: Wandering patience exceeded.";
     private static final String APPIUM_ = s(APPIUM, _COLON_);
+
+    /** Constant representing all-leafs mode aborted due to wandering patience exceeded message. */
+    public static final String ALL_LEAFS_MODE_ABORTED_WANDERING_PATIENCE_EXCEEDED = b(d(c(ALL), LEAFS), MODE,
+            s(ABORTED, _COLON_), c(WANDERING), PATIENCE, s(EXCEEDED, _DOT_));
     /** Constant representing the message when actual values are not valid. */
     public static final String ACTUAL_VALUES_ARE_NOT_VALID = b(c(ACTUAL), VALUES, ARE, NOT, VALID);
     /** Constant representing the message when adjacent log records are too similar with the same text. */
@@ -74,8 +88,8 @@ public record A() {
     /** Constant representing the message for attempting counter action. */
     public static final String ATTEMPTING_COUNTER_ACTION = b(c(ATTEMPTING), d(COUNTER, ACTION));
     /** Constant representing Appium server closed message. */
-    public static final String APPIUM_SERVER_CLOSED = "Appium server closed the connection unexpectedly (see ";
+    public static final String APPIUM_SERVER_CLOSED = e(b(c(APPIUM), SERVER, CLOSED, THE, CONNECTION, UNEXPECTEDLY,
+            s(OPN_BRK, SEE)), true);
+    /** Constant representing Appium server closed diagnostic message. */
     public static final String MSG_APPIUM_CLOSED = APPIUM_SERVER_CLOSED;
 }
-
-

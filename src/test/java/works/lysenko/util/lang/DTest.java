@@ -28,5 +28,6 @@ class DTest {
         assertFalse(D.DUE_TO.isEmpty());
         assertNotNull(D.DUPLICATED___);
         assertFalse(D.DUPLICATED___.isEmpty());
+        assertEquals("Default Appium port 4723 is already in use; selecting an available free port ...", D.DEFAULT_PORT_BUSY);
     }
 }

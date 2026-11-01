@@ -13,6 +13,8 @@ import static works.lysenko.util.spec.Symbols.*;
 @SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "WeakerAccess"})
 public record A() {
 
+    /** Constant representing the word ABORTED. */
+    public static final String ABORTED = s(AB, OR, TED);
     /** Constant representing the word ABOVE. */
     public static final String ABOVE = s(AB, O, VE);
     /** Constant representing the word ACTIVITY. */
@@ -35,6 +37,8 @@ public record A() {
     public static final String ACTUAL = s(AC, TUAL);
     /** Constant representing the word ACTUALLY. */
     public static final String ACTUALLY = s(ACTUAL, LY);
+    /** Constant representing the word ADB. */
+    public static final String ADB = s(AD, B);
     /** Constant representing the word ADDITIONAL. */
     public static final String ADDITIONAL = s(ADD, IT, ION, AL);
     /** Constant representing the word ADJACENT. */
@@ -61,6 +65,8 @@ public record A() {
     public static final String ANDROID = s(ANDR, O, ID);
     /** Constant representing the word ANFANG. */
     public static final String ANFANG = s(ANFA, NG);
+    /** Constant representing the word ANOTHER. */
+    public static final String ANOTHER = s(AN, O, THER);
     /** Constant representing the word ANTEPENULTIMATE. */
     public static final String ANTEPENULTIMATE = s(AN, TE, PENU, LTIM, ATE);
     /** Constant representing the word APPEAR. */

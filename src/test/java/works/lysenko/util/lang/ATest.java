@@ -20,6 +20,7 @@ class ATest {
         assertFalse(A.ADJACENT___.isEmpty());
         assertNotNull(A.ALLOWED___);
         assertFalse(A.ALLOWED___.isEmpty());
+        assertEquals("All-leafs mode aborted: Wandering patience exceeded.", A.ALL_LEAFS_MODE_ABORTED_WANDERING_PATIENCE_EXCEEDED);
         assertNotNull(A.AMOUNT_OF);
         assertFalse(A.AMOUNT_OF.isEmpty());
         assertNotNull(A.ANDROID_LAUNCHER);
@@ -46,5 +47,7 @@ class ATest {
         assertFalse(A.ASSERTING_THAT_VALUE.isEmpty());
         assertNotNull(A.ATTEMPTING_COUNTER_ACTION);
         assertFalse(A.ATTEMPTING_COUNTER_ACTION.isEmpty());
+        assertEquals("Appium server closed the connection unexpectedly (see ", A.APPIUM_SERVER_CLOSED);
+        assertEquals(A.APPIUM_SERVER_CLOSED, A.MSG_APPIUM_CLOSED);
     }
 }

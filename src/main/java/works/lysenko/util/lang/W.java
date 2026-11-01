@@ -8,8 +8,10 @@ import static works.lysenko.util.chrs.____.WERE;
 import static works.lysenko.util.chrs.____.WITH;
 import static works.lysenko.util.chrs._____.VALUE;
 import static works.lysenko.util.data.enums.Brackets.ROUND;
+import static works.lysenko.util.data.enums.Brackets.SQUARE;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
+import static works.lysenko.util.data.strs.Case.u;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.lang.F.FULLSCREEN_IMAGE;
@@ -28,6 +30,7 @@ import static works.lysenko.util.lang.word.S.STILL;
 import static works.lysenko.util.lang.word.T.TRYING;
 import static works.lysenko.util.lang.word.V.VISIBILITY;
 import static works.lysenko.util.lang.word.W.*;
+import static works.lysenko.util.spec.Symbols._ASTRS_;
 import static works.lysenko.util.spec.Symbols._COMMA_;
 import static works.lysenko.util.spec.Symbols._SLASH_;
 
@@ -71,5 +74,6 @@ public record W() {
     public static final String WRITING_FULLSCREEN_IMAGE = b(c(WRITING), FULLSCREEN_IMAGE);
     /** Constant representing 'WebDriver'. */
     public static final String WEB_DRIVER = s(c(WEB), c(DRIVER));
-    public static final String WARNING_MARKER = "**[WARNING]** ";
+    /** Constant representing Markdown warning marker prefix. */
+    public static final String WARNING_MARKER = e(e(_ASTRS_, e(_ASTRS_, e(SQUARE, u(WARNING)))), true);
 }

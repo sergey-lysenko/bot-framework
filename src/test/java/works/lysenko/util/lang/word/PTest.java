@@ -34,6 +34,7 @@ class PTest {
         assertFalse(P.PASSED.isEmpty());
         assertNotNull(P.PATHS);
         assertFalse(P.PATHS.isEmpty());
+        assertEquals("patience", P.PATIENCE);
         assertNotNull(P.PAUSE);
         assertFalse(P.PAUSE.isEmpty());
         assertNotNull(P.PAUSED);
@@ -60,6 +61,7 @@ class PTest {
         assertFalse(P.POINTS.isEmpty());
         assertNotNull(P.POLYCHROMY);
         assertFalse(P.POLYCHROMY.isEmpty());
+        assertEquals("port", P.PORT);
         assertNotNull(P.POSITION);
         assertFalse(P.POSITION.isEmpty());
         assertNotNull(P.POSSIBLE);

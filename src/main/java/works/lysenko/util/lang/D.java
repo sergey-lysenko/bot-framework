@@ -1,18 +1,27 @@
 package works.lysenko.util.lang;
 
+import static works.lysenko.util.chrs.__.AN;
+import static works.lysenko.util.chrs.__.IN;
 import static works.lysenko.util.chrs.__.IS;
 import static works.lysenko.util.chrs.__.OF;
 import static works.lysenko.util.chrs.__.TO;
 import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.____.DOES;
+import static works.lysenko.util.chrs.____.FREE;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.lang.word.A.ALREADY;
 import static works.lysenko.util.lang.word.A.AMOUNT;
+import static works.lysenko.util.lang.word.A.APPIUM;
+import static works.lysenko.util.lang.word.A.AVAILABLE;
 import static works.lysenko.util.lang.word.C.CLASS;
 import static works.lysenko.util.lang.word.D.*;
 import static works.lysenko.util.lang.word.G.GROUND;
 import static works.lysenko.util.lang.word.L.LINES;
+import static works.lysenko.util.lang.word.P.PORT;
+import static works.lysenko.util.lang.word.S.SELECTING;
+import static works.lysenko.util.lang.word.U.USE;
 import static works.lysenko.util.spec.Symbols.*;
 
 
@@ -38,6 +47,6 @@ public record D() {
     /** Constant representing duplicated log lines prefix. */
     public static final String DUPLICATED___ = b(c(DUPLICATED), LOG, s(LINES, _COLON_));
     /** Constant representing default port busy message. */
-    public static final String DEFAULT_PORT_BUSY = "Default Appium port 4723 is already in use; selecting an available free port ...";
+    public static final String DEFAULT_PORT_BUSY = b(c(DEFAULT), c(APPIUM), PORT, s(_4_, _7_, _2_, _3_), IS, ALREADY,
+            IN, s(USE, SEM_CLN), SELECTING, AN, AVAILABLE, FREE, PORT, DOTS);
 }
-

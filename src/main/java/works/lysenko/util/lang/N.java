@@ -6,13 +6,21 @@ import static works.lysenko.util.chrs.____.NULL;
 import static works.lysenko.util.chrs.____.WERE;
 import static works.lysenko.util.chrs.____.WITH;
 import static works.lysenko.util.chrs._____.VALUE;
+import static works.lysenko.util.data.enums.Brackets.ROUND;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Wrap.e;
+import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.lang.word.A.ACCEPTABLE;
 import static works.lysenko.util.lang.word.A.ACTUAL;
+import static works.lysenko.util.lang.word.A.ADB;
 import static works.lysenko.util.lang.word.A.ALLOWED;
+import static works.lysenko.util.lang.word.A.ANDROID;
 import static works.lysenko.util.lang.word.C.COLOURS;
+import static works.lysenko.util.lang.word.C.CONNECTED;
+import static works.lysenko.util.lang.word.D.DEVICE;
+import static works.lysenko.util.lang.word.D.DEVICES;
 import static works.lysenko.util.lang.word.E.*;
 import static works.lysenko.util.lang.word.F.FOUND;
 import static works.lysenko.util.lang.word.M.MARGINS;
@@ -21,15 +29,18 @@ import static works.lysenko.util.lang.word.N.NOTHING;
 import static works.lysenko.util.lang.word.P.PERFORMED;
 import static works.lysenko.util.lang.word.P.PROPERTY;
 import static works.lysenko.util.lang.word.R.REQUESTED;
+import static works.lysenko.util.lang.word.R.RUNNING;
 import static works.lysenko.util.lang.word.T.TESTS;
 import static works.lysenko.util.spec.Symbols._COLON_;
+import static works.lysenko.util.spec.Symbols._DOT_;
 import static works.lysenko.util.spec.Symbols._EQUAL_;
 import static works.lysenko.util.spec.Symbols._EXCL_;
+import static works.lysenko.util.spec.Symbols._SLASH_;
 
 /**
  * Language utility constants starting with N.
  */
-@SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "ClassWithoutLogger", "unused"})
+@SuppressWarnings({"StaticMethodOnlyUsedInOneClass", "ClassWithoutLogger", "AutoBoxing", "WeakerAccess", "unused"})
 public record N() {
 
     /** Constant representing new colours property value with extended margins. */
@@ -52,8 +63,8 @@ public record N() {
     /** Constant representing neither actual nor requested value allowed to be null. */
     public static final String NEITHER_ACTUAL_NOR___ = b(c(NEITHER), ACTUAL, NOR, REQUESTED, VALUE, ALLOWED, TO, BE, NULL);
     /** Constant representing no device hint message. */
-    public static final String NO_DEVICE_HINT = "No connected Android device/emulator found. Ensure the emulator is running ('adb devices')";
+    public static final String NO_DEVICE_HINT = b(c(NO), CONNECTED, c(ANDROID), b(_SLASH_, DEVICE, EMULATOR),
+            s(FOUND, _DOT_), c(ENSURE), THE, EMULATOR, IS, RUNNING, e(ROUND, q(b(ADB, DEVICES))));
+    /** Constant representing no device hint diagnostic message. */
     public static final String MSG_NO_DEVICE_HINT = NO_DEVICE_HINT;
 }
-
-

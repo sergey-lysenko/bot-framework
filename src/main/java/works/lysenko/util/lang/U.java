@@ -19,33 +19,37 @@ import static works.lysenko.util.lang.word.A.AMONG;
 import static works.lysenko.util.lang.word.A.AUTOMATOR;
 import static works.lysenko.util.lang.word.B.BROWSER;
 import static works.lysenko.util.lang.word.B.BUNDLE;
+import static works.lysenko.util.lang.word.B.BYTES;
 import static works.lysenko.util.lang.word.C.CANDIDATES;
 import static works.lysenko.util.lang.word.C.CLIPBOARD;
 import static works.lysenko.util.lang.word.C.CONFIGURED;
 import static works.lysenko.util.lang.word.D.DEFINE;
+import static works.lysenko.util.lang.word.D.DRIVER;
 import static works.lysenko.util.lang.word.D.DURING;
 import static works.lysenko.util.lang.word.E.*;
 import static works.lysenko.util.lang.word.F.FAILED;
+import static works.lysenko.util.lang.word.H.HEADER;
+import static works.lysenko.util.lang.word.H.HTTP;
 import static works.lysenko.util.lang.word.I.IMAGE;
 import static works.lysenko.util.lang.word.I.INCORRECTLY;
 import static works.lysenko.util.lang.word.I.INSTANCE;
+import static works.lysenko.util.lang.word.I.INSTANTIATION;
 import static works.lysenko.util.lang.word.L.LINES;
 import static works.lysenko.util.lang.word.M.MARGIN;
 import static works.lysenko.util.lang.word.N.NEITHER;
 import static works.lysenko.util.lang.word.P.PARSE;
+import static works.lysenko.util.lang.word.P.PARSER;
 import static works.lysenko.util.lang.word.P.PROCEED;
 import static works.lysenko.util.lang.word.P.PROCESS;
 import static works.lysenko.util.lang.word.R.RANDOM;
 import static works.lysenko.util.lang.word.R.RANGED;
+import static works.lysenko.util.lang.word.R.RECEIVED;
 import static works.lysenko.util.lang.word.R.RESULT;
 import static works.lysenko.util.lang.word.S.*;
 import static works.lysenko.util.lang.word.T.TESTS;
 import static works.lysenko.util.lang.word.T.TRANSFORM;
 import static works.lysenko.util.lang.word.T.TYPES;
 import static works.lysenko.util.lang.word.U.*;
-import static works.lysenko.util.lang.word.D.DRIVER;
-import static works.lysenko.util.lang.word.I.INSTANTIATION;
-import static works.lysenko.util.lang.word.E.ERROR;
 import static works.lysenko.util.lang.word.V.VALID;
 import static works.lysenko.util.lang.word.V.VALIDATE;
 import static works.lysenko.util.lang.word.V.VERIFICATION;
@@ -56,7 +60,7 @@ import static works.lysenko.util.spec.Symbols.*;
 /**
  * Language utility constants starting with U.
  */
-@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing"})
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "WeakerAccess"})
 public record U() {
 
     private static final String UI_VERIFICATION_FAILED = b(u(UI), VERIFICATION, FAILED);
@@ -124,9 +128,8 @@ public record U() {
     public static final String U_B_EXCEPTION = s(c(UNREACHABLE), c(BROWSER), c(EXCEPTION));
     /** Constant representing unknown error message. */
     public static final String UNKNOWN_DRIVER_ERROR = b(c(UNKNOWN), DRIVER, INSTANTIATION, ERROR);
+    /** Constant representing unknown driver error diagnostic message. */
     public static final String MSG_UNKNOWN_ERROR = UNKNOWN_DRIVER_ERROR;
-    public static final String MSG_PARSER_NO_BYTES = "HTTP/1.1 header parser received no bytes";
+    /** Constant representing HTTP/1.1 header parser received no bytes diagnostic message. */
+    public static final String MSG_PARSER_NO_BYTES = b(s(u(HTTP), _SLASH_, _1_, _DOT_, _1_), HEADER, PARSER, RECEIVED, NO, BYTES);
 }
-
-
-

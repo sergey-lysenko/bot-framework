@@ -76,5 +76,8 @@ class UTest {
         assertFalse(U.USER_DIR.isEmpty());
         assertNotNull(U.U_B_EXCEPTION);
         assertFalse(U.U_B_EXCEPTION.isEmpty());
+        assertEquals("Unknown driver instantiation error", U.UNKNOWN_DRIVER_ERROR);
+        assertEquals(U.UNKNOWN_DRIVER_ERROR, U.MSG_UNKNOWN_ERROR);
+        assertEquals("HTTP/1.1 header parser received no bytes", U.MSG_PARSER_NO_BYTES);
     }
 }

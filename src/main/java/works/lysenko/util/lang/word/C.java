@@ -83,6 +83,8 @@ public record C() {
     public static final String CLIPBOARD = s(CL, IP, BO, AR, D);
     /** Constant representing the word CLOSE. */
     public static final String CLOSE = s(CLOS, E);
+    /** Constant representing the word CLOSED. */
+    public static final String CLOSED = s(CLOS, ED);
     /** Constant representing the word CLOSING. */
     public static final String CLOSING = s(CLOS, ING);
     /** Constant representing the word COLOUR. */
@@ -113,6 +115,12 @@ public record C() {
     public static final String CONFIRMATION = s(CONF, IR, MA, TION);
     /** Constant representing the word CONFIRMED. */
     public static final String CONFIRMED = s(CONFIRM, ED);
+    /** Constant representing the word CONFLICT. */
+    public static final String CONFLICT = s(CONF, LI, CT);
+    /** Constant representing the word CONNECTED. */
+    public static final String CONNECTED = s(CO, NN, EC, TED);
+    /** Constant representing the word CONNECTION. */
+    public static final String CONNECTION = s(CO, NN, EC, TION);
     /** Constant representing the word CONSIDER. */
     public static final String CONSIDER = s(CO, NS, ID, ER);
     /** Constant representing the word CONSTRUCTOR. */

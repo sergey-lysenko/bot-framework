@@ -26,5 +26,9 @@ class STest {
         assertFalse(S.SNAPSHOT_OF_PAGE_CODE.isEmpty());
         assertNotNull(S.S_E_R_EXCEPTION);
         assertFalse(S.S_E_R_EXCEPTION.isEmpty());
+        assertEquals("Android SDK root folder does not exist: check ANDROID_HOME / ANDROID_SDK_ROOT", S.SDK_ROOT_CHECK);
+        assertEquals("Android SDK folder does not exist: check ANDROID_HOME / ANDROID_SDK_ROOT", S.SDK_FOLDER_CHECK);
+        assertEquals(S.SDK_ROOT_CHECK, S.MSG_SDK_ROOT_CHECK);
+        assertEquals(S.SDK_FOLDER_CHECK, S.MSG_SDK_FOLDER_CHECK);
     }
 }

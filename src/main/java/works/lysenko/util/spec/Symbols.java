@@ -92,7 +92,9 @@ public record Symbols() {
     public static final char CRCMFLX = booleansToChar(false, true, true, true, true, false, true); // '^'
     /** Underscore character ('_'). */
     public static final char UND_SCR = booleansToChar(true, true, true, true, true, false, true); // '_'
-    /** Uppercase letter 'A'. */
+    /** Grave accent / backtick character ('`'). */
+    public static final char GRV_ACC = booleansToChar(false, false, false, false, false, true, true); // '`'
+    /** Lowercase letter 'a'. */
     public static final char A = booleansToChar(true, false, false, false, false, true, true);
     /** Uppercase letter 'B'. */
     public static final char B = booleansToChar(false, true, false, false, false, true, true);

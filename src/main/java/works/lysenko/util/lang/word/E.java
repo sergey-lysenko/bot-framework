@@ -15,6 +15,8 @@ public record E() {
     private static final String EXECUT = s(EX, EC, UT);
     /** Constant representing the word EXPECT. */
     public static final String EXPECT = s(EXPE, CT);
+    /** Constant representing the word EADDRINUSE. */
+    public static final String EADDRINUSE = s(E, ADD, RI, NU, SE);
     /** Constant representing the word EDGE. */
     public static final String EDGE = s(ED, GE);
     /** Constant representing the word EDGES. */
@@ -25,10 +27,14 @@ public record E() {
     public static final String ELEMENT = s(EL, EMEN, T);
     /** Constant representing the word EMPTY. */
     public static final String EMPTY = s(EM, P, TY);
+    /** Constant representing the word EMULATOR. */
+    public static final String EMULATOR = s(EM, ULAT, OR);
     /** Constant representing the word ENABLED. */
     public static final String ENABLED = s(EN, AB, L, ED);
     /** Constant representing the word ENOUGH. */
     public static final String ENOUGH = s(EN, OU, GH);
+    /** Constant representing the word ENSURE. */
+    public static final String ENSURE = s(EN, SU, RE);
     /** Constant representing the word ENTRY. */
     public static final String ENTRY = s(EN, TR, Y);
     /** Constant representing the word EQUAL. */
@@ -46,6 +52,8 @@ public record E() {
 
     /** Constant representing the word EXACT. */
     public static final String EXACT = s(EX, AC, T);
+    /** Constant representing the word EXCEEDED. */
+    public static final String EXCEEDED = s(EX, CE, ED, ED);
     /** Constant representing the word EXCEEDING. */
     public static final String EXCEEDING = s(EX, CE, ED, ING);
     /** Constant representing the word EXCEPTION. */

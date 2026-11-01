@@ -44,7 +44,6 @@ class TTest {
         assertFalse(T.TOO_FEW_EXPECTED.isEmpty());
         assertNotNull(T.TO_BE);
         assertFalse(T.TO_BE.isEmpty());
-        assertNotNull(T.TRIED_FOR_30_SECONDS___);
-        assertFalse(T.TRIED_FOR_30_SECONDS___.isEmpty());
+        assertEquals(" (tried for 30 second(s) with 500 milliseconds interval)", T.TRIED_FOR_30_SECONDS___);
     }
 }

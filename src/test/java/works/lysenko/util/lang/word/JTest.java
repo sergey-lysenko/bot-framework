@@ -14,7 +14,10 @@ class JTest {
 
     @Test
     void testConstants() {
+        assertEquals("java", J.JAVA);
         assertNotNull(J.JUST);
         assertFalse(J.JUST.isEmpty());
+        assertEquals("\n```", J.JAVA_END);
+        assertEquals("\n```java\n", J.JAVA_START);
     }
 }

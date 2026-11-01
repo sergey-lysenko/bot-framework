@@ -4,9 +4,11 @@ import static works.lysenko.util.chrs.__.*;
 import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.____.*;
 import static works.lysenko.util.chrs._____.THERE;
+import static works.lysenko.util.data.enums.Brackets.ROUND;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.lang.word.A.ABSENT;
 import static works.lysenko.util.lang.word.C.COMPLETED;
 import static works.lysenko.util.lang.word.D.DEFINED;
@@ -16,19 +18,25 @@ import static works.lysenko.util.lang.word.E.EXECUTION;
 import static works.lysenko.util.lang.word.E.EXPECTED;
 import static works.lysenko.util.lang.word.H.HAPPEN;
 import static works.lysenko.util.lang.word.I.INITIALISED;
+import static works.lysenko.util.lang.word.I.INTERVAL;
+import static works.lysenko.util.lang.word.M.MILLISECONDS;
 import static works.lysenko.util.lang.word.P.PREEMPTIVELY;
 import static works.lysenko.util.lang.word.P.PROPERTIES;
 import static works.lysenko.util.lang.word.R.RANGES;
 import static works.lysenko.util.lang.word.S.*;
 import static works.lysenko.util.lang.word.T.*;
 import static works.lysenko.util.lang.word.W.WRITER;
+import static works.lysenko.util.spec.Symbols.S;
+import static works.lysenko.util.spec.Symbols._0_;
+import static works.lysenko.util.spec.Symbols._3_;
+import static works.lysenko.util.spec.Symbols._5_;
 import static works.lysenko.util.spec.Symbols._COLON_;
 import static works.lysenko.util.spec.Symbols._DOT_;
 
 /**
  * Language utility constants starting with T.
  */
-@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "unused"})
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing", "unused"})
 public record T() {
 
     /** Constant representing telemetry writer is not initialised message. */
@@ -62,5 +70,6 @@ public record T() {
     /** Constant representing the phrase 'to be'. */
     public static final String TO_BE = b(TO, BE);
     /** Constant representing tried for 30 seconds wait description. */
-    public static final String TRIED_FOR_30_SECONDS___ = " (tried for 30 second(s) with 500 milliseconds interval)"; //NON-NLS
+    public static final String TRIED_FOR_30_SECONDS___ = e(true, e(ROUND, b(TRIED, FOR, s(_3_, _0_),
+            s(SECOND, e(ROUND, S)), WITH, s(_5_, _0_, _0_), MILLISECONDS, INTERVAL)));
 }

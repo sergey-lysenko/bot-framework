@@ -6,9 +6,12 @@ import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.____.GRID;
 import static works.lysenko.util.chrs.____.NULL;
 import static works.lysenko.util.chrs.____.PATH;
+import static works.lysenko.util.data.enums.Brackets.SQUARE;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
+import static works.lysenko.util.data.strs.Case.u;
 import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.lang.word.C.CONDITION;
 import static works.lysenko.util.lang.word.C.CONFIGURATION;
 import static works.lysenko.util.lang.word.C.CONFIGURED;
@@ -26,7 +29,7 @@ import static works.lysenko.util.spec.Symbols.*;
 /**
  * Language utility constants starting with E.
  */
-@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass"})
+@SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing"})
 public record E() {
 
     /** Constant representing the message 'element is null'. */
@@ -43,5 +46,6 @@ public record E() {
             VISIBILITY, OF, ELEMENT, LOCATED, BY, s(c(BY), _DOT_, X, PATH, _COLON_, _SPACE_));
     /** Constant representing exceptional scenario. */
     public static final String EXCEPTIONAL_SCENARION = b(c(EXCEPTIONAL), c(SCENARIO));
-    public static final String ERROR_MARKER = "**[ERROR]** ";
+    /** Constant representing Markdown bold error marker prefix. */
+    public static final String ERROR_MARKER = e(e(_ASTRS_, e(_ASTRS_, e(SQUARE, u(ERROR)))), true);
 }

@@ -38,6 +38,8 @@ public record R() {
     public static final String REARRANGING = s(RE, ARRA, NG, ING);
     /** Constant representing the word RECALCULATE. */
     public static final String RECALCULATE = s(RE, CA, LC, UL, AT, E);
+    /** Constant representing the word RECEIVED. */
+    public static final String RECEIVED = s(RE, CE, IV, ED);
     /** Constant representing the word RECORDS. */
     public static final String RECORDS = s(RE, CO, R, DS);
     /** Constant representing the word RECTANGLE. */

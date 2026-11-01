@@ -33,6 +33,8 @@ public record P() {
     public static final String PASSED = s(PASS, ED);
     /** Constant representing the word PATHS. */
     public static final String PATHS = s(PATH, S);
+    /** Constant representing the word PATIENCE. */
+    public static final String PATIENCE = s(PA, TI, EN, CE);
     /** Constant representing the word PAUSE. */
     public static final String PAUSE = s(PA, U, SE);
     /** Constant representing the word PAUSED. */
@@ -59,6 +61,8 @@ public record P() {
     public static final String POINTS = s(POIN, T, S);
     /** Constant representing the word POLYCHROMY. */
     public static final String POLYCHROMY = s(PO, LY, CH, RO, M, Y);
+    /** Constant representing the word PORT. */
+    public static final String PORT = s(PO, RT);
     /** Constant representing the word POSITION. */
     public static final String POSITION = s(P, O, SI, TION);
     /** Constant representing the word POSSIBLE. */

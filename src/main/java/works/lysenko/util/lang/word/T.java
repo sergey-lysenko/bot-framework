@@ -48,6 +48,8 @@ public record T() {
     public static final String TOOK = s(TO, OK);
     /** Constant representing the word TOOLBAR. */
     public static final String TOOLBAR = s(TOO, L, BAR);
+    /** Constant representing the word TOOLS. */
+    public static final String TOOLS = s(TOO, LS);
     /** Constant representing the word TOUCHING. */
     public static final String TOUCHING = s(TO, UCH, ING);
     /** Constant representing the word TRACE. */
@@ -56,6 +58,8 @@ public record T() {
     public static final String TRANSFORM = s(TR, ANS, FORM);
     /** Constant representing the word TREE. */
     public static final String TREE = s(TR, EE);
+    /** Constant representing the word TRIED. */
+    public static final String TRIED = s(TRI, ED);
     /** Constant representing the word TRYING. */
     public static final String TRYING = s(TRY, ING);
     /** Constant representing the word TYPES. */

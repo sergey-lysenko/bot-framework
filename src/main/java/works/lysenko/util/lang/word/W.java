@@ -14,6 +14,8 @@ public record W() {
 
     /** Constant representing the word WAITING. */
     public static final String WAITING = s(WAIT, ING);
+    /** Constant representing the word WANDERING. */
+    public static final String WANDERING = s(WA, ND, ER, ING);
     /** Constant representing the word WARNING. */
     public static final String WARNING = s(WARN, ING);
     /** Constant representing the word WEIGHT. */

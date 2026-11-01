@@ -46,5 +46,6 @@ class WTest {
         assertFalse(W.WRITING_FULLSCREEN_IMAGE.isEmpty());
         assertNotNull(W.WEB_DRIVER);
         assertFalse(W.WEB_DRIVER.isEmpty());
+        assertEquals("**[WARNING]** ", W.WARNING_MARKER);
     }
 }

@@ -34,6 +34,8 @@ public record M() {
     public static final String METHOD = s(ME, TH, OD);
     /** Constant representing the word MILLISECOND. */
     public static final String MILLISECOND = s(MI, LL, IS, EC, O, ND);
+    /** Constant representing the word MILLISECONDS. */
+    public static final String MILLISECONDS = s(MILLISECOND, S);
     /** Constant representing the word MINIMUM. */
     public static final String MINIMUM = s(MIN, IMUM);
     /** Constant representing the word MODAL. */
