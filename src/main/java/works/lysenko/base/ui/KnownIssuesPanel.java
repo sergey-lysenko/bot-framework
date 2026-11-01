@@ -241,8 +241,8 @@ public class KnownIssuesPanel extends JPanel {
 
         final File target = resolveTargetFile();
         if (target.exists()) {
-            try {
-                final KnownIssuesStore store = new KnownIssuesStore(Files.newInputStream(target.toPath()));
+            try (final java.io.InputStream is = Files.newInputStream(target.toPath())) {
+                final KnownIssuesStore store = new KnownIssuesStore(is);
                 for (final KnownIssue ki : store.getIssues()) {
                     tableModel.addRow(new Object[]{
                             ki.scenario(),
@@ -376,9 +376,10 @@ public class KnownIssuesPanel extends JPanel {
     private void syncRawJsonToTable() {
         try {
             final String json = rawJsonArea.getText();
+            tableModel.setRowCount(0);
+            clearForm();
             if (isNotNull(json) && !json.isBlank()) {
                 final KnownIssuesStore store = new KnownIssuesStore(new java.io.ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
-                tableModel.setRowCount(0);
                 for (final KnownIssue ki : store.getIssues()) {
                     tableModel.addRow(new Object[]{
                             ki.scenario(),
@@ -406,8 +407,10 @@ public class KnownIssuesPanel extends JPanel {
                 return;
             }
 
-            final KnownIssuesStore store = new KnownIssuesStore(Files.newInputStream(target.toPath()));
-            final List<KnownIssue> issues = store.getIssues();
+            final List<KnownIssue> issues;
+            try (final java.io.InputStream is = Files.newInputStream(target.toPath())) {
+                issues = new KnownIssuesStore(is).getIssues();
+            }
 
             final List<String> allProperties = PropertyValidator.getAllKnownProperties();
             final Map<String, String> canonicalScenarios = new LinkedHashMap<>();

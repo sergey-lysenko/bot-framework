@@ -5,8 +5,11 @@ import org.junit.jupiter.api.Test;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.table.DefaultTableModel;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class KnownIssuesPanelTest {
@@ -46,6 +49,36 @@ class KnownIssuesPanelTest {
                 rawJsonArea.setAccessible(true);
                 final JTextArea taJson = (JTextArea) rawJsonArea.get(panel);
                 assertNotNull(taJson.getComponentPopupMenu(), "rawJsonArea should have popup menu");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Test
+    void testEmptyJsonIssuesProducesZeroRowsInTable() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            final KnownIssuesPanel panel = new KnownIssuesPanel();
+
+            try {
+                final Field rawJsonAreaField = KnownIssuesPanel.class.getDeclaredField("rawJsonArea");
+                rawJsonAreaField.setAccessible(true);
+                final JTextArea rawJsonArea = (JTextArea) rawJsonAreaField.get(panel);
+                rawJsonArea.setText("""
+                        {
+                          "$schema": "./issues.schema.json",
+                          "issues": []
+                        }
+                        """);
+
+                final Method syncMethod = KnownIssuesPanel.class.getDeclaredMethod("syncRawJsonToTable");
+                syncMethod.setAccessible(true);
+                syncMethod.invoke(panel);
+
+                final Field tableModelField = KnownIssuesPanel.class.getDeclaredField("tableModel");
+                tableModelField.setAccessible(true);
+                final DefaultTableModel tableModel = (DefaultTableModel) tableModelField.get(panel);
+                assertEquals(0, tableModel.getRowCount(), "Empty issues list in JSON should result in 0 table rows");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

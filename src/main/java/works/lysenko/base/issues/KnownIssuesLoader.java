@@ -127,41 +127,53 @@ public final class KnownIssuesLoader {
     public static List<KnownIssue> loadFromStream(final InputStream is) {
         final List<KnownIssue> issues = new ArrayList<>();
         if (null == is) return issues;
-        byte[] bytes;
+        final byte[] bytes;
         try {
             bytes = is.readAllBytes();
         } catch (final IOException e) {
             return issues;
         }
 
-        try {
-            final KnownIssuesContainer container = MAPPER.readValue(bytes, KnownIssuesContainer.class);
-            if (isNotNull(container)) {
-                if (isNotNull(container.issues())) {
-                    for (final KnownIssueRaw raw : container.issues()) {
-                        final List<String> targetScenarios = collectScenarios(raw.scenario(), raw.scenarios());
-                        for (final String scStr : targetScenarios) {
-                            issues.add(new KnownIssue(scStr, raw.title(), raw.description(), raw.link(), raw.pattern()));
+        String content = new String(bytes, StandardCharsets.UTF_8).trim();
+        if (!content.isEmpty() && '\uFEFF' == content.charAt(0)) {
+            content = content.substring(1).trim();
+        }
+        if (content.isEmpty()) return issues;
+
+        if (content.startsWith("{") || content.startsWith("[")) {
+            try {
+                if (content.startsWith("[")) {
+                    final KnownIssueRaw[] rawArray = MAPPER.readValue(bytes, KnownIssueRaw[].class);
+                    if (isNotNull(rawArray)) {
+                        for (final KnownIssueRaw raw : rawArray) {
+                            addRawIssue(issues, raw);
                         }
                     }
-                }
-                if (isNotNull(container.scenarios())) {
-                    for (final KnownScenarioRaw scRaw : container.scenarios()) {
-                        final List<String> targetScenarios = collectScenarios(scRaw.scenario(), scRaw.scenarios());
-                        if (isNotNull(scRaw.issues())) {
-                            for (final KnownIssueRaw rawIssue : scRaw.issues()) {
-                                for (final String scStr : targetScenarios) {
-                                    issues.add(new KnownIssue(scStr, rawIssue.title(), rawIssue.description(), rawIssue.link(), rawIssue.pattern()));
+                } else {
+                    final KnownIssuesContainer container = MAPPER.readValue(bytes, KnownIssuesContainer.class);
+                    if (isNotNull(container)) {
+                        if (isNotNull(container.issues())) {
+                            for (final KnownIssueRaw raw : container.issues()) {
+                                addRawIssue(issues, raw);
+                            }
+                        }
+                        if (isNotNull(container.scenarios())) {
+                            for (final KnownScenarioRaw scRaw : container.scenarios()) {
+                                final List<String> targetScenarios = collectScenarios(scRaw.scenario(), scRaw.scenarios());
+                                if (isNotNull(scRaw.issues())) {
+                                    for (final KnownIssueRaw rawIssue : scRaw.issues()) {
+                                        for (final String scStr : targetScenarios) {
+                                            issues.add(new KnownIssue(scStr, rawIssue.title(), rawIssue.description(), rawIssue.link(), rawIssue.pattern()));
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
-                if (!issues.isEmpty()) {
-                    return issues;
-                }
+            } catch (final IOException ignored) {
             }
-        } catch (final IOException ignored) {
+            return issues;
         }
 
         // Fallback: parse as Properties / Key-Value lines
@@ -181,6 +193,15 @@ public final class KnownIssuesLoader {
         }
 
         return issues;
+    }
+
+    private static void addRawIssue(final List<KnownIssue> issues, final KnownIssueRaw raw) {
+        if (isNotNull(raw)) {
+            final List<String> targetScenarios = collectScenarios(raw.scenario(), raw.scenarios());
+            for (final String scStr : targetScenarios) {
+                issues.add(new KnownIssue(scStr, raw.title(), raw.description(), raw.link(), raw.pattern()));
+            }
+        }
     }
 
     private static List<String> collectScenarios(final String singleScenario, final List<String> scenarioList) {

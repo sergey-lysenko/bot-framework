@@ -43,6 +43,25 @@ class KnownIssuesLoaderTest {
     }
 
     @Test
+    void testLoadFromStreamEmptyJsonIssuesWithSchema() {
+        final String json = """
+                {
+                  "$schema": "./issues.schema.json",
+                  "issues": []
+                }
+                """;
+        final List<KnownIssue> issues = KnownIssuesLoader.loadFromStream(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+        assertNotNull(issues);
+        assertTrue(issues.isEmpty(), "Empty JSON issues list must not fall back to Properties parsing");
+    }
+
+    @Test
+    void testLoadFromStreamEmptyJsonObjectAndArray() {
+        assertTrue(KnownIssuesLoader.loadFromStream(new ByteArrayInputStream("{}".getBytes(StandardCharsets.UTF_8))).isEmpty());
+        assertTrue(KnownIssuesLoader.loadFromStream(new ByteArrayInputStream("[]".getBytes(StandardCharsets.UTF_8))).isEmpty());
+    }
+
+    @Test
     void testLoadFromNullStream() {
         assertTrue(KnownIssuesLoader.loadFromStream(null).isEmpty());
     }
