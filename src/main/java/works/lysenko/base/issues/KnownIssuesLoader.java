@@ -89,14 +89,15 @@ public final class KnownIssuesLoader {
     }
 
     /**
-     * Saves the current known/issues.json content into the run result dataset as {runId}.known.issues.json.
+     * Saves the current known/issues.json content into a specific file.
+     *
+     * @param outputFile the file to save the dataset to
      */
-    public static void saveRunKnownIssues() {
+    public static void saveRunKnownIssues(final java.io.File outputFile) {
         try (final InputStream is = findInputStream()) {
             if (isNotNull(is)) {
                 final byte[] bytes = is.readAllBytes();
                 if (bytes.length > 0) {
-                    final java.io.File outputFile = new java.io.File(name(RUN_KNOWN_ISSUES_));
                     final java.io.File parent = outputFile.getAbsoluteFile().getParentFile();
                     if (null != parent && !parent.exists()) {
                         parent.mkdirs();
@@ -108,6 +109,13 @@ public final class KnownIssuesLoader {
         } catch (final Throwable e) {
             logDebug("Unable to save run known issues dataset: " + e.getMessage());
         }
+    }
+
+    /**
+     * Saves the current known/issues.json content into the run result dataset as {runId}.known.issues.json.
+     */
+    public static void saveRunKnownIssues() {
+        saveRunKnownIssues(new java.io.File(name(RUN_KNOWN_ISSUES_)));
     }
 
     /**

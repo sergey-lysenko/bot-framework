@@ -121,7 +121,7 @@ public final class SvgTreeRenderer {
         sb.append("  </defs>\n");
         sb.append("  <style>\n");
         sb.append("    .tx1 { font-family: monospace; font-size: 10px; font-weight: bold; }\n");
-        sb.append("    .tx2 { font-size: 12px; }\n");
+        sb.append("    .tx2 { font-family: sans-serif; font-size: 12px; }\n");
         sb.append("    .tx3 { font-family: monospace; font-weight: bold; font-size: 11px; }\n");
         sb.append("    .tx4 { font-family: sans-serif; font-weight: bold; font-size: 15px; fill: #F8FAFC; }\n");
         sb.append("    .pb { fill: #0f172a; opacity: 0.8; }\n");

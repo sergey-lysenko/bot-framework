@@ -7,8 +7,7 @@ import works.lysenko.util.apis.exception.checked.SafeguardException;
 import works.lysenko.util.apis.test.*;
 import works.lysenko.util.data.records.test.Workflow;
 import works.lysenko.util.prop.core.Mode;
-import works.lysenko.util.prop.tree.Scenario;
-import works.lysenko.util.prop.tree.Traverse;
+import works.lysenko.util.prop.tree.*;
 import works.lysenko.util.spec.Level;
 import works.lysenko.util.prop.PropEnum;
 
@@ -22,19 +21,23 @@ import static works.lysenko.util.data.enums.Ansi.yb;
 import static works.lysenko.util.data.enums.ExitCode.TESTS_UNHANDLED_EXCEPTION;
 import static works.lysenko.util.data.enums.Severity.S2;
 import static works.lysenko.util.data.enums.Severity.S3;
+import static works.lysenko.util.data.records.KeyValue.*;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.s1;
 import static works.lysenko.util.data.strs.Time.t;
+import static works.lysenko.util.data.strs.Vars.*;
 import static works.lysenko.util.func.core.Assertions.fail;
 import static works.lysenko.util.func.core.ClassLoader.instantiate;
 import static works.lysenko.util.func.type.Objects.isNotNull;
+import static works.lysenko.util.lang.A.*;
 import static works.lysenko.util.lang.I.INITIAL_SETBACK_MESSAGE;
 import static works.lysenko.util.lang.M.MANUALLY_REQUESTED_TEST_STOP_PERFORMED;
 import static works.lysenko.util.lang.T.TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY;
 import static works.lysenko.util.lang.T.TEST_SESSION_COMPLETED;
 import static works.lysenko.util.lang.word.S.STATUS;
 import static works.lysenko.util.lang.word.U.UNKNOWN;
+import static works.lysenko.util.prop.tree.Wandering.*;
 
 /**
  * Represents the Test class that governs repetition of testing actions.
@@ -205,17 +208,62 @@ public class Test implements _Test {
     /**
      * Checks if the tests execution is not exhausted.
      *
+     * @param lastProgressTestNumber the test number when the last leaf execution occurred
      * @return true if the tests execution is not exhausted, false otherwise.
      */
-    private boolean isNotExhausted() {
+    private boolean isNotExhausted(final int lastProgressTestNumber) {
 
         final boolean allLeafsMode = (isNotNull(parameters))
                 ? parameters.isAllLeafs()
                 : (Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get()) || isCountAllLeafs());
-        if (allLeafsMode) {
-            return !core.areAllLeafsExecuted();
-        }
+        if (allLeafsMode) return isAllLeafs(isPatienceLost(lastProgressTestNumber));
         return null == core.getTotalTests() || repeater.getHistory().size() < core.getTotalTests();
+    }
+
+    private boolean isPatienceLost(final int lastProgressTestNumber) {
+
+        boolean patienceLost = false;
+        logDebug(a(kv("lastProgressTestNumber", lastProgressTestNumber)));
+        if (lastProgressTestNumber > 0) {
+            final int currentTest = repeater.getHistory().size() + 1;
+            final double multiplier = (2.0 + (patience.doubleValue() / lastProgressTestNumber));
+            logDebug(a(kv("multiplier", multiplier)));
+            final double patienceThreshold = lastProgressTestNumber * multiplier;
+            logDebug(String.format(java.util.Locale.ROOT, "Patience at %.0f%% (%d / %.0f)",
+                    100.0 * currentTest / patienceThreshold, currentTest, patienceThreshold), false);
+            patienceLost = currentTest > patienceThreshold;
+        }
+        return patienceLost;
+    }
+
+    /**
+     * Determines whether the test run should continue in "all-leafs" mode.
+     * <p>
+     * If the wandering patience has been lost, the run is aborted. Otherwise, the run continues for as long
+     * as not every leaf of the test model has been executed.
+     *
+     * @param patienceLost {@code true} if the number of tests executed since the last progress exceeds the
+     *                     patience threshold ({@code lastProgressTestNumber + patience}), {@code false} otherwise
+     * @return {@code true} if execution should continue (not all leafs have been executed and patience
+     * has not run out), {@code false} if all leafs have been executed or patience was exceeded
+     */
+    private static boolean isAllLeafs(final boolean patienceLost) {
+
+        if (patienceLost) return isLostPatience();
+        return !core.areAllLeafsExecuted();
+    }
+
+    /**
+     * Handles the loss of patience in "all-leafs" mode by logging that the mode was aborted.
+     * <p>
+     * The returned value is meant to be passed straight back as the "continue" flag of the calling method.
+     *
+     * @return always {@code false}, signalling that the run should not continue
+     */
+    private static boolean isLostPatience() {
+
+        logEvent(S3, b(ALL_LEAFS_MODE_ABORTED_WANDERING_PATIENCE_EXCEEDED));
+        return false;
     }
 
     /**
@@ -265,8 +313,17 @@ public class Test implements _Test {
 
         if (Mode.resilient || !core.getResults().areFailingEvents()) {
             try {
-                while (!core.getStopFlag() && (Mode.resilient || !core.getResults().areFailingEvents()) && isNotExhausted() && !wasStopRequestedAndPerformed())
+                int lastLeafExecutionCount = core.getExecutedLeafExecutionsCount();
+                int lastProgressTestNumber = repeater.getHistory().size();
+
+                while (isNotExhausted(lastProgressTestNumber) && !core.getStopFlag() && (Mode.resilient || !core.getResults().areFailingEvents()) && !wasStopRequestedAndPerformed()) {
                     repeater.run();
+                    final int currentLeafExecutionCount = core.getExecutedLeafExecutionsCount();
+                    if (currentLeafExecutionCount > lastLeafExecutionCount) {
+                        lastLeafExecutionCount = currentLeafExecutionCount;
+                        lastProgressTestNumber = repeater.getHistory().size();
+                    }
+                }
             } catch (final Error e) { // Failed assertions, no rethrow
                 _Test.printThrowable(e);
                 stop(e.getMessage() != null ? e.getMessage() : e.toString());

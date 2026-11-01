@@ -404,7 +404,7 @@ public class PostProcessor {
                     treeSonification);
 
             progress.update(REPORT_TASK, 0);
-            KnownIssuesLoader.saveRunKnownIssues();
+            KnownIssuesLoader.saveRunKnownIssues(new File(runDir, prefix + ".known.issues.json"));
             LogHtml.generateReport(
                     logFile,
                     htmlFile,

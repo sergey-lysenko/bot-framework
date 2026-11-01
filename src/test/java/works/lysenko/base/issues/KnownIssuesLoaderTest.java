@@ -49,6 +49,6 @@ class KnownIssuesLoaderTest {
 
     @Test
     void testSaveRunKnownIssues() {
-        assertDoesNotThrow(KnownIssuesLoader::saveRunKnownIssues);
+        assertDoesNotThrow(() -> KnownIssuesLoader.saveRunKnownIssues());
     }
 }

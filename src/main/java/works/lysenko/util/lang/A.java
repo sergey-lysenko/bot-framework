@@ -37,6 +37,7 @@ import static works.lysenko.util.spec.Symbols._DOT_;
 @SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing"})
 public record A() {
 
+    public static final String ALL_LEAFS_MODE_ABORTED_WANDERING_PATIENCE_EXCEEDED = "All-leafs mode aborted: Wandering patience exceeded.";
     private static final String APPIUM_ = s(APPIUM, _COLON_);
     /** Constant representing the message when actual values are not valid. */
     public static final String ACTUAL_VALUES_ARE_NOT_VALID = b(c(ACTUAL), VALUES, ARE, NOT, VALID);

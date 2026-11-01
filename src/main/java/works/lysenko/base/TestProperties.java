@@ -481,6 +481,10 @@ public class TestProperties implements _TestProperties {
             if (isNotNull(allLeafsCountVal) && !allLeafsCountVal.isEmpty()) {
                 the.setProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), allLeafsCountVal);
             }
+            final String allLeafsPatienceVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.ALL_LEAFS_PATIENCE);
+            if (isNotNull(allLeafsPatienceVal) && !allLeafsPatienceVal.isEmpty()) {
+                the.setProperty(PropEnum._TREE_ALL_LEAFS_PATIENCE.getPropertyName(), allLeafsPatienceVal);
+            }
             final String testsVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.TESTS);
             if (isNotNull(testsVal) && !testsVal.isEmpty()) {
                 the.setProperty(PropEnum._TEST_TESTS.getPropertyName(), testsVal);

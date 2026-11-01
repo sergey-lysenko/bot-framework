@@ -197,7 +197,7 @@ public record Layout() {
             final String name = s(rootPath, f(template, list.toArray()));
             final Path path = java.nio.file.Paths.get(name);
             if (isNotNull(path.getParent()))
-                if (path.getParent().toFile().mkdirs()) logDebug(b(c(CREATED), DIRECTORIES, FOR, name));
+                path.getParent().toFile().mkdirs();
             return name;
         }
 

@@ -264,6 +264,15 @@ public final class Parameters extends Properties implements _ExecutionParameterV
     }
     
     /**
+     * Performs set all leafs patience.
+     * @param patience the patience float value
+     */
+    public void setAllLeafsPatience(final float patience) {
+        
+        put(ALL_LEAFS_PATIENCE.name(), String.valueOf(patience));
+    }
+    
+    /**
      * Performs set headless.
      * @param value the value
      */

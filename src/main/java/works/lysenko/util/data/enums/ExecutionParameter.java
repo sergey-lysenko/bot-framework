@@ -30,6 +30,11 @@ public enum ExecutionParameter implements _Default {
     ALL_LEAFS_EXECUTIONS(EMPTY),
 
     /**
+     * Parameter specifying all leaf executions patience offset.
+     */
+    ALL_LEAFS_PATIENCE(EMPTY),
+
+    /**
      * Parameter for completion weight.
      */
     COMPLETION_WEIGHT(EMPTY),
