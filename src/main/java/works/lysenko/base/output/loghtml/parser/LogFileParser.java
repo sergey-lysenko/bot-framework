@@ -168,9 +168,17 @@ public final class LogFileParser {
 
         LogModels.LogSection currentSec = new LogModels.LogSection(BOOTING, c(BOOTING), NEUTRAL, lineStore);
 
+        final List<works.lysenko.base.responses.ExpectedResponse> expectedResponses = loadExpectedResponsesForLog(logFile);
+        final List<works.lysenko.base.issues.KnownIssue> knownIssues = loadKnownIssuesForLog(logFile);
+        if (!expectedResponses.isEmpty()) {
+            works.lysenko.base.output.TreeHtml.setExpectedResponsesStore(new works.lysenko.base.responses.ExpectedResponsesStore(expectedResponses));
+        }
+
         int prevTestNum = 0;
         boolean inPostflight = false;
         boolean inScenStats = false;
+        String currentScenario = null;
+        boolean currentScenarioMatchedExpected = false;
 
 
         final Matcher mAnsi = ANSI_PATTERN.matcher("");
@@ -329,6 +337,8 @@ public final class LogFileParser {
                         currentSec.startOp = opNum;
                         currentSec.startTime = ts;
                         prevTestNum = tNum;
+                        currentScenario = null;
+                        currentScenarioMatchedExpected = false;
                     }
                     currentSec.endOp = opNum;
                     currentSec.endTime = ts;
@@ -358,18 +368,43 @@ public final class LogFileParser {
                 }
             }
 
-            if (clean.contains(s(OPN_SBR, u(WARNING), CLS_SBR)) && !FAILED.equals(currentSec.status)) {
-                currentSec.status = WARNING;
-            } else if (clean.contains(s(OPN_SBR, u(SEVERE), CLS_SBR)) || clean.contains(s(OPN_SBR, u(FAILURE), CLS_SBR))) {
-                currentSec.status = FAILED;
-            }
-
-            if (TEST.equals(currentSec.type)) { // suppressed by logic
+            if (TEST.equals(currentSec.type)) {
                 mScenToken.reset(clean);
                 if (mScenToken.find()) {
                     final String sc = mScenToken.group(2).trim();
-                    if (isValidScenarioToken(sc, currentSec)) {
-                        currentSec.scenarios.add(sc);
+                    if (!sc.isEmpty() && !SCENARIO.equalsIgnoreCase(sc) && !sc.equalsIgnoreCase(c(SPECIFICS)) && !sc.toLowerCase(Locale.ROOT).endsWith(s(_DOT_, SPECIFICS))) {
+                        currentScenario = sc;
+                        currentScenarioMatchedExpected = false;
+                        if (!currentSec.scenarios.contains(sc)) {
+                            currentSec.scenarios.add(sc);
+                        }
+                    }
+                }
+            }
+
+            final boolean hasSevereOrFailure = clean.contains(s(OPN_SBR, u(SEVERE), CLS_SBR)) || clean.contains(s(OPN_SBR, u(FAILURE), CLS_SBR));
+            final boolean hasWarn = clean.contains(s(OPN_SBR, u(WARNING), CLS_SBR));
+            final boolean hasNotice = clean.contains("[NOTICE]");
+
+            if (hasSevereOrFailure || hasWarn || hasNotice) {
+                boolean isExpected = matchesExpectedResponse(expectedResponses, currentScenario, clean);
+                if (!isExpected && currentScenarioMatchedExpected && clean.contains("[BROWSER]")) {
+                    isExpected = true;
+                }
+                if (isExpected) {
+                    currentScenarioMatchedExpected = true;
+                } else {
+                    final boolean isKnown = matchesKnownIssue(knownIssues, currentScenario, clean);
+                    if (isKnown) {
+                        if (!FAILED.equals(currentSec.status)) {
+                            currentSec.status = WARNING;
+                        }
+                    } else if (hasSevereOrFailure) {
+                        currentSec.status = FAILED;
+                    } else if (hasWarn && !FAILED.equals(currentSec.status)) {
+                        currentSec.status = WARNING;
+                    } else if (hasNotice && PASSED.equals(currentSec.status)) {
+                        currentSec.status = "notice";
                     }
                 }
             }
@@ -387,5 +422,75 @@ public final class LogFileParser {
         if (!currentSec.lines.isEmpty()) result.sections.add(currentSec);
         
         return result;
+    }
+
+    private static List<works.lysenko.base.responses.ExpectedResponse> loadExpectedResponsesForLog(final File logFile) {
+        if (null != logFile && null != logFile.getParentFile()) {
+            final String name = logFile.getName();
+            if (name.endsWith(".run.log")) {
+                final String prefix = name.substring(0, name.length() - ".run.log".length());
+                final File sidecar = new File(logFile.getParentFile(), prefix + ".expected.responses.json");
+                if (sidecar.exists()) {
+                    return works.lysenko.base.responses.ExpectedResponsesLoader.loadFromFile(sidecar);
+                }
+            }
+        }
+        return works.lysenko.base.responses.ExpectedResponsesLoader.loadDefault();
+    }
+
+    private static List<works.lysenko.base.issues.KnownIssue> loadKnownIssuesForLog(final File logFile) {
+        if (null != logFile && null != logFile.getParentFile()) {
+            final String name = logFile.getName();
+            if (name.endsWith(".run.log")) {
+                final String prefix = name.substring(0, name.length() - ".run.log".length());
+                final File sidecar = new File(logFile.getParentFile(), prefix + ".known.issues.json");
+                if (sidecar.exists()) {
+                    try (final java.io.FileInputStream fis = new java.io.FileInputStream(sidecar)) {
+                        return works.lysenko.base.issues.KnownIssuesLoader.loadFromStream(fis);
+                    } catch (final Exception ignored) {
+                    }
+                }
+            }
+        }
+        return works.lysenko.base.issues.KnownIssuesLoader.loadDefault();
+    }
+
+    private static boolean matchesExpectedResponse(
+            final List<works.lysenko.base.responses.ExpectedResponse> expectedResponses,
+            final String currentScenario,
+            final String cleanLine) {
+        if (null == expectedResponses || expectedResponses.isEmpty() || null == currentScenario) return false;
+        for (final works.lysenko.base.responses.ExpectedResponse er : expectedResponses) {
+            if (works.lysenko.base.responses.ExpectedResponsesMatcher.matchesScenario(er.scenario(), currentScenario)
+                    && matchesLinePattern(er.pattern(), cleanLine)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean matchesKnownIssue(
+            final List<works.lysenko.base.issues.KnownIssue> knownIssues,
+            final String currentScenario,
+            final String cleanLine) {
+        if (null == knownIssues || knownIssues.isEmpty()) return false;
+        for (final works.lysenko.base.issues.KnownIssue ki : knownIssues) {
+            final boolean scenOk = (null == ki.scenario() || ki.scenario().isBlank() || "*".equals(ki.scenario().trim()))
+                    || (null != currentScenario && works.lysenko.base.responses.ExpectedResponsesMatcher.matchesScenario(ki.scenario(), currentScenario));
+            if (scenOk && matchesLinePattern(ki.pattern(), cleanLine)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean matchesLinePattern(final String patternStr, final String cleanLine) {
+        if (null == patternStr || patternStr.isBlank() || null == cleanLine) return false;
+        if (cleanLine.contains(patternStr)) return true;
+        try {
+            return Pattern.compile(patternStr, Pattern.DOTALL).matcher(cleanLine).find();
+        } catch (final Exception ignored) {
+            return false;
+        }
     }
 }

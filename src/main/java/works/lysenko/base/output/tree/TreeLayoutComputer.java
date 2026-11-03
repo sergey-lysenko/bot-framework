@@ -270,6 +270,35 @@ public final class TreeLayoutComputer {
         }
         final _Result res = n.result();
         if (null != res) {
+            if (null != res.getEvents() && !res.getEvents().isEmpty()) {
+                final works.lysenko.base.responses.ExpectedResponsesStore expStore = TreeHtml.getExpectedResponsesStore();
+                final boolean nodeMatchedExpected = (null != expStore && expStore.matchesNode(n));
+                for (final _LogRecord lr : res.getEvents()) {
+                    if (null == lr || !(lr.data() instanceof works.lysenko.util.apis.data._Event ev)) continue;
+                    if (ev.severity() != works.lysenko.util.data.enums.Severity.S0
+                            && ev.severity() != works.lysenko.util.data.enums.Severity.S1) {
+                        continue;
+                    }
+                    if (null != expStore) {
+                        if (expStore.isExpected(n, lr)) continue;
+                        final String text = lr.text();
+                        if (nodeMatchedExpected && null != text && text.contains("[BROWSER]")) continue;
+                    }
+                    boolean matchedKnown = false;
+                    if (null != n.knownIssues() && !n.knownIssues().isEmpty()) {
+                        for (final KnownIssue ki : n.knownIssues()) {
+                            if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
+                                matchedKnown = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!matchedKnown) {
+                        return true;
+                    }
+                }
+                return false;
+            }
             return res.status() == works.lysenko.util.data.enums.ExecutionStatus.FAILED;
         }
         return false;

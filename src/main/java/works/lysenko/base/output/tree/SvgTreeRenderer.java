@@ -153,7 +153,8 @@ public final class SvgTreeRenderer {
 
             final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
             final int fromExecs = (null != e.from().result()) ? e.from().result().getExecutions() : 0;
-            final boolean toWarning = (null != e.to().result() && e.to().result().status() == ExecutionStatus.WARNING);
+            final boolean toWarning = TreeHtml.hasWarning(e.to());
+            final boolean toNotice = !toWarning && TreeHtml.hasNotice(e.to());
             final boolean isRecent = recentNodeKeys.contains(e.to().id());
 
             String strokeColor = "#3341558C";
@@ -173,6 +174,8 @@ public final class SvgTreeRenderer {
             } else if (toExecs > 0 && fromExecs > 0) {
                 if (toWarning) {
                     strokeColor = "#F59E0B";
+                } else if (toNotice) {
+                    strokeColor = "#06B6D4";
                 } else {
                     final java.awt.Color col = TreeProgressMetrics.getScenarioProgressColor(e.to(), target, maxLeafOverRatio);
                     strokeColor = TreeTheme.DEFAULT.hex(col);

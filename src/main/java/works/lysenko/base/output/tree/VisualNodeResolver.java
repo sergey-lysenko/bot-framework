@@ -120,17 +120,6 @@ public class VisualNodeResolver {
      */
     public VisualNode resolve(NodeData node, boolean isRecentNode, Map<NodeData, Boolean> childFailureCache, Map<NodeData, Boolean> executableCache) {
         final int execs = (node.result() != null) ? node.result().getExecutions() : 0;
-        final works.lysenko.base.responses.ExpectedResponsesStore expStore = TreeHtml.getExpectedResponsesStore();
-        final String scenarioName = (node.scenario() != null) ? node.scenario().getName() : node.label();
-        int unclassifiedEventCount = 0;
-        if (node.result() != null && node.result().getEvents() != null) {
-            for (final works.lysenko.util.apis.log._LogRecord lr : node.result().getEvents()) {
-                if (null != expStore && expStore.isExpected(scenarioName, lr)) {
-                    continue;
-                }
-                unclassifiedEventCount++;
-            }
-        }
         final int scenarioTarget = getTargetExecutions(node, target);
         final int safeTarget = Math.max(1, scenarioTarget);
         final ScenarioType type = getScenarioType(node);
@@ -147,7 +136,8 @@ public class VisualNodeResolver {
         boolean isDashed = false;
         String statusName;
 
-        final boolean warning = (unclassifiedEventCount > 0 && node.result() != null && node.result().status() == ExecutionStatus.WARNING);
+        final boolean warning = TreeHtml.hasWarning(node);
+        final boolean notice = !warning && TreeHtml.hasNotice(node);
 
         if (failure) {
             cardFill = theme.failedBg();
@@ -158,7 +148,7 @@ public class VisualNodeResolver {
             cardFill = (overRatio > 0.0) ? progressColor : new Color(0x16, 0x3A, 0x58);
             borderColor = new Color(0x38, 0xBD, 0xF8); // ACCENT_CYAN
             strokeWidth = 2.8f;
-            statusName = childFailure ? "UPSET" : ((execs > 0) ? (warning ? "WARNING" : "PASSED") : (executable ? "UNVISITED" : "NON_EXECUTABLE"));
+            statusName = childFailure ? "UPSET" : ((execs > 0) ? (warning ? "WARNING" : (notice ? "NOTICE" : "PASSED")) : (executable ? "UNVISITED" : "NON_EXECUTABLE"));
         } else if (childFailure) {
             cardFill = theme.upsetBg();
             borderColor = theme.upsetBorder();
@@ -178,21 +168,21 @@ public class VisualNodeResolver {
             }
         } else if (overRatio > 0.0) {
             cardFill = progressColor;
-            borderColor = warning ? theme.warningBorder() : progressColor;
+            borderColor = warning ? theme.warningBorder() : (notice ? theme.noticeBorder() : progressColor);
             strokeWidth = 1.8f;
-            statusName = warning ? "WARNING" : "PASSED";
+            statusName = warning ? "WARNING" : (notice ? "NOTICE" : "PASSED");
         } else {
             final int r = (int) (theme.unvisitedBg().getRed() * 0.7 + progressColor.getRed() * 0.3);
             final int gr = (int) (theme.unvisitedBg().getGreen() * 0.7 + progressColor.getGreen() * 0.3);
             final int b = (int) (theme.unvisitedBg().getBlue() * 0.7 + progressColor.getBlue() * 0.3);
             cardFill = new Color(r, gr, b);
-            borderColor = warning ? theme.warningBorder() : progressColor;
+            borderColor = warning ? theme.warningBorder() : (notice ? theme.noticeBorder() : progressColor);
             strokeWidth = 1.8f;
-            statusName = warning ? "WARNING" : "PASSED";
+            statusName = warning ? "WARNING" : (notice ? "NOTICE" : "PASSED");
         }
 
         boolean hasKnownIssues = node.knownIssues() != null && !node.knownIssues().isEmpty();
-        if (hasKnownIssues) {
+        if (hasKnownIssues && !failure) {
             borderColor = new Color(251, 191, 36); // Amber #fbbf24 for known issues border
         }
 
@@ -212,15 +202,8 @@ public class VisualNodeResolver {
             ? theme.nonExecutableText() 
             : (childFailure ? theme.upsetBorder() : ((execs == 0) ? theme.unvisitedText() : progressColor));
 
-        // Circle indicator color
+        // Model A: Outlines carry 100% of the node state; no circle pips on tree cards
         Color indicatorColor = null;
-        if (failure) {
-            indicatorColor = theme.failedBorder();
-        } else if (childFailure) {
-            indicatorColor = theme.upsetBorder();
-        } else if (unclassifiedEventCount > 0) {
-            indicatorColor = theme.warningBorder();
-        }
 
         // Node label text color
         Color textColor = (overRatio > 0.0) 

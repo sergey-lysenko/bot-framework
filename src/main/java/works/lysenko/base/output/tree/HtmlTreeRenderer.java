@@ -33,6 +33,7 @@ public class HtmlTreeRenderer {
                 case "UPSET" -> "child_failed";
                 case "PASSED" -> "passed";
                 case "WARNING" -> "warning";
+                case "NOTICE" -> "notice";
                 case "NON_EXECUTABLE" -> "non_executable";
                 default -> "unvisited";
             };
@@ -42,6 +43,7 @@ public class HtmlTreeRenderer {
                 case "UPSET" -> "Upset";
                 case "PASSED" -> "Passed";
                 case "WARNING" -> "Warning";
+                case "NOTICE" -> "Notice";
                 case "NON_EXECUTABLE" -> "Non-executable";
                 default -> "Unvisited";
             };

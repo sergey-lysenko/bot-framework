@@ -88,7 +88,8 @@ public final class TreeHtmlRenderer {
 
             final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
             final int fromExecs = (null != e.from().result()) ? e.from().result().getExecutions() : 0;
-            final boolean toWarning = (null != e.to().result() && e.to().result().status() == ExecutionStatus.WARNING);
+            final boolean toWarning = works.lysenko.base.output.TreeHtml.hasWarning(e.to());
+            final boolean toNotice = !toWarning && works.lysenko.base.output.TreeHtml.hasNotice(e.to());
             final boolean toFailure = TreeLayoutComputer.hasFailure(e.to());
             final boolean toChildFailure = TreeLayoutComputer.hasChildFailure(e.to());
             final boolean toTheoreticallyExecutable = TreeLayoutComputer.isTheoreticallyExecutable(e.to(), accessibleScenarios);
@@ -101,6 +102,8 @@ public final class TreeHtmlRenderer {
                     edgeClass = "connector child_failed";
                 } else if (toWarning) {
                     edgeClass = "connector warning";
+                } else if (toNotice) {
+                    edgeClass = "connector notice";
                 } else {
                     edgeClass = "connector visited";
                 }
@@ -217,6 +220,7 @@ public final class TreeHtmlRenderer {
                 "  .connector { fill: none; stroke: #475569; stroke-width: 2; transition: stroke 0.2s, stroke-width 0.2s; }\n" +
                 "  .connector.visited { stroke: #22c55e; stroke-width: 2.5; }\n" +
                 "  .connector.warning { stroke: #f59e0b; stroke-width: 2.5; }\n" +
+                "  .connector.notice { stroke: #06b6d4; stroke-width: 2.5; }\n" +
                 "  .connector.failed { stroke: #ef4444; stroke-width: 2.5; }\n" +
                 "  .connector.child_failed { stroke: #818cf8; stroke-width: 1.5; stroke-dasharray: 3 3; }\n" +
                 "  .connector.non_executable { stroke: #243044; stroke-width: 1.2; stroke-dasharray: 4 4; opacity: 0.6; }\n" +

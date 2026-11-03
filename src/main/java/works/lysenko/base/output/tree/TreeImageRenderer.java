@@ -62,6 +62,7 @@ public final class TreeImageRenderer {
     private static final Color ACCENT_CYAN = new Color(0x38, 0xBD, 0xF8);
     private static final Color UNVISITED_EDGE = new Color(0x33, 0x41, 0x55, 140);
     private static final Color WARNING_AMBER = new Color(0xF5, 0x9E, 0x0B);
+    private static final Color NOTICE_CYAN = new Color(0x06, 0xB6, 0xD4);
     private static final Color RED_FAILED = new Color(0xEF, 0x44, 0x44);
     private static final Color INDIGO_UPSET = new Color(0x81, 0x8C, 0xF8);
     private static final Color EXCLUDED_EDGE = new Color(0x24, 0x30, 0x44, 100);
@@ -291,7 +292,8 @@ public final class TreeImageRenderer {
 
             final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
             final int fromExecs = (null != e.from().result()) ? e.from().result().getExecutions() : 0;
-            final boolean toWarning = (null != e.to().result() && e.to().result().status() == ExecutionStatus.WARNING);
+            final boolean toWarning = TreeHtml.hasWarning(e.to());
+            final boolean toNotice = !toWarning && TreeHtml.hasNotice(e.to());
 
             final Path2D.Double path = new Path2D.Double();
             path.moveTo(startX, startY);
@@ -319,6 +321,8 @@ public final class TreeImageRenderer {
             } else if (toExecs > 0 && fromExecs > 0) {
                 if (toWarning) {
                     g.setColor(WARNING_AMBER);
+                } else if (toNotice) {
+                    g.setColor(NOTICE_CYAN);
                 } else {
                     g.setColor(TreeProgressMetrics.getScenarioProgressColor(e.to(), target, maxLeafOverRatio));
                 }

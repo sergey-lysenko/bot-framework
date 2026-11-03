@@ -54,7 +54,7 @@ public final class PlaqueMetricsCalculator {
 
             final _Result res = n.result();
             final int execs = (null != res) ? res.getExecutions() : 0;
-            final int eventCount = (null != res && null != res.getEvents()) ? res.getEvents().size() : 0;
+            final int eventCount = TreeHtml.getUnclassifiedEventCount(n);
             final boolean failure = TreeHtml.hasFailure(n);
             final boolean childFailure = TreeHtml.hasChildFailure(n);
 

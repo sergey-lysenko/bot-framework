@@ -149,7 +149,13 @@ public final class SectionRenderer {
         final Map<String, String> statuses = new HashMap<>(8);
         if (null == sec || sec.lines.isEmpty()) return statuses;
 
+        final works.lysenko.base.responses.ExpectedResponsesStore expStore = works.lysenko.base.output.TreeHtml.getExpectedResponsesStore();
+        final List<works.lysenko.base.responses.ExpectedResponse> expList = (null != expStore) ? expStore.getResponses() : List.of();
+        final works.lysenko.base.issues.KnownIssuesStore kiStore = works.lysenko.base.output.TreeHtml.getKnownIssuesStore();
+        final List<works.lysenko.base.issues.KnownIssue> kiList = (null != kiStore) ? kiStore.getIssues() : List.of();
+
         String currentScen = null;
+        boolean currentScenMatchedExpected = false;
         final Matcher mScenToken = SCEN_TOKEN_RE.matcher("");
         for (final String line : sec.lines) {
             final String clean = ANSI_PATTERN.matcher(line).replaceAll("").trim();
@@ -159,18 +165,64 @@ public final class SectionRenderer {
                 if (!sc.isEmpty() && !"Scenario".equalsIgnoreCase(sc) && !"Specifics".equalsIgnoreCase(sc)
                         && !sc.toLowerCase(Locale.ROOT).endsWith(".specifics")) {
                     currentScen = sc;
+                    currentScenMatchedExpected = false;
                     statuses.putIfAbsent(currentScen, "passed");
                 }
             }
             if (null != currentScen) {
-                if (clean.contains("[SEVERE]") || clean.contains("[FAILURE]")) {
-                    statuses.put(currentScen, "failed");
-                } else if (clean.contains("[WARNING]") && !"failed".equals(statuses.get(currentScen))) {
-                    statuses.put(currentScen, "warning");
+                final boolean isSevereOrFail = clean.contains("[SEVERE]") || clean.contains("[FAILURE]");
+                final boolean isWarn = clean.contains("[WARNING]");
+                final boolean isNotice = clean.contains("[NOTICE]");
+                if (isSevereOrFail || isWarn || isNotice) {
+                    boolean expected = false;
+                    for (final works.lysenko.base.responses.ExpectedResponse er : expList) {
+                        if (works.lysenko.base.responses.ExpectedResponsesMatcher.matchesScenario(er.scenario(), currentScen)
+                                && matchesTextPattern(er.pattern(), clean)) {
+                            expected = true;
+                            break;
+                        }
+                    }
+                    if (!expected && currentScenMatchedExpected && clean.contains("[BROWSER]")) {
+                        expected = true;
+                    }
+                    if (expected) {
+                        currentScenMatchedExpected = true;
+                        continue;
+                    }
+                    boolean known = false;
+                    for (final works.lysenko.base.issues.KnownIssue ki : kiList) {
+                        final boolean scenOk = (null == ki.scenario() || ki.scenario().isBlank() || "*".equals(ki.scenario().trim()))
+                                || works.lysenko.base.responses.ExpectedResponsesMatcher.matchesScenario(ki.scenario(), currentScen);
+                        if (scenOk && matchesTextPattern(ki.pattern(), clean)) {
+                            known = true;
+                            break;
+                        }
+                    }
+                    if (known) {
+                        if (!"failed".equals(statuses.get(currentScen))) {
+                            statuses.put(currentScen, "warning");
+                        }
+                    } else if (isSevereOrFail) {
+                        statuses.put(currentScen, "failed");
+                    } else if (isWarn && !"failed".equals(statuses.get(currentScen))) {
+                        statuses.put(currentScen, "warning");
+                    } else if (isNotice && "passed".equals(statuses.get(currentScen))) {
+                        statuses.put(currentScen, "notice");
+                    }
                 }
             }
         }
         return statuses;
+    }
+
+    private static boolean matchesTextPattern(final String patternStr, final String text) {
+        if (null == patternStr || patternStr.isBlank() || null == text) return false;
+        if (text.contains(patternStr)) return true;
+        try {
+            return Pattern.compile(patternStr, Pattern.DOTALL).matcher(text).find();
+        } catch (final Exception ignored) {
+            return false;
+        }
     }
 
     /**
@@ -269,16 +321,22 @@ public final class SectionRenderer {
                     if ("passed".equals(nodeCssClass) && sIdx == p.steps.size() - 1 && !hasFailedStep) {
                         if ("failed".equals(testStatus)) nodeCssClass = "failed";
                         else if ("warning".equals(testStatus)) nodeCssClass = "warning";
+                        else if ("notice".equals(testStatus)) nodeCssClass = "notice";
                     }
 
-                    if ("failed".equals(nodeCssClass) || "warning".equals(nodeCssClass)) {
+                    if ("failed".equals(nodeCssClass) || "warning".equals(nodeCssClass) || "notice".equals(nodeCssClass)) {
                         hasFailedStep = true;
                     }
 
-                    sb.append(s("<a class=\"path-step ", nodeCssClass, "\" href=\"#test-", p.num, "-", escapeHtml(targetScen),
+                    final String baseStepClass = "failed".equals(nodeCssClass) ? "failed" : "passed";
+                    final String stepPipHtml = "warning".equals(nodeCssClass)
+                            ? "<span class=\"status-bullet-warning\" title=\"Has warnings\"></span>"
+                            : ("notice".equals(nodeCssClass) ? "<span class=\"status-bullet-notice\" title=\"Has notices\"></span>" : "");
+
+                    sb.append(s("<a class=\"path-step ", baseStepClass, "\" href=\"#test-", p.num, "-", escapeHtml(targetScen),
                             "\" onclick=\"focusScenario(event, '", p.num, "', '", escapeHtml(targetScen),
                             "')\" title=\"Jump to ", escapeHtml(targetScen), " in Test #", p.num, "\">",
-                            escapeHtml(targetScen), "</a>"));
+                            escapeHtml(targetScen), stepPipHtml, "</a>"));
                 }
             }
             sb.append("</div></div>");
@@ -438,9 +496,13 @@ public final class SectionRenderer {
         for (final LogSection sec : sections) {
             final boolean isTest = "test".equals(sec.type);
             final boolean isLimbo = "limbo".equals(sec.type) || "configuring".equals(sec.type);
-            final String badgeClass = ("warning".equals(sec.status) || "failed".equals(sec.status)) ? sec.status
+            final String badgeClass = "failed".equals(sec.status) ? "failed"
+                    : ("warning".equals(sec.status) || "notice".equals(sec.status)) ? "passed"
                     : isTest ? sec.status : isLimbo ? "limbo" : "neutral";
-            final String badgeText = isTest ? sec.status
+            final String badgePip = "warning".equals(sec.status)
+                    ? "<span class=\"status-bullet-warning\" title=\"Has warnings\"></span>"
+                    : ("notice".equals(sec.status) ? "<span class=\"status-bullet-notice\" title=\"Has notices\"></span>" : "");
+            final String badgeText = isTest ? ("failed".equals(sec.status) ? "failed" : "passed")
                     : "limbo".equals(sec.type) ? "limbo"
                     : "configuring".equals(sec.type) ? "config"
                     : "preflight".equals(sec.type) ? "preflight"
@@ -462,7 +524,7 @@ public final class SectionRenderer {
                     "  <summary>\n    <div class=\"summary-left\">\n",
                     opRange.isEmpty() ? "" : s("      <span class=\"op-range\">", opRange, "</span>\n"),
                     "      <span class=\"sec-title\">", escapeHtml(sec.title), "</span>\n",
-                    "      <span class=\"badge ", badgeClass, "\">", badgeText, "</span>\n",
+                    "      <span class=\"badge ", badgeClass, "\">", badgeText, badgePip, "</span>\n",
                     (sec.durationStr != null && !sec.durationStr.isEmpty()) ? s("      <span class=\"duration", isLimbo ? " limbo-duration" : "", "\">", sec.durationStr, "</span>\n") : "",
                     "    </div>\n    <div class=\"summary-right\">\n",
                     timeRange.isEmpty() ? "" : s("      <span class=\"time-range\" title=\"", fullTimeRange, "\">", timeRange, "</span>\n"),
@@ -475,9 +537,13 @@ public final class SectionRenderer {
                 for (final String sc : sec.scenarios) {
                     if (sc.equalsIgnoreCase("Specifics") || sc.toLowerCase(java.util.Locale.ROOT).endsWith(".specifics")) continue;
                     final String scStatus = resolveScenarioStatus(sc, -1, -1, sec.status, scenStatuses);
-                    sb.append(s("    <a class=\"pill scen-pill ", scStatus, "\" href=\"#test-", sec.testNum, "-", escapeHtml(sc),
+                    final String basePillClass = "failed".equals(scStatus) ? "failed" : "passed";
+                    final String pillPipHtml = "warning".equals(scStatus)
+                            ? "<span class=\"status-bullet-warning\" title=\"Has warnings\"></span>"
+                            : ("notice".equals(scStatus) ? "<span class=\"status-bullet-notice\" title=\"Has notices\"></span>" : "");
+                    sb.append(s("    <a class=\"pill scen-pill ", basePillClass, "\" href=\"#test-", sec.testNum, "-", escapeHtml(sc),
                             "\" onclick=\"focusScenario(event, '", sec.testNum, "', '", escapeHtml(sc),
-                            "')\" title=\"Jump to ", escapeHtml(sc), "\">", escapeHtml(sc), "</a>\n"));
+                            "')\" title=\"Jump to ", escapeHtml(sc), "\">", escapeHtml(sc), pillPipHtml, "</a>\n"));
                 }
                 sb.append("  </div>\n");
             }
