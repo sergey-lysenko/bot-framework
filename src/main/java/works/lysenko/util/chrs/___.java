@@ -10,6 +10,7 @@ public record ___() {
     /** Constant representing "ach". */
     public static final String ACH = "ach";
     /** Constant representing "add". */
+    public static final String ADB = "adb";
     public static final String ADD = "add";
     /** Constant representing "aft". */
     public static final String AFT = "aft";
@@ -57,6 +58,8 @@ public record ___() {
     public static final String COL = "col";
     /** Constant representing "com". */
     public static final String COM = "com";
+    /** Constant representing "cou". */
+    public static final String COU = "cou";
     /** Constant representing "den". */
     public static final String DEN = "den";
     /** Constant representing "...". */
@@ -64,6 +67,7 @@ public record ___() {
     /** Constant representing "due". */
     public static final String DUE = "due";
     /** Constant representing "end". */
+    public static final String EAR = "ear";
     public static final String END = "end";
     /** Constant representing "ent". */
     public static final String ENT = "ent";

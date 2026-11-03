@@ -76,7 +76,7 @@ public record Layout() {
         /** Bin directory path with separator. */
         static final String BIN_ = s(BIN, s);
         /** Dash directory path with separator. */
-        public static final String DASH_ = s(s(DA, SH), s);
+        public static final String DASH_ = s(DASH, s);
         /** Main directory path with separator. */
         static final String MAIN_ = s(MAIN, s);
         /** Resources directory path with separator. */

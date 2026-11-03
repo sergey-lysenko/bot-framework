@@ -20,7 +20,7 @@ public record B() {
     /** Constant representing the word BETTER. */
     public static final String BETTER = s(BE, TTER);
     /** Constant representing the word BIGGER. */
-    public static final String BIGGER = s(BI, GG, ER);
+    public static final String BIGGER = s(BI, GGER);
     /** Constant representing the word BINDING. */
     public static final String BINDING = s(BI, ND, ING);
     /** Constant representing the word BOOTING. */
@@ -28,9 +28,9 @@ public record B() {
     /** Constant representing the word BORDER. */
     public static final String BORDER = s(BO, RD, ER);
     /** Constant representing the word BOUNDARIES. */
-    public static final String BOUNDARIES = s(BO, UN, DA, RI, ES);
+    public static final String BOUNDARIES = s(BOUN, DA, RI, ES);
     /** Constant representing the word BOUNDS. */
-    public static final String BOUNDS = s(BO, UN, DS);
+    public static final String BOUNDS = s(BOUN, DS);
     /** Constant representing the word BRIGHTNESS. */
     public static final String BRIGHTNESS = s(BR, IG, HT, NE, SS);
     /** Constant representing the word BROWSER. */
@@ -42,5 +42,5 @@ public record B() {
     /** Constant representing the word BUTTON. */
     public static final String BUTTON = s(BU, TT, ON);
     /** Constant representing the word BYTES. */
-    public static final String BYTES = s(BY, T, ES);
+    public static final String BYTES = s(BY, TE, S);
 }

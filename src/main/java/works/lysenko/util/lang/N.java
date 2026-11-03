@@ -14,7 +14,6 @@ import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.lang.word.A.ACCEPTABLE;
 import static works.lysenko.util.lang.word.A.ACTUAL;
-import static works.lysenko.util.lang.word.A.ADB;
 import static works.lysenko.util.lang.word.A.ALLOWED;
 import static works.lysenko.util.lang.word.A.ANDROID;
 import static works.lysenko.util.lang.word.C.COLOURS;

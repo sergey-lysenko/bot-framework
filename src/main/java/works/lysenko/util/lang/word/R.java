@@ -37,7 +37,7 @@ public record R() {
     /** Constant representing the word REARRANGING. */
     public static final String REARRANGING = s(RE, ARRA, NG, ING);
     /** Constant representing the word RECALCULATE. */
-    public static final String RECALCULATE = s(RE, CA, LC, UL, AT, E);
+    public static final String RECALCULATE = s(RE, CALC, ULAT, E);
     /** Constant representing the word RECEIVED. */
     public static final String RECEIVED = s(RE, CE, IV, ED);
     /** Constant representing the word RECORDS. */
@@ -87,7 +87,7 @@ public record R() {
     /** Constant representing the word RESET. */
     public static final String RESET = s(RE, SET);
     /** Constant representing the word RESOLUTION. */
-    public static final String RESOLUTION = s(RESO, LU, TION);
+    public static final String RESOLUTION = s(RE, SOLU, TION);
     /** Constant representing the word RESOLVE. */
     public static final String RESOLVE = s(RESO, L, VE);
     /** Constant representing the word RESOURCE. */

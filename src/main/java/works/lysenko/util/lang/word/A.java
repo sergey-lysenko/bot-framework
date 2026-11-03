@@ -22,7 +22,7 @@ public record A() {
     /** Constant representing the word ABSENT. */
     public static final String ABSENT = s(ABSE, NT);
     /** Constant representing the word ABSOLUTE. */
-    public static final String ABSOLUTE = s(AB, SO, LU, TE);
+    public static final String ABSOLUTE = s(AB, SOLU, TE);
     /** Constant representing the word ACCEPTABLE. */
     public static final String ACCEPTABLE = s(ACCE, PT, ABLE);
     /** Constant representing the word ACCESSIBLE. */
@@ -37,8 +37,6 @@ public record A() {
     public static final String ACTUAL = s(AC, TUAL);
     /** Constant representing the word ACTUALLY. */
     public static final String ACTUALLY = s(ACTUAL, LY);
-    /** Constant representing the word ADB. */
-    public static final String ADB = s(AD, B);
     /** Constant representing the word ADDITIONAL. */
     public static final String ADDITIONAL = s(ADD, IT, ION, AL);
     /** Constant representing the word ADJACENT. */
@@ -70,13 +68,13 @@ public record A() {
     /** Constant representing the word ANTEPENULTIMATE. */
     public static final String ANTEPENULTIMATE = s(AN, TE, PENU, LTIM, ATE);
     /** Constant representing the word APPEAR. */
-    public static final String APPEAR = s(APP, E, AR);
+    public static final String APPEAR = s(APP, EAR);
     /** Constant representing the word APPEARING. */
     public static final String APPEARING = s(APPEAR, ING);
     /** Constant representing the word APPIUM. */
     public static final String APPIUM = s(APP, I, UM);
     /** Constant representing the word APPLICABLE. */
-    public static final String APPLICABLE = s(AP, PL, IC, ABLE);
+    public static final String APPLICABLE = s(APPL, IC, ABLE);
     /** Constant representing the word APPLIED. */
     public static final String APPLIED = s(APP, LI, ED);
     /** Constant representing the word AREA. */
@@ -92,7 +90,7 @@ public record A() {
     /** Constant representing the word ASSIGNING. */
     public static final String ASSIGNING = s(AS, SI, e(G, e(N, I)));
     /** Constant representing the word ATTEMPT. */
-    public static final String ATTEMPT = s(AT, TE, M, PT);
+    public static final String ATTEMPT = s(ATTE, M, PT);
     /** Constant representing the word ATTEMPTING. */
     public static final String ATTEMPTING = s(ATTEMPT, ING);
     /** Constant representing the word AUTOMATION. */

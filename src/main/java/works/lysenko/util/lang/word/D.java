@@ -14,7 +14,7 @@ public record D() {
 
     private static final String DEFIN = s(D, EF, IN);
     /** Constant representing the word DASHBOARD. */
-    public static final String DASHBOARD = s(DA, SH, BO, A, RD);
+    public static final String DASHBOARD = s(DASH, BO, A, RD);
     /** Constant representing the word DEBUG. */
     public static final String DEBUG = s(DE, BU, G);
     /** Constant representing the word DEEP. */

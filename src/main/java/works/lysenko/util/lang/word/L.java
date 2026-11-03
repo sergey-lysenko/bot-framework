@@ -43,7 +43,7 @@ public record L() {
     /** Constant representing the word LOCATORS. */
     public static final String LOCATORS = s(LOCATOR, S);
     /** Constant representing the word LOGGER. */
-    public static final String LOGGER = s(LOGG, ER);
+    public static final String LOGGER = s(LO, GGER);
     /** Constant representing the word LOWER. */
     public static final String LOWER = s(LOWE, R);
 }

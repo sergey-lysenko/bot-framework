@@ -5,6 +5,7 @@ import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.____.*;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.lang.word.A.ABILITY;
+import static works.lysenko.util.lang.word.U.*;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
@@ -18,9 +19,9 @@ public record C() {
     /** Constant representing the word CONFIRM. */
     public static final String CONFIRM = s(CONF, IR, M);
     /** Constant representing the word CALCULATE. */
-    public static final String CALCULATE = s(CA, LC, UL, AT, E);
+    public static final String CALCULATE = s(CALC, ULAT, E);
     /** Constant representing the word CALCULATED. */
-    public static final String CALCULATED = s(CA, LC, ULAT, ED);
+    public static final String CALCULATED = s(CALC, ULAT, ED);
     /** Constant representing the word CALCULATING. */
     public static final String CALCULATING = s(CALC, ULAT, ING);
     /** Constant representing the word CALLABLE. */
@@ -36,7 +37,7 @@ public record C() {
     /** Constant representing the word CAUGHT. */
     public static final String CAUGHT = s(CA, UGHT);
     /** Constant representing the word CAUSE. */
-    public static final String CAUSE = s(CA, U, SE);
+    public static final String CAUSE = s(CA, USE);
     /** Constant representing the word CELLS. */
     public static final String CELLS = s(CELL, S);
     /** Constant representing the word CENTER. */
@@ -70,9 +71,9 @@ public record C() {
     /** Constant representing the word CLASSES. */
     public static final String CLASSES = s(CLASS, ES);
     /** Constant representing the word CLEAR. */
-    public static final String CLEAR = s(CL, EA, R);
+    public static final String CLEAR = s(CL, EAR);
     /** Constant representing the word CLEARING. */
-    public static final String CLEARING = s(CL, E, AR, ING);
+    public static final String CLEARING = s(CL, EAR, ING);
     /** Constant representing the word CLICK. */
     public static final String CLICK = s(CL, ICK);
     /** Constant representing the word CLICKABILITY. */
@@ -92,7 +93,7 @@ public record C() {
     /** Constant representing the word COLOURS. */
     public static final String COLOURS = s(COLOUR, S);
     /** Constant representing the word COMMAND. */
-    public static final String COMMAND = s(COMM, A, ND);
+    public static final String COMMAND = s(COMM, AND);
     /** Constant representing the word COMMON. */
     public static final String COMMON = s(COMM, ON);
     /** Constant representing the word COMPENSATION. */
@@ -118,11 +119,11 @@ public record C() {
     /** Constant representing the word CONFLICT. */
     public static final String CONFLICT = s(CONF, LI, CT);
     /** Constant representing the word CONNECTED. */
-    public static final String CONNECTED = s(CO, NN, EC, TED);
+    public static final String CONNECTED = s(CONN, EC, TED);
     /** Constant representing the word CONNECTION. */
-    public static final String CONNECTION = s(CO, NN, EC, TION);
+    public static final String CONNECTION = s(CONN, EC, TION);
     /** Constant representing the word CONSIDER. */
-    public static final String CONSIDER = s(CO, NS, ID, ER);
+    public static final String CONSIDER = s(CONS, ID, ER);
     /** Constant representing the word CONSTRUCTOR. */
     public static final String CONSTRUCTOR = s(CONS, TR, UC, TOR);
     /** Constant representing the word CONTAINER. */
@@ -130,7 +131,7 @@ public record C() {
     /** Constant representing the word CONTAINS. */
     public static final String CONTAINS = s(CONT, AI, NS);
     /** Constant representing the word CONTENT. */
-    public static final String CONTENT = s(CONT, E, NT);
+    public static final String CONTENT = s(CONT, ENT);
     /** Constant representing the word CONVERT. */
     public static final String CONVERT = s(CO, N, VE, RT);
     /** Constant representing the word COORDINATE. */
@@ -140,11 +141,11 @@ public record C() {
     /** Constant representing the word CORRESPONDING. */
     public static final String CORRESPONDING = s(CORR, ES, PO, ND, ING);
     /** Constant representing the word COULD. */
-    public static final String COULD = s(CO, U, LD);
+    public static final String COULD = s(COU, LD);
     /** Constant representing the word COUNT. */
-    public static final String COUNT = s(CO, U, NT);
+    public static final String COUNT = s(COU, NT);
     /** Constant representing the word COUNTER. */
-    public static final String COUNTER = s(CO, U, NT, ER);
+    public static final String COUNTER = s(COU, NT, ER);
     /** Constant representing the word COVERAGE. */
     public static final String COVERAGE = s(CO, VER, AGE);
     /** Constant representing the word CREATED. */

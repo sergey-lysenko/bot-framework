@@ -54,12 +54,15 @@ public record ____() {
     public static final String ANGE = "ange";
     /** Constant representing "anti". */
     public static final String ANTI = "anti";
+    public static final String APPL = "appl";
     /** Constant representing "arch". */
     public static final String ARCH = "arch";
     /** Constant representing "arra". */
     public static final String ARRA = "arra";
     /** Constant representing "ated". */
     public static final String ATED = "ated";
+    /** Constant representing "atte". */
+    public static final String ATTE = "atte";
     /** Constant representing "auto". */
     public static final String AUTO = "auto";
     /** Constant representing "back". */
@@ -74,6 +77,8 @@ public record ____() {
     public static final String BLUE = "blue";
     /** Constant representing "body". */
     public static final String BODY = "body";
+    /** Constant representing "boun". */
+    public static final String BOUN = "boun";
     /** Constant representing "busy". */
     public static final String BUSY = "busy";
     /** Constant representing "calc". */
@@ -100,6 +105,8 @@ public record ____() {
     public static final String COND = "cond";
     /** Constant representing "conf". */
     public static final String CONF = "conf";
+    /** Constant representing "conn". */
+    public static final String CONN = "conn";
     /** Constant representing "cons". */
     public static final String CONS = "cons";
     /** Constant representing "cont". */
@@ -114,6 +121,8 @@ public record ____() {
     public static final String CTOR = "ctor";
     /** Constant representing "data". */
     public static final String DATA = "data";
+    /** Constant representing "dash". */
+    public static final String DASH = "dash";
     /** Constant representing "dele". */
     public static final String DELE = "dele";
     /** Constant representing "desc". */
@@ -176,6 +185,8 @@ public record ____() {
     public static final String FROM = "from";
     /** Constant representing "full". */
     public static final String FULL = "full";
+    /** Constant representing "gger". */
+    public static final String GGER = "gger";
     /** Constant representing "grid". */
     public static final String GRID = "grid";
     /** Constant representing "halt". */
@@ -383,6 +394,7 @@ public record ____() {
     /** Constant representing "sion". */
     public static final String SION = "sion";
     /** Constant representing "some". */
+    public static final String SOLU = "solu";
     public static final String SOME = "some";
     /** Constant representing "soon". */
     public static final String SOON = "soon";

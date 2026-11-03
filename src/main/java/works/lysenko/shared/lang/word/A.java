@@ -4,6 +4,7 @@ import static works.lysenko.util.chrs.__.*;
 import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.____.*;
 import static works.lysenko.util.data.strs.Swap.*;
+import static works.lysenko.util.lang.word.A.ATTEMPT;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
@@ -30,12 +31,12 @@ public record A() {
     /**
      * String constant for "apply".
      */
-    public static final String APPLY = s(AP, PL, Y);
+    public static final String APPLY = s(APPL, Y);
 
     /**
      * String constant for "attempts".
      */
-    public static final String ATTEMPTS = s(AT, TE, M, PT, S);
+    public static final String ATTEMPTS = s(ATTEMPT, S);
 
     /**
      * String constant for "alert".
