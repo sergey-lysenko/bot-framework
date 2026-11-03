@@ -280,13 +280,17 @@ public final class TreeHtmlRenderer {
                 "      const cH = container.clientHeight || window.innerHeight;\n" +
                 "      const plaque = document.getElementById('tree-summary-plaque');\n" +
                 "      const plaqueH = (plaque && plaque.offsetHeight > 0) ? plaque.offsetHeight : 120;\n" +
-                "      const availH = Math.max(200, cH - plaqueH - 60);\n" +
-                "      const availW = Math.max(200, cW - 80);\n" +
+                "      const topOffset = plaqueH + 16;\n" +
+                "      const availH = Math.max(100, cH - topOffset - 24);\n" +
+                "      const availW = Math.max(100, cW - 60);\n" +
                 "      const sX = availW / bbox.width;\n" +
                 "      const sY = availH / bbox.height;\n" +
-                "      scale = Math.min(Math.max(0.2, Math.min(sX, sY)), 1.2);\n" +
-                "      panX = Math.max(40, (cW - bbox.width * scale) / 2 - bbox.x * scale);\n" +
-                "      panY = Math.max(plaqueH + 28, (cH + plaqueH + 20 - bbox.height * scale) / 2 - bbox.y * scale);\n" +
+                "      scale = Math.min(Math.max(0.1, Math.min(sX, sY)), 1.0);\n" +
+                "      panX = Math.max(20, (cW - bbox.width * scale) / 2 - bbox.x * scale);\n" +
+                "      panY = topOffset - bbox.y * scale;\n" +
+                "      window.scale = scale;\n" +
+                "      window.panX = panX;\n" +
+                "      window.panY = panY;\n" +
                 "      updateTransform();\n" +
                 "    } catch (e) {}\n" +
                 "  }\n" +

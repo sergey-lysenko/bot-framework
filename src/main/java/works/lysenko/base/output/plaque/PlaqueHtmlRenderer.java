@@ -145,7 +145,7 @@ public final class PlaqueHtmlRenderer {
     }
 
     public static String css() {
-        return "  .summary-plaque-card { background: var(--card-bg, #111827); border: 1px solid var(--border, #1e293b); border-radius: 8px; padding: 16px 20px; margin-top: 24px; margin-bottom: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }\n" +
+        return "  .summary-plaque-card { background: rgba(17, 24, 39, 0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(51, 65, 85, 0.8); border-radius: 8px; padding: 16px 20px; margin-top: 24px; margin-bottom: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }\n" +
                "  .summary-plaque-card .card-title { font-size: 14px; font-weight: 600; color: #f8fafc; margin-bottom: 12px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }\n" +
                "  .summary-plaque-card .plaque-config { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 11px; font-weight: normal; }\n" +
                "  .summary-plaque-card .config-item { color: #94a3b8; font-weight: normal; }\n" +
