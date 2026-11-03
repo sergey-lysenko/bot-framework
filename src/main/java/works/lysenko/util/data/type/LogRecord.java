@@ -120,4 +120,12 @@ public class LogRecord implements _LogRecord {
 
         return time;
     }
+
+    @Override
+    public String toString() {
+        if (data != null && data.message() != null && !data.message().isBlank()) {
+            return data.message();
+        }
+        return super.toString();
+    }
 }

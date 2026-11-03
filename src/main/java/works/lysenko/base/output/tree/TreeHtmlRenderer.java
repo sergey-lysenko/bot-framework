@@ -157,7 +157,11 @@ public final class TreeHtmlRenderer {
             final StringBuilder eventDetails = new StringBuilder();
             if (null != res && null != res.getEvents()) {
                 for (final _LogRecord lr : res.getEvents()) {
-                    eventDetails.append(lr.toString()).append("\n");
+                    final String rawMsg = lr.text() != null ? lr.text() : lr.toString();
+                    if (rawMsg != null && !rawMsg.isBlank()) {
+                        final String cleanMsg = rawMsg.replaceAll("\u001B\\[[0-9;]*m", "").trim();
+                        eventDetails.append(cleanMsg).append("\n");
+                    }
                 }
             }
 
