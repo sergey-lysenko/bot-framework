@@ -278,16 +278,20 @@ public final class TreeHtmlRenderer {
                 "      if (!bbox || bbox.width <= 0 || bbox.height <= 0) return;\n" +
                 "      const cW = container.clientWidth || window.innerWidth;\n" +
                 "      const cH = container.clientHeight || window.innerHeight;\n" +
-                "      const sX = (cW - 80) / bbox.width;\n" +
-                "      const sY = (cH - 80) / bbox.height;\n" +
-                "      scale = Math.min(Math.max(0.15, Math.min(sX, sY)), 1.5);\n" +
-                "      panX = (cW - bbox.width * scale) / 2 - bbox.x * scale;\n" +
-                "      panY = (cH - bbox.height * scale) / 2 - bbox.y * scale;\n" +
+                "      const plaque = document.getElementById('tree-summary-plaque');\n" +
+                "      const plaqueH = (plaque && plaque.offsetHeight > 0) ? plaque.offsetHeight : 120;\n" +
+                "      const availH = Math.max(200, cH - plaqueH - 60);\n" +
+                "      const availW = Math.max(200, cW - 80);\n" +
+                "      const sX = availW / bbox.width;\n" +
+                "      const sY = availH / bbox.height;\n" +
+                "      scale = Math.min(Math.max(0.2, Math.min(sX, sY)), 1.2);\n" +
+                "      panX = Math.max(40, (cW - bbox.width * scale) / 2 - bbox.x * scale);\n" +
+                "      panY = Math.max(plaqueH + 28, (cH + plaqueH + 20 - bbox.height * scale) / 2 - bbox.y * scale);\n" +
                 "      updateTransform();\n" +
                 "    } catch (e) {}\n" +
                 "  }\n" +
                 "  function resetZoom() {\n" +
-                "    if (" + Optimization.progression + ") { autoFit(); } else { scale = 1; panX = 40; panY = 40; updateTransform(); }\n" +
+                "    autoFit();\n" +
                 "  }\n" +
                 "  document.querySelectorAll('.node-card').forEach(card => {\n" +
                 "    card.addEventListener('mouseenter', () => {\n" +
@@ -325,12 +329,9 @@ public final class TreeHtmlRenderer {
                 "    if (details && details.trim().length > 0) { det.style.display = 'block'; det.innerText = details; }\n" +
                 "    else { det.style.display = 'none'; }\n" +
                 "  }\n" +
-                "  if (" + Optimization.progression + ") {\n" +
-                "    window.addEventListener('resize', autoFit);\n" +
-                "    setTimeout(autoFit, 100);\n" +
-                "  } else {\n" +
-                "    updateTransform();\n" +
-                "  }\n" +
+                "  window.addEventListener('resize', autoFit);\n" +
+                "  setTimeout(autoFit, 80);\n" +
+                "  setTimeout(autoFit, 300);\n" +
                 "</script>\n" +
                 "</body></html>";
     }
