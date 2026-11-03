@@ -45,7 +45,7 @@ public interface Case {
      */
     static String l(final Object o) {
 
-        return l(o, false);
+        return l(o, true);
     }
 
     /**
