@@ -536,7 +536,7 @@ public class Processor implements _LogsProcessor {
     }
 
     /**
-     * Processes an external log entry and queues an event based on the log type and parameters.
+     * Processes an external log entry and queues an event or log record based on its native severity level.
      *
      * @param logEntry the log entry to process
      * @param logType  the type of the log entry, e.g. BROWSER or other types
@@ -545,12 +545,40 @@ public class Processor implements _LogsProcessor {
      */
     private void processExternalLogEntry(final LogEntry logEntry, final String logType, final int depth, final long time) {
 
+        final int levelValue = (null != logEntry.getLevel())
+                ? logEntry.getLevel().intValue()
+                : java.util.logging.Level.WARNING.intValue();
+        final Severity mappedSeverity;
+        if (levelValue >= java.util.logging.Level.SEVERE.intValue()) {
+            mappedSeverity = Severity.S1;
+        } else if (levelValue >= java.util.logging.Level.WARNING.intValue()) {
+            mappedSeverity = Severity.S2;
+        } else if (levelValue >= java.util.logging.Level.INFO.intValue()) {
+            mappedSeverity = Severity.S3;
+        } else {
+            mappedSeverity = null;
+        }
+
+        final String isoTimestamp = e(SQUARE, java.time.Instant.ofEpochMilli(logEntry.getTimestamp()).toString());
+        final String cleanMessage = b(isoTimestamp, n(EMPTY, logEntry.getMessage()));
+
         if (logType.equals(LogType.BROWSER)) {
             final long timestamp = logEntry.getTimestamp() - Routines.startedAt(); // since test start
             final long difference = time - timestamp; // since capturing
-            queue.add(createEvent(timestamp, depth, Severities.externalEvent, b(e(SQUARE, difference), e(SQUARE, u(BROWSER))
-                    , s(logEntry)), EMPTY));
-        } else queue.add(createEvent(time, depth, Severities.externalEvent, b(e(SQUARE, u(logType)), s(logEntry)), EMPTY));
+            final String formatted = b(e(SQUARE, difference), e(SQUARE, u(BROWSER)), cleanMessage);
+            if (null != mappedSeverity) {
+                queue.add(createEvent(timestamp, depth, mappedSeverity, formatted, EMPTY));
+            } else {
+                queue.add(createLogRecord(timestamp, new Log(++counter, depth, ZERO, formatted, EMPTY)));
+            }
+        } else {
+            final String formatted = b(e(SQUARE, u(logType)), cleanMessage);
+            if (null != mappedSeverity) {
+                queue.add(createEvent(time, depth, mappedSeverity, formatted, EMPTY));
+            } else {
+                queue.add(createLogRecord(time, new Log(++counter, depth, ZERO, formatted, EMPTY)));
+            }
+        }
     }
 
     /**
