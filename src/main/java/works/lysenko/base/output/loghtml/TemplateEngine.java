@@ -23,14 +23,24 @@ public final class TemplateEngine {
     }
 
     /**
-     * Loads the HTML report template resource from the classpath.
+     * Loads the default HTML log report template resource from the classpath.
      *
      * @return template string content, or an empty string if loading fails
      */
     public static String loadTemplate() {
-        try (final InputStream is = TemplateEngine.class.getClassLoader().getResourceAsStream(TEMPLATE_RESOURCE)) {
+        return loadTemplate(TEMPLATE_RESOURCE);
+    }
+
+    /**
+     * Loads the specified HTML report template resource from the classpath.
+     *
+     * @param resourcePath classpath resource path
+     * @return template string content, or an empty string if loading fails
+     */
+    public static String loadTemplate(final String resourcePath) {
+        try (final InputStream is = TemplateEngine.class.getClassLoader().getResourceAsStream(resourcePath)) {
             if (is == null) {
-                logEvent(S2, s("log-report-template.html not found on classpath: ", TEMPLATE_RESOURCE));
+                logEvent(S2, s("Template resource not found on classpath: ", resourcePath));
                 return "";
             }
             try (final BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
@@ -42,7 +52,7 @@ public final class TemplateEngine {
                 return sb.toString();
             }
         } catch (final IOException e) {
-            logEvent(S2, s("Failed to load log-report-template.html: ", e.getMessage()));
+            logEvent(S2, s("Failed to load template resource ", resourcePath, ": ", e.getMessage()));
             return "";
         }
     }

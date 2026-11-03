@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scenario Execution Tree</title>
+<style>
+  :root { --bg: #0f172a; --panel-bg: #1e293b; --border: #334155; --text: #f8fafc; --text-muted: #94a3b8; --accent: #38bdf8; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+  header { background: var(--panel-bg); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+  h1 { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .badge { background: #0284c7; color: white; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  button { background: #334155; color: var(--text); border: 1px solid #475569; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  button:hover { background: #475569; }
+  #canvas-container { flex: 1; position: relative; cursor: grab; user-select: none; background-image: radial-gradient(circle, #1e293b 1px, transparent 1px); background-size: 24px 24px; }
+  #canvas-container:active { cursor: grabbing; }
+  svg { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+  .node-card { cursor: pointer; transition: filter 0.15s; }
+  .node-card:hover { filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.4)); }
+  .node-card rect.card-bg { rx: 8; ry: 8; stroke-width: 1.5; }
+  .node-card.child_failed rect.card-bg { fill: #1e1b4b; stroke: #818cf8; stroke-width: 1.2; stroke-dasharray: 3 3; }
+  .node-card.non_executable rect.card-bg { fill: #131a2a; stroke: #283548; stroke-width: 1.2; stroke-dasharray: 4 4; }
+  .node-card.non_executable text { fill: #475569; }
+  .node-card.non_executable circle { stroke: #283548; stroke-width: 1.2; stroke-dasharray: 2 2; }
+  .node-card.known-issue rect.card-bg { stroke: #f59e0b; stroke-width: 2; }
+  .node-card text { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; fill: #f8fafc; }
+  .connector { fill: none; stroke: #475569; stroke-width: 2; transition: stroke 0.2s, stroke-width 0.2s; }
+  .connector.visited { stroke: #22c55e; stroke-width: 2.5; }
+  .connector.warning { stroke: #f59e0b; stroke-width: 2.5; }
+  .connector.notice { stroke: #06b6d4; stroke-width: 2.5; }
+  .connector.failed { stroke: #ef4444; stroke-width: 2.5; }
+  .connector.child_failed { stroke: #818cf8; stroke-width: 1.5; stroke-dasharray: 3 3; }
+  .connector.non_executable { stroke: #243044; stroke-width: 1.2; stroke-dasharray: 4 4; opacity: 0.6; }
+  .connector.active { stroke: var(--accent); stroke-width: 3.5; opacity: 1.0; }
+  #details-panel { position: absolute; right: 20px; bottom: 20px; width: 360px; max-height: 400px; overflow-y: auto; background: rgba(30, 41, 59, 0.95); border: 1px solid var(--border); backdrop-filter: blur(8px); border-radius: 8px; padding: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); display: none; z-index: 20; }
+  #details-panel h3 { font-size: 14px; margin-bottom: 8px; color: var(--accent); word-break: break-all; }
+  #details-panel p { font-size: 12px; line-height: 1.6; color: var(--text-muted); }
+  #details-panel .val { color: var(--text); font-weight: 500; }
+  #details-panel pre { margin-top: 8px; background: #0f172a; padding: 8px; border-radius: 4px; font-size: 11px; color: #f59e0b; white-space: pre-wrap; word-break: break-all; }
+{{SUMMARY_PLAQUE_CSS}}</style>
+</head>
+<body>
+<header>
+  <h1>⚡ Scenario Tree <span class="badge">Interactive</span></h1>
+  <div class="controls">
+    <button onclick="zoomIn()">Zoom +</button>
+    <button onclick="zoomOut()">Zoom -</button>
+    <button onclick="resetZoom()">Reset</button>
+  </div>
+</header>
+<div id="canvas-container">
+  <div id="tree-summary-plaque" style="position: absolute; top: 16px; left: 16px; z-index: 15;">
+{{SUMMARY_PLAQUE_HTML}}  </div>
+  <svg id="tree-svg">
+    <defs>
+      <pattern id="known-issue-hatch" width="12" height="12" patternUnits="userSpaceOnUse">
+        <path d="M 0 12 L 12 0 M -3 3 L 3 -3 M 9 15 L 15 9 M 0 0 L 12 12 M -3 9 L 3 15 M 9 -3 L 15 3" stroke="#fbbf24" stroke-width="1.8" stroke-opacity="0.6" />
+      </pattern>
+      <rect id="cb" width="220" height="44" rx="8" ry="8" />
+      <rect id="pt" x="8" y="38" width="204" height="3" fill="#0f172a" opacity="0.7" rx="1.5" ry="1.5" />
+    </defs>
+    <g id="viewport">
+{{SVG_CONTENT}}  </g></svg>
+  <div id="details-panel">
+    <h3 id="d-name">Node</h3>
+    <p>Group: <span id="d-group" class="val"></span></p>
+    <p>Status: <span id="d-status" class="val"></span></p>
+    <p>Executions: <span id="d-exec" class="val"></span></p>
+    <p>Events: <span id="d-events" class="val"></span></p>
+    <div id="d-known-issues" style="display:none; margin-top:10px; padding:10px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); border-radius:6px;">
+      <div style="font-weight:600; font-size:12px; color:#fbbf24; margin-bottom:6px;">Known Issues</div>
+      <div id="d-ki-content" style="font-size:11px; color:#f8fafc;"></div>
+    </div>
+    <pre id="d-details"></pre>
+  </div>
+</div>
+<script>
+  let scale = 1, panX = 40, panY = 40, isPanning = false, startX, startY;
+  const viewport = document.getElementById('viewport');
+  const container = document.getElementById('canvas-container');
+  function updateTransform() { viewport.setAttribute('transform', `translate(${panX}, ${panY}) scale(${scale})`); }
+  container.addEventListener('mousedown', (e) => { isPanning = true; startX = e.clientX - panX; startY = e.clientY - panY; });
+  window.addEventListener('mousemove', (e) => { if (!isPanning) return; panX = e.clientX - startX; panY = e.clientY - startY; updateTransform(); });
+  window.addEventListener('mouseup', () => isPanning = false);
+  container.addEventListener('wheel', (e) => { e.preventDefault(); const factor = e.deltaY < 0 ? 1.1 : 0.9; scale = Math.min(Math.max(0.2, scale * factor), 4); updateTransform(); });
+  function zoomIn() { scale = Math.min(scale * 1.2, 4); updateTransform(); }
+  function zoomOut() { scale = Math.max(scale / 1.2, 0.2); updateTransform(); }
+  function autoFit() {
+    try {
+      const bbox = viewport.getBBox();
+      if (!bbox || bbox.width <= 0 || bbox.height <= 0) return;
+      const cW = container.clientWidth || window.innerWidth;
+      const cH = container.clientHeight || window.innerHeight;
+      const plaque = document.getElementById('tree-summary-plaque');
+      const plaqueH = (plaque && plaque.offsetHeight > 0) ? plaque.offsetHeight : 120;
+      const topOffset = plaqueH + 16;
+      const availH = Math.max(100, cH - topOffset - 24);
+      const availW = Math.max(100, cW - 60);
+      const sX = availW / bbox.width;
+      const sY = availH / bbox.height;
+      scale = Math.min(Math.max(0.1, Math.min(sX, sY)), 1.0);
+      panX = Math.max(20, (cW - bbox.width * scale) / 2 - bbox.x * scale);
+      panY = topOffset - bbox.y * scale;
+      window.scale = scale;
+      window.panX = panX;
+      window.panY = panY;
+      updateTransform();
+    } catch (e) {}
+  }
+  function resetZoom() {
+    autoFit();
+  }
+  document.querySelectorAll('.node-card').forEach(card => {
+    card.addEventListener('mouseenter', () => {
+      const id = card.id;
+      document.querySelectorAll('.connector[data-from="' + id + '"], .connector[data-to="' + id + '"]').forEach(c => c.classList.add('active'));
+    });
+    card.addEventListener('mouseleave', () => {
+      document.querySelectorAll('.connector.active').forEach(c => c.classList.remove('active'));
+    });
+  });
+  const nodeDataMap = {{NODE_DATA_JSON}};
+  function showNodeDetails(id) {
+    const data = nodeDataMap[id];
+    if (!data) return;
+    showDetails(data.name, data.group, data.status, data.exec, data.events, data.details, data.kiHtml);
+  }
+  function showDetails(name, group, status, exec, events, details, kiHtml) {
+    const p = document.getElementById('details-panel');
+    p.style.display = 'block';
+    document.getElementById('d-name').innerText = name;
+    document.getElementById('d-group').innerText = group;
+    document.getElementById('d-status').innerText = status;
+    document.getElementById('d-exec').innerText = exec;
+    document.getElementById('d-events').innerText = events;
+    const kiBox = document.getElementById('d-known-issues');
+    const kiContent = document.getElementById('d-ki-content');
+    if (kiHtml && kiHtml.trim().length > 0) {
+      kiBox.style.display = 'block';
+      kiContent.innerHTML = kiHtml;
+    } else {
+      kiBox.style.display = 'none';
+      kiContent.innerHTML = '';
+    }
+    const det = document.getElementById('d-details');
+    if (details && details.trim().length > 0) { det.style.display = 'block'; det.innerText = details; }
+    else { det.style.display = 'none'; }
+  }
+  window.addEventListener('resize', autoFit);
+  setTimeout(autoFit, 80);
+  setTimeout(autoFit, 300);
+</script>
+</body></html>
