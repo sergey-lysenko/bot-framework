@@ -227,6 +227,8 @@ public record Layout() {
         public static final String RUN_JSON_ = s($1_S, s, $1_S, _DOT_, RUN, _DOT_, JSON);
         /** Run known issues template. */
         public static final String RUN_KNOWN_ISSUES_ = s($1_S, s, $1_S, _DOT_, KNOWN, _DOT_, ISSUES, _DOT_, JSON);
+        /** Run expected responses template. */
+        public static final String RUN_EXPECTED_RESPONSES_ = s($1_S, s, $1_S, _DOT_, "expected", _DOT_, "responses", _DOT_, JSON);
         /** Run all leaf completions template. */
         public static final String RUN_ALL_LEAF_COMPLETIONS_ = s($1_S, s, $1_S, _DOT_, ALL, _DASH_, LEAF, _DASH_,
                 "completions", _DOT_, LOG);

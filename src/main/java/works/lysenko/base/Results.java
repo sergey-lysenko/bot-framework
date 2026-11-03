@@ -72,13 +72,38 @@ public class Results implements _Results {
     public void addEvent(final _LogRecord lr) {
 
         if (lr.data() instanceof _Event event) {
-            max = greaterSeverity(max, event.severity());
             if (isNotNull(exec) && isNotNull(exec.scenarios()) && isNotNull(exec.scenarios().current())) {
                 addEvent0(lr);
             } else {
+                if (!isKnownOrExpected(null, null, lr)) {
+                    max = greaterSeverity(max, event.severity());
+                }
                 rootEvents.add(lr);
             }
         }
+    }
+
+    private boolean isKnownOrExpected(final _Scenario scenario, final Result result, final _LogRecord lr) {
+        final works.lysenko.base.responses.ExpectedResponsesStore expStore = works.lysenko.base.output.TreeHtml.getExpectedResponsesStore();
+        if (null != expStore && null != scenario) {
+            if (expStore.isExpected(scenario, lr)) {
+                return true;
+            }
+            final String text = lr.text();
+            if (null != text && text.contains("[BROWSER]") && null != result && expStore.matchesNode(scenario, result)) {
+                return true;
+            }
+        }
+        final works.lysenko.base.issues.KnownIssuesStore kiStore = works.lysenko.base.output.TreeHtml.getKnownIssuesStore();
+        if (null != kiStore) {
+            if (null != scenario && !kiStore.getForLogRecord(scenario, lr).isEmpty()) {
+                return true;
+            }
+            if (null == scenario && !kiStore.getForLogRecord(Collections.emptyList(), lr).isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -129,12 +154,14 @@ public class Results implements _Results {
 
         final List<String> list = new ArrayList<>(0);
         for (final _LogRecord event : rootEvents) {
-            if (((_Event) event.data()).severity().ordinal() <= Stop.atSeverity.ordinal())
+            if (!isKnownOrExpected(null, null, event)
+                    && ((_Event) event.data()).severity().ordinal() <= Stop.atSeverity.ordinal())
                 list.add(event.data().message());
         }
         for (final Map.Entry<_Scenario, Result> entry : results.entrySet()) {
             for (final _LogRecord event : entry.getValue().getEvents()) {
-                if (((_Event) event.data()).severity().ordinal() <= Stop.atSeverity.ordinal())
+                if (!isKnownOrExpected(entry.getKey(), entry.getValue(), event)
+                        && ((_Event) event.data()).severity().ordinal() <= Stop.atSeverity.ordinal())
                     list.add(b(event.data().message(), IN, q(entry.getKey().getName()), SCENARIO));
             }
         }
@@ -220,9 +247,12 @@ public class Results implements _Results {
                 final Result result = results.computeIfAbsent(current, Result::new);
                 result.addEvent(lr);
                 if (lr.data() instanceof works.lysenko.util.apis.data._Event event) {
-                    if (event.severity() == Severity.S0 || event.severity() == Severity.S1) {
-                        if (!current.hasChildFailed()) {
-                            current.markAsFailed();
+                    if (!isKnownOrExpected(current, result, lr)) {
+                        max = greaterSeverity(max, event.severity());
+                        if (event.severity() == Severity.S0 || event.severity() == Severity.S1) {
+                            if (!current.hasChildFailed()) {
+                                current.markAsFailed();
+                            }
                         }
                     }
                 }

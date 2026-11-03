@@ -19,12 +19,25 @@ public final class ExpectedResponsesLoader {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    private static final String[] CLASSPATH_RESOURCES = {
+        "expected/responses.json",
+        "known/expected.responses.json",
+        "expected.responses.json"
+    };
+
+    private static final String[] FILE_PATHS = {
+        "src/main/resources/expected/responses.json",
+        "expected/responses.json",
+        "src/main/resources/known/expected.responses.json",
+        "src/main/resources/expected.responses.json"
+    };
+
     private ExpectedResponsesLoader() {
         // Utility class
     }
 
     /**
-     * Finds the input stream for expected.responses.json.
+     * Finds the input stream for expected/responses.json (or legacy fallbacks).
      *
      * @return the input stream or null if not found
      */
@@ -33,15 +46,24 @@ public final class ExpectedResponsesLoader {
         try {
             final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
             if (isNotNull(contextClassLoader)) {
-                is = contextClassLoader.getResourceAsStream("known/expected.responses.json");
-                if (null == is) is = contextClassLoader.getResourceAsStream("expected.responses.json");
+                for (final String res : CLASSPATH_RESOURCES) {
+                    is = contextClassLoader.getResourceAsStream(res);
+                    if (isNotNull(is)) break;
+                }
             }
             if (null == is) {
-                final java.io.File f1 = new java.io.File("src/main/resources/known/expected.responses.json");
-                if (f1.exists()) is = new java.io.FileInputStream(f1);
-                else {
-                    final java.io.File f2 = new java.io.File("src/main/resources/expected.responses.json");
-                    if (f2.exists()) is = new java.io.FileInputStream(f2);
+                for (final String res : CLASSPATH_RESOURCES) {
+                    is = ExpectedResponsesLoader.class.getResourceAsStream("/" + res);
+                    if (isNotNull(is)) break;
+                }
+            }
+            if (null == is) {
+                for (final String path : FILE_PATHS) {
+                    final java.io.File file = new java.io.File(path);
+                    if (file.exists() && file.isFile()) {
+                        is = new java.io.FileInputStream(file);
+                        break;
+                    }
                 }
             }
         } catch (final Exception ignored) {
@@ -63,6 +85,51 @@ public final class ExpectedResponsesLoader {
     }
 
     /**
+     * Loads expected responses from a file if it exists.
+     *
+     * @param file the JSON file to load
+     * @return list of expected responses
+     */
+    public static List<ExpectedResponse> loadFromFile(final java.io.File file) {
+        if (null == file || !file.exists() || !file.isFile()) return Collections.emptyList();
+        try (final InputStream is = new java.io.FileInputStream(file)) {
+            return loadFromStream(is);
+        } catch (final Exception ignored) {
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Saves the current expected/responses.json content into a specific file.
+     *
+     * @param outputFile the destination file
+     */
+    public static void saveRunExpectedResponses(final java.io.File outputFile) {
+        if (null == outputFile) return;
+        try (final InputStream is = findInputStream()) {
+            if (isNotNull(is)) {
+                final byte[] bytes = is.readAllBytes();
+                if (bytes.length > 0) {
+                    if (isNotNull(outputFile.getParentFile())) {
+                        outputFile.getParentFile().mkdirs();
+                    }
+                    java.nio.file.Files.write(outputFile.toPath(), bytes);
+                    works.lysenko.Base.logDebug("Saved expected responses dataset to " + outputFile.getAbsolutePath());
+                }
+            }
+        } catch (final Throwable e) {
+            works.lysenko.Base.logDebug("Unable to save run expected responses dataset: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Saves the current expected/responses.json content into the run result dataset as {runId}.expected.responses.json.
+     */
+    public static void saveRunExpectedResponses() {
+        saveRunExpectedResponses(new java.io.File(works.lysenko.util.spec.Layout.Files.name(works.lysenko.util.spec.Layout.Templates.RUN_EXPECTED_RESPONSES_)));
+    }
+
+    /**
      * Loads expected responses from an input stream.
      *
      * @param is input stream
@@ -78,9 +145,18 @@ public final class ExpectedResponsesLoader {
             if (isNotNull(container) && isNotNull(container.responses())) {
                 for (final ExpectedResponseRaw raw : container.responses()) {
                     if (isNotNull(raw) && isNotNull(raw.pattern()) && !raw.pattern().isBlank()) {
-                        final String scenario = (null != raw.scenario()) ? raw.scenario().trim() : "*";
                         final String reason = (null != raw.reason()) ? raw.reason().trim() : "";
-                        list.add(new ExpectedResponse(scenario, raw.pattern().trim(), reason));
+                        final String pattern = raw.pattern().trim();
+                        if (isNotNull(raw.scenarios()) && !raw.scenarios().isEmpty()) {
+                            for (final String sc : raw.scenarios()) {
+                                if (isNotNull(sc) && !sc.isBlank()) {
+                                    list.add(new ExpectedResponse(sc.trim(), pattern, reason));
+                                }
+                            }
+                        } else {
+                            final String scenario = (null != raw.scenario() && !raw.scenario().isBlank()) ? raw.scenario().trim() : "*";
+                            list.add(new ExpectedResponse(scenario, pattern, reason));
+                        }
                     }
                 }
             }
@@ -92,6 +168,7 @@ public final class ExpectedResponsesLoader {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record ExpectedResponseRaw(
         @JsonProperty("scenario") String scenario,
+        @JsonProperty("scenarios") List<String> scenarios,
         @JsonProperty("pattern") String pattern,
         @JsonProperty("reason") String reason
     ) {}

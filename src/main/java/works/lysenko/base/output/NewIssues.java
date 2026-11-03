@@ -69,11 +69,12 @@ record NewIssues() {
             log(Level.none, ansi(b(c(NO), NEW, c(ISSUES)), GREEN), true);
         else {
             final KnownIssuesStore store = getKnownIssuesStore();
+            final works.lysenko.base.responses.ExpectedResponsesStore expStore = TreeHtml.getExpectedResponsesStore();
             final Map<works.lysenko.util.apis.scenario._Scenario, works.lysenko.util.apis.data._Result> sorted = core.getResults().getSorted();
 
             int newIssuesCount = 0;
             for (final _LogRecord lr : exec.issues().latestCopy()) {
-                if (store.getForLogRecord(sorted.keySet(), lr).isEmpty()) {
+                if (store.getForLogRecord(sorted.keySet(), lr).isEmpty() && !isExpectedRecord(expStore, sorted, lr)) {
                     newIssuesCount++;
                 }
             }
@@ -83,13 +84,31 @@ record NewIssues() {
                     _COLON_)), RED)), true);
             final LogRenderer ansiRenderer = new AnsiLogRenderer();
             for (final _LogRecord lr : exec.issues().latestCopy()) {
-                if (store.getForLogRecord(sorted.keySet(), lr).isEmpty()) {
+                if (store.getForLogRecord(sorted.keySet(), lr).isEmpty() && !isExpectedRecord(expStore, sorted, lr)) {
                     final int totalTests = (isNotNull(core) && isNotNull(core.getTest()) && isNotNull(core.getTotalTests())) ? core.getTotalTests() : 0;
                     final int spanLength = (isNotNull(core) && isNotNull(core.getLogger())) ? core.getLogger().getSpanLength() : 0;
                     log(Level.none, ansi(ansiRenderer.render(lr, totalTests, spanLength, null)), false);
                 }
             }
         }
+    }
+
+    private static boolean isExpectedRecord(
+            final works.lysenko.base.responses.ExpectedResponsesStore expStore,
+            final Map<works.lysenko.util.apis.scenario._Scenario, works.lysenko.util.apis.data._Result> sorted,
+            final _LogRecord lr) {
+        if (null == expStore || null == lr) return false;
+        if (null != sorted) {
+            for (final Map.Entry<works.lysenko.util.apis.scenario._Scenario, works.lysenko.util.apis.data._Result> entry : sorted.entrySet()) {
+                final works.lysenko.util.apis.data._Result res = entry.getValue();
+                if (null != res && null != res.getEvents() && res.getEvents().contains(lr)) {
+                    if (expStore.isExpected(entry.getKey(), lr) || expStore.matchesNode(entry.getKey(), res)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     /**

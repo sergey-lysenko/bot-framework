@@ -36,6 +36,8 @@ import static works.lysenko.util.spec.Symbols.*;
  */
 public class Result implements _Result {
 
+    /** The associated scenario instance (may be null). */
+    private final _Scenario scenario;
     /** The type of the scenario. */
     private final ScenarioType scenarioType;
     /** The list of log records/events associated with this result. */
@@ -60,6 +62,7 @@ public class Result implements _Result {
      */
     public Result(final _Scenario scenario) {
 
+        this.scenario = scenario;
         scenarioType = scenario.type();
         configuredWeight = scenario.weightConfigured();
         upstreamWeight = scenario.weightUpstream();
@@ -85,6 +88,7 @@ public class Result implements _Result {
     public Result(final ScenarioType scenarioType, final Fraction configuredWeight, final Fraction upstreamWeight,
                   final Fraction downstreamWeight, final List<_LogRecord> events, final int executions, final int instances) {
 
+        this.scenario = null;
         this.scenarioType = scenarioType;
         this.configuredWeight = configuredWeight;
         this.upstreamWeight = upstreamWeight;
@@ -97,14 +101,7 @@ public class Result implements _Result {
         }
         if (events != null) {
             for (final _LogRecord lr : events) {
-                if (lr != null && lr.data() instanceof works.lysenko.util.apis.data._Event event) {
-                    final works.lysenko.util.data.enums.Severity sev = event.severity();
-                    if (sev == works.lysenko.util.data.enums.Severity.S0 || sev == works.lysenko.util.data.enums.Severity.S1) {
-                        updateStatus(ExecutionStatus.FAILED);
-                    } else if (sev == works.lysenko.util.data.enums.Severity.S2) {
-                        updateStatus(ExecutionStatus.WARNING);
-                    }
-                }
+                applyEventStatus(lr);
             }
         }
     }
@@ -129,7 +126,28 @@ public class Result implements _Result {
     public final void addEvent(final _LogRecord lr) {
 
         events.add(lr);
+        applyEventStatus(lr);
+    }
+
+    private void applyEventStatus(final _LogRecord lr) {
+
         if (null != lr && lr.data() instanceof works.lysenko.util.apis.data._Event event) {
+            final works.lysenko.base.responses.ExpectedResponsesStore expStore = works.lysenko.base.output.TreeHtml.getExpectedResponsesStore();
+            if (null != expStore && null != scenario) {
+                if (expStore.isExpected(scenario, lr)) {
+                    return;
+                }
+                final String text = lr.text();
+                if (null != text && text.contains("[BROWSER]") && expStore.matchesNode(scenario, this)) {
+                    return;
+                }
+            }
+            final works.lysenko.base.issues.KnownIssuesStore kiStore = works.lysenko.base.output.TreeHtml.getKnownIssuesStore();
+            final boolean isKnown = null != kiStore && null != scenario && !kiStore.getForLogRecord(scenario, lr).isEmpty();
+            if (isKnown) {
+                updateStatus(ExecutionStatus.WARNING);
+                return;
+            }
             final works.lysenko.util.data.enums.Severity sev = event.severity();
             if (sev == works.lysenko.util.data.enums.Severity.S0 || sev == works.lysenko.util.data.enums.Severity.S1) {
                 updateStatus(ExecutionStatus.FAILED);
