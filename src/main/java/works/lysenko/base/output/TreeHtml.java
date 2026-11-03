@@ -25,6 +25,7 @@ import static works.lysenko.util.data.strs.Bind.b;
 public final class TreeHtml {
 
     private static KnownIssuesStore knownIssuesStore = null;
+    private static works.lysenko.base.responses.ExpectedResponsesStore expectedResponsesStore = null;
 
     private TreeHtml() {}
 
@@ -37,6 +38,17 @@ public final class TreeHtml {
             knownIssuesStore = new KnownIssuesStore();
         }
         return knownIssuesStore;
+    }
+
+    public static void setExpectedResponsesStore(final works.lysenko.base.responses.ExpectedResponsesStore store) {
+        expectedResponsesStore = store;
+    }
+
+    public static works.lysenko.base.responses.ExpectedResponsesStore getExpectedResponsesStore() {
+        if (null == expectedResponsesStore) {
+            expectedResponsesStore = new works.lysenko.base.responses.ExpectedResponsesStore();
+        }
+        return expectedResponsesStore;
     }
 
     /**

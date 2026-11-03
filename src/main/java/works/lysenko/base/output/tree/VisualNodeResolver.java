@@ -120,7 +120,17 @@ public class VisualNodeResolver {
      */
     public VisualNode resolve(NodeData node, boolean isRecentNode, Map<NodeData, Boolean> childFailureCache, Map<NodeData, Boolean> executableCache) {
         final int execs = (node.result() != null) ? node.result().getExecutions() : 0;
-        final int eventCount = (node.result() != null && node.result().getEvents() != null) ? node.result().getEvents().size() : 0;
+        final works.lysenko.base.responses.ExpectedResponsesStore expStore = TreeHtml.getExpectedResponsesStore();
+        final String scenarioName = (node.scenario() != null) ? node.scenario().getName() : node.label();
+        int unclassifiedEventCount = 0;
+        if (node.result() != null && node.result().getEvents() != null) {
+            for (final works.lysenko.util.apis.log._LogRecord lr : node.result().getEvents()) {
+                if (null != expStore && expStore.isExpected(scenarioName, lr)) {
+                    continue;
+                }
+                unclassifiedEventCount++;
+            }
+        }
         final int scenarioTarget = getTargetExecutions(node, target);
         final int safeTarget = Math.max(1, scenarioTarget);
         final ScenarioType type = getScenarioType(node);
@@ -137,7 +147,7 @@ public class VisualNodeResolver {
         boolean isDashed = false;
         String statusName;
 
-        final boolean warning = (node.result() != null && node.result().status() == ExecutionStatus.WARNING);
+        final boolean warning = (unclassifiedEventCount > 0 && node.result() != null && node.result().status() == ExecutionStatus.WARNING);
 
         if (failure) {
             cardFill = theme.failedBg();
@@ -208,7 +218,7 @@ public class VisualNodeResolver {
             indicatorColor = theme.failedBorder();
         } else if (childFailure) {
             indicatorColor = theme.upsetBorder();
-        } else if (eventCount > 0) {
+        } else if (unclassifiedEventCount > 0) {
             indicatorColor = theme.warningBorder();
         }
 
