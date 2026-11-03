@@ -263,7 +263,6 @@ public final class LogParser {
         replacements.put("{{TREE_PROGRESSION_WEBP_LINK}}", mlRes.getTreeProgressionWebpLink());
         replacements.put("{{TREE_PROGRESSION_MP4_LINK}}", mlRes.getTreeProgressionMp4Link());
         replacements.put("{{TREE_LINK}}", escapeHtml(s(mlRes.getBasePrefix(), ".tree.html")));
-        replacements.put("{{JSON_LINK}}", escapeHtml(s(mlRes.getBasePrefix(), ".run.json")));
         replacements.put("{{RAW_LINK}}", escapeHtml(s(mlRes.getBasePrefix(), ".run.log")));
         replacements.put("{{TELEM_LINK}}", escapeHtml(s(mlRes.getBasePrefix(), ".telemetry.log")));
         replacements.put("{{STACKTRACES_LINK}}", escapeHtml(s(mlRes.getBasePrefix(), ".stacktraces.properties")));

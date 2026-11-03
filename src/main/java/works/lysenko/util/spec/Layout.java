@@ -223,8 +223,6 @@ public record Layout() {
         public static final String NEW_ISSUES_NOTICE_ = s($1_S, s, $1_S, _DOT_, ISSUES, _DOT_, NOTICE, _DOT_, HTML);
         /** New issues warning template. */
         public static final String NEW_ISSUES_WARNING_ = s($1_S, s, $1_S, _DOT_, ISSUES, _DOT_, WARNING, _DOT_, HTML);
-        /** Run JSON template. */
-        public static final String RUN_JSON_ = s($1_S, s, $1_S, _DOT_, RUN, _DOT_, JSON);
         /** Run known issues template. */
         public static final String RUN_KNOWN_ISSUES_ = s($1_S, s, $1_S, _DOT_, KNOWN, _DOT_, ISSUES, _DOT_, JSON);
         /** Run expected responses template. */

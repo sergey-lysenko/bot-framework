@@ -11,10 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static works.lysenko.Base.section;
-import static works.lysenko.base.output.Json.jsonStats;
 import static works.lysenko.base.output.TreeHtml.treeStats;
 import static works.lysenko.util.chrs.__.IN;
-import static works.lysenko.util.chrs.____.JSON;
 import static works.lysenko.util.lang.word.T.TREE;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
@@ -47,8 +45,8 @@ public class Stat implements _Stat {
             works.lysenko.base.output.EtaCorrection.recordRunCompletion(works.lysenko.Base.timer.msSinceStart());
         }
         reports.run();
-        section(JSON);
-        jsonStats();
+        works.lysenko.base.issues.KnownIssuesLoader.saveRunKnownIssues();
+        works.lysenko.base.responses.ExpectedResponsesLoader.saveRunExpectedResponses();
         section(TREE);
         treeStats();
         LogHtml.logStats();

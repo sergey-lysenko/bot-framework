@@ -405,6 +405,7 @@ public class PostProcessor {
 
             progress.update(REPORT_TASK, 0);
             KnownIssuesLoader.saveRunKnownIssues(new File(runDir, prefix + ".known.issues.json"));
+            works.lysenko.base.responses.ExpectedResponsesLoader.saveRunExpectedResponses(new File(runDir, prefix + ".expected.responses.json"));
             LogHtml.generateReport(
                     logFile,
                     htmlFile,
