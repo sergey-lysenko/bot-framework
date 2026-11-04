@@ -287,7 +287,8 @@ public final class TreeLayoutComputer {
                     boolean matchedKnown = false;
                     if (null != n.knownIssues() && !n.knownIssues().isEmpty()) {
                         for (final KnownIssue ki : n.knownIssues()) {
-                            if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
+                            if (ki.decreaseToWarning()
+                                    && works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
                                 matchedKnown = true;
                                 break;
                             }

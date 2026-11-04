@@ -162,8 +162,9 @@ public final class KnownIssuesLoader {
                                 final List<String> targetScenarios = collectScenarios(scRaw.scenario(), scRaw.scenarios());
                                 if (isNotNull(scRaw.issues())) {
                                     for (final KnownIssueRaw rawIssue : scRaw.issues()) {
+                                        final boolean decrease = null == rawIssue.decreaseToWarning() || rawIssue.decreaseToWarning();
                                         for (final String scStr : targetScenarios) {
-                                            issues.add(new KnownIssue(scStr, rawIssue.title(), rawIssue.description(), rawIssue.link(), rawIssue.pattern()));
+                                            issues.add(new KnownIssue(scStr, rawIssue.title(), rawIssue.description(), rawIssue.link(), rawIssue.pattern(), decrease));
                                         }
                                     }
                                 }
@@ -186,7 +187,7 @@ public final class KnownIssuesLoader {
                     if ("XXX".equalsIgnoreCase(key.trim()) && "YYY".equalsIgnoreCase(val.trim())) {
                         continue; // Skip dummy placeholder entries
                     }
-                    issues.add(new KnownIssue(key.trim(), key.trim(), val.trim(), "", val.trim()));
+                    issues.add(new KnownIssue(key.trim(), key.trim(), val.trim(), "", val.trim(), true));
                 }
             }
         } catch (final IOException ignored) {
@@ -198,8 +199,9 @@ public final class KnownIssuesLoader {
     private static void addRawIssue(final List<KnownIssue> issues, final KnownIssueRaw raw) {
         if (isNotNull(raw)) {
             final List<String> targetScenarios = collectScenarios(raw.scenario(), raw.scenarios());
+            final boolean decrease = null == raw.decreaseToWarning() || raw.decreaseToWarning();
             for (final String scStr : targetScenarios) {
-                issues.add(new KnownIssue(scStr, raw.title(), raw.description(), raw.link(), raw.pattern()));
+                issues.add(new KnownIssue(scStr, raw.title(), raw.description(), raw.link(), raw.pattern(), decrease));
             }
         }
     }
@@ -229,7 +231,8 @@ public final class KnownIssuesLoader {
             @JsonProperty("title") String title,
             @JsonProperty("description") String description,
             @JsonProperty("link") String link,
-            @JsonProperty("pattern") String pattern
+            @JsonProperty("pattern") String pattern,
+            @JsonProperty("decrease-to-warning") Boolean decreaseToWarning
     ) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)

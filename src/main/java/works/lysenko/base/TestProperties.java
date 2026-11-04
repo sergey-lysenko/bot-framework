@@ -568,6 +568,7 @@ public class TestProperties implements _TestProperties {
         works.lysenko.util.prop.tree.Optimization.refresh();
         works.lysenko.util.prop.tree.Retries.refresh();
         works.lysenko.util.prop.tree.Scenario.refresh();
+        works.lysenko.util.prop.tree.Sequence.refresh();
         works.lysenko.util.prop.tree.Traverse.refresh();
         works.lysenko.util.prop.tree.Wandering.refresh();
     }

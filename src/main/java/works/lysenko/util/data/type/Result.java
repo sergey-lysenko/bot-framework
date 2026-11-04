@@ -31,9 +31,6 @@ import static works.lysenko.util.spec.Symbols.*;
 @SuppressWarnings({"FieldNotUsedInToString", "ClassWithoutNoArgConstructor", "ParameterHidesMemberVariable", "AutoBoxing",
         "NestedMethodCall",
         "ImplicitNumericConversion", "LocalVariableHidesMemberVariable"})
-/**
- * The Result class.
- */
 public class Result implements _Result {
 
     /** The associated scenario instance (may be null). */
@@ -68,7 +65,7 @@ public class Result implements _Result {
         upstreamWeight = scenario.weightUpstream();
         downstreamWeight = scenario.weightDownstream();
         events = new ArrayList<>(0);
-        if (scenario != null && scenario.hasFailed()) {
+        if (scenario.hasFailed()) {
             status = ExecutionStatus.FAILED;
         }
     }
@@ -87,8 +84,27 @@ public class Result implements _Result {
     @SuppressWarnings({"AssignmentOrReturnOfFieldWithMutableType", "ConstructorWithTooManyParameters"})
     public Result(final ScenarioType scenarioType, final Fraction configuredWeight, final Fraction upstreamWeight,
                   final Fraction downstreamWeight, final List<_LogRecord> events, final int executions, final int instances) {
+        this(null, scenarioType, configuredWeight, upstreamWeight, downstreamWeight, events, executions, instances);
+    }
 
-        this.scenario = null;
+    /**
+     * Constructs a Result object with explicitly specified parameters including scenario reference.
+     *
+     * @param scenario         the associated scenario (may be null)
+     * @param scenarioType     the type of the scenario
+     * @param configuredWeight the configured weight of the scenario
+     * @param upstreamWeight   the upstream weight of the scenario
+     * @param downstreamWeight the downstream weight of the scenario
+     * @param events           the list of log records associated with this result
+     * @param executions       the number of executions
+     * @param instances        the number of instances
+     */
+    @SuppressWarnings({"AssignmentOrReturnOfFieldWithMutableType", "ConstructorWithTooManyParameters"})
+    public Result(final _Scenario scenario, final ScenarioType scenarioType, final Fraction configuredWeight,
+                  final Fraction upstreamWeight, final Fraction downstreamWeight, final List<_LogRecord> events,
+                  final int executions, final int instances) {
+
+        this.scenario = scenario;
         this.scenarioType = scenarioType;
         this.configuredWeight = configuredWeight;
         this.upstreamWeight = upstreamWeight;
@@ -96,10 +112,10 @@ public class Result implements _Result {
         this.events = events;
         this.executions = executions;
         this.instances = instances;
-        if (executions > 0) {
+        if (0 < executions) {
             status = ExecutionStatus.PASSED;
         }
-        if (events != null) {
+        if (null != events) {
             for (final _LogRecord lr : events) {
                 applyEventStatus(lr);
             }
@@ -113,13 +129,13 @@ public class Result implements _Result {
     }
 
     @Override
-    public final void updateStatus(final ExecutionStatus newStatus) {
+    public final void updateStatus(final ExecutionStatus status) {
 
-        if (null == newStatus) return;
-        if (status == ExecutionStatus.FAILED) return;
-        if (status == ExecutionStatus.CHILD_FAILED && newStatus != ExecutionStatus.FAILED) return;
-        if (status == ExecutionStatus.WARNING && (newStatus != ExecutionStatus.FAILED && newStatus != ExecutionStatus.CHILD_FAILED)) return;
-        status = newStatus;
+        if (null == status) return;
+        if (ExecutionStatus.FAILED == this.status) return;
+        if (ExecutionStatus.CHILD_FAILED == this.status && ExecutionStatus.FAILED != status) return;
+        if (ExecutionStatus.WARNING == this.status && (ExecutionStatus.FAILED != status && ExecutionStatus.CHILD_FAILED != status)) return;
+        this.status = status;
     }
 
     @Override
@@ -129,32 +145,59 @@ public class Result implements _Result {
         applyEventStatus(lr);
     }
 
+    private boolean isExpectedEvent(final _LogRecord lr) {
+        if (null == lr || null == scenario) return false;
+        final works.lysenko.base.responses.ExpectedResponsesStore expStore = works.lysenko.base.output.TreeHtml.getExpectedResponsesStore();
+        if (null == expStore) return false;
+        if (expStore.isExpected(scenario, lr)) {
+            return true;
+        }
+        final String text = lr.text();
+        return null != text && text.contains("[BROWSER]") && expStore.matchesNode(scenario, this);
+    }
+
     private void applyEventStatus(final _LogRecord lr) {
 
-        if (null != lr && lr.data() instanceof works.lysenko.util.apis.data._Event event) {
-            final works.lysenko.base.responses.ExpectedResponsesStore expStore = works.lysenko.base.output.TreeHtml.getExpectedResponsesStore();
-            if (null != expStore && null != scenario) {
-                if (expStore.isExpected(scenario, lr)) {
-                    return;
-                }
-                final String text = lr.text();
-                if (null != text && text.contains("[BROWSER]") && expStore.matchesNode(scenario, this)) {
-                    return;
-                }
-            }
-            final works.lysenko.base.issues.KnownIssuesStore kiStore = works.lysenko.base.output.TreeHtml.getKnownIssuesStore();
-            final boolean isKnown = null != kiStore && null != scenario && !kiStore.getForLogRecord(scenario, lr).isEmpty();
-            if (isKnown) {
-                updateStatus(ExecutionStatus.WARNING);
+        if (null != lr && lr.data() instanceof final works.lysenko.util.apis.data._Event event) {
+            if (isExpectedEvent(lr)) {
                 return;
             }
+            final works.lysenko.base.issues.KnownIssuesStore kiStore = works.lysenko.base.output.TreeHtml.getKnownIssuesStore();
+            if (null != kiStore && null != scenario) {
+                final List<works.lysenko.base.issues.KnownIssue> matches = kiStore.getForLogRecord(scenario, lr);
+                if (!matches.isEmpty()) {
+                    for (final works.lysenko.base.issues.KnownIssue ki : matches) {
+                        if (ki.decreaseToWarning()) {
+                            updateStatus(ExecutionStatus.WARNING);
+                            return;
+                        }
+                    }
+                }
+            }
             final works.lysenko.util.data.enums.Severity sev = event.severity();
-            if (sev == works.lysenko.util.data.enums.Severity.S0 || sev == works.lysenko.util.data.enums.Severity.S1) {
+            if (works.lysenko.util.data.enums.Severity.S0 == sev || works.lysenko.util.data.enums.Severity.S1 == sev) {
                 updateStatus(ExecutionStatus.FAILED);
-            } else if (sev == works.lysenko.util.data.enums.Severity.S2) {
+            } else if (works.lysenko.util.data.enums.Severity.S2 == sev) {
                 updateStatus(ExecutionStatus.WARNING);
             }
         }
+    }
+
+    /**
+     * Returns the count of events excluding neutralized expected responses.
+     *
+     * @return effective event count
+     */
+    @Override
+    public final int getEffectiveEventsCount() {
+        if (null == events || events.isEmpty()) return 0;
+        int count = 0;
+        for (final _LogRecord lr : events) {
+            if (!isExpectedEvent(lr)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     /**
@@ -162,6 +205,7 @@ public class Result implements _Result {
      *
      * @return the Fraction representing configured weight
      */
+    @Override
     public final Fraction getConfiguredWeight() {
 
         return configuredWeight;
@@ -172,6 +216,7 @@ public class Result implements _Result {
      *
      * @return the Fraction representing downstream weight
      */
+    @Override
     public final Fraction getDownstreamWeight() {
 
         return downstreamWeight;
@@ -182,6 +227,7 @@ public class Result implements _Result {
      *
      * @return unmodifiable list of {@link _LogRecord}
      */
+    @Override
     public final List<_LogRecord> getEvents() {
 
         return Collections.unmodifiableList(events);
@@ -192,6 +238,7 @@ public class Result implements _Result {
      *
      * @return execution count
      */
+    @Override
     public final int getExecutions() {
 
         return executions;
@@ -202,6 +249,7 @@ public class Result implements _Result {
      *
      * @return instance count
      */
+    @Override
     public final int getInstances() {
 
         return instances;
@@ -212,6 +260,7 @@ public class Result implements _Result {
      *
      * @return the ScenarioType
      */
+    @Override
     public final ScenarioType getScenarioType() {
 
         return scenarioType;
@@ -222,6 +271,7 @@ public class Result implements _Result {
      *
      * @return the Fraction representing upstream weight
      */
+    @Override
     public final Fraction getUpstreamWeight() {
 
         return upstreamWeight;
@@ -231,7 +281,7 @@ public class Result implements _Result {
     public final void tick() {
 
         ++executions;
-        if (status == ExecutionStatus.UNVISITED) {
+        if (ExecutionStatus.UNVISITED == status) {
             updateStatus(ExecutionStatus.PASSED);
         }
     }
@@ -248,8 +298,9 @@ public class Result implements _Result {
                 (0.0 < upstreamWeight.doubleValue() ? s(e(s(LFT_ARR)), e(ROUND, ts(upstreamWeight))) : EMPTY)
         );
         final String perInstances = (0 < instances) ? s(_COLON_, instances + 1) : EMPTY; // plus original one
-        final String events = (getEvents().isEmpty()) ?
-                EMPTY : e(true, e(ROUND, s1(getEvents().size(), EVENT)));
+        final int effectiveEvents = getEffectiveEventsCount();
+        final String events = (0 == effectiveEvents) ?
+                EMPTY : e(true, e(ROUND, s1(effectiveEvents, EVENT)));
         return b(s(weight), s(executions, perInstances, events));
     }
 }

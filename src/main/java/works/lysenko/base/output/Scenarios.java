@@ -151,12 +151,13 @@ record Scenarios() {
      * Returns a new _Result object by aggregating the provided thisResult and aggregatedResult,
      * and combining their executions and instances.
      *
+     * @param thisScenario     The scenario associated with this result.
      * @param thisResult       The result of the current scenario.
      * @param aggregatedResult The aggregated result of all instances of this scenario.
      * @param theseEvents      The list of log records associated with this scenario.
      * @return The new aggregated _Result object.
      */
-    private static _Result getNewResult(final _Result thisResult, final _Result aggregatedResult,
+    private static _Result getNewResult(final _Scenario thisScenario, final _Result thisResult, final _Result aggregatedResult,
                                         final List<_LogRecord> theseEvents) {
 
         final int theseExecutions = thisResult.getExecutions() + aggregatedResult.getExecutions();
@@ -166,7 +167,7 @@ record Scenarios() {
 
         // New Result object
         return new Result(
-                thisResult.getScenarioType(), thisResult.getConfiguredWeight(),
+                thisScenario, thisResult.getScenarioType(), thisResult.getConfiguredWeight(),
                 thisResult.getUpstreamWeight(), thisResult.getDownstreamWeight(),
                 theseEvents, theseExecutions, theseInstances);
     }
@@ -206,7 +207,7 @@ record Scenarios() {
             final List<_LogRecord> theseEvents = new ArrayList<>(thisResult.getEvents());
             theseEvents.addAll(aggregatedResult.getEvents());
             // Executions
-            final _Result newResult = getNewResult(thisResult, aggregatedResult, theseEvents);
+            final _Result newResult = getNewResult(thisScenario, thisResult, aggregatedResult, theseEvents);
             aggResults.put(thisScenarioName, newResult);
         }
     }

@@ -475,6 +475,7 @@ public final class LogFileParser {
             final String cleanLine) {
         if (null == knownIssues || knownIssues.isEmpty()) return false;
         for (final works.lysenko.base.issues.KnownIssue ki : knownIssues) {
+            if (!ki.decreaseToWarning()) continue;
             final boolean scenOk = (null == ki.scenario() || ki.scenario().isBlank() || "*".equals(ki.scenario().trim()))
                     || (null != currentScenario && works.lysenko.base.responses.ExpectedResponsesMatcher.matchesScenario(ki.scenario(), currentScenario));
             if (scenOk && matchesLinePattern(ki.pattern(), cleanLine)) {

@@ -15,10 +15,12 @@ import static works.lysenko.util.chrs.___._128;
 import static works.lysenko.util.chrs.___._255;
 import static works.lysenko.util.chrs.____.TRUE;
 import static works.lysenko.util.data.strs.Bind.b;
+import static works.lysenko.util.data.strs.Case.*;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Strings.NULL;
 import static works.lysenko.util.lang.word.F.*;
 import static works.lysenko.util.lang.word.N.*;
+import static works.lysenko.util.lang.word.S.*;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
@@ -211,10 +213,10 @@ public enum PropEnum implements _PropEnum {
     _TREE_SCENARIO_DOES_NOT_FIT_NOTICE(Boolean.class, TRUE),
     _TREE_SCENARIO_HISTORY_DEPTH_SAFEGUARD(Integer.class, _2_, _0_),
     _TREE_SCENARIO_NOT_EXECUTABLE_NOTICE(Boolean.class, TRUE),
-    _TREE_SEQUENCE_MODE(SequenceMode.class, "SUGGESTION", false, true),
-    _TREE_SEQUENCE_FAILURE_SEVERITY(Severity.class, _S0_, false, true),
+    _TREE_SEQUENCE_MODE(SequenceMode.class, u(SUGGESTION)),
+    _TREE_SEQUENCE_FAILURE_SEVERITY(Severity.class, _S0_),
     _TREE_TRAVERSE_EXTENSIONS(Boolean.class, FALSE, false, true),
-    _TREE_UNREACHABLE_LEAF_PRUNING(Boolean.class, TRUE, false, true),
+    _TREE_UNREACHABLE_LEAF_PRUNING(Boolean.class, TRUE),
     _WEBD_FORCED_PLATFORM(String.class, NULL),
     _WEBD_IWAIT(Integer.class, _1_, _0_, _0_, _0_),
     _WEBD_RECREATE_DRIVER_AFTER_EXCEPTION(Boolean.class, TRUE);
@@ -290,7 +292,7 @@ public enum PropEnum implements _PropEnum {
     public <T> T get() {
 
         if (isNull(properties)) return (T) create(defaultValue, type).result();
-        final T val = (T) properties.getEnum(this);
+        final T val = properties.getEnum(this);
         return isNull(val) ? (T) create(defaultValue, type).result() : val;
     }
 
@@ -301,8 +303,6 @@ public enum PropEnum implements _PropEnum {
             case _SWIPE_LINE_MARKER_COLOUR -> ".swipes.marker.line.colour";
             case _SWIPE_START_MARKER_COLOUR -> ".swipes.marker.start.colour";
             case _SWIPE_STOP_MARKER_COLOUR -> ".swipes.marker.stop.colour";
-            case _TREE_SEQUENCE_MODE -> ".tree.sequence.mode";
-            case _TREE_SEQUENCE_FAILURE_SEVERITY -> ".tree.sequence.failure.severity";
             default -> _PropEnum.super.getPropertyName();
         };
     }

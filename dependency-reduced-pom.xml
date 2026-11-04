@@ -4,7 +4,7 @@
   <groupId>works.lysenko</groupId>
   <artifactId>framework</artifactId>
   <name>bot-framework</name>
-  <version>0.26.45-SNAPSHOT</version>
+  <version>0.26.45</version>
   <description>Automation test framework developed by Sergii Lysenko</description>
   <build>
     <plugins>

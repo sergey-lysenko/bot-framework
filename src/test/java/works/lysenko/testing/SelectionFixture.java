@@ -10,10 +10,13 @@ import works.lysenko.base.TestProperties;
 import works.lysenko.base.exec.Scenarios;
 import works.lysenko.base.output.SequenceTracker;
 import works.lysenko.util.apis.log._Logs;
+import works.lysenko.util.data.enums.SequenceMode;
+import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.prop.PropEnum;
 import works.lysenko.util.prop.core.Mode;
 import works.lysenko.util.prop.tree.Notify;
 import works.lysenko.util.prop.tree.Scenario;
+import works.lysenko.util.prop.tree.Sequence;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
@@ -50,6 +53,8 @@ public final class SelectionFixture implements AutoCloseable {
     private final boolean previousIgnoreFailedSelection = Scenario.ignoreFailedSelection;
     private final boolean previousDoesNotFit = Notify.doesNotFit;
     private final boolean previousNotExecutable = Notify.notExecutable;
+    private final SequenceMode previousSequenceMode = Sequence.mode;
+    private final Severity previousSequenceSeverity = Sequence.severity;
     private final Core core;
 
     private SelectionFixture() throws Exception {
@@ -57,6 +62,7 @@ public final class SelectionFixture implements AutoCloseable {
         Base.parameters = null;
         Base.properties = null;
         SequenceTracker.reset();
+        Sequence.refresh();
 
         final Unsafe unsafe = unsafe();
         core = (Core) unsafe.allocateInstance(Core.class);
@@ -121,6 +127,7 @@ public final class SelectionFixture implements AutoCloseable {
             props.put(property.getPropertyName(), value);
             theField.set(testProperties, props);
             Base.properties = testProperties;
+            TestProperties.refreshAllPropertyRecords();
         } catch (final Exception e) {
             throw new IllegalStateException(e);
         }
@@ -137,6 +144,8 @@ public final class SelectionFixture implements AutoCloseable {
         Scenario.ignoreFailedSelection = previousIgnoreFailedSelection;
         Notify.doesNotFit = previousDoesNotFit;
         Notify.notExecutable = previousNotExecutable;
+        Sequence.mode = previousSequenceMode;
+        Sequence.severity = previousSequenceSeverity;
         SequenceTracker.reset();
     }
 

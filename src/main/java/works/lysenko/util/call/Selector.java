@@ -15,7 +15,6 @@ import java.util.Set;
 import static java.util.Objects.isNull;
 import works.lysenko.util.call.selector.Utils;
 import works.lysenko.util.data.enums.SequenceMode;
-import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.data.records.KeyValue;
 import works.lysenko.util.prop.core.*;
 import works.lysenko.util.prop.tree.Include;
@@ -34,7 +33,6 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static works.lysenko.Base.core;
 import static works.lysenko.Base.parameters;
 import static works.lysenko.Base.isDebug;
-import static works.lysenko.Base.isTrace;
 import static works.lysenko.util.call.selector.Utils.*;
 import static works.lysenko.util.chrs.__.*;
 import static works.lysenko.util.chrs.___.*;
@@ -74,6 +72,7 @@ import static works.lysenko.util.lang.word.U.UNMET;
 import static works.lysenko.util.lang.word.W.WEIGHTS;
 import static works.lysenko.util.prop.core.Mode.*;
 import static works.lysenko.util.prop.data.Delimeters.L0;
+import static works.lysenko.util.prop.tree.Sequence.*;
 import static works.lysenko.util.spec.Symbols._COLON_;
 
 /**
@@ -318,16 +317,14 @@ public final class Selector implements Callable<_Scenario> {
                     final String classKey = SequenceTracker.getScenarioClassKey(sc);
                     if (expected.equalsIgnoreCase(sc.getShortName()) || expected.equalsIgnoreCase(sc.getName()) || expected.equalsIgnoreCase(classKey)) {
                         SequenceTracker.advanceSequence();
-                        Utils.logDebug(b(q(sc.getShortName()), "scripted"));
+                        logDebug(b(q(sc.getShortName()), "scripted"));
                         return (Core) sc;
                     }
                 }
-                final SequenceMode mode = PropEnum._TREE_SEQUENCE_MODE.get();
-                if (SequenceMode.ORDER.equals(mode)) {
-                    final Severity sev = PropEnum._TREE_SEQUENCE_FAILURE_SEVERITY.get();
-                    logEvent(sev != null ? sev : Severity.S0, "Sequence script order failed: scenario '" + expected + "' is not available among candidates");
+                if (SequenceMode.ORDER == mode) {
+                    logEvent(null != severity ? severity : S0, "Sequence script order failed: scenario '" + expected + "' is not available among candidates");
                 } else {
-                    Utils.logDebug("Sequence script suggested scenario '" + expected + "' is not available; falling back to weighted selection");
+                    logDebug("Sequence script suggested scenario '" + expected + "' is not available; falling back to weighted selection");
                 }
             }
         }
@@ -339,12 +336,12 @@ public final class Selector implements Callable<_Scenario> {
             for (final KeyValue<_Scenario, Fraction> candidate : candidates)
                 doubleCandidates.add(kv(candidate.k(), candidate.v().doubleValue()));
             scenario = (Core) enumDis(doubleCandidates).sample();
-            Utils.logDebug(b(q(scenario.getShortName()), PROPOSED, FROM, s1(candidates.size(), CANDIDATE)));
+            logDebug(b(q(scenario.getShortName()), PROPOSED, FROM, s1(candidates.size(), CANDIDATE)));
         } catch (final MathArithmeticException ex) {
-            selectionFailed(b(UNABLE_TO_SELECT_A_SCENARIO___, s(Utils.createReadableScenariosList(candidates, true,
+            selectionFailed(b(UNABLE_TO_SELECT_A_SCENARIO___, s(createReadableScenariosList(candidates, true,
                     isDebug()), _COLON_), CUMULATIVE, PROBABILITY, IS, works.lysenko.util.lang.word.Z.ZERO));
         } catch (final NotPositiveException ex) {
-            selectionFailed(b(UNABLE_TO_SELECT_A_SCENARIO___, s(Utils.createReadableScenariosList(candidates, true,
+            selectionFailed(b(UNABLE_TO_SELECT_A_SCENARIO___, s(createReadableScenariosList(candidates, true,
                     isDebug()), _COLON_), NEGATIVE, WEIGHTS, ARE, NOT, ALLOWED));
         }
         return scenario;

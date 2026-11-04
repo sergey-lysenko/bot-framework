@@ -29,6 +29,11 @@ public interface _Result {
     Fraction getDownstreamWeight();
 
     /**
+     * @return count of events excluding neutralized expected responses
+     */
+    int getEffectiveEventsCount();
+
+    /**
      * @return unmodifiable copy of events
      */
     List<_LogRecord> getEvents();

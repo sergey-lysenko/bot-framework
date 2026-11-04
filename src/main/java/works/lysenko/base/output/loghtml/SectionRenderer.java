@@ -191,6 +191,7 @@ public final class SectionRenderer {
                     }
                     boolean known = false;
                     for (final works.lysenko.base.issues.KnownIssue ki : kiList) {
+                        if (!ki.decreaseToWarning()) continue;
                         final boolean scenOk = (null == ki.scenario() || ki.scenario().isBlank() || "*".equals(ki.scenario().trim()))
                                 || works.lysenko.base.responses.ExpectedResponsesMatcher.matchesScenario(ki.scenario(), currentScen);
                         if (scenOk && matchesTextPattern(ki.pattern(), clean)) {

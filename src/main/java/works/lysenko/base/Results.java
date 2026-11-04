@@ -19,6 +19,9 @@ import static works.lysenko.Base.exec;
 import static works.lysenko.util.chrs.__.IN;
 import static works.lysenko.util.chrs.__.IS;
 import static works.lysenko.util.chrs.____.NULL;
+import static works.lysenko.util.data.enums.Severity.S0;
+import static works.lysenko.util.data.enums.Severity.S1;
+import static works.lysenko.util.data.enums.Severity.S2;
 import static works.lysenko.util.data.enums.Severity.greaterSeverity;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
@@ -26,7 +29,6 @@ import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.lang.word.C.CURRENT;
 import static works.lysenko.util.lang.word.E.EXECUTION;
-import static works.lysenko.util.lang.word.R.RESULT;
 import static works.lysenko.util.lang.word.S.SCENARIO;
 
 /**
@@ -39,9 +41,6 @@ import static works.lysenko.util.lang.word.S.SCENARIO;
         "MethodWithMultipleLoops",
         "UnqualifiedFieldAccess", "DesignForExtension", "UseOfConcreteClass", "ClassUnconnectedToPackage",
         "NestedMethodCall", "ClassWithTooManyDependencies"})
-/**
- * The Results class.
- */
 public class Results implements _Results {
 
     @SuppressWarnings("WeakerAccess")
@@ -58,52 +57,69 @@ public class Results implements _Results {
         EtaDebug.reset();
     }
 
-    @SuppressWarnings({"ChainedMethodCall", "LawOfDemeter", "LocalCanBeFinal", "NestedMethodCall"})
-    static String getTaggedString(final _Scenario scenario) {
+    @SuppressWarnings({"ChainedMethodCall", "LawOfDemeter", "NestedMethodCall"})
+    private static String getTaggedString(final _Scenario scenario) {
 
         return b(scenario.getShortName(), scenario.type().tag());
     }
 
-    @SuppressWarnings("NestedMethodCall")
     /**
      * Performs add event.
+     *
      * @param lr the lr
      */
+    @SuppressWarnings("NestedMethodCall")
+    @Override
     public void addEvent(final _LogRecord lr) {
 
-        if (lr.data() instanceof _Event event) {
+        if (lr.data() instanceof final _Event event) {
             if (isNotNull(exec) && isNotNull(exec.scenarios()) && isNotNull(exec.scenarios().current())) {
                 addEvent0(lr);
             } else {
-                if (!isKnownOrExpected(null, null, lr)) {
-                    max = greaterSeverity(max, event.severity());
+                final Severity effective = getEffectiveSeverity(null, null, lr, event.severity());
+                if (isNotNull(effective)) {
+                    max = greaterSeverity(max, effective);
                 }
                 rootEvents.add(lr);
             }
         }
     }
 
-    private boolean isKnownOrExpected(final _Scenario scenario, final Result result, final _LogRecord lr) {
+    private static Severity getEffectiveSeverity(
+            final _Scenario scenario,
+            final _Result result,
+            final _LogRecord lr,
+            final Severity rawSeverity) {
+        if (null == rawSeverity) return null;
         final works.lysenko.base.responses.ExpectedResponsesStore expStore = works.lysenko.base.output.TreeHtml.getExpectedResponsesStore();
         if (null != expStore && null != scenario) {
             if (expStore.isExpected(scenario, lr)) {
-                return true;
+                return null;
             }
             final String text = lr.text();
             if (null != text && text.contains("[BROWSER]") && null != result && expStore.matchesNode(scenario, result)) {
-                return true;
+                return null;
             }
         }
         final works.lysenko.base.issues.KnownIssuesStore kiStore = works.lysenko.base.output.TreeHtml.getKnownIssuesStore();
         if (null != kiStore) {
-            if (null != scenario && !kiStore.getForLogRecord(scenario, lr).isEmpty()) {
-                return true;
-            }
-            if (null == scenario && !kiStore.getForLogRecord(Collections.emptyList(), lr).isEmpty()) {
-                return true;
+            final List<works.lysenko.base.issues.KnownIssue> matches = (null != scenario)
+                    ? kiStore.getForLogRecord(scenario, lr)
+                    : kiStore.getForLogRecord(Collections.emptyList(), lr);
+            if (!matches.isEmpty()) {
+                boolean decrease = false;
+                for (final works.lysenko.base.issues.KnownIssue ki : matches) {
+                    if (ki.decreaseToWarning()) {
+                        decrease = true;
+                        break;
+                    }
+                }
+                if (decrease && (S0 == rawSeverity || S1 == rawSeverity)) {
+                    return S2;
+                }
             }
         }
-        return false;
+        return rawSeverity;
     }
 
     /**
@@ -112,6 +128,7 @@ public class Results implements _Results {
      * @return {@code true} if there are failing events, {@code false} otherwise
      */
     @SuppressWarnings("MethodWithMultipleReturnPoints")
+    @Override
     public boolean areFailingEvents() {
 
         if (isNotNull(max)) return Stop.atSeverity.ordinal() >= max.ordinal();
@@ -125,6 +142,7 @@ public class Results implements _Results {
      * @return The relevant Result object
      */
     @SuppressWarnings("LocalCanBeFinal")
+    @Override
     public Result count(_Scenario scenario) {
 
         Result r = results.getOrDefault(scenario, new Result(scenario));
@@ -148,20 +166,22 @@ public class Results implements _Results {
 
     /**
      * Performs get failures.
+     *
      * @return the get failures result
      */
+    @Override
     public List<String> getFailures() {
 
         final List<String> list = new ArrayList<>(0);
         for (final _LogRecord event : rootEvents) {
-            if (!isKnownOrExpected(null, null, event)
-                    && ((_Event) event.data()).severity().ordinal() <= Stop.atSeverity.ordinal())
+            final Severity effective = getEffectiveSeverity(null, null, event, ((_Event) event.data()).severity());
+            if (isNotNull(effective) && effective.ordinal() <= Stop.atSeverity.ordinal())
                 list.add(event.data().message());
         }
         for (final Map.Entry<_Scenario, Result> entry : results.entrySet()) {
             for (final _LogRecord event : entry.getValue().getEvents()) {
-                if (!isKnownOrExpected(entry.getKey(), entry.getValue(), event)
-                        && ((_Event) event.data()).severity().ordinal() <= Stop.atSeverity.ordinal())
+                final Severity effective = getEffectiveSeverity(entry.getKey(), entry.getValue(), event, ((_Event) event.data()).severity());
+                if (isNotNull(effective) && effective.ordinal() <= Stop.atSeverity.ordinal())
                     list.add(b(event.data().message(), IN, q(entry.getKey().getName()), SCENARIO));
             }
         }
@@ -186,6 +206,7 @@ public class Results implements _Results {
      * @return The sorted map of ProvidesScenario and Result objects
      */
     @SuppressWarnings({"WeakerAccess", "LocalCanBeFinal"})
+    @Override
     public Map<_Scenario, _Result> getSorted() {
 
         Map<_Scenario, _Result> sorted = new SortedResult();
@@ -193,14 +214,16 @@ public class Results implements _Results {
         return sorted;
     }
 
-    @SuppressWarnings({"ObjectAllocationInLoop", "LocalCanBeFinal", "NestedMethodCall", "UnqualifiedStaticUsage",
-            "ForeachStatement",
-            "BooleanParameter"})
     /**
      * Performs get sorted strings.
+     *
      * @param includeExternal the includeExternal
      * @return the get sorted strings result
      */
+    @SuppressWarnings({"ObjectAllocationInLoop", "LocalCanBeFinal", "NestedMethodCall", "UnqualifiedStaticUsage",
+            "ForeachStatement",
+            "BooleanParameter"})
+    @Override
     public TreeMap<String, Result> getSortedStrings(boolean includeExternal) {
 
         TreeMap<String, Result> sortedStrings = new TreeMap<>();
@@ -246,10 +269,11 @@ public class Results implements _Results {
             if (isNotNull(current)) {
                 final Result result = results.computeIfAbsent(current, Result::new);
                 result.addEvent(lr);
-                if (lr.data() instanceof works.lysenko.util.apis.data._Event event) {
-                    if (!isKnownOrExpected(current, result, lr)) {
-                        max = greaterSeverity(max, event.severity());
-                        if (event.severity() == Severity.S0 || event.severity() == Severity.S1) {
+                if (lr.data() instanceof final works.lysenko.util.apis.data._Event event) {
+                    final Severity effective = getEffectiveSeverity(current, result, lr, event.severity());
+                    if (isNotNull(effective)) {
+                        max = greaterSeverity(max, effective);
+                        if (S0 == effective || S1 == effective) {
                             if (!current.hasChildFailed()) {
                                 current.markAsFailed();
                             }

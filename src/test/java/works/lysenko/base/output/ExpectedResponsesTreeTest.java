@@ -96,6 +96,8 @@ class ExpectedResponsesTreeTest {
                 "[6] [BROWSER] [2026-11-03T14:36:57.059Z] [SEVERE] https://stg-dashboard.myordering.online/static/js/main.6dc89438.js 1:3360947 o", "")));
 
         assertEquals(ExecutionStatus.PASSED, wrongLoginResult.status(), "Result status must remain PASSED when browser event matches expected response");
+        assertEquals(0, wrongLoginResult.getEffectiveEventsCount(), "Effective event count must be 0 when events are neutralized");
+        assertFalse(wrongLoginResult.toString().contains("event"), "Result.toString() must not print (N events) when all events are expected responses");
 
         final TreeHtml.NodeData parentNode = new TreeHtml.NodeData("n_signin", "SignIn ▷", "Tests", 0, 1.0, signInResult, signInScenario);
         final TreeHtml.NodeData wrongLoginNode = new TreeHtml.NodeData("n_wronglogin", "WrongLogin ◼", "SignIn ▷", 1, 1.0, wrongLoginResult, wrongLoginScenario);

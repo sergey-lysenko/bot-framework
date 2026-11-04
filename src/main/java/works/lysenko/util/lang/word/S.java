@@ -173,6 +173,8 @@ public record S() {
     public static final String SUCCESSFUL = s(SU, CC, ES, SF, UL);
     /** Constant representing the word SUCCESSFULLY. */
     public static final String SUCCESSFULLY = s(SUCCESSFUL, LY);
+    /** Constant representing the word SUGGESTION. */
+    public static final String SUGGESTION = s(SU, GG, ES, TION);
     /** Constant representing the word SUITE. */
     public static final String SUITE = s(SU, IT, E);
     /** Constant representing the word SUITES. */
