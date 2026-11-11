@@ -55,8 +55,10 @@ public final class AuroraSonifier extends AbstractTreeSonifier {
             
             final boolean isCompleted = executions >= leafTarget;
             final boolean isActive = executions > 0 && executions < leafTarget;
+            final boolean isFailed = TreeHtml.hasFailure(node);
+            final boolean isWarning = TreeHtml.hasWarning(node);
             
-            stats.computeIfAbsent(col, k -> new ColumnStats(0, 0, 0)).add(isActive, isCompleted);
+            stats.computeIfAbsent(col, k -> new ColumnStats(0, 0, 0, 0, 0)).add(isActive, isCompleted, isFailed, isWarning);
         }
 
         try (BufferedWriter writer = Files.newBufferedWriter(
@@ -64,7 +66,7 @@ public final class AuroraSonifier extends AbstractTreeSonifier {
                 StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
             for (final Map.Entry<Integer, ColumnStats> entry : stats.entrySet()) {
                 final ColumnStats s = entry.getValue();
-                writer.write(entry.getKey() + "\t" + s.total + "\t" + s.active + "\t" + s.completed);
+                writer.write(entry.getKey() + "\t" + s.total + "\t" + s.active + "\t" + s.completed + "\t" + s.failed + "\t" + s.warning);
                 writer.newLine();
             }
         }
@@ -79,6 +81,8 @@ public final class AuroraSonifier extends AbstractTreeSonifier {
     protected Map<Integer, List<AudioNote>> compose(final List<File> frames, final int samplesPerFrame) throws IOException {
         final Map<Integer, List<AudioNote>> notesByFrame = new HashMap<>();
         final Map<Integer, Integer> previousCompleted = new HashMap<>();
+        final Map<Integer, Integer> previousFailed = new HashMap<>();
+        final Map<Integer, Integer> previousWarning = new HashMap<>();
 
         for (int frameIndex = 0; frameIndex < frames.size(); frameIndex++) {
             final Map<Integer, ColumnStats> current = readSnapshot(snapshotFile(frames.get(frameIndex)));
@@ -89,6 +93,8 @@ public final class AuroraSonifier extends AbstractTreeSonifier {
                 final int col = entry.getKey();
                 final ColumnStats stats = entry.getValue();
                 final int oldCompleted = previousCompleted.getOrDefault(col, 0);
+                final int oldFailed = previousFailed.getOrDefault(col, 0);
+                final int oldWarning = previousWarning.getOrDefault(col, 0);
 
                 if (stats.completed > 0 && frameIndex % FRAMES_PER_PAD == 0) {
                     final int midi = PAD_MIDI_BASE + 12 * (col / SCALE.length) + SCALE[col % SCALE.length];
@@ -105,7 +111,23 @@ public final class AuroraSonifier extends AbstractTreeSonifier {
                         frameNotes.add(new AudioNote(startSample, midi, amp, 0.3));
                     }
                 }
+                
+                final int gainedFailed = stats.failed - oldFailed;
+                if (gainedFailed > 0) {
+                    // Dissonant, low, and bright burst for failure
+                    frameNotes.add(new AudioNote(startSample, 36, 0.4 * Math.sqrt(gainedFailed), 0.8));
+                    frameNotes.add(new AudioNote(startSample, 37, 0.4 * Math.sqrt(gainedFailed), 0.8));
+                }
+                
+                final int gainedWarning = stats.warning - oldWarning;
+                if (gainedWarning > 0) {
+                    // Slightly dissonant and moderately bright note for warning
+                    frameNotes.add(new AudioNote(startSample, 42, 0.3 * Math.sqrt(gainedWarning), 0.5));
+                }
+
                 previousCompleted.put(col, stats.completed);
+                previousFailed.put(col, stats.failed);
+                previousWarning.put(col, stats.warning);
             }
 
             if (!frameNotes.isEmpty()) {
@@ -126,7 +148,9 @@ public final class AuroraSonifier extends AbstractTreeSonifier {
                     final int total = Integer.parseInt(parts[1]);
                     final int active = Integer.parseInt(parts[2]);
                     final int completed = Integer.parseInt(parts[3]);
-                    result.put(col, new ColumnStats(total, active, completed));
+                    final int failed = parts.length >= 6 ? Integer.parseInt(parts[4]) : 0;
+                    final int warning = parts.length >= 6 ? Integer.parseInt(parts[5]) : 0;
+                    result.put(col, new ColumnStats(total, active, completed, failed, warning));
                 }
             }
         }
@@ -137,17 +161,23 @@ public final class AuroraSonifier extends AbstractTreeSonifier {
         int total;
         int active;
         int completed;
+        int failed;
+        int warning;
 
-        ColumnStats(final int total, final int active, final int completed) {
+        ColumnStats(final int total, final int active, final int completed, final int failed, final int warning) {
             this.total = total;
             this.active = active;
             this.completed = completed;
+            this.failed = failed;
+            this.warning = warning;
         }
 
-        void add(final boolean isActive, final boolean isCompleted) {
+        void add(final boolean isActive, final boolean isCompleted, final boolean isFailed, final boolean isWarning) {
             this.total++;
             if (isActive) this.active++;
             if (isCompleted) this.completed++;
+            if (isFailed) this.failed++;
+            if (isWarning) this.warning++;
         }
     }
 }
