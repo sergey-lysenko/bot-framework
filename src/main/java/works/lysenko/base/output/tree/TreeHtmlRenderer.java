@@ -12,6 +12,7 @@ import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.prop.PropEnum;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -239,6 +240,27 @@ public record TreeHtmlRenderer() {
         return maxLeafOverRatio;
     }
 
+    private static String cleanNodeLabel(final String label) {
+        if (null == label) return "";
+        return label.replaceAll("[\\s▷◼◆▲▼★●]+$", "").strip();
+    }
+
+    private static String computeScenarioPath(final TreeHtml.NodeData node) {
+        if (null == node) return "";
+        if (isNotNull(node.scenario())) {
+            final String shortName = node.scenario().getShortName();
+            if (hasText(shortName)) return shortName;
+            final String name = node.scenario().getName();
+            if (hasText(name)) return name;
+        }
+        final String cleanLabel = cleanNodeLabel(node.label());
+        final String cleanGroup = cleanNodeLabel(node.group());
+        if (hasText(cleanGroup) && !cleanLabel.startsWith(cleanGroup) && !"tests".equalsIgnoreCase(cleanGroup)) {
+            return cleanGroup + "." + cleanLabel;
+        }
+        return cleanLabel;
+    }
+
     private static Map<String, Object> buildNodeInfo(final TreeHtml.NodeData node, final VisualNode visualNode) {
         final _Result res = node.result();
         final int execs = isNotNull(res) ? res.getExecutions() : 0;
@@ -246,11 +268,13 @@ public record TreeHtmlRenderer() {
         final String eventDetails = formatEventDetails(res);
         final String kiHtml = renderKnownIssuesHtml(node.knownIssues());
         final String safeLabel = node.label().replace("<", "&lt;").replace(">", "&gt;");
-        final String execLinksHtml = renderExecLinksHtml(node, execs);
+        final String scenPath = computeScenarioPath(node);
+        final String execLinksHtml = renderExecLinksHtml(node, scenPath, execs);
 
-        final Map<String, Object> nodeInfo = new LinkedHashMap<>(9);
+        final Map<String, Object> nodeInfo = new LinkedHashMap<>(10);
         nodeInfo.put("name", safeLabel);
         nodeInfo.put("group", node.group());
+        nodeInfo.put("scenarioPath", scenPath);
         nodeInfo.put("status", s(visualNode.badgeText(), (visualNode.hasKnownIssues() ? s(_SPACE_, e(ROUND, b(c(KNOWN), c(ISSUE)))) : "")));
         nodeInfo.put("exec", execs);
         nodeInfo.put("execLinksHtml", execLinksHtml);
@@ -260,25 +284,53 @@ public record TreeHtmlRenderer() {
         return nodeInfo;
     }
 
-    private static String renderExecLinksHtml(final TreeHtml.NodeData node, final int execs) {
-        if (execs <= 0) {
+    private static List<Integer> resolveTestNumbers(final TreeHtml.NodeData node, final int execs) {
+        final List<Integer> testNums = new ArrayList<>();
+        collectTestNumbers(node, testNums);
+        if (testNums.isEmpty()) {
+            for (int i = 1; i <= execs; i++) {
+                testNums.add(i);
+            }
+        }
+        return testNums;
+    }
+
+    private static void collectTestNumbers(final TreeHtml.NodeData node, final List<Integer> testNums) {
+        if (null == node) return;
+        if (isNotNull(node.result()) && isNotNull(node.result().getEvents())) {
+            for (final _LogRecord lr : node.result().getEvents()) {
+                if (isNotNull(lr) && lr.test() > 0 && !testNums.contains(lr.test())) {
+                    testNums.add(lr.test());
+                }
+            }
+        }
+        if (isNotNull(node.children())) {
+            for (final TreeHtml.NodeData child : node.children()) {
+                collectTestNumbers(child, testNums);
+            }
+        }
+    }
+
+    private static String renderExecLinksHtml(final TreeHtml.NodeData node, final String scenPath, final int execs) {
+        if (execs <= 0 || !hasText(scenPath)) {
             return "";
         }
-        final String label = node.label() != null ? node.label() : "";
-        final String group = node.group() != null ? node.group() : "";
-        final String fullPath = (hasText(group) && !label.startsWith(group)) ? (group + "." + label) : label;
-        final String safePath = escapeHtml(fullPath);
-
-        final StringBuilder sb = new StringBuilder(64);
-        sb.append("<span style=\"font-size:11px; color:#94a3b8;\">(");
-        for (int i = 1; i <= execs; i++) {
-            if (i > 1) {
+        final List<Integer> testNums = resolveTestNumbers(node, execs);
+        final String safePath = escapeHtml(scenPath);
+        final StringBuilder sb = new StringBuilder(128);
+        sb.append("<span style=\"font-size:11px; color:#94a3b8; max-height:48px; overflow-y:auto; display:inline-block; vertical-align:middle;\">(");
+        for (int i = 0; i < testNums.size(); i++) {
+            if (i > 0) {
                 sb.append(", ");
             }
-            sb.append("<a class=\"exec-link\" href=\"#test-").append(i).append("-").append(safePath)
-              .append("\" data-cycle=\"").append(i).append("\" data-scenario=\"").append(safePath)
+            final int testNum = testNums.get(i);
+            final String hash = s("test-", testNum, "-", safePath);
+            sb.append("<a class=\"exec-link\" href=\"#").append(hash)
+              .append("\" onclick=\"navigateToLog(event, '").append(hash)
+              .append("')\" data-cycle=\"").append(testNum)
+              .append("\" data-scenario=\"").append(safePath)
               .append("\" style=\"color:#38bdf8; text-decoration:underline; font-weight:600;\">#")
-              .append(i).append("</a>");
+              .append(testNum).append("</a>");
         }
         sb.append(")</span>");
         return sb.toString();

@@ -120,23 +120,51 @@
       document.querySelectorAll('.connector.active').forEach(c => c.classList.remove('active'));
     });
   });
+  function getLogReportUrl(hash) {
+    const path = window.location.pathname;
+    const filename = path.substring(path.lastIndexOf('/') + 1);
+    const logFile = filename.endsWith('.tree.html')
+      ? filename.replace(/\.tree\.html$/, '.run.log.html')
+      : 'run.log.html';
+    return logFile + (hash ? '#' + hash : '');
+  }
+
+  function navigateToLog(e, hash) {
+    if (e) {
+      if (e.preventDefault) e.preventDefault();
+      if (e.stopPropagation) e.stopPropagation();
+    }
+    const url = getLogReportUrl(hash);
+    if (window.opener && !window.opener.closed) {
+      try {
+        window.opener.location.href = url;
+        window.opener.focus();
+        return;
+      } catch (err) {
+        // Fall back to window.open if cross-origin or restricted
+      }
+    }
+    window.open(url, 'logexplorer');
+  }
+
   const nodeDataMap = {{NODE_DATA_JSON}};
   function showNodeDetails(id) {
     const data = nodeDataMap[id];
     if (!data) return;
-    showDetails(data.name, data.group, data.status, data.exec, data.events, data.details, data.kiHtml, data.execLinksHtml);
+    showDetails(data.name, data.group, data.status, data.exec, data.events, data.details, data.kiHtml, data.scenarioPath, data.execLinksHtml);
   }
-  function showDetails(name, group, status, exec, events, details, kiHtml, execLinksHtml) {
+  function showDetails(name, group, status, exec, events, details, kiHtml, scenarioPath, execLinksHtml) {
     const p = document.getElementById('details-panel');
     p.style.display = 'block';
-    const cleanName = (name || '').trim();
+    const cleanName = (name || '').replace(/[\s▷◼◆▲▼★●]+$/, '').trim();
     document.getElementById('d-name').innerText = cleanName;
-    const fullPath = (group && !cleanName.startsWith(group)) ? (group + '.' + cleanName) : cleanName;
+    const scenPath = scenarioPath || ((group && !cleanName.startsWith(group) && group !== 'tests') ? (group + '.' + cleanName) : cleanName);
     const nameLink = document.getElementById('d-name-link');
     if (nameLink) {
-      nameLink.href = '#' + fullPath;
-      nameLink.setAttribute('data-scenario', fullPath);
-      nameLink.setAttribute('title', 'Open in Log Explorer: ' + fullPath);
+      nameLink.href = getLogReportUrl(scenPath);
+      nameLink.onclick = function(e) { navigateToLog(e, scenPath); };
+      nameLink.setAttribute('data-scenario', scenPath);
+      nameLink.setAttribute('title', 'Open in Log Explorer: ' + scenPath);
     }
     document.getElementById('d-group').innerText = group;
     document.getElementById('d-status').innerText = status;
