@@ -57,7 +57,8 @@ public final class TreeLayoutOptimizer {
                     for (int i = 0; i < allChildren.size(); i++) {
                         final NodeData leaf = allChildren.get(i);
                         final int extraCol = i / perCol;
-                        leaf.setCol(parent.col() + 1 + extraCol);
+                        final int offset = leaf.col() - (parent.col() + 1);
+                        leaf.setCol(parent.col() + 1 + extraCol + offset);
                     }
                 }
             }
@@ -101,6 +102,7 @@ public final class TreeLayoutOptimizer {
                         t += extraCol * GOLDEN_RATIO * 0.382;
                     }
                 }
+                t += n.rowOffset();
                 targets[i] = t;
             }
             final double[] resolved = solveColumn1D(targets);
@@ -167,6 +169,7 @@ public final class TreeLayoutOptimizer {
                             target += extraCol * GOLDEN_RATIO * 0.382;
                         }
                     }
+                    target += n.rowOffset();
                     targetMap.put(n, target);
                 }
 
@@ -392,8 +395,10 @@ public final class TreeLayoutOptimizer {
             for (final List<NodeData> component : bank) {
                 final double minR = minimumRow(component);
                 final double shiftR = nextRow - minR;
+                final NodeData compRoot = rootOf(component.get(0));
+                final int rootOffset = compRoot.col();
                 final int minC = minimumCol(component);
-                final int shiftC = currentColOffset - minC;
+                final int shiftC = (currentColOffset + rootOffset) - minC;
 
                 final int depth = maximumCol(component) - minC + 1;
                 if (depth > bankMaxDepth) bankMaxDepth = depth;

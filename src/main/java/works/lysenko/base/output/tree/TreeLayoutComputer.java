@@ -134,6 +134,7 @@ public final class TreeLayoutComputer {
         return new TreeLayout(nodes, edges);
     }
     public static final java.util.Map<String, Integer> offsetOverrides = new java.util.concurrent.ConcurrentHashMap<>();
+    public static final java.util.Map<String, Integer> rowOffsetOverrides = new java.util.concurrent.ConcurrentHashMap<>();
 
     private static void processScenario(final _Scenario scenario, final NodeData parent, final int col, final int[] rows,
                                         final Set<_Scenario> ancestors, final TreeMap<String, Result> sorted,
@@ -142,17 +143,28 @@ public final class TreeLayoutComputer {
 
         if (null == scenario || !ancestors.add(scenario)) return;
         int offset = 0;
-        if (offsetOverrides.containsKey(scenario.getSimpleName())) {
+        if (offsetOverrides.containsKey(scenario.getClass().getName())) {
+            offset = offsetOverrides.get(scenario.getClass().getName());
+        } else if (offsetOverrides.containsKey(scenario.getSimpleName())) {
             offset = offsetOverrides.get(scenario.getSimpleName());
         } else {
             final VisualOffset vo = scenario.getClass().getAnnotation(VisualOffset.class);
             if (vo != null) offset = vo.value();
         }
+        int rowOffset = 0;
+        if (rowOffsetOverrides.containsKey(scenario.getClass().getName())) {
+            rowOffset = rowOffsetOverrides.get(scenario.getClass().getName());
+        } else if (rowOffsetOverrides.containsKey(scenario.getSimpleName())) {
+            rowOffset = rowOffsetOverrides.get(scenario.getSimpleName());
+        } else {
+            final works.lysenko.util.prop.tree.VisualRowOffset vro = scenario.getClass().getAnnotation(works.lysenko.util.prop.tree.VisualRowOffset.class);
+            if (vro != null) rowOffset = vro.value();
+        }
         final int myCol = col + offset;
         final String label = b(scenario.getSimpleName(), scenario.type().tag());
         final String id = s("scenario_", nodes.size(), "_", scenario.getSimpleName());
         final String group = (null == parent) ? TESTS : parent.label();
-        final NodeData node = new NodeData(id, label, group, myCol, rows[0]++, resultFor(scenario, sorted), scenario);
+        final NodeData node = new NodeData(id, label, group, myCol, rows[0]++, rowOffset, resultFor(scenario, sorted), scenario);
 
         final KnownIssuesStore store = TreeHtml.getKnownIssuesStore();
         if (null != store) {
@@ -452,12 +464,16 @@ public final class TreeLayoutComputer {
     }
 
     private static Result resultFor(final _Scenario scenario, final TreeMap<String, Result> sorted) {
-        if (null != core && null != core.getResults()) {
+        if (previewAccessibleScenarios == null && null != core && null != core.getResults()) {
             final Result result = core.getResults().getResult(scenario);
             if (null != result) return result;
         }
         final Result result = sorted.get(b(scenario.getShortName(), scenario.type().tag()));
-        return (null != result) ? result : new Result(scenario);
+        if (null != result) return result;
+        if (previewAccessibleScenarios != null) {
+            return new Result(scenario, scenario.type(), scenario.weightConfigured(), scenario.weightUpstream(), scenario.weightDownstream(), Collections.emptyList(), 1, 0);
+        }
+        return new Result(scenario);
     }
 
     public static void resetProgressTimer() {

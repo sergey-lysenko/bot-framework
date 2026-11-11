@@ -87,6 +87,12 @@ public class PropertyTablePanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getTableHeader().setReorderingAllowed(false);
         sorter = new TableRowSorter<>(tableModel);
+        final java.util.Comparator<String> caseSensitiveComparator = java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder());
+        for (int i = 0; i < tableModel.getColumnCount(); i++) {
+            if (String.class.equals(tableModel.getColumnClass(i))) {
+                sorter.setComparator(i, caseSensitiveComparator);
+            }
+        }
         table.setRowSorter(sorter);
 
         // 1. Search Panel

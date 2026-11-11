@@ -60,24 +60,30 @@ public final class TreeHtml {
         private final String group;
         private int col;
         private double row;
+        private int rowOffset = 0;
         private final _Result result;
         private final _Scenario scenario;
         private final List<NodeData> children = new ArrayList<>();
         private final List<KnownIssue> knownIssues = new ArrayList<>();
         private NodeData parent;
 
-        public NodeData(final String id, final String label, final String group, final int col, final double row, final _Result result, final _Scenario scenario) {
+        public NodeData(final String id, final String label, final String group, final int col, final double row, final int rowOffset, final _Result result, final _Scenario scenario) {
             this.id = id;
             this.label = label;
             this.group = group;
             this.col = col;
             this.row = row;
+            this.rowOffset = rowOffset;
             this.result = result;
             this.scenario = scenario;
         }
 
+        public NodeData(final String id, final String label, final String group, final int col, final double row, final _Result result, final _Scenario scenario) {
+            this(id, label, group, col, row, 0, result, scenario);
+        }
+
         public NodeData(final String id, final String label, final String group, final int col, final double row, final _Result result) {
-            this(id, label, group, col, row, result, null);
+            this(id, label, group, col, row, 0, result, null);
         }
 
         public String id() { return id; }
@@ -87,6 +93,8 @@ public final class TreeHtml {
         public void setCol(final int col) { this.col = col; }
         public double row() { return row; }
         public void setRow(final double row) { this.row = row; }
+        public int rowOffset() { return rowOffset; }
+        public void setRowOffset(final int rowOffset) { this.rowOffset = rowOffset; }
         public _Result result() { return result; }
         public _Scenario scenario() { return scenario; }
         public List<NodeData> children() { return children; }
