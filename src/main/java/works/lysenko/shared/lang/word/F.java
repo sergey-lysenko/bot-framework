@@ -26,4 +26,7 @@ public record F() {
      * String constant for "filters".
      */
     public static final String FILTERS = s(FILTER, S);
+
+    public static final String FEE = s(FE, E);
+    public static final String FLAT = s(F, LA, T);
 }

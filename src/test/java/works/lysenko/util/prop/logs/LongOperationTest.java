@@ -12,4 +12,3 @@ class LongOperationTest {
         assertNotNull(new LongOperation());
     }
 }
-

@@ -1,6 +1,7 @@
 package works.lysenko.shared.lang.word;
 
 import static works.lysenko.util.chrs.__.*;
+import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.____.*;
 import static works.lysenko.util.data.strs.Swap.*;
 import static works.lysenko.util.spec.Symbols.*;
@@ -35,4 +36,8 @@ public record P() {
      * String constant for "profile".
      */
     public static final String PROFILE = s(PR, OF, IL, E);
+
+    public static final String PARTNER = s(PA, RT, N, ER);
+    public static final String PHONE = s(PH, ONE);
+    public static final String PRODUCT = s(PROD, UC, T);
 }

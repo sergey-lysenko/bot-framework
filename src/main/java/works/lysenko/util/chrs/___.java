@@ -245,6 +245,8 @@ public record ___() {
     public static final String UGH = "ugh";
     /** Constant representing "ung". */
     public static final String UNG = "ung";
+    /** Constant representing "ung". */
+    public static final String URL = "url";
     /** Constant representing "val". */
     public static final String VAL = "val";
     /** Constant representing "var". */

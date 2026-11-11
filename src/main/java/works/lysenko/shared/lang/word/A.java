@@ -1,5 +1,6 @@
 package works.lysenko.shared.lang.word;
 
+import static works.lysenko.shared.lang.chrs.__.*;
 import static works.lysenko.util.chrs.__.*;
 import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.____.*;
@@ -42,4 +43,6 @@ public record A() {
      * String constant for "alert".
      */
     public static final String ALERT = s(AL, ER, T);
+    public static final String ADDRESS = s(AD, DR, ES, S);
+    public static final String ASSIGN = s(AS, SI, GN);
 }

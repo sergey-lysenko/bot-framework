@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static works.lysenko.util.spec.Symbols.FAT_BUL;
 import static works.lysenko.Base.core;
 import static works.lysenko.Base.parameters;
 import static works.lysenko.Base.isDebug;
@@ -126,12 +127,15 @@ public final class Selector implements Callable<_Scenario> {
                 fits = scenario.fits();
                 if (!fits) {
                     if (Notify.doesNotFit) logEvent(S3, b(c(SCENARIO), q(scenario.getShortName()), DOES, NOT, FIT));
+                    logDebug(b(s(FAT_BUL), c(SCENARIO), q(scenario.getShortName()), "pruned from candidate pool (does not fit)"));
                     candidates.remove(Utils.getThePair(scenario, candidates));
                     if (Scenario.unreachableLeafPruning) {
                         scenario.markAsExhausted();
+                        logDebug(b(s(FAT_BUL), c(SCENARIO), q(scenario.getShortName()), "marked as exhausted (unreachable leaf pruning)"));
                     }
                     if (Scenario.branchStalePenalty) {
                         scenario.incrementStaleCount();
+                        logDebug(b(s(FAT_BUL), c(SCENARIO), q(scenario.getShortName()), "stale count incremented to", String.valueOf(scenario.getStaleCount()), "(branch stale penalty)"));
                     }
                 }
             }
@@ -152,10 +156,12 @@ public final class Selector implements Callable<_Scenario> {
                 logEvent(S3, b(c(TESTS), WILL, GO, ON, AS, REQUESTED));
                 if (Scenario.branchStalePenalty && isNotNull(ctrl.getParent())) {
                     ctrl.getParent().incrementStaleCount();
+                    logDebug(b(s(FAT_BUL), "Parent scenario", q(ctrl.getParent().getShortName()), "stale count incremented to", String.valueOf(ctrl.getParent().getStaleCount()), "(due to empty candidate pool)"));
                 }
             } else {
                 if (isNotNull(ctrl.getParent())) {
                     ctrl.getParent().markAsExhausted();
+                    logDebug(b(s(FAT_BUL), "Parent scenario", q(ctrl.getParent().getShortName()), "marked as exhausted (due to empty candidate pool)"));
                 }
                 selectionFailed(message);
             }

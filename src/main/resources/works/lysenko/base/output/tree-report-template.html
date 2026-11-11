@@ -63,10 +63,10 @@
     <g id="viewport">
 {{SVG_CONTENT}}  </g></svg>
   <div id="details-panel">
-    <h3 id="d-name">Node</h3>
+    <h3 id="d-name-wrap"><a id="d-name-link" href="#" target="_blank" style="color:var(--accent);text-decoration:none;"><span id="d-name">Node</span> <span style="font-size:0.8em;opacity:0.85;">⚡</span></a></h3>
     <p>Group: <span id="d-group" class="val"></span></p>
     <p>Status: <span id="d-status" class="val"></span></p>
-    <p>Executions: <span id="d-exec" class="val"></span></p>
+    <p>Executions: <span id="d-exec" class="val"></span> <span id="d-exec-links" style="margin-left:4px;"></span></p>
     <p>Events: <span id="d-events" class="val"></span></p>
     <div id="d-known-issues" style="display:none; margin-top:10px; padding:10px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); border-radius:6px;">
       <div style="font-weight:600; font-size:12px; color:#fbbf24; margin-bottom:6px;">Known Issues</div>
@@ -124,15 +124,27 @@
   function showNodeDetails(id) {
     const data = nodeDataMap[id];
     if (!data) return;
-    showDetails(data.name, data.group, data.status, data.exec, data.events, data.details, data.kiHtml);
+    showDetails(data.name, data.group, data.status, data.exec, data.events, data.details, data.kiHtml, data.execLinksHtml);
   }
-  function showDetails(name, group, status, exec, events, details, kiHtml) {
+  function showDetails(name, group, status, exec, events, details, kiHtml, execLinksHtml) {
     const p = document.getElementById('details-panel');
     p.style.display = 'block';
-    document.getElementById('d-name').innerText = name;
+    const cleanName = (name || '').trim();
+    document.getElementById('d-name').innerText = cleanName;
+    const fullPath = (group && !cleanName.startsWith(group)) ? (group + '.' + cleanName) : cleanName;
+    const nameLink = document.getElementById('d-name-link');
+    if (nameLink) {
+      nameLink.href = '#' + fullPath;
+      nameLink.setAttribute('data-scenario', fullPath);
+      nameLink.setAttribute('title', 'Open in Log Explorer: ' + fullPath);
+    }
     document.getElementById('d-group').innerText = group;
     document.getElementById('d-status').innerText = status;
     document.getElementById('d-exec').innerText = exec;
+    const execLinksSpan = document.getElementById('d-exec-links');
+    if (execLinksSpan) {
+      execLinksSpan.innerHTML = execLinksHtml || '';
+    }
     document.getElementById('d-events').innerText = events;
     const kiBox = document.getElementById('d-known-issues');
     const kiContent = document.getElementById('d-ki-content');

@@ -157,7 +157,7 @@ public record Stacktrace() {
      */
     private static List<String> getIgnoredList() {
 
-        if ((isNotNull(exec)) && (isNotNull(core)) && (properties.areTestPropertiesReady()))
+        if ((isNotNull(exec)) && (isNotNull(core)) && (isNotNull(properties)) && (properties.areTestPropertiesReady()))
             return getListOrEmpty();
         return new ArrayList<>(ZERO);
     }

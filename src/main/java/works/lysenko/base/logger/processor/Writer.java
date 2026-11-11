@@ -58,7 +58,7 @@ public class Writer implements _LogsWriter {
             writer.write("> **Context & Schema**:" + System.lineSeparator());
             writer.write("> - **Sections (`### Title`)**: Execution phases are structured as Markdown headings in per-test log files." + System.lineSeparator());
             writer.write("> - **Log Message**: Operational events, UI interactions, assertions, property reads/writes within each section." + System.lineSeparator());
-            writer.write("> - **Stack Trace**: Call site references formatted as `ID:[Class.method:line]`. The full mapping is stored in `<run_id>.stacktraces.properties` in the run directory." + System.lineSeparator());
+            writer.write("> - **Call Stack**: Call site references formatted as `ID:[Class.method:line]`. The full mapping is stored in `<run_id>.callstacks.properties` in the run directory." + System.lineSeparator());
             writer.write("> - **Duration (ms)**: Operation execution time in milliseconds." + System.lineSeparator() + System.lineSeparator());
             writer.write("## Segmented Log Files" + System.lineSeparator() + System.lineSeparator());
             writer.flush();
@@ -74,7 +74,7 @@ public class Writer implements _LogsWriter {
             writer.write("> **Context & Schema**:" + System.lineSeparator());
             writer.write("> - **Sections (`### Title`)**: Execution phases (Preflight, Scenario selection/execution, Data operations) are structured as Markdown headings with call site IDs and section timing." + System.lineSeparator());
             writer.write("> - **Log Message**: Operational events, UI interactions, assertions, property reads/writes, and state changes within each section." + System.lineSeparator());
-            writer.write("> - **Stack Trace**: Call site references formatted as `ID:[Class.method:line]` upon first declaration. Bracketed IDs (`[ID]`) or empty cells refer to call site IDs defined earlier in the trace." + System.lineSeparator());
+            writer.write("> - **Call Stack**: Call site references formatted as `ID:[Class.method:line]` upon first declaration. Bracketed IDs (`[ID]`) or empty cells refer to call site IDs defined earlier in the trace." + System.lineSeparator());
             writer.write("> - **Duration (ms)**: Operation execution time in milliseconds." + System.lineSeparator() + System.lineSeparator());
             writer.flush();
         } catch (final IOException ignored) {
@@ -88,7 +88,7 @@ public class Writer implements _LogsWriter {
             writer.write("> **Context & Schema**:" + System.lineSeparator());
             writer.write("> - **Sections (`### Title`)**: Execution summary phases (Scenario statistics, Result markers, Tree reports, Postflight) are structured as Markdown headings with call site IDs and section timing." + System.lineSeparator());
             writer.write("> - **Log Message**: Operational events, UI interactions, assertions, property reads/writes, and state changes within each section." + System.lineSeparator());
-            writer.write("> - **Stack Trace**: Call site references formatted as `ID:[Class.method:line]`. The full mapping is stored in `<run_id>.stacktraces.properties` in the run directory." + System.lineSeparator());
+            writer.write("> - **Call Stack**: Call site references formatted as `ID:[Class.method:line]`. The full mapping is stored in `<run_id>.callstacks.properties` in the run directory." + System.lineSeparator());
             writer.write("> - **Duration (ms)**: Operation execution time in milliseconds." + System.lineSeparator() + System.lineSeparator());
             writer.flush();
         } catch (final IOException ignored) {

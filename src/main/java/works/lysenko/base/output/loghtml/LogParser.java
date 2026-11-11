@@ -265,6 +265,7 @@ public final class LogParser {
         replacements.put("{{TREE_LINK}}", escapeHtml(s(mlRes.getBasePrefix(), ".tree.html")));
         replacements.put("{{RAW_LINK}}", escapeHtml(s(mlRes.getBasePrefix(), ".run.log")));
         replacements.put("{{TELEM_LINK}}", escapeHtml(s(mlRes.getBasePrefix(), ".telemetry.log")));
+        replacements.put("{{CALLSTACKS_LINK}}", escapeHtml(s(mlRes.getBasePrefix(), ".callstacks.properties")));
         replacements.put("{{STACKTRACES_LINK}}", escapeHtml(s(mlRes.getBasePrefix(), ".stacktraces.properties")));
         replacements.put("{{TIMELINE_TOGGLE}}", timelineToggle);
         replacements.put("{{STATS_STRIP}}", statsStrip);

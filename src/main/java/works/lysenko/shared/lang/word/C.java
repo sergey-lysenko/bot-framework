@@ -45,4 +45,7 @@ public record C() {
      * String constant for "complete".
      */
     public static final String COMPLETE = s(CO, MP, LE, TE);
+
+    public static final String CREATE = s(CR, EA, TE);
+    public static final String CUSTOMER = s(CU, ST, OM, ER);
 }

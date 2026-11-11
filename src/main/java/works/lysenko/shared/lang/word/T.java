@@ -20,4 +20,9 @@ public record T() {
      * String constant for "timestamps".
      */
     public static final String TIMESTAMPS = s(TIMESTAMP, S);
+
+    public static final String TIMEZONE = s(TI, ME, ZO, NE);
+    public static final String TODAY = s(TO, D, AY);
+    public static final String TOGGLE = s(TO, GG, LE);
+    public static final String TYPE = s(TY, PE);
 }

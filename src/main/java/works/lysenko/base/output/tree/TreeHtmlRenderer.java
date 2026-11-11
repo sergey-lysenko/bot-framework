@@ -246,16 +246,42 @@ public record TreeHtmlRenderer() {
         final String eventDetails = formatEventDetails(res);
         final String kiHtml = renderKnownIssuesHtml(node.knownIssues());
         final String safeLabel = node.label().replace("<", "&lt;").replace(">", "&gt;");
+        final String execLinksHtml = renderExecLinksHtml(node, execs);
 
-        final Map<String, Object> nodeInfo = new LinkedHashMap<>(8);
+        final Map<String, Object> nodeInfo = new LinkedHashMap<>(9);
         nodeInfo.put("name", safeLabel);
         nodeInfo.put("group", node.group());
         nodeInfo.put("status", s(visualNode.badgeText(), (visualNode.hasKnownIssues() ? s(_SPACE_, e(ROUND, b(c(KNOWN), c(ISSUE)))) : "")));
         nodeInfo.put("exec", execs);
+        nodeInfo.put("execLinksHtml", execLinksHtml);
         nodeInfo.put(EVENTS, eventCount);
         nodeInfo.put(DETAILS, eventDetails);
         nodeInfo.put("kiHtml", kiHtml);
         return nodeInfo;
+    }
+
+    private static String renderExecLinksHtml(final TreeHtml.NodeData node, final int execs) {
+        if (execs <= 0) {
+            return "";
+        }
+        final String label = node.label() != null ? node.label() : "";
+        final String group = node.group() != null ? node.group() : "";
+        final String fullPath = (hasText(group) && !label.startsWith(group)) ? (group + "." + label) : label;
+        final String safePath = escapeHtml(fullPath);
+
+        final StringBuilder sb = new StringBuilder(64);
+        sb.append("<span style=\"font-size:11px; color:#94a3b8;\">(");
+        for (int i = 1; i <= execs; i++) {
+            if (i > 1) {
+                sb.append(", ");
+            }
+            sb.append("<a class=\"exec-link\" href=\"#test-").append(i).append("-").append(safePath)
+              .append("\" data-cycle=\"").append(i).append("\" data-scenario=\"").append(safePath)
+              .append("\" style=\"color:#38bdf8; text-decoration:underline; font-weight:600;\">#")
+              .append(i).append("</a>");
+        }
+        sb.append(")</span>");
+        return sb.toString();
     }
 
     private static String formatEventDetails(final _Result res) {
