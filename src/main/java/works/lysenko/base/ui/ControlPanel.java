@@ -200,7 +200,11 @@ public class ControlPanel extends JFrame implements _Dashboard {
 
         tabbedPane.addTab("Tree Progression", treeProgressionPanel);
 
-        // 5. Known Issues Tab
+        // 5. Tree Layout Editor
+        final TreeLayoutEditorPanel treeLayoutEditorPanel = new TreeLayoutEditorPanel();
+        tabbedPane.addTab("Tree Layout Editor", treeLayoutEditorPanel);
+
+        // 6. Known Issues Tab
         final KnownIssuesPanel knownIssuesPanel = new KnownIssuesPanel();
         tabbedPane.addTab("Known Issues", knownIssuesPanel);
 

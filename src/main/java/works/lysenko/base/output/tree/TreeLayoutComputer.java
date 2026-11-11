@@ -8,12 +8,14 @@ import works.lysenko.base.output.TreeHtml.NodeData;
 import works.lysenko.base.output.TreeHtml.TreeLayout;
 import works.lysenko.base.output.svg.Groups;
 import works.lysenko.base.output.svg.Parts;
+import works.lysenko.util.apis.*;
 import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Node;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.type.Result;
 import works.lysenko.util.prop.tree.HideOff;
+import works.lysenko.util.prop.tree.VisualOffset;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -131,6 +133,7 @@ public final class TreeLayoutComputer {
         logDebug(s("Tree layout timing (scenarios): process = ", tProc - tStart, " ms (known issues checked against ", logRecords.size(), " logs), prune = ", tPrune - tPruneStart, " ms, optimize = ", tOpt - tOptStart, " ms"));
         return new TreeLayout(nodes, edges);
     }
+    public static final java.util.Map<String, Integer> offsetOverrides = new java.util.concurrent.ConcurrentHashMap<>();
 
     private static void processScenario(final _Scenario scenario, final NodeData parent, final int col, final int[] rows,
                                         final Set<_Scenario> ancestors, final TreeMap<String, Result> sorted,
@@ -138,10 +141,18 @@ public final class TreeLayoutComputer {
                                         final List<_LogRecord> logRecords) {
 
         if (null == scenario || !ancestors.add(scenario)) return;
+        int offset = 0;
+        if (offsetOverrides.containsKey(scenario.getSimpleName())) {
+            offset = offsetOverrides.get(scenario.getSimpleName());
+        } else {
+            final VisualOffset vo = scenario.getClass().getAnnotation(VisualOffset.class);
+            if (vo != null) offset = vo.value();
+        }
+        final int myCol = col + offset;
         final String label = b(scenario.getSimpleName(), scenario.type().tag());
         final String id = s("scenario_", nodes.size(), "_", scenario.getSimpleName());
         final String group = (null == parent) ? TESTS : parent.label();
-        final NodeData node = new NodeData(id, label, group, col, rows[0]++, resultFor(scenario, sorted), scenario);
+        final NodeData node = new NodeData(id, label, group, myCol, rows[0]++, resultFor(scenario, sorted), scenario);
 
         final KnownIssuesStore store = TreeHtml.getKnownIssuesStore();
         if (null != store) {
@@ -185,7 +196,7 @@ public final class TreeLayoutComputer {
             pairs.sort(Comparator.comparing((works.lysenko.util.data.records.KeyValue<_Scenario, org.apache.commons.math3.fraction.Fraction> p) -> p.k().getSimpleName())
                     .thenComparing(p -> p.k().getName()));
             for (final var child : pairs)
-                processScenario(child.k(), node, col + 1, rows, ancestors, sorted, nodes, edges, logRecords);
+                processScenario(child.k(), node, myCol + 1, rows, ancestors, sorted, nodes, edges, logRecords);
         }
         ancestors.remove(scenario);
     }
@@ -422,7 +433,12 @@ public final class TreeLayoutComputer {
         return isTheoreticallyExecutable(n, getAccessibleScenarios());
     }
 
+    public static Set<_Scenario> previewAccessibleScenarios = null;
+
     public static Set<_Scenario> getAccessibleScenarios() {
+        if (previewAccessibleScenarios != null) {
+            return previewAccessibleScenarios;
+        }
         if (isNotNull(core)) {
             try {
                 final Set<_Scenario> accessible = core.getAccessibleScenarios();

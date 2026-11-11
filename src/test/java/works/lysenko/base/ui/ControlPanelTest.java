@@ -50,7 +50,7 @@ class ControlPanelTest {
     }
 
     @Test
-    void controlPanelHasThreeTabsWithTreeProgression() throws Exception {
+    void controlPanelHasAllExpectedTabs() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             final Properties props = new Properties();
             props.setProperty("TEST", "testSuite");
@@ -62,12 +62,13 @@ class ControlPanelTest {
 
             final JTabbedPane tabbedPane = controlPanel.getTabbedPane();
             assertNotNull(tabbedPane);
-            assertEquals(5, tabbedPane.getTabCount());
+            assertEquals(6, tabbedPane.getTabCount());
             assertEquals("Config & Tests", tabbedPane.getTitleAt(0));
             assertEquals("Run Setup", tabbedPane.getTitleAt(1));
             assertEquals("Execution", tabbedPane.getTitleAt(2));
             assertEquals("Tree Progression", tabbedPane.getTitleAt(3));
-            assertEquals("Known Issues", tabbedPane.getTitleAt(4));
+            assertEquals("Tree Layout Editor", tabbedPane.getTitleAt(4));
+            assertEquals("Known Issues", tabbedPane.getTitleAt(5));
             assertEquals(1, tabbedPane.getSelectedIndex());
         });
     }
