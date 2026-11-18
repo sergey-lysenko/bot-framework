@@ -6,7 +6,7 @@ result/
 *.log
 run/
 dash/
-/var/parameters
+**/var/parameters
 .artifacts/
 ScratchTest.java
 skills/

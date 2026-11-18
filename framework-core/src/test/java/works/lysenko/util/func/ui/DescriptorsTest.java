@@ -1,0 +1,53 @@
+package works.lysenko.util.func.ui;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import works.lysenko.Base;
+import works.lysenko.base.Parameters;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class DescriptorsTest {
+
+    private Parameters previousParameters;
+
+    @BeforeEach
+    void setUp() {
+        previousParameters = Base.parameters;
+        Base.parameters = new Parameters(new java.util.Properties());
+    }
+
+    @AfterEach
+    void tearDown() {
+        Base.parameters = previousParameters;
+    }
+
+    @Test
+    void testPutAndGet() {
+        Descriptors.put("test.key", "xpath=//test");
+        assertEquals("xpath=//test", Descriptors.get("test.key"));
+    }
+
+    @Test
+    void testFill() {
+        Descriptors.put("formatted.key", "xpath=//test[%s]");
+        assertEquals("xpath=//test[123]", Descriptors.fill("formatted.key", "123"));
+    }
+
+    @Test
+    void testContentFallbackWeb() {
+        final java.util.Properties props = new java.util.Properties();
+        props.setProperty("PLATFORM", "chrome");
+        Base.parameters = new Parameters(props);
+        assertEquals("//body", Descriptors.get("Content"));
+    }
+
+    @Test
+    void testContentFallbackAndroid() {
+        final java.util.Properties props = new java.util.Properties();
+        props.setProperty("PLATFORM", "Android");
+        Base.parameters = new Parameters(props);
+        assertEquals("//android.widget.FrameLayout", Descriptors.get("Content"));
+    }
+}

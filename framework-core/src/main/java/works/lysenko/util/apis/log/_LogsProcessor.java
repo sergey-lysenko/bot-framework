@@ -1,0 +1,119 @@
+package works.lysenko.util.apis.log;
+
+import works.lysenko.base.util.Telemetry;
+import works.lysenko.util.data.enums.Severity;
+
+import java.io.Closeable;
+
+/**
+ * _LogsProcessor is an interface that represents a log processor.
+ * It provides methods for processing telemetry, logging messages and retrieving logs.
+ */
+@SuppressWarnings("InterfaceWithOnlyOneDirectInheritor")
+public interface _LogsProcessor {
+
+    /**
+     * Retrieves all browser logs before proceeding with log entry addition.
+     *
+     * @param depth         The depth of the logs to retrieve.
+     * @param redefinedTime The optional redefined time to filter logs. If null, all logs will be retrieved.
+     */
+    void getAllDriverLogs(int depth, Long redefinedTime);
+
+    /**
+     * Retrieves a Closeable object that can be used to write logs.
+     *
+     * @return A1 Closeable object representing the log writer.
+     */
+    Closeable getLogWriter();
+
+    /**
+     * Retrieves the length of the span.
+     *
+     * @return The length of the span.
+     */
+    int getSpanLength();
+
+    /**
+     * Returns a Closeable object that can be used to write telemetry data.
+     *
+     * @return A1 Closeable object that represents the telemetry writer.
+     */
+    Closeable getTelemetryWriter();
+
+    /**
+     * Logs a message with the specified log level, call stack, and optional redefined time.
+     *
+     * @param level         The log level.
+     * @param message       The log message to be logged.
+     * @param callstack     The call stack string.
+     * @param redefinedTime The optional redefined time.
+     */
+    default void log(final int level, final String message, final String callstack, final Long redefinedTime) {
+        log(level, message, redefinedTime);
+    }
+
+    /**
+     * Logs a message with the specified log level and optional redefined time.
+     *
+     * @param level         The log level. Use an integer value representing the severity of the log message.
+     * @param message       The log message to be logged.
+     * @param redefinedTime The optional redefined time to filter logs. If null, all logs will be logged.
+     */
+    void log(int level, String message, Long redefinedTime);
+
+    /**
+     * Logs a section header.
+     * TODO: redeem author's stupidity
+     *
+     * @param title     The section title.
+     * @param callstack The optional call stack string.
+     */
+    default void logSection(final String title, final String callstack) {
+        log(0, title, callstack, null);
+    }
+
+    /**
+     * Logs a section header.
+     * TODO: redeem author's stupidity
+     *
+     * @param title The section title.
+     */
+    default void logSection(final String title) {
+        logSection(title, null);
+    }
+
+    /**
+     * Logs an empty line with a given short call stack.
+     *
+     * @param shortCallstack The short call stack to append to the empty line.
+     */
+    void logEmptyLine(String shortCallstack);
+
+    /**
+     * Logs an empty line.
+     */
+    void logEmptyLine();
+
+    /**
+     * Logs an event with the specified severity, message, and short call stack.
+     *
+     * @param severity       The severity of the event.
+     * @param message        The message to be logged.
+     * @param shortCallstack The short call stack to be logged.
+     */
+    void logEvent(Severity severity, String message, String shortCallstack);
+
+    /**
+     * Process the telemetry data.
+     *
+     * @param telemetry The telemetry data to be processed.
+     */
+    void process(Telemetry telemetry);
+
+    /**
+     * Flushes the last remaining log record from the buffer into the queue,
+     * and processes the queue to ensure all logs are written out.
+     */
+    void flush();
+}
