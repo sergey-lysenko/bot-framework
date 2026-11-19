@@ -127,22 +127,39 @@ public record Telemetry(Data data, String rendered) {
     private static double sampleIntervalCpuPercent(final long nowNs, final int cores) {
 
         if (lastCpuWallNs < 0L) {
-            lastCpuWallNs = nowNs;
-            lastProcessCpuNs = readProcessCpuTimeNs();
+            final long initialCpuNs = readProcessCpuTimeNs();
             final double initialLoad = (null != osMX) ? osMX.getProcessCpuLoad() : -1.0;
-            lastCpuPercent = (initialLoad >= 0.0 && Double.isFinite(initialLoad))
+            final double initialPct = (initialLoad >= 0.0 && Double.isFinite(initialLoad))
                     ? Math.round(Math.min(100.0, initialLoad * 100.0) * 100.0) / 100.0
                     : 0.0;
+            return initCpuSampler(nowNs, initialCpuNs, initialPct);
+        }
+        if ((nowNs - lastCpuWallNs) < MIN_CPU_SAMPLE_WINDOW_NS) {
             return lastCpuPercent;
+        }
+        return sampleIntervalCpuPercent(nowNs, readProcessCpuTimeNs(), cores);
+    }
+
+    static synchronized double initCpuSampler(final long nowNs, final long processCpuNs, final double initialPct) {
+
+        lastCpuWallNs = nowNs;
+        lastProcessCpuNs = processCpuNs;
+        lastCpuPercent = initialPct;
+        return lastCpuPercent;
+    }
+
+    static synchronized double sampleIntervalCpuPercent(final long nowNs, final long processCpuNs, final int cores) {
+
+        if (lastCpuWallNs < 0L) {
+            return initCpuSampler(nowNs, processCpuNs, 0.0);
         }
         final long deltaWallNs = nowNs - lastCpuWallNs;
         if (deltaWallNs < MIN_CPU_SAMPLE_WINDOW_NS) {
             return lastCpuPercent;
         }
-        final long nowCpuNs = readProcessCpuTimeNs();
-        final long deltaCpuNs = nowCpuNs - lastProcessCpuNs;
+        final long deltaCpuNs = processCpuNs - lastProcessCpuNs;
         lastCpuWallNs = nowNs;
-        lastProcessCpuNs = nowCpuNs;
+        lastProcessCpuNs = processCpuNs;
         lastCpuPercent = computeIntervalCpuPercent(deltaCpuNs, deltaWallNs, cores);
         return lastCpuPercent;
     }

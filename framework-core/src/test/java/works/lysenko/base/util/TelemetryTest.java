@@ -54,26 +54,39 @@ class TelemetryTest {
     }
 
     @Test
-    void testIntervalCpuRespondsToBusyVsIdleWindows() throws InterruptedException {
+    void testIntervalWindowHoldsDuringBurstAndDropsWhenIdle() {
+        final int cores = 8;
+        // Baseline at t = 0
+        assertEquals(0.0, Telemetry.sampleIntervalCpuPercent(0L, 1_000_000_000L, cores));
+
+        // 50 ms later (< 250 ms minimum window) -> holds previous sample
+        assertEquals(0.0, Telemetry.sampleIntervalCpuPercent(50_000_000L, 1_200_000_000L, cores));
+
+        // 500 ms later: 2 cores worth of CPU consumed -> 25.0%
+        assertEquals(25.0, Telemetry.sampleIntervalCpuPercent(500_000_000L, 2_000_000_000L, cores));
+
+        // 600 ms (100 ms into next window < 250 ms) -> holds 25.0%
+        assertEquals(25.0, Telemetry.sampleIntervalCpuPercent(600_000_000L, 2_005_000_000L, cores));
+
+        // 1500 ms (1000 ms after last sample): almost idle (40 ms CPU across 8 cores = 0.5%)
+        assertEquals(0.5, Telemetry.sampleIntervalCpuPercent(1_500_000_000L, 2_040_000_000L, cores));
+    }
+
+    @Test
+    void testRealProcessCpuSampleIsPositiveUnderLoad() {
         Telemetry.getNewTelemetry(0L, "baseline");
 
         // Busy-burn 1 thread for ~300 ms (> 250 ms minimum window)
         final long burnUntil = System.nanoTime() + 300_000_000L;
         double sink = 0.0;
+        long iter = 1L;
         while (System.nanoTime() < burnUntil) {
-            sink += Math.sqrt(burnUntil - System.nanoTime());
+            sink += Math.sqrt(iter++);
         }
-        assertTrue(Double.isFinite(sink));
+        assertTrue(Double.isFinite(sink) && sink > 0.0);
         final Telemetry afterBusy = Telemetry.getNewTelemetry(300L, "after busy");
 
-        // Idle sleep for ~300 ms
-        Thread.sleep(300L);
-        final Telemetry afterIdle = Telemetry.getNewTelemetry(600L, "after idle");
-
-        assertTrue(afterBusy.data().spent() > 0.0,
-                "Expected positive interval CPU during busy burn, got " + afterBusy.data().spent());
-        assertTrue(afterBusy.data().spent() > afterIdle.data().spent(),
-                "Expected busy interval (" + afterBusy.data().spent() + "%) > idle interval ("
-                        + afterIdle.data().spent() + "%)");
+        assertTrue(afterBusy.data().spent() > 0.0 && afterBusy.data().spent() <= 100.0,
+                "Expected interval CPU in (0, 100] during busy burn, got " + afterBusy.data().spent());
     }
 }
