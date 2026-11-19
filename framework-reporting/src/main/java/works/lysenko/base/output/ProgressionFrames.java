@@ -35,7 +35,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -530,8 +529,9 @@ public final class ProgressionFrames {
         }
 
         final int threads = Math.min(svgCount, Math.max(2, Runtime.getRuntime().availableProcessors()));
-        final AtomicInteger completed = new AtomicInteger(0);
-        final AtomicInteger lastReportedPct = new AtomicInteger(0);
+        final Object progressLock = new Object();
+        final int[] completed = {0};
+        final int[] lastReportedPct = {0};
 
         try (ExecutorService executor = Executors.newFixedThreadPool(
                 threads,
@@ -546,21 +546,25 @@ public final class ProgressionFrames {
                         final BufferedImage img = renderSvg(src, maxFramePixels, maxWidth, maxHeight);
                         ImageIO.write(img, "png", dstPng);
                         outputs[index] = dstPng;
-                        final int done = completed.incrementAndGet();
-                        final int percent = (int) Math.round((double) done * 100.0 / total);
-                        final int prev = lastReportedPct.getAndAccumulate(percent, Math::max);
-                        if (percent > prev) {
-                            progress.update(taskName, percent);
+                        synchronized (progressLock) {
+                            final int done = ++completed[0];
+                            final int percent = (int) Math.round((double) done * 100.0 / total);
+                            if (percent > lastReportedPct[0]) {
+                                lastReportedPct[0] = percent;
+                                progress.update(taskName, percent);
+                            }
                         }
                         return null;
                     }));
                 } else {
                     outputs[index] = src;
-                    final int done = completed.incrementAndGet();
-                    final int percent = (int) Math.round((double) done * 100.0 / total);
-                    final int prev = lastReportedPct.getAndAccumulate(percent, Math::max);
-                    if (percent > prev) {
-                        progress.update(taskName, percent);
+                    synchronized (progressLock) {
+                        final int done = ++completed[0];
+                        final int percent = (int) Math.round((double) done * 100.0 / total);
+                        if (percent > lastReportedPct[0]) {
+                            lastReportedPct[0] = percent;
+                            progress.update(taskName, percent);
+                        }
                     }
                 }
             }

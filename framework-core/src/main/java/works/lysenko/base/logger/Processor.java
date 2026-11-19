@@ -26,13 +26,19 @@ import works.lysenko.util.data.type.logr.type.LineFeed;
 import works.lysenko.util.data.type.logr.type.Log;
 import works.lysenko.util.func.core.Callstack;
 import works.lysenko.util.prop.core.Similarity;
+import works.lysenko.util.spec.Level;
 import works.lysenko.util.spec.Severities;
 
 import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.isNull;
 import static works.lysenko.Base.core;
@@ -96,17 +102,44 @@ import works.lysenko.base.logger.renderer.MarkdownLogRenderer;
 @SuppressWarnings({"CallToSuspiciousStringMethod", "MethodWithMultipleReturnPoints", "CallToPrintStackTrace"})
 public class Processor implements _LogsProcessor {
 
+    private sealed interface DispatchTask permits WriteRecord, FlushBarrier {}
+
+    private record WriteRecord(
+            _LogRecord record,
+            Integer totalTests,
+            int spanLength,
+            long previousId,
+            Telemetry telemetry) implements DispatchTask {}
+
+    private record FlushBarrier(CountDownLatch latch) implements DispatchTask {}
+
+    private static final long DRIVER_LOG_POLL_MIN_INTERVAL_NS = 200_000_000L;
+    private static final AtomicReference<WeakReference<Processor>> ACTIVE_PROCESSOR = new AtomicReference<>();
+
+    static {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            final WeakReference<Processor> ref = ACTIVE_PROCESSOR.get();
+            final Processor active = (null != ref) ? ref.get() : null;
+            if (null != active) {
+                active.awaitAsyncFlush(2L, TimeUnit.SECONDS);
+            }
+        }, "log-writer-shutdown"));
+    }
+
     private static long counter = ZERO;
     private final _Queue queue = new Queue();
     private final _LimitedDeque<_LogRecord> similarity = new LimitedDeque<>(Similarity.depth);
-    private final _LogsWriter writer = new Writer();
+    private final _LogsWriter writer;
     private final LogRenderer ansiRenderer = new AnsiLogRenderer();
     private final LogRenderer markdownRenderer = new MarkdownLogRenderer();
     private final Set<String> logsToRead;
+    private final LinkedBlockingQueue<DispatchTask> asyncQueue = new LinkedBlockingQueue<>();
+    private final Thread writerThread;
     private _LogRecord previousLogRecord = null;
     private Boolean driverLogsAvailable = null;
     private int spanLength = 0;
     private _LogRecord upperLogRecord = null;
+    private long lastDriverLogPollNs = -1L;
 
     /**
      * Constructor for the Processor class that initialises the logs to be read.
@@ -115,7 +148,18 @@ public class Processor implements _LogsProcessor {
      */
     public Processor(final Set<String> logsToRead) {
 
+        this(logsToRead, new Writer());
+    }
+
+    Processor(final Set<String> logsToRead, final _LogsWriter writer) {
+
         this.logsToRead = logsToRead;
+        this.writer = writer;
+        this.writerThread = Thread.ofPlatform()
+                .daemon()
+                .name("log-writer")
+                .start(this::drainAsyncQueue);
+        ACTIVE_PROCESSOR.set(new WeakReference<>(this));
     }
 
     /**
@@ -221,6 +265,7 @@ public class Processor implements _LogsProcessor {
      */
     public synchronized final void getAllDriverLogs(final int depth, final Long redefinedTime) {
 
+        if (null == logsToRead || logsToRead.isEmpty()) return;
         if (isNotNull(exec)) {
             if (isNotNull(exec.wd())) {
                 if (Routines.in(CHROME)) { // Old code
@@ -230,6 +275,18 @@ public class Processor implements _LogsProcessor {
                 } else readAllDriverLogs(depth, redefinedTime);
             }
         }
+    }
+
+    private void pollDriverLogsIfNeeded(final int level, final int depth, final Long redefinedTime) {
+
+        if (null == logsToRead || logsToRead.isEmpty()) return;
+        final long nowNs = System.nanoTime();
+        if (level >= Level.debug && lastDriverLogPollNs >= 0L
+                && (nowNs - lastDriverLogPollNs) < DRIVER_LOG_POLL_MIN_INTERVAL_NS) {
+            return;
+        }
+        lastDriverLogPollNs = nowNs;
+        getAllDriverLogs(depth, redefinedTime);
     }
 
     @Override
@@ -274,7 +331,7 @@ public class Processor implements _LogsProcessor {
     public synchronized final void log(final int level, final String message, final String callstack, final Long redefinedTime) {
 
         final int depth = getDepth(); // indentation of text
-        getAllDriverLogs(depth, redefinedTime); // external logs
+        pollDriverLogsIfNeeded(level, depth, redefinedTime); // external logs
 
         final long time = defineTime(redefinedTime); // time for this record
         final AbstractLogData data = new Log(++counter, depth, level, n(NULL, message), callstack); // data for this log record
@@ -358,6 +415,7 @@ public class Processor implements _LogsProcessor {
      * and processes the queue to ensure all logs are written out.
      */
     public synchronized final void flush() {
+        getAllDriverLogs(getDepth(), null);
         if (isNotNull(previousLogRecord)) {
             final int span = previousLogRecord.setSpan(defineTime(null)); 
             queue.add((LogRecord) previousLogRecord);
@@ -369,28 +427,93 @@ public class Processor implements _LogsProcessor {
             previousLogRecord = null;
         }
         process(Telemetry.getNewTelemetry(defineTime(null), StringUtils.EMPTY));
+        awaitAsyncFlush(30L, TimeUnit.SECONDS);
     }
 
     /**
-     * Processes the log records in the log queue.
+     * Dispatches queued log records in strict chronological order to the dedicated
+     * single-consumer background writer thread.
      *
      * @param telemetry The telemetry object to be logged along with the log records.
      */
     public synchronized final void process(final Telemetry telemetry) {
 
+        final Integer totalTests = isNotNull(core) ? core.getTotalTests() : null;
         while (!queue.isEmpty()) {
             final _LogRecord r = queue.poll();
             if (r == null) continue;
             final long previousId = isNull(upperLogRecord) ? ZERO : upperLogRecord.data().id();
-            
-            final String ansiLine = ansiRenderer.render(r, core.getTotalTests(), spanLength, previousId);
-            final String mdLine = markdownRenderer.render(r, core.getTotalTests(), spanLength, previousId);
-            
-            logConsole(ansiLine); // render to Console
-            logToFile(ansiLine); // render to File
-            logToMarkdown(r.test(), mdLine); // render to Markdown File
-            logTelemetry(telemetry); // persist Telemetry
+            asyncQueue.add(new WriteRecord(r, totalTests, spanLength, previousId, telemetry));
             upperLogRecord = r;
+        }
+    }
+
+    private void awaitAsyncFlush(final long timeout, final TimeUnit unit) {
+
+        if (Thread.currentThread() == writerThread || !writerThread.isAlive()) {
+            writer.flushAll();
+            return;
+        }
+        final CountDownLatch latch = new CountDownLatch(1);
+        asyncQueue.add(new FlushBarrier(latch));
+        try {
+            if (!latch.await(timeout, unit)) {
+                writer.flushAll();
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            writer.flushAll();
+        }
+    }
+
+    private void drainAsyncQueue() {
+
+        BufferedWriter lastDirtyMarkdown = null;
+        while (true) {
+            final DispatchTask task;
+            try {
+                task = asyncQueue.take();
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+            if (task instanceof WriteRecord wr) {
+                lastDirtyMarkdown = writeRecord(wr, lastDirtyMarkdown);
+                if (asyncQueue.isEmpty() && isNotNull(lastDirtyMarkdown)) {
+                    flushQuietly(lastDirtyMarkdown);
+                    lastDirtyMarkdown = null;
+                }
+            } else if (task instanceof FlushBarrier fb) {
+                try {
+                    writer.flushAll();
+                    lastDirtyMarkdown = null;
+                } finally {
+                    fb.latch().countDown();
+                }
+            }
+        }
+    }
+
+    private BufferedWriter writeRecord(final WriteRecord wr, final BufferedWriter lastDirtyMarkdown) {
+
+        final _LogRecord r = wr.record();
+        final String ansiLine = ansiRenderer.render(r, wr.totalTests(), wr.spanLength(), wr.previousId());
+        final String mdLine = markdownRenderer.render(r, wr.totalTests(), wr.spanLength(), wr.previousId());
+
+        logConsole(ansiLine); // render to Console
+        logToFile(ansiLine); // render to File
+        final BufferedWriter activeMdWriter = logToMarkdown(r.test(), mdLine, lastDirtyMarkdown); // render to Markdown File
+        logTelemetry(wr.telemetry()); // persist Telemetry
+        return activeMdWriter;
+    }
+
+    private static void flushQuietly(final BufferedWriter bw) {
+
+        if (isNotNull(bw)) {
+            try {
+                bw.flush();
+            } catch (final IOException ignored) {
+            }
         }
     }
 
@@ -472,13 +595,13 @@ public class Processor implements _LogsProcessor {
      *
      * @param telemetry the telemetry object containing data to be logged
      */
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private void logTelemetry(final Telemetry telemetry) {
 
         if (isNull(telemetry)) return;
         try {
             if (isNull(writer.getTelemetryWriter()))
-                logEvent(S0, Ansi.ansi(TELEMETRY_WRITER_IS_NOT___),
-                        Callstack.getShort(Thread.currentThread().getStackTrace()));
+                System.err.println(Ansi.ansi(TELEMETRY_WRITER_IS_NOT___));
             else writer.getTelemetryWriter().write(s(telemetry, System.lineSeparator()));
         } catch (final IOException e) {
             if (!"Stream closed".equals(e.getMessage())) {
@@ -492,11 +615,12 @@ public class Processor implements _LogsProcessor {
      *
      * @param s the message to be logged
      */
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private void logToFile(final String s) {
 
         try {
             if (isNull(writer.getLogWriter()))
-                logEvent(S0, Ansi.ansi(LOG_WRITER_IS_NOT___), Callstack.getShort(Thread.currentThread().getStackTrace()));
+                System.err.println(Ansi.ansi(LOG_WRITER_IS_NOT___));
             else writer.getLogWriter().write(s(s, System.lineSeparator()));
         } catch (final IOException e) {
             if (!"Stream closed".equals(e.getMessage())) {
@@ -506,25 +630,32 @@ public class Processor implements _LogsProcessor {
     }
 
     /**
-     * Logs the provided message to a Markdown file using the designated log writer.
+     * Logs the provided message to a Markdown file using the designated log writer,
+     * flushing only when switching test files or when the async burst drains.
      *
-     * @param testNumber the test number integer
-     * @param s          the message to be logged
+     * @param testNumber        the test number integer
+     * @param s                 the message to be logged
+     * @param lastDirtyMarkdown previously written Markdown writer awaiting flush, or null
+     * @return the currently dirty Markdown writer
      */
-    private void logToMarkdown(final int testNumber, final String s) {
+    private BufferedWriter logToMarkdown(final int testNumber, final String s, final BufferedWriter lastDirtyMarkdown) {
 
-        if (s == null || s.isEmpty()) return;
+        if (s == null || s.isEmpty()) return lastDirtyMarkdown;
         try {
             final BufferedWriter w = writer.getMarkdownWriter(testNumber);
+            if (isNotNull(lastDirtyMarkdown) && lastDirtyMarkdown != w) {
+                flushQuietly(lastDirtyMarkdown);
+            }
             if (isNotNull(w)) {
                 w.write(s(s, System.lineSeparator()));
-                w.flush();
+                return w;
             }
         } catch (final IOException e) {
             if (!"Stream closed".equals(e.getMessage())) {
                 e.printStackTrace();
             }
         }
+        return lastDirtyMarkdown;
     }
 
     /**

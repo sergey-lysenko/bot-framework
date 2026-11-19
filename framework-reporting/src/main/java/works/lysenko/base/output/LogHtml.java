@@ -29,9 +29,10 @@ public final class LogHtml {
      */
     public static void logStats() {
         try {
-            if (null != core && null != core.getLogger() && null != core.getLogger().getLogWriter()) {
-                if (core.getLogger().getLogWriter() instanceof java.io.Flushable) {
-                    ((java.io.Flushable) core.getLogger().getLogWriter()).flush();
+            if (null != core && null != core.getLogger()) {
+                core.getLogger().flush();
+                if (core.getLogger().getLogWriter() instanceof java.io.Flushable flushable) {
+                    flushable.flush();
                 }
             }
         } catch (final Exception e) {

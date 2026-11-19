@@ -38,4 +38,10 @@ public interface _LogsWriter {
      * @return The BufferedWriter object used for writing telemetry data.
      */
     BufferedWriter getTelemetryWriter();
+
+    /**
+     * Flushes all open log, Markdown, and telemetry writers.
+     */
+    default void flushAll() {
+    }
 }

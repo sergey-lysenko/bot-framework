@@ -170,4 +170,25 @@ public class Writer implements _LogsWriter {
 
         return telemetryWriter;
     }
+
+    @Override
+    public final void flushAll() {
+
+        flushQuietly(logWriter);
+        flushQuietly(telemetryWriter);
+        flushQuietly(markdownWriter);
+        for (final BufferedWriter w : markdownTestWriters.values()) {
+            flushQuietly(w);
+        }
+    }
+
+    private static void flushQuietly(final BufferedWriter writer) {
+
+        if (isNotNull(writer)) {
+            try {
+                writer.flush();
+            } catch (final IOException ignored) {
+            }
+        }
+    }
 }
