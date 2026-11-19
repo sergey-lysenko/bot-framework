@@ -95,6 +95,8 @@ public final class NodeEventClassifier {
      */
     public static Classification classify(final NodeData node) {
         if (null == node) return Classification.EMPTY;
+        final Classification precomputed = node.precomputedClassification();
+        if (null != precomputed) return precomputed;
 
         final _Scenario scenario = node.scenario();
         final boolean scenarioFailed = (null != scenario)

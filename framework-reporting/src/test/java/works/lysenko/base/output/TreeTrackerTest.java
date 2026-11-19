@@ -975,4 +975,36 @@ class TreeTrackerTest {
         assertTrue(svg.contains("Elapsed:"), "Header must include Elapsed badge");
         assertTrue(svg.contains("fill-opacity=\"0.14\""), "Header badges must use translucent bordered styling");
     }
+
+    @Test
+    void testSnapshotLayoutIsIsolatedFromSubsequentLiveMutations() {
+        final Result liveRootResult = new Result(ScenarioType.NODE, fr(1), fr(1), fr(1), new ArrayList<>(), 1, 1);
+        final Result liveLeafResult = new Result(ScenarioType.LEAF, fr(1), fr(1), fr(1), new ArrayList<>(), 1, 1);
+        final NodeData root = new NodeData("root", "Root", "Root", 0, 1.0, liveRootResult);
+        final NodeData leaf = new NodeData("leaf", "Leaf", "Root", 1, 1.0, liveLeafResult);
+        leaf.setParent(root);
+        root.children().add(leaf);
+
+        final TreeLayout liveLayout = new TreeLayout(List.of(root, leaf), List.of(new Edge(root, leaf)));
+        final TreeHtml.AccessibleContext ctx = new TreeHtml.AccessibleContext(Set.of());
+        final TreeLayout snapshot = TreeHtml.snapshotLayout(liveLayout, ctx);
+
+        // Mutate live results after snapshotting (simulating main thread advancing to the next scenario)
+        liveLeafResult.tick();
+        liveLeafResult.tick();
+        liveLeafResult.updateStatus(works.lysenko.util.data.enums.ExecutionStatus.FAILED);
+        liveRootResult.updateStatus(works.lysenko.util.data.enums.ExecutionStatus.CHILD_FAILED);
+
+        final NodeData snapRoot = snapshot.nodes().get(0);
+        final NodeData snapLeaf = snapshot.nodes().get(1);
+        assertEquals(1, snapLeaf.result().getExecutions(), "Snapshot executions must stay frozen");
+        assertFalse(TreeHtml.hasFailure(snapLeaf), "Snapshot failure flag must stay frozen");
+        assertFalse(TreeHtml.hasChildFailure(snapRoot), "Snapshot childFailure flag must stay frozen");
+        assertTrue(TreeHtml.hasFailure(leaf), "Live node reflects new failure");
+        assertTrue(TreeHtml.hasChildFailure(root), "Live root reflects new child failure");
+
+        final String svg = TreeTracker.renderTreeProgressionSvg(snapshot, 2, "Test #1", Set.of("leaf"));
+        assertTrue(svg.contains("2 execs"), "Rendered SVG from snapshot must reflect frozen execution counts (1+1=2)");
+        assertFalse(svg.contains("4 execs"), "Rendered SVG must not leak post-snapshot ticks");
+    }
 }

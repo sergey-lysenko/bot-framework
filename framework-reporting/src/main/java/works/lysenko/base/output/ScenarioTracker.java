@@ -9,6 +9,8 @@ import works.lysenko.util.prop.PropEnum;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -99,9 +101,17 @@ public final class ScenarioTracker {
             capturedFrames.add(frameFile);
         }
         final Set<String> recentKeys = computeRecentScenarioKeys(scenarios);
-        final String svgContent = renderProgressionGraphSvg(scenarios, target, currentCycle, recentKeys);
+        final ScenarioGraphSvgRenderer.FrameSnapshot snapshot =
+                ScenarioGraphSvgRenderer.captureSnapshot(scenarios, target, currentCycle, recentKeys);
         updatePreviousExecutions(scenarios);
-        ProgressionFrames.saveFrameSvgAsync(svgContent, frameFile, () -> {
+        ProgressionFrames.submitAsync(() -> {
+            final String svgContent = ScenarioGraphSvgRenderer.renderProgressionGraphSvg(snapshot);
+            try {
+                Files.writeString(frameFile.toPath(), svgContent, StandardCharsets.UTF_8);
+            } catch (final IOException e) {
+                System.err.println("Failed to save progression SVG frame: " + e.getMessage());
+                return;
+            }
             final long duration = System.currentTimeMillis() - t0;
             logDebug(String.format("Captured scenario progression frame #%d (%dx%d) in %d ms", frameIndex, WIDTH, HEIGHT, duration));
         });

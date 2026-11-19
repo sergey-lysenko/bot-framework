@@ -358,6 +358,8 @@ public final class TreeLayoutComputer {
 
     public static boolean hasChildFailure(final NodeData n, final Map<NodeData, Boolean> cache) {
         if (null == n) return false;
+        final Boolean precomputed = n.precomputedChildFailure();
+        if (null != precomputed) return precomputed;
         final Boolean cached = cache.get(n);
         if (null != cached) return cached;
 
@@ -393,6 +395,8 @@ public final class TreeLayoutComputer {
             final Set<_Scenario> accessibleScenarios,
             final Map<NodeData, Boolean> cache) {
         if (null == n) return false;
+        final Boolean precomputed = n.precomputedExecutable();
+        if (null != precomputed) return precomputed;
         final Boolean cached = cache.get(n);
         if (null != cached) return cached;
         return isTheoreticallyExecutable(n, new TreeHtml.AccessibleContext(accessibleScenarios), cache);
@@ -403,6 +407,8 @@ public final class TreeLayoutComputer {
             final TreeHtml.AccessibleContext ctx,
             final Map<NodeData, Boolean> cache) {
         if (null == n) return false;
+        final Boolean precomputed = n.precomputedExecutable();
+        if (null != precomputed) return precomputed;
         final Boolean cached = cache.get(n);
         if (null != cached) return cached;
 

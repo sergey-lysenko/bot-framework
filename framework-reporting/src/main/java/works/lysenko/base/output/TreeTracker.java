@@ -17,6 +17,8 @@ import java.awt.Stroke;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -247,28 +249,25 @@ public final class TreeTracker {
         if (isNull(runDir))
             return;
 
-        final String svgContent;
-        final TreeHtml.AccessibleContext capturedAccessibleCtx;
-        try {
-            final Set<String> recentNodeKeys = computeRecentNodeKeys(layout);
-            logDebug(String.format("Canvas (%d nodes, %d edges)...", layout.nodes().size(), layout.edges().size()));
-            final Set<_Scenario> accessibleScenarios = TreeHtml.getAccessibleScenarios();
-            final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(accessibleScenarios);
-            capturedAccessibleCtx = accessibleCtx;
-
-            final TreeCameraTransform.Transform cameraTx = TreeCameraTransform.computeSmoothTransform(layout, recentNodeKeys, target, sessionBaseW, sessionBaseH);
-            svgContent = SvgTreeRenderer.renderTreeProgressionSvg(
-                    layout, target, badgeText, recentNodeKeys, accessibleScenarios, accessibleCtx, cameraTx, null, sessionBaseW, sessionBaseH);
-            updatePreviousExecutions(layout);
-        } catch (final IllegalArgumentException e) {
-            System.err.println("Skipped tree progression frame: " + e.getMessage());
+        final int frameW = sessionBaseW;
+        final int frameH = sessionBaseH;
+        final SvgTreeRenderer.RenderContext renderCtx = SvgTreeRenderer.RenderContext.captureCurrent();
+        if (frameW > ProgressionFrames.MAX_DIMENSION
+                || frameH > ProgressionFrames.MAX_DIMENSION
+                || (long) frameW * frameH > renderCtx.maxPixels()) {
+            System.err.println("Skipped tree progression frame: Rendered tree frame would exceed the configured limit ("
+                    + frameW + "x" + frameH + ", max pixels " + renderCtx.maxPixels() + ")");
             return;
         }
 
-        latestFrameSvg = svgContent;
-        if (isNotNull(core) && isNotNull(core.getDashboard())) {
-            core.getDashboard().setTreeProgressionSvg(svgContent);
-        }
+        final Set<String> recentNodeKeys = computeRecentNodeKeys(layout);
+        logDebug(String.format("Canvas (%d nodes, %d edges)...", layout.nodes().size(), layout.edges().size()));
+        final Set<_Scenario> accessibleScenarios = TreeHtml.getAccessibleScenarios();
+        final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(accessibleScenarios);
+        final TreeCameraTransform.Transform cameraTx = TreeCameraTransform.computeSmoothTransform(layout, recentNodeKeys, target, frameW, frameH);
+        final SvgTreeRenderer.RenderContext postCameraRenderCtx = SvgTreeRenderer.RenderContext.captureCurrent();
+        final TreeLayout snapshotLayout = TreeHtml.snapshotLayout(layout, accessibleCtx);
+        updatePreviousExecutions(layout);
 
         final File progressionDir = new File(runDir, "tree_progression");
         if (!progressionDir.exists() && !progressionDir.mkdirs())
@@ -280,17 +279,46 @@ public final class TreeTracker {
             capturedFrames.add(frameFile);
         }
 
-        final int frameW = sessionBaseW;
-        final int frameH = sessionBaseH;
-        ProgressionFrames.saveFrameSvgAsync(svgContent, frameFile, () -> {
-            if (ProgressionSettings.current().treeMp4Enabled()) {
-                final java.util.Optional<TreeSonifier> sonifier = ProgressionSettings.current().treeSonifier();
-                if (sonifier.isPresent()) {
-                    try {
-                        sonifier.get().capture(frameFile, layout, target, capturedAccessibleCtx);
-                    } catch (final IOException e) {
-                        System.err.println("Failed tree sonification: " + e.getMessage());
-                    }
+        final works.lysenko.util.apis.util._Dashboard dashboard = isNotNull(core) ? core.getDashboard() : null;
+        final java.util.Optional<TreeSonifier> sonifier = ProgressionSettings.current().treeMp4Enabled()
+                ? ProgressionSettings.current().treeSonifier()
+                : java.util.Optional.empty();
+        final Set<String> frozenRecentKeys = Set.copyOf(recentNodeKeys);
+
+        ProgressionFrames.submitAsync(() -> {
+            final String svgContent;
+            try {
+                svgContent = SvgTreeRenderer.renderTreeProgressionSvg(
+                        snapshotLayout,
+                        target,
+                        badgeText,
+                        frozenRecentKeys,
+                        Set.of(),
+                        accessibleCtx,
+                        cameraTx,
+                        null,
+                        frameW,
+                        frameH,
+                        postCameraRenderCtx);
+            } catch (final IllegalArgumentException e) {
+                System.err.println("Skipped tree progression frame: " + e.getMessage());
+                return;
+            }
+            latestFrameSvg = svgContent;
+            if (isNotNull(dashboard)) {
+                dashboard.setTreeProgressionSvg(svgContent);
+            }
+            try {
+                Files.writeString(frameFile.toPath(), svgContent, StandardCharsets.UTF_8);
+            } catch (final IOException e) {
+                System.err.println("Failed to save progression SVG frame: " + e.getMessage());
+                return;
+            }
+            if (sonifier.isPresent()) {
+                try {
+                    sonifier.get().capture(frameFile, snapshotLayout, target, accessibleCtx);
+                } catch (final IOException e) {
+                    System.err.println("Failed tree sonification: " + e.getMessage());
                 }
             }
             final long duration = System.currentTimeMillis() - t0;

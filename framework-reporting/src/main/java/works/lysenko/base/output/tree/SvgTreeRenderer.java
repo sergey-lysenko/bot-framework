@@ -42,6 +42,39 @@ public final class SvgTreeRenderer {
     private SvgTreeRenderer() {
     }
 
+    /**
+     * Immutable rendering parameters captured on the main thread so SVG construction can run
+     * completely asynchronously without touching global mutable state.
+     */
+    public record RenderContext(
+            boolean isAllLeafs,
+            long maxPixels,
+            String elapsedBadge,
+            ProgressionChrome.EtaBadge etaBadge,
+            works.lysenko.base.output.SummaryPlaque.RunConfig runConfig,
+            boolean treeDebugEnabled,
+            double debugDx,
+            double debugDy,
+            double debugDz,
+            double debugMaxZoom) {
+
+        public static RenderContext captureCurrent() {
+            final boolean allLeafs = (null != parameters) && parameters.isAllLeafs();
+            final long maxPx = ProgressionFrames.maxFramePixels(ProgressionSettings.current().maxFramePixels());
+            return new RenderContext(
+                    allLeafs,
+                    maxPx,
+                    ProgressionChrome.formatElapsedBadge(),
+                    ProgressionChrome.resolveEtaBadge(),
+                    works.lysenko.base.output.SummaryPlaque.RunConfig.fromParameters(parameters),
+                    ProgressionSettings.current().treeDebugEnabled(),
+                    TreeCameraTransform.getDebugDx(),
+                    TreeCameraTransform.getDebugDy(),
+                    TreeCameraTransform.getDebugDz(),
+                    TreeCameraTransform.getDebugMaxZoom());
+        }
+    }
+
     public static String renderTreeProgressionSvg(
             final TreeLayout layout,
             final int target,
@@ -53,7 +86,34 @@ public final class SvgTreeRenderer {
             final Map<NodeData, Boolean> cachedExecutable,
             final int sessionBaseW,
             final int sessionBaseH) {
+        return renderTreeProgressionSvg(
+                layout,
+                target,
+                badgeText,
+                recentNodeKeys,
+                accessibleScenarios,
+                accessibleCtx,
+                overrideTx,
+                cachedExecutable,
+                sessionBaseW,
+                sessionBaseH,
+                RenderContext.captureCurrent());
+    }
 
+    public static String renderTreeProgressionSvg(
+            final TreeLayout layout,
+            final int target,
+            final String badgeText,
+            final Set<String> recentNodeKeys,
+            final Set<_Scenario> accessibleScenarios,
+            final TreeHtml.AccessibleContext accessibleCtx,
+            final TreeCameraTransform.Transform overrideTx,
+            final Map<NodeData, Boolean> cachedExecutable,
+            final int sessionBaseW,
+            final int sessionBaseH,
+            final RenderContext renderContext) {
+
+        final RenderContext rctx = (null != renderContext) ? renderContext : RenderContext.captureCurrent();
         final TreeHtml.AccessibleContext ctx = (null != accessibleCtx) ? accessibleCtx : new TreeHtml.AccessibleContext(accessibleScenarios);
         final Map<NodeData, Boolean> executableCache = (null != cachedExecutable) ? cachedExecutable : new HashMap<>();
         final Map<NodeData, Boolean> childFailureCache = new HashMap<>();
@@ -97,7 +157,7 @@ public final class SvgTreeRenderer {
         }
         final int headerH = headerHeight(baseW);
 
-        final long maxPixels = ProgressionFrames.maxFramePixels(ProgressionSettings.current().maxFramePixels());
+        final long maxPixels = rctx.maxPixels();
         if (baseW > ProgressionFrames.MAX_DIMENSION
                 || baseH > ProgressionFrames.MAX_DIMENSION
                 || (long) baseW * baseH > maxPixels) {
@@ -186,7 +246,7 @@ public final class SvgTreeRenderer {
                 } else if (toNotice) {
                     strokeColor = "#06B6D4";
                 } else {
-                    final java.awt.Color col = TreeProgressMetrics.getScenarioProgressColor(e.to(), target, maxLeafOverRatio);
+                    final java.awt.Color col = TreeProgressMetrics.getScenarioProgressColor(e.to(), target, maxLeafOverRatio, rctx.isAllLeafs());
                     strokeColor = TreeTheme.DEFAULT.hex(col);
                 }
                 strokeOpacity = "";
@@ -203,7 +263,7 @@ public final class SvgTreeRenderer {
                     startX, startY, cX, startY, cX, endY, endX, endY, strokeColor, strokeOpacity, strokeW, dash));
         }
 
-        final boolean isAllLeafs = (null != parameters) ? parameters.isAllLeafs() : false;
+        final boolean isAllLeafs = rctx.isAllLeafs();
         final VisualNodeResolver nodeResolver =
                 new VisualNodeResolver(TreeTheme.DEFAULT, ctx, isAllLeafs, target, maxLeafOverRatio, false, true, 0.0, headerH);
         final List<VisualNode> visualNodes = new ArrayList<>();
@@ -226,8 +286,8 @@ public final class SvgTreeRenderer {
 
         // Right-to-left placement -> left-to-right display:
         // Test #N | Leafs: X/Y (P%) | Target: T | Zoom: Z.Zx | M execs | ETA: MM:SS | Elapsed: HH:MM:SS
-        rightX = ProgressionChrome.appendBorderedBadge(sb, ProgressionChrome.formatElapsedBadge(), rightX, topY, ProgressionChrome.BADGE_SLATE);
-        final ProgressionChrome.EtaBadge etaBadge = ProgressionChrome.resolveEtaBadge();
+        rightX = ProgressionChrome.appendBorderedBadge(sb, rctx.elapsedBadge(), rightX, topY, ProgressionChrome.BADGE_SLATE);
+        final ProgressionChrome.EtaBadge etaBadge = rctx.etaBadge();
         rightX = ProgressionChrome.appendBorderedBadge(sb, etaBadge.text(), rightX, topY, etaBadge.style());
         rightX = ProgressionChrome.appendBorderedBadge(sb, totalExecs + " execs", rightX, topY, ProgressionChrome.BADGE_SLATE);
 
@@ -256,28 +316,28 @@ public final class SvgTreeRenderer {
 
         ProgressionChrome.appendHeaderTitle(sb, hudMarginX, titleText);
 
-        if (ProgressionSettings.current().treeDebugEnabled()) {
+        if (rctx.treeDebugEnabled()) {
             final String debugStr = String.format(Locale.US, "dx:%.1f dy:%.1f dz:%.3f maxZ:%.1fx",
-                    TreeCameraTransform.getDebugDx(),
-                    TreeCameraTransform.getDebugDy(),
-                    TreeCameraTransform.getDebugDz(),
-                    TreeCameraTransform.getDebugMaxZoom());
+                    rctx.debugDx(),
+                    rctx.debugDy(),
+                    rctx.debugDz(),
+                    rctx.debugMaxZoom());
             sb.append("    <g id=\"tree-debug-overlay\">\n");
             sb.append(String.format(Locale.US, "      <text class=\"tx3\" x=\"%d\" y=\"%d\" fill=\"#64748B\">%s</text>\n", PADDING_X, HEADER_HEIGHT_BASE - 5, debugStr));
 
             final double ox = localW / 2.0;
             final double oy = (baseH / scale) / 2.0;
             sb.append(String.format(Locale.US, "      <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"#F59E0B\" stroke-width=\"2\" />\n",
-                    ox, oy, ox - TreeCameraTransform.getDebugDx(), oy - TreeCameraTransform.getDebugDy()));
+                    ox, oy, ox - rctx.debugDx(), oy - rctx.debugDy()));
             sb.append(String.format(Locale.US, "      <circle cx=\"%.1f\" cy=\"%.1f\" r=\"3\" fill=\"#F59E0B\" />\n", ox, oy));
             sb.append(String.format(Locale.US, "      <circle cx=\"%.1f\" cy=\"%.1f\" r=\"2\" fill=\"#F8FAFC\" />\n",
-                    ox - TreeCameraTransform.getDebugDx(), oy - TreeCameraTransform.getDebugDy()));
+                    ox - rctx.debugDx(), oy - rctx.debugDy()));
             sb.append("    </g>\n");
         }
 
         final works.lysenko.base.output.SummaryPlaque plaque = works.lysenko.base.output.SummaryPlaque.computeFromNodes(
                 layout.nodes(),
-                works.lysenko.base.output.SummaryPlaque.RunConfig.fromParameters(parameters),
+                rctx.runConfig(),
                 ctx,
                 executableCache,
                 childFailureCache);

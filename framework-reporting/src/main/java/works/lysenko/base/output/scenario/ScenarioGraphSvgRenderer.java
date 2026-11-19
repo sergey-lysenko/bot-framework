@@ -80,15 +80,82 @@ public final class ScenarioGraphSvgRenderer {
     }
 
     /**
-     * Renders a scenario progression frame with active-cycle highlights.
-     *
-     * @param scenarios          ordered list of accessible leaf scenarios
-     * @param target             target executions per repeatable leaf
-     * @param currentCycle       current 1-based test cycle number
-     * @param recentScenarioKeys keys ({@code getName()} or {@code getShortName()}) executed in the current cycle
-     * @return complete SVG document string
+     * Immutable snapshot of scenario execution progress captured on the main thread so
+     * SVG rendering can execute safely on a background worker thread.
      */
-    public static String renderProgressionGraphSvg(
+    public static final class FrameSnapshot {
+        private final int count;
+        private final int safeTarget;
+        private final int currentCycle;
+        private final int completedCount;
+        private final int totalExecs;
+        private final int maxExecs;
+        private final int passedCount;
+        private final int warningCount;
+        private final int failedCount;
+        private final int noticeCount;
+        private final int inProgressCount;
+        private final int pendingCount;
+        private final int[] execsArray;
+        private final int[] targetsArray;
+        private final BarStatus[] statuses;
+        private final boolean[] activeFlags;
+        private final String[] rawShortNames;
+        private final String commonPrefix;
+        private final String[] displayNames;
+        private final String elapsedBadge;
+        private final ProgressionChrome.EtaBadge etaBadge;
+
+        private FrameSnapshot(
+                final int count,
+                final int safeTarget,
+                final int currentCycle,
+                final int completedCount,
+                final int totalExecs,
+                final int maxExecs,
+                final int passedCount,
+                final int warningCount,
+                final int failedCount,
+                final int noticeCount,
+                final int inProgressCount,
+                final int pendingCount,
+                final int[] execsArray,
+                final int[] targetsArray,
+                final BarStatus[] statuses,
+                final boolean[] activeFlags,
+                final String[] rawShortNames,
+                final String commonPrefix,
+                final String[] displayNames,
+                final String elapsedBadge,
+                final ProgressionChrome.EtaBadge etaBadge) {
+            this.count = count;
+            this.safeTarget = safeTarget;
+            this.currentCycle = currentCycle;
+            this.completedCount = completedCount;
+            this.totalExecs = totalExecs;
+            this.maxExecs = maxExecs;
+            this.passedCount = passedCount;
+            this.warningCount = warningCount;
+            this.failedCount = failedCount;
+            this.noticeCount = noticeCount;
+            this.inProgressCount = inProgressCount;
+            this.pendingCount = pendingCount;
+            this.execsArray = execsArray;
+            this.targetsArray = targetsArray;
+            this.statuses = statuses;
+            this.activeFlags = activeFlags;
+            this.rawShortNames = rawShortNames;
+            this.commonPrefix = commonPrefix;
+            this.displayNames = displayNames;
+            this.elapsedBadge = elapsedBadge;
+            this.etaBadge = etaBadge;
+        }
+    }
+
+    /**
+     * Captures an immutable {@link FrameSnapshot} of current scenario execution metrics on the caller thread.
+     */
+    public static FrameSnapshot captureSnapshot(
             final List<_Scenario> scenarios,
             final int target,
             final int currentCycle,
@@ -149,6 +216,74 @@ public final class ScenarioGraphSvgRenderer {
             displayNames[i] = stripPrefix(rawShortNames[i], commonPrefix);
         }
 
+        return new FrameSnapshot(
+                count,
+                safeTarget,
+                currentCycle,
+                completedCount,
+                totalExecs,
+                maxExecs,
+                passedCount,
+                warningCount,
+                failedCount,
+                noticeCount,
+                inProgressCount,
+                pendingCount,
+                execsArray,
+                targetsArray,
+                statuses,
+                activeFlags,
+                rawShortNames,
+                commonPrefix,
+                displayNames,
+                ProgressionChrome.formatElapsedBadge(),
+                ProgressionChrome.resolveEtaBadge());
+    }
+
+    /**
+     * Renders a scenario progression frame with active-cycle highlights.
+     *
+     * @param scenarios          ordered list of accessible leaf scenarios
+     * @param target             target executions per repeatable leaf
+     * @param currentCycle       current 1-based test cycle number
+     * @param recentScenarioKeys keys ({@code getName()} or {@code getShortName()}) executed in the current cycle
+     * @return complete SVG document string
+     */
+    public static String renderProgressionGraphSvg(
+            final List<_Scenario> scenarios,
+            final int target,
+            final int currentCycle,
+            final Set<String> recentScenarioKeys) {
+        return renderProgressionGraphSvg(captureSnapshot(scenarios, target, currentCycle, recentScenarioKeys));
+    }
+
+    /**
+     * Renders a scenario progression SVG from an already-captured immutable {@link FrameSnapshot}.
+     *
+     * @param snapshot immutable scenario frame snapshot
+     * @return complete SVG document string
+     */
+    public static String renderProgressionGraphSvg(final FrameSnapshot snapshot) {
+        final int count = snapshot.count;
+        final int safeTarget = snapshot.safeTarget;
+        final int currentCycle = snapshot.currentCycle;
+        final int completedCount = snapshot.completedCount;
+        final int totalExecs = snapshot.totalExecs;
+        final int maxExecs = snapshot.maxExecs;
+        final int passedCount = snapshot.passedCount;
+        final int warningCount = snapshot.warningCount;
+        final int failedCount = snapshot.failedCount;
+        final int noticeCount = snapshot.noticeCount;
+        final int inProgressCount = snapshot.inProgressCount;
+        final int pendingCount = snapshot.pendingCount;
+        final int[] execsArray = snapshot.execsArray;
+        final int[] targetsArray = snapshot.targetsArray;
+        final BarStatus[] statuses = snapshot.statuses;
+        final boolean[] activeFlags = snapshot.activeFlags;
+        final String[] rawShortNames = snapshot.rawShortNames;
+        final String commonPrefix = snapshot.commonPrefix;
+        final String[] displayNames = snapshot.displayNames;
+
         final boolean denseMode = count > DENSE_SCENARIO_THRESHOLD;
         final int headerH = ProgressionChrome.HEADER_HEIGHT_BASE;
         final int marginX = 24;
@@ -181,8 +316,8 @@ public final class ScenarioGraphSvgRenderer {
 
         // Right-to-left placement -> left-to-right display:
         // Test #N | Leafs: X/Y (P%) | Target: T | M execs | ETA: MM:SS | Elapsed: HH:MM:SS
-        rightX = ProgressionChrome.appendBorderedBadge(sb, ProgressionChrome.formatElapsedBadge(), rightX, topY, ProgressionChrome.BADGE_SLATE);
-        final ProgressionChrome.EtaBadge etaBadge = ProgressionChrome.resolveEtaBadge();
+        rightX = ProgressionChrome.appendBorderedBadge(sb, snapshot.elapsedBadge, rightX, topY, ProgressionChrome.BADGE_SLATE);
+        final ProgressionChrome.EtaBadge etaBadge = snapshot.etaBadge;
         rightX = ProgressionChrome.appendBorderedBadge(sb, etaBadge.text(), rightX, topY, etaBadge.style());
         rightX = ProgressionChrome.appendBorderedBadge(sb, totalExecs + " execs", rightX, topY, ProgressionChrome.BADGE_SLATE);
         rightX = ProgressionChrome.appendBorderedBadge(sb, "Target: " + safeTarget, rightX, topY, ProgressionChrome.BADGE_SLATE);

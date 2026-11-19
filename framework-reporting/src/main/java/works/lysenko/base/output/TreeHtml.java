@@ -1,5 +1,6 @@
 package works.lysenko.base.output;
 
+import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.base.issues.KnownIssue;
 import works.lysenko.base.issues.KnownIssuesStore;
 import works.lysenko.base.output.tree.NodeEventClassifier;
@@ -7,12 +8,17 @@ import works.lysenko.base.output.tree.TreeHtmlRenderer;
 import works.lysenko.base.output.tree.TreeLayoutComputer;
 import works.lysenko.base.output.tree.TreeLayoutOptimizer;
 import works.lysenko.util.apis.data._Result;
+import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.scenario._TreeNodeView;
+import works.lysenko.util.data.enums.ExecutionStatus;
+import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.type.Result;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,6 +65,9 @@ public final class TreeHtml {
         private final List<NodeData> children = new ArrayList<>();
         private final List<KnownIssue> knownIssues = new ArrayList<>();
         private NodeData parent;
+        private NodeEventClassifier.Classification precomputedClassification;
+        private Boolean precomputedChildFailure;
+        private Boolean precomputedExecutable;
 
         public NodeData(final String id, final String label, final String group, final int col, final double row, final int rowOffset, final _Result result, final _Scenario scenario) {
             this.id = id;
@@ -94,6 +103,122 @@ public final class TreeHtml {
         public List<KnownIssue> knownIssues() { return knownIssues; }
         public NodeData parent() { return parent; }
         public void setParent(final NodeData parent) { this.parent = parent; }
+        public NodeEventClassifier.Classification precomputedClassification() { return precomputedClassification; }
+        public Boolean precomputedChildFailure() { return precomputedChildFailure; }
+        public Boolean precomputedExecutable() { return precomputedExecutable; }
+
+        void setPrecomputed(
+                final NodeEventClassifier.Classification classification,
+                final boolean childFailure,
+                final boolean executable) {
+            this.precomputedClassification = classification;
+            this.precomputedChildFailure = childFailure;
+            this.precomputedExecutable = executable;
+        }
+    }
+
+    private record ResultSnapshot(
+            ExecutionStatus status,
+            ScenarioType scenarioType,
+            Fraction configuredWeight,
+            Fraction upstreamWeight,
+            Fraction downstreamWeight,
+            List<_LogRecord> events,
+            int executions,
+            int instances,
+            int effectiveEventsCount) implements _Result {
+
+        static _Result from(final _Result source, final int effectiveEventsCount) {
+            if (null == source) return null;
+            final List<_LogRecord> srcEvents = source.getEvents();
+            final List<_LogRecord> frozenEvents = (null == srcEvents || srcEvents.isEmpty())
+                    ? List.of() : List.copyOf(srcEvents);
+            return new ResultSnapshot(
+                    source.status(),
+                    source.getScenarioType(),
+                    source.getConfiguredWeight(),
+                    source.getUpstreamWeight(),
+                    source.getDownstreamWeight(),
+                    frozenEvents,
+                    source.getExecutions(),
+                    source.getInstances(),
+                    effectiveEventsCount);
+        }
+
+        @Override public void addEvent(final _LogRecord lr) { throw new UnsupportedOperationException("Immutable snapshot"); }
+        @Override public Fraction getConfiguredWeight() { return configuredWeight; }
+        @Override public Fraction getDownstreamWeight() { return downstreamWeight; }
+        @Override public int getEffectiveEventsCount() { return effectiveEventsCount; }
+        @Override public List<_LogRecord> getEvents() { return events; }
+        @Override public int getExecutions() { return executions; }
+        @Override public int getInstances() { return instances; }
+        @Override public ScenarioType getScenarioType() { return scenarioType; }
+        @Override public Fraction getUpstreamWeight() { return upstreamWeight; }
+        @Override public void updateStatus(final ExecutionStatus status) { throw new UnsupportedOperationException("Immutable snapshot"); }
+        @Override public void tick() { throw new UnsupportedOperationException("Immutable snapshot"); }
+    }
+
+    /**
+     * Captures a thread-safe, immutable snapshot of {@code layout} decoupled from live
+     * mutable {@link _Result} and {@link _Scenario} instances so SVG rendering and
+     * sonification can execute safely off the main test thread.
+     *
+     * @param layout live computed layout
+     * @param ctx    accessible scenario context captured at the same instant
+     * @return immutable layout snapshot with precomputed classifications and statuses
+     */
+    public static TreeLayout snapshotLayout(final TreeLayout layout, final AccessibleContext ctx) {
+        if (null == layout || layout.nodes().isEmpty()) {
+            return new TreeLayout(List.of(), List.of());
+        }
+        final AccessibleContext safeCtx = (null != ctx) ? ctx : new AccessibleContext(Set.of());
+        final Map<NodeData, Boolean> liveChildFailureCache = new HashMap<>(layout.nodes().size() * 2);
+        final Map<NodeData, Boolean> liveExecutableCache = new HashMap<>(layout.nodes().size() * 2);
+        final Map<NodeData, NodeData> copyMap = new IdentityHashMap<>(layout.nodes().size() * 2);
+        final List<NodeData> snapshotNodes = new ArrayList<>(layout.nodes().size());
+
+        for (final NodeData orig : layout.nodes()) {
+            final NodeEventClassifier.Classification cls = NodeEventClassifier.classify(orig);
+            final boolean childFailure = hasChildFailure(orig, liveChildFailureCache);
+            final boolean executable = isTheoreticallyExecutable(orig, safeCtx, liveExecutableCache);
+            final _Result frozenResult = ResultSnapshot.from(orig.result(), cls.unclassifiedEventCount());
+            final NodeData copy = new NodeData(
+                    orig.id(),
+                    orig.label(),
+                    orig.group(),
+                    orig.col(),
+                    orig.row(),
+                    orig.rowOffset(),
+                    frozenResult,
+                    null);
+            if (!orig.knownIssues().isEmpty()) {
+                copy.knownIssues().addAll(orig.knownIssues());
+            }
+            copy.setPrecomputed(cls, childFailure, executable);
+            copyMap.put(orig, copy);
+            snapshotNodes.add(copy);
+        }
+
+        for (final NodeData orig : layout.nodes()) {
+            final NodeData copy = copyMap.get(orig);
+            if (null != orig.parent()) {
+                copy.setParent(copyMap.get(orig.parent()));
+            }
+            for (final NodeData child : orig.children()) {
+                final NodeData copyChild = copyMap.get(child);
+                if (null != copyChild) copy.children().add(copyChild);
+            }
+        }
+
+        final List<Edge> snapshotEdges = new ArrayList<>(layout.edges().size());
+        for (final Edge edge : layout.edges()) {
+            final NodeData from = copyMap.get(edge.from());
+            final NodeData to = copyMap.get(edge.to());
+            if (null != from && null != to) {
+                snapshotEdges.add(new Edge(from, to));
+            }
+        }
+        return new TreeLayout(snapshotNodes, snapshotEdges);
     }
 
     public record Edge(NodeData from, NodeData to) {}

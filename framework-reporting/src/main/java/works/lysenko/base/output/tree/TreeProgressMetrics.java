@@ -109,8 +109,16 @@ public final class TreeProgressMetrics {
             final NodeData node,
             final int target,
             final double maxLeafOverRatio) {
-        final int execs = (null != node.result()) ? node.result().getExecutions() : 0;
         final boolean isAllLeafs = (null != parameters) ? parameters.isAllLeafs() : (null != PropEnum._TEST_ALL_LEAFS.get() && (Boolean) PropEnum._TEST_ALL_LEAFS.get());
+        return getScenarioProgressColor(node, target, maxLeafOverRatio, isAllLeafs);
+    }
+
+    public static Color getScenarioProgressColor(
+            final NodeData node,
+            final int target,
+            final double maxLeafOverRatio,
+            final boolean isAllLeafs) {
+        final int execs = (null != node.result()) ? node.result().getExecutions() : 0;
         final ScenarioType type = getScenarioType(node);
         if (ScenarioType.LEAF == type && isAllLeafs) {
             final double overRatio = getLeafOverExecutionRatio(node, target);
