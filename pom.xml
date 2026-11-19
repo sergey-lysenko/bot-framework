@@ -285,7 +285,7 @@
         <configuration>
           <reportsDirectory>${project.basedir}/result/surefire-reports</reportsDirectory>
           <argLine>
-            @{argLine} --enable-native-access=ALL-UNNAMED -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
+            @{argLine} --enable-native-access=ALL-UNNAMED -XX:+UseCompactObjectHeaders -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
           </argLine>
           <rerunFailingTestsCount>0</rerunFailingTestsCount>
         </configuration>

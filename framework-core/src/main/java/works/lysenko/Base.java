@@ -690,7 +690,7 @@ public record Base() {
         if (isNotNull(exec)) exec.logEmptyLine(addStack, forceUnfiltered);
     }
 
-    private static final ThreadLocal<Boolean> LOG_EVENT_RECURSION_GUARD = ThreadLocal.withInitial(() -> Boolean.FALSE);
+    private static final ScopedValue<Boolean> LOG_EVENT_RECURSION_GUARD = ScopedValue.newInstance();
 
     /**
      * Logs an event with the specified severity and message.
@@ -699,17 +699,14 @@ public record Base() {
      * @param message  the message of the event
      */
     public static void logEvent(final Severity severity, final String message) {
-        if (Boolean.TRUE.equals(LOG_EVENT_RECURSION_GUARD.get())) {
+        if (LOG_EVENT_RECURSION_GUARD.isBound()) {
             System.err.println(b("[RECURSION GUARD] Blocked nested Base.logEvent: ", severity.toString(), " - ", message));
             return;
         }
-        LOG_EVENT_RECURSION_GUARD.set(Boolean.TRUE);
-        try {
+        ScopedValue.where(LOG_EVENT_RECURSION_GUARD, Boolean.TRUE).run(() -> {
             if (isNotNull(exec)) exec.logEvent(severity, message);
             else еггог(message);
-        } finally {
-            LOG_EVENT_RECURSION_GUARD.set(Boolean.FALSE);
-        }
+        });
     }
 
     /**

@@ -26,6 +26,7 @@ import works.lysenko.util.spec.Numbers;
 
 import java.awt.image.BufferedImage;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
 import java.util.*;
@@ -977,7 +978,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         }
     }
 
-    private static final ThreadLocal<Boolean> ROOT_LOG_EVENT_RECURSION_GUARD = ThreadLocal.withInitial(() -> Boolean.FALSE);
+    private static final ScopedValue<Boolean> ROOT_LOG_EVENT_RECURSION_GUARD = ScopedValue.newInstance();
 
     /**
      * Performs log event.
@@ -985,17 +986,13 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
      * @param message the message
      */
     public final void logEvent(final Severity severity, final String message) {
-        if (Boolean.TRUE.equals(ROOT_LOG_EVENT_RECURSION_GUARD.get())) {
+        if (ROOT_LOG_EVENT_RECURSION_GUARD.isBound()) {
             System.err.println("[RECURSION GUARD] Blocked nested Root.logEvent: " + severity + " - " + message);
             return;
         }
-        ROOT_LOG_EVENT_RECURSION_GUARD.set(Boolean.TRUE);
-        try {
-            core.getLogger().logEvent(severity, message, isDebug() ?
-                    Callstack.getShort(Thread.currentThread().getStackTrace()) : EMPTY);
-        } finally {
-            ROOT_LOG_EVENT_RECURSION_GUARD.set(Boolean.FALSE);
-        }
+        ScopedValue.where(ROOT_LOG_EVENT_RECURSION_GUARD, Boolean.TRUE).run(() ->
+                core.getLogger().logEvent(severity, message, isDebug() ?
+                        Callstack.getShort(Thread.currentThread().getStackTrace()) : EMPTY));
     }
 
     /**
@@ -1028,52 +1025,44 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         if (isNull(exec) || isTrace()) log(Level.debug, message, addStack, forceUnfiltered);
     }
 
-    @SuppressWarnings({"ThrowInsideCatchBlockWhichIgnoresCaughtException", "HttpUrlsUsage"})
+    private static URL tryParseUrl(final String spec) {
+        if (null == spec) return null;
+        try {
+            return URI.create(spec).toURL();
+        } catch (final MalformedURLException | IllegalArgumentException e) {
+            return null;
+        }
+    }
+
     /**
      * Performs open.
      * @param u the u
      */
+    @SuppressWarnings("HttpUrlsUsage")
     public final void open(final String u) {
 
-        URL url = null;
-        try {
-            url = new URL(u);
-        } catch (final MalformedURLException e) {
-            try {
-                url = new URL("https://" + u);
-            } catch (final MalformedURLException f1) {
-                try {
-                    url = new URL("http://" + u);
-                } catch (final MalformedURLException f2) {
-                    @SuppressWarnings("ConstantValue") final String urlString = (null == url) ? b(UNKNOWN, s(U, R, L)) :
-                            q(url.toString());
-                    throw new IllegalArgumentException(s(UNABLE_TO_OPEN, urlString));
-                }
-            }
+        URL url = tryParseUrl(u);
+        if (null == url) url = tryParseUrl("https://" + u);
+        if (null == url) url = tryParseUrl("http://" + u);
+        if (null == url) {
+            throw new IllegalArgumentException(s(UNABLE_TO_OPEN, b(UNKNOWN, s(U, R, L))));
         }
         log(b(c(OPENING), q(s(url))));
         exec.wd().get(url.toString());
     }
 
-    @SuppressWarnings({"ThrowInsideCatchBlockWhichIgnoresCaughtException", "HardcodedFileSeparator"})
     /**
      * Performs open.
      * @param p the p
      * @param u the u
      */
+    @SuppressWarnings("HardcodedFileSeparator")
     public final void open(final String p, final String u) {
 
-        URL url = null;
-        try {
-            url = new URL(u);
-        } catch (final MalformedURLException e) {
-            try {
-                url = new URL(p + "://" + u);
-            } catch (final MalformedURLException e1) {
-                @SuppressWarnings("ConstantValue") final String urlString = (null == url) ? b(UNKNOWN, s(U, R, L)) :
-                        q(url.toString());
-                throw new IllegalArgumentException(s(UNABLE_TO_OPEN, urlString));
-            }
+        URL url = tryParseUrl(u);
+        if (null == url) url = tryParseUrl(p + "://" + u);
+        if (null == url) {
+            throw new IllegalArgumentException(s(UNABLE_TO_OPEN, b(UNKNOWN, s(U, R, L))));
         }
         log(b(OPENING, q(s(url))));
         if (isNotNull(getWebDriver())) getWebDriver().get(url.toString());

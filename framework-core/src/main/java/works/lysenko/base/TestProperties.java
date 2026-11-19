@@ -59,7 +59,7 @@ import static works.lysenko.util.spec.Symbols.*;
 public class TestProperties implements _TestProperties {
 
     private static final String TAG = s(c(C), _DOT_, GET);
-    private static final ThreadLocal<Boolean> IN_GET_LOG = ThreadLocal.withInitial(() -> Boolean.FALSE);
+    private static final ScopedValue<Boolean> IN_GET_LOG = ScopedValue.newInstance();
     private final Collection<Class<? extends _PropEnum>> compendium = new ArrayList<>(1);
     private final Map<String, String> userOverrides = new LinkedHashMap<>();
     private final Map<String, String> configFileDefaults = new LinkedHashMap<>();
@@ -115,14 +115,10 @@ public class TestProperties implements _TestProperties {
      * @param o     The object associated with the log message.\n     */
     private static void getLog(final Object field, final Object o, final Object def) {
 
-        if (IN_GET_LOG.get()) return;
-        IN_GET_LOG.set(Boolean.TRUE);
-        try {
-            log(Level.debug, b(sn(TAG, e(ROUND, bb(field)), e(gray(isDefault(o, def), RGT_DAR)), yb(!isDefault(o, def), o))),
-                    true);
-        } finally {
-            IN_GET_LOG.set(Boolean.FALSE);
-        }
+        if (IN_GET_LOG.isBound()) return;
+        ScopedValue.where(IN_GET_LOG, Boolean.TRUE).run(() ->
+                log(Level.debug, b(sn(TAG, e(ROUND, bb(field)), e(gray(isDefault(o, def), RGT_DAR)), yb(!isDefault(o, def), o))),
+                        true));
     }
 
     /**
@@ -309,7 +305,7 @@ public class TestProperties implements _TestProperties {
             }
         }
         if (isNull(source)) source = def;
-        if (isNotNull(exec) && !IN_GET_LOG.get()) {
+        if (isNotNull(exec) && !IN_GET_LOG.isBound()) {
             if (isNotNull(def) && !p.silent() && isDebug()) getLog(key, (null == source) ? null : source.trim(), def);
         }
         return source;
@@ -365,7 +361,7 @@ public class TestProperties implements _TestProperties {
         if (isNull(source) && isNotNull(the) && !name.startsWith(".")) {
             source = the.getProperty("." + name);
         }
-        if (isNotNull(exec) && !IN_GET_LOG.get()) {
+        if (isNotNull(exec) && !IN_GET_LOG.isBound()) {
             if (isNull(source))
                 logEvent(S0, b(c(CONFIGURATION), PROPERTY, q(name), IS, UNDEFINED));
             if (isDebug() && !silent) getLog(name, (null == source) ? null : source.trim(), EMPTY);

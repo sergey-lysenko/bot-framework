@@ -36,7 +36,7 @@ import static works.lysenko.util.spec.Symbols._SPACE_;
 public record Callstack() {
 
     private static final List<String> references = new ArrayList<>(0);
-    private static final ThreadLocal<Boolean> CALLSTACK_GUARD = ThreadLocal.withInitial(() -> Boolean.FALSE);
+    private static final ScopedValue<Boolean> CALLSTACK_GUARD = ScopedValue.newInstance();
 
     /**
      * Clears the in-memory call stack reference table.
@@ -61,26 +61,25 @@ public record Callstack() {
     }
 
     private static void saveCallstackReference(final int index, final String callstack) {
-        if (Boolean.TRUE.equals(CALLSTACK_GUARD.get())) return;
-        CALLSTACK_GUARD.set(Boolean.TRUE);
-        try {
-            final String filePath = Layout.Files.name(Layout.Templates.RUN_CALLSTACKS_);
-            final java.io.File file = new java.io.File(filePath);
-            if (null != file.getParentFile() && !file.getParentFile().exists()) {
-                file.getParentFile().mkdirs();
+        if (CALLSTACK_GUARD.isBound()) return;
+        ScopedValue.where(CALLSTACK_GUARD, Boolean.TRUE).run(() -> {
+            try {
+                final String filePath = Layout.Files.name(Layout.Templates.RUN_CALLSTACKS_);
+                final java.io.File file = new java.io.File(filePath);
+                if (null != file.getParentFile() && !file.getParentFile().exists()) {
+                    file.getParentFile().mkdirs();
+                }
+                final String entry = s(index, _EQUAL_, callstack, System.lineSeparator());
+                java.nio.file.Files.writeString(
+                        file.toPath(),
+                        entry,
+                        java.nio.charset.StandardCharsets.UTF_8,
+                        java.nio.file.StandardOpenOption.CREATE,
+                        java.nio.file.StandardOpenOption.APPEND);
+            } catch (final Exception ignored) {
+                // Suppressed to prevent failure during callstack formatting
             }
-            final String entry = s(index, _EQUAL_, callstack, System.lineSeparator());
-            java.nio.file.Files.writeString(
-                    file.toPath(),
-                    entry,
-                    java.nio.charset.StandardCharsets.UTF_8,
-                    java.nio.file.StandardOpenOption.CREATE,
-                    java.nio.file.StandardOpenOption.APPEND);
-        } catch (final Exception ignored) {
-            // Suppressed to prevent failure during callstack formatting
-        } finally {
-            CALLSTACK_GUARD.set(Boolean.FALSE);
-        }
+        });
     }
 
     /**

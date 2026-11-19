@@ -29,9 +29,11 @@ class PostProcessorTest {
                 "run.html",
                 false);
 
-        assertDoesNotThrow(() -> Long.parseLong(command[10]));
-        assertDoesNotThrow(() -> Long.parseLong(command[11]));
+        assertEquals("--enable-native-access=ALL-UNNAMED", command[1]);
+        assertEquals("-XX:+UseCompactObjectHeaders", command[2]);
         assertDoesNotThrow(() -> Long.parseLong(command[12]));
+        assertDoesNotThrow(() -> Long.parseLong(command[13]));
+        assertDoesNotThrow(() -> Long.parseLong(command[14]));
     }
 
     @Test
@@ -45,13 +47,13 @@ class PostProcessorTest {
                 true,
                 false);
 
-        assertEquals("true", command[7]);
-        assertEquals("false", command[16]);
-        assertEquals(ProgressionSettings.current().treeSonification(), command[17]);
-        assertEquals(String.valueOf(ProgressionSettings.current().scenarioGifEnabled()), command[18]);
-        assertEquals(String.valueOf(ProgressionSettings.current().scenarioWebpEnabled()), command[19]);
-        assertEquals(String.valueOf(ProgressionSettings.current().treeGifEnabled()), command[20]);
-        assertEquals(String.valueOf(ProgressionSettings.current().treeWebpEnabled()), command[21]);
+        assertEquals("true", command[9]);
+        assertEquals("false", command[18]);
+        assertEquals(ProgressionSettings.current().treeSonification(), command[19]);
+        assertEquals(String.valueOf(ProgressionSettings.current().scenarioGifEnabled()), command[20]);
+        assertEquals(String.valueOf(ProgressionSettings.current().scenarioWebpEnabled()), command[21]);
+        assertEquals(String.valueOf(ProgressionSettings.current().treeGifEnabled()), command[22]);
+        assertEquals(String.valueOf(ProgressionSettings.current().treeWebpEnabled()), command[23]);
     }
 
     @Test

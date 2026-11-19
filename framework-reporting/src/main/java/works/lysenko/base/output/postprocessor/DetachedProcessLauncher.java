@@ -180,6 +180,8 @@ public final class DetachedProcessLauncher {
             final boolean openBrowser) {
         return new String[]{
                 javaBin,
+                "--enable-native-access=ALL-UNNAMED",
+                "-XX:+UseCompactObjectHeaders",
                 "-cp",
                 classPath,
                 PostProcessor.class.getName(),

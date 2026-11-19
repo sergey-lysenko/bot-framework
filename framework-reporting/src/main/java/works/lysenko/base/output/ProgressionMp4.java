@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -106,60 +107,59 @@ final class ProgressionMp4 {
 
         final ByteArrayOutputStream stderr = new ByteArrayOutputStream();
         final AtomicReference<IOException> stderrFailure = new AtomicReference<>();
-        final Thread stderrReader = new Thread(
-                () -> copyLimited(process.getErrorStream(), stderr, stderrFailure),
-                "progression-ffmpeg-stderr");
-        stderrReader.setDaemon(true);
-        stderrReader.start();
+        final Thread stderrReader = Thread.ofVirtual()
+                .name("progression-ffmpeg-stderr")
+                .start(() -> copyLimited(process.getErrorStream(), stderr, stderrFailure));
 
         final int finalW = maxWidth;
         final int finalH = maxHeight;
         final int threads = Math.max(2, Runtime.getRuntime().availableProcessors());
-        final ExecutorService renderExecutor = Executors.newFixedThreadPool(threads, r -> {
-            final Thread t = new Thread(r, "mp4-frame-renderer");
-            t.setDaemon(true);
-            return t;
-        });
 
         try {
-            try (OutputStream input = process.getOutputStream()) {
+            try (ExecutorService renderExecutor = Executors.newFixedThreadPool(
+                    threads,
+                    Thread.ofPlatform().daemon().name("mp4-frame-renderer-", 0).factory());
+                 OutputStream input = process.getOutputStream()) {
                 final int windowSize = threads * 2;
                 final List<Future<BufferedImage>> futures = new ArrayList<>(frames.size());
 
-                for (int i = 0; i < Math.min(windowSize, frames.size()); i++) {
-                    final File file = frames.get(i);
-                    futures.add(renderExecutor.submit(() -> ProgressionFrames.read(file, maxFramePixels, finalW, finalH)));
-                }
-
-                long lastLogTime = System.currentTimeMillis();
-                for (int i = 0; i < frames.size(); i++) {
-                    final int nextToSubmit = i + windowSize;
-                    if (nextToSubmit < frames.size()) {
-                        final File file = frames.get(nextToSubmit);
+                try {
+                    for (int i = 0; i < Math.min(windowSize, frames.size()); i++) {
+                        final File file = frames.get(i);
                         futures.add(renderExecutor.submit(() -> ProgressionFrames.read(file, maxFramePixels, finalW, finalH)));
                     }
 
-                    final BufferedImage image = futures.get(i).get();
-                    futures.set(i, null);
+                    long lastLogTime = System.currentTimeMillis();
+                    for (int i = 0; i < frames.size(); i++) {
+                        final int nextToSubmit = i + windowSize;
+                        if (nextToSubmit < frames.size()) {
+                            final File file = frames.get(nextToSubmit);
+                            futures.add(renderExecutor.submit(() -> ProgressionFrames.read(file, maxFramePixels, finalW, finalH)));
+                        }
 
-                    validateDimensions(image.getWidth(), image.getHeight());
-                    if (!javax.imageio.ImageIO.write(image, "png", input)) {
-                        throw new IOException("No PNG ImageIO writer is available for MP4 input");
+                        final BufferedImage image = futures.get(i).get();
+                        futures.set(i, null);
+
+                        validateDimensions(image.getWidth(), image.getHeight());
+                        if (!javax.imageio.ImageIO.write(image, "png", input)) {
+                            throw new IOException("No PNG ImageIO writer is available for MP4 input");
+                        }
+                        input.flush();
+                        final int pct = (int) (((i + 1L) * 100) / frames.size());
+                        progress.accept(pct);
+                        final long now = System.currentTimeMillis();
+                        if (now - lastLogTime >= 3000 || i == frames.size() - 1) {
+                            lastLogTime = now;
+                            logDebug(String.format("Encoding MP4 video (%s)... %d/%d frames (%d%%)", outputFile.getName(), i + 1, frames.size(), pct));
+                        }
                     }
-                    input.flush();
-                    final int pct = (int) (((i + 1L) * 100) / frames.size());
-                    progress.accept(pct);
-                    final long now = System.currentTimeMillis();
-                    if (now - lastLogTime >= 3000 || i == frames.size() - 1) {
-                        lastLogTime = now;
-                        logDebug(String.format("Encoding MP4 video (%s)... %d/%d frames (%d%%)", outputFile.getName(), i + 1, frames.size(), pct));
-                    }
+                } catch (final IOException | InterruptedException | ExecutionException | RuntimeException e) {
+                    renderExecutor.shutdownNow();
+                    throw e;
                 }
             } catch (final ExecutionException e) {
-                if (e.getCause() instanceof IOException) throw (IOException) e.getCause();
+                if (e.getCause() instanceof IOException ioe) throw ioe;
                 throw new IOException("Failed during parallel frame rendering: " + e.getMessage(), e);
-            } finally {
-                renderExecutor.shutdownNow();
             }
 
             final boolean exited = process.waitFor(10, TimeUnit.MINUTES);
@@ -167,8 +167,9 @@ final class ProgressionMp4 {
                 process.destroyForcibly();
                 throw new IOException("FFmpeg exceeded the 10 minute encoding limit");
             }
-            stderrReader.join(5000);
-            if (stderrReader.isAlive()) throw new IOException("Unable to collect FFmpeg diagnostic output");
+            if (!stderrReader.join(Duration.ofSeconds(5))) {
+                throw new IOException("Unable to collect FFmpeg diagnostic output");
+            }
             if (process.exitValue() != 0) {
                 final String details;
                 synchronized (stderr) {

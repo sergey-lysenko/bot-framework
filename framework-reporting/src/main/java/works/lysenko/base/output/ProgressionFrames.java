@@ -3,6 +3,7 @@ package works.lysenko.base.output;
 import com.github.weisj.jsvg.SVGDocument;
 import com.github.weisj.jsvg.attributes.ViewBox;
 import com.github.weisj.jsvg.geometry.size.FloatSize;
+import com.github.weisj.jsvg.parser.LoaderContext;
 import com.github.weisj.jsvg.parser.SVGLoader;
 
 import javax.imageio.ImageIO;
@@ -16,6 +17,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -331,7 +333,10 @@ public final class ProgressionFrames {
         }
         try {
             final SVGLoader loader = new SVGLoader();
-            final SVGDocument doc = loader.load(new ByteArrayInputStream(svgContent.getBytes(StandardCharsets.UTF_8)));
+            final SVGDocument doc = loader.load(
+                    new ByteArrayInputStream(svgContent.getBytes(StandardCharsets.UTF_8)),
+                    null,
+                    LoaderContext.createDefault());
             if (null == doc) throw new IOException("Unable to parse inline SVG frame");
             final FloatSize size = doc.size();
             final int svgWidth = (int) Math.ceil(size.width);
@@ -348,9 +353,9 @@ public final class ProgressionFrames {
     }
 
     static BufferedImage renderSvg(final File file, final int maxFramePixels, final int targetWidth, final int targetHeight) throws IOException {
-        try {
+        try (InputStream input = Files.newInputStream(file.toPath())) {
             final SVGLoader loader = new SVGLoader();
-            final SVGDocument doc = loader.load(file.toURI().toURL());
+            final SVGDocument doc = loader.load(input, file.toURI(), LoaderContext.createDefault());
             if (null == doc) throw new IOException("Unable to parse SVG file: " + file);
             final FloatSize size = doc.size();
             final int svgWidth = (int) Math.ceil(size.width);
@@ -362,12 +367,11 @@ public final class ProgressionFrames {
         }
     }
 
-    @SuppressWarnings("deprecation")
     static int[] dimensions(final File file, final int maxFramePixels) throws IOException {
         if (file.getName().endsWith(".svg")) {
-            try {
+            try (InputStream input = Files.newInputStream(file.toPath())) {
                 final SVGLoader loader = new SVGLoader();
-                final SVGDocument doc = loader.load(file.toURI().toURL());
+                final SVGDocument doc = loader.load(input, file.toURI(), LoaderContext.createDefault());
                 if (null == doc) throw new IOException("Unable to parse SVG file: " + file);
                 final FloatSize size = doc.size();
                 final int width = (int) Math.ceil(size.width);
