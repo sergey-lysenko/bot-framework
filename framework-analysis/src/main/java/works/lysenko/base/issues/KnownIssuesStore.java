@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static works.lysenko.util.func.type.Objects.*;
 
@@ -32,6 +34,7 @@ public final class KnownIssuesStore {
     }
 
     private final List<KnownIssue> issues = new ArrayList<>(16);
+    private final Map<String, List<KnownIssue>> scenarioIssuesCache = new ConcurrentHashMap<>();
 
     /**
      * Instantiates a new Known issues store with default resources.
@@ -76,6 +79,31 @@ public final class KnownIssuesStore {
     }
 
     /**
+     * Returns all known issues whose scenario target matches the given scenario FQN or simple name.
+     * Results are cached per store instance since the underlying issue list is immutable after construction.
+     *
+     * @param fqn        fully qualified scenario name (may be null)
+     * @param simpleName simple scenario name (may be null)
+     * @return unmodifiable list of matching known issues
+     */
+    public List<KnownIssue> getForScenario(final String fqn, final String simpleName) {
+
+        if (issues.isEmpty() || (null == fqn && null == simpleName)) {
+            return Collections.emptyList();
+        }
+        final String key = (null != fqn ? fqn : "") + '\0' + (null != simpleName ? simpleName : "");
+        return scenarioIssuesCache.computeIfAbsent(key, k -> {
+            final List<KnownIssue> matched = new ArrayList<>(4);
+            for (final KnownIssue ki : issues) {
+                if (KnownIssuesMatcher.matchesScenario(ki.scenario(), fqn, simpleName)) {
+                    matched.add(ki);
+                }
+            }
+            return matched.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(matched);
+        });
+    }
+
+    /**
      * Finds known issues that match the given scenario and optional execution result.
      *
      * @param scenario the scenario to check (can be null)
@@ -86,13 +114,9 @@ public final class KnownIssuesStore {
 
         final List<KnownIssue> matches = new ArrayList<>(10);
         if (null != scenario) {
-            final String fqn = scenario.getName();
-            final String simpleName = scenario.getSimpleName();
-
-            for (final KnownIssue ki : issues) {
-                if (KnownIssuesMatcher.matchesScenario(ki.scenario(), fqn, simpleName)) {
-                    if (KnownIssuesMatcher.matchesPattern(ki.pattern(), result)) matches.add(ki);
-                }
+            final List<KnownIssue> candidates = getForScenario(scenario.getName(), scenario.getSimpleName());
+            for (final KnownIssue ki : candidates) {
+                if (KnownIssuesMatcher.matchesPattern(ki.pattern(), result)) matches.add(ki);
             }
         }
         return matches;

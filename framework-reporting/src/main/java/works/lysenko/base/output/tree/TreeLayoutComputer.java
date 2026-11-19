@@ -189,14 +189,13 @@ public final class TreeLayoutComputer {
                 }
             }
             if (!works.lysenko.util.prop.issues.KnownIssues.failedOnly && null != logRecords && !logRecords.isEmpty()) {
-                for (final KnownIssue ki : store.getIssues()) {
+                for (final KnownIssue ki : store.getForScenario(scenario.getName(), scenario.getSimpleName())) {
                     if (node.knownIssues().contains(ki)) continue;
                     final String scenarioTarget = ki.scenario();
                     final boolean isWildcard = null == scenarioTarget || scenarioTarget.isBlank() || "*".equals(scenarioTarget.trim());
                     if (isWildcard && !ki.pattern().isBlank()) continue;
 
-                    final boolean scenarioMatches = works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(scenarioTarget, scenario.getName(), scenario.getSimpleName());
-                    if (scenarioMatches && matchesAnyLogRecord(ki.pattern(), logRecords, s("checking known issues for scenario ", scenario.getSimpleName()), patternLogCache)) {
+                    if (matchesAnyLogRecord(ki.pattern(), logRecords, s("checking known issues for scenario ", scenario.getSimpleName()), patternLogCache)) {
                         node.knownIssues().add(ki);
                     }
                 }
@@ -350,45 +349,7 @@ public final class TreeLayoutComputer {
     }
 
     public static boolean hasFailure(final NodeData n) {
-        if (null == n) return false;
-        if (null != n.scenario()) {
-            if (n.scenario().hasFailed() || n.scenario().getExecutionStatus() == works.lysenko.util.data.enums.ExecutionStatus.FAILED) return true;
-        }
-        final _Result res = n.result();
-        if (null != res) {
-            if (null != res.getEvents() && !res.getEvents().isEmpty()) {
-                final works.lysenko.base.responses.ExpectedResponsesStore expStore = TreeHtml.getExpectedResponsesStore();
-                final boolean nodeMatchedExpected = (null != expStore && expStore.matchesNode(n));
-                for (final _LogRecord lr : res.getEvents()) {
-                    if (null == lr || !(lr.data() instanceof works.lysenko.util.apis.data._Event ev)) continue;
-                    if (ev.severity() != works.lysenko.util.data.enums.Severity.S0
-                            && ev.severity() != works.lysenko.util.data.enums.Severity.S1) {
-                        continue;
-                    }
-                    if (null != expStore) {
-                        if (expStore.isExpected(n, lr)) continue;
-                        final String text = lr.text();
-                        if (nodeMatchedExpected && null != text && text.contains("[BROWSER]")) continue;
-                    }
-                    boolean matchedKnown = false;
-                    if (null != n.knownIssues() && !n.knownIssues().isEmpty()) {
-                        for (final KnownIssue ki : n.knownIssues()) {
-                            if (ki.decreaseToWarning()
-                                    && works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
-                                matchedKnown = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!matchedKnown) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-            return res.status() == works.lysenko.util.data.enums.ExecutionStatus.FAILED;
-        }
-        return false;
+        return NodeEventClassifier.classify(n).hasFailure();
     }
 
     public static boolean hasChildFailure(final NodeData n) {

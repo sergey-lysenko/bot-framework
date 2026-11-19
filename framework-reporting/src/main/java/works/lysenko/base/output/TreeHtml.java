@@ -2,6 +2,7 @@ package works.lysenko.base.output;
 
 import works.lysenko.base.issues.KnownIssue;
 import works.lysenko.base.issues.KnownIssuesStore;
+import works.lysenko.base.output.tree.NodeEventClassifier;
 import works.lysenko.base.output.tree.TreeHtmlRenderer;
 import works.lysenko.base.output.tree.TreeLayoutComputer;
 import works.lysenko.base.output.tree.TreeLayoutOptimizer;
@@ -142,79 +143,19 @@ public final class TreeHtml {
     }
 
     public static boolean hasFailure(final NodeData n) {
-        return TreeLayoutComputer.hasFailure(n);
+        return NodeEventClassifier.classify(n).hasFailure();
     }
 
     public static int getUnclassifiedEventCount(final NodeData n) {
-        if (null == n || null == n.result() || null == n.result().getEvents() || n.result().getEvents().isEmpty()) {
-            return 0;
-        }
-        final works.lysenko.base.responses.ExpectedResponsesStore expStore = getExpectedResponsesStore();
-        final boolean nodeMatchedExpected = (null != expStore && expStore.matchesNode(n));
-        int count = 0;
-        for (final works.lysenko.util.apis.log._LogRecord lr : n.result().getEvents()) {
-            if (null != expStore && null != lr) {
-                if (expStore.isExpected(n, lr)) {
-                    continue;
-                }
-                final String text = (null != lr.data()) ? lr.text() : null;
-                if (nodeMatchedExpected && null != text && text.contains("[BROWSER]")) {
-                    continue;
-                }
-            }
-            count++;
-        }
-        return count;
+        return NodeEventClassifier.classify(n).unclassifiedEventCount();
     }
 
     public static boolean hasWarning(final NodeData n) {
-        if (null == n || null == n.result()) return false;
-        if (hasFailure(n)) return false;
-        final works.lysenko.base.responses.ExpectedResponsesStore expStore = getExpectedResponsesStore();
-        final boolean nodeMatchedExpected = (null != expStore && expStore.matchesNode(n));
-        if (null != n.result().getEvents() && !n.result().getEvents().isEmpty()) {
-            for (final works.lysenko.util.apis.log._LogRecord lr : n.result().getEvents()) {
-                if (null != expStore) {
-                    if (expStore.isExpected(n, lr)) continue;
-                    final String text = (null != lr) ? lr.text() : null;
-                    if (nodeMatchedExpected && null != text && text.contains("[BROWSER]")) continue;
-                }
-                if (null == lr || null == lr.data()) {
-                    return true;
-                }
-                if (lr.data() instanceof works.lysenko.util.apis.data._Event ev) {
-                    if (ev.severity() == works.lysenko.util.data.enums.Severity.S2
-                            || ev.severity() == works.lysenko.util.data.enums.Severity.S1
-                            || ev.severity() == works.lysenko.util.data.enums.Severity.S0) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-        return n.result().status() == works.lysenko.util.data.enums.ExecutionStatus.WARNING;
+        return NodeEventClassifier.classify(n).hasWarning();
     }
 
     public static boolean hasNotice(final NodeData n) {
-        if (null == n || null == n.result()) return false;
-        if (hasFailure(n) || hasWarning(n)) return false;
-        final works.lysenko.base.responses.ExpectedResponsesStore expStore = getExpectedResponsesStore();
-        final boolean nodeMatchedExpected = (null != expStore && expStore.matchesNode(n));
-        if (null != n.result().getEvents() && !n.result().getEvents().isEmpty()) {
-            for (final works.lysenko.util.apis.log._LogRecord lr : n.result().getEvents()) {
-                if (null != expStore) {
-                    if (expStore.isExpected(n, lr)) continue;
-                    final String text = (null != lr) ? lr.text() : null;
-                    if (nodeMatchedExpected && null != text && text.contains("[BROWSER]")) continue;
-                }
-                if (null != lr && lr.data() instanceof works.lysenko.util.apis.data._Event ev) {
-                    if (ev.severity() == works.lysenko.util.data.enums.Severity.S3) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+        return NodeEventClassifier.classify(n).hasNotice();
     }
 
     public static boolean hasChildFailure(final NodeData n) {

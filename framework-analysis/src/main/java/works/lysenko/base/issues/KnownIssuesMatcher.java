@@ -30,9 +30,21 @@ public final class KnownIssuesMatcher {
             } catch (final PatternSyntaxException ignored) {
             }
             final String lower = patternStr.toLowerCase(java.util.Locale.ROOT);
-            final String norm = NON_ALPHANUMERIC.matcher(lower).replaceAll(EMPTY);
+            final String norm = stripNonAlphanumeric(lower);
             return new PreparedRecordPattern(compiled, lower, norm);
         }
+    }
+
+    private static String stripNonAlphanumeric(final String lowerText) {
+        final int len = lowerText.length();
+        final StringBuilder sb = new StringBuilder(len);
+        for (int i = 0; i < len; i++) {
+            final char c = lowerText.charAt(i);
+            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
     private static final String EMPTY = "";
     private static final String ASTERISK = "*";
@@ -70,15 +82,15 @@ public final class KnownIssuesMatcher {
             } else if (isNotNull(fqn)) {
                 final String lowerFqn = fqn.toLowerCase(java.util.Locale.ROOT);
                 final String lowerTrimmed = trimmed.toLowerCase(java.util.Locale.ROOT);
-                if (lowerFqn.equalsIgnoreCase(lowerTrimmed)) match = true;
-                else if (lowerFqn.endsWith(String.format(FORMAT_CONCAT, DOT, lowerTrimmed)) || lowerFqn.endsWith(lowerTrimmed)) match = true;
-                else if (lowerTrimmed.endsWith(String.format(FORMAT_CONCAT, DOT, lowerFqn)) || lowerTrimmed.endsWith(lowerFqn)) match = true;
+                if (lowerFqn.endsWith(lowerTrimmed) || lowerTrimmed.endsWith(lowerFqn)) {
+                    match = true;
+                }
             }
 
             if (!match && trimmed.contains(ASTERISK)) {
                 String patternStr = trimmed.replace(DOT, DOT_ESCAPED).replace(ASTERISK, DOT_STAR);
-                if (!patternStr.startsWith(DOT_STAR)) patternStr = String.format(FORMAT_CONCAT, DOT_STAR, patternStr);
-                final String regex = String.format(FORMAT_REGEX_EXACT, patternStr);
+                if (!patternStr.startsWith(DOT_STAR)) patternStr = DOT_STAR + patternStr;
+                final String regex = "(?i)^" + patternStr + "$";
                 try {
                     final Pattern pattern = getCompiledPattern(regex, 0);
                     if (isNotNull(fqn) && pattern.matcher(fqn).matches()) match = true;
@@ -201,7 +213,7 @@ public final class KnownIssuesMatcher {
 
         // 3. Normalized alphanumeric tolerance match
         if (!prepared.normPattern.isEmpty()) {
-            final String normText = NON_ALPHANUMERIC.matcher(lowerFullText).replaceAll(EMPTY);
+            final String normText = stripNonAlphanumeric(lowerFullText);
             return normText.contains(prepared.normPattern);
         }
         return false;

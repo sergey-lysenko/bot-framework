@@ -191,4 +191,59 @@ class TreeLayoutCachingTest {
             TreeTracker.reset();
         }
     }
+
+    private record SeverityLogRecord(String text, works.lysenko.util.data.enums.EventType type) implements _LogRecord {
+        @Override public _LogData data() {
+            return new works.lysenko.util.data.type.logr.type.Event(1L, type, 0, text, "");
+        }
+        @Override public int setSpan(final long currentTime) { return 0; }
+        @Override public int span() { return 0; }
+        @Override public int test() { return 1; }
+        @Override public Long time() { return 0L; }
+    }
+
+    @Test
+    void nodeEventClassifierUpdatesIncrementallyAcrossBrowserSuppressionAndKnownIssues() {
+        final works.lysenko.base.responses.ExpectedResponsesStore prevExp = TreeHtml.getExpectedResponsesStore();
+        try {
+            final works.lysenko.base.responses.ExpectedResponse expRule =
+                    new works.lysenko.base.responses.ExpectedResponse("*", "Google Maps JavaScript API warning", "expected");
+            TreeHtml.setExpectedResponsesStore(new works.lysenko.base.responses.ExpectedResponsesStore(List.of(expRule)));
+
+            final NamedLeaf leaf = new NamedLeaf(Fraction.ONE, "demo.Root.LeafX", "LeafX");
+            final Result res = new Result(leaf);
+            res.tick();
+            final NodeData node = new NodeData("id1", "LeafX", "Root", 1, 1.0, res, leaf);
+
+            // 1. Add an S2 [BROWSER] event (not yet matched by expected rule)
+            res.addEvent(new SeverityLogRecord("[BROWSER] random console warning", works.lysenko.util.data.enums.EventType.WARNING));
+            assertFalse(TreeHtml.hasFailure(node));
+            assertTrue(TreeHtml.hasWarning(node));
+            assertEquals(1, TreeHtml.getUnclassifiedEventCount(node));
+
+            // 2. Append an event matching the expected rule -> retroactively suppresses [BROWSER] companion warning
+            res.addEvent(new SeverityLogRecord("[BROWSER] Google Maps JavaScript API warning", works.lysenko.util.data.enums.EventType.WARNING));
+            assertFalse(TreeHtml.hasFailure(node));
+            assertFalse(TreeHtml.hasWarning(node));
+            assertEquals(0, TreeHtml.getUnclassifiedEventCount(node));
+
+            // 3. Append a non-browser S3 notice -> shows notice even though nodeMatchedExpected is true
+            res.addEvent(new SeverityLogRecord("Minor layout shift", works.lysenko.util.data.enums.EventType.NOTICE));
+            assertTrue(TreeHtml.hasNotice(node));
+            assertEquals(1, TreeHtml.getUnclassifiedEventCount(node));
+
+            // 4. Append a non-browser S0 failure -> fails, then decreases to warning when KnownIssue attaches
+            res.addEvent(new SeverityLogRecord("Fatal timeout XYZ", works.lysenko.util.data.enums.EventType.FAILURE));
+            assertTrue(TreeHtml.hasFailure(node));
+            assertFalse(TreeHtml.hasWarning(node));
+            assertFalse(TreeHtml.hasNotice(node));
+
+            node.knownIssues().add(new KnownIssue("LeafX", "Timeout", "Desc", "", "Fatal timeout XYZ", true));
+            assertFalse(TreeHtml.hasFailure(node));
+            assertTrue(TreeHtml.hasWarning(node));
+            assertFalse(TreeHtml.hasNotice(node));
+        } finally {
+            TreeHtml.setExpectedResponsesStore(prevExp);
+        }
+    }
 }
