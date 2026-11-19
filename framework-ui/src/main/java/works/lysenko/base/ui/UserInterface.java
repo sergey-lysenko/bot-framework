@@ -1,7 +1,7 @@
 package works.lysenko.base.ui;
 
 import works.lysenko.base.output.AllLeafCompletions;
-import works.lysenko.base.output.EtaCorrection;
+import works.lysenko.base.util.EtaCalculator;
 import works.lysenko.base.util.Telemetry;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.util._BotButton;
@@ -564,68 +564,16 @@ public final class UserInterface extends JPanel implements _Dashboard {
      */
     public static long calculateEtaMs() {
 
-        return works.lysenko.base.util.EtaCalculator.calculateEtaMs();
+        return EtaCalculator.calculateEtaMs();
     }
 
     private static String calculateEtaString() {
 
-        final long remainingMs = calculateEtaMs();
-        if (remainingMs > 0L) {
-            AllLeafCompletions.recordEtaSample(remainingMs);
-            return b("(ETA", s(formatMs(remainingMs)) + ")");
+        final EtaCalculator.Snapshot snapshot = EtaCalculator.capture(false);
+        if (snapshot.remainingMs() > 0L) {
+            AllLeafCompletions.recordEtaSample(snapshot.remainingMs());
         }
-
-        if (isNull(core) || isNull(timer)) return "(ETA --:--)";
-        final long elapsedMs = timer.msSinceStart();
-        if (elapsedMs < 1000L) return "(ETA --:--)";
-
-        final Integer configuredLeafExecs = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
-        final boolean allLeafsMode = (isNotNull(parameters))
-                ? parameters.isAllLeafs()
-                : (Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get())
-                        || (isNotNull(configuredLeafExecs) && configuredLeafExecs > 1));
-        if (allLeafsMode) {
-            final boolean multipleExecutionsPerLeaf = (isNotNull(parameters))
-                    ? (parameters.getAllLeafsExecutions() > 1)
-                    : (isNotNull(configuredLeafExecs) && configuredLeafExecs > 1);
-            final int executed = multipleExecutionsPerLeaf
-                    ? core.getExecutedLeafExecutionsCount()
-                    : core.getExecutedLeafsCount();
-            final int total = multipleExecutionsPerLeaf
-                    ? core.getTotalLeafExecutionsCount()
-                    : (isNotNull(core.getAccessibleLeafs()) ? core.getAccessibleLeafs().size() : 0);
-            if (executed >= total && core.areAllLeafsExecuted()) return "(ETA Done)";
-            final works.lysenko.util.apis.test._Test activeTest = isNotNull(core.getTest())
-                    ? core.getTest()
-                    : works.lysenko.Base.test;
-            if (isNotNull(activeTest) && activeTest.getPatiencePercentage() >= 100.0) return "(ETA Done)";
-            return "(ETA --:--)";
-        }
-
-        final Integer totalTests = core.getTotalTests();
-        if (isNotNull(totalTests) && totalTests > 0) {
-            final int completedTests = (isNotNull(core.getTest()) && isNotNull(core.getTest().repeater()) && isNotNull(core.getTest().repeater().getHistory()))
-                    ? core.getTest().repeater().getHistory().size()
-                    : 0;
-            if (completedTests >= totalTests) return "(ETA Done)";
-            return "(ETA --:--)";
-        }
-
-        return "(ETA --:--)";
-    }
-
-    private static String formatMs(final long ms) {
-
-        final long totalSec = Math.max(0L, ms / 1000L);
-        final long hours = totalSec / 3600L;
-        final long minutes = (totalSec % 3600L) / 60L;
-        final long seconds = totalSec % 60L;
-
-        if (hours > 0) {
-            return String.format(Locale.ROOT, "%02d:%02d:%02d", hours, minutes, seconds);
-        } else {
-            return String.format(Locale.ROOT, "%02d:%02d", minutes, seconds);
-        }
+        return snapshot.label();
     }
 
     @Override

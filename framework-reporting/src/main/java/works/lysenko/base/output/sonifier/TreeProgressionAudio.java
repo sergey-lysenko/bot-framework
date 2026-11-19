@@ -15,7 +15,8 @@ public final class TreeProgressionAudio {
             new ClaudeSonifier(),
             new GeminiSonifier(),
             new OrpheusSonifier(),
-            new AuroraSonifier());
+            new AuroraSonifier(),
+            new CarbonSonifier());
 
     private TreeProgressionAudio() {
     }

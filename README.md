@@ -167,7 +167,7 @@ Configuration is organized into 11 specialized partial files included via `src/m
 | **Tests** | `.test.fail.by.event.of.severity` | `s1` | Event severity level that halts test execution |
 | **Tests** | `.test.resilient.mode` | `false` | Enables resilient mode (executes full suite despite failures) |
 | **Tests** | `.test.report.progression.tree.mp4` | `true` | Generates MP4 video of scenario tree progression (FFmpeg) |
-| **Tests** | `.test.report.progression.tree.sonification` | `none` | Adds deterministic musical audio to progression MP4 (`none`, `copilot`, `claude`, `gemini`) |
+| **Tests** | `.test.report.progression.tree.sonification` | `none` | Adds deterministic musical audio to progression MP4 (`none`, `copilot`, `claude`, `gemini`, `orpheus`, `aurora`, `carbon`) |
 | **UI** | `.screen.to.spawn.dashboard` | `0` | Screen index on which to open the dashboard |
 | **UI** | `.mobi.native.x.resolution` | `1080` | Mobile native screen width in pixels |
 | **WebDriver**| `.test.ewait` | `30` | Explicit wait timeout in seconds |
@@ -211,6 +211,9 @@ When `.test.report.progression.tree.mp4 = true`, the framework uses FFmpeg to co
 - **`copilot`**: Leaf-driven audio tracks where scenario tree path depth determines pitch and target execution progress drives dynamics.
 - **`claude`**: Visual diff-driven audio tracks where image changes between frames control note selection and volume.
 - **`gemini`**: Ambient structural cascade reflecting macro-level scenario tree layout transformations.
+- **`orpheus`**: Polyphonic modal narrative with branch melodies, leaf completion arpeggios, status harmony, and camera shimmer.
+- **`aurora`**: Ethereal Hirajoshi pentatonic pads tracking column completion with failure and warning cues.
+- **`carbon`**: True-stereo spatial FM/pad synthesis mapping tree depth left-to-right with continuous harmonic buoyancy, adaptive step/macro strumming, damped over-execution ticks, `known-issue`-aware status cues, and pruning updraft sweeps.
 
 ---
 

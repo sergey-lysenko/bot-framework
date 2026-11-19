@@ -89,7 +89,7 @@ final class ProgressionMp4 {
                         "-map", "0:v:0",
                         "-map", "1:a:0",
                         "-c:a", "aac",
-                        "-b:a", "96k"));
+                        "-b:a", "128k"));
             } else {
                 command.add("-an");
             }

@@ -1,13 +1,25 @@
 package works.lysenko.base.ui;
 
+import works.lysenko.base.output.AllLeafCompletions;
+import works.lysenko.base.util.EtaCalculator;
 import works.lysenko.base.util.Telemetry;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.util._Dashboard;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static works.lysenko.util.func.type.Objects.isNotNull;
+import static works.lysenko.Base.core;
+import static works.lysenko.Base.timer;
+import static works.lysenko.util.chrs.___.ETA;
 import static works.lysenko.util.chrs.____.HALT;
 import static works.lysenko.util.chrs.____.STOP;
 import static works.lysenko.util.chrs.____.TRUE;
@@ -22,23 +34,26 @@ import static works.lysenko.util.spec.Layout.Paths._DASH_;
 import static works.lysenko.util.spec.Symbols.QUS_MRK;
 
 /**
- * The Directory class represents a dashboard in a directory.
- * It implements the ProvidesDashboard interface and provides methods to interact with the directory.
+ * The Directory class represents a filesystem-backed dashboard in {@code dash/}.
+ * It implements {@link _Dashboard} for CLI / headless execution, exposing stop/pause/halt/debug flags,
+ * run title ({@code dash/title}), and throttled live ETA snapshots ({@code dash/eta}).
  */
 @SuppressWarnings({"ClassWithoutLogger", "FinalClass", "NestedMethodCall", "ClassWithTooManyDependencies",
         "ClassWithTooManyTransitiveDependencies", "ClassWithTooManyTransitiveDependents", "CyclicClassDependency",
         "AutoBoxing",
         "ClassUnconnectedToPackage", "MismatchedQueryAndUpdateOfCollection", "BooleanParameter"})
-/**
- * The Directory class.
- */
 public final class Directory implements _Dashboard {
 
     private static final String TITLE_PATH = s(_DASH_, TITLE);
+    private static final String ETA_PATH = s(_DASH_, ETA);
     private static final String DEBUG_PATH = s(_DASH_, DEBUG);
     private static final String HALT_PATH = s(_DASH_, HALT);
     private static final String STOP_PATH = s(_DASH_, STOP);
     private static final String PAUSE_PATH = s(_DASH_, PAUSE);
+    private static final long ETA_WRITE_INTERVAL_MS = 1000L;
+
+    private volatile String currentTitle = "";
+    private volatile long lastEtaWriteAtMs = 0L;
 
     /**
      * Instantiates a new Directory object.
@@ -63,7 +78,7 @@ public final class Directory implements _Dashboard {
      * Creates a label for a given scenario.
      *
      * @param scenario The scenario for which a label is to be created.
-     * @return A1 label for the given scenario.
+     * @return label for the given scenario.
      */
     private static String createScenarioString(final _Scenario scenario) {
 
@@ -79,6 +94,7 @@ public final class Directory implements _Dashboard {
     @Override
     public void dispose() {
 
+        publishEta(true, true);
     }
 
     /**
@@ -150,18 +166,59 @@ public final class Directory implements _Dashboard {
     }
 
     /**
-     * Sets the information message and refreshes the status board with the provided telemetry data.
+     * Refreshes the throttled {@code dash/eta} telemetry sidecar during CLI/headless execution.
      *
      * @param message   The information message to be displayed.
      * @param telemetry The telemetry data used to refresh the status board.
      */
     public void setInfo(final String message, final Telemetry telemetry) {
-        // not implemented for console in order to conserve resources
+
+        publishEta(false, false);
     }
 
     @Override
     public void setTitle(final String title) {
 
+        currentTitle = (null == title) ? "" : title;
         writeToFile(title, TITLE_PATH);
+        publishEta(true, false);
+    }
+
+    private void publishEta(final boolean force, final boolean markDone) {
+
+        if (!isNotNull(core) || !isNotNull(timer)) return;
+
+        final long now = System.currentTimeMillis();
+        if (!force && (now - lastEtaWriteAtMs) < ETA_WRITE_INTERVAL_MS) return;
+        lastEtaWriteAtMs = now;
+
+        EtaCalculator.Snapshot snapshot = EtaCalculator.capture(true);
+        if (!markDone && snapshot.remainingMs() > 0L) {
+            AllLeafCompletions.recordEtaSample(snapshot.remainingMs());
+        }
+        if (markDone) {
+            snapshot = snapshot.asDone(now, Math.max(0L, timer.msSinceStart()));
+        }
+        writeEtaJson(snapshot.toJson(currentTitle));
+    }
+
+    private static void writeEtaJson(final String json) {
+
+        try {
+            final Path target = Path.of(ETA_PATH);
+            final Path parent = target.getParent();
+            if (null != parent) {
+                Files.createDirectories(parent);
+            }
+            final Path tmp = target.resolveSibling(target.getFileName().toString() + ".tmp");
+            Files.writeString(tmp, json, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            try {
+                Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (final IOException ignored) {
+                Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (final IOException ignored) {
+            // Never disrupt test execution if dash/eta cannot be written
+        }
     }
 }

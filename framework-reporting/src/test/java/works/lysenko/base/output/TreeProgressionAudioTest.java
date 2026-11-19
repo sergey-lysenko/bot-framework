@@ -32,9 +32,157 @@ class TreeProgressionAudioTest {
         assertTrue(TreeProgressionAudio.find("Orpheus").orElseThrow() instanceof OrpheusSonifier);
         assertTrue(TreeProgressionAudio.find("aurora").orElseThrow() instanceof AuroraSonifier);
         assertTrue(TreeProgressionAudio.find("Aurora").orElseThrow() instanceof AuroraSonifier);
+        assertTrue(TreeProgressionAudio.find("carbon").orElseThrow() instanceof CarbonSonifier);
+        assertTrue(TreeProgressionAudio.find("Carbon").orElseThrow() instanceof CarbonSonifier);
         assertTrue(TreeProgressionAudio.find("none").isEmpty());
         assertTrue(TreeProgressionAudio.find("true").isEmpty());
         assertTrue(TreeProgressionAudio.find(null).isEmpty());
+    }
+
+    @Test
+    void carbonSynthesizesStereoSpatialTelemetryDeterministically(@TempDir final Path tempDir) throws Exception {
+        final CarbonSonifier carbon = new CarbonSonifier();
+        final File frame1 = tempDir.resolve("frame_0001.svg").toFile();
+        final File frame2 = tempDir.resolve("frame_0002.svg").toFile();
+        final File frame3 = tempDir.resolve("frame_0003.svg").toFile();
+
+        // Frame 1: root branch (col 0), partial leaf (col 2), unvisited sibling leaf (col 4)
+        final TreeHtml.NodeData root1 = new TreeHtml.NodeData(
+                "root", "SignIn", "Suite", 0, 1, new Result(ScenarioType.NODE, null, null, null, List.of(), 1, 0));
+        final TreeHtml.NodeData leafLeft1 = new TreeHtml.NodeData(
+                "leafL", "Verify", "Suite", 2, 0, new Result(ScenarioType.LEAF, null, null, null, List.of(), 1, 0));
+        final TreeHtml.NodeData leafRight1 = new TreeHtml.NodeData(
+                "leafR", "Checkout", "Suite", 4, 2, new Result(ScenarioType.LEAF, null, null, null, List.of(), 0, 0));
+        leafLeft1.setParent(root1);
+        leafRight1.setParent(root1);
+        root1.children().addAll(List.of(leafLeft1, leafRight1));
+        final TreeHtml.TreeLayout layout1 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(root1, leafLeft1, leafRight1)), List.of());
+
+        // Frame 2: leafLeft completes target=2, leafRight pruned (shedding tree mass -> updraft sweep)
+        final TreeHtml.NodeData root2 = new TreeHtml.NodeData(
+                "root", "SignIn", "Suite", 0, 1, new Result(ScenarioType.NODE, null, null, null, List.of(), 2, 0));
+        final TreeHtml.NodeData leafLeft2 = new TreeHtml.NodeData(
+                "leafL", "Verify", "Suite", 2, 0, new Result(ScenarioType.LEAF, null, null, null, List.of(), 2, 0));
+        leafLeft2.setParent(root2);
+        root2.children().add(leafLeft2);
+        final TreeHtml.TreeLayout layout2 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(root2, leafLeft2)), List.of());
+
+        // Frame 3: over-execution (3/2) with warning status
+        final Result overWarn = new Result(ScenarioType.LEAF, null, null, null, List.of(), 3, 1);
+        overWarn.updateStatus(ExecutionStatus.WARNING);
+        final TreeHtml.NodeData root3 = new TreeHtml.NodeData(
+                "root", "SignIn", "Suite", 0, 1, new Result(ScenarioType.NODE, null, null, null, List.of(), 3, 0));
+        final TreeHtml.NodeData leafLeft3 = new TreeHtml.NodeData(
+                "leafL", "Verify", "Suite", 2, 0, overWarn);
+        leafLeft3.setParent(root3);
+        root3.children().add(leafLeft3);
+        final TreeHtml.TreeLayout layout3 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(root3, leafLeft3)), List.of());
+
+        carbon.capture(frame1, layout1, 2);
+        carbon.capture(frame2, layout2, 2);
+        carbon.capture(frame3, layout3, 2);
+
+        assertTrue(CarbonSonifier.snapshotFile(frame1).isFile());
+        assertTrue(carbon.canSonify(List.of(frame1, frame2, frame3)));
+
+        final File firstWav = tempDir.resolve("carbon_1.wav").toFile();
+        final File secondWav = tempDir.resolve("carbon_2.wav").toFile();
+        carbon.writeWav(List.of(frame1, frame2, frame3), firstWav, 10);
+        carbon.writeWav(List.of(frame1, frame2, frame3), secondWav, 10);
+
+        final byte[] wav = Files.readAllBytes(firstWav.toPath());
+        assertEquals("RIFF", new String(wav, 0, 4, StandardCharsets.US_ASCII));
+        assertEquals("WAVE", new String(wav, 8, 4, StandardCharsets.US_ASCII));
+        final int channels = (wav[22] & 0xFF) | ((wav[23] & 0xFF) << 8);
+        assertEquals(2, channels, "Carbon must output 2-channel stereo PCM WAV");
+        assertEquals(44 + ((3 * 4_410) + 44_100) * 2 * Short.BYTES, wav.length);
+        assertTrue(hasSound(wav));
+        assertTrue(hasStereoSeparation(wav), "Left and right channels must reflect spatial topology");
+        assertArrayEquals(wav, Files.readAllBytes(secondWav.toPath()), "Carbon synthesis must be bit-for-bit deterministic");
+    }
+
+    @Test
+    void carbonSonifiesSvgLineageAndKnownIssuesDirectly(@TempDir final Path tempDir) throws Exception {
+        final CarbonSonifier carbon = new CarbonSonifier();
+        final File svg1 = tempDir.resolve("frame_0001.svg").toFile();
+        final File svg2 = tempDir.resolve("frame_0002.svg").toFile();
+
+        // Two distinct parent branches (Users, Reports) with identically named sibling leaves (VerifyData)
+        Files.writeString(svg1.toPath(),
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1200\" height=\"600\">\n"
+                        + "  <g transform=\"translate(0.00, 0.00) scale(1.0000)\">\n"
+                        + "    <path class=\"edge\" fill=\"none\" d=\"M 260 114 C 285 114, 285 114, 310 114\" stroke=\"#38BDF8\" stroke-width=\"3.0\" />\n"
+                        + "    <path class=\"edge\" fill=\"none\" d=\"M 260 234 C 285 234, 285 234, 310 234\" stroke=\"#334155\" stroke-width=\"1.2\" />\n"
+                        + "    <g id=\"scenario_0_Users\" class=\"node-card notice\" transform=\"translate(40, 92)\">\n"
+                        + "      <title>Users ▷ (Notice)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"44\" stroke=\"#38bdf8\" />\n"
+                        + "      <text class=\"tx1\">1 exec</text>\n"
+                        + "    </g>\n"
+                        + "    <g id=\"scenario_1_VerifyData\" class=\"node-card passed\" transform=\"translate(310, 92)\">\n"
+                        + "      <title>VerifyData ◆ (Passed)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"44\" stroke=\"#38bdf8\" />\n"
+                        + "      <text class=\"tx1\">✓ 1/1</text>\n"
+                        + "    </g>\n"
+                        + "    <g id=\"scenario_2_Reports\" class=\"node-card unvisited\" transform=\"translate(40, 212)\">\n"
+                        + "      <title>Reports ▷ (Unvisited)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"44\" stroke=\"#64748b\" />\n"
+                        + "      <text class=\"tx1\">0 execs</text>\n"
+                        + "    </g>\n"
+                        + "    <g id=\"scenario_3_VerifyData\" class=\"node-card unvisited\" transform=\"translate(310, 212)\">\n"
+                        + "      <title>VerifyData ◼ (Unvisited)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"44\" stroke=\"#64748b\" />\n"
+                        + "      <text class=\"tx1\">0/1</text>\n"
+                        + "    </g>\n"
+                        + "  </g>\n"
+                        + "  <g transform=\"scale(1.0000)\">\n"
+                        + "    <text class=\"tx3\">Leafs: 1/2</text>\n"
+                        + "    <text class=\"tx3\">Test #1</text>\n"
+                        + "  </g>\n"
+                        + "</svg>\n",
+                StandardCharsets.UTF_8);
+
+        Files.writeString(svg2.toPath(),
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1200\" height=\"600\">\n"
+                        + "  <g transform=\"translate(12.00, -18.00) scale(1.1500)\">\n"
+                        + "    <path class=\"edge\" fill=\"none\" d=\"M 260 114 C 285 114, 285 114, 310 114\" stroke=\"#22C55E\" stroke-width=\"2.2\" />\n"
+                        + "    <path class=\"edge\" fill=\"none\" d=\"M 260 234 C 285 234, 285 234, 310 234\" stroke=\"#38BDF8\" stroke-width=\"3.0\" />\n"
+                        + "    <g id=\"scenario_0_Users\" class=\"node-card notice\" transform=\"translate(40, 92)\">\n"
+                        + "      <title>Users ▷ (Notice)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"44\" stroke=\"#06b6d4\" />\n"
+                        + "      <text class=\"tx1\">1 exec</text>\n"
+                        + "    </g>\n"
+                        + "    <g id=\"scenario_1_VerifyData\" class=\"node-card passed\" transform=\"translate(310, 92)\">\n"
+                        + "      <title>VerifyData ◆ (Passed)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"44\" stroke=\"#22c55e\" />\n"
+                        + "      <text class=\"tx1\">✓ 1/1</text>\n"
+                        + "    </g>\n"
+                        + "    <g id=\"scenario_2_Reports\" class=\"node-card warning known-issue\" transform=\"translate(40, 212)\">\n"
+                        + "      <title>Reports ▷ (Warning (Known Issue))</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"44\" stroke=\"#fbbf24\" />\n"
+                        + "      <text class=\"tx1\">1 exec</text>\n"
+                        + "    </g>\n"
+                        + "    <g id=\"scenario_3_VerifyData\" class=\"node-card failed known-issue\" transform=\"translate(310, 212)\">\n"
+                        + "      <title>VerifyData... (Failed (Known Issue))</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"44\" stroke=\"#38bdf8\" />\n"
+                        + "      <text class=\"tx1\">✓ 1/1</text>\n"
+                        + "    </g>\n"
+                        + "  </g>\n"
+                        + "  <g transform=\"scale(1.0000)\">\n"
+                        + "    <text class=\"tx3\">Leafs: 2/2</text>\n"
+                        + "    <text class=\"tx3\">Test #2</text>\n"
+                        + "  </g>\n"
+                        + "</svg>\n",
+                StandardCharsets.UTF_8);
+
+        assertTrue(carbon.canSonify(List.of(svg1, svg2)));
+        final File wavOut = tempDir.resolve("carbon_svg.wav").toFile();
+        carbon.writeWav(List.of(svg1, svg2), wavOut, 10);
+        final byte[] wav = Files.readAllBytes(wavOut.toPath());
+        assertTrue(hasSound(wav));
+        assertTrue(hasStereoSeparation(wav));
     }
 
     @Test
@@ -359,6 +507,18 @@ class TreeProgressionAudioTest {
 
         for (int i = 44; i < wav.length; i++) {
             if (0 != wav[i]) return true;
+        }
+        return false;
+    }
+
+    private static boolean hasStereoSeparation(final byte[] wav) {
+
+        for (int index = 44; index + 3 < wav.length; index += 4) {
+            final int left = (short) ((wav[index] & 0xFF) | (wav[index + 1] << 8));
+            final int right = (short) ((wav[index + 2] & 0xFF) | (wav[index + 3] << 8));
+            if (Math.abs(left - right) > 250) {
+                return true;
+            }
         }
         return false;
     }
