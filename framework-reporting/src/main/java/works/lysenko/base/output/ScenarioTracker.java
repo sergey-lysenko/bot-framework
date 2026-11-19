@@ -256,61 +256,70 @@ public final class ScenarioTracker {
                 rasterizedFrames = framesToProcess;
             }
 
+            final List<Runnable> encoderTasks = new ArrayList<>(3);
             if (gifEnabled) {
-                final File gifFile = new File(runDir, prefix + ".progression.gif");
-                try {
-                    writeAnimatedGifFiles(
-                            rasterizedFrames,
-                            gifFile,
-                            DELAY_CENTISECONDS,
-                            FINAL_FRAME_DELAY_CENTISECONDS,
-                            maxFramePixels,
-                            percentage -> progress.update(gifTask, 10 + (percentage * 45 / 100)));
-                    progress.complete(gifTask);
-                    log("Progression GIF generated: " + gifFile.getAbsolutePath());
-                } catch (final Exception e) {
-                    progress.failed(gifTask, e);
-                }
+                encoderTasks.add(() -> {
+                    final File gifFile = new File(runDir, prefix + ".progression.gif");
+                    try {
+                        writeAnimatedGifFiles(
+                                rasterizedFrames,
+                                gifFile,
+                                DELAY_CENTISECONDS,
+                                FINAL_FRAME_DELAY_CENTISECONDS,
+                                maxFramePixels,
+                                percentage -> progress.update(gifTask, 10 + (percentage * 45 / 100)));
+                        progress.complete(gifTask);
+                        log("Progression GIF generated: " + gifFile.getAbsolutePath());
+                    } catch (final Exception e) {
+                        progress.failed(gifTask, e);
+                    }
+                });
             } else {
                 progress.skipped(gifTask);
             }
 
             if (webpEnabled) {
-                final File webpFile = new File(runDir, prefix + ".progression.webp");
-                try {
-                    AnimatedWebP.write(
-                            rasterizedFrames,
-                            webpFile,
-                            DELAY_CENTISECONDS * 10,
-                            FINAL_FRAME_DELAY_CENTISECONDS * 10,
-                            maxFramePixels,
-                            percentage -> progress.update(webpTask, 10 + (percentage * 90 / 100)));
-                    progress.complete(webpTask);
-                    log("Progression WebP generated: " + webpFile.getAbsolutePath());
-                } catch (final Exception e) {
-                    progress.failed(webpTask, e);
-                }
+                encoderTasks.add(() -> {
+                    final File webpFile = new File(runDir, prefix + ".progression.webp");
+                    try {
+                        AnimatedWebP.write(
+                                rasterizedFrames,
+                                webpFile,
+                                DELAY_CENTISECONDS * 10,
+                                FINAL_FRAME_DELAY_CENTISECONDS * 10,
+                                maxFramePixels,
+                                percentage -> progress.update(webpTask, 10 + (percentage * 90 / 100)));
+                        progress.complete(webpTask);
+                        log("Progression WebP generated: " + webpFile.getAbsolutePath());
+                    } catch (final Exception e) {
+                        progress.failed(webpTask, e);
+                    }
+                });
             } else {
                 progress.skipped(webpTask);
             }
-            if (!mp4Enabled) {
+
+            if (mp4Enabled) {
+                encoderTasks.add(() -> {
+                    try {
+                        logDebug("Generating scenario progression MP4 from " + rasterizedFrames.size() + " frames...");
+                        ProgressionMp4.write(
+                                rasterizedFrames,
+                                new File(runDir, prefix + ".progression.mp4"),
+                                ffmpeg,
+                                FPS,
+                                maxFramePixels,
+                                percentage -> progress.update(mp4Task, percentage));
+                        progress.complete(mp4Task);
+                        log("Progression MP4 generated: " + new File(runDir, prefix + ".progression.mp4").getAbsolutePath());
+                    } catch (final Exception e) {
+                        progress.failed(mp4Task, e);
+                    }
+                });
+            } else {
                 progress.skipped(mp4Task);
-                return;
             }
-            try {
-                logDebug("Generating scenario progression MP4 from " + rasterizedFrames.size() + " frames...");
-                ProgressionMp4.write(
-                        rasterizedFrames,
-                        new File(runDir, prefix + ".progression.mp4"),
-                        ffmpeg,
-                        FPS,
-                        maxFramePixels,
-                        percentage -> progress.update(mp4Task, percentage));
-                progress.complete(mp4Task);
-                log("Progression MP4 generated: " + new File(runDir, prefix + ".progression.mp4").getAbsolutePath());
-            } catch (final Exception e) {
-                progress.failed(mp4Task, e);
-            }
+            ProgressionFrames.runAllConcurrently(encoderTasks);
         } catch (final Exception e) {
             progress.failed(pngTask, e);
         } finally {

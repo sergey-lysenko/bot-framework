@@ -47,13 +47,7 @@ final class ProgressionMp4 {
             final IntConsumer progress) throws IOException, InterruptedException {
         if (frames.isEmpty()) throw new IllegalArgumentException("At least one MP4 frame is required");
 
-        final int[] maxDims = frames.parallelStream().map(f -> {
-            try {
-                return ProgressionFrames.dimensions(f, maxFramePixels);
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to read frame dimensions for " + f.getName(), e);
-            }
-        }).reduce(new int[]{0, 0}, (a, b) -> new int[]{Math.max(a[0], b[0]), Math.max(a[1], b[1])});
+        final int[] maxDims = ProgressionFrames.maxDimensions(frames, maxFramePixels);
 
         int rawWidth = maxDims[0];
         int rawHeight = maxDims[1];

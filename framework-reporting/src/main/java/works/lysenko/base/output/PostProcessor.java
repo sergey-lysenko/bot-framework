@@ -8,6 +8,7 @@ import works.lysenko.base.output.postprocessor.DetachedProcessLauncher;
 import works.lysenko.base.output.postprocessor.PostProcessorProgressUI;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -378,7 +379,8 @@ public class PostProcessor {
                 treeMp4Enabled);
         final ProcessingProgress progress = PostProcessorProgressUI.create(showProgressWindow, tasks);
         try {
-            ScenarioTracker.processFrames(
+            final List<Runnable> mediaPipelines = new ArrayList<>(2);
+            mediaPipelines.add(() -> ScenarioTracker.processFrames(
                     runDir,
                     prefix,
                     progress,
@@ -389,8 +391,8 @@ public class PostProcessor {
                     scenarioGifEnabled,
                     scenarioWebpEnabled,
                     scenarioMp4Enabled,
-                    ffmpeg);
-            TreeTracker.processFrames(
+                    ffmpeg));
+            mediaPipelines.add(() -> TreeTracker.processFrames(
                     runDir,
                     prefix,
                     progress,
@@ -402,7 +404,12 @@ public class PostProcessor {
                     treeWebpEnabled,
                     treeMp4Enabled,
                     ffmpeg,
-                    treeSonification);
+                    treeSonification));
+            if (scenarioProgressionEnabled && treeProgressionEnabled) {
+                ProgressionFrames.runAllConcurrently(mediaPipelines);
+            } else {
+                for (final Runnable pipeline : mediaPipelines) pipeline.run();
+            }
 
             progress.update(REPORT_TASK, 0);
             KnownIssuesLoader.saveRunKnownIssues(new File(runDir, prefix + ".known.issues.json"));

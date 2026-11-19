@@ -41,6 +41,30 @@ class AnimatedWebPTest {
                 () -> AnimatedWebP.write(frames, tempDir.resolve("invalid.webp").toFile(), 100, 1500));
     }
 
+    @Test
+    void encodesMultipleFramesInParallelPreservingOrderAndDurations(@TempDir final Path tempDir) throws IOException {
+        final List<BufferedImage> frames = new java.util.ArrayList<>(16);
+        for (int i = 0; i < 16; i++) {
+            frames.add(frame(new Color((i * 15) & 0xFF, (255 - i * 15) & 0xFF, (i * 31) & 0xFF)));
+        }
+        final File output = tempDir.resolve("parallel.webp").toFile();
+        final List<Integer> progressUpdates = new java.util.ArrayList<>();
+
+        AnimatedWebP.write(frames, output, 100, 1500, progressUpdates::add);
+
+        final byte[] data = Files.readAllBytes(output.toPath());
+        assertEquals("RIFF", fourCc(data, 0));
+        assertEquals("WEBP", fourCc(data, 8));
+        assertEquals(data.length - 8, read32(data, 4));
+        assertEquals(16, countFrames(output));
+        for (int i = 0; i < 15; i++) {
+            assertEquals(100, frameDuration(data, i));
+        }
+        assertEquals(1500, frameDuration(data, 15));
+        assertEquals(16, progressUpdates.size());
+        assertEquals(100, progressUpdates.getLast());
+    }
+
     static int countFrames(final File file) throws IOException {
         final byte[] data = Files.readAllBytes(file.toPath());
         int count = 0;

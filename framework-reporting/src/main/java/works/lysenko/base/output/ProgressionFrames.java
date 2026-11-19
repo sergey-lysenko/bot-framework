@@ -23,15 +23,19 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -102,6 +106,24 @@ public final class ProgressionFrames {
         });
     }
 
+    static void submitAsync(final Runnable task) {
+        try {
+            WRITER_SEMAPHore.acquire();
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        }
+        EXECUTOR.submit(() -> {
+            try {
+                task.run();
+            } catch (final Exception e) {
+                System.err.println("Failed async progression frame task: " + e.getMessage());
+            } finally {
+                WRITER_SEMAPHore.release();
+            }
+        });
+    }
+
     static void awaitCompletion() {
         try {
             WRITER_SEMAPHore.acquire(MAX_PENDING_FRAMES);
@@ -109,6 +131,69 @@ public final class ProgressionFrames {
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    static void runAllConcurrently(final List<Runnable> tasks) {
+        if (tasks.isEmpty()) return;
+        if (tasks.size() == 1) {
+            tasks.getFirst().run();
+            return;
+        }
+        Throwable failure = null;
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            final List<Future<?>> futures = new ArrayList<>(tasks.size());
+            for (final Runnable task : tasks) {
+                futures.add(executor.submit(task));
+            }
+            for (final Future<?> future : futures) {
+                try {
+                    future.get();
+                } catch (final ExecutionException e) {
+                    if (null == failure) failure = e.getCause();
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    if (null == failure) failure = e;
+                }
+            }
+        }
+        if (failure instanceof RuntimeException re) throw re;
+        if (failure instanceof Error err) throw err;
+        if (null != failure) throw new IllegalStateException("Concurrent progression task failed", failure);
+    }
+
+    static int[] maxDimensions(final List<File> frames, final int maxFramePixels) throws IOException {
+        if (frames.isEmpty()) return new int[]{0, 0};
+        if (frames.size() == 1) return dimensions(frames.getFirst(), maxFramePixels);
+
+        final int threads = Math.min(frames.size(), Math.max(2, Runtime.getRuntime().availableProcessors()));
+        int maxWidth = 0;
+        int maxHeight = 0;
+        try (ExecutorService executor = Executors.newFixedThreadPool(
+                threads,
+                Thread.ofPlatform().daemon().name("progression-dims-", 0).factory())) {
+            final List<Future<int[]>> futures = new ArrayList<>(frames.size());
+            for (final File frame : frames) {
+                futures.add(executor.submit(() -> dimensions(frame, maxFramePixels)));
+            }
+            try {
+                for (final Future<int[]> future : futures) {
+                    final int[] dims = future.get();
+                    maxWidth = Math.max(maxWidth, dims[0]);
+                    maxHeight = Math.max(maxHeight, dims[1]);
+                }
+            } catch (final ExecutionException e) {
+                executor.shutdownNow();
+                if (e.getCause() instanceof IOException ioe) throw ioe;
+                if (e.getCause() instanceof RuntimeException re) throw re;
+                if (e.getCause() instanceof Error err) throw err;
+                throw new IOException("Failed to read progression frame dimensions", e.getCause());
+            } catch (final InterruptedException e) {
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while scanning progression frame dimensions", e);
+            }
+        }
+        return new int[]{maxWidth, maxHeight};
     }
 
     private static long parseFrameNumber(final File file) {
@@ -152,13 +237,9 @@ public final class ProgressionFrames {
         final List<File> allFrames = new ArrayList<>(frameMap.values());
         allFrames.sort(Comparator.comparingLong(ProgressionFrames::parseFrameNumber));
 
-        int maxWidth = 0;
-        int maxHeight = 0;
-        for (final File frame : allFrames) {
-            final int[] dimensions = dimensions(frame, configuredMaxFramePixels);
-            maxWidth = Math.max(maxWidth, dimensions[0]);
-            maxHeight = Math.max(maxHeight, dimensions[1]);
-        }
+        final int[] maxDims = maxDimensions(allFrames, configuredMaxFramePixels);
+        final int maxWidth = maxDims[0];
+        final int maxHeight = maxDims[1];
 
         final int frameLimit = frameLimit(
                 maxFrames,
@@ -409,14 +490,11 @@ public final class ProgressionFrames {
             progress.skipped(taskName);
             return List.of();
         }
-        boolean hasSvg = false;
+        int svgCount = 0;
         for (final File f : frames) {
-            if (f.getName().endsWith(".svg")) {
-                hasSvg = true;
-                break;
-            }
+            if (f.getName().endsWith(".svg")) svgCount++;
         }
-        if (!hasSvg) {
+        if (0 == svgCount) {
             progress.complete(taskName);
             return frames;
         }
@@ -425,33 +503,85 @@ public final class ProgressionFrames {
             throw new IOException("Failed to create temporary raster directory: " + tmpDir);
         }
 
-        int maxWidth = 0;
-        int maxHeight = 0;
-        for (final File f : frames) {
-            final int[] dims = dimensions(f, maxFramePixels);
-            maxWidth = Math.max(maxWidth, dims[0]);
-            maxHeight = Math.max(maxHeight, dims[1]);
-        }
+        final int[] maxDims = maxDimensions(frames, maxFramePixels);
+        final int maxWidth = maxDims[0];
+        final int maxHeight = maxDims[1];
 
-        final List<File> pngFrames = new ArrayList<>(frames.size());
         final int total = frames.size();
+        final File[] outputs = new File[total];
         progress.update(taskName, 0);
 
-        for (int i = 0; i < total; i++) {
-            final File src = frames.get(i);
-            final File dstPng = new File(tmpDir, String.format(Locale.US, "frame_%04d.png", i + 1));
-            if (src.getName().endsWith(".svg")) {
-                final BufferedImage img = renderSvg(src, maxFramePixels, maxWidth, maxHeight);
-                ImageIO.write(img, "png", dstPng);
-                pngFrames.add(dstPng);
-            } else {
-                pngFrames.add(src);
+        if (svgCount == 1) {
+            for (int i = 0; i < total; i++) {
+                final File src = frames.get(i);
+                if (src.getName().endsWith(".svg")) {
+                    final File dstPng = new File(tmpDir, String.format(Locale.US, "frame_%04d.png", i + 1));
+                    final BufferedImage img = renderSvg(src, maxFramePixels, maxWidth, maxHeight);
+                    ImageIO.write(img, "png", dstPng);
+                    outputs[i] = dstPng;
+                } else {
+                    outputs[i] = src;
+                }
+                final int percent = (int) Math.round((double) (i + 1) * 100.0 / total);
+                progress.update(taskName, percent);
             }
-            final int percent = (int) Math.round((double) (i + 1) * 100.0 / total);
-            progress.update(taskName, percent);
+            progress.complete(taskName);
+            return Arrays.asList(outputs);
+        }
+
+        final int threads = Math.min(svgCount, Math.max(2, Runtime.getRuntime().availableProcessors()));
+        final AtomicInteger completed = new AtomicInteger(0);
+        final AtomicInteger lastReportedPct = new AtomicInteger(0);
+
+        try (ExecutorService executor = Executors.newFixedThreadPool(
+                threads,
+                Thread.ofPlatform().daemon().name("progression-rasterizer-", 0).factory())) {
+            final List<Future<?>> futures = new ArrayList<>(svgCount);
+            for (int i = 0; i < total; i++) {
+                final int index = i;
+                final File src = frames.get(index);
+                if (src.getName().endsWith(".svg")) {
+                    final File dstPng = new File(tmpDir, String.format(Locale.US, "frame_%04d.png", index + 1));
+                    futures.add(executor.submit(() -> {
+                        final BufferedImage img = renderSvg(src, maxFramePixels, maxWidth, maxHeight);
+                        ImageIO.write(img, "png", dstPng);
+                        outputs[index] = dstPng;
+                        final int done = completed.incrementAndGet();
+                        final int percent = (int) Math.round((double) done * 100.0 / total);
+                        final int prev = lastReportedPct.getAndAccumulate(percent, Math::max);
+                        if (percent > prev) {
+                            progress.update(taskName, percent);
+                        }
+                        return null;
+                    }));
+                } else {
+                    outputs[index] = src;
+                    final int done = completed.incrementAndGet();
+                    final int percent = (int) Math.round((double) done * 100.0 / total);
+                    final int prev = lastReportedPct.getAndAccumulate(percent, Math::max);
+                    if (percent > prev) {
+                        progress.update(taskName, percent);
+                    }
+                }
+            }
+            try {
+                for (final Future<?> future : futures) {
+                    future.get();
+                }
+            } catch (final ExecutionException e) {
+                executor.shutdownNow();
+                if (e.getCause() instanceof IOException ioe) throw ioe;
+                if (e.getCause() instanceof RuntimeException re) throw re;
+                if (e.getCause() instanceof Error err) throw err;
+                throw new IOException("Failed during parallel SVG rasterization", e.getCause());
+            } catch (final InterruptedException e) {
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted during parallel SVG rasterization", e);
+            }
         }
         progress.complete(taskName);
-        return pngFrames;
+        return Arrays.asList(outputs);
     }
 
     static void cleanup(final File directory) {

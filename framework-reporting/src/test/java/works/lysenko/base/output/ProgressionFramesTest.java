@@ -84,4 +84,48 @@ class ProgressionFramesTest {
         assertEquals(0x00FF0000, img.getRGB(200, 200) & 0xFFFFFF);
         assertEquals(0x00FF0000, img.getRGB(399, 399) & 0xFFFFFF);
     }
+
+    @Test
+    void rasterizesMultipleSvgFramesInParallelPreservingOrderAndMonotonicProgress(@TempDir final Path tempDir) throws IOException {
+        final List<java.io.File> svgFrames = new java.util.ArrayList<>(12);
+        for (int i = 1; i <= 12; i++) {
+            final Path svg = tempDir.resolve("frame_%04d.svg".formatted(i));
+            final String hex = String.format("#%02X%02X00", i * 16, 255 - i * 16);
+            Files.writeString(svg, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\">" +
+                    "<rect width=\"16\" height=\"16\" fill=\"" + hex + "\" /></svg>");
+            svgFrames.add(svg.toFile());
+        }
+
+        final Path outDir = tempDir.resolve("raster");
+        final List<Integer> reported = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+        final boolean[] completed = new boolean[1];
+        final ProcessingProgress progress = new ProcessingProgress() {
+            @Override
+            public void update(final String task, final int percentage) {
+                reported.add(percentage);
+            }
+
+            @Override
+            public void complete(final String task) {
+                completed[0] = true;
+            }
+        };
+
+        final List<java.io.File> pngs = ProgressionFrames.rasterize(svgFrames, outDir.toFile(), "raster", progress, 33554432);
+
+        assertEquals(12, pngs.size());
+        assertTrue(completed[0]);
+        for (int i = 0; i < 12; i++) {
+            assertEquals("frame_%04d.png".formatted(i + 1), pngs.get(i).getName());
+            final BufferedImage img = ImageIO.read(pngs.get(i));
+            assertEquals(16, img.getWidth());
+            assertEquals(16, img.getHeight());
+            final int expectedRgb = (((i + 1) * 16) << 16) | ((255 - (i + 1) * 16) << 8);
+            assertEquals(expectedRgb, img.getRGB(8, 8) & 0xFFFFFF);
+        }
+        for (int i = 1; i < reported.size(); i++) {
+            assertTrue(reported.get(i) >= reported.get(i - 1),
+                    "Progress should be monotonically non-decreasing: " + reported);
+        }
+    }
 }

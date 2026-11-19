@@ -11,6 +11,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.IntConsumer;
 
 /**
@@ -101,18 +105,64 @@ final class AnimatedWebP {
                 writeChunk(chunkOutput, "VP8X", vp8x, width, height);
                 writeChunk(chunkOutput, "ANIM", new byte[6]);
 
-                for (int i = 0; i < frameCount; i++) {
-                    final BufferedImage image = (i == 0) ? first : frames.load(i);
-                    if (image.getWidth() != width || image.getHeight() != height) {
-                        throw new IllegalArgumentException("All WebP frames must have identical dimensions");
-                    }
-                    validateDimensions(width, height, maxFramePixels);
-                    final int delay = (i == frameCount - 1) ? finalFrameDelayMillis : frameDelayMillis;
+                if (frameCount == 1) {
+                    final int delay = finalFrameDelayMillis;
                     if (delay < 0 || delay > MAX_CHUNK_SIZE) {
                         throw new IllegalArgumentException("WebP frame delay must be between 0 and 16777215 ms");
                     }
-                    writeFrame(chunkOutput, image, width, height, delay);
-                    progress.accept((int) (((i + 1L) * 100) / frameCount));
+                    final EncodedFrame encoded = encodeValidatedFrame(first, width, height, maxFramePixels);
+                    writeEncodedFrame(chunkOutput, encoded, width, height, delay);
+                    progress.accept(100);
+                } else {
+                    for (int i = 0; i < frameCount; i++) {
+                        final int delay = (i == frameCount - 1) ? finalFrameDelayMillis : frameDelayMillis;
+                        if (delay < 0 || delay > MAX_CHUNK_SIZE) {
+                            throw new IllegalArgumentException("WebP frame delay must be between 0 and 16777215 ms");
+                        }
+                    }
+                    final int threads = Math.min(frameCount, Math.max(2, Runtime.getRuntime().availableProcessors()));
+                    final int windowSize = ((long) width * height > 8_000_000L) ? threads : threads * 2;
+                    try (ExecutorService encoderExecutor = Executors.newFixedThreadPool(
+                            threads,
+                            Thread.ofPlatform().daemon().name("webp-frame-encoder-", 0).factory())) {
+                        final List<Future<EncodedFrame>> futures = new ArrayList<>(frameCount);
+                        try {
+                            for (int i = 0; i < Math.min(windowSize, frameCount); i++) {
+                                final int idx = i;
+                                futures.add(encoderExecutor.submit(() -> {
+                                    final BufferedImage img = (idx == 0) ? first : frames.load(idx);
+                                    return encodeValidatedFrame(img, width, height, maxFramePixels);
+                                }));
+                            }
+                            for (int i = 0; i < frameCount; i++) {
+                                final int nextToSubmit = i + windowSize;
+                                if (nextToSubmit < frameCount) {
+                                    futures.add(encoderExecutor.submit(() -> {
+                                        final BufferedImage img = frames.load(nextToSubmit);
+                                        return encodeValidatedFrame(img, width, height, maxFramePixels);
+                                    }));
+                                }
+                                final EncodedFrame encoded = futures.get(i).get();
+                                futures.set(i, null);
+                                final int delay = (i == frameCount - 1) ? finalFrameDelayMillis : frameDelayMillis;
+                                writeEncodedFrame(chunkOutput, encoded, width, height, delay);
+                                progress.accept((int) (((i + 1L) * 100) / frameCount));
+                            }
+                        } catch (final ExecutionException e) {
+                            encoderExecutor.shutdownNow();
+                            if (e.getCause() instanceof IOException ioe) throw ioe;
+                            if (e.getCause() instanceof RuntimeException re) throw re;
+                            if (e.getCause() instanceof Error err) throw err;
+                            throw new IOException("Failed during parallel WebP frame encoding", e.getCause());
+                        } catch (final InterruptedException e) {
+                            encoderExecutor.shutdownNow();
+                            Thread.currentThread().interrupt();
+                            throw new IOException("Interrupted during parallel WebP frame encoding", e);
+                        } catch (final IOException | RuntimeException e) {
+                            encoderExecutor.shutdownNow();
+                            throw e;
+                        }
+                    }
                 }
             }
 
@@ -141,27 +191,38 @@ final class AnimatedWebP {
         }
     }
 
-    private static void writeFrame(
-            final OutputStream output,
+    private static EncodedFrame encodeValidatedFrame(
             final BufferedImage image,
-            final int width,
-            final int height,
-            final int duration) throws IOException {
+            final int expectedWidth,
+            final int expectedHeight,
+            final int maxFramePixels) throws IOException {
+        if (image.getWidth() != expectedWidth || image.getHeight() != expectedHeight) {
+            throw new IllegalArgumentException("All WebP frames must have identical dimensions");
+        }
+        validateDimensions(expectedWidth, expectedHeight, maxFramePixels);
         final byte[] encoded = encodeFrame(image);
         final List<ChunkRange> imageChunks = imageDataChunks(encoded);
         long frameSize = 16;
         for (final ChunkRange chunk : imageChunks) frameSize += chunk.length();
         if (frameSize > MAX_CHUNK_SIZE) throw new IOException("Encoded WebP frame exceeds maximum chunk size");
+        return new EncodedFrame(encoded, imageChunks, frameSize);
+    }
 
+    private static void writeEncodedFrame(
+            final OutputStream output,
+            final EncodedFrame frame,
+            final int width,
+            final int height,
+            final int duration) throws IOException {
         output.write("ANMF".getBytes(java.nio.charset.StandardCharsets.US_ASCII));
-        write32(output, frameSize);
+        write32(output, frame.frameSize());
         final byte[] frameHeader = new byte[16];
         write24(frameHeader, 6, width - 1);
         write24(frameHeader, 9, height - 1);
         write24(frameHeader, 12, duration);
         frameHeader[15] = 0x02;
         output.write(frameHeader);
-        for (final ChunkRange chunk : imageChunks) output.write(encoded, chunk.offset(), chunk.length());
+        for (final ChunkRange chunk : frame.chunks()) output.write(frame.encoded(), chunk.offset(), chunk.length());
     }
 
     private static byte[] encodeFrame(final BufferedImage image) throws IOException {
@@ -250,4 +311,6 @@ final class AnimatedWebP {
     }
 
     private record ChunkRange(int offset, int length) { }
+
+    private record EncodedFrame(byte[] encoded, List<ChunkRange> chunks, long frameSize) { }
 }

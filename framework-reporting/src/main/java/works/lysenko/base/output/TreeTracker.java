@@ -553,73 +553,82 @@ public final class TreeTracker {
                 rasterizedFrames = framesToProcess;
             }
 
+            final List<Runnable> encoderTasks = new ArrayList<>(3);
             if (gifEnabled) {
-                final File gifFile = new File(runDir, prefix + ".tree.progression.gif");
-                try {
-                    ScenarioTracker.writeAnimatedGifFiles(
-                            rasterizedFrames,
-                            gifFile,
-                            DELAY_CENTISECONDS,
-                            FINAL_FRAME_DELAY_CENTISECONDS,
-                            maxFramePixels,
-                            percentage -> progress.update(gifTask, 10 + (percentage * 45 / 100)));
-                    progress.complete(gifTask);
-                    log("Tree progression GIF generated: " + gifFile.getAbsolutePath());
-                } catch (final Exception e) {
-                    progress.failed(gifTask, e);
-                }
+                encoderTasks.add(() -> {
+                    final File gifFile = new File(runDir, prefix + ".tree.progression.gif");
+                    try {
+                        ScenarioTracker.writeAnimatedGifFiles(
+                                rasterizedFrames,
+                                gifFile,
+                                DELAY_CENTISECONDS,
+                                FINAL_FRAME_DELAY_CENTISECONDS,
+                                maxFramePixels,
+                                percentage -> progress.update(gifTask, 10 + (percentage * 45 / 100)));
+                        progress.complete(gifTask);
+                        log("Tree progression GIF generated: " + gifFile.getAbsolutePath());
+                    } catch (final Exception e) {
+                        progress.failed(gifTask, e);
+                    }
+                });
             } else {
                 progress.skipped(gifTask);
             }
 
             if (webpEnabled) {
-                final File webpFile = new File(runDir, prefix + ".tree.progression.webp");
-                try {
-                    AnimatedWebP.write(
-                            rasterizedFrames,
-                            webpFile,
-                            DELAY_CENTISECONDS * 10,
-                            FINAL_FRAME_DELAY_CENTISECONDS * 10,
-                            maxFramePixels,
-                            percentage -> progress.update(webpTask, 10 + (percentage * 90 / 100)));
-                    progress.complete(webpTask);
-                    log("Tree progression WebP generated: " + webpFile.getAbsolutePath());
-                } catch (final Exception e) {
-                    progress.failed(webpTask, e);
-                }
+                encoderTasks.add(() -> {
+                    final File webpFile = new File(runDir, prefix + ".tree.progression.webp");
+                    try {
+                        AnimatedWebP.write(
+                                rasterizedFrames,
+                                webpFile,
+                                DELAY_CENTISECONDS * 10,
+                                FINAL_FRAME_DELAY_CENTISECONDS * 10,
+                                maxFramePixels,
+                                percentage -> progress.update(webpTask, 10 + (percentage * 90 / 100)));
+                        progress.complete(webpTask);
+                        log("Tree progression WebP generated: " + webpFile.getAbsolutePath());
+                    } catch (final Exception e) {
+                        progress.failed(webpTask, e);
+                    }
+                });
             } else {
                 progress.skipped(webpTask);
             }
-            if (!mp4Enabled) {
+
+            if (mp4Enabled) {
+                encoderTasks.add(() -> {
+                    final File mp4File = new File(runDir, prefix + ".tree.progression.mp4");
+                    File audioFile = null;
+                    try {
+                        logDebug("Generating tree progression MP4 from " + rasterizedFrames.size() + " frames...");
+                        final java.util.Optional<TreeSonifier> sonifier = TreeProgressionAudio.find(treeSonification);
+                        if (sonifier.isPresent() && sonifier.get().canSonify(framesToProcess)) {
+                            audioFile = File.createTempFile("tree-progression-audio-", ".wav", runDir);
+                            sonifier.get().writeWav(framesToProcess, audioFile, FPS);
+                        }
+                        ProgressionMp4.write(
+                                rasterizedFrames,
+                                mp4File,
+                                ffmpeg,
+                                FPS,
+                                maxFramePixels,
+                                audioFile,
+                                percentage -> progress.update(mp4Task, percentage));
+                        progress.complete(mp4Task);
+                        log("Tree progression MP4 generated: " + mp4File.getAbsolutePath());
+                    } catch (final Exception e) {
+                        progress.failed(mp4Task, e);
+                    } finally {
+                        if (null != audioFile && !audioFile.delete()) {
+                            log("Unable to remove temporary tree progression audio: " + audioFile.getAbsolutePath());
+                        }
+                    }
+                });
+            } else {
                 progress.skipped(mp4Task);
-                return;
             }
-            final File mp4File = new File(runDir, prefix + ".tree.progression.mp4");
-            File audioFile = null;
-            try {
-                logDebug("Generating tree progression MP4 from " + rasterizedFrames.size() + " frames...");
-                final java.util.Optional<TreeSonifier> sonifier = TreeProgressionAudio.find(treeSonification);
-                if (sonifier.isPresent() && sonifier.get().canSonify(framesToProcess)) {
-                    audioFile = File.createTempFile("tree-progression-audio-", ".wav", runDir);
-                    sonifier.get().writeWav(framesToProcess, audioFile, FPS);
-                }
-                ProgressionMp4.write(
-                        rasterizedFrames,
-                        mp4File,
-                        ffmpeg,
-                        FPS,
-                        maxFramePixels,
-                        audioFile,
-                        percentage -> progress.update(mp4Task, percentage));
-                progress.complete(mp4Task);
-                log("Tree progression MP4 generated: " + mp4File.getAbsolutePath());
-            } catch (final Exception e) {
-                progress.failed(mp4Task, e);
-            } finally {
-                if (null != audioFile && !audioFile.delete()) {
-                    log("Unable to remove temporary tree progression audio: " + audioFile.getAbsolutePath());
-                }
-            }
+            ProgressionFrames.runAllConcurrently(encoderTasks);
         } catch (final Exception e) {
             progress.failed(pngTask, e);
         } finally {
