@@ -99,7 +99,7 @@ bot-framework/
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **Java**: OpenJDK 17 or higher (Java 21 supported)
+- **Java**: OpenJDK 25 or higher
 - **Maven**: 3.8+
 - **Platform Drivers**:
   - *Web*: ChromeDriver / GeckoDriver (or Selenium Manager managed)
