@@ -152,4 +152,43 @@ class TreeLayoutCachingTest {
         assertEquals(3, cachedPlaque.executable());
         assertEquals(0, cachedPlaque.executed());
     }
+
+    @Test
+    void treeTrackerReflectsDynamicallyAddedScenariosWithoutStaleCache() throws Exception {
+        TreeTracker.reset();
+        try (final SelectionFixture fixture = SelectionFixture.install()) {
+            final NamedLeaf initialLeaf = new NamedLeaf(Fraction.ONE, "demo.Root.InitialLeaf", "InitialLeaf");
+            final NamedNode root = new NamedNode("demo.Root", "Root", initialLeaf);
+            final works.lysenko.tree.Ctrl rootCtrl = new works.lysenko.tree.Ctrl(null, List.of(root));
+
+            final works.lysenko.base.Test testObj = SelectionFixture.allocate(works.lysenko.base.Test.class);
+            final works.lysenko.util.apis.test._Exec fakeExec = (works.lysenko.util.apis.test._Exec) java.lang.reflect.Proxy.newProxyInstance(
+                    works.lysenko.util.apis.test._Exec.class.getClassLoader(),
+                    new Class<?>[]{works.lysenko.util.apis.test._Exec.class},
+                    (p, m, a) -> "ctrl".equals(m.getName()) ? rootCtrl : ("getRootScenariosList".equals(m.getName()) ? Set.of(root) : null));
+            final Field execField = works.lysenko.base.Test.class.getDeclaredField("executor");
+            execField.setAccessible(true);
+            execField.set(testObj, fakeExec);
+            final Field testField = works.lysenko.base.Core.class.getDeclaredField("test");
+            testField.setAccessible(true);
+            testField.set(fixture.core(), testObj);
+
+            // Frame 1: only InitialLeaf exists
+            final TreeLayout layout1 = TreeHtml.computeLayout(List.of(root), new TreeMap<>());
+            final String svg1 = TreeTracker.renderTreeProgressionSvg(layout1, 1, 1);
+            assertTrue(svg1.contains("Leafs: 0/1"), "Initial frame should see 1 accessible leaf");
+
+            // Mutate tree dynamically: add a second leaf to root's pool
+            final NamedLeaf addedLeaf = new NamedLeaf(Fraction.ONE, "demo.Root.AddedLeaf", "AddedLeaf");
+            root.getPool().add(List.of(addedLeaf));
+
+            // Frame 2: must immediately see both leaves as accessible (not stuck at 1 or marked OFF)
+            final TreeLayout layout2 = TreeHtml.computeLayout(List.of(root), new TreeMap<>());
+            final String svg2 = TreeTracker.renderTreeProgressionSvg(layout2, 1, 2);
+            assertTrue(svg2.contains("Leafs: 0/2"), "Second frame must reflect dynamically added leaf");
+            assertFalse(svg2.contains("non_executable"), "Dynamically added leaf must not be marked non_executable");
+        } finally {
+            TreeTracker.reset();
+        }
+    }
 }

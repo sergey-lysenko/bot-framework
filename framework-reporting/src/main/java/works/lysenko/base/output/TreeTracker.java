@@ -83,8 +83,6 @@ public final class TreeTracker {
     private static volatile BufferedImage latestFrameImage = null;
     private static final Map<String, Integer> previousExecutions = new HashMap<>();
     private static final Set<String> lastRecentNodeKeys = new HashSet<>();
-    private static volatile Set<_Scenario> cachedAccessibleScenarios = null;
-    private static volatile TreeHtml.AccessibleContext cachedAccessibleContext = null;
 
     private static volatile int sessionBaseW = 0;
     private static volatile int sessionBaseH = 0;
@@ -120,15 +118,6 @@ public final class TreeTracker {
         sessionBaseW = 0;
         sessionBaseH = 0;
         TreeCameraTransform.reset();
-        invalidateCache();
-    }
-
-    /**
-     * Performs invalidate cache.
-     */
-    public static void invalidateCache() {
-        cachedAccessibleScenarios = null;
-        cachedAccessibleContext = null;
     }
 
     /**
@@ -263,17 +252,9 @@ public final class TreeTracker {
         try {
             final Set<String> recentNodeKeys = computeRecentNodeKeys(layout);
             logDebug(String.format("Canvas (%d nodes, %d edges)...", layout.nodes().size(), layout.edges().size()));
-            final boolean isCold = (null == cachedAccessibleScenarios);
-            final long tAccStart = System.currentTimeMillis();
-            if (isCold) {
-                logDebug("Collecting accessible scenarios...");
-            }
-            final Set<_Scenario> accessibleScenarios = getAccessibleScenarios();
-            final TreeHtml.AccessibleContext accessibleCtx = cachedAccessibleContext;
+            final Set<_Scenario> accessibleScenarios = TreeHtml.getAccessibleScenarios();
+            final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(accessibleScenarios);
             capturedAccessibleCtx = accessibleCtx;
-            if (isCold) {
-                logDebug(String.format("Collected %d accessible scenarios in %d ms", accessibleScenarios.size(), System.currentTimeMillis() - tAccStart));
-            }
 
             final TreeCameraTransform.Transform cameraTx = TreeCameraTransform.computeSmoothTransform(layout, recentNodeKeys, target, sessionBaseW, sessionBaseH);
             svgContent = SvgTreeRenderer.renderTreeProgressionSvg(
@@ -647,13 +628,7 @@ public final class TreeTracker {
     }
 
     static Set<_Scenario> getAccessibleScenarios() {
-        Set<_Scenario> scenarios = cachedAccessibleScenarios;
-        if (null == scenarios) {
-            scenarios = TreeHtml.getAccessibleScenarios();
-            cachedAccessibleScenarios = scenarios;
-            cachedAccessibleContext = new TreeHtml.AccessibleContext(scenarios);
-        }
-        return scenarios;
+        return TreeHtml.getAccessibleScenarios();
     }
 
     static boolean isTheoreticallyExecutable(final NodeData n, final Set<_Scenario> accessibleScenarios) {
@@ -717,7 +692,7 @@ public final class TreeTracker {
             final String badgeText,
             final Set<String> recentNodeKeys,
             final Set<_Scenario> accessibleScenarios) {
-        return renderTreeProgressionSvg(layout, target, badgeText, recentNodeKeys, accessibleScenarios, (null != cachedAccessibleContext) ? cachedAccessibleContext : new TreeHtml.AccessibleContext(accessibleScenarios));
+        return renderTreeProgressionSvg(layout, target, badgeText, recentNodeKeys, accessibleScenarios, new TreeHtml.AccessibleContext(accessibleScenarios));
     }
 
     public static String renderTreeProgressionSvg(
@@ -773,7 +748,7 @@ public final class TreeTracker {
             final String badgeText,
             final Set<String> recentNodeKeys,
             final Set<_Scenario> accessibleScenarios) {
-        return renderTreeProgression(layout, target, badgeText, recentNodeKeys, accessibleScenarios, (null != cachedAccessibleContext) ? cachedAccessibleContext : new TreeHtml.AccessibleContext(accessibleScenarios));
+        return renderTreeProgression(layout, target, badgeText, recentNodeKeys, accessibleScenarios, new TreeHtml.AccessibleContext(accessibleScenarios));
     }
 
     public static BufferedImage renderTreeProgression(
