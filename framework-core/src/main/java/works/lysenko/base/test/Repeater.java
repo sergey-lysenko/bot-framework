@@ -325,7 +325,8 @@ public class Repeater implements _Repeater {
      */
     private void info() {
 
-        log(Level.none, core.getTest().getStatus(), false);
+        final String status = core.getTest().getStatus();
+        if (isNotNull(status) && !status.isEmpty()) log(Level.none, status, false);
         log(Level.none, b(bb(getTitle()), DONE), false);
     }
 
