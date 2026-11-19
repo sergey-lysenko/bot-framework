@@ -5,7 +5,7 @@
 
   <groupId>works.lysenko</groupId>
   <artifactId>bot-framework-parent</artifactId>
-  <version>0.26.47</version>
+  <version>0.26.48-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>bot-framework-parent</name>
