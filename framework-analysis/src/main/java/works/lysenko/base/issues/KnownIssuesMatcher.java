@@ -19,7 +19,21 @@ import static works.lysenko.util.func.type.Objects.*;
 public final class KnownIssuesMatcher {
 
     private static final Map<String, Pattern> PATTERN_CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, PreparedRecordPattern> RECORD_PATTERN_CACHE = new ConcurrentHashMap<>();
     private static final Pattern NON_ALPHANUMERIC = Pattern.compile("[^a-z0-9]");
+
+    private record PreparedRecordPattern(Pattern regex, String lowerPattern, String normPattern) {
+        static PreparedRecordPattern compile(final String patternStr) {
+            Pattern compiled = null;
+            try {
+                compiled = Pattern.compile(patternStr, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+            } catch (final PatternSyntaxException ignored) {
+            }
+            final String lower = patternStr.toLowerCase(java.util.Locale.ROOT);
+            final String norm = NON_ALPHANUMERIC.matcher(lower).replaceAll(EMPTY);
+            return new PreparedRecordPattern(compiled, lower, norm);
+        }
+    }
     private static final String EMPTY = "";
     private static final String ASTERISK = "*";
     private static final String DOT = ".";
@@ -160,35 +174,36 @@ public final class KnownIssuesMatcher {
      */
     public static boolean matchesPatternForRecord(final String patternStr, final _LogRecord logRecord) {
 
-        boolean match = false;
         if (null == patternStr || patternStr.isBlank()) {
-            match = true;
-        } else if (null != logRecord && null != logRecord.text()) {
-            final String text = logRecord.text();
-            final String dataStr = (null != logRecord.data()) ? logRecord.data().toString() : "";
-            final String fullText = (!dataStr.isBlank()) ? dataStr + " " + text : text;
-
-            // 1. Direct Regex match
-            try {
-                final Pattern pattern = getCompiledPattern(patternStr, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-                if (pattern.matcher(text).find() || pattern.matcher(fullText).find()) match = true;
-            } catch (final PatternSyntaxException ignored) {
-            }
-
-            if (!match) {
-                // 2. Direct Substring match (case-insensitive)
-                final String lowerText = text.toLowerCase(java.util.Locale.ROOT);
-                final String lowerFullText = fullText.toLowerCase(java.util.Locale.ROOT);
-                final String lowerPattern = patternStr.toLowerCase(java.util.Locale.ROOT);
-                if (lowerText.contains(lowerPattern) || lowerFullText.contains(lowerPattern)) match = true;
-                else {
-                    // 3. Normalized alphanumeric tolerance match
-                    final String normText = NON_ALPHANUMERIC.matcher(lowerFullText).replaceAll(EMPTY);
-                    final String normPattern = NON_ALPHANUMERIC.matcher(lowerPattern).replaceAll(EMPTY);
-                    match = !normPattern.isEmpty() && normText.contains(normPattern);
-                }
-            }
+            return true;
         }
-        return match;
+        if (null == logRecord || null == logRecord.text()) {
+            return false;
+        }
+        final PreparedRecordPattern prepared = RECORD_PATTERN_CACHE.computeIfAbsent(patternStr, PreparedRecordPattern::compile);
+        final String text = logRecord.text();
+        final String dataStr = (null != logRecord.data()) ? logRecord.data().toString() : EMPTY;
+        final boolean hasData = !dataStr.isBlank();
+        final String fullText = hasData ? dataStr + " " + text : text;
+
+        // 1. Direct Regex match
+        if (null != prepared.regex) {
+            if (prepared.regex.matcher(text).find()) return true;
+            if (hasData && prepared.regex.matcher(fullText).find()) return true;
+        }
+
+        // 2. Direct Substring match (case-insensitive)
+        // Note: text is always a substring of fullText, so checking lowerFullText covers both.
+        final String lowerFullText = fullText.toLowerCase(java.util.Locale.ROOT);
+        if (lowerFullText.contains(prepared.lowerPattern)) {
+            return true;
+        }
+
+        // 3. Normalized alphanumeric tolerance match
+        if (!prepared.normPattern.isEmpty()) {
+            final String normText = NON_ALPHANUMERIC.matcher(lowerFullText).replaceAll(EMPTY);
+            return normText.contains(prepared.normPattern);
+        }
+        return false;
     }
 }

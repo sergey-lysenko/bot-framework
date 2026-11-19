@@ -143,6 +143,15 @@ public record SummaryPlaque(
         return PlaqueMetricsCalculator.computeFromNodes(nodes, config);
     }
 
+    public static SummaryPlaque computeFromNodes(
+            final List<TreeHtml.NodeData> nodes,
+            final RunConfig config,
+            final TreeHtml.AccessibleContext accessibleCtx,
+            final java.util.Map<TreeHtml.NodeData, Boolean> executableCache,
+            final java.util.Map<TreeHtml.NodeData, Boolean> childFailureCache) {
+        return PlaqueMetricsCalculator.computeFromNodes(nodes, config, accessibleCtx, executableCache, childFailureCache);
+    }
+
     public static SummaryPlaque computeFromSections(final List<LogSection> sections) {
         return PlaqueMetricsCalculator.computeFromSections(sections);
     }

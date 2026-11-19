@@ -16,7 +16,7 @@ import works.lysenko.util.data.enums.ScenarioType;
 public class VisualNodeResolver {
     
     private final TreeTheme theme;
-    private final Set<_Scenario> accessibleScenarios;
+    private final TreeHtml.AccessibleContext accessibleCtx;
     private final boolean isAllLeafs;
     private final int target;
     private final double maxLeafOverRatio;
@@ -77,8 +77,12 @@ public class VisualNodeResolver {
     }
 
     public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isAllLeafs, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset, double minRow, int headerHeight) {
+        this(theme, new TreeHtml.AccessibleContext(accessibleScenarios), isAllLeafs, target, maxLeafOverRatio, isRecent, includeHeaderOffset, minRow, headerHeight);
+    }
+
+    public VisualNodeResolver(TreeTheme theme, TreeHtml.AccessibleContext accessibleCtx, boolean isAllLeafs, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset, double minRow, int headerHeight) {
         this.theme = theme;
-        this.accessibleScenarios = accessibleScenarios;
+        this.accessibleCtx = (null != accessibleCtx) ? accessibleCtx : new TreeHtml.AccessibleContext(null);
         this.isAllLeafs = isAllLeafs;
         this.target = target;
         this.maxLeafOverRatio = maxLeafOverRatio;
@@ -128,7 +132,7 @@ public class VisualNodeResolver {
         final boolean failure = TreeHtml.hasFailure(node);
         final boolean childFailure = !failure && TreeHtml.hasChildFailure(node, childFailureCache);
         final Color progressColor = failure ? theme.failedBorder() : (childFailure ? theme.upsetBorder() : getScenarioProgressColor(node, target, maxLeafOverRatio));
-        boolean executable = TreeHtml.isTheoreticallyExecutable(node, accessibleScenarios, executableCache);
+        boolean executable = TreeHtml.isTheoreticallyExecutable(node, accessibleCtx, executableCache);
 
         Color cardFill;
         Color borderColor;

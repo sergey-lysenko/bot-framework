@@ -1,5 +1,6 @@
 package works.lysenko.base.output.sonifier;
 
+import works.lysenko.base.output.TreeHtml;
 import works.lysenko.base.output.TreeHtml.TreeLayout;
 
 import java.io.File;
@@ -27,6 +28,24 @@ public interface TreeSonifier {
      * @throws IOException on write failure
      */
     default void capture(final File frame, final TreeLayout layout, final int target) throws IOException {
+    }
+
+    /**
+     * Called when a frame is written, providing the precomputed {@link TreeHtml.AccessibleContext}
+     * to avoid redundant accessibility traversals.
+     *
+     * @param frame         written frame file
+     * @param layout        layout the frame was rendered from
+     * @param target        target executions count
+     * @param accessibleCtx precomputed accessibility context (may be {@code null})
+     * @throws IOException on write failure
+     */
+    default void capture(
+            final File frame,
+            final TreeLayout layout,
+            final int target,
+            final TreeHtml.AccessibleContext accessibleCtx) throws IOException {
+        capture(frame, layout, target);
     }
 
     /**

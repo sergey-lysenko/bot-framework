@@ -139,11 +139,13 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     @Override
     public int calculateCombinations(final boolean onlyConfigured) {
 
-        final boolean isDownstream = Boolean.TRUE.equals(Include.downstream) && ZERO < weightDownstream().doubleValue();
-        final boolean isUpstream = Boolean.TRUE.equals(Include.upstream) && ZERO < weightUpstream().doubleValue();
-        final boolean isConfigured = (isNotNull(weightConfigured())) && ZERO < weightConfigured().doubleValue();
-        if (onlyConfigured) return (isNotNull(weightConfigured())) && (isDownstream || isUpstream || isConfigured) ? ONE : ZERO;
-        return ONE;
+        if (!onlyConfigured) return ONE;
+        final Fraction configured = weightConfigured();
+        if (isNull(configured)) return ZERO;
+        if (ZERO < configured.doubleValue()) return ONE;
+        if (Boolean.TRUE.equals(Include.upstream) && ZERO < weightUpstream().doubleValue()) return ONE;
+        if (Boolean.TRUE.equals(Include.downstream) && ZERO < weightDownstream().doubleValue()) return ONE;
+        return ZERO;
     }
 
     /**

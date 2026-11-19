@@ -191,7 +191,7 @@ public final class SvgTreeRenderer {
                 }
                 strokeOpacity = "";
                 strokeW = 2.2f;
-            } else if (!TreeHtml.isTheoreticallyExecutable(e.to(), accessibleScenarios)) {
+            } else if (!TreeHtml.isTheoreticallyExecutable(e.to(), ctx, executableCache)) {
                 strokeColor = "#243044";
                 strokeOpacity = "stroke-opacity=\"0.39\" ";
                 strokeW = 1.0f;
@@ -205,7 +205,7 @@ public final class SvgTreeRenderer {
 
         final boolean isAllLeafs = (null != parameters) ? parameters.isAllLeafs() : false;
         final VisualNodeResolver nodeResolver =
-                new VisualNodeResolver(TreeTheme.DEFAULT, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, false, true, 0.0, headerH);
+                new VisualNodeResolver(TreeTheme.DEFAULT, ctx, isAllLeafs, target, maxLeafOverRatio, false, true, 0.0, headerH);
         final List<VisualNode> visualNodes = new ArrayList<>();
         for (final NodeData n : layout.nodes()) {
             visualNodes.add(nodeResolver.resolve(n, recentNodeKeys.contains(n.id()), childFailureCache, executableCache));
@@ -275,7 +275,12 @@ public final class SvgTreeRenderer {
             sb.append("    </g>\n");
         }
 
-        final works.lysenko.base.output.SummaryPlaque plaque = works.lysenko.base.output.SummaryPlaque.computeFromNodes(layout.nodes(), works.lysenko.base.output.SummaryPlaque.RunConfig.fromParameters(parameters));
+        final works.lysenko.base.output.SummaryPlaque plaque = works.lysenko.base.output.SummaryPlaque.computeFromNodes(
+                layout.nodes(),
+                works.lysenko.base.output.SummaryPlaque.RunConfig.fromParameters(parameters),
+                ctx,
+                executableCache,
+                childFailureCache);
         renderPlaqueSvg(plaque, sb, 16, HEADER_HEIGHT_BASE + 16);
 
         sb.append("  </g>\n");

@@ -100,4 +100,38 @@ class CoreTest {
         assertEquals(1, core.list().size(), "list() should contain exactly this scenario");
         assertTrue(core.list().contains(core), "list() set should contain core instance");
     }
+
+    @Test
+    void testCalculateCombinationsShortCircuitsWeights() {
+        final int[] upstreamCalls = {0};
+        final Core trackingPositive = new Core(fr(1.0)) {
+            @Override
+            public Fraction weightUpstream() {
+                upstreamCalls[0]++;
+                return Fraction.ZERO;
+            }
+        };
+
+        assertEquals(1, trackingPositive.calculateCombinations(false));
+        assertEquals(0, upstreamCalls[0], "calculateCombinations(false) should not evaluate upstream weights");
+
+        assertEquals(1, trackingPositive.calculateCombinations(true));
+        assertEquals(0, upstreamCalls[0], "calculateCombinations(true) with positive configured weight should short-circuit");
+
+        final boolean previousUpstream = works.lysenko.util.prop.tree.Include.upstream;
+        try {
+            works.lysenko.util.prop.tree.Include.upstream = true;
+            final Core zeroConfiguredWithUpstream = new Core(Fraction.ZERO) {
+                @Override
+                public Fraction weightUpstream() {
+                    upstreamCalls[0]++;
+                    return fr(2.0);
+                }
+            };
+            assertEquals(1, zeroConfiguredWithUpstream.calculateCombinations(true));
+            assertEquals(1, upstreamCalls[0], "Zero configured weight should fall back to upstream weight");
+        } finally {
+            works.lysenko.util.prop.tree.Include.upstream = previousUpstream;
+        }
+    }
 }

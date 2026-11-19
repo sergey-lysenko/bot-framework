@@ -12,9 +12,12 @@ import works.lysenko.util.prop.tree.Include;
 import works.lysenko.util.prop.tree.Scenario;
 
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import works.lysenko.tree.base.Leaf;
+import works.lysenko.tree.base.Node;
 import works.lysenko.util.apis.scenario._Node;
 
 import static java.util.Objects.isNull;
@@ -186,44 +189,75 @@ public class Ctrl extends Root implements _Ctrl {
     public final Set<_Scenario> getAccessibleLeafs() {
 
         final Set<_Scenario> leafs = new HashSet<>();
-        collectAccessibleLeafs(getWeightedList(), leafs);
+        collectAccessibleLeafs(getWeightedList(), leafs, new IdentityHashMap<>());
         return leafs;
     }
 
     /**
      * Checks if a scenario is accessible based on its state and configured weights.
      *
-     * @param s scenario to check
+     * @param s          scenario to check
+     * @param comboCache memoization map for {@code calculateCombinations(false) > 0} within a single traversal
      * @return true if scenario is accessible, false otherwise
      */
-    private static boolean isScenarioAccessible(final _Scenario s) {
+    private static boolean isScenarioAccessible(final _Scenario s, final Map<_Scenario, Boolean> comboCache) {
         if (isNull(s) || s.hasFailed() || s.isExhausted()) return false;
 
-        final double cw = (isNotNull(s.weightConfigured())) ? s.weightConfigured().doubleValue() :
-                          ((isNotNull(s.weightCoded())) ? s.weightCoded().doubleValue() : 1.0);
-        final double dw = (isNotNull(s.weightDownstream())) ? s.weightDownstream().doubleValue() : 0.0;
-        final double uw = (isNotNull(s.weightUpstream())) ? s.weightUpstream().doubleValue() : 0.0;
-
-        if (cw <= 0.0 && dw <= 0.0 && uw <= 0.0) {
-            return false;
+        final Fraction configured = s.weightConfigured();
+        final double cw = isNotNull(configured) ? configured.doubleValue()
+                : (isNotNull(s.weightCoded()) ? s.weightCoded().doubleValue() : 1.0);
+        if (cw <= 0.0) {
+            final Fraction downstream = s.weightDownstream();
+            final double dw = isNotNull(downstream) ? downstream.doubleValue() : 0.0;
+            if (dw <= 0.0) {
+                final Fraction upstream = s.weightUpstream();
+                final double uw = isNotNull(upstream) ? upstream.doubleValue() : 0.0;
+                if (uw <= 0.0) {
+                    return false;
+                }
+            }
         }
-        return s.calculateCombinations(false) > 0;
+        return hasAnyCombination(s, comboCache);
+    }
+
+    private static boolean hasAnyCombination(final _Scenario s, final Map<_Scenario, Boolean> comboCache) {
+        final Boolean cached = comboCache.get(s);
+        if (isNotNull(cached)) return cached;
+        final boolean result;
+        if (s instanceof Node node) {
+            boolean found = false;
+            for (final KeyValue<_Scenario, Fraction> child : node.getPool().getPairList()) {
+                if (isNotNull(child.k()) && hasAnyCombination(child.k(), comboCache)) {
+                    found = true;
+                    break;
+                }
+            }
+            result = found;
+        } else {
+            result = s.calculateCombinations(false) > 0;
+        }
+        comboCache.put(s, result);
+        return result;
     }
 
     /**
      * Recursively collects accessible leaf scenarios from weighted scenario pairs.
      *
-     * @param pairs weighted scenario pairs
-     * @param leafs target set collecting accessible leaf scenarios
+     * @param pairs      weighted scenario pairs
+     * @param leafs      target set collecting accessible leaf scenarios
+     * @param comboCache memoization map for combination checks within this traversal
      */
-    private static void collectAccessibleLeafs(final Iterable<KeyValue<_Scenario, Fraction>> pairs, final Set<_Scenario> leafs) {
+    private static void collectAccessibleLeafs(
+            final Iterable<KeyValue<_Scenario, Fraction>> pairs,
+            final Set<_Scenario> leafs,
+            final Map<_Scenario, Boolean> comboCache) {
 
         if (isNull(pairs)) return;
         for (final KeyValue<_Scenario, Fraction> pair : pairs) {
             final _Scenario s = pair.k();
-            if (isScenarioAccessible(s)) {
+            if (isScenarioAccessible(s, comboCache)) {
                 if (s instanceof _Node node) {
-                    collectAccessibleLeafs(node.getPool().getPairList(), leafs);
+                    collectAccessibleLeafs(node.getPool().getPairList(), leafs, comboCache);
                 } else {
                     leafs.add(s);
                 }
@@ -240,25 +274,29 @@ public class Ctrl extends Root implements _Ctrl {
     public final Set<_Scenario> getAccessibleNodes() {
 
         final Set<_Scenario> nodes = new HashSet<>();
-        collectAccessibleNodes(getWeightedList(), nodes);
+        collectAccessibleNodes(getWeightedList(), nodes, new IdentityHashMap<>());
         return nodes;
     }
 
     /**
      * Recursively collects accessible node scenarios from weighted scenario pairs.
      *
-     * @param pairs weighted scenario pairs
-     * @param nodes target set collecting accessible node scenarios
+     * @param pairs      weighted scenario pairs
+     * @param nodes      target set collecting accessible node scenarios
+     * @param comboCache memoization map for combination checks within this traversal
      */
-    private static void collectAccessibleNodes(final Iterable<KeyValue<_Scenario, Fraction>> pairs, final Set<_Scenario> nodes) {
+    private static void collectAccessibleNodes(
+            final Iterable<KeyValue<_Scenario, Fraction>> pairs,
+            final Set<_Scenario> nodes,
+            final Map<_Scenario, Boolean> comboCache) {
 
         if (isNull(pairs)) return;
         for (final KeyValue<_Scenario, Fraction> pair : pairs) {
             final _Scenario s = pair.k();
-            if (isScenarioAccessible(s)) {
+            if (isScenarioAccessible(s, comboCache)) {
                 if (s instanceof _Node node) {
                     nodes.add(s);
-                    collectAccessibleNodes(node.getPool().getPairList(), nodes);
+                    collectAccessibleNodes(node.getPool().getPairList(), nodes, comboCache);
                 }
             }
         }
@@ -273,25 +311,29 @@ public class Ctrl extends Root implements _Ctrl {
     public final Set<_Scenario> getAccessibleScenarios() {
 
         final Set<_Scenario> scenarios = new HashSet<>();
-        collectAccessibleScenarios(getWeightedList(), scenarios);
+        collectAccessibleScenarios(getWeightedList(), scenarios, new IdentityHashMap<>());
         return scenarios;
     }
 
     /**
      * Recursively collects accessible scenarios from weighted scenario pairs.
      *
-     * @param pairs     weighted scenario pairs
-     * @param scenarios target set collecting accessible scenarios
+     * @param pairs      weighted scenario pairs
+     * @param scenarios  target set collecting accessible scenarios
+     * @param comboCache memoization map for combination checks within this traversal
      */
-    private static void collectAccessibleScenarios(final Iterable<KeyValue<_Scenario, Fraction>> pairs, final Set<_Scenario> scenarios) {
+    private static void collectAccessibleScenarios(
+            final Iterable<KeyValue<_Scenario, Fraction>> pairs,
+            final Set<_Scenario> scenarios,
+            final Map<_Scenario, Boolean> comboCache) {
 
         if (isNull(pairs)) return;
         for (final KeyValue<_Scenario, Fraction> pair : pairs) {
             final _Scenario s = pair.k();
-            if (isScenarioAccessible(s)) {
+            if (isScenarioAccessible(s, comboCache)) {
                 scenarios.add(s);
                 if (s instanceof _Node node) {
-                    collectAccessibleScenarios(node.getPool().getPairList(), scenarios);
+                    collectAccessibleScenarios(node.getPool().getPairList(), scenarios, comboCache);
                 }
             }
         }

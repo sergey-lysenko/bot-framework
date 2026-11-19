@@ -107,10 +107,20 @@ public final class CarbonSonifier implements TreeSonifier {
 
     @Override
     public void capture(final File frame, final TreeLayout layout, final int target) throws IOException {
+        capture(frame, layout, target, null);
+    }
+
+    @Override
+    public void capture(
+            final File frame,
+            final TreeLayout layout,
+            final int target,
+            final TreeHtml.AccessibleContext precomputedCtx) throws IOException {
         final File snapshot = snapshotFile(frame);
         Files.createDirectories(snapshot.toPath().getParent());
 
-        final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(Set.of());
+        final TreeHtml.AccessibleContext accessibleCtx = (null != precomputedCtx)
+                ? precomputedCtx : new TreeHtml.AccessibleContext(Set.of());
         final Map<NodeData, Boolean> executableCache = new HashMap<>();
         final Map<NodeData, Boolean> childFailureCache = new HashMap<>();
 

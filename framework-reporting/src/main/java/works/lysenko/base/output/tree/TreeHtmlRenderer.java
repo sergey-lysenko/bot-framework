@@ -14,6 +14,7 @@ import works.lysenko.util.prop.PropEnum;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -108,29 +109,37 @@ public record TreeHtmlRenderer() {
     public static String renderHtml(final List<TreeHtml.NodeData> nodes, final List<TreeHtml.Edge> edges) {
         final StringBuilder svgContent = new StringBuilder(4096);
         final Set<_Scenario> accessibleScenarios = TreeLayoutComputer.getAccessibleScenarios();
+        final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(accessibleScenarios);
+        final Map<TreeHtml.NodeData, Boolean> executableCache = new HashMap<>();
+        final Map<TreeHtml.NodeData, Boolean> childFailureCache = new HashMap<>();
 
-        renderSvgEdges(edges, accessibleScenarios, svgContent);
+        renderSvgEdges(edges, accessibleCtx, executableCache, childFailureCache, svgContent);
 
         final boolean isAllLeafs = isAllLeafsMode();
         final int target = resolveTargetExecutions();
         final double maxLeafOverRatio = computeMaxLeafOverRatio(nodes, target);
 
         final VisualNodeResolver nodeResolver =
-                new VisualNodeResolver(TreeTheme.DEFAULT, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio);
+                new VisualNodeResolver(TreeTheme.DEFAULT, accessibleCtx, isAllLeafs, target, maxLeafOverRatio, false, false, 0.0, 60);
         final List<VisualNode> visualNodes = new ArrayList<>(nodes.size());
         final Map<String, Map<String, Object>> nodeDataMap = new LinkedHashMap<>(nodes.size());
 
         for (int i = 0; i < nodes.size(); i++) {
             final TreeHtml.NodeData node = nodes.get(i);
             TreeLayoutComputer.logProgressIfNeeded("rendering visual nodes", i + 1, nodes.size());
-            final VisualNode visualNode = nodeResolver.resolve(node);
+            final VisualNode visualNode = nodeResolver.resolve(node, false, childFailureCache, executableCache);
             visualNodes.add(visualNode);
             nodeDataMap.put(node.id(), buildNodeInfo(node, visualNode));
         }
 
         svgContent.append(new HtmlTreeRenderer(TreeTheme.DEFAULT).renderNodes(visualNodes));
 
-        final SummaryPlaque summaryPlaque = SummaryPlaque.computeFromNodes(nodes);
+        final SummaryPlaque summaryPlaque = SummaryPlaque.computeFromNodes(
+                nodes,
+                SummaryPlaque.RunConfig.fromParameters(works.lysenko.Base.parameters),
+                accessibleCtx,
+                executableCache,
+                childFailureCache);
         final String nodeDataJson = serializeNodeData(nodeDataMap);
 
         final Map<String, String> replacements = new LinkedHashMap<>(4);
@@ -144,7 +153,9 @@ public record TreeHtmlRenderer() {
 
     private static void renderSvgEdges(
             final List<TreeHtml.Edge> edges,
-            final Set<_Scenario> accessibleScenarios,
+            final TreeHtml.AccessibleContext accessibleCtx,
+            final Map<TreeHtml.NodeData, Boolean> executableCache,
+            final Map<TreeHtml.NodeData, Boolean> childFailureCache,
             final StringBuilder svgContent) {
         final List<TreeHtml.Edge> sortedEdges = new ArrayList<>(edges);
         sortedEdges.sort(Comparator.comparingInt(e -> {
@@ -161,7 +172,7 @@ public record TreeHtmlRenderer() {
             final int endX = edge.to().col() * COL_WIDTH + 40;
             final long endY = Math.round(edge.to().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + 20);
             final int cX = (startX + endX) / 2;
-            final String edgeClass = resolveEdgeClass(edge, accessibleScenarios);
+            final String edgeClass = resolveEdgeClass(edge, accessibleCtx, executableCache, childFailureCache);
 
             svgContent.append(String.format(
                     Locale.US,
@@ -171,13 +182,17 @@ public record TreeHtmlRenderer() {
         }
     }
 
-    private static String resolveEdgeClass(final TreeHtml.Edge edge, final Set<_Scenario> accessibleScenarios) {
+    private static String resolveEdgeClass(
+            final TreeHtml.Edge edge,
+            final TreeHtml.AccessibleContext accessibleCtx,
+            final Map<TreeHtml.NodeData, Boolean> executableCache,
+            final Map<TreeHtml.NodeData, Boolean> childFailureCache) {
         final int toExecs = isNotNull(edge.to().result()) ? edge.to().result().getExecutions() : 0;
         final int fromExecs = isNotNull(edge.from().result()) ? edge.from().result().getExecutions() : 0;
         final String resultClass;
         if (0 < toExecs && 0 < fromExecs) {
-            resultClass = resolveVisitedEdgeClass(edge.to());
-        } else if (TreeLayoutComputer.isTheoreticallyExecutable(edge.to(), accessibleScenarios)) {
+            resultClass = resolveVisitedEdgeClass(edge.to(), childFailureCache);
+        } else if (TreeLayoutComputer.isTheoreticallyExecutable(edge.to(), accessibleCtx, executableCache)) {
             resultClass = "connector";
         } else {
             resultClass = "connector non_executable";
@@ -185,11 +200,13 @@ public record TreeHtmlRenderer() {
         return resultClass;
     }
 
-    private static String resolveVisitedEdgeClass(final TreeHtml.NodeData targetNode) {
+    private static String resolveVisitedEdgeClass(
+            final TreeHtml.NodeData targetNode,
+            final Map<TreeHtml.NodeData, Boolean> childFailureCache) {
         final String visitedClass;
         if (TreeLayoutComputer.hasFailure(targetNode)) {
             visitedClass = "connector failed";
-        } else if (TreeLayoutComputer.hasChildFailure(targetNode)) {
+        } else if (TreeLayoutComputer.hasChildFailure(targetNode, childFailureCache)) {
             visitedClass = "connector child_failed";
         } else {
             visitedClass = resolvePassingEdgeClass(targetNode);

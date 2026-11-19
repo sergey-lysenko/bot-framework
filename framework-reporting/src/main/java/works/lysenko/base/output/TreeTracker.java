@@ -85,7 +85,6 @@ public final class TreeTracker {
     private static final Set<String> lastRecentNodeKeys = new HashSet<>();
     private static volatile Set<_Scenario> cachedAccessibleScenarios = null;
     private static volatile TreeHtml.AccessibleContext cachedAccessibleContext = null;
-    private static volatile Map<TreeHtml.NodeData, Boolean> cachedExecutable = null;
 
     private static volatile int sessionBaseW = 0;
     private static volatile int sessionBaseH = 0;
@@ -130,7 +129,6 @@ public final class TreeTracker {
     public static void invalidateCache() {
         cachedAccessibleScenarios = null;
         cachedAccessibleContext = null;
-        cachedExecutable = null;
     }
 
     /**
@@ -261,6 +259,7 @@ public final class TreeTracker {
             return;
 
         final String svgContent;
+        final TreeHtml.AccessibleContext capturedAccessibleCtx;
         try {
             final Set<String> recentNodeKeys = computeRecentNodeKeys(layout);
             logDebug(String.format("Canvas (%d nodes, %d edges)...", layout.nodes().size(), layout.edges().size()));
@@ -271,13 +270,14 @@ public final class TreeTracker {
             }
             final Set<_Scenario> accessibleScenarios = getAccessibleScenarios();
             final TreeHtml.AccessibleContext accessibleCtx = cachedAccessibleContext;
+            capturedAccessibleCtx = accessibleCtx;
             if (isCold) {
                 logDebug(String.format("Collected %d accessible scenarios in %d ms", accessibleScenarios.size(), System.currentTimeMillis() - tAccStart));
             }
 
             final TreeCameraTransform.Transform cameraTx = TreeCameraTransform.computeSmoothTransform(layout, recentNodeKeys, target, sessionBaseW, sessionBaseH);
             svgContent = SvgTreeRenderer.renderTreeProgressionSvg(
-                    layout, target, badgeText, recentNodeKeys, accessibleScenarios, accessibleCtx, cameraTx, cachedExecutable, sessionBaseW, sessionBaseH);
+                    layout, target, badgeText, recentNodeKeys, accessibleScenarios, accessibleCtx, cameraTx, null, sessionBaseW, sessionBaseH);
             updatePreviousExecutions(layout);
         } catch (final IllegalArgumentException e) {
             System.err.println("Skipped tree progression frame: " + e.getMessage());
@@ -306,7 +306,7 @@ public final class TreeTracker {
                 final java.util.Optional<TreeSonifier> sonifier = ProgressionSettings.current().treeSonifier();
                 if (sonifier.isPresent()) {
                     try {
-                        sonifier.get().capture(frameFile, layout, target);
+                        sonifier.get().capture(frameFile, layout, target, capturedAccessibleCtx);
                     } catch (final IOException e) {
                         System.err.println("Failed tree sonification: " + e.getMessage());
                     }
@@ -740,11 +740,8 @@ public final class TreeTracker {
             final Transform overrideTx) {
 
         final TreeCameraTransform.Transform cameraTx = (null != overrideTx) ? overrideTx.toCamera() : null;
-        if (null == cachedExecutable) {
-            cachedExecutable = new HashMap<>();
-        }
         return SvgTreeRenderer.renderTreeProgressionSvg(
-                layout, target, badgeText, recentNodeKeys, accessibleScenarios, accessibleCtx, cameraTx, cachedExecutable, sessionBaseW, sessionBaseH);
+                layout, target, badgeText, recentNodeKeys, accessibleScenarios, accessibleCtx, cameraTx, null, sessionBaseW, sessionBaseH);
     }
 
     public static BufferedImage renderTreeProgression(

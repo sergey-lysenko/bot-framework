@@ -8,8 +8,10 @@ import works.lysenko.base.output.loghtml.LogModels.LogSection;
 import works.lysenko.base.output.loghtml.LogModels.ScenEntry;
 import works.lysenko.util.apis.data._Result;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Computes summary plaque statistics from scenario node trees, log sections,
@@ -34,6 +36,16 @@ public final class PlaqueMetricsCalculator {
     }
 
     public static SummaryPlaque computeFromNodes(final List<TreeHtml.NodeData> nodes, final RunConfig config) {
+        final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(TreeHtml.getAccessibleScenarios());
+        return computeFromNodes(nodes, config, accessibleCtx, new HashMap<>(), new HashMap<>());
+    }
+
+    public static SummaryPlaque computeFromNodes(
+            final List<TreeHtml.NodeData> nodes,
+            final RunConfig config,
+            final TreeHtml.AccessibleContext accessibleCtx,
+            final Map<TreeHtml.NodeData, Boolean> executableCache,
+            final Map<TreeHtml.NodeData, Boolean> childFailureCache) {
         int total = nodes.size();
         int executable = 0;
         int executed = 0;
@@ -43,20 +55,23 @@ public final class PlaqueMetricsCalculator {
         int failed = 0;
         int knownIssues = 0;
 
-        final java.util.Set<works.lysenko.util.apis.scenario._Scenario> accessible = TreeHtml.getAccessibleScenarios();
+        final TreeHtml.AccessibleContext ctx = (null != accessibleCtx)
+                ? accessibleCtx : new TreeHtml.AccessibleContext(TreeHtml.getAccessibleScenarios());
+        final Map<TreeHtml.NodeData, Boolean> execCache = (null != executableCache) ? executableCache : new HashMap<>();
+        final Map<TreeHtml.NodeData, Boolean> childFailCache = (null != childFailureCache) ? childFailureCache : new HashMap<>();
 
         for (final TreeHtml.NodeData n : nodes) {
             if (!n.knownIssues().isEmpty()) {
                 knownIssues++;
             }
-            final boolean isExec = TreeHtml.isTheoreticallyExecutable(n, accessible);
+            final boolean isExec = TreeHtml.isTheoreticallyExecutable(n, ctx, execCache);
             if (isExec) executable++;
 
             final _Result res = n.result();
             final int execs = (null != res) ? res.getExecutions() : 0;
             final int eventCount = TreeHtml.getUnclassifiedEventCount(n);
             final boolean failure = TreeHtml.hasFailure(n);
-            final boolean childFailure = TreeHtml.hasChildFailure(n);
+            final boolean childFailure = TreeHtml.hasChildFailure(n, childFailCache);
 
             if (failure) {
                 failed++;

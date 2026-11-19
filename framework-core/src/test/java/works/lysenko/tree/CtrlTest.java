@@ -71,4 +71,25 @@ class CtrlTest {
         final Set<_Scenario> accessibleScenarios = ctrl.getAccessibleScenarios();
         assertEquals(4, accessibleScenarios.size(), "Should have 4 total accessible scenarios");
     }
+
+    @Test
+    void testUpstreamWeightWithMixedActiveAndExhaustedSubtrees() {
+        final DummyLeaf activeLeaf1 = new DummyLeaf(fr(2.0));
+        final DummyLeaf activeLeaf2 = new DummyLeaf(fr(1.5));
+        final DummyLeaf exhaustedLeaf = new DummyLeaf(fr(3.0));
+        exhaustedLeaf.markAsExhausted();
+
+        final DummyNode activeBranch = new DummyNode(fr(1.0), activeLeaf1, activeLeaf2, exhaustedLeaf);
+        final DummyLeaf deadLeaf = new DummyLeaf(fr(5.0));
+        deadLeaf.markAsExhausted();
+        final DummyNode deadBranch = new DummyNode(fr(1.0), deadLeaf);
+
+        final DummyNode root = new DummyNode(fr(1.0), activeBranch, deadBranch);
+        // DummyNode ignores constructor weight -> pool weight is defaultWeight (0.0); only active leaves (2.0 + 1.5) contribute
+        assertEquals(3.5, root.weightUpstream().doubleValue(), 1e-6);
+
+        final Ctrl ctrl = new Ctrl(null, List.of(root));
+        final Set<_Scenario> leafs = ctrl.getAccessibleLeafs();
+        assertEquals(Set.of(activeLeaf1, activeLeaf2), leafs);
+    }
 }

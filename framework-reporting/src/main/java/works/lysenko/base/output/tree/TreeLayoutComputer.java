@@ -54,6 +54,17 @@ public final class TreeLayoutComputer {
     private static long lastProgressLogTimestamp = 0;
     private static final long PROGRESS_LOG_INTERVAL_MS = 2000;
 
+    private static final class LogScanCursor {
+        int scannedUpTo;
+        _LogRecord lastRecord;
+        boolean matched;
+    }
+
+    private static final Object LOG_SCAN_LOCK = new Object();
+    private static List<_LogRecord> cachedLogListRef = null;
+    private static _LogRecord cachedLogFirstRecord = null;
+    private static final Map<String, LogScanCursor> LOG_SCAN_CURSORS = new HashMap<>();
+
     private TreeLayoutComputer() {
     }
 
@@ -71,9 +82,10 @@ public final class TreeLayoutComputer {
         final List<_LogRecord> logRecords = (!works.lysenko.util.prop.issues.KnownIssues.failedOnly && isNotNull(exec) && isNotNull(exec.issues()))
                 ? exec.issues().latest() : Collections.emptyList();
 
+        final Map<String, Boolean> patternLogCache = new HashMap<>();
         final SortedMap<String, TreeMap<String, Result>> t = new Groups(TESTS, sorted);
         for (final Map.Entry<String, TreeMap<String, Result>> group : t.entrySet()) {
-            processGroup(group, null, 0, dy, nodes, edges, logRecords);
+            processGroup(group, null, 0, dy, nodes, edges, logRecords, patternLogCache);
         }
         final long tProc = System.currentTimeMillis();
 
@@ -118,8 +130,9 @@ public final class TreeLayoutComputer {
         final List<_LogRecord> logRecords = (!works.lysenko.util.prop.issues.KnownIssues.failedOnly && isNotNull(exec) && isNotNull(exec.issues()))
                 ? exec.issues().latest() : Collections.emptyList();
 
+        final Map<String, Boolean> patternLogCache = new HashMap<>();
         for (final _Scenario root : sortedRoots)
-            processScenario(root, null, 0, rows, ancestors, sorted, nodes, edges, logRecords);
+            processScenario(root, null, 0, rows, ancestors, sorted, nodes, edges, logRecords, patternLogCache);
         final long tProc = System.currentTimeMillis();
 
         final long tPruneStart = System.currentTimeMillis();
@@ -139,7 +152,8 @@ public final class TreeLayoutComputer {
     private static void processScenario(final _Scenario scenario, final NodeData parent, final int col, final int[] rows,
                                         final Set<_Scenario> ancestors, final TreeMap<String, Result> sorted,
                                         final List<NodeData> nodes, final List<Edge> edges,
-                                        final List<_LogRecord> logRecords) {
+                                        final List<_LogRecord> logRecords,
+                                        final Map<String, Boolean> patternLogCache) {
 
         if (null == scenario || !ancestors.add(scenario)) return;
         int offset = 0;
@@ -182,15 +196,8 @@ public final class TreeLayoutComputer {
                     if (isWildcard && !ki.pattern().isBlank()) continue;
 
                     final boolean scenarioMatches = works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(scenarioTarget, scenario.getName(), scenario.getSimpleName());
-                    if (scenarioMatches) {
-                        for (int i = 0; i < logRecords.size(); i++) {
-                            final _LogRecord lr = logRecords.get(i);
-                            logProgressIfNeeded(s("checking known issues for scenario ", scenario.getSimpleName()), i + 1, logRecords.size());
-                            if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
-                                node.knownIssues().add(ki);
-                                break;
-                            }
-                        }
+                    if (scenarioMatches && matchesAnyLogRecord(ki.pattern(), logRecords, s("checking known issues for scenario ", scenario.getSimpleName()), patternLogCache)) {
+                        node.knownIssues().add(ki);
                     }
                 }
             }
@@ -208,7 +215,7 @@ public final class TreeLayoutComputer {
             pairs.sort(Comparator.comparing((works.lysenko.util.data.records.KeyValue<_Scenario, org.apache.commons.math3.fraction.Fraction> p) -> p.k().getSimpleName())
                     .thenComparing(p -> p.k().getName()));
             for (final var child : pairs)
-                processScenario(child.k(), node, myCol + 1, rows, ancestors, sorted, nodes, edges, logRecords);
+                processScenario(child.k(), node, myCol + 1, rows, ancestors, sorted, nodes, edges, logRecords, patternLogCache);
         }
         ancestors.remove(scenario);
     }
@@ -217,7 +224,8 @@ public final class TreeLayoutComputer {
                                      final NodeData parentNode,
                                      final int col, final int[] dy,
                                      final List<NodeData> nodes, final List<Edge> edges,
-                                     final List<_LogRecord> logRecords) {
+                                     final List<_LogRecord> logRecords,
+                                     final Map<String, Boolean> patternLogCache) {
         final Map<String, NodeData> myNodes = new HashMap<>();
         final Parts parts = Parts.process(group.getValue());
 
@@ -254,13 +262,8 @@ public final class TreeLayoutComputer {
                         if (works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), fullScenarioKey, shortKey)
                                 || works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), altScenarioKey, shortKey)
                                 || works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), rawKey, shortKey)) {
-                            for (int i = 0; i < logRecords.size(); i++) {
-                                final _LogRecord lr = logRecords.get(i);
-                                logProgressIfNeeded(s("checking known issues for ", shortKey), i + 1, logRecords.size());
-                                if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
-                                    nd.knownIssues().add(ki);
-                                    break;
-                                }
+                            if (matchesAnyLogRecord(ki.pattern(), logRecords, s("checking known issues for ", shortKey), patternLogCache)) {
+                                nd.knownIssues().add(ki);
                             }
                         }
                     }
@@ -282,8 +285,68 @@ public final class TreeLayoutComputer {
             final String subKey = subgroup.getKey().toLowerCase();
             final NodeData subParent = myNodes.get(subKey);
             final NodeData nextParent = (null != subParent) ? subParent : parentNode;
-            processGroup(subgroup, nextParent, col + 1, dy, nodes, edges, logRecords);
+            processGroup(subgroup, nextParent, col + 1, dy, nodes, edges, logRecords, patternLogCache);
         }
+    }
+
+    private static boolean matchesAnyLogRecord(
+            final String pattern,
+            final List<_LogRecord> logRecords,
+            final String progressLabel,
+            final Map<String, Boolean> perCallCache) {
+        final String cacheKey = (null == pattern) ? "" : pattern;
+        final Boolean perCall = perCallCache.get(cacheKey);
+        if (null != perCall) return perCall;
+
+        final int size = logRecords.size();
+        if (0 == size) {
+            perCallCache.put(cacheKey, Boolean.FALSE);
+            return false;
+        }
+
+        final _LogRecord firstRecord = logRecords.get(0);
+        int startIdx = 0;
+        synchronized (LOG_SCAN_LOCK) {
+            if (cachedLogListRef != logRecords || cachedLogFirstRecord != firstRecord) {
+                cachedLogListRef = logRecords;
+                cachedLogFirstRecord = firstRecord;
+                LOG_SCAN_CURSORS.clear();
+            } else {
+                final LogScanCursor cursor = LOG_SCAN_CURSORS.get(cacheKey);
+                if (null != cursor && cursor.scannedUpTo <= size) {
+                    if (0 == cursor.scannedUpTo || logRecords.get(cursor.scannedUpTo - 1) == cursor.lastRecord) {
+                        if (cursor.matched) {
+                            perCallCache.put(cacheKey, Boolean.TRUE);
+                            return true;
+                        }
+                        startIdx = cursor.scannedUpTo;
+                    }
+                }
+            }
+        }
+
+        boolean matched = false;
+        int scannedTo = size;
+        for (int i = startIdx; i < size; i++) {
+            final _LogRecord lr = logRecords.get(i);
+            logProgressIfNeeded(progressLabel, i + 1, size);
+            if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(pattern, lr)) {
+                matched = true;
+                scannedTo = i + 1;
+                break;
+            }
+        }
+
+        synchronized (LOG_SCAN_LOCK) {
+            if (cachedLogListRef == logRecords && cachedLogFirstRecord == firstRecord) {
+                final LogScanCursor cursor = LOG_SCAN_CURSORS.computeIfAbsent(cacheKey, k -> new LogScanCursor());
+                cursor.scannedUpTo = scannedTo;
+                cursor.lastRecord = (scannedTo > 0) ? logRecords.get(scannedTo - 1) : null;
+                cursor.matched = matched;
+            }
+        }
+        perCallCache.put(cacheKey, matched);
+        return matched;
     }
 
     public static boolean hasFailure(final NodeData n) {
@@ -368,6 +431,9 @@ public final class TreeLayoutComputer {
             final NodeData n,
             final Set<_Scenario> accessibleScenarios,
             final Map<NodeData, Boolean> cache) {
+        if (null == n) return false;
+        final Boolean cached = cache.get(n);
+        if (null != cached) return cached;
         return isTheoreticallyExecutable(n, new TreeHtml.AccessibleContext(accessibleScenarios), cache);
     }
 
@@ -391,7 +457,7 @@ public final class TreeLayoutComputer {
         if (null != n.parent()) {
             final boolean parentIsStructural = null == n.parent().scenario() && null == n.parent().result();
             final boolean parentWasExecuted = null != n.parent().result() && n.parent().result().getExecutions() > 0;
-            if (!parentIsStructural && !parentWasExecuted && !computeIsTheoreticallyExecutable(n.parent(), ctx, cache)) {
+            if (!parentIsStructural && !parentWasExecuted && !isTheoreticallyExecutable(n.parent(), ctx, cache)) {
                 return false;
             }
         }
@@ -403,12 +469,19 @@ public final class TreeLayoutComputer {
             if (sc.hasFailed() || sc.isExhausted()) {
                 return false;
             }
-            final double cw = (sc.weightConfigured() != null) ? sc.weightConfigured().doubleValue() :
-                              ((sc.weightCoded() != null) ? sc.weightCoded().doubleValue() : 1.0);
-            final double dw = (sc.weightDownstream() != null) ? sc.weightDownstream().doubleValue() : 0.0;
-            final double uw = (sc.weightUpstream() != null) ? sc.weightUpstream().doubleValue() : 0.0;
-            if (cw <= 0.0 && dw <= 0.0 && uw <= 0.0) {
-                return false;
+            final org.apache.commons.math3.fraction.Fraction configured = sc.weightConfigured();
+            final double cw = (null != configured) ? configured.doubleValue()
+                    : ((null != sc.weightCoded()) ? sc.weightCoded().doubleValue() : 1.0);
+            if (cw <= 0.0) {
+                final org.apache.commons.math3.fraction.Fraction downstream = sc.weightDownstream();
+                final double dw = (null != downstream) ? downstream.doubleValue() : 0.0;
+                if (dw <= 0.0) {
+                    final org.apache.commons.math3.fraction.Fraction upstream = sc.weightUpstream();
+                    final double uw = (null != upstream) ? upstream.doubleValue() : 0.0;
+                    if (uw <= 0.0) {
+                        return false;
+                    }
+                }
             }
         }
         if (null != ctx.scenarios && !ctx.scenarios.isEmpty()) {
@@ -527,10 +600,11 @@ public final class TreeLayoutComputer {
         if (!HideOff.branches) return;
 
         final Set<_Scenario> accessibleScenarios = getAccessibleScenarios();
+        final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(accessibleScenarios);
         final Map<NodeData, Boolean> cache = new HashMap<>();
         final Set<NodeData> toRemove = new HashSet<>();
         for (final NodeData n : nodes) {
-            if (!isTheoreticallyExecutable(n, accessibleScenarios, cache)) {
+            if (!isTheoreticallyExecutable(n, accessibleCtx, cache)) {
                 toRemove.add(n);
             }
         }
