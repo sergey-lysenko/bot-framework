@@ -1,7 +1,6 @@
 package works.lysenko.base;
 
-import works.lysenko.base.output.AllLeafCompletions;
-import works.lysenko.base.output.EtaDebug;
+import works.lysenko.util.apis.core._EtaProvider;
 import works.lysenko.util.apis.core._Results;
 import works.lysenko.util.apis.data._Event;
 import works.lysenko.util.apis.data._Result;
@@ -53,8 +52,7 @@ public class Results implements _Results {
      */
     public Results() {
 
-        AllLeafCompletions.reset();
-        EtaDebug.reset();
+        _EtaProvider.fireReset();
     }
 
     @SuppressWarnings({"ChainedMethodCall", "LawOfDemeter", "NestedMethodCall"})
@@ -91,33 +89,12 @@ public class Results implements _Results {
             final _LogRecord lr,
             final Severity rawSeverity) {
         if (null == rawSeverity) return null;
-        final works.lysenko.base.responses.ExpectedResponsesStore expStore = works.lysenko.base.responses.ExpectedResponsesStore.getGlobalStore();
-        if (null != expStore && null != scenario) {
-            if (expStore.isExpected(scenario, lr)) {
-                return null;
-            }
-            final String text = lr.text();
-            if (null != text && text.contains("[BROWSER]") && null != result && expStore.matchesNode(scenario, result)) {
-                return null;
-            }
+        if (works.lysenko.util.apis.core._DiagnosticsProvider.checkExpectedEvent(scenario, result, lr)) {
+            return null;
         }
-        final works.lysenko.base.issues.KnownIssuesStore kiStore = works.lysenko.base.issues.KnownIssuesStore.getGlobalStore();
-        if (null != kiStore) {
-            final List<works.lysenko.base.issues.KnownIssue> matches = (null != scenario)
-                    ? kiStore.getForLogRecord(scenario, lr)
-                    : kiStore.getForLogRecord(Collections.emptyList(), lr);
-            if (!matches.isEmpty()) {
-                boolean decrease = false;
-                for (final works.lysenko.base.issues.KnownIssue ki : matches) {
-                    if (ki.decreaseToWarning()) {
-                        decrease = true;
-                        break;
-                    }
-                }
-                if (decrease && (S0 == rawSeverity || S1 == rawSeverity)) {
-                    return S2;
-                }
-            }
+        if ((S0 == rawSeverity || S1 == rawSeverity)
+                && works.lysenko.util.apis.core._DiagnosticsProvider.checkDecreaseToWarning(scenario, lr)) {
+            return S2;
         }
         return rawSeverity;
     }

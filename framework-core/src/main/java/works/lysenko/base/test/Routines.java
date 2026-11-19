@@ -75,7 +75,11 @@ public record Routines() {
         final var service = exec.service();
         if (isNotNull(service)) {
             log(CLOSING_TEST_SERVICE);
-            service.close();
+            try {
+                service.close();
+            } catch (final java.io.IOException ignored) {
+                // Service closure is best-effort
+            }
             log(b(DOTS, DONE));
         }
     }

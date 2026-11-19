@@ -120,6 +120,70 @@ class ScenarioTrackerTest {
     }
 
     @Test
+    void testDenseScenarioSuiteUsesUnifiedChromeBranchBracketsAndStatusColors() {
+        final String[] branches = {
+                "auditLogs", "billing", "customers", "dashboard", "delivery",
+                "discounts", "inventory", "locations", "menu", "notifications",
+                "orders", "reports", "settings", "staff"
+        };
+        final List<_Scenario> scenarios = new ArrayList<>();
+        for (int b = 0; b < branches.length; b++) {
+            final int branchSize = 18;
+            for (int i = 0; i < branchSize; i++) {
+                final String name = (i == 0)
+                        ? "signIn.login." + Character.toUpperCase(branches[b].charAt(0)) + branches[b].substring(1)
+                        : "signIn.login." + branches[b] + ".sub" + (i % 3) + ".Action" + i;
+                final TestLeaf leaf = new TestLeaf(name, fr(1.0));
+                scenarios.add(leaf);
+                if (b < 2 && i < 6) {
+                    Base.core.getResults().count(leaf);
+                    if (b == 0 && i == 1) {
+                        Base.core.getResults().count(leaf);
+                        Base.core.getResults().count(leaf);
+                    }
+                }
+            }
+        }
+        scenarios.sort(java.util.Comparator.comparing(_Scenario::getShortName, String.CASE_INSENSITIVE_ORDER));
+        final _Scenario active = scenarios.get(2);
+
+        final String svg = ScenarioTracker.renderProgressionGraphSvg(
+                scenarios, 1, 36, java.util.Set.of(active.getName()));
+
+        assertTrue(svg.contains("Scenario Execution Progression"), "Title must use unified Title Case");
+        assertFalse(svg.contains("SCENARIO EXECUTION PROGRESSION"), "Must not use legacy ALL CAPS title");
+        assertTrue(svg.contains("Test #36"), "Cycle badge must use Title Case");
+        assertTrue(svg.contains("Leafs: 12/252"), "Progress badge must use unified Leafs label");
+        assertTrue(svg.contains("Target: 1"), "Target badge must use Title Case");
+        assertTrue(svg.contains("ETA:"), "Header must include ETA badge");
+        assertTrue(svg.contains("Elapsed:"), "Header must include Elapsed badge");
+        assertTrue(svg.contains("id=\"branch-axis\""), "Dense suite (>45 scenarios) must use branch bracket axis");
+        assertFalse(svg.contains("transform=\"rotate(-45"), "Dense suite must not render overlapping diagonal labels");
+        assertTrue(svg.contains("id=\"active-footer\""), "Dense suite must render active-cycle footer callout");
+        assertTrue(svg.contains("Root: signIn.login"), "Common root prefix must be extracted to legend");
+        assertTrue(svg.contains("<title>"), "Bars must include SVG hover tooltips");
+        assertTrue(svg.contains("auditLogs"), "Branch axis must display grouped branch names");
+    }
+
+    @Test
+    void testSparseScenarioSuiteRendersPrefixStrippedDiagonalLabels() {
+        final List<_Scenario> scenarios = new ArrayList<>();
+        for (int i = 0; i < 12; i++) {
+            final TestLeaf leaf = new TestLeaf("signIn.login.orders.OrderAction" + i, fr(1.0));
+            scenarios.add(leaf);
+            if (i < 4) {
+                Base.core.getResults().count(leaf);
+            }
+        }
+
+        final String svg = ScenarioTracker.renderProgressionGraphSvg(scenarios, 2, 5);
+        assertTrue(svg.contains("id=\"scenario-labels\""), "Sparse suite (<=45 scenarios) must render diagonal labels");
+        assertFalse(svg.contains("id=\"branch-axis\""), "Sparse suite must not switch to dense branch brackets");
+        assertTrue(svg.contains("Root: signIn.login.orders"), "Common prefix must be stripped in sparse mode too");
+        assertTrue(svg.contains(">OrderAction0<"), "Diagonal label should show concise stripped leaf name");
+    }
+
+    @Test
     void testWriteAnimatedGif(@TempDir final Path tempDir) throws IOException {
         final File gifFile = tempDir.resolve("test_progression.gif").toFile();
 

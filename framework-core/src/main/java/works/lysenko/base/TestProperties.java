@@ -559,6 +559,9 @@ public class TestProperties implements _TestProperties {
         works.lysenko.util.prop.core.Assertions.refresh();
         works.lysenko.util.prop.core.Mode.refresh();
         works.lysenko.util.prop.core.Screenshot.refresh();
+        works.lysenko.util.prop.core.Start.refresh();
+        works.lysenko.util.prop.core.Test.refresh();
+        works.lysenko.util.prop.core.Time.refresh();
         works.lysenko.util.prop.issues.KnownIssues.refresh();
         works.lysenko.util.prop.logs.Debug.refresh();
         works.lysenko.util.prop.tree.HideOff.refresh();

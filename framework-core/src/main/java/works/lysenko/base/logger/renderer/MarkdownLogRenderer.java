@@ -1,6 +1,5 @@
 package works.lysenko.base.logger.renderer;
 
-import org.jetbrains.annotations.NonNls;
 import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.log._LogData;
 import works.lysenko.util.data.type.logr.type.Event;
@@ -26,10 +25,8 @@ import static works.lysenko.util.spec.Symbols.*;
 
 public class MarkdownLogRenderer implements LogRenderer {
 
-    @NonNls
     private static final double THOUSAND = 1000.0;
-    @NonNls
-    private static final String TABLE_HEADER = "| Log Message | Call Stack | Duration (ms) |" + System.lineSeparator() + "| :--- | :--- | :--- |";
+    private static final String TABLE_HEADER = "| Log Message | Call Stack | Duration (ms) |" + System.lineSeparator() + "| :--- | :--- | :--- |"; //NON-NLS
 
     private boolean needsTableHeader = true;
     private String pendingSectionHeader = null;

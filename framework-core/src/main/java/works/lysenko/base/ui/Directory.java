@@ -1,8 +1,7 @@
 package works.lysenko.base.ui;
 
-import works.lysenko.base.output.AllLeafCompletions;
-import works.lysenko.base.util.EtaCalculator;
 import works.lysenko.base.util.Telemetry;
+import works.lysenko.util.apis.core._EtaProvider;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.util._Dashboard;
 
@@ -192,14 +191,10 @@ public final class Directory implements _Dashboard {
         if (!force && (now - lastEtaWriteAtMs) < ETA_WRITE_INTERVAL_MS) return;
         lastEtaWriteAtMs = now;
 
-        EtaCalculator.Snapshot snapshot = EtaCalculator.capture(true);
-        if (!markDone && snapshot.remainingMs() > 0L) {
-            AllLeafCompletions.recordEtaSample(snapshot.remainingMs());
+        final String json = _EtaProvider.resolveEtaJson(markDone, now, Math.max(0L, timer.msSinceStart()), currentTitle);
+        if (null != json) {
+            writeEtaJson(json);
         }
-        if (markDone) {
-            snapshot = snapshot.asDone(now, Math.max(0L, timer.msSinceStart()));
-        }
-        writeEtaJson(snapshot.toJson(currentTitle));
     }
 
     private static void writeEtaJson(final String json) {

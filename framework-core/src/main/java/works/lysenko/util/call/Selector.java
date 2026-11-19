@@ -3,7 +3,6 @@ package works.lysenko.util.call;
 import org.apache.commons.math3.exception.MathArithmeticException;
 import org.apache.commons.math3.exception.NotPositiveException;
 import org.apache.commons.math3.fraction.Fraction;
-import works.lysenko.base.output.SequenceTracker;
 import works.lysenko.tree.Core;
 import works.lysenko.tree.Ctrl;
 import works.lysenko.tree.base.Mono;

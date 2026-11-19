@@ -26,7 +26,20 @@
     </dependency>
     <dependency>
       <groupId>works.lysenko</groupId>
+      <artifactId>framework-analysis</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>works.lysenko</groupId>
+      <artifactId>framework-grid</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>works.lysenko</groupId>
       <artifactId>framework-reporting</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
     </dependency>
 
     <dependency>

@@ -1,8 +1,8 @@
 package works.lysenko.base.output;
 
 import works.lysenko.base.output.scenario.AnimatedGifWriter;
-import works.lysenko.base.output.scenario.ScenarioGraphImageRenderer;
 import works.lysenko.base.output.scenario.ScenarioGraphSvgRenderer;
+import works.lysenko.base.output.svg.ProgressionChrome;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.prop.PropEnum;
 
@@ -11,7 +11,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.IntConsumer;
 
@@ -39,6 +42,8 @@ public final class ScenarioTracker {
     private static final int FINAL_FRAME_DELAY_CENTISECONDS = 150; // 1.5s on final frame
 
     private static final List<File> capturedFrames = new ArrayList<>();
+    private static final Map<String, Integer> previousExecutions = new HashMap<>();
+    private static final Set<String> lastRecentScenarioKeys = new HashSet<>();
     private static File customOutputDir = null;
 
     private ScenarioTracker() {
@@ -51,6 +56,8 @@ public final class ScenarioTracker {
     public static void reset() {
         ProgressionFrames.awaitCompletion();
         capturedFrames.clear();
+        previousExecutions.clear();
+        lastRecentScenarioKeys.clear();
         customOutputDir = null;
     }
 
@@ -70,7 +77,8 @@ public final class ScenarioTracker {
 
         final long t0 = System.currentTimeMillis();
         final List<_Scenario> scenarios = new ArrayList<>(leafs);
-        scenarios.sort(Comparator.comparing(_Scenario::getShortName).thenComparing(_Scenario::getName));
+        scenarios.sort(Comparator.comparing(_Scenario::getShortName, String.CASE_INSENSITIVE_ORDER)
+                .thenComparing(_Scenario::getName, String.CASE_INSENSITIVE_ORDER));
 
         final int target = (isNotNull(parameters)) ? parameters.getAllLeafsExecutions()
                 : (isNotNull(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) : 1);
@@ -90,7 +98,9 @@ public final class ScenarioTracker {
         if (!capturedFrames.contains(frameFile)) {
             capturedFrames.add(frameFile);
         }
-        final String svgContent = renderProgressionGraphSvg(scenarios, target, currentCycle);
+        final Set<String> recentKeys = computeRecentScenarioKeys(scenarios);
+        final String svgContent = renderProgressionGraphSvg(scenarios, target, currentCycle, recentKeys);
+        updatePreviousExecutions(scenarios);
         ProgressionFrames.saveFrameSvgAsync(svgContent, frameFile, () -> {
             final long duration = System.currentTimeMillis() - t0;
             logDebug(String.format("Captured scenario progression frame #%d (%dx%d) in %d ms", frameIndex, WIDTH, HEIGHT, duration));
@@ -315,15 +325,60 @@ public final class ScenarioTracker {
         return ScenarioGraphSvgRenderer.renderProgressionGraphSvg(scenarios, target, currentCycle);
     }
 
+    public static String renderProgressionGraphSvg(
+            final List<_Scenario> scenarios,
+            final int target,
+            final int currentCycle,
+            final Set<String> recentScenarioKeys) {
+        return ScenarioGraphSvgRenderer.renderProgressionGraphSvg(scenarios, target, currentCycle, recentScenarioKeys);
+    }
+
     public static BufferedImage renderProgressionGraph(
             final List<_Scenario> scenarios,
             final int target,
             final int currentCycle) {
-        return ScenarioGraphImageRenderer.renderProgressionGraph(scenarios, target, currentCycle);
+        final String svg = renderProgressionGraphSvg(scenarios, target, currentCycle);
+        try {
+            return ProgressionFrames.renderSvg(svg, ProgressionSettings.current().maxFramePixels());
+        } catch (final IOException e) {
+            throw new IllegalStateException("Failed to rasterize scenario progression SVG", e);
+        }
     }
 
     public static String formatElapsedTime(final long elapsedMillis) {
-        return ScenarioGraphImageRenderer.formatElapsedTime(elapsedMillis);
+        return ProgressionChrome.formatElapsedTime(elapsedMillis);
+    }
+
+    private static Set<String> computeRecentScenarioKeys(final List<_Scenario> scenarios) {
+        final Set<String> recent = new HashSet<>();
+        if (isNull(core) || isNull(core.getResults())) return recent;
+        for (final _Scenario sc : scenarios) {
+            final String key = scenarioKey(sc);
+            final int execs = core.getResults().getExecutions(sc);
+            final int prev = previousExecutions.getOrDefault(key, 0);
+            if (execs > prev) {
+                recent.add(key);
+            }
+        }
+        if (!recent.isEmpty()) {
+            lastRecentScenarioKeys.clear();
+            lastRecentScenarioKeys.addAll(recent);
+            return recent;
+        }
+        return new HashSet<>(lastRecentScenarioKeys);
+    }
+
+    private static void updatePreviousExecutions(final List<_Scenario> scenarios) {
+        if (isNull(core) || isNull(core.getResults())) return;
+        for (final _Scenario sc : scenarios) {
+            previousExecutions.put(scenarioKey(sc), core.getResults().getExecutions(sc));
+        }
+    }
+
+    private static String scenarioKey(final _Scenario sc) {
+        if (isNull(sc)) return "";
+        final String name = sc.getName();
+        return (isNotNull(name) && !name.isBlank()) ? name : sc.getShortName();
     }
 
     public static void writeAnimatedGif(

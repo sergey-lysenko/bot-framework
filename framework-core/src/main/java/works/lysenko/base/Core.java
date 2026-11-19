@@ -2,7 +2,7 @@ package works.lysenko.base;
 
 import org.openqa.selenium.WebDriver;
 import works.lysenko.base.core.Routines;
-import works.lysenko.base.output.RunLocks;
+import works.lysenko.base.core.RunLocks;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
 import static works.lysenko.util.spec.Layout.Files.name;
@@ -293,7 +293,7 @@ public final class Core extends Root implements _Core, _Tests {
      */
     public Integer getCurrentTestNumber() {
 
-        if (isNull(test)) return null;
+        if (isNull(test) || isNull(test.repeater())) return null;
         return test.repeater().getCurrent();
     }
 
@@ -334,6 +334,7 @@ public final class Core extends Root implements _Core, _Tests {
     @Override
     public Integer getTotalTests() {
 
+        if (isNull(test) || isNull(test.repeater())) return null;
         return test.repeater().getTotalTests();
     }
 

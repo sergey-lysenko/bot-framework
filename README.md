@@ -65,48 +65,33 @@ The framework features a built-in Swing-based **Control Panel** (`works.lysenko.
 
 ---
 
-## 📁 Repository Structure
+## 📁 Multi-Module Reactor Structure
+
+The repository is organized as an acyclic multi-module Maven reactor (`bot-framework-parent`):
+
+| Module | Description |
+|---|---|
+| `framework-lexicon` | Linguistic atoms, bit-level character/symbol synthesis, and shared constants (`works.lysenko.util.{chrs,lang,spec}`) |
+| `framework-core` | Headless scenario tree engine, configuration loader, property schema/validation, structured logging, and SPI contracts |
+| `framework-analysis` | ETA runtime estimation, Monte Carlo coverage simulation, known-issues diagnostics, and expected-responses verification |
+| `framework-grid` | Image analysis, HSB/RGB/polychromy colour ranger, visual operation markers, screenshot capture, and grid validation engine |
+| `framework-driver` | Browser (`Selenium` + `WebDriverManager`) and mobile (`Appium`) driver lifecycle and platform discovery |
+| `framework-reporting` | HTML/SVG reports, Graphviz tree rendering, WebP/MP4 progression animations, and deterministic sonification |
+| `framework-ui` | Swing Control Panel, Micro-IDE configuration editor, live execution dashboard, and interactive tree visualizer |
+| `framework-runner` | Default CLI workflow harness and lifecycle hooks (`BotRunner`, `Agenda`, `Preflight`, `Postflight`, `Specifics`, `Status`) |
+| `framework` | Drop-in umbrella artifact aggregating all modules (with merged `META-INF/services` SPIs in the shaded classifier) |
 
 ```
-src/main/resources/
-├── config/                 # Modular configuration directory
-│   ├── common.configuration.properties # Master config include file
-│   ├── property-help.properties       # Complete property documentation dictionary
-│   └── parts/              # Categorized configuration partials (.part)
-│       ├── data.part       # Data storage & serialization delimiters
-│       ├── debug.part      # Appium diagnostics, debug logs, and tracing
-│       ├── fractions.part  # Math precision and fraction formatting
-│       ├── images.part     # Color grid, screenshot triggers, and swipe markers
-│       ├── log.part        # Log formatting, similarity matching, and rates
-│       ├── project.part    # Scenario root package and application paths
-│       ├── scenarios.part  # Tree safeguards, sufficiency, and weights
-│       ├── stacktrace.part # Stack trace shortening and exclusions
-│       ├── tests.part      # Execution controls, progression, and sonification
-│       ├── ui.part         # Dashboard display and mobile native resolutions
-│       └── webdriver.part  # WebDriver wait timeouts and platform options
-├── known/
-│   └── issues.json         # Per-scenario known issues and defect mapping
-└── tests/                  # Test suite definitions (*.test) and suite parts
-    └── parts/
-
-src/main/java/works/lysenko/
-├── Base.java               # Global execution context, property lookups, and utilities
-├── base/                   # Core runtime machinery
-│   ├── core/               # Engine execution loop and lifecycles (BootCapture)
-│   ├── exec/               # Driver executors (Web, Android) and session managers
-│   ├── logger/             # Structured ANSI logging and reporting
-│   ├── parameters/         # Execution parameters, CLI flags, and property validation
-│   ├── properties/         # Runtime properties loader
-│   ├── telemetry/          # Screenshots, diffing, and visual telemetry
-│   └── ui/                 # Control Panel GUI & Micro-IDE components
-├── tree/                   # State-tree navigation and Root action dispatch
-│   ├── Root.java           # Primary interaction API (clicks, waits, scrolls, types)
-│   └── base/               # Tree node abstractions
-└── util/                   # Framework utilities
-    ├── apis/               # Modular capability interfaces (Clicks, Waits, Clears)
-    ├── func/               # Geometric, color, visual, and locator functions
-    ├── lang/               # Lexicon and linguistic building blocks
-    └── spec/               # Bits, symbols, and surrogate definitions
+bot-framework/
+├── framework-lexicon/      # Character, word, phrase, symbol, and surrogate primitives
+├── framework-core/         # Core scenario tree (Root, Core), Exec, Parameters, Logger, SPIs, and config/parts
+├── framework-analysis/     # works.lysenko.base.{eta,issues,responses} + _EtaProvider & _DiagnosticsProvider
+├── framework-grid/         # works.lysenko.util.{grid,func.grid,func.imgs} + _GridProvider
+├── framework-driver/       # works.lysenko.base.{exec.Driver,util.WebDrivers} + _DriverProvider
+├── framework-reporting/    # works.lysenko.base.output.* + _ReportingProvider
+├── framework-ui/           # works.lysenko.base.ui.* & Swing parameter dialogs + _UiProvider
+├── framework-runner/       # works.lysenko.shared.* CLI entrypoint & default workflow
+└── framework/              # Umbrella & shaded drop-in artifact
 ```
 
 ---

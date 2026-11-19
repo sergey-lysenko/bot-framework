@@ -1,7 +1,8 @@
 package works.lysenko.base.ui;
 
-import works.lysenko.base.output.AllLeafCompletions;
-import works.lysenko.base.util.EtaCalculator;
+import works.lysenko.base.eta.AllLeafCompletions;
+import works.lysenko.base.eta.EtaCalculator;
+import works.lysenko.base.eta.model.EtaSnapshot;
 import works.lysenko.base.util.Telemetry;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.util._BotButton;
@@ -569,7 +570,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
 
     private static String calculateEtaString() {
 
-        final EtaCalculator.Snapshot snapshot = EtaCalculator.capture(false);
+        final EtaSnapshot snapshot = EtaCalculator.capture(false);
         if (snapshot.remainingMs() > 0L) {
             AllLeafCompletions.recordEtaSample(snapshot.remainingMs());
         }

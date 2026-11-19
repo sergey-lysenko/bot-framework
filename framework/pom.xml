@@ -13,7 +13,7 @@
   <packaging>jar</packaging>
 
   <name>bot-framework</name>
-  <description>Drop-in umbrella artifact aggregating lexicon, core, reporting, and ui</description>
+  <description>Drop-in umbrella artifact aggregating lexicon, core, analysis, grid, driver, reporting, ui, and runner</description>
 
   <dependencies>
     <dependency>
@@ -26,11 +26,27 @@
     </dependency>
     <dependency>
       <groupId>works.lysenko</groupId>
+      <artifactId>framework-analysis</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>works.lysenko</groupId>
+      <artifactId>framework-grid</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>works.lysenko</groupId>
+      <artifactId>framework-driver</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>works.lysenko</groupId>
       <artifactId>framework-reporting</artifactId>
     </dependency>
     <dependency>
       <groupId>works.lysenko</groupId>
       <artifactId>framework-ui</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>works.lysenko</groupId>
+      <artifactId>framework-runner</artifactId>
     </dependency>
   </dependencies>
 

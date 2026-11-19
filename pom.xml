@@ -14,8 +14,12 @@
   <modules>
     <module>framework-lexicon</module>
     <module>framework-core</module>
+    <module>framework-analysis</module>
+    <module>framework-grid</module>
+    <module>framework-driver</module>
     <module>framework-reporting</module>
     <module>framework-ui</module>
+    <module>framework-runner</module>
     <module>framework</module>
   </modules>
 
@@ -80,12 +84,32 @@
       </dependency>
       <dependency>
         <groupId>works.lysenko</groupId>
+        <artifactId>framework-analysis</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>works.lysenko</groupId>
+        <artifactId>framework-grid</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>works.lysenko</groupId>
+        <artifactId>framework-driver</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>works.lysenko</groupId>
         <artifactId>framework-reporting</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>works.lysenko</groupId>
         <artifactId>framework-ui</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>works.lysenko</groupId>
+        <artifactId>framework-runner</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -98,6 +122,11 @@
       <dependency>
         <groupId>org.seleniumhq.selenium</groupId>
         <artifactId>selenium-api</artifactId>
+        <version>${selenium.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.seleniumhq.selenium</groupId>
+        <artifactId>selenium-support</artifactId>
         <version>${selenium.version}</version>
       </dependency>
       <dependency>

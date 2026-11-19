@@ -146,14 +146,7 @@ public class Result implements _Result {
     }
 
     private boolean isExpectedEvent(final _LogRecord lr) {
-        if (null == lr || null == scenario) return false;
-        final works.lysenko.base.responses.ExpectedResponsesStore expStore = works.lysenko.base.responses.ExpectedResponsesStore.getGlobalStore();
-        if (null == expStore) return false;
-        if (expStore.isExpected(scenario, lr)) {
-            return true;
-        }
-        final String text = lr.text();
-        return null != text && text.contains("[BROWSER]") && expStore.matchesNode(scenario, this);
+        return works.lysenko.util.apis.core._DiagnosticsProvider.checkExpectedEvent(scenario, this, lr);
     }
 
     private void applyEventStatus(final _LogRecord lr) {
@@ -162,17 +155,9 @@ public class Result implements _Result {
             if (isExpectedEvent(lr)) {
                 return;
             }
-            final works.lysenko.base.issues.KnownIssuesStore kiStore = works.lysenko.base.issues.KnownIssuesStore.getGlobalStore();
-            if (null != kiStore && null != scenario) {
-                final List<works.lysenko.base.issues.KnownIssue> matches = kiStore.getForLogRecord(scenario, lr);
-                if (!matches.isEmpty()) {
-                    for (final works.lysenko.base.issues.KnownIssue ki : matches) {
-                        if (ki.decreaseToWarning()) {
-                            updateStatus(ExecutionStatus.WARNING);
-                            return;
-                        }
-                    }
-                }
+            if (null != scenario && works.lysenko.util.apis.core._DiagnosticsProvider.checkDecreaseToWarning(scenario, lr)) {
+                updateStatus(ExecutionStatus.WARNING);
+                return;
             }
             final works.lysenko.util.data.enums.Severity sev = event.severity();
             if (works.lysenko.util.data.enums.Severity.S0 == sev || works.lysenko.util.data.enums.Severity.S1 == sev) {

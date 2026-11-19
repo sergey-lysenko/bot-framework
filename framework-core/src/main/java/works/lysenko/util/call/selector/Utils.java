@@ -182,7 +182,7 @@ public record Utils() {
     /**
      * Verifies and finalizes a selected scenario before execution.
      * <p>
-     * Records scenario execution in {@link works.lysenko.base.output.SequenceTracker}, logs scenario details,
+     * Records scenario execution in {@link works.lysenko.util.call.SequenceTracker}, logs scenario details,
      * and evaluates recursion depth against safeguard limits.
      *
      * @param scenario the scenario instance to verify
@@ -191,7 +191,7 @@ public record Utils() {
      */
     public static _Scenario verifyScenarioSelection(final _Scenario scenario) throws SafeguardException {
 
-        works.lysenko.base.output.SequenceTracker.recordScenarioExecution(scenario);
+        works.lysenko.util.call.SequenceTracker.recordScenarioExecution(scenario);
         logDetails(scenario);
         processSafeguard();
         return scenario;

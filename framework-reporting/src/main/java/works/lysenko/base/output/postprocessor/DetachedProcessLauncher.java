@@ -1,8 +1,8 @@
 package works.lysenko.base.output.postprocessor;
 
+import works.lysenko.base.core.RunLocks;
 import works.lysenko.base.output.PostProcessor;
 import works.lysenko.base.output.ProgressionSettings;
-import works.lysenko.base.output.RunLocks;
 
 import java.io.File;
 import java.io.IOException;
@@ -65,6 +65,8 @@ public final class DetachedProcessLauncher {
         final String[] keyClassNames = {
                 "works.lysenko.Base",
                 "works.lysenko.util.spec.Symbols",
+                "works.lysenko.base.issues.KnownIssuesLoader",
+                "works.lysenko.util.func.imgs.Screenshot",
                 "works.lysenko.base.output.PostProcessor",
                 "com.fasterxml.jackson.databind.ObjectMapper",
                 "org.apache.commons.math3.fraction.Fraction",

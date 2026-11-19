@@ -72,23 +72,21 @@ record NewIssues() {
             final works.lysenko.base.responses.ExpectedResponsesStore expStore = TreeHtml.getExpectedResponsesStore();
             final Map<works.lysenko.util.apis.scenario._Scenario, works.lysenko.util.apis.data._Result> sorted = core.getResults().getSorted();
 
-            int newIssuesCount = 0;
+            final List<_LogRecord> unmatchedRecords = new java.util.ArrayList<>();
             for (final _LogRecord lr : exec.issues().latestCopy()) {
                 if (store.getForLogRecord(sorted.keySet(), lr).isEmpty() && !isExpectedRecord(expStore, sorted, lr)) {
-                    newIssuesCount++;
+                    unmatchedRecords.add(lr);
                 }
             }
 
-            section(b(s1(newIssuesCount, c(EVENT)), SUMMARY));
+            section(b(s1(unmatchedRecords.size(), c(EVENT)), SUMMARY));
             log(Level.none, s((isDebug() ? ansi(e(b(c(NOTICES), AND), true), CYAN) : EMPTY), ansi(b(c(NEW), s(c(ISSUES),
                     _COLON_)), RED)), true);
             final LogRenderer ansiRenderer = new AnsiLogRenderer();
-            for (final _LogRecord lr : exec.issues().latestCopy()) {
-                if (store.getForLogRecord(sorted.keySet(), lr).isEmpty() && !isExpectedRecord(expStore, sorted, lr)) {
-                    final int totalTests = (isNotNull(core) && isNotNull(core.getTest()) && isNotNull(core.getTotalTests())) ? core.getTotalTests() : 0;
-                    final int spanLength = (isNotNull(core) && isNotNull(core.getLogger())) ? core.getLogger().getSpanLength() : 0;
-                    log(Level.none, ansi(ansiRenderer.render(lr, totalTests, spanLength, null)), false);
-                }
+            final int totalTests = (isNotNull(core) && isNotNull(core.getTest()) && isNotNull(core.getTotalTests())) ? core.getTotalTests() : 0;
+            final int spanLength = (isNotNull(core) && isNotNull(core.getLogger())) ? core.getLogger().getSpanLength() : 0;
+            for (final _LogRecord lr : unmatchedRecords) {
+                log(Level.none, ansi(ansiRenderer.render(lr, totalTests, spanLength, null)), false);
             }
         }
     }
@@ -127,54 +125,45 @@ record NewIssues() {
         final Set<String> notReproducedRefs = new LinkedHashSet<>();
         final Set<String> notCheckedRefs = new LinkedHashSet<>();
 
-        for (final KnownIssue ki : allKnownIssues) {
-            final Set<Integer> reproducingTests = new TreeSet<>();
-            for (final _LogRecord lr : logRecords) {
-                if (store.getForLogRecord(sorted.keySet(), lr).contains(ki)) {
-                    if (lr.test() > 0) {
-                        reproducingTests.add(lr.test());
-                    }
-                }
-            }
-            for (final Map.Entry<works.lysenko.util.apis.scenario._Scenario, works.lysenko.util.apis.data._Result> entry : sorted.entrySet()) {
-                final boolean nodeMatched = store.getForNode(entry.getKey(), entry.getValue()).contains(ki);
-                if (null != entry.getValue() && null != entry.getValue().getEvents()) {
-                    for (final _LogRecord lr : entry.getValue().getEvents()) {
-                        if (nodeMatched || store.getForLogRecord(List.of(entry.getKey()), lr).contains(ki)) {
-                            if (lr.test() > 0) {
-                                reproducingTests.add(lr.test());
-                            }
-                        }
-                    }
-                }
-            }
+        final Map<KnownIssue, Set<Integer>> issueTests = new java.util.HashMap<>();
+        final Set<KnownIssue> confirmedIssues = new java.util.HashSet<>();
 
-            boolean isConfirmed = !reproducingTests.isEmpty();
-            if (!isConfirmed) {
-                for (final _LogRecord lr : logRecords) {
-                    if (store.getForLogRecord(sorted.keySet(), lr).contains(ki)) {
-                        isConfirmed = true;
-                        break;
-                    }
+        for (final _LogRecord lr : logRecords) {
+            final List<KnownIssue> matched = store.getForLogRecord(sorted.keySet(), lr);
+            for (final KnownIssue ki : matched) {
+                confirmedIssues.add(ki);
+                if (lr.test() > 0) {
+                    issueTests.computeIfAbsent(ki, k -> new TreeSet<>()).add(lr.test());
                 }
             }
-            if (!isConfirmed) {
-                for (final Map.Entry<works.lysenko.util.apis.scenario._Scenario, works.lysenko.util.apis.data._Result> entry : sorted.entrySet()) {
-                    if (store.getForNode(entry.getKey(), entry.getValue()).contains(ki)) {
-                        isConfirmed = true;
-                        break;
-                    }
-                    if (null != entry.getValue() && null != entry.getValue().getEvents()) {
-                        for (final _LogRecord lr : entry.getValue().getEvents()) {
-                            if (store.getForLogRecord(List.of(entry.getKey()), lr).contains(ki)) {
-                                isConfirmed = true;
-                                break;
-                            }
+        }
+        for (final Map.Entry<works.lysenko.util.apis.scenario._Scenario, works.lysenko.util.apis.data._Result> entry : sorted.entrySet()) {
+            final works.lysenko.util.apis.scenario._Scenario scenario = entry.getKey();
+            final works.lysenko.util.apis.data._Result result = entry.getValue();
+            final List<KnownIssue> nodeMatches = store.getForNode(scenario, result);
+            confirmedIssues.addAll(nodeMatches);
+            if (null != result && null != result.getEvents()) {
+                final List<works.lysenko.util.apis.scenario._Scenario> singleScenario = List.of(scenario);
+                for (final _LogRecord lr : result.getEvents()) {
+                    if (lr.test() > 0) {
+                        for (final KnownIssue ki : nodeMatches) {
+                            issueTests.computeIfAbsent(ki, k -> new TreeSet<>()).add(lr.test());
                         }
                     }
-                    if (isConfirmed) break;
+                    final List<KnownIssue> eventMatches = store.getForLogRecord(singleScenario, lr);
+                    for (final KnownIssue ki : eventMatches) {
+                        confirmedIssues.add(ki);
+                        if (lr.test() > 0) {
+                            issueTests.computeIfAbsent(ki, k -> new TreeSet<>()).add(lr.test());
+                        }
+                    }
                 }
             }
+        }
+
+        for (final KnownIssue ki : allKnownIssues) {
+            final Set<Integer> reproducingTests = issueTests.getOrDefault(ki, Collections.emptySet());
+            final boolean isConfirmed = confirmedIssues.contains(ki);
 
             final String ref = getReference(ki);
 

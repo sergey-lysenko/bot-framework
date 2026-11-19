@@ -6,11 +6,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Interactive;
 import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
-import works.lysenko.util.data.records.Location;
-import works.lysenko.util.func.imgs.OperationMarkers;
+import works.lysenko.util.apis.grid._GridProvider;
 import works.lysenko.util.prop.core.Screenshot;
-import works.lysenko.util.prop.core.Size;
-import works.lysenko.util.prop.grid.Marker;
 
 import java.awt.image.BufferedImage;
 import java.time.Duration;
@@ -19,6 +16,9 @@ import java.util.List;
 import static org.apache.commons.math3.util.FastMath.round;
 import static works.lysenko.Base.exec;
 import static works.lysenko.Base.logDebug;
+import static works.lysenko.util.apis.grid._GridProvider.getBufferedImage;
+import static works.lysenko.util.apis.grid._GridProvider.makeScreenshot;
+import static works.lysenko.util.apis.grid._GridProvider.writeScreenshot;
 import static works.lysenko.util.chrs.__.AT;
 import static works.lysenko.util.chrs.__.MS;
 import static works.lysenko.util.chrs.____.DONE;
@@ -29,10 +29,6 @@ import static works.lysenko.util.data.strs.Bind.d;
 import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Vars.a;
-import static works.lysenko.util.func.imgs.BufferedImages.getBufferedImage;
-import static works.lysenko.util.func.imgs.Painter.drawPointOn;
-import static works.lysenko.util.func.imgs.Screenshot.makeScreenshot;
-import static works.lysenko.util.func.imgs.Screenshot.writeScreenshot;
 import static works.lysenko.util.lang.word.A.AFTER;
 import static works.lysenko.util.lang.word.B.BEFORE;
 import static works.lysenko.util.lang.word.C.CLICK;
@@ -126,7 +122,7 @@ public record Click() {
 
         if (Screenshot.longClicks) {
             final BufferedImage image = getBufferedImage();
-            OperationMarkers.markPoint(image, new java.awt.Point(x1, y1), b(LONG, CLICK));
+            _GridProvider.markPoint(image, new java.awt.Point(x1, y1), b(LONG, CLICK));
             writeScreenshot(image, false, b(name, LONG, CLICK, AT, s(X, x1), s(Y, y1), s(duration, MS)));
         }
     }

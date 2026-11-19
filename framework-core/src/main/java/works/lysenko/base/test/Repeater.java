@@ -3,7 +3,7 @@ package works.lysenko.base.test;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.StringUtils;
 import works.lysenko.base.core.Routines;
-import works.lysenko.base.output.AllLeafCompletions;
+import works.lysenko.util.apis.core._EtaProvider;
 import works.lysenko.util.apis.core._ReportingProvider;
 import works.lysenko.util.apis.exception.checked.*;
 import works.lysenko.util.apis.scenario.*;
@@ -143,7 +143,7 @@ public class Repeater implements _Repeater {
         final Integer testNum = getCurrent();
         final String test = sn(StringUtils.EMPTY, testNum);
         close(test);
-        works.lysenko.base.output.AllLeafCompletions.recordCycleIfMissing(testNum, Routines.msSinceStart());
+        _EtaProvider.fireLimboCycle(testNum, Routines.msSinceStart());
         time();
         history();
         _ReportingProvider.fireOnLimbo(testNum);
@@ -172,7 +172,7 @@ public class Repeater implements _Repeater {
      */
     public final List<List<String>> getHistory() {
 
-        return statistics.history();
+        return (null != statistics) ? statistics.history() : List.of();
     }
 
     @Override

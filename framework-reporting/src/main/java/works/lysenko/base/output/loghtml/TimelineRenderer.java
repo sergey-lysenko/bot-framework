@@ -248,7 +248,7 @@ public final class TimelineRenderer {
                 final String roundIntervalStr = (roundIntervalMs >= 0L) ? formatCompletionDuration(roundIntervalMs) : "";
                 final String etaStr = formatCompletionDuration(c.etaMs);
                 final long rawProjMs = c.atMillis + c.etaMs;
-                final long corrMs = works.lysenko.base.output.EtaCorrection.getEstimationCorrection(c.atMillis);
+                final long corrMs = works.lysenko.base.eta.EtaCorrection.getEstimationCorrection(c.atMillis);
                 final long corrEtaMs = Math.max(0L, c.etaMs - corrMs);
                 final long corrProjMs = c.atMillis + corrEtaMs;
                 final String projStr = formatCompletionDuration(rawProjMs);

@@ -3,7 +3,7 @@ package works.lysenko.base.parameters;
 import works.lysenko.Base;
 import works.lysenko.base.Parameters;
 import works.lysenko.base.TestProperties;
-import works.lysenko.tree.CoverageEstimator;
+import works.lysenko.base.eta.coverage.CoverageEstimator;
 import works.lysenko.tree.Ctrl;
 import works.lysenko.util.apis.scenario._Ctrl;
 import works.lysenko.util.apis.scenario._Scenario;

@@ -1,6 +1,5 @@
 package works.lysenko.base;
 
-import io.appium.java_client.service.local.AppiumDriverLocalService;
 import org.apache.commons.math3.fraction.Fraction;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
@@ -14,6 +13,7 @@ import works.lysenko.util.apis.test._Test;
 import works.lysenko.util.prop.logs.Debug;
 import works.lysenko.util.spec.Level;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Collection;
@@ -37,7 +37,7 @@ import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.func.core.Assertions.еггог;
 import static works.lysenko.util.func.type.Objects.isNotNull;
-import static works.lysenko.util.grid.validation.BackgroundValidator.bv;
+import static works.lysenko.util.apis.grid._GridProvider.initBackgroundValidation;
 import static works.lysenko.util.lang.D.DUE_TO;
 import static works.lysenko.util.lang.W.WEB_DRIVER;
 import static works.lysenko.util.lang.word.C.CREATING;
@@ -103,8 +103,14 @@ public final class Exec extends Root implements _TestData, _Executes {
      */
     public boolean createDriver() {
 
-        driver = new Driver();
-        return driver.isOk();
+        driver = _DriverProvider.createDriver();
+        return isNotNull(driver) && driver.isOk();
+    }
+
+    @Override
+    public _Driver driver() {
+
+        return driver;
     }
 
     /**
@@ -118,7 +124,7 @@ public final class Exec extends Root implements _TestData, _Executes {
         scaler = new Scaler();
         if (scaler.isOk()) {
             final String name = d(s(scaler.getCurrent().getNumerator()), s(scaler.getCurrent().getDenominator()));
-            bv("ROOT", name, null, scaler.getImage(), S0);
+            initBackgroundValidation("ROOT", name, scaler.getImage(), S0);
         }
         return scaler.isOk();
     }
@@ -346,12 +352,12 @@ public final class Exec extends Root implements _TestData, _Executes {
     }
 
     /**
-     * Retrieves the AppiumDriverLocalService instance associated with the current driver
+     * Retrieves the local driver service instance associated with the current driver
      * or returns null if the driver is not initialised.
      *
-     * @return The AppiumDriverLocalService instance if the driver is not null; otherwise, null.
+     * @return The Closeable service instance if the driver is not null; otherwise, null.
      */
-    public AppiumDriverLocalService service() {
+    public Closeable service() {
 
         return isNotNull(driver) ? driver.service() : null;
     }

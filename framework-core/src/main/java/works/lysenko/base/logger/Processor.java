@@ -284,7 +284,6 @@ public class Processor implements _LogsProcessor {
 
         if (isSimilarityCheck(logRecord)) {
             processLogRecord(time, telemetry, logRecord);
-            previousLogRecord = logRecord;
             process(telemetry);
         }
     }
@@ -307,7 +306,6 @@ public class Processor implements _LogsProcessor {
                 Callstack.getShort(Thread.currentThread().getStackTrace()));
 
         processLogRecord(logRecord.time(), telemetry, logRecord);
-        previousLogRecord = logRecord;
         process(telemetry);
     }
 
@@ -320,7 +318,6 @@ public class Processor implements _LogsProcessor {
         core.sleep(1L, true);
         final LogRecord logRecord = new LogRecord(core.getCurrentTestNumber(), msSinceStart(), new LineFeed(++counter));
         processLogRecord(logRecord.time(), Telemetry.getNewTelemetry(logRecord.time(), StringUtils.EMPTY), logRecord);
-        previousLogRecord = logRecord;
         core.sleep(1L, true);
     }
 
@@ -336,7 +333,6 @@ public class Processor implements _LogsProcessor {
         final LogRecord logRecord = new LogRecord(core.getCurrentTestNumber(), msSinceStart(), new Log(++counter, depth, ZERO,
                 EMPTY, shortCallstack));
         processLogRecord(logRecord.time(), Telemetry.getNewTelemetry(logRecord.time(), shortCallstack), logRecord);
-        previousLogRecord = logRecord;
         core.sleep(1L, true);
     }
 
@@ -353,7 +349,6 @@ public class Processor implements _LogsProcessor {
         final LogRecord logRecord = createEvent(time, depth, severity, message, shortCallstack);
         
         processLogRecord(time, Telemetry.getNewTelemetry(time, isNull(shortCallstack) ? StringUtils.EMPTY : shortCallstack), logRecord);
-        previousLogRecord = logRecord;
         
         process(null); // Ensure immediate output for events, flushing the queue
     }
@@ -599,6 +594,7 @@ public class Processor implements _LogsProcessor {
                 queue.add(longOpEvent);
             }
         }
+        previousLogRecord = logRecord;
         if (isNotNull(exec) && isNotNull(core.getDashboard())) core.getDashboard().setInfo(logRecord.text(), telemetry);
     }
 

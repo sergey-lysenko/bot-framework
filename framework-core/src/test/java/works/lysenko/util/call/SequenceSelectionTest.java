@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import works.lysenko.testing.SelectionFixture;
 import works.lysenko.util.data.enums.Severity;
-import works.lysenko.base.output.SequenceTracker;
 import works.lysenko.tree.Ctrl;
 import works.lysenko.tree.base.Leaf;
 import works.lysenko.util.apis.scenario._Scenario;

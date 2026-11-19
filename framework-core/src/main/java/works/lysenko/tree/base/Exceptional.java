@@ -28,7 +28,7 @@ import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Vars.a;
 import static works.lysenko.util.data.strs.Wrap.q;
-import static works.lysenko.util.func.imgs.Screenshot.makeScreenshot;
+import static works.lysenko.util.apis.grid._GridProvider.makeScreenshot;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.lang.A.ANDROID_LAUNCHER;
 import static works.lysenko.util.lang.A.AN_ELEMENT___;

@@ -1,11 +1,11 @@
 package works.lysenko.base.output.tree;
 
 import works.lysenko.base.output.TreeHtml.NodeData;
+import works.lysenko.base.output.svg.ProgressionChrome;
 import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.prop.PropEnum;
 
 import java.awt.Color;
-import java.util.Locale;
 
 import static works.lysenko.Base.parameters;
 
@@ -126,12 +126,6 @@ public final class TreeProgressMetrics {
     }
 
     public static String formatElapsedTime(final long elapsedMillis) {
-        final long totalSeconds = Math.max(0L, elapsedMillis) / 1000;
-        return String.format(
-                Locale.ROOT,
-                "%02d:%02d:%02d",
-                totalSeconds / 3600,
-                (totalSeconds / 60) % 60,
-                totalSeconds % 60);
+        return ProgressionChrome.formatElapsedTime(elapsedMillis);
     }
 }

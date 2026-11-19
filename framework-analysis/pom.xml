@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>works.lysenko</groupId>
+    <artifactId>bot-framework-parent</artifactId>
+    <version>0.26.47-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>framework-analysis</artifactId>
+  <packaging>jar</packaging>
+
+  <name>bot-framework :: analysis</name>
+  <description>ETA estimation, historical calibration, Monte Carlo coverage estimator, known issues, and expected responses</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>works.lysenko</groupId>
+      <artifactId>framework-lexicon</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>works.lysenko</groupId>
+      <artifactId>framework-core</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>works.lysenko</groupId>
+      <artifactId>framework-core</artifactId>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

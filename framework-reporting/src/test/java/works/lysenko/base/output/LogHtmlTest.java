@@ -24,7 +24,7 @@ class LogHtmlTest {
         if (works.lysenko.util.func.type.Objects.isNotNull(works.lysenko.Base.properties)) {
             works.lysenko.Base.properties.clearUserOverrides();
         }
-        works.lysenko.base.output.EtaCorrection.reset();
+        works.lysenko.base.eta.EtaCorrection.reset();
     }
 
     @Test

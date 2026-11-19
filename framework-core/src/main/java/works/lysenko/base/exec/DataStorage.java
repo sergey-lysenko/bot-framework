@@ -30,7 +30,6 @@ import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Swap.sn;
 import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.data.strs.Wrap.q;
-import static works.lysenko.util.func.imgs.Screenshot.getSnapshotPath;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.lang.C.COMMA_SPACE;
 import static works.lysenko.util.lang.D.DUE_TO;
@@ -40,6 +39,7 @@ import static works.lysenko.util.lang.word.P.PROPERTIES;
 import static works.lysenko.util.lang.word.S.SNAPSHOT;
 import static works.lysenko.util.lang.word.U.UNNAMED;
 import static works.lysenko.util.spec.Layout.Directories.VAR_;
+import static works.lysenko.util.spec.Layout.Files.name;
 import static works.lysenko.util.spec.Layout.Parts._DATA_PROPERTIES;
 import static works.lysenko.util.spec.Layout.Templates.DATA_SNAPSHOT_;
 import static works.lysenko.util.spec.Symbols.*;
@@ -128,7 +128,7 @@ public final class DataStorage extends Properties implements _DataStorage {
             final String descriptor = getChangeDescriptor(name, comments, fields);
             final String contents = (Snapshot.full) ? exec.getDataSnapshot(descriptor) : StringUtils.EMPTY;
             final String finalName = n(s(_DASH_), name);
-            final Path path = Path.of(getSnapshotPath(DATA_SNAPSHOT_, false, finalName, PROPERTIES));
+            final Path path = Path.of(name(DATA_SNAPSHOT_, finalName, PROPERTIES));
             try {
                 Files.writeString(path, contents);
                 if (!silent)

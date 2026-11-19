@@ -6,11 +6,9 @@ import org.openqa.selenium.interactions.Interactive;
 import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
 import works.lysenko.util.apis.exception.unchecked.SwipeException;
+import works.lysenko.util.apis.grid._GridProvider;
 import works.lysenko.util.apis.grid.t._RelativePosition;
-import works.lysenko.util.data.records.Location;
 import works.lysenko.util.prop.core.Screenshot;
-import works.lysenko.util.prop.core.Size;
-import works.lysenko.util.prop.core.Swipe;
 
 import java.awt.Point;
 import java.awt.image.BufferedImage;
@@ -21,6 +19,8 @@ import static java.lang.StrictMath.round;
 import static java.util.Objects.isNull;
 import static works.lysenko.Base.exec;
 import static works.lysenko.Base.logDebug;
+import static works.lysenko.util.apis.grid._GridProvider.getBufferedImage;
+import static works.lysenko.util.apis.grid._GridProvider.writeScreenshot;
 import static works.lysenko.util.chrs.__.*;
 import static works.lysenko.util.chrs.___.NOT;
 import static works.lysenko.util.chrs.____.DONE;
@@ -29,10 +29,6 @@ import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.Imgs.areIdentical;
-import static works.lysenko.util.func.imgs.BufferedImages.getBufferedImage;
-import static works.lysenko.util.func.imgs.Painter.drawLineOn;
-import static works.lysenko.util.func.imgs.Painter.drawPointOn;
-import static works.lysenko.util.func.imgs.Screenshot.writeScreenshot;
 import static works.lysenko.util.lang.word.A.AFTER;
 import static works.lysenko.util.lang.word.C.*;
 import static works.lysenko.util.lang.word.D.DID;
@@ -93,7 +89,7 @@ public record Data(WebElement scroller, int height, int width, PointerInput fing
 
         final BufferedImage image = getBufferedImage();
         if (Screenshot.swipes) {
-            works.lysenko.util.func.imgs.OperationMarkers.markSwipe(image, s, t);
+            _GridProvider.markSwipe(image, s, t);
             writeScreenshot(image, false, b(S3, s(X, s.x), s(Y, s.y), TO, s(X, t.x), s(Y, t.y), s(duration, MS)));
         }
         return image;

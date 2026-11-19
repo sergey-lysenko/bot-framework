@@ -376,6 +376,20 @@ class PostProcessorTest {
         assertTrue(updates.stream().anyMatch(pct -> pct > 0 && pct < 100));
     }
 
+    @Test
+    void resolveClassPathIncludesAnalysisAndGridModules() throws Exception {
+        final String cp = works.lysenko.base.output.postprocessor.DetachedProcessLauncher.resolveClassPath();
+        final String analysisLoc = new java.io.File(
+                works.lysenko.base.issues.KnownIssuesLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI()
+        ).getAbsolutePath();
+        final String gridLoc = new java.io.File(
+                works.lysenko.util.func.imgs.Screenshot.class.getProtectionDomain().getCodeSource().getLocation().toURI()
+        ).getAbsolutePath();
+
+        assertTrue(cp.contains(analysisLoc), "Resolved classpath should include framework-analysis code source");
+        assertTrue(cp.contains(gridLoc), "Resolved classpath should include framework-grid code source");
+    }
+
     private static void writeFrame(final Path path) throws IOException {
         writeFrame(path, Color.BLACK);
     }

@@ -8,7 +8,7 @@ import works.lysenko.base.Parameters;
 import works.lysenko.base.Results;
 import works.lysenko.base.TestProperties;
 import works.lysenko.base.exec.Scenarios;
-import works.lysenko.base.output.SequenceTracker;
+import works.lysenko.util.call.SequenceTracker;
 import works.lysenko.util.apis.log._Logs;
 import works.lysenko.util.data.enums.SequenceMode;
 import works.lysenko.util.data.enums.Severity;

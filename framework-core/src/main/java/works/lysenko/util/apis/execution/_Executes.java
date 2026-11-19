@@ -1,9 +1,10 @@
 package works.lysenko.util.apis.execution;
 
-import io.appium.java_client.service.local.AppiumDriverLocalService;
 import org.apache.commons.math3.fraction.Fraction;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.io.Closeable;
 
 /**
  * Interface of Scenario executors
@@ -19,6 +20,13 @@ public interface _Executes {
      * @return {@code true} if the driver was successfully created, otherwise {@code false}.
      */
     boolean createDriver();
+
+    /**
+     * Retrieves the underlying {@link _Driver} wrapper.
+     *
+     * @return the current {@link _Driver} instance, or {@code null}
+     */
+    _Driver driver();
 
     /**
      * Creates and initialises a scaler for execution scenarios.
@@ -71,13 +79,11 @@ public interface _Executes {
     boolean isTrace();
 
     /**
-     * Provides an instance of the AppiumDriverLocalService.
-     * The service is used to start, stop, or manage the local Appium server
-     * for mobile application testing.
+     * Provides an instance of the local driver service (e.g. Appium server).
      *
-     * @return An instance of AppiumDriverLocalService to manage the local Appium server.
+     * @return A {@link Closeable} representing the local server, or {@code null}.
      */
-    AppiumDriverLocalService service();
+    Closeable service();
 
     /**
      * Retrieves the instance of the `_Issues` interface that provides methods

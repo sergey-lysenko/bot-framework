@@ -6,8 +6,8 @@ import works.lysenko.base.output.TreeHtml;
 import works.lysenko.base.output.TreeHtml.Edge;
 import works.lysenko.base.output.TreeHtml.NodeData;
 import works.lysenko.base.output.TreeHtml.TreeLayout;
+import works.lysenko.base.output.svg.ProgressionChrome;
 import works.lysenko.util.apis.scenario._Scenario;
-import works.lysenko.util.data.enums.ExecutionStatus;
 import works.lysenko.util.data.enums.ScenarioType;
 
 import java.util.ArrayList;
@@ -19,8 +19,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static works.lysenko.Base.parameters;
-import static works.lysenko.Base.timer;
-import static works.lysenko.util.func.type.Objects.isNotNull;
 
 /**
  * Renders scenario tree progression layouts as SVG strings.
@@ -117,12 +115,7 @@ public final class SvgTreeRenderer {
                 "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%d\" height=\"%d\" viewBox=\"0 0 %d %d\">\n",
                 baseW, baseH, baseW, baseH));
         sb.append("  <defs>\n");
-        sb.append(String.format(Locale.US,
-                "    <pattern id=\"dot-grid\" width=\"24\" height=\"24\" patternUnits=\"userSpaceOnUse\" y=\"%d\">\n",
-                headerH));
-        sb.append("      <rect width=\"24\" height=\"24\" fill=\"#0F172A\" />\n");
-        sb.append("      <circle cx=\"1\" cy=\"1\" r=\"1\" fill=\"#1E293B\" opacity=\"0.7\" />\n");
-        sb.append("    </pattern>\n");
+        ProgressionChrome.appendDotGridPattern(sb, headerH);
         sb.append("    <pattern id=\"known-issue-hatch\" width=\"10\" height=\"10\" patternTransform=\"rotate(45 0 0)\" patternUnits=\"userSpaceOnUse\">\n");
         sb.append("      <line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"10\" stroke=\"#fbbf24\" stroke-width=\"2\" stroke-opacity=\"0.45\" />\n");
         sb.append("      <line x1=\"0\" y1=\"0\" x2=\"10\" y2=\"0\" stroke=\"#fbbf24\" stroke-width=\"2\" stroke-opacity=\"0.45\" />\n");
@@ -140,10 +133,7 @@ public final class SvgTreeRenderer {
         sb.append("    .edge { fill: none; }\n");
         sb.append("  </style>\n");
 
-        sb.append("  <rect width=\"100%\" height=\"100%\" fill=\"#0F172A\" />\n");
-        sb.append(String.format(Locale.US,
-                "  <rect x=\"0\" y=\"%d\" width=\"%d\" height=\"%d\" fill=\"url(#dot-grid)\" />\n",
-                headerH, baseW, Math.max(0, baseH - headerH)));
+        ProgressionChrome.appendCanvasBackground(sb, baseW, baseH, headerH);
 
         sb.append(String.format(Locale.US,
                 "  <g transform=\"translate(%.2f, %.2f) scale(%.4f)\">\n",
@@ -228,46 +218,43 @@ public final class SvgTreeRenderer {
         final int localW = (int) Math.round(baseW / scale);
 
         sb.append(String.format(Locale.US, "  <g transform=\"scale(%.4f)\">\n", scale));
-        sb.append(String.format(Locale.US,
-                "    <rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\" fill=\"#1E293B\" stroke=\"#334155\" stroke-width=\"1\" />\n",
-                localW, HEADER_HEIGHT_BASE));
+        ProgressionChrome.appendHeaderBar(sb, localW);
 
-        int rightX = localW - PADDING_X;
-        final int topY = (HEADER_HEIGHT_BASE - 22) / 2;
+        final int hudMarginX = 24;
+        int rightX = localW - hudMarginX;
+        final int topY = (HEADER_HEIGHT_BASE - ProgressionChrome.BADGE_HEIGHT) / 2;
 
-        final String elapsedText = (isNotNull(timer))
-                ? "Elapsed: " + TreeProgressMetrics.formatElapsedTime(Math.max(0L, System.currentTimeMillis() - timer.startedAt()))
-                : "Elapsed: --:--:--";
-        rightX = appendHeaderBadgeSvg(sb, elapsedText, rightX, topY, "#334155", "#F8FAFC");
-        rightX = appendHeaderBadgeSvg(sb, totalExecs + " total execs", rightX, topY, "#334155", "#F8FAFC");
+        // Right-to-left placement -> left-to-right display:
+        // Test #N | Leafs: X/Y (P%) | Target: T | Zoom: Z.Zx | M execs | ETA: MM:SS | Elapsed: HH:MM:SS
+        rightX = ProgressionChrome.appendBorderedBadge(sb, ProgressionChrome.formatElapsedBadge(), rightX, topY, ProgressionChrome.BADGE_SLATE);
+        final ProgressionChrome.EtaBadge etaBadge = ProgressionChrome.resolveEtaBadge();
+        rightX = ProgressionChrome.appendBorderedBadge(sb, etaBadge.text(), rightX, topY, etaBadge.style());
+        rightX = ProgressionChrome.appendBorderedBadge(sb, totalExecs + " execs", rightX, topY, ProgressionChrome.BADGE_SLATE);
 
         final String zoomStr = String.format(Locale.US, "Zoom: %.1fx", zoom);
-        rightX = appendHeaderBadgeSvg(sb, zoomStr, rightX, topY, "#0284C7", "#FFFFFF");
+        rightX = ProgressionChrome.appendBorderedBadge(sb, zoomStr, rightX, topY, ProgressionChrome.BADGE_SKY);
 
-        final String covBg = (coveredLeafs == totalLeafs && totalLeafs > 0) ? "#166534" : "#B45309";
-        rightX = appendHeaderBadgeSvg(sb, "Leafs: " + coveredLeafs + "/" + totalLeafs, rightX, topY, covBg, "#F8FAFC");
-        rightX = appendHeaderBadgeSvg(sb, "Target: " + target, rightX, topY, "#334155", "#CBD5E1");
-        rightX = appendHeaderBadgeSvg(sb, badgeText, rightX, topY, "#0284C7", "#FFFFFF");
+        rightX = ProgressionChrome.appendBorderedBadge(sb, "Target: " + target, rightX, topY, ProgressionChrome.BADGE_SLATE);
+        rightX = ProgressionChrome.appendBorderedBadge(
+                sb,
+                ProgressionChrome.formatLeafsBadge(coveredLeafs, totalLeafs),
+                rightX,
+                topY,
+                ProgressionChrome.leafsBadgeStyle(coveredLeafs, totalLeafs));
+        rightX = ProgressionChrome.appendBorderedBadge(sb, badgeText, rightX, topY, ProgressionChrome.BADGE_SKY);
 
         final String titleText;
-        if (rightX >= 350) {
+        if (rightX >= 330) {
             titleText = "Scenario Execution Tree Progression";
-        } else if (rightX >= 260) {
+        } else if (rightX >= 240) {
             titleText = "Scenario Execution Tree";
-        } else if (rightX >= 120) {
+        } else if (rightX >= 100) {
             titleText = "Tree";
         } else {
             titleText = "";
         }
 
-        if (!titleText.isEmpty()) {
-            sb.append(String.format(Locale.US,
-                    "    <circle cx=\"%d\" cy=\"%d\" r=\"6\" fill=\"#38BDF8\" />\n",
-                    PADDING_X + 6, HEADER_HEIGHT_BASE / 2));
-            sb.append(String.format(Locale.US,
-                    "    <text class=\"tx4\" x=\"%d\" y=\"%d\">%s</text>\n",
-                    PADDING_X + 22, (HEADER_HEIGHT_BASE / 2) + 5, titleText));
-        }
+        ProgressionChrome.appendHeaderTitle(sb, hudMarginX, titleText);
 
         if (ProgressionSettings.current().treeDebugEnabled()) {
             final String debugStr = String.format(Locale.US, "dx:%.1f dy:%.1f dz:%.3f maxZ:%.1fx",
@@ -275,15 +262,17 @@ public final class SvgTreeRenderer {
                     TreeCameraTransform.getDebugDy(),
                     TreeCameraTransform.getDebugDz(),
                     TreeCameraTransform.getDebugMaxZoom());
-            sb.append(String.format(Locale.US, "  <text class=\"tx3\" x=\"%d\" y=\"%d\" fill=\"#64748B\">%s</text>\n", PADDING_X, HEADER_HEIGHT_BASE - 5, debugStr));
+            sb.append("    <g id=\"tree-debug-overlay\">\n");
+            sb.append(String.format(Locale.US, "      <text class=\"tx3\" x=\"%d\" y=\"%d\" fill=\"#64748B\">%s</text>\n", PADDING_X, HEADER_HEIGHT_BASE - 5, debugStr));
 
             final double ox = localW / 2.0;
             final double oy = (baseH / scale) / 2.0;
-            sb.append(String.format(Locale.US, "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"#F59E0B\" stroke-width=\"2\" />\n",
+            sb.append(String.format(Locale.US, "      <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"#F59E0B\" stroke-width=\"2\" />\n",
                     ox, oy, ox - TreeCameraTransform.getDebugDx(), oy - TreeCameraTransform.getDebugDy()));
-            sb.append(String.format(Locale.US, "  <circle cx=\"%.1f\" cy=\"%.1f\" r=\"3\" fill=\"#F59E0B\" />\n", ox, oy));
-            sb.append(String.format(Locale.US, "  <circle cx=\"%.1f\" cy=\"%.1f\" r=\"2\" fill=\"#F8FAFC\" />\n",
+            sb.append(String.format(Locale.US, "      <circle cx=\"%.1f\" cy=\"%.1f\" r=\"3\" fill=\"#F59E0B\" />\n", ox, oy));
+            sb.append(String.format(Locale.US, "      <circle cx=\"%.1f\" cy=\"%.1f\" r=\"2\" fill=\"#F8FAFC\" />\n",
                     ox - TreeCameraTransform.getDebugDx(), oy - TreeCameraTransform.getDebugDy()));
+            sb.append("    </g>\n");
         }
 
         final works.lysenko.base.output.SummaryPlaque plaque = works.lysenko.base.output.SummaryPlaque.computeFromNodes(layout.nodes(), works.lysenko.base.output.SummaryPlaque.RunConfig.fromParameters(parameters));
@@ -345,7 +334,7 @@ public final class SvgTreeRenderer {
             final int lineY = 22 + i * 14;
             sb.append(String.format(Locale.US,
                     "      <text x=\"%d\" y=\"%d\" fill=\"#38BDF8\" font-size=\"10\" font-weight=\"bold\" font-family=\"monospace\">%s</text>\n",
-                    lineX, lineY, escapeHtml(configLines.get(i))));
+                    lineX, lineY, ProgressionChrome.escapeXml(configLines.get(i))));
         }
 
         final int divY = 32 + yOffset;
@@ -399,27 +388,6 @@ public final class SvgTreeRenderer {
 
     private static boolean hasText(final String text) {
         return text != null && !text.isBlank();
-    }
-
-    private static String escapeHtml(final String text) {
-        if (text == null) return "";
-        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
-    }
-
-    private static int appendHeaderBadgeSvg(
-            final StringBuilder sb,
-            final String text,
-            final int rightX,
-            final int topY,
-            final String bg,
-            final String fg) {
-        final int badgeW = text.length() * 7 + 16;
-        final int leftX = rightX - badgeW;
-        sb.append(String.format(Locale.US,
-                "  <rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"22\" rx=\"6\" ry=\"6\" fill=\"%s\" />\n" +
-                "  <text class=\"tx3\" x=\"%d\" y=\"%d\" fill=\"%s\">%s</text>\n",
-                leftX, topY, badgeW, bg, leftX + 8, topY + 15, fg, escapeHtml(text)));
-        return leftX - 10;
     }
 
     private static long evenDimension(final long dimension) {

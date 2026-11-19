@@ -36,11 +36,10 @@ public class Stat implements _Stat {
     public static void reports() {
 
         if (null != works.lysenko.Base.timer) {
-            works.lysenko.base.output.EtaCorrection.recordRunCompletion(works.lysenko.Base.timer.msSinceStart());
+            works.lysenko.util.apis.core._EtaProvider.fireRunCompletion(works.lysenko.Base.timer.msSinceStart());
         }
         if (_ReportingProvider.providers().isEmpty()) {
-            works.lysenko.base.issues.KnownIssuesLoader.saveRunKnownIssues();
-            works.lysenko.base.responses.ExpectedResponsesLoader.saveRunExpectedResponses();
+            works.lysenko.util.apis.core._DiagnosticsProvider.fireSaveRunSnapshots();
         } else {
             _ReportingProvider.fireOnRunStats();
         }

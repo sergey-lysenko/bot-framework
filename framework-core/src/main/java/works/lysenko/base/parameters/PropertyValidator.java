@@ -2,9 +2,9 @@ package works.lysenko.base.parameters;
 
 import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.util.apis.core._ReportingProvider;
+import works.lysenko.util.apis.grid._GridProvider;
 import works.lysenko.util.apis.parameters._ConfigFileCategory;
 import works.lysenko.util.apis._PropEnum;
-import works.lysenko.util.func.imgs.OperationMarkers;
 import works.lysenko.util.prop.PropEnum;
 
 import java.awt.Color;
@@ -36,7 +36,7 @@ public final class PropertyValidator {
      */
     private static final Map<_PropEnum, List<String>> ALLOWED_VALUES = Map.of(
             PropEnum._TEST_REPORT_PROGRESSION_TREE_SONIFICATION, _ReportingProvider.resolveTreeSonificationValues(),
-            PropEnum._SCREENSHOTS_MARKER_VARIANT, OperationMarkers.availableModes());
+            PropEnum._SCREENSHOTS_MARKER_VARIANT, _GridProvider.availableMarkerModes());
 
     private static List<String> cachedProperties = null;
     private static Set<Class<? extends _PropEnum>> cachedPropEnumClasses = null;
@@ -64,7 +64,6 @@ public final class PropertyValidator {
         if (null == cachedPropEnumClasses) {
             final Set<Class<? extends _PropEnum>> classes = new LinkedHashSet<>();
             classes.add(PropEnum.class);
-            classes.add(works.lysenko.shared.util.spec.PropEnum.class);
 
             if (isNotNull(works.lysenko.Base.properties)) {
                 final Collection<Class<? extends _PropEnum>> comp = works.lysenko.Base.properties.getCompendium();

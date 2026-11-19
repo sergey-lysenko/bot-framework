@@ -2,8 +2,7 @@ package works.lysenko.tree;
 
 import org.apache.commons.math3.fraction.Fraction;
 import org.openqa.selenium.WebElement;
-import works.lysenko.base.output.AllLeafCompletions;
-import works.lysenko.base.output.EtaDebug;
+import works.lysenko.util.apis.core._EtaProvider;
 import works.lysenko.util.apis.core._ReportingProvider;
 import works.lysenko.util.apis.action.Verifies;
 import works.lysenko.util.apis.data._Result;
@@ -42,11 +41,10 @@ import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.func.core.Assertions.assertTrue;
 import static works.lysenko.util.func.core.Weights.downstreamWeight;
 import static works.lysenko.util.func.core.Weights.configuredWeightValue;
-import static works.lysenko.util.func.imgs.Grid.test;
-import static works.lysenko.util.func.imgs.Screenshot.makeScreenshot;
+import static works.lysenko.util.apis.grid._GridProvider.makeScreenshot;
+import static works.lysenko.util.apis.grid._GridProvider.verifyImage;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.func.type.fractions.Factory.fr;
-import static works.lysenko.util.grid.validation.Check.image;
 import static works.lysenko.util.lang.D.DUE_TO;
 import static works.lysenko.util.lang.U.UI_VERIFICATION_FAILED_IN;
 import static works.lysenko.util.lang.word.C.CONTENT;
@@ -451,7 +449,7 @@ public abstract class Core extends Root implements _Scenario, Verifies {
             exec.scenarios().push(this);
         }
         if (ScenarioType.LEAF == type() || ScenarioType.MONO == type()) {
-            EtaDebug.startCycle(getShortName());
+            _EtaProvider.fireCycleStart(getShortName());
         }
         log(Level.none, s(ansi(b(s(type().tag()), getShortName()), BLUE_BOLD_BRIGHT), e(s(_COLON_)),
                 core.getResults().count(this)), false);
@@ -509,7 +507,7 @@ public abstract class Core extends Root implements _Scenario, Verifies {
 
         final WebElement element = find(c(CONTENT));
         final BufferedImage image = makeScreenshot(element);
-        final boolean asserted = test(image(image, getShortName())).isPassed();
+        final boolean asserted = verifyImage(image, getShortName());
         assertTrue(asserted, b(UI_VERIFICATION_FAILED_IN, getShortName()));
         return true;
     }
@@ -538,8 +536,7 @@ public abstract class Core extends Root implements _Scenario, Verifies {
         log(Level.none, b(false, bb(s(q(getShortName()))), // Scenario
                 (null == info || info.isEmpty()) ? EMPTY : yb(info), b(DONE, IN), yb(t(runtime))), false);
         if (ScenarioType.LEAF == type() || ScenarioType.MONO == type()) {
-            EtaDebug.endCycle(getShortName());
-            AllLeafCompletions.checkAndRecord(msSinceStart(), this);
+            _EtaProvider.fireCycleEnd(getShortName(), msSinceStart(), this);
             if (Scenario.branchStalePenalty) {
                 _Scenario curr = this;
                 while (isNotNull(curr)) {

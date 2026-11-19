@@ -1,22 +1,24 @@
 package works.lysenko.util.apis.execution;
 
-import io.appium.java_client.service.local.AppiumDriverLocalService;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.io.Closeable;
+
 /**
- * Represents an abstraction for managing WebDriver, WebDriverWait, and AppiumDriverLocalService instances.
+ * Represents an abstraction for managing WebDriver, WebDriverWait, and local driver service instances.
  * This interface defines methods for retrieving and setting these components.
  */
 @SuppressWarnings("InterfaceWithOnlyOneDirectInheritor")
 public interface _Driver {
 
     /**
-     * Retrieves the current instance of the AppiumDriverLocalService.
+     * Retrieves the current instance of the local driver service (e.g. Appium server).
      *
-     * @return the AppiumDriverLocalService instance used by the implementing class.
+     * @return the Closeable service instance used by the implementing class, or {@code null}.
      */
-    AppiumDriverLocalService service();
+    Closeable service();
 
     /**
      * Retrieves the current instance of the WebDriver.
@@ -41,14 +43,6 @@ public interface _Driver {
     WebDriverWait wdw(java.time.Duration timeout);
 
     /**
-     * Sets the provided AppiumDriverLocalService instance for the implementing class.
-     *
-     * @param service the AppiumDriverLocalService instance to be set
-     */
-    @SuppressWarnings("unused")
-    void service(AppiumDriverLocalService service);
-
-    /**
      * Sets the WebDriver instance for the implementing class.
      *
      * @param wd the WebDriver instance to be set
@@ -71,5 +65,32 @@ public interface _Driver {
      * @return {@code true} if the WebDriver was successfully initialised, {@code false} otherwise
      */
     boolean isOk();
+
+    /**
+     * Hides the on-screen mobile keyboard when supported by the underlying driver.
+     */
+    void hideKeyboard();
+
+    /**
+     * Terminates the mobile application identified by {@code bundleId}.
+     *
+     * @param bundleId application package or bundle identifier
+     */
+    void terminateApp(String bundleId);
+
+    /**
+     * Activates (brings to foreground) the mobile application identified by {@code bundleId}.
+     *
+     * @param bundleId application package or bundle identifier
+     */
+    void activateApp(String bundleId);
+
+    /**
+     * Finds a {@link WebElement} using an Android UIAutomator expression.
+     *
+     * @param uiautomatorText UIAutomator selector expression
+     * @return matching {@link WebElement}
+     */
+    WebElement findByAndroidUIAutomator(String uiautomatorText);
 
 }

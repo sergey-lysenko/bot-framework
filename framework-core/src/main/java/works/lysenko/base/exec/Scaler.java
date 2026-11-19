@@ -16,7 +16,7 @@ import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Case.u;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.core.Assertions.fail;
-import static works.lysenko.util.func.imgs.Screenshot.makeScreenshot;
+import static works.lysenko.util.apis.grid._GridProvider.makeScreenshot;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.func.type.fractions.Render.ts;
 import static works.lysenko.util.lang.U.UNABLE_TO_DEFINE___;

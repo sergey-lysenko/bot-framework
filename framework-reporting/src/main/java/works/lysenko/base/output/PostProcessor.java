@@ -2,6 +2,7 @@ package works.lysenko.base.output;
 
 import static works.lysenko.Base.log;
 
+import works.lysenko.base.core.RunLocks;
 import works.lysenko.base.issues.KnownIssuesLoader;
 import works.lysenko.base.output.postprocessor.DetachedProcessLauncher;
 import works.lysenko.base.output.postprocessor.PostProcessorProgressUI;

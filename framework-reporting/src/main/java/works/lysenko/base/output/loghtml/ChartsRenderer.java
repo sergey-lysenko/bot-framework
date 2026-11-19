@@ -62,7 +62,7 @@ public final class ChartsRenderer {
             projectedTotals[index] = projTotal;
             maxProjectedMs = Math.max(maxProjectedMs, projTotal);
 
-            final long corrMs = works.lysenko.base.output.EtaCorrection.getEstimationCorrection(c.atMillis);
+            final long corrMs = works.lysenko.base.eta.EtaCorrection.getEstimationCorrection(c.atMillis);
             if (corrMs != 0L) hasCorrectionData = true;
             final long corrEtaMs = Math.max(0L, c.etaMs - corrMs);
             final long corrTotal = c.atMillis + corrEtaMs;

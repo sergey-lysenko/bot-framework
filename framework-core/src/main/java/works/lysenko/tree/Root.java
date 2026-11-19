@@ -1,7 +1,5 @@
 package works.lysenko.tree;
 
-import io.appium.java_client.HidesKeyboard;
-import io.appium.java_client.InteractsWithApps;
 import org.apache.commons.math3.fraction.Fraction;
 import org.openqa.selenium.*;
 import org.openqa.selenium.NoSuchElementException;
@@ -11,10 +9,10 @@ import works.lysenko.util.Constants;
 import works.lysenko.util.apis.common.*;
 import works.lysenko.util.apis.data._DataStorage;
 import works.lysenko.util.apis.exception.unchecked.BotRuntimeException;
+import works.lysenko.util.apis.grid._GridProvider;
 import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.data.records.KeyValue;
 import works.lysenko.util.func.core.Callstack;
-import works.lysenko.util.func.imgs.Painter;
 import works.lysenko.util.func.type.Points;
 import works.lysenko.util.func.type.Strings;
 import works.lysenko.util.func.ui.Locators;
@@ -35,7 +33,6 @@ import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
-import static io.appium.java_client.AppiumBy.androidUIAutomator;
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.openqa.selenium.support.ui.ExpectedConditions.*;
@@ -66,9 +63,9 @@ import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.func.core.Assertions.fail;
 import static works.lysenko.util.func.core.Callstack.getShort;
 import static works.lysenko.util.func.data.Percents.percentString;
-import static works.lysenko.util.func.imgs.BufferedImages.getBufferedImage;
-import static works.lysenko.util.func.imgs.Painter.drawArea;
-import static works.lysenko.util.func.imgs.Screenshot.writeScreenshot;
+import static works.lysenko.util.apis.grid._GridProvider.describeRectangle;
+import static works.lysenko.util.apis.grid._GridProvider.getBufferedImage;
+import static works.lysenko.util.apis.grid._GridProvider.writeScreenshot;
 import static works.lysenko.util.func.type.Booleans.isTrue;
 import static works.lysenko.util.func.type.Numbers.random;
 import static works.lysenko.util.func.type.Objects.isNotNull;
@@ -316,7 +313,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         final Rectangle re = isNull(element) ? null : element.getRect();
         if (isNull(re)) logEvent(S0, b(c(ELEMENT), LOCATION, UNKNOWN));
         else {
-            log(Level.supplementary, b(s(c(ELEMENT), _QUOTE_, S), RECTANGLE, IS, Painter.describe(re)), true);
+            log(Level.supplementary, b(s(c(ELEMENT), _QUOTE_, S), RECTANGLE, IS, describeRectangle(re)), true);
             final Point center = Points.getCenter(re);
             final Point p = Points.getPoint(x1, y1, re);
             final int offsetX = p.x - center.x;
@@ -495,7 +492,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         if (isNull(element)) return EMPTY;
         final String tg = element.getTagName();
         return s(((null == tg) ? ELEMENT : tg), (an.isEmpty() ? EMPTY : e(true, q(an))), (geometry ? s(e(s(_AT_SGN)),
-                Painter.describe(element.getRect())) : EMPTY));
+                describeRectangle(element.getRect())) : EMPTY));
     }
 
     @SuppressWarnings({"MethodWithMultipleLoops", "OverlyComplexMethod", "ArrayLengthInLoopCondition",
@@ -760,7 +757,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     @Override
     public final void hideKeyboard() {
 
-        ((HidesKeyboard) exec.wd()).hideKeyboard();
+        if (isNotNull(exec.driver())) exec.driver().hideKeyboard();
     }
 
     /**
@@ -1176,13 +1173,13 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
 
         if (in(ANDROID)) {
             log(b(TERMINATING, Start.bundleId));
-            ((InteractsWithApps) exec.wd()).terminateApp(Start.bundleId);
+            if (isNotNull(exec.driver())) exec.driver().terminateApp(Start.bundleId);
             try {
                 log(b(ACTIVATING, Start.bundleId));
                 sleep(pause);
-                ((InteractsWithApps) exec.wd()).activateApp(Start.bundleId);
+                if (isNotNull(exec.driver())) exec.driver().activateApp(Start.bundleId);
                 sleep(pause); // TODO: [framework] investigate the reason of needing two attempts
-                ((InteractsWithApps) exec.wd()).activateApp(Start.bundleId);
+                if (isNotNull(exec.driver())) exec.driver().activateApp(Start.bundleId);
             } catch (final RuntimeException e) {
                 //
             }
@@ -1223,8 +1220,8 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         // TODO: [framework] investigate reason of unpredictable scrolling behavior (or just fall back to swipes)
         if (in(ANDROID)) {
             log(b(SCROLLING, s1(steps, STEP), FORWARD));
-            return exec.wd().findElement(androidUIAutomator(s(AUTOMATOR_CODE_PART1, _DOT_, SCROLL, c(FORWARD),
-                    e(ROUND, steps))));
+            return isNotNull(exec.driver()) ? exec.driver().findByAndroidUIAutomator(s(AUTOMATOR_CODE_PART1, _DOT_, SCROLL, c(FORWARD),
+                    e(ROUND, steps))) : null;
         } else {
             logEvent(S3, b(s(SCROLL, c(FORWARD), e(ROUND, EMPTY)), ONLY, APPLICABLE, FOR, c(ANDROID), TESTING));
             return null;
@@ -1328,8 +1325,10 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             if (in(ANDROID)) {
                 if (lazy) if (alreadyOnScreen(text)) return;
                 log(b(c(SCROLLING), TO, q(bb(text)), TEXT));
-                exec.wd().findElement(androidUIAutomator(s(AUTOMATOR_CODE_PART1, AUTOMATOR_CODE_PART2, text,
-                        AUTOMATOR_CODE_PART3)));
+                if (isNotNull(exec.driver())) {
+                    exec.driver().findByAndroidUIAutomator(s(AUTOMATOR_CODE_PART1, AUTOMATOR_CODE_PART2, text,
+                            AUTOMATOR_CODE_PART3));
+                }
                 if (isNotNull(afterScroll)) afterScroll.run();
                 return;
             }
@@ -2125,7 +2124,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
         if (Screenshot.clicks) {
             final BufferedImage image = getBufferedImage();
             final String desc = describe(element);
-            final BufferedImage img = works.lysenko.util.func.imgs.OperationMarkers.markElement(image, element.getRect(), desc, CLICK);
+            final BufferedImage img = _GridProvider.markElement(image, element.getRect(), desc, CLICK);
             writeScreenshot(img, false, b(CLICK, ON, desc));
         }
         element.click();

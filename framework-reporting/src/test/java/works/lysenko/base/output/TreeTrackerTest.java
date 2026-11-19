@@ -834,7 +834,8 @@ class TreeTrackerTest {
         ProgressionSettings.initialize();
         final String svgNoDebug = TreeTracker.renderTreeProgressionSvg(layout, 1, "Test #1", Collections.emptySet());
         assertFalse(svgNoDebug.contains("dx:"), "SVG must not contain debug coordinates when debug is false");
-        assertFalse(svgNoDebug.contains("stroke=\"#F59E0B\""), "SVG must not contain impulse vector line when debug is false");
+        assertFalse(svgNoDebug.contains("id=\"tree-debug-overlay\""), "SVG must not contain debug overlay when debug is false");
+        assertFalse(svgNoDebug.contains("stroke=\"#F59E0B\" stroke-width=\"2\""), "SVG must not contain impulse vector line when debug is false");
 
         // Enabled (.tree.progression.debug=true): debug text and vector line SHOULD be present in SVG
         setTestProperty(PropEnum._TREE_PROGRESSION_DEBUG.getPropertyName(), "true");
@@ -842,7 +843,8 @@ class TreeTrackerTest {
         final String svgDebug = TreeTracker.renderTreeProgressionSvg(layout, 1, "Test #1", Collections.emptySet());
         assertTrue(svgDebug.contains("dx:"), "SVG must contain debug coordinates when debug is true");
         assertTrue(svgDebug.contains("maxZ:"), "SVG debug text must include maxZ when debug is true");
-        assertTrue(svgDebug.contains("stroke=\"#F59E0B\""), "SVG must contain impulse vector line when debug is true");
+        assertTrue(svgDebug.contains("id=\"tree-debug-overlay\""), "SVG must contain debug overlay when debug is true");
+        assertTrue(svgDebug.contains("stroke=\"#F59E0B\" stroke-width=\"2\""), "SVG must contain impulse vector line when debug is true");
     }
 
     @Test
@@ -950,5 +952,27 @@ class TreeTrackerTest {
         }
         assertTrue(brightTextOrBorderPixels > 100,
                 "Execution Statistics plaque must be rendered in the preview frame, found bright pixels: " + brightTextOrBorderPixels);
+    }
+
+    @Test
+    void testTreeProgressionHeaderUsesUnifiedBorderedBadgesWithLeafPercentageAndEta() {
+        final NodeData root = new NodeData("root", "Root", "Root", 0, 1.0, result(ScenarioType.NODE, 3));
+        final NodeData leaf1 = new NodeData("leaf1", "LeafOne", "Root", 1, 1.0, result(ScenarioType.LEAF, 1));
+        final NodeData leaf2 = new NodeData("leaf2", "LeafTwo", "Root", 1, 2.0, result(ScenarioType.LEAF, 0));
+        leaf1.setParent(root);
+        leaf2.setParent(root);
+        root.children().add(leaf1);
+        root.children().add(leaf2);
+        final TreeLayout layout = new TreeLayout(List.of(root, leaf1, leaf2), List.of(new Edge(root, leaf1), new Edge(root, leaf2)));
+
+        final String svg = TreeTracker.renderTreeProgressionSvg(layout, 1, "Test #36", Set.of("leaf1"));
+
+        assertTrue(svg.contains("Scenario Execution Tree Progression"), "Header title must be Title Case");
+        assertTrue(svg.contains("Test #36"), "Header must include cycle badge");
+        assertTrue(svg.contains("Leafs: 1/2 (50%)"), "Leafs badge must include completion percentage");
+        assertTrue(svg.contains("Target: 1"), "Header must include target badge");
+        assertTrue(svg.contains("ETA:"), "Header must include ETA badge");
+        assertTrue(svg.contains("Elapsed:"), "Header must include Elapsed badge");
+        assertTrue(svg.contains("fill-opacity=\"0.14\""), "Header badges must use translucent bordered styling");
     }
 }
