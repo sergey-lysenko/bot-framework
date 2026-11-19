@@ -1,15 +1,14 @@
 package works.lysenko.base.util;
 
+import com.sun.management.OperatingSystemMXBean;
 import works.lysenko.base.core.Routines;
 import works.lysenko.base.telemetry.Data;
 
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.apache.commons.math3.util.FastMath.min;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Null.n;
 import static works.lysenko.util.data.strs.Swap.s;
@@ -24,15 +23,19 @@ import static works.lysenko.util.spec.Symbols._DASH_;
 @SuppressWarnings({"AutoBoxing", "FeatureEnvy", "NestedMethodCall", "ImplicitNumericConversion",
         "NumericCastThatLosesPrecision",
         "MethodWithMultipleReturnPoints", "OverloadedMethodsWithSameNumberOfParameters", "CallToSuspiciousStringMethod"})
-/**
- * The Telemetry record.
- */
 public record Telemetry(Data data, String rendered) {
 
     private static final ThreadMXBean threadsMX = ManagementFactory.getThreadMXBean();
+    private static final OperatingSystemMXBean osMX =
+            (ManagementFactory.getOperatingSystemMXBean() instanceof OperatingSystemMXBean bean) ? bean : null;
     private static final ClassLoadingMXBean classesMX = ManagementFactory.getClassLoadingMXBean();
     private static final Runtime env = Runtime.getRuntime();
     private static final String SAME = s(_DASH_);
+    /**
+     * Minimum wall-clock interval between CPU counter reads so sub-millisecond log bursts
+     * do not produce noisy spikes or extra OS syscalls.
+     */
+    static final long MIN_CPU_SAMPLE_WINDOW_NS = 250_000_000L;
     /**
      * A1 small positive value used for floating-point comparisons with a fractionTolerance.
      * The value of EPSILON is 0.0000001.
@@ -43,6 +46,9 @@ public record Telemetry(Data data, String rendered) {
      */
     private static Data previous = new Data(0L, 0, 0, 0.0, 0, 0L, 0L,
             0L, 0L, 0L, 0, 0L, EMPTY);
+    private static long lastCpuWallNs = -1L;
+    private static long lastProcessCpuNs = -1L;
+    private static double lastCpuPercent = 0.0;
 
     /**
      * Retrieves a new Telemetry object with the given time and comment.
@@ -51,7 +57,7 @@ public record Telemetry(Data data, String rendered) {
      * @param comment The comment for the telemetry.
      * @return A1 new Telemetry object with the fresh data and the rendered string representation.
      */
-    public static Telemetry getNewTelemetry(final long time, final String comment) {
+    public static synchronized Telemetry getNewTelemetry(final long time, final String comment) {
 
         final Data fresh = sampleNewTelemetryData(time, comment);
         final String spent = toString(fresh.spent(), previous.spent());
@@ -60,7 +66,7 @@ public record Telemetry(Data data, String rendered) {
         final String s = b(_COMMA_,
                 toString(fresh.timeShift(), previous.timeShift()),
                 s(fresh.timestamp()),
-                spent.substring(0, min(7, spent.length())),
+                spent,
                 toString(fresh.runTime(), previous.runTime()),
                 toString(fresh.cores(), previous.cores()),
                 toString(fresh.threads(), previous.threads()),
@@ -77,19 +83,75 @@ public record Telemetry(Data data, String rendered) {
     }
 
     /**
-     * Calculates the total CPU time spent by all threads in milliseconds.
+     * Reads cumulative process CPU time in nanoseconds across all JVM threads (including exited,
+     * GC, and JIT threads) via {@link OperatingSystemMXBean#getProcessCpuTime()}, falling back to
+     * summing live thread CPU times if unavailable.
      *
-     * @return The total CPU time spent in milliseconds.
+     * @return process CPU time in nanoseconds
      */
-    private static long getSpentTime() {
+    private static long readProcessCpuTimeNs() {
 
+        if (null != osMX) {
+            final long processCpuTime = osMX.getProcessCpuTime();
+            if (processCpuTime >= 0L) return processCpuTime;
+        }
         final long[] ids = threadsMX.getAllThreadIds();
-        long time = 0;
+        long time = 0L;
         for (final long id : ids) {
             final long thisTime = threadsMX.getThreadCpuTime(id);
-            if (-1 != thisTime) time += thisTime;
+            if (-1L != thisTime) time += thisTime;
         }
-        return (time / 1000);
+        return time;
+    }
+
+    /**
+     * Computes interval CPU usage percentage normalized across available logical cores.
+     *
+     * @param deltaCpuNs  process CPU nanoseconds elapsed during the window
+     * @param deltaWallNs wall-clock nanoseconds elapsed during the window
+     * @param cores       available logical CPU cores
+     * @return normalized CPU percentage in {@code [0.0, 100.0]} rounded to 2 decimal places
+     */
+    static double computeIntervalCpuPercent(final long deltaCpuNs, final long deltaWallNs, final int cores) {
+
+        if (deltaWallNs <= 0L || deltaCpuNs <= 0L || cores <= 0) return 0.0;
+        final double rawPct = (deltaCpuNs * 100.0) / ((double) deltaWallNs * cores);
+        final double clamped = Math.min(100.0, Math.max(0.0, rawPct));
+        return Math.round(clamped * 100.0) / 100.0;
+    }
+
+    /**
+     * Samples interval JVM CPU usage percentage, refreshing at most once per
+     * {@link #MIN_CPU_SAMPLE_WINDOW_NS} to avoid sub-millisecond jitter on rapid log bursts.
+     */
+    private static double sampleIntervalCpuPercent(final long nowNs, final int cores) {
+
+        if (lastCpuWallNs < 0L) {
+            lastCpuWallNs = nowNs;
+            lastProcessCpuNs = readProcessCpuTimeNs();
+            final double initialLoad = (null != osMX) ? osMX.getProcessCpuLoad() : -1.0;
+            lastCpuPercent = (initialLoad >= 0.0 && Double.isFinite(initialLoad))
+                    ? Math.round(Math.min(100.0, initialLoad * 100.0) * 100.0) / 100.0
+                    : 0.0;
+            return lastCpuPercent;
+        }
+        final long deltaWallNs = nowNs - lastCpuWallNs;
+        if (deltaWallNs < MIN_CPU_SAMPLE_WINDOW_NS) {
+            return lastCpuPercent;
+        }
+        final long nowCpuNs = readProcessCpuTimeNs();
+        final long deltaCpuNs = nowCpuNs - lastProcessCpuNs;
+        lastCpuWallNs = nowNs;
+        lastProcessCpuNs = nowCpuNs;
+        lastCpuPercent = computeIntervalCpuPercent(deltaCpuNs, deltaWallNs, cores);
+        return lastCpuPercent;
+    }
+
+    static synchronized void resetCpuSampler() {
+
+        lastCpuWallNs = -1L;
+        lastProcessCpuNs = -1L;
+        lastCpuPercent = 0.0;
     }
 
     /**
@@ -111,8 +173,7 @@ public record Telemetry(Data data, String rendered) {
         final long max = env.maxMemory();
         final long totalM = env.totalMemory();
         final long our = Routines.msSinceStart();
-        final double rawSpent = (0 < our) ? ((getSpentTime() / 10.0) / our) : 0.0;
-        final double spent = (our < 1000 || rawSpent > (cores * 100.0)) ? 0.0 : (cores > 0 ? rawSpent / cores : rawSpent);
+        final double spent = sampleIntervalCpuPercent(start, cores);
         final int timeShift = (int) (our - time);
         final long runTime = System.nanoTime() - start;
         return new Data(time, cores, threads, spent, load, unload, totalC, free, totalM, max, timeShift, runTime, comment);
