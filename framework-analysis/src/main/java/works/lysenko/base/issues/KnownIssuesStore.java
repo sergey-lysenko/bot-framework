@@ -8,8 +8,10 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static works.lysenko.util.func.type.Objects.*;
@@ -33,8 +35,46 @@ public final class KnownIssuesStore {
         return globalStore;
     }
 
+    private static final class NodeScanCursor {
+        final List<KnownIssue> candidates;
+        final boolean[] matched;
+        int remainingUnmatched;
+        int scannedUpTo;
+        _LogRecord firstRecord;
+        _LogRecord lastRecord;
+        List<KnownIssue> cachedMatches;
+
+        NodeScanCursor(final List<KnownIssue> candidates) {
+            this.candidates = candidates;
+            this.matched = new boolean[candidates.size()];
+            int unmatched = 0;
+            for (int i = 0; i < candidates.size(); i++) {
+                final String pattern = candidates.get(i).pattern();
+                if (null == pattern || pattern.isBlank()) {
+                    this.matched[i] = true;
+                } else {
+                    unmatched++;
+                }
+            }
+            this.remainingUnmatched = unmatched;
+            this.cachedMatches = buildMatches();
+        }
+
+        List<KnownIssue> buildMatches() {
+            final List<KnownIssue> result = new ArrayList<>(candidates.size());
+            for (int i = 0; i < candidates.size(); i++) {
+                if (matched[i]) {
+                    result.add(candidates.get(i));
+                }
+            }
+            return result.isEmpty() ? Collections.emptyList() : result;
+        }
+    }
+
     private final List<KnownIssue> issues = new ArrayList<>(16);
     private final Map<String, List<KnownIssue>> scenarioIssuesCache = new ConcurrentHashMap<>();
+    private final Object nodeCursorLock = new Object();
+    private final Map<_Result, Map<String, NodeScanCursor>> nodeScanCursors = new WeakHashMap<>();
 
     /**
      * Instantiates a new Known issues store with default resources.
@@ -105,6 +145,9 @@ public final class KnownIssuesStore {
 
     /**
      * Finds known issues that match the given scenario and optional execution result.
+     * <p>
+     * Uses per-{@link _Result} incremental scan cursors keyed weakly by result instance so repeated
+     * lookups across tree layout frames scale with newly appended events rather than total run events.
      *
      * @param scenario the scenario to check (can be null)
      * @param result   the execution result to check for log patterns (can be null)
@@ -112,14 +155,81 @@ public final class KnownIssuesStore {
      */
     public List<KnownIssue> getForNode(final _Scenario scenario, final _Result result) {
 
-        final List<KnownIssue> matches = new ArrayList<>(10);
-        if (null != scenario) {
-            final List<KnownIssue> candidates = getForScenario(scenario.getName(), scenario.getSimpleName());
-            for (final KnownIssue ki : candidates) {
-                if (KnownIssuesMatcher.matchesPattern(ki.pattern(), result)) matches.add(ki);
-            }
+        if (null == scenario) {
+            return new ArrayList<>(0);
         }
-        return matches;
+        final String fqn = scenario.getName();
+        final String simpleName = scenario.getSimpleName();
+        final List<KnownIssue> candidates = getForScenario(fqn, simpleName);
+        if (candidates.isEmpty()) {
+            return new ArrayList<>(0);
+        }
+        if (null == result) {
+            final List<KnownIssue> matches = new ArrayList<>(candidates.size());
+            for (final KnownIssue ki : candidates) {
+                if (null == ki.pattern() || ki.pattern().isBlank()) {
+                    matches.add(ki);
+                }
+            }
+            return matches;
+        }
+        final List<_LogRecord> events = result.getEvents();
+        final int eventCount = (null != events) ? events.size() : 0;
+        if (0 == eventCount) {
+            final List<KnownIssue> matches = new ArrayList<>(candidates.size());
+            for (final KnownIssue ki : candidates) {
+                if (null == ki.pattern() || ki.pattern().isBlank()) {
+                    matches.add(ki);
+                }
+            }
+            return matches;
+        }
+
+        final String scenarioKey = (null != fqn ? fqn : "") + '\0' + (null != simpleName ? simpleName : "");
+        final _LogRecord firstRecord = events.get(0);
+
+        synchronized (nodeCursorLock) {
+            final Map<String, NodeScanCursor> perScenario = nodeScanCursors.computeIfAbsent(result, r -> new HashMap<>(2));
+            NodeScanCursor cursor = perScenario.get(scenarioKey);
+            final boolean cursorValid = null != cursor
+                    && cursor.candidates == candidates
+                    && cursor.scannedUpTo <= eventCount
+                    && (0 == cursor.scannedUpTo
+                    || (cursor.firstRecord == firstRecord && events.get(cursor.scannedUpTo - 1) == cursor.lastRecord));
+            if (!cursorValid) {
+                cursor = new NodeScanCursor(candidates);
+                perScenario.put(scenarioKey, cursor);
+            }
+
+            if (cursor.scannedUpTo < eventCount && cursor.remainingUnmatched > 0) {
+                boolean changed = false;
+                for (int i = cursor.scannedUpTo; i < eventCount; i++) {
+                    final _LogRecord lr = events.get(i);
+                    for (int c = 0; c < candidates.size(); c++) {
+                        if (!cursor.matched[c] && KnownIssuesMatcher.matchesPatternForRecord(candidates.get(c).pattern(), lr)) {
+                            cursor.matched[c] = true;
+                            cursor.remainingUnmatched--;
+                            changed = true;
+                        }
+                    }
+                    if (0 == cursor.remainingUnmatched) {
+                        break;
+                    }
+                }
+                cursor.scannedUpTo = eventCount;
+                cursor.firstRecord = firstRecord;
+                cursor.lastRecord = events.get(eventCount - 1);
+                if (changed) {
+                    cursor.cachedMatches = cursor.buildMatches();
+                }
+            } else if (cursor.scannedUpTo < eventCount) {
+                cursor.scannedUpTo = eventCount;
+                cursor.firstRecord = firstRecord;
+                cursor.lastRecord = events.get(eventCount - 1);
+            }
+
+            return new ArrayList<>(cursor.cachedMatches);
+        }
     }
 
     /**

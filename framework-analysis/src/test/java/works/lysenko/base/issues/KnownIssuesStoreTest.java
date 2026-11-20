@@ -308,4 +308,57 @@ class KnownIssuesStoreTest {
         List<KnownIssue> saveMatches = store.getForNode(saveScenario, result);
         assertEquals(2, saveMatches.size());
     }
+
+    @Test
+    @DisplayName("Incremental node cursor detects newly appended events and handles multiple scenarios on one Result")
+    void testGetForNodeIncrementalCursor() {
+        final String json = """
+                {
+                  "issues": [
+                    {
+                      "scenario": "*",
+                      "title": "BUG-1",
+                      "pattern": "ALPHA_ERR"
+                    },
+                    {
+                      "scenario": "demo.Target",
+                      "title": "BUG-2",
+                      "pattern": "BETA_ERR"
+                    }
+                  ]
+                }
+                """;
+        final KnownIssuesStore store = new KnownIssuesStore(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+
+        final _Scenario target = new Leaf(Fraction.ONE) {
+            @Override public String getName() { return "demo.Target"; }
+            @Override public String getSimpleName() { return "Target"; }
+        };
+        final _Scenario other = new Leaf(Fraction.ONE) {
+            @Override public String getName() { return "demo.Other"; }
+            @Override public String getSimpleName() { return "Other"; }
+        };
+
+        final Result result = new Result(target);
+        result.addEvent(new LogRecord(1, System.currentTimeMillis(), new Event(1, EventType.WARNING, 0, "Normal event", null)));
+
+        // Initial scan: no match
+        assertTrue(store.getForNode(target, result).isEmpty());
+        assertTrue(store.getForNode(other, result).isEmpty());
+
+        // Append ALPHA_ERR -> both target and other match BUG-1
+        result.addEvent(new LogRecord(2, System.currentTimeMillis(), new Event(2, EventType.FAILURE, 0, "Hit ALPHA_ERR", null)));
+        assertEquals(List.of("BUG-1"), store.getForNode(target, result).stream().map(KnownIssue::title).toList());
+        assertEquals(List.of("BUG-1"), store.getForNode(other, result).stream().map(KnownIssue::title).toList());
+
+        // Append BETA_ERR -> target now matches both BUG-1 and BUG-2, while other stays at BUG-1
+        result.addEvent(new LogRecord(3, System.currentTimeMillis(), new Event(3, EventType.FAILURE, 0, "Hit BETA_ERR", null)));
+        assertEquals(List.of("BUG-1", "BUG-2"), store.getForNode(target, result).stream().map(KnownIssue::title).toList());
+        assertEquals(List.of("BUG-1"), store.getForNode(other, result).stream().map(KnownIssue::title).toList());
+
+        // Mutating returned list must not corrupt internal cached matches
+        final List<KnownIssue> returned = store.getForNode(target, result);
+        returned.clear();
+        assertEquals(2, store.getForNode(target, result).size());
+    }
 }

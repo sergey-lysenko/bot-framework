@@ -95,9 +95,9 @@ public record EtaFormulas() {
     /**
      * Computes mean, standard deviation, and predicted duration across per-cycle ETA samples.
      *
-     * @param samples      non-null list of sampled ETA values in milliseconds
-     * @param initialEtaMs ETA recorded at cycle start
-     * @param finalEtaMs   ETA recorded at cycle completion
+     * @param samples      non-null list of sampled projected-total or ETA values in milliseconds
+     * @param initialEtaMs remaining ETA recorded at cycle start
+     * @param finalEtaMs   remaining ETA recorded at cycle completion
      * @param realMs       actual elapsed cycle duration in milliseconds
      * @return aggregated {@link CycleStats}
      */
@@ -106,6 +106,25 @@ public record EtaFormulas() {
             final long initialEtaMs,
             final long finalEtaMs,
             final long realMs) {
+        return computeCycleStats(samples, initialEtaMs, finalEtaMs, realMs, 0L);
+    }
+
+    /**
+     * Computes mean, standard deviation, and predicted duration across per-cycle ETA samples.
+     *
+     * @param samples          non-null list of sampled projected-total or ETA values in milliseconds
+     * @param initialEtaMs     remaining ETA recorded at cycle start
+     * @param finalEtaMs       remaining ETA recorded at cycle completion
+     * @param realMs           actual elapsed cycle duration in milliseconds
+     * @param predictedCycleMs optional model-derived single-cycle duration prediction at cycle start, or {@code <= 0}
+     * @return aggregated {@link CycleStats}
+     */
+    public static CycleStats computeCycleStats(
+            final List<Long> samples,
+            final long initialEtaMs,
+            final long finalEtaMs,
+            final long realMs,
+            final long predictedCycleMs) {
 
         long sum = 0L;
         for (final long s : samples) {
@@ -122,9 +141,10 @@ public record EtaFormulas() {
         final long stdDevEtaMs = Math.round(Math.sqrt(sumVariance / count));
 
         final long predictedMs;
-        if (initialEtaMs > 0L && finalEtaMs > 0L) {
-            final long diffEta = (initialEtaMs - finalEtaMs) + realMs;
-            predictedMs = Math.max(1L, diffEta);
+        if (predictedCycleMs > 0L) {
+            predictedMs = predictedCycleMs;
+        } else if (initialEtaMs > 0L && finalEtaMs > 0L) {
+            predictedMs = Math.max(1L, initialEtaMs - finalEtaMs);
         } else if (meanEtaMs > 0L) {
             predictedMs = meanEtaMs;
         } else {

@@ -74,6 +74,7 @@ public final class TreeLayoutComputer {
             if (null != roots && !roots.isEmpty()) return computeLayout(roots, sorted);
         }
         final long tStart = System.currentTimeMillis();
+        resetProgressTimer();
         final List<NodeData> nodes = new ArrayList<>();
         final List<Edge> edges = new ArrayList<>();
         final int[] dy = new int[100];
@@ -115,6 +116,7 @@ public final class TreeLayoutComputer {
 
     public static TreeLayout computeLayout(final Iterable<? extends _Scenario> roots, final TreeMap<String, Result> sorted) {
         final long tStart = System.currentTimeMillis();
+        resetProgressTimer();
         final List<NodeData> nodes = new ArrayList<>();
         final List<Edge> edges = new ArrayList<>();
         final int[] rows = {1};

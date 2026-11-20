@@ -3,6 +3,7 @@ package works.lysenko.base.eta;
 import works.lysenko.Base;
 import works.lysenko.base.eta.calc.EtaFormulas;
 import works.lysenko.base.eta.model.CycleStats;
+import works.lysenko.base.eta.model.EtaSnapshot;
 import works.lysenko.util.prop.PropEnum;
 
 import java.io.IOException;
@@ -27,6 +28,7 @@ public record EtaDebug() {
 
     private static long cycleStartMs = 0L;
     private static long initialEtaMs = 0L;
+    private static long predictedCycleMs = 0L;
     private static final List<Long> cycleSamples = new ArrayList<>(0);
 
     /**
@@ -35,6 +37,7 @@ public record EtaDebug() {
     public static synchronized void reset() {
         cycleStartMs = 0L;
         initialEtaMs = 0L;
+        predictedCycleMs = 0L;
         cycleSamples.clear();
     }
 
@@ -45,21 +48,27 @@ public record EtaDebug() {
      */
     public static synchronized void startCycle(final String name) {
         cycleStartMs = (isNotNull(Base.timer)) ? Base.timer.msSinceStart() : 0L;
-        initialEtaMs = EtaCalculator.calculateEtaMs();
+        final EtaSnapshot snapshot = EtaCalculator.capture(false);
+        initialEtaMs = snapshot.remainingMs();
+        final int remainingUnits = snapshot.total() - snapshot.executed();
+        predictedCycleMs = (initialEtaMs > 0L && remainingUnits > 0)
+                ? Math.max(1L, Math.round((double) initialEtaMs / remainingUnits))
+                : 0L;
         cycleSamples.clear();
         if (initialEtaMs > 0L) {
-            cycleSamples.add(initialEtaMs);
+            cycleSamples.add(cycleStartMs + initialEtaMs);
         }
     }
 
     /**
-     * Records an intra-cycle remaining ETA sample.
+     * Records an intra-cycle remaining ETA sample as projected total runtime ({@code elapsed + etaMs}).
      *
      * @param etaMs sampled remaining duration in milliseconds
      */
     public static synchronized void recordSample(final long etaMs) {
         if (etaMs > 0L) {
-            cycleSamples.add(etaMs);
+            final long nowMs = (isNotNull(Base.timer)) ? Base.timer.msSinceStart() : 0L;
+            cycleSamples.add(nowMs + etaMs);
             AllLeafCompletions.recordEtaSample(etaMs);
         }
     }
@@ -74,24 +83,28 @@ public record EtaDebug() {
         if (cycleStartMs == 0L) return;
 
         final long cycleEndMs = (isNotNull(Base.timer)) ? Base.timer.msSinceStart() : 0L;
-        final long realMs = Math.max(1L, cycleEndMs - cycleStartMs);
+        final long inFlightMs = (isNotNull(Base.core) && isNotNull(Base.core.getTest()) && isNotNull(Base.core.getTest().repeater()))
+                ? Base.core.getTest().repeater().getInFlightMs(cycleEndMs)
+                : 0L;
+        final long realMs = (inFlightMs > 0L) ? inFlightMs : Math.max(1L, cycleEndMs - cycleStartMs);
         final long finalEtaMs = EtaCalculator.calculateEtaMs();
 
         if (finalEtaMs > 0L) {
-            cycleSamples.add(finalEtaMs);
+            cycleSamples.add(cycleEndMs + finalEtaMs);
         }
 
         if (cycleSamples.isEmpty()) {
-            if (initialEtaMs > 0L) cycleSamples.add(initialEtaMs);
-            else if (finalEtaMs > 0L) cycleSamples.add(finalEtaMs);
+            if (initialEtaMs > 0L) cycleSamples.add(cycleStartMs + initialEtaMs);
+            else if (finalEtaMs > 0L) cycleSamples.add(cycleEndMs + finalEtaMs);
         }
 
-        final CycleStats stats = EtaFormulas.computeCycleStats(cycleSamples, initialEtaMs, finalEtaMs, realMs);
+        final CycleStats stats = EtaFormulas.computeCycleStats(cycleSamples, initialEtaMs, finalEtaMs, realMs, predictedCycleMs);
         final int testNum = isNotNull(Base.core) ? Base.core.getTestsCount() : 0;
         append(testNum, realMs, stats.meanEtaMs(), stats.stdDevEtaMs(), stats.predictedMs(), name);
 
         cycleStartMs = 0L;
         initialEtaMs = 0L;
+        predictedCycleMs = 0L;
         cycleSamples.clear();
     }
 
