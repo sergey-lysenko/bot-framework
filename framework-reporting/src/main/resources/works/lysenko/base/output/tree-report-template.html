@@ -47,6 +47,7 @@
     <button onclick="zoomIn()">Zoom +</button>
     <button onclick="zoomOut()">Zoom -</button>
     <button onclick="resetZoom()">Reset</button>
+    <a id="issues-link" href="#" target="_blank" style="text-decoration:none;" title="Known Issues with Referenced Tests"><button type="button">Issues</button></a>
   </div>
 </header>
 <div id="canvas-container">
@@ -146,6 +147,13 @@
     }
     window.open(url, 'logexplorer');
   }
+
+  (function() {
+    const path = window.location.pathname;
+    const filename = path.substring(path.lastIndexOf('/') + 1);
+    document.getElementById('issues-link').href = filename.endsWith('.tree.html')
+      ? filename.replace(/\.tree\.html$/, '.issues.html') : 'issues.html';
+  })();
 
   const nodeDataMap = {{NODE_DATA_JSON}};
   function showNodeDetails(id) {

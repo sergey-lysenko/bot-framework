@@ -242,6 +242,8 @@ public record Layout() {
         public static final String RUN_ROOT_ = s($1_S, s, $1_S, _DOT_, $2_S, _DOT_, $3_S, _DOT_, $4_S, _DOT_, $5_S);
         /** Run tree HTML template. */
         public static final String RUN_TREE_HTML_ = s($1_S, s, $1_S, _DOT_, works.lysenko.util.lang.word.T.TREE, _DOT_, HTML);
+        /** Run known issues HTML template. */
+        public static final String RUN_ISSUES_HTML_ = s($1_S, s, $1_S, _DOT_, "issues", _DOT_, HTML);
         /** Run log HTML template. */
         public static final String RUN_LOG_HTML_ = s($1_S, s, $1_S, _DOT_, RUN, _DOT_, LOG, _DOT_, HTML);
         /** Run sequence template. */

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Known Issues</title>
+<style>
+  :root { --bg: #0f172a; --panel-bg: #1e293b; --border: #334155; --text: #f8fafc; --text-muted: #94a3b8; --accent: #38bdf8; --ok: #22c55e; --warn: #f59e0b; --info: #06b6d4; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+  header { position: sticky; top: 0; background: var(--panel-bg); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px; z-index: 10; flex-wrap: wrap; }
+  h1 { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .badge { background: #0284c7; color: white; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  button, .btn-link button { background: #334155; color: var(--text); border: 1px solid #475569; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  button:hover { background: #475569; }
+  .btn-link { text-decoration: none; }
+  input#filter { background: #0f172a; color: var(--text); border: 1px solid #475569; border-radius: 6px; padding: 6px 10px; font-size: 13px; width: 260px; }
+  input#filter:focus { outline: none; border-color: var(--accent); }
+  main { padding: 20px; max-width: 1400px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+  .stats { display: flex; gap: 12px; flex-wrap: wrap; }
+  .stat { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; min-width: 150px; }
+  .stat .n { font-size: 22px; font-weight: 700; }
+  .stat .l { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat.confirmed .n { color: var(--ok); }
+  .stat.not-reproduced .n, .stat.not-checked .n { color: var(--info); }
+  .group { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .group-head { display: flex; align-items: baseline; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .group-head h2 { font-size: 14px; font-weight: 600; }
+  .group.confirmed h2 { color: var(--ok); }
+  .group.not-reproduced h2, .group.not-checked h2 { color: var(--info); }
+  .group-head .count { background: #0f172a; border: 1px solid var(--border); border-radius: 12px; padding: 1px 8px; font-size: 11px; color: var(--text-muted); }
+  .group-head .sub { font-size: 12px; color: var(--text-muted); }
+  .none { padding: 14px 16px; color: var(--text-muted); font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 16px; background: #172033; border-bottom: 1px solid var(--border); }
+  td { padding: 8px 16px; border-bottom: 1px solid #243044; vertical-align: top; }
+  tr.issue:last-child td { border-bottom: none; }
+  tr.issue:hover td { background: rgba(56, 189, 248, 0.06); }
+  .c-issue { white-space: nowrap; width: 1%; }
+  .c-tests { width: 55%; }
+  .key { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 600; color: var(--accent); text-decoration: none; }
+  a.key:hover { text-decoration: underline; }
+  .title { color: var(--text); }
+  .desc { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+  .muted { color: var(--text-muted); font-size: 12px; font-style: italic; }
+  .tcount { display: inline-block; min-width: 24px; text-align: center; margin-right: 8px; background: rgba(34, 197, 94, 0.15); color: var(--ok); border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 700; }
+  a.test { display: inline-block; margin: 1px 4px 1px 0; padding: 0 6px; border-radius: 4px; background: #0f172a; border: 1px solid var(--border); color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; text-decoration: none; }
+  a.test:hover { border-color: var(--accent); background: #172033; }
+  tr.hidden { display: none; }
+  .group.empty-filter { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🐞 Known Issues <span class="badge">Report</span></h1>
+  <div class="controls">
+    <input id="filter" type="search" placeholder="Filter by key, title or test…" oninput="applyFilter()" autofocus>
+    <a class="btn-link" id="log-link" href="#" onclick="navigateToLog(event, '')" title="Execution Timeline &amp; Telemetry"><button type="button">Log</button></a>
+    <a class="btn-link" id="tree-link" href="#" target="_blank" title="Interactive Scenario Graph"><button type="button">Tree</button></a>
+  </div>
+</header>
+<main>
+  <div class="stats">
+    <div class="stat confirmed"><div class="n">{{CONFIRMED_COUNT}}</div><div class="l">Confirmed</div></div>
+    <div class="stat not-reproduced"><div class="n">{{NOT_REPRODUCED_COUNT}}</div><div class="l">Not reproduced</div></div>
+    <div class="stat not-checked"><div class="n">{{NOT_CHECKED_COUNT}}</div><div class="l">Not checked</div></div>
+  </div>
+{{CONTENT}}</main>
+<script>
+  function siblingReport(suffix) {
+    const path = window.location.pathname;
+    const filename = path.substring(path.lastIndexOf('/') + 1);
+    return filename.endsWith('.issues.html') ? filename.replace(/\.issues\.html$/, suffix) : null;
+  }
+  function getLogReportUrl(hash) {
+    return (siblingReport('.run.log.html') || 'run.log.html') + (hash ? '#' + hash : '');
+  }
+  function navigateToLog(e, hash) {
+    if (e) {
+      if (e.preventDefault) e.preventDefault();
+      if (e.stopPropagation) e.stopPropagation();
+    }
+    const url = getLogReportUrl(hash);
+    if (window.opener && !window.opener.closed) {
+      try {
+        window.opener.location.href = url;
+        window.opener.focus();
+        return;
+      } catch (err) {
+        // Fall back to window.open if cross-origin or restricted
+      }
+    }
+    window.open(url, 'logexplorer');
+  }
+  document.getElementById('log-link').href = getLogReportUrl('');
+  document.getElementById('tree-link').href = siblingReport('.tree.html') || 'tree.html';
+
+  function applyFilter() {
+    const q = document.getElementById('filter').value.trim().toLowerCase();
+    document.querySelectorAll('section.group').forEach(group => {
+      let visible = 0;
+      group.querySelectorAll('tr.issue').forEach(row => {
+        const tests = row.querySelector('.c-tests') ? row.querySelector('.c-tests').innerText.toLowerCase() : '';
+        const match = !q || row.getAttribute('data-search').includes(q) || tests.includes(q);
+        row.classList.toggle('hidden', !match);
+        if (match) visible++;
+      });
+      group.classList.toggle('empty-filter', !!q && group.querySelector('tr.issue') && visible === 0);
+    });
+  }
+</script>
+</body>
+</html>

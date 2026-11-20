@@ -110,9 +110,11 @@ record NewIssues() {
     }
 
     /**
-     * Prints summary information about known issues to the console.
+     * Computes which known issues were confirmed (with reproducing tests), not reproduced or not checked.
+     *
+     * @return summary of known issues for this run
      */
-    private static void consoleKnownIssues() {
+    static KnownIssuesSummary computeKnownIssuesSummary() {
 
         final KnownIssuesStore store = getKnownIssuesStore();
         final List<KnownIssue> allKnownIssues = store.getIssues();
@@ -121,9 +123,10 @@ record NewIssues() {
         final List<_LogRecord> logRecords =
                 (isNotNull(exec) && isNotNull(exec.issues())) ? exec.issues().latestCopy() : Collections.emptyList();
 
-        final Map<String, Set<Integer>> confirmedRefs = new LinkedHashMap<>();
-        final Set<String> notReproducedRefs = new LinkedHashSet<>();
-        final Set<String> notCheckedRefs = new LinkedHashSet<>();
+        final Map<String, KnownIssuesSummary.Entry> confirmedRefs = new LinkedHashMap<>();
+        final Map<String, KnownIssuesSummary.Entry> notReproducedRefs = new LinkedHashMap<>();
+        final Map<String, KnownIssuesSummary.Entry> notCheckedRefs = new LinkedHashMap<>();
+
 
         final Map<KnownIssue, Set<Integer>> issueTests = new java.util.HashMap<>();
         final Set<KnownIssue> confirmedIssues = new java.util.HashSet<>();
@@ -168,7 +171,7 @@ record NewIssues() {
             final String ref = getReference(ki);
 
             if (isConfirmed) {
-                confirmedRefs.computeIfAbsent(ref, k -> new TreeSet<>()).addAll(reproducingTests);
+                confirmedRefs.computeIfAbsent(ref, k -> entryOf(ki, ref, new TreeSet<>())).tests().addAll(reproducingTests);
             } else {
                 final String target = ki.scenario();
                 final boolean scenarioExecuted;
@@ -179,49 +182,63 @@ record NewIssues() {
                 }
 
                 if (scenarioExecuted) {
-                    notReproducedRefs.add(ref);
+                    notReproducedRefs.computeIfAbsent(ref, k -> entryOf(ki, ref, Collections.emptySet()));
                 } else {
-                    notCheckedRefs.add(ref);
+                    notCheckedRefs.computeIfAbsent(ref, k -> entryOf(ki, ref, Collections.emptySet()));
                 }
             }
         }
 
+        return new KnownIssuesSummary(confirmedRefs, notReproducedRefs, notCheckedRefs);
+    }
+
+    /**
+     * Prints summary information about known issues to the console.
+     *
+     * @param summary precomputed summary
+     */
+    private static void consoleKnownIssues(final KnownIssuesSummary summary) {
+
         section(b(c(KNOWN), c(ISSUES), SUMMARY));
 
         log(Level.none, ansi(b(c(CONFIRMED), s(c(KNOWN), _SPACE_, c(ISSUES), _COLON_)), GREEN), true);
-        if (confirmedRefs.isEmpty()) {
+        if (summary.confirmed().isEmpty()) {
             log(Level.none, s("  ", c(NONE)), false);
         } else {
-            for (final Map.Entry<String, Set<Integer>> entry : confirmedRefs.entrySet()) {
-                final String ref = entry.getKey();
-                final Set<Integer> testNums = entry.getValue();
+            for (final KnownIssuesSummary.Entry entry : summary.confirmed().values()) {
+                final Set<Integer> testNums = entry.tests();
                 if (testNums.isEmpty()) {
-                    log(Level.none, s("  ", _BULLT_, _SPACE_, ref), false);
+                    log(Level.none, s("  ", _BULLT_, _SPACE_, entry.ref()), false);
                 } else {
                     final String testsStr = testNums.stream().map(Object::toString).collect(Collectors.joining(" "));
-                    log(Level.none, s("  ", _BULLT_, _SPACE_, ref, _SPACE_, testsStr), false);
+                    log(Level.none, s("  ", _BULLT_, _SPACE_, entry.ref(), _SPACE_, testsStr), false);
                 }
             }
         }
 
         log(Level.none, ansi(b(c(KNOWN), c(ISSUES), u(NOT), s(c(REPRODUCED), _COLON_)), CYAN), true);
-        if (notReproducedRefs.isEmpty()) {
+        if (summary.notReproduced().isEmpty()) {
             log(Level.none, s("  ", c(NONE)), false);
         } else {
-            for (final String ref : notReproducedRefs) {
+            for (final String ref : summary.notReproduced().keySet()) {
                 log(Level.none, s("  ", _BULLT_, _SPACE_, ref), false);
             }
         }
 
         log(Level.none, ansi(b(c(KNOWN), c(ISSUES), u(NOT), s(c(CHECKED), _COLON_)), CYAN), true);
-        if (notCheckedRefs.isEmpty()) {
+        if (summary.notChecked().isEmpty()) {
             log(Level.none, s("  ", c(NONE)), false);
         } else {
-            for (final String ref : notCheckedRefs) {
+            for (final String ref : summary.notChecked().keySet()) {
                 log(Level.none, s("  ", _BULLT_, _SPACE_, ref), false);
             }
         }
     }
+
+    private static KnownIssuesSummary.Entry entryOf(final KnownIssue ki, final String ref, final Set<Integer> tests) {
+        return new KnownIssuesSummary.Entry(ref, ki.link().trim(), ki.title().trim(), ki.description().trim(), tests);
+    }
+
 
     private static String getReference(final KnownIssue ki) {
 
@@ -247,9 +264,10 @@ record NewIssues() {
      */
     static void run() {
 
-        final List<_LogRecord> newIssues = exec.issues().latestCopy();
         consoleNewIssues();
-        consoleKnownIssues();
+        final KnownIssuesSummary summary = computeKnownIssuesSummary();
+        consoleKnownIssues(summary);
+        KnownIssuesHtml.write(summary);
     }
 }
 
