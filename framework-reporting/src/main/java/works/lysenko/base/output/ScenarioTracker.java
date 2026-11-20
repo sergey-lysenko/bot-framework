@@ -47,6 +47,7 @@ public final class ScenarioTracker {
     private static final Map<String, Integer> previousExecutions = new HashMap<>();
     private static final Set<String> lastRecentScenarioKeys = new HashSet<>();
     private static File customOutputDir = null;
+    private static volatile String latestFrameSvg = null;
 
     private ScenarioTracker() {
     }
@@ -57,10 +58,19 @@ public final class ScenarioTracker {
 
     public static void reset() {
         ProgressionFrames.awaitCompletion();
+        ProgressionFrames.clearDebugLogs();
         capturedFrames.clear();
         previousExecutions.clear();
         lastRecentScenarioKeys.clear();
         customOutputDir = null;
+        latestFrameSvg = null;
+    }
+
+    /**
+     * @return SVG source of the most recently rendered scenario progression frame, or {@code null} if none yet
+     */
+    public static String getLatestFrameSvg() {
+        return latestFrameSvg;
     }
 
     public static List<File> getCapturedFrames() {
@@ -71,6 +81,7 @@ public final class ScenarioTracker {
     public static void onLimbo(final Integer testNumber) {
         if (!ProgressionSettings.current().scenarioEnabled())
             return;
+        ProgressionFrames.drainDebugLogs(works.lysenko.Base::logDebug);
         if (isNull(core))
             return;
         final Set<_Scenario> leafs = core.getAccessibleLeafs();
@@ -104,8 +115,13 @@ public final class ScenarioTracker {
         final ScenarioGraphSvgRenderer.FrameSnapshot snapshot =
                 ScenarioGraphSvgRenderer.captureSnapshot(scenarios, target, currentCycle, recentKeys);
         updatePreviousExecutions(scenarios);
+        final works.lysenko.util.apis.util._Dashboard dashboard = isNotNull(core) ? core.getDashboard() : null;
         ProgressionFrames.submitAsync(() -> {
             final String svgContent = ScenarioGraphSvgRenderer.renderProgressionGraphSvg(snapshot);
+            latestFrameSvg = svgContent;
+            if (isNotNull(dashboard)) {
+                dashboard.setScenarioProgressionSvg(svgContent);
+            }
             try {
                 Files.writeString(frameFile.toPath(), svgContent, StandardCharsets.UTF_8);
             } catch (final IOException e) {
@@ -113,12 +129,13 @@ public final class ScenarioTracker {
                 return;
             }
             final long duration = System.currentTimeMillis() - t0;
-            logDebug(String.format("Captured scenario progression frame #%d (%dx%d) in %d ms", frameIndex, WIDTH, HEIGHT, duration));
+            ProgressionFrames.deferDebugLog(String.format("Captured scenario progression frame #%d (%dx%d) in %d ms", frameIndex, WIDTH, HEIGHT, duration));
         });
     }
 
     public static void onComplete() {
         ProgressionFrames.awaitCompletion();
+        ProgressionFrames.drainDebugLogs(works.lysenko.Base::logDebug);
     }
 
     public static void processFrames(

@@ -183,6 +183,47 @@ class ScenarioTrackerTest {
         assertTrue(svg.contains(">OrderAction0<"), "Diagonal label should show concise stripped leaf name");
     }
 
+    private static List<_Scenario> dominantBranchSuite() {
+        final String[] thirdLevel = {"ReactCrashCheck", "Logout", "Remember", "Reset", "Captcha", "Session"};
+        final List<_Scenario> scenarios = new ArrayList<>();
+        for (final String third : thirdLevel) {
+            for (int i = 0; i < 10; i++) {
+                scenarios.add(new TestLeaf("signIn.login." + third + ".Step" + i, fr(1.0)));
+            }
+        }
+        scenarios.add(new TestLeaf("signIn.WrongLogin", fr(1.0)));
+        scenarios.add(new TestLeaf("signIn.WrongPassword", fr(1.0)));
+        scenarios.sort(java.util.Comparator.comparing(_Scenario::getShortName, String.CASE_INSENSITIVE_ORDER));
+        return scenarios;
+    }
+
+    @Test
+    void testAutoLabelLevelDescendsPastSingleDominantBranch() {
+        final String svg = ScenarioTracker.renderProgressionGraphSvg(dominantBranchSuite(), 1, 1);
+
+        assertTrue(svg.contains("Root: signIn"), "Root must be shown in legend");
+        assertTrue(svg.contains(">ReactCrashCheck</text>"), "Auto level must label by third tree level, not just 'login'");
+        assertTrue(svg.contains(">WrongLogin</text>"), "Shallower siblings keep their own labels");
+        assertTrue(svg.contains("8 branches"), "Footer must count third-level groups");
+    }
+
+    @Test
+    void testExplicitLabelLevelOverridesAuto() throws Exception {
+        final TestProperties previous = Base.properties;
+        try {
+            setTestProperty(".test.report.progression.scenario.label.level", "2");
+            ProgressionSettings.initialize();
+            final String svg = ScenarioTracker.renderProgressionGraphSvg(dominantBranchSuite(), 1, 1);
+
+            assertFalse(svg.contains(">ReactCrashCheck</text>"), "Level 2 must not split login into third-level groups");
+            assertTrue(svg.contains("3 branches"), "Level 2 yields login, WrongLogin, WrongPassword");
+        } finally {
+            Base.properties = previous;
+            ProgressionSettings.initialize();
+        }
+    }
+
+
     @Test
     void testWriteAnimatedGif(@TempDir final Path tempDir) throws IOException {
         final File gifFile = tempDir.resolve("test_progression.gif").toFile();

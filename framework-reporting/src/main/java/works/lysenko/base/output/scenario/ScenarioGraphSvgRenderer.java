@@ -1,5 +1,6 @@
 package works.lysenko.base.output.scenario;
 
+import works.lysenko.base.output.ProgressionSettings;
 import works.lysenko.base.output.svg.ProgressionChrome;
 import works.lysenko.base.output.tree.TreeProgressMetrics;
 import works.lysenko.base.output.tree.TreeTheme;
@@ -31,6 +32,7 @@ public final class ScenarioGraphSvgRenderer {
     public static final int HEIGHT = 680;
     static final int DENSE_SCENARIO_THRESHOLD = 45;
     private static final int MAX_HIERARCHICAL_GROUPS = 28;
+    private static final int AUTO_MIN_GROUPS = 5;
 
     private enum BarStatus {
         UNVISITED("Pending", ProgressionChrome.SLATE_FILL, ProgressionChrome.TEXT_DIM),
@@ -103,6 +105,7 @@ public final class ScenarioGraphSvgRenderer {
         private final String[] rawShortNames;
         private final String commonPrefix;
         private final String[] displayNames;
+        private final int labelLevel;
         private final String elapsedBadge;
         private final ProgressionChrome.EtaBadge etaBadge;
 
@@ -126,6 +129,7 @@ public final class ScenarioGraphSvgRenderer {
                 final String[] rawShortNames,
                 final String commonPrefix,
                 final String[] displayNames,
+                final int labelLevel,
                 final String elapsedBadge,
                 final ProgressionChrome.EtaBadge etaBadge) {
             this.count = count;
@@ -147,6 +151,7 @@ public final class ScenarioGraphSvgRenderer {
             this.rawShortNames = rawShortNames;
             this.commonPrefix = commonPrefix;
             this.displayNames = displayNames;
+            this.labelLevel = labelLevel;
             this.elapsedBadge = elapsedBadge;
             this.etaBadge = etaBadge;
         }
@@ -236,6 +241,7 @@ public final class ScenarioGraphSvgRenderer {
                 rawShortNames,
                 commonPrefix,
                 displayNames,
+                ProgressionSettings.current().scenarioLabelLevel(),
                 ProgressionChrome.formatElapsedBadge(),
                 ProgressionChrome.resolveEtaBadge());
     }
@@ -356,7 +362,7 @@ public final class ScenarioGraphSvgRenderer {
 
         // Compute branch groups for dense mode and determine whether labels need 1 or 2 staggered rows
         final List<BranchGroup> branchGroups = denseMode
-                ? computeBranchGroups(displayNames, execsArray, targetsArray, statuses)
+                ? computeBranchGroups(rawShortNames, commonPrefix, snapshot.labelLevel, execsArray, targetsArray, statuses)
                 : Collections.emptyList();
         final boolean denseNeedsTwoRows = denseMode && requiresSecondLabelRow(branchGroups, chartX, chartW, slotW);
         final int chartH = denseMode ? (denseNeedsTwoRows ? 444 : 472) : 376;
@@ -781,37 +787,29 @@ public final class ScenarioGraphSvgRenderer {
     }
 
     private static List<BranchGroup> computeBranchGroups(
-            final String[] displayNames,
+            final String[] rawShortNames,
+            final String commonPrefix,
+            final int labelLevel,
             final int[] execsArray,
             final int[] targetsArray,
             final BarStatus[] statuses) {
 
-        final int count = displayNames.length;
+        final int count = rawShortNames.length;
         if (count == 0) return Collections.emptyList();
 
-        final List<BranchGroup> raw = new ArrayList<>();
-        int i = 0;
-        while (i < count) {
-            final String keyLower = firstSegment(displayNames[i]).toLowerCase(Locale.ROOT);
-            String bestLabel = firstSegment(displayNames[i]);
-            boolean hasChildPath = displayNames[i].indexOf('.') >= 0;
-            final int start = i;
-            int completed = 0;
-            boolean hasFailure = false;
-            boolean hasWarning = false;
-
-            while (i < count && firstSegment(displayNames[i]).toLowerCase(Locale.ROOT).equals(keyLower)) {
-                if (!hasChildPath && displayNames[i].indexOf('.') >= 0) {
-                    bestLabel = firstSegment(displayNames[i]);
-                    hasChildPath = true;
-                }
-                if (execsArray[i] >= targetsArray[i]) completed++;
-                if (statuses[i] == BarStatus.FAILED) hasFailure = true;
-                if (statuses[i] == BarStatus.WARNING) hasWarning = true;
-                i++;
-            }
-            raw.add(new BranchGroup(bestLabel, start, i - 1, completed, i - start, hasFailure, hasWarning));
+        final int minLevel = segmentCount(commonPrefix) + 1;
+        int maxDepth = minLevel;
+        for (final String name : rawShortNames) {
+            maxDepth = Math.max(maxDepth, segmentCount(name));
         }
+
+        final int level;
+        if (labelLevel > 0) {
+            level = Math.min(Math.max(labelLevel, minLevel), maxDepth);
+        } else {
+            level = autoLabelLevel(rawShortNames, minLevel, maxDepth);
+        }
+        final List<BranchGroup> raw = groupByLevel(rawShortNames, level, execsArray, targetsArray, statuses);
 
         // If names are flat (no hierarchy) or excessively fragmented, fall back to clean uniform buckets
         if (raw.size() > MAX_HIERARCHICAL_GROUPS && (double) count / raw.size() < 2.2) {
@@ -836,6 +834,94 @@ public final class ScenarioGraphSvgRenderer {
         }
         return raw;
     }
+
+    /**
+     * Picks the shallowest tree level (at or below the first level distinguishing scenarios) that yields at least
+     * {@link #AUTO_MIN_GROUPS} groups, without exceeding {@link #MAX_HIERARCHICAL_GROUPS}.
+     */
+    private static int autoLabelLevel(final String[] rawShortNames, final int minLevel, final int maxDepth) {
+        int candidate = minLevel;
+        for (int level = minLevel; level <= maxDepth; level++) {
+            final int groups = countGroups(rawShortNames, level);
+            if (groups > MAX_HIERARCHICAL_GROUPS) break;
+            candidate = level;
+            if (groups >= AUTO_MIN_GROUPS) break;
+        }
+        return candidate;
+    }
+
+    private static int countGroups(final String[] rawShortNames, final int level) {
+        int groups = 0;
+        String previousKey = null;
+        for (final String name : rawShortNames) {
+            final String key = groupKey(name, level).toLowerCase(Locale.ROOT);
+            if (!key.equals(previousKey)) {
+                groups++;
+                previousKey = key;
+            }
+        }
+        return groups;
+    }
+
+    private static List<BranchGroup> groupByLevel(
+            final String[] rawShortNames,
+            final int level,
+            final int[] execsArray,
+            final int[] targetsArray,
+            final BarStatus[] statuses) {
+
+        final int count = rawShortNames.length;
+        final List<BranchGroup> groups = new ArrayList<>();
+        int i = 0;
+        while (i < count) {
+            final String key = groupKey(rawShortNames[i], level);
+            final String keyLower = key.toLowerCase(Locale.ROOT);
+            String bestLabel = lastSegment(key);
+            boolean hasChildPath = segmentCount(rawShortNames[i]) > level;
+            final int start = i;
+            int completed = 0;
+            boolean hasFailure = false;
+            boolean hasWarning = false;
+
+            while (i < count && groupKey(rawShortNames[i], level).toLowerCase(Locale.ROOT).equals(keyLower)) {
+                if (!hasChildPath && segmentCount(rawShortNames[i]) > level) {
+                    bestLabel = lastSegment(groupKey(rawShortNames[i], level));
+                    hasChildPath = true;
+                }
+                if (execsArray[i] >= targetsArray[i]) completed++;
+                if (statuses[i] == BarStatus.FAILED) hasFailure = true;
+                if (statuses[i] == BarStatus.WARNING) hasWarning = true;
+                i++;
+            }
+            groups.add(new BranchGroup(bestLabel, start, i - 1, completed, i - start, hasFailure, hasWarning));
+        }
+        return groups;
+    }
+
+    /** Returns the first {@code level} dot-separated segments of the name (the whole name if it is shallower). */
+    private static String groupKey(final String name, final int level) {
+        int idx = -1;
+        for (int seg = 0; seg < level; seg++) {
+            idx = name.indexOf('.', idx + 1);
+            if (idx < 0) return name;
+        }
+        return name.substring(0, idx);
+    }
+
+    private static String lastSegment(final String key) {
+        final int dot = key.lastIndexOf('.');
+        return (dot >= 0) ? key.substring(dot + 1) : key;
+    }
+
+    private static int segmentCount(final String name) {
+        if (null == name || name.isEmpty()) return 0;
+        int segments = 1;
+        for (int k = 0; k < name.length(); k++) {
+            if (name.charAt(k) == '.' && k < name.length() - 1) segments++;
+        }
+        return segments;
+    }
+
 
     private static BarStatus resolveBarStatus(final Result res, final int execs, final int target) {
         if (execs <= 0) return BarStatus.UNVISITED;
@@ -911,11 +997,6 @@ public final class ScenarioGraphSvgRenderer {
             return name.substring(commonPrefix.length());
         }
         return name;
-    }
-
-    private static String firstSegment(final String name) {
-        final int dot = name.indexOf('.');
-        return (dot > 0) ? name.substring(0, dot) : name;
     }
 
     private static String truncate(final String text, final int maxLen) {

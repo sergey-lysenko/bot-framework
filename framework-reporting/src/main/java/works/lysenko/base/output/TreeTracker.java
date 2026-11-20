@@ -109,6 +109,7 @@ public final class TreeTracker {
      */
     public static void reset() {
         ProgressionFrames.awaitCompletion();
+        ProgressionFrames.clearDebugLogs();
         capturedFrames.clear();
         customOutputDir = null;
         latestFrameSvg = null;
@@ -218,6 +219,7 @@ public final class TreeTracker {
     }
 
     private static synchronized void captureFrame(final Integer testNumber) {
+        ProgressionFrames.drainDebugLogs(works.lysenko.Base::logDebug);
         logDebug("captureFrame start");
 
         if (isNull(core) || isNull(core.getResults()))
@@ -322,7 +324,7 @@ public final class TreeTracker {
                 }
             }
             final long duration = System.currentTimeMillis() - t0;
-            logDebug(String.format("Frame #%d (%dx%d) in %d ms", frameIndex, frameW, frameH, duration));
+            ProgressionFrames.deferDebugLog(String.format("Frame #%d (%dx%d) in %d ms", frameIndex, frameW, frameH, duration));
         });
     }
 
@@ -401,6 +403,7 @@ public final class TreeTracker {
             captureFrame(null);
         }
         ProgressionFrames.awaitCompletion();
+        ProgressionFrames.drainDebugLogs(works.lysenko.Base::logDebug);
     }
 
     /**

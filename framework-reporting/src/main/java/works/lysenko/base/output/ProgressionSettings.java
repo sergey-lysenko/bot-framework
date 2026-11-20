@@ -17,6 +17,7 @@ public record ProgressionSettings(
         boolean scenarioGifEnabled,
         boolean scenarioWebpEnabled,
         boolean scenarioMp4Enabled,
+        int scenarioLabelLevel,
         boolean treeGifEnabled,
         boolean treeWebpEnabled,
         boolean treeMp4Enabled,
@@ -64,6 +65,7 @@ public record ProgressionSettings(
         final Boolean scenarioGifEnabled = PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_GIF.get();
         final Boolean scenarioWebpEnabled = PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_WEBP.get();
         final Boolean scenarioMp4Enabled = PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_MP4.get();
+        final Integer scenarioLabelLevel = PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_LABEL_LEVEL.get();
         final Boolean treeGifEnabled = PropEnum._TEST_REPORT_PROGRESSION_TREE_GIF.get();
         final Boolean treeWebpEnabled = PropEnum._TEST_REPORT_PROGRESSION_TREE_WEBP.get();
         final Boolean treeMp4Enabled = PropEnum._TEST_REPORT_PROGRESSION_TREE_MP4.get();
@@ -80,6 +82,7 @@ public record ProgressionSettings(
                 Boolean.TRUE.equals(scenarioGifEnabled),
                 Boolean.TRUE.equals(scenarioWebpEnabled),
                 Boolean.TRUE.equals(scenarioMp4Enabled),
+                null == scenarioLabelLevel ? 0 : Math.max(0, scenarioLabelLevel),
                 Boolean.TRUE.equals(treeGifEnabled),
                 Boolean.TRUE.equals(treeWebpEnabled),
                 Boolean.TRUE.equals(treeMp4Enabled),

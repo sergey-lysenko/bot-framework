@@ -151,6 +151,7 @@ Configuration is organized into 11 specialized partial files included via `src/m
 | **Tests** | `.test.all.leafs.executions` | `1` | Target execution count for each leaf scenario in ALL_LEAFS mode |
 | **Tests** | `.test.fail.by.event.of.severity` | `s1` | Event severity level that halts test execution |
 | **Tests** | `.test.resilient.mode` | `false` | Enables resilient mode (executes full suite despite failures) |
+| **Tests** | `.test.report.progression.scenario.label.level` | `0` | Tree level (1 = root) used to group/label bars in the Scenario Execution Progression chart; `0` = auto |
 | **Tests** | `.test.report.progression.tree.mp4` | `true` | Generates MP4 video of scenario tree progression (FFmpeg) |
 | **Tests** | `.test.report.progression.tree.sonification` | `none` | Adds deterministic musical audio to progression MP4 (`none`, `copilot`, `claude`, `gemini`, `orpheus`, `aurora`, `carbon`) |
 | **UI** | `.screen.to.spawn.dashboard` | `0` | Screen index on which to open the dashboard |

@@ -141,6 +141,10 @@
 # .test.report.progression.scenario.gif=false
 
 # ------------------------------------------------------------------------------
+# Scenario tree level (1 = tree root) used to group and label bars in the Scenario Execution Progression chart for large suites. 0 (default) selects a level automatically; values deeper than the tree are clamped to the deepest level. Default: 0
+# .test.report.progression.scenario.label.level=0
+
+# ------------------------------------------------------------------------------
 # Generates an MP4 video of scenario coverage progression. Default: true
 # .test.report.progression.scenario.mp4=true
 

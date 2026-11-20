@@ -131,4 +131,13 @@ public interface _Dashboard {
     default void setTreeProgressionSvg(final String svgContent) {
         // Default implementation does nothing
     }
+
+    /**
+     * Updates the displayed scenario progression frame on the dashboard from its SVG source.
+     *
+     * @param svgContent the SVG source of the scenario progression frame
+     */
+    default void setScenarioProgressionSvg(final String svgContent) {
+        // Default implementation does nothing
+    }
 }

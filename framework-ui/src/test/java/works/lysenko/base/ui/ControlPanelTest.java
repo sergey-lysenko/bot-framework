@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import works.lysenko.Base;
 import works.lysenko.base.Parameters;
+import works.lysenko.base.output.ScenarioTracker;
 import works.lysenko.base.output.TreeTracker;
 import works.lysenko.base.parameters.Gui;
 
@@ -31,6 +32,7 @@ class ControlPanelTest {
     void setUp() throws IOException {
         previousParameters = Base.parameters;
         TreeTracker.reset();
+        ScenarioTracker.reset();
         final File platformsFile = new File(PLATFORMS_);
         if (!platformsFile.exists()) {
             platformsFile.getParentFile().mkdirs();
@@ -43,6 +45,7 @@ class ControlPanelTest {
     void tearDown() {
         Base.parameters = previousParameters;
         TreeTracker.reset();
+        ScenarioTracker.reset();
         if (createdPlatformsFile) {
             new File(PLATFORMS_).delete();
             new File("var").delete();
@@ -62,13 +65,14 @@ class ControlPanelTest {
 
             final JTabbedPane tabbedPane = controlPanel.getTabbedPane();
             assertNotNull(tabbedPane);
-            assertEquals(6, tabbedPane.getTabCount());
+            assertEquals(7, tabbedPane.getTabCount());
             assertEquals("Config & Tests", tabbedPane.getTitleAt(0));
             assertEquals("Run Setup", tabbedPane.getTitleAt(1));
             assertEquals("Execution", tabbedPane.getTitleAt(2));
             assertEquals("Tree Progression", tabbedPane.getTitleAt(3));
-            assertEquals("Tree Layout Editor", tabbedPane.getTitleAt(4));
-            assertEquals("Known Issues", tabbedPane.getTitleAt(5));
+            assertEquals("Scenario Progression", tabbedPane.getTitleAt(4));
+            assertEquals("Tree Layout Editor", tabbedPane.getTitleAt(5));
+            assertEquals("Known Issues", tabbedPane.getTitleAt(6));
             assertEquals(1, tabbedPane.getSelectedIndex());
         });
     }
@@ -124,11 +128,37 @@ class ControlPanelTest {
     }
 
     @Test
+    void setScenarioProgressionSvgUpdatesOnlyScenarioPanel() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            final Properties props = new Properties();
+            props.setProperty("TEST", "testSuite");
+            props.setProperty("PLATFORM", "chrome");
+            final Parameters parameters = new Parameters(props);
+            final Gui gui = new Gui(parameters);
+            gui.addStandardParameters();
+            final ControlPanel controlPanel = new ControlPanel(parameters, gui);
+
+            final String svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"300\" height=\"150\" viewBox=\"0 0 300 150\">" +
+                    "<rect width=\"300\" height=\"150\" fill=\"#22C55E\" />" +
+                    "</svg>";
+            assertNull(controlPanel.getScenarioImagePanel().getSvgFrame());
+            controlPanel.setScenarioProgressionSvg(svg);
+            assertNotNull(controlPanel.getScenarioImagePanel().getSvgFrame());
+            assertEquals(300, controlPanel.getScenarioImagePanel().getSvgFrame().width());
+            assertNull(controlPanel.getTreeImagePanel().getSvgFrame());
+
+            controlPanel.setScenarioProgressionSvg(null);
+            assertNull(controlPanel.getScenarioImagePanel().getSvgFrame());
+        });
+    }
+
+    @Test
     void treeTrackerTracksLatestFrameImage() {
         assertNull(TreeTracker.getLatestFrameSvg());
         assertNull(TreeTracker.getLatestFrameImage());
 
         TreeTracker.reset();
+        ScenarioTracker.reset();
         assertNull(TreeTracker.getLatestFrameSvg());
         assertNull(TreeTracker.getLatestFrameImage());
     }

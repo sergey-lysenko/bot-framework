@@ -1,8 +1,7 @@
 package works.lysenko.base.ui;
 
 import works.lysenko.base.Parameters;
-import works.lysenko.base.output.ProgressionFrames;
-import works.lysenko.base.output.ProgressionSettings;
+import works.lysenko.base.output.ScenarioTracker;
 import works.lysenko.base.output.TreeTracker;
 import works.lysenko.base.parameters.Gui;
 import works.lysenko.base.parameters.PropertiesPanel;
@@ -16,15 +15,9 @@ import javax.swing.*;
 import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * The ControlPanel class.
@@ -89,23 +82,14 @@ public class ControlPanel extends JFrame implements _Dashboard {
         ContextMenu.attach(components);
     }
 
-    private static final ExecutorService TREE_PREVIEW_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
-        final Thread t = new Thread(r, "tree-progression-preview");
-        t.setDaemon(true);
-        return t;
-    });
-
     private static ControlPanel instance;
 
     private final JTabbedPane tabbedPane;
     private final Gui gui;
     private final PropertiesPanel propertiesPanel;
     private UserInterface dashboardPanel;
-    private final CardLayout treeProgressionLayout;
-    private final JPanel treeProgressionPanel;
-    private final ImagePanel treeImagePanel;
-    private final JViewport treeViewport;
-    private final AtomicReference<String> pendingTreeSvg = new AtomicReference<>();
+    private final SvgPreviewPanel treePreview;
+    private final SvgPreviewPanel scenarioPreview;
     private final CountDownLatch runLatch = new CountDownLatch(1);
 
     /**
@@ -185,40 +169,18 @@ public class ControlPanel extends JFrame implements _Dashboard {
         tabbedPane.addTab("Execution", dashboardPanel);
 
         // 4. Tree Progression Tab
-        treeProgressionLayout = new CardLayout();
-        treeProgressionPanel = new JPanel(treeProgressionLayout);
+        treePreview = new SvgPreviewPanel("No tree progression frame available yet.", "tree-progression-preview");
+        tabbedPane.addTab("Tree Progression", treePreview);
 
-        final JPanel placeholderPanel = new JPanel(new GridBagLayout());
-        final JLabel placeholderLabel = new JLabel("No tree progression frame available yet.");
-        placeholderLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
-        placeholderLabel.setForeground(new Color(0x94, 0xA3, 0xB8));
-        placeholderPanel.add(placeholderLabel);
+        // 5. Scenario Progression Tab
+        scenarioPreview = new SvgPreviewPanel("No scenario progression frame available yet.", "scenario-progression-preview");
+        tabbedPane.addTab("Scenario Progression", scenarioPreview);
 
-        treeImagePanel = new ImagePanel();
-        treeImagePanel.setBackground(new Color(0x0F, 0x17, 0x2A));
-        final JScrollPane treeScrollPane = new JScrollPane(treeImagePanel);
-        treeScrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        treeScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
-        treeViewport = treeScrollPane.getViewport();
-        treeViewport.setBackground(new Color(0x0F, 0x17, 0x2A));
-        treeViewport.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(final ComponentEvent event) {
-
-                fitTreeImageToViewport();
-            }
-        });
-
-        treeProgressionPanel.add(placeholderPanel, "PLACEHOLDER");
-        treeProgressionPanel.add(treeScrollPane, "IMAGE");
-
-        tabbedPane.addTab("Tree Progression", treeProgressionPanel);
-
-        // 5. Tree Layout Editor
+        // 6. Tree Layout Editor
         final TreeLayoutEditorPanel treeLayoutEditorPanel = new TreeLayoutEditorPanel();
         tabbedPane.addTab("Tree Layout Editor", treeLayoutEditorPanel);
 
-        // 6. Known Issues Tab
+        // 7. Known Issues Tab
         final KnownIssuesPanel knownIssuesPanel = new KnownIssuesPanel();
         tabbedPane.addTab("Known Issues", knownIssuesPanel);
 
@@ -250,6 +212,10 @@ public class ControlPanel extends JFrame implements _Dashboard {
             if (null != initialFrame) {
                 setTreeProgression(initialFrame);
             }
+        }
+        final String initialScenarioSvg = ScenarioTracker.getLatestFrameSvg();
+        if (null != initialScenarioSvg) {
+            setScenarioProgressionSvg(initialScenarioSvg);
         }
 
         add(tabbedPane);
@@ -365,79 +331,29 @@ public class ControlPanel extends JFrame implements _Dashboard {
      * @return the get tree image panel result
      */
     public ImagePanel getTreeImagePanel() {
-        return treeImagePanel;
+        return treePreview.getImagePanel();
+    }
+
+    /**
+     * Performs get scenario image panel.
+     * @return the panel that paints the scenario progression frame
+     */
+    public ImagePanel getScenarioImagePanel() {
+        return scenarioPreview.getImagePanel();
     }
 
     @Override
     public void setTreeProgression(final Image image) {
-        if (null == treeProgressionPanel) return;
-        pendingTreeSvg.set(null);
-        final Runnable updateRunnable = () -> {
-            if (null == image) {
-                treeImagePanel.setImage(null);
-                treeProgressionLayout.show(treeProgressionPanel, "PLACEHOLDER");
-            } else {
-                treeImagePanel.setImage(image);
-                fitTreeImageToViewport();
-                treeProgressionLayout.show(treeProgressionPanel, "IMAGE");
-            }
-        };
-        if (SwingUtilities.isEventDispatchThread()) {
-            updateRunnable.run();
-        } else {
-            SwingUtilities.invokeLater(updateRunnable);
-        }
+        treePreview.setImage(image);
     }
 
     @Override
     public void setTreeProgressionSvg(final String svgContent) {
-        if (null == treeProgressionPanel) return;
-        if (null == svgContent || svgContent.isBlank()) {
-            pendingTreeSvg.set(null);
-            final Runnable clearRunnable = () -> {
-                treeImagePanel.setSvgFrame(null);
-                treeProgressionLayout.show(treeProgressionPanel, "PLACEHOLDER");
-            };
-            if (SwingUtilities.isEventDispatchThread()) {
-                clearRunnable.run();
-            } else {
-                SwingUtilities.invokeLater(clearRunnable);
-            }
-            return;
-        }
-        if (SwingUtilities.isEventDispatchThread()) {
-            pendingTreeSvg.set(null);
-            try {
-                final ProgressionFrames.SvgFrame svgFrame =
-                        ProgressionFrames.parseSvg(svgContent, ProgressionSettings.current().maxFramePixels());
-                applySvgFrame(svgFrame);
-            } catch (final IOException ignored) {
-            }
-            return;
-        }
-        if (null == pendingTreeSvg.getAndSet(svgContent)) {
-            TREE_PREVIEW_EXECUTOR.submit(() -> {
-                String nextSvg;
-                while (null != (nextSvg = pendingTreeSvg.getAndSet(null))) {
-                    try {
-                        final ProgressionFrames.SvgFrame svgFrame =
-                                ProgressionFrames.parseSvg(nextSvg, ProgressionSettings.current().maxFramePixels());
-                        SwingUtilities.invokeLater(() -> applySvgFrame(svgFrame));
-                    } catch (final IOException ignored) {
-                    }
-                }
-            });
-        }
+        treePreview.setSvg(svgContent);
     }
 
-    private void applySvgFrame(final ProgressionFrames.SvgFrame svgFrame) {
-        treeImagePanel.setSvgFrame(svgFrame);
-        fitTreeImageToViewport();
-        treeProgressionLayout.show(treeProgressionPanel, "IMAGE");
-    }
-
-    private void fitTreeImageToViewport() {
-
-        treeImagePanel.fitTo(treeViewport.getExtentSize());
+    @Override
+    public void setScenarioProgressionSvg(final String svgContent) {
+        scenarioPreview.setSvg(svgContent);
     }
 }

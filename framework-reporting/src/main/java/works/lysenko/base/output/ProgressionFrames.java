@@ -30,11 +30,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -51,8 +53,27 @@ public final class ProgressionFrames {
         t.setDaemon(true);
         return t;
     });
+    private static final ConcurrentLinkedQueue<String> PENDING_DEBUG_LOGS = new ConcurrentLinkedQueue<>();
 
     private ProgressionFrames() {
+    }
+
+    static void deferDebugLog(final String message) {
+        if (null != message && !message.isEmpty()) {
+            PENDING_DEBUG_LOGS.add(message);
+        }
+    }
+
+    static void drainDebugLogs(final Consumer<String> sink) {
+        if (null == sink) return;
+        String msg;
+        while (null != (msg = PENDING_DEBUG_LOGS.poll())) {
+            sink.accept(msg);
+        }
+    }
+
+    static void clearDebugLogs() {
+        PENDING_DEBUG_LOGS.clear();
     }
 
     static void saveFrameAsync(final BufferedImage image, final File frameFile, final Runnable postSave) {
