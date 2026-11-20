@@ -1,6 +1,7 @@
 package works.lysenko.util.prop.tree;
 
 import static works.lysenko.util.prop.PropEnum._TREE_HIDE_OFF_BRANCHES;
+import static works.lysenko.util.prop.PropEnum._TREE_HIDE_PASSED_LEAVES;
 
 /**
  * Represents tree property that hides non-executable OFF branches.
@@ -14,9 +15,15 @@ public record HideOff() {
     public static boolean branches = _TREE_HIDE_OFF_BRANCHES.get();
 
     /**
+     * true if passed leaf scenarios should be hidden from the layout
+     */
+    public static boolean passedLeaves = _TREE_HIDE_PASSED_LEAVES.get();
+
+    /**
      * Refreshes static fields from current test properties.
      */
     public static void refresh() {
         branches = _TREE_HIDE_OFF_BRANCHES.get();
+        passedLeaves = _TREE_HIDE_PASSED_LEAVES.get();
     }
 }

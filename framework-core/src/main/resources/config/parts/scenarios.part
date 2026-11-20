@@ -46,6 +46,10 @@
 # .tree.hide.off.branches=false
 
 # ------------------------------------------------------------------------------
+# Hides passing leaf scenarios from the layout to focus purely on warnings, notices, and errors. Default: false
+# .tree.hide.passed.leaves=false
+
+# ------------------------------------------------------------------------------
 # Whether to preserve completely empty columns in the layout. Default: false
 # .tree.allow.horizontal.gaps=false
 

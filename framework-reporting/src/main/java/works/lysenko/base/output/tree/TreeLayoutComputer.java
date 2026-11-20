@@ -92,6 +92,7 @@ public final class TreeLayoutComputer {
 
         final long tPruneStart = System.currentTimeMillis();
         pruneOffBranches(nodes, edges);
+        prunePassedLeaves(nodes, edges);
         final long tPrune = System.currentTimeMillis();
 
         final long tOptStart = System.currentTimeMillis();
@@ -140,6 +141,7 @@ public final class TreeLayoutComputer {
 
         final long tPruneStart = System.currentTimeMillis();
         pruneOffBranches(nodes, edges);
+        prunePassedLeaves(nodes, edges);
         final long tPrune = System.currentTimeMillis();
 
         final long tOptStart = System.currentTimeMillis();
@@ -586,6 +588,43 @@ public final class TreeLayoutComputer {
 
         edges.removeIf(e -> toRemove.contains(e.from()) || toRemove.contains(e.to()));
 
+        for (final NodeData n : nodes) {
+            n.children().removeAll(toRemove);
+        }
+    }
+    public static void prunePassedLeaves(final List<NodeData> nodes, final List<Edge> edges) {
+        if (!works.lysenko.util.prop.tree.HideOff.passedLeaves) return;
+
+        boolean changed;
+        final Set<NodeData> toRemove = new HashSet<>();
+        do {
+            changed = false;
+            for (final NodeData n : nodes) {
+                if (toRemove.contains(n)) continue;
+                
+                boolean isLeaf = true;
+                for (final NodeData child : n.children()) {
+                    if (!toRemove.contains(child)) {
+                        isLeaf = false;
+                        break;
+                    }
+                }
+                
+                if (isLeaf) {
+                    final works.lysenko.util.data.type.Result res = (works.lysenko.util.data.type.Result) n.result();
+                    final int execs = (res != null) ? res.getExecutions() : 0;
+                    if (execs > 0 && !hasFailure(n) && !works.lysenko.base.output.TreeHtml.hasWarning(n) && !works.lysenko.base.output.TreeHtml.hasNotice(n)) {
+                        toRemove.add(n);
+                        changed = true;
+                    }
+                }
+            }
+        } while (changed);
+
+        if (toRemove.isEmpty()) return;
+
+        nodes.removeAll(toRemove);
+        edges.removeIf(e -> toRemove.contains(e.from()) || toRemove.contains(e.to()));
         for (final NodeData n : nodes) {
             n.children().removeAll(toRemove);
         }

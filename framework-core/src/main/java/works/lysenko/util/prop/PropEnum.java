@@ -197,6 +197,7 @@ public enum PropEnum implements _PropEnum {
     _TREE_FITS_BY_DEFAULT(Boolean.class, FALSE),
     _TREE_FORBID_OVEREXECUTION(Boolean.class, FALSE, false, true),
     _TREE_HIDE_OFF_BRANCHES(Boolean.class, FALSE),
+    _TREE_HIDE_PASSED_LEAVES(Boolean.class, FALSE),
     _TREE_IGNORE_FAILED_SCENARIO_SELECTION(Boolean.class, FALSE),
     _TREE_INCLUDE_DOWNSTREAM(Boolean.class, FALSE),
     _TREE_INCLUDE_UPSTREAM(Boolean.class, FALSE),
