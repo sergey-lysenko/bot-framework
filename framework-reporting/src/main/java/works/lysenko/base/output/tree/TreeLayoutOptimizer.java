@@ -490,4 +490,61 @@ public final class TreeLayoutOptimizer {
         }
         return y;
     }
+
+    public static void removeEmptyRowsAndColumns(final List<NodeData> nodes) {
+        if (!Optimization.allowHorizontalGaps) {
+            removeEmptyColumns(nodes);
+        }
+        if (!Optimization.allowVerticalGaps) {
+            removeEmptyRows(nodes);
+        }
+    }
+
+    private static void removeEmptyColumns(final List<NodeData> nodes) {
+        if (nodes.isEmpty()) return;
+        
+        final java.util.Set<Integer> usedCols = new java.util.TreeSet<>();
+        for (final NodeData n : nodes) {
+            usedCols.add(n.col());
+        }
+        
+        final java.util.Map<Integer, Integer> colMapping = new HashMap<>();
+        int newCol = 0;
+        for (final int oldCol : usedCols) {
+            colMapping.put(oldCol, newCol++);
+        }
+        
+        for (final NodeData n : nodes) {
+            n.setCol(colMapping.get(n.col()));
+        }
+    }
+
+    private static void removeEmptyRows(final List<NodeData> nodes) {
+        if (nodes.isEmpty()) return;
+        
+        final java.util.Map<Integer, List<NodeData>> rowNodesMap = new TreeMap<>();
+        for (final NodeData n : nodes) {
+            final int roundedRow = (int) Math.round(n.row());
+            rowNodesMap.computeIfAbsent(roundedRow, k -> new ArrayList<>()).add(n);
+        }
+        
+        double shift = 0.0;
+        int previousRow = -1;
+        
+        for (final Map.Entry<Integer, List<NodeData>> entry : rowNodesMap.entrySet()) {
+            final int currentRow = entry.getKey();
+            if (previousRow != -1) {
+                final int gap = currentRow - previousRow;
+                if (gap > 1) {
+                    shift += (gap - 1);
+                }
+            }
+            if (shift > 0.0) {
+                for (final NodeData n : entry.getValue()) {
+                    n.setRow(n.row() - shift);
+                }
+            }
+            previousRow = currentRow;
+        }
+    }
 }

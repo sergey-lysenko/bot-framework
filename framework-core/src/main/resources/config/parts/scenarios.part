@@ -46,6 +46,14 @@
 # .tree.hide.off.branches=false
 
 # ------------------------------------------------------------------------------
+# Whether to preserve completely empty columns in the layout. Default: false
+# .tree.allow.horizontal.gaps=false
+
+# ------------------------------------------------------------------------------
+# Whether to preserve completely empty rows in the layout. Default: false
+# .tree.allow.vertical.gaps=false
+
+# ------------------------------------------------------------------------------
 # Displays debug coordinates and camera movement vector in tree progression frames. Default: false
 # .tree.progression.debug=false
 

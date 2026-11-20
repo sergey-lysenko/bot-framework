@@ -216,6 +216,8 @@ public enum PropEnum implements _PropEnum {
     _TREE_SCENARIO_NOT_EXECUTABLE_NOTICE(Boolean.class, TRUE),
     _TREE_SEQUENCE_MODE(SequenceMode.class, u(SUGGESTION)),
     _TREE_SEQUENCE_FAILURE_SEVERITY(Severity.class, _S0_),
+    _TREE_ALLOW_HORIZONTAL_GAPS(Boolean.class, FALSE),
+    _TREE_ALLOW_VERTICAL_GAPS(Boolean.class, FALSE),
     _TREE_TRAVERSE_EXTENSIONS(Boolean.class, FALSE, false, true),
     _TREE_UNREACHABLE_LEAF_PRUNING(Boolean.class, TRUE),
     _WEBD_FORCED_PLATFORM(String.class, NULL),

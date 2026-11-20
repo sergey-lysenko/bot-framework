@@ -96,6 +96,7 @@ public final class TreeLayoutComputer {
 
         final long tOptStart = System.currentTimeMillis();
         TreeLayoutOptimizer.optimizeLayout(nodes);
+        TreeLayoutOptimizer.removeEmptyRowsAndColumns(nodes);
         final long tOpt = System.currentTimeMillis();
 
         logDebug(s("Tree layout timing (groups): process = ", tProc - tStart, " ms (known issues checked against ", logRecords.size(), " logs), prune = ", tPrune - tPruneStart, " ms, optimize = ", tOpt - tOptStart, " ms"));
@@ -143,6 +144,7 @@ public final class TreeLayoutComputer {
 
         final long tOptStart = System.currentTimeMillis();
         TreeLayoutOptimizer.optimizeLayout(nodes);
+        TreeLayoutOptimizer.removeEmptyRowsAndColumns(nodes);
         final long tOpt = System.currentTimeMillis();
 
         logDebug(s("Tree layout timing (scenarios): process = ", tProc - tStart, " ms (known issues checked against ", logRecords.size(), " logs), prune = ", tPrune - tPruneStart, " ms, optimize = ", tOpt - tOptStart, " ms"));

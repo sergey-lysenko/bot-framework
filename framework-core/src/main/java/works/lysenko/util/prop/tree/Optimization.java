@@ -1,5 +1,7 @@
 package works.lysenko.util.prop.tree;
 
+import static works.lysenko.util.prop.PropEnum._TREE_ALLOW_HORIZONTAL_GAPS;
+import static works.lysenko.util.prop.PropEnum._TREE_ALLOW_VERTICAL_GAPS;
 import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION;
 import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION_BANK_COLUMNS;
 import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION_MAX_ASPECT_RATIO;
@@ -23,6 +25,16 @@ public record Optimization() {
      * Indicates whether tree layout progression optimization is enabled.
      */
     public static boolean progression = _TREE_PROGRESSION_OPTIMIZATION.get();
+
+    /**
+     * Whether to preserve completely empty columns in the layout.
+     */
+    public static boolean allowHorizontalGaps = _TREE_ALLOW_HORIZONTAL_GAPS.get();
+
+    /**
+     * Whether to preserve completely empty rows in the layout.
+     */
+    public static boolean allowVerticalGaps = _TREE_ALLOW_VERTICAL_GAPS.get();
 
     /**
      * Number of horizontal column banks to partition independent scenario trees into when aspect ratio is narrow.
@@ -64,6 +76,8 @@ public record Optimization() {
      */
     public static void refresh() {
         progression = _TREE_PROGRESSION_OPTIMIZATION.get();
+        allowHorizontalGaps = _TREE_ALLOW_HORIZONTAL_GAPS.get();
+        allowVerticalGaps = _TREE_ALLOW_VERTICAL_GAPS.get();
         bankColumns = _TREE_PROGRESSION_OPTIMIZATION_BANK_COLUMNS.get();
         maxAspectRatio = _TREE_PROGRESSION_OPTIMIZATION_MAX_ASPECT_RATIO.get();
         packColumns = _TREE_PROGRESSION_OPTIMIZATION_PACK_COLUMNS.get();
