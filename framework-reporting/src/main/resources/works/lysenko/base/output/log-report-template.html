@@ -1085,30 +1085,7 @@ a.path-step { text-decoration: none; }
 
       if (hasLimbo) {
         const lMs = test.l !== undefined && test.l !== null ? test.l : 0.0;
-        const yL = calcY(lMs / 1000.0, lCeil / 1000.0, mt, ph, isLog);
-        if (i === 0) {
-          limboPath += `M ${x.toFixed(2)} ${yL.toFixed(2)}`;
-          limboArea += `M ${x.toFixed(2)} ${(mt + ph).toFixed(2)} L ${x.toFixed(2)} ${yL.toFixed(2)}`;
-        } else {
-          limboPath += ` L ${x.toFixed(2)} ${yL.toFixed(2)}`;
-          limboArea += ` L ${x.toFixed(2)} ${yL.toFixed(2)}`;
-        }
-        if (i === N - 1) {
-          limboArea += ` L ${x.toFixed(2)} ${(mt + ph).toFixed(2)} Z`;
-        }
-      }
-
-      if (i === 0) {
-        testPath += `M ${x.toFixed(2)} ${yT.toFixed(2)}`;
-        testArea += `M ${x.toFixed(2)} ${(mt + ph).toFixed(2)} L ${x.toFixed(2)} ${yT.toFixed(2)}`;
-      } else {
-        testPath += ` L ${x.toFixed(2)} ${yT.toFixed(2)}`;
-        testArea += ` L ${x.toFixed(2)} ${yT.toFixed(2)}`;
-      }
-
-      if (hasLimbo) {
-        const lMs = test.l !== undefined && test.l !== null ? test.l : 0.0;
-        const yL = (mt + ph) - Math.min(ph, (lMs / lCeil) * ph);
+        const yL = calcY(lMs, lCeil, mt, ph, isLog);
         if (i === 0) {
           limboPath += `M ${x.toFixed(2)} ${yL.toFixed(2)}`;
           limboArea += `M ${x.toFixed(2)} ${(mt + ph).toFixed(2)} L ${x.toFixed(2)} ${yL.toFixed(2)}`;
@@ -1194,7 +1171,8 @@ a.path-step { text-decoration: none; }
     const ml = X + Y / 2.0;
     const pw = svgWidth - 2.0 * ml, ph = 240.0 - 26.0 - 34.0;
     const svgX = ml + (N > 1 ? (idx / (N - 1)) * pw : pw / 2.0);
-    const svgYTest = (26.0 + ph) - Math.min(ph, (d.s / window.lgTCeil) * ph);
+    const isLog = (window.timelineScaleMode === 'log');
+    const svgYTest = calcY(d.s, window.lgTCeil, 26.0, ph, isLog);
 
     const crosshair = document.getElementById('lgCrosshair');
     const dot = document.getElementById('lgTestDot');
@@ -1211,7 +1189,7 @@ a.path-step { text-decoration: none; }
 
     const limboDot = document.getElementById('lgLimboDot');
     if (limboDot && window.lgHasLimbo && window.lgLCeil > 0) {
-      const svgYLimbo = (26.0 + ph) - Math.min(ph, (d.l / window.lgLCeil) * ph);
+      const svgYLimbo = calcY(d.l, window.lgLCeil, 26.0, ph, isLog);
       limboDot.setAttribute('cx', svgX);
       limboDot.setAttribute('cy', svgYLimbo);
       limboDot.style.opacity = '1';

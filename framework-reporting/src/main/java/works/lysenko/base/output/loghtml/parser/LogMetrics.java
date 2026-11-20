@@ -89,8 +89,8 @@ public final class LogMetrics {
                     chartLabel = s(sec.prevTestNum, "➔End");
                 }
                 final double t0 = toSeconds(sec.startTime);
-                final double t1 = (i + 1 < sections.size() && sections.get(i + 1).startTime != null)
-                        ? toSeconds(sections.get(i + 1).startTime) : toSeconds(sec.endTime);
+                final double t1 = (null != nextSec && TEST.equals(nextSec.type) && nextSec.startTime != null)
+                        ? toSeconds(nextSec.startTime) : toSeconds(sec.endTime);
                 final double delta = Math.max(0.001, t1 - t0);
                 sec.durationSec = delta;
                 sec.durationStr = formatDeltaTime(delta);
@@ -122,7 +122,10 @@ public final class LogMetrics {
                 sec.durationStr = formatDeltaTime(delta);
                 r.preflightItem = new TelemetryItem("Preflight", "Preflight", delta, delta * 1000.0, sec.status, true, 0);
             } else if ("postflight".equals(sec.type)) {
-                final double t0 = toSeconds(sec.startTime);
+                final LogSection prevSec = (i > 0) ? sections.get(i - 1) : null;
+                final double secStart = toSeconds(sec.startTime);
+                final double prevEnd = (null != prevSec && null != prevSec.endTime) ? toSeconds(prevSec.endTime) : -1.0;
+                final double t0 = (prevEnd >= 0.0 && prevEnd <= secStart) ? prevEnd : secStart;
                 final double t1 = toSeconds(sec.endTime);
                 final double delta = Math.max(0.001, t1 - t0);
                 sec.durationSec = delta;

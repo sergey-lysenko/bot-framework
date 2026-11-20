@@ -855,4 +855,52 @@ class LogHtmlTest {
         assertTrue(html.contains("class=\"pill scen-pill failed\""),
                 "Section breadcrumb pill for AddNew should be marked as failed");
     }
+
+    @Test
+    void finalLimboExcludesPostRunReportingGapAndTimelineScriptHasNoDuplicateLimboPath(@TempDir final Path tempDir) throws IOException {
+        final Path logPath = tempDir.resolve("final_limbo.run.log");
+        final Path htmlPath = tempDir.resolve("final_limbo.run.log.html");
+
+        final List<String> logLines = List.of(
+                "Starting Bot core ...",
+                "# Applied test configuration",
+                "[ 1][1][10.000][10] Executing Scenario A",
+                "[ 1][2][15.000][5] • Closing test 1 ...",
+                "[  ][3][15.001][1] • Test time 5 s",
+                "[  ][4][15.051][5] Persisting Test history",
+                "[ 2][5][15.060][10] Executing Scenario B",
+                "[ 2][6][20.000][5] • Closing test 2 ...",
+                "[  ][7][20.001][1] • Test time 5 s",
+                "[  ][8][20.064][1322] 2 tests of Sample done in 20 s",
+                "[  ][9][21.386][15] = 0 Events summary =",
+                "[  ][10][21.500][1] = Known Issues summary ="
+        );
+
+        Files.write(logPath, logLines);
+        LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
+
+        final String html = Files.readString(htmlPath);
+
+        // Limbo #1 is 59ms (15.001 -> 15.060), final Limbo #2 is 63ms (20.001 -> 20.064), NOT 1385ms
+        assertTrue(html.contains("\"n\":1") && html.contains("\"l\":59"), "Limbo #1 should be 59ms");
+        assertTrue(html.contains("\"n\":2") && html.contains("\"l\":63"),
+                "Final limbo #2 -> Teardown must end at 'done in' (63ms) rather than absorbing post-run reporting");
+        assertFalse(html.contains("\"l\":1385"), "Final limbo must not absorb the 1322ms post-run gap");
+        assertTrue(html.contains("title=\"Postflight: 1.44s\""),
+                "Postflight duration should include the post-run reporting gap (20.064 -> 21.500 = 1.436s)");
+
+        // Verify renderTimelineSvg has no duplicate limboArea close block and scales limbo in ms
+        final int fnStart = html.indexOf("function renderTimelineSvg()");
+        final int fnEnd = html.indexOf("function syncCrosshairs(", fnStart);
+        assertTrue(fnStart > 0 && fnEnd > fnStart);
+        final String renderFn = html.substring(fnStart, fnEnd);
+        final int firstClose = renderFn.indexOf("limboArea += ` L ${x.toFixed(2)} ${(mt + ph).toFixed(2)} Z`;");
+        assertTrue(firstClose > 0, "renderTimelineSvg should close limboArea once");
+        assertEquals(-1, renderFn.indexOf("limboArea += ` L ${x.toFixed(2)} ${(mt + ph).toFixed(2)} Z`;", firstClose + 1),
+                "renderTimelineSvg must not duplicate limboArea closing command (which draws a diagonal ramp)");
+        assertTrue(renderFn.contains("calcY(lMs, lCeil, mt, ph, isLog)"),
+                "renderTimelineSvg should compute limbo Y in milliseconds matching logLCeil");
+        assertTrue(html.contains("const svgYLimbo = calcY(d.l, window.lgLCeil, 26.0, ph, isLog);"),
+                "updateLgCrosshair should honor log/linear scale mode");
+    }
 }
