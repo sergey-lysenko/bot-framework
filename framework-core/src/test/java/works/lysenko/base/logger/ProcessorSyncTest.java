@@ -20,11 +20,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SuppressWarnings({"removal", "deprecation"})
-class ProcessorAsyncTest {
+class ProcessorSyncTest {
 
     private Core previousCore;
     private Stopwatch previousTimer;
@@ -49,10 +48,11 @@ class ProcessorAsyncTest {
     }
 
     @Test
-    void writesLogsAsynchronouslyInStrictOrderAndFlushesOnDemand() {
+    void writesLogsSynchronouslyOnCallingThreadInStrictOrderAndFlushesImmediately() {
         final StringWriter logOut = new StringWriter();
         final StringWriter mdOut = new StringWriter();
         final StringWriter telemOut = new StringWriter();
+        final AtomicInteger logFlushes = new AtomicInteger();
         final AtomicInteger mdFlushes = new AtomicInteger();
         final AtomicReference<String> writerThreadName = new AtomicReference<>();
 
@@ -61,6 +61,12 @@ class ProcessorAsyncTest {
             public void write(final String str) throws IOException {
                 writerThreadName.compareAndSet(null, Thread.currentThread().getName());
                 super.write(str);
+            }
+
+            @Override
+            public void flush() throws IOException {
+                logFlushes.incrementAndGet();
+                super.flush();
             }
         };
         final BufferedWriter mdWriter = new BufferedWriter(mdOut) {
@@ -90,19 +96,19 @@ class ProcessorAsyncTest {
         final Processor processor = new Processor(Set.of(), fakeWriter);
         final int total = 60;
         for (int i = 0; i < total; i++) {
-            processor.log(Level.plain, "async-msg-" + i, null, (long) (i + 1));
+            processor.log(Level.plain, "sync-msg-" + i, null, (long) (i + 1));
         }
         processor.flush();
 
-        assertEquals("log-writer", writerThreadName.get(), "Log records must be written by dedicated log-writer thread");
-        assertNotEquals(Thread.currentThread().getName(), writerThreadName.get());
+        assertEquals(Thread.currentThread().getName(), writerThreadName.get(),
+                "Log records must be written synchronously on the calling thread");
 
         final String rawLog = logOut.toString();
         final String rawMd = mdOut.toString();
         int lastLogPos = -1;
         int lastMdPos = -1;
         for (int i = 0; i < total; i++) {
-            final String token = "async-msg-" + i;
+            final String token = "sync-msg-" + i;
             final int logPos = rawLog.indexOf(token);
             final int mdPos = rawMd.indexOf(token);
             assertTrue(logPos > lastLogPos, "Log file missing or out-of-order token: " + token);
@@ -111,49 +117,7 @@ class ProcessorAsyncTest {
             lastMdPos = mdPos;
         }
         assertTrue(telemOut.toString().lines().count() >= total, "Telemetry lines should be written for all records");
-        assertTrue(mdFlushes.get() >= 1, "Markdown writer must flush at least once on drain/flush");
-    }
-
-    @Test
-    void concurrentLoggingAndFlushingNeverDeadlocks() throws InterruptedException {
-        final StringWriter logOut = new StringWriter();
-        final StringWriter mdOut = new StringWriter();
-        final StringWriter telemOut = new StringWriter();
-        final BufferedWriter logWriter = new BufferedWriter(logOut);
-        final BufferedWriter mdWriter = new BufferedWriter(mdOut);
-        final BufferedWriter telemWriter = new BufferedWriter(telemOut);
-
-        final _LogsWriter fakeWriter = new _LogsWriter() {
-            @Override public BufferedWriter getLogWriter() { return logWriter; }
-            @Override public BufferedWriter getMarkdownWriter() { return mdWriter; }
-            @Override public BufferedWriter getTelemetryWriter() { return telemWriter; }
-            @Override
-            public void flushAll() {
-                try {
-                    logWriter.flush();
-                    mdWriter.flush();
-                    telemWriter.flush();
-                } catch (final IOException ignored) {
-                }
-            }
-        };
-
-        final Processor processor = new Processor(Set.of(), fakeWriter);
-        final Thread flusher = Thread.ofVirtual().start(() -> {
-            for (int i = 0; i < 10; i++) {
-                processor.flush();
-            }
-        });
-        for (int i = 0; i < 40; i++) {
-            processor.log(Level.debug, "concurrent-msg-" + i, null, (long) (i + 1));
-        }
-        flusher.join(5000);
-        assertTrue(!flusher.isAlive(), "Concurrent flush thread should finish without deadlock");
-        processor.flush();
-
-        final String rawLog = logOut.toString();
-        for (int i = 0; i < 40; i++) {
-            assertTrue(rawLog.contains("concurrent-msg-" + i), "Missing concurrent log message " + i);
-        }
+        assertTrue(logFlushes.get() >= total, "Log writer must flush immediately on each written record");
+        assertTrue(mdFlushes.get() >= total, "Markdown writer must flush immediately on each written record");
     }
 }

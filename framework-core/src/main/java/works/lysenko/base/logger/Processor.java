@@ -32,13 +32,8 @@ import works.lysenko.util.spec.Severities;
 import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.isNull;
 import static works.lysenko.Base.core;
@@ -102,29 +97,7 @@ import works.lysenko.base.logger.renderer.MarkdownLogRenderer;
 @SuppressWarnings({"CallToSuspiciousStringMethod", "MethodWithMultipleReturnPoints", "CallToPrintStackTrace"})
 public class Processor implements _LogsProcessor {
 
-    private sealed interface DispatchTask permits WriteRecord, FlushBarrier {}
-
-    private record WriteRecord(
-            _LogRecord record,
-            Integer totalTests,
-            int spanLength,
-            long previousId,
-            Telemetry telemetry) implements DispatchTask {}
-
-    private record FlushBarrier(CountDownLatch latch) implements DispatchTask {}
-
     private static final long DRIVER_LOG_POLL_MIN_INTERVAL_NS = 200_000_000L;
-    private static final AtomicReference<WeakReference<Processor>> ACTIVE_PROCESSOR = new AtomicReference<>();
-
-    static {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            final WeakReference<Processor> ref = ACTIVE_PROCESSOR.get();
-            final Processor active = (null != ref) ? ref.get() : null;
-            if (null != active) {
-                active.awaitAsyncFlush(2L, TimeUnit.SECONDS);
-            }
-        }, "log-writer-shutdown"));
-    }
 
     private static long counter = ZERO;
     private final _Queue queue = new Queue();
@@ -133,8 +106,6 @@ public class Processor implements _LogsProcessor {
     private final LogRenderer ansiRenderer = new AnsiLogRenderer();
     private final LogRenderer markdownRenderer = new MarkdownLogRenderer();
     private final Set<String> logsToRead;
-    private final LinkedBlockingQueue<DispatchTask> asyncQueue = new LinkedBlockingQueue<>();
-    private final Thread writerThread;
     private _LogRecord previousLogRecord = null;
     private Boolean driverLogsAvailable = null;
     private int spanLength = 0;
@@ -155,11 +126,6 @@ public class Processor implements _LogsProcessor {
 
         this.logsToRead = logsToRead;
         this.writer = writer;
-        this.writerThread = Thread.ofPlatform()
-                .daemon()
-                .name("log-writer")
-                .start(this::drainAsyncQueue);
-        ACTIVE_PROCESSOR.set(new WeakReference<>(this));
     }
 
     /**
@@ -427,12 +393,11 @@ public class Processor implements _LogsProcessor {
             previousLogRecord = null;
         }
         process(Telemetry.getNewTelemetry(defineTime(null), StringUtils.EMPTY));
-        awaitAsyncFlush(30L, TimeUnit.SECONDS);
+        writer.flushAll();
     }
 
     /**
-     * Dispatches queued log records in strict chronological order to the dedicated
-     * single-consumer background writer thread.
+     * Processes queued log records synchronously in strict chronological order on the calling thread.
      *
      * @param telemetry The telemetry object to be logged along with the log records.
      */
@@ -443,77 +408,15 @@ public class Processor implements _LogsProcessor {
             final _LogRecord r = queue.poll();
             if (r == null) continue;
             final long previousId = isNull(upperLogRecord) ? ZERO : upperLogRecord.data().id();
-            asyncQueue.add(new WriteRecord(r, totalTests, spanLength, previousId, telemetry));
+
+            final String ansiLine = ansiRenderer.render(r, totalTests, spanLength, previousId);
+            final String mdLine = markdownRenderer.render(r, totalTests, spanLength, previousId);
+
+            logConsole(ansiLine); // render to Console
+            logToFile(ansiLine); // render to File
+            logToMarkdown(r.test(), mdLine); // render to Markdown File
+            logTelemetry(telemetry); // persist Telemetry
             upperLogRecord = r;
-        }
-    }
-
-    private void awaitAsyncFlush(final long timeout, final TimeUnit unit) {
-
-        if (Thread.currentThread() == writerThread || !writerThread.isAlive()) {
-            writer.flushAll();
-            return;
-        }
-        final CountDownLatch latch = new CountDownLatch(1);
-        asyncQueue.add(new FlushBarrier(latch));
-        try {
-            if (!latch.await(timeout, unit)) {
-                writer.flushAll();
-            }
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-            writer.flushAll();
-        }
-    }
-
-    private void drainAsyncQueue() {
-
-        BufferedWriter lastDirtyMarkdown = null;
-        while (true) {
-            final DispatchTask task;
-            try {
-                task = asyncQueue.take();
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            }
-            if (task instanceof WriteRecord wr) {
-                lastDirtyMarkdown = writeRecord(wr, lastDirtyMarkdown);
-                if (asyncQueue.isEmpty() && isNotNull(lastDirtyMarkdown)) {
-                    flushQuietly(lastDirtyMarkdown);
-                    lastDirtyMarkdown = null;
-                }
-            } else if (task instanceof FlushBarrier fb) {
-                try {
-                    writer.flushAll();
-                    lastDirtyMarkdown = null;
-                } finally {
-                    fb.latch().countDown();
-                }
-            }
-        }
-    }
-
-    private BufferedWriter writeRecord(final WriteRecord wr, final BufferedWriter lastDirtyMarkdown) {
-
-        final _LogRecord r = wr.record();
-        final String ansiLine = ansiRenderer.render(r, wr.totalTests(), wr.spanLength(), wr.previousId());
-        final String mdLine = markdownRenderer.render(r, wr.totalTests(), wr.spanLength(), wr.previousId());
-
-        logConsole(ansiLine); // render to Console
-        logToFile(ansiLine); // render to File
-        final BufferedWriter activeMdWriter = logToMarkdown(r.test(), mdLine, lastDirtyMarkdown); // render to Markdown File
-        logTelemetry(wr.telemetry()); // persist Telemetry
-        return activeMdWriter;
-    }
-
-    private static void flushQuietly(final BufferedWriter bw) {
-
-        if (isNotNull(bw)) {
-            try {
-                bw.flush();
-            } catch (final IOException ignored) {
-            }
         }
     }
 
@@ -621,7 +524,10 @@ public class Processor implements _LogsProcessor {
         try {
             if (isNull(writer.getLogWriter()))
                 System.err.println(Ansi.ansi(LOG_WRITER_IS_NOT___));
-            else writer.getLogWriter().write(s(s, System.lineSeparator()));
+            else {
+                writer.getLogWriter().write(s(s, System.lineSeparator()));
+                writer.getLogWriter().flush();
+            }
         } catch (final IOException e) {
             if (!"Stream closed".equals(e.getMessage())) {
                 e.printStackTrace();
@@ -630,32 +536,25 @@ public class Processor implements _LogsProcessor {
     }
 
     /**
-     * Logs the provided message to a Markdown file using the designated log writer,
-     * flushing only when switching test files or when the async burst drains.
+     * Logs the provided message to a Markdown file using the designated log writer.
      *
-     * @param testNumber        the test number integer
-     * @param s                 the message to be logged
-     * @param lastDirtyMarkdown previously written Markdown writer awaiting flush, or null
-     * @return the currently dirty Markdown writer
+     * @param testNumber the test number integer
+     * @param s          the message to be logged
      */
-    private BufferedWriter logToMarkdown(final int testNumber, final String s, final BufferedWriter lastDirtyMarkdown) {
+    private void logToMarkdown(final int testNumber, final String s) {
 
-        if (s == null || s.isEmpty()) return lastDirtyMarkdown;
+        if (s == null || s.isEmpty()) return;
         try {
             final BufferedWriter w = writer.getMarkdownWriter(testNumber);
-            if (isNotNull(lastDirtyMarkdown) && lastDirtyMarkdown != w) {
-                flushQuietly(lastDirtyMarkdown);
-            }
             if (isNotNull(w)) {
                 w.write(s(s, System.lineSeparator()));
-                return w;
+                w.flush();
             }
         } catch (final IOException e) {
             if (!"Stream closed".equals(e.getMessage())) {
                 e.printStackTrace();
             }
         }
-        return lastDirtyMarkdown;
     }
 
     /**
