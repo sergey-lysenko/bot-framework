@@ -114,9 +114,8 @@ public record EtaCalculator() {
         long correctedRemainingMs = rawEtaMs;
         if (includeCorrection && rawEtaMs > 0L) {
             try {
-                correctionMs = EtaCorrection.getEstimationCorrection(elapsedMs);
-                final long candidate = rawEtaMs - correctionMs;
-                correctedRemainingMs = (candidate > 0L) ? candidate : rawEtaMs;
+                correctedRemainingMs = EtaCorrection.estimateCorrectedRemainingMs(elapsedMs, rawEtaMs);
+                correctionMs = rawEtaMs - correctedRemainingMs;
             } catch (final Exception ignored) {
                 correctionMs = 0L;
                 correctedRemainingMs = rawEtaMs;
@@ -133,7 +132,10 @@ public record EtaCalculator() {
         if (rawEtaMs > 0L) {
             formattedRemaining = EtaFormatter.formatMs(rawEtaMs);
             formattedCorrectedRemaining = EtaFormatter.formatMs(correctedRemainingMs);
-            label = "(ETA " + formattedRemaining + ")";
+            final String displayRemaining = (includeCorrection && correctionMs != 0L)
+                    ? formattedCorrectedRemaining
+                    : formattedRemaining;
+            label = "(ETA " + displayRemaining + ")";
         } else if (state == EtaState.DONE) {
             formattedRemaining = EtaFormatter.DONE_TEXT;
             formattedCorrectedRemaining = EtaFormatter.DONE_TEXT;

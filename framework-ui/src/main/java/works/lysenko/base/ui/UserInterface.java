@@ -570,7 +570,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
 
     private static String calculateEtaString() {
 
-        final EtaSnapshot snapshot = EtaCalculator.capture(false);
+        final EtaSnapshot snapshot = EtaCalculator.capture(true);
         if (snapshot.remainingMs() > 0L) {
             AllLeafCompletions.recordEtaSample(snapshot.remainingMs());
         }

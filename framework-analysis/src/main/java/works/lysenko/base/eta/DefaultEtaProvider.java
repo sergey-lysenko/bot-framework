@@ -13,6 +13,7 @@ public final class DefaultEtaProvider implements _EtaProvider {
     public void onReset() {
         AllLeafCompletions.reset();
         EtaDebug.reset();
+        EtaCorrection.reset();
     }
 
     @Override

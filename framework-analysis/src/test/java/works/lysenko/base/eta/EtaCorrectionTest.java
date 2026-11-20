@@ -6,20 +6,29 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import works.lysenko.Base;
+import works.lysenko.base.Core;
 import works.lysenko.base.Parameters;
+import works.lysenko.base.Results;
 import works.lysenko.base.TestProperties;
 import works.lysenko.base.eta.correction.CompletionSidecarReader;
+import works.lysenko.base.eta.correction.CorrectionInterpolator;
+import works.lysenko.base.eta.correction.CorrectionStore;
 import works.lysenko.base.eta.model.CorrectionRecord;
 import works.lysenko.base.eta.model.EtaMetadata;
 import works.lysenko.base.eta.model.TestError;
 import works.lysenko.base.eta.model.TestSample;
+import works.lysenko.testing.SelectionFixture;
+import works.lysenko.util.apis.scenario._Scenario;
+import works.lysenko.util.apis.test._Repeater;
 import works.lysenko.util.prop.PropEnum;
 
 import java.io.File;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -28,12 +37,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EtaCorrectionTest {
 
+    private Core previousCore;
     private Parameters previousParameters;
     private final File correctionFile = new File("var/eta_correction.json");
 
     @BeforeEach
     void setUp() {
+        previousCore = Base.core;
         previousParameters = Base.parameters;
+        Base.core = null;
         EtaCorrection.reset();
         if (correctionFile.exists()) {
             correctionFile.delete();
@@ -42,6 +54,7 @@ class EtaCorrectionTest {
 
     @AfterEach
     void tearDown() {
+        Base.core = previousCore;
         Base.parameters = previousParameters;
         EtaCorrection.reset();
         if (correctionFile.exists()) {
@@ -278,5 +291,226 @@ class EtaCorrectionTest {
         } finally {
             works.lysenko.util.prop.core.Test.tests = previousCachedTests;
         }
+    }
+
+    @Test
+    void recordRunCompletionSkipsAbortedAndIncompleteRuns() throws Exception {
+        final Properties allLeafsProps = new Properties();
+        allLeafsProps.setProperty("TEST", "GuardedE2E");
+        allLeafsProps.setProperty("ALL_LEAFS", "true");
+        Base.parameters = new Parameters(allLeafsProps);
+
+        final _Scenario dummyLeaf = (_Scenario) java.lang.reflect.Proxy.newProxyInstance(
+                _Scenario.class.getClassLoader(),
+                new Class<?>[]{_Scenario.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "isExecutable" -> Boolean.TRUE;
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "equals" -> proxy == args[0];
+                    case "toString" -> "dummyLeaf";
+                    default -> {
+                        final Class<?> rt = method.getReturnType();
+                        if (rt == boolean.class) yield Boolean.FALSE;
+                        if (rt == int.class) yield 0;
+                        if (rt == long.class) yield 0L;
+                        if (rt == double.class) yield 0.0;
+                        yield null;
+                    }
+                });
+
+        // 1. Preemptively stopped run must not be persisted
+        Base.core = createStubCore(true, true, Set.of(dummyLeaf), 74, 0);
+        EtaCorrection.recordTestSample(74, 1_450_000L, 0L);
+        EtaCorrection.recordRunCompletion(1_470_000L);
+        assertFalse(correctionFile.exists(), "Stopped run must not be written to eta_correction.json");
+
+        // 2. Incomplete ALL_LEAFS run (e.g. patience abort) must not be persisted
+        EtaCorrection.reset();
+        Base.core = createStubCore(false, false, Set.of(dummyLeaf), 74, 0);
+        EtaCorrection.recordTestSample(74, 1_450_000L, 3_500_000L);
+        EtaCorrection.recordRunCompletion(1_470_000L);
+        assertFalse(correctionFile.exists(), "Incomplete ALL_LEAFS run must not be written");
+
+        // 3. Incomplete FIXED_TESTS run must not be persisted
+        EtaCorrection.reset();
+        final Properties fixedProps = new Properties();
+        fixedProps.setProperty("TEST", "GuardedFixed");
+        fixedProps.setProperty("TESTS", "55");
+        fixedProps.setProperty("ALL_LEAFS", "false");
+        Base.parameters = new Parameters(fixedProps);
+        Base.core = createStubCore(false, false, Set.of(), 27, 55);
+        EtaCorrection.recordTestSample(27, 678_000L, 757_000L);
+        EtaCorrection.recordRunCompletion(679_000L);
+        assertFalse(correctionFile.exists(), "Incomplete FIXED_TESTS run must not be written");
+
+        // 4. Valid completed ALL_LEAFS run IS persisted
+        EtaCorrection.reset();
+        Base.parameters = new Parameters(allLeafsProps);
+        Base.core = createStubCore(false, true, Set.of(dummyLeaf), 252, 0);
+        EtaCorrection.recordTestSample(1, 20_000L, 4_500_000L);
+        EtaCorrection.recordTestSample(252, 4_490_000L, 0L);
+        EtaCorrection.recordRunCompletion(4_493_000L);
+        assertTrue(correctionFile.exists(), "Completed ALL_LEAFS run should be persisted");
+    }
+
+    @Test
+    void ignoresTaintedAbortedRecordsFromDiskInBothAdditiveAndScaleCalibration() {
+        final EtaMetadata e2eMeta = new EtaMetadata("E2E", "", true, 1, "root", "", 5000, "Chrome");
+
+        // Aborted E2E run stopped at test 74 with +58m fake overestimation (matching production taint)
+        final CorrectionRecord taintedAborted = new CorrectionRecord(
+                e2eMeta,
+                5_892_523L,
+                1_470_673L,
+                4_421_850L,
+                List.of(
+                        new TestError(1, 24_178L, 7_063_480L, 7_087_658L, 5_616_985L, 381.93),
+                        new TestError(74, 1_454_909L, 3_499_668L, 4_954_577L, 3_483_904L, 236.89)),
+                1000L);
+
+        // Clean completed E2E run (actual 4,500s, accurate mid-run ETA, ends with etaMs = 0)
+        final CorrectionRecord cleanComplete = new CorrectionRecord(
+                e2eMeta,
+                6_000_000L,
+                4_500_000L,
+                1_500_000L,
+                List.of(
+                        new TestError(1, 30_000L, 6_000_000L, 6_030_000L, 1_530_000L, 34.0),
+                        new TestError(150, 2_700_000L, 1_800_000L, 4_500_000L, 0L, 0.0),
+                        new TestError(252, 4_498_000L, 0L, 4_498_000L, -2_000L, -0.04)),
+                2000L);
+
+        assertFalse(CorrectionInterpolator.isValidRecord(taintedAborted), "Aborted ALL_LEAFS record should be detected as tainted");
+        assertTrue(CorrectionInterpolator.isValidRecord(cleanComplete), "Completed ALL_LEAFS record should be valid");
+
+        final EtaMetadata fixedMeta = new EtaMetadata("Wave", "55", false, 1, "root", "", 5000, "Chrome");
+        final CorrectionRecord taintedFixed = new CorrectionRecord(
+                fixedMeta, 2_000_000L, 680_000L, 1_320_000L,
+                List.of(new TestError(27, 678_000L, 757_000L, 1_435_000L, 755_000L, 111.0)), 1000L);
+        assertFalse(CorrectionInterpolator.isValidRecord(taintedFixed), "Aborted FIXED_TESTS record should be detected as tainted");
+
+        final List<CorrectionRecord> mixed = List.of(taintedAborted, cleanComplete);
+        // At elapsed = 2,700,000ms (60% done), tainted record would have injected ~+3,484,000ms if not ignored!
+        assertEquals(0L, CorrectionInterpolator.computeWeightedCorrection(mixed, 2_700_000L));
+        // Past completed run duration, additive correction decays to 0
+        assertEquals(0L, CorrectionInterpolator.computeWeightedCorrection(mixed, 5_000_000L));
+        // Progress-indexed remaining scale at 60% progress should be 1.0 (not distorted by tainted record)
+        assertEquals(1_800_000L, CorrectionInterpolator.applyRemainingScale(2_700_000L, 1_800_000L, mixed));
+    }
+
+    @Test
+    void progressIndexedCalibrationIsSpeedInvariantAndAvoidsNegativeCliff() {
+        final EtaMetadata maMeta = new EtaMetadata("MA", "", true, 1, "root", "", 5000, "Chrome");
+
+        // Systematic 4x overestimation early (like MA dynamic pruning): actualTotal = 400s
+        // At t=100s, rawEta=1200s -> rawProgress = 100/1300 = 0.0769, actualRemaining = 300s -> scale = 0.25
+        // At t=300s, rawEta=300s  -> rawProgress = 300/600  = 0.5000, actualRemaining = 100s -> scale = 0.3333
+        final CorrectionRecord cleanMa = new CorrectionRecord(
+                maMeta,
+                1_600_000L,
+                400_000L,
+                1_200_000L,
+                List.of(
+                        new TestError(10, 100_000L, 1_200_000L, 1_300_000L, 900_000L, 225.0),
+                        new TestError(35, 300_000L, 300_000L, 600_000L, 200_000L, 50.0),
+                        new TestError(50, 399_000L, 0L, 399_000L, -1_000L, -0.25)),
+                1000L);
+
+        // Same speed as history: elapsed=100s, rawEta=1200s -> calibrated=300s (exact)
+        assertEquals(300_000L, CorrectionInterpolator.applyRemainingScale(100_000L, 1_200_000L, List.of(cleanMa)));
+
+        // 2x faster machine: elapsed=50s, rawEta=600s (additive 600-900 would have gone negative & cliffed to 600s!)
+        // Progress-indexed scale predicts exact 150s!
+        assertEquals(150_000L, CorrectionInterpolator.applyRemainingScale(50_000L, 600_000L, List.of(cleanMa)));
+
+        // 2x slower machine: elapsed=200s, rawEta=2400s -> predicts exact 600s!
+        assertEquals(600_000L, CorrectionInterpolator.applyRemainingScale(200_000L, 2_400_000L, List.of(cleanMa)));
+    }
+
+    @Test
+    void defaultEtaProviderOnResetClearsEtaCorrectionCacheAndSamples() {
+        final Properties props = new Properties();
+        props.setProperty("TEST", "ResetCacheSuite");
+        Base.parameters = new Parameters(props);
+
+        // Populate cache with empty disk lookup and stage an in-memory sample
+        assertTrue(EtaCorrection.getMatchingRecords().isEmpty());
+        EtaCorrection.recordTestSample(1, 10_000L, 90_000L);
+
+        // Append a valid record externally on disk
+        final EtaMetadata meta = EtaCorrection.currentMetadata();
+        CorrectionStore.appendRecord(new CorrectionRecord(
+                meta, 200_000L, 100_000L, 100_000L,
+                List.of(
+                        new TestError(1, 20_000L, 160_000L, 180_000L, 80_000L, 80.0),
+                        new TestError(2, 99_000L, 0L, 99_000L, -1_000L, -1.0)),
+                1000L));
+
+        // Before reset, cached list is still empty
+        assertTrue(EtaCorrection.getMatchingRecords().isEmpty());
+
+        // DefaultEtaProvider.onReset() must reset EtaCorrection cache so new record is picked up
+        new DefaultEtaProvider().onReset();
+        assertEquals(1, EtaCorrection.getMatchingRecords().size());
+    }
+
+    private static Core createStubCore(
+            final boolean stopFlag,
+            final boolean allLeafsExecuted,
+            final Set<_Scenario> accessibleLeafs,
+            final int completedTests,
+            final int totalTests) throws Exception {
+        final Core core = SelectionFixture.allocate(Core.class);
+        core.setStopFlag(stopFlag);
+
+        final Results results = new Results();
+        if (allLeafsExecuted) {
+            for (final _Scenario leaf : accessibleLeafs) {
+                results.count(leaf);
+            }
+        }
+        final Field rf = Core.class.getDeclaredField("results");
+        rf.setAccessible(true);
+        rf.set(core, results);
+
+        final List<List<String>> history = new ArrayList<>();
+        for (int i = 0; i < completedTests; i++) history.add(List.of("ok"));
+
+        final _Repeater repeater = new _Repeater() {
+            @Override public void addToHistory(final _Scenario scenario) {}
+            @Override public void addToScenarios(final _Scenario scenario) {}
+            @Override public void close() {}
+            @Override public Integer getCurrent() { return completedTests; }
+            @Override public List<List<String>> getHistory() { return history; }
+            @Override public List<List<String>> getSummary() { return List.of(); }
+            @Override public int getTestsCount() { return completedTests; }
+            @Override public Integer getTotalTests() { return totalTests > 0 ? totalTests : null; }
+            @Override public void run() {}
+        };
+
+        final works.lysenko.util.apis.scenario._Ctrl ctrl = (works.lysenko.util.apis.scenario._Ctrl) java.lang.reflect.Proxy.newProxyInstance(
+                works.lysenko.util.apis.scenario._Ctrl.class.getClassLoader(),
+                new Class<?>[]{works.lysenko.util.apis.scenario._Ctrl.class},
+                (proxy, method, args) -> "getAccessibleLeafs".equals(method.getName()) ? accessibleLeafs : null);
+
+        final works.lysenko.util.apis.test._Exec execProxy = (works.lysenko.util.apis.test._Exec) java.lang.reflect.Proxy.newProxyInstance(
+                works.lysenko.util.apis.test._Exec.class.getClassLoader(),
+                new Class<?>[]{works.lysenko.util.apis.test._Exec.class},
+                (proxy, method, args) -> "ctrl".equals(method.getName()) ? ctrl : null);
+
+        final works.lysenko.util.apis.test._Test testSession = (works.lysenko.util.apis.test._Test) java.lang.reflect.Proxy.newProxyInstance(
+                works.lysenko.util.apis.test._Test.class.getClassLoader(),
+                new Class<?>[]{works.lysenko.util.apis.test._Test.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "repeater" -> repeater;
+                    case "executor" -> execProxy;
+                    case "getPatiencePercentage" -> 0.0;
+                    default -> null;
+                });
+
+        final Field testField = Core.class.getDeclaredField("test");
+        testField.setAccessible(true);
+        testField.set(core, testSession);
+        return core;
     }
 }
