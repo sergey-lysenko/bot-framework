@@ -150,7 +150,7 @@ public class VisualNodeResolver {
             statusName = "FAILED";
         } else if (isRecentNode) {
             cardFill = (overRatio > 0.0) ? progressColor : new Color(0x16, 0x3A, 0x58);
-            borderColor = new Color(0x38, 0xBD, 0xF8); // ACCENT_CYAN
+            borderColor = new Color(0xFB, 0xBF, 0x24); // AMBER (YELLOW)
             strokeWidth = 2.8f;
             statusName = childFailure ? "UPSET" : ((execs > 0) ? (warning ? "WARNING" : (notice ? "NOTICE" : "PASSED")) : (executable ? "UNVISITED" : "NON_EXECUTABLE"));
         } else if (childFailure) {
