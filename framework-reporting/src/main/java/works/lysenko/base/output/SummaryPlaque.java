@@ -107,6 +107,10 @@ public record SummaryPlaque(
         this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, upset, failed, knownIssues, (total - executable), 0, true);
     }
 
+    public int totalPassed() {
+        return passed + hidden;
+    }
+
     public record RunConfig(String suite, String pool, String domain, String mode, String pathsSummary, String origin, String tag) {
         public RunConfig(final String suite, final String pool, final String domain, final String mode, final String pathsSummary) {
             this(suite, pool, domain, mode, pathsSummary, null, null);

@@ -46,11 +46,10 @@ public final class PlaqueHtmlRenderer {
         }
 
         final boolean hasHidden = plaque.hidden() > 0;
-        final String passedHeader = hasHidden ? "Passed / Hidden" : "Passed";
         final String passedAmount = hasHidden
-                ? String.format(Locale.US, "%d <span class=\"config-hint\">/ %d</span>", plaque.passed(), plaque.hidden())
+                ? String.format(Locale.US, "%d <span style=\"color:#94a3b8;font-weight:normal;\">(%d)</span>", plaque.totalPassed(), plaque.hidden())
                 : String.valueOf(plaque.passed());
-        final String passedPct = SummaryPlaque.formatPct(plaque.passed() + plaque.hidden(), plaque.total());
+        final String passedPct = SummaryPlaque.formatPct(plaque.totalPassed(), plaque.total());
 
         if (plaque.perNode()) {
             return String.format(Locale.US,
@@ -100,7 +99,7 @@ public final class PlaqueHtmlRenderer {
                     "  </table>\n" +
                     "</div>\n",
                     configHtml,
-                    passedHeader,
+                    "Passed",
                     plaque.total(), plaque.executable(), plaque.off(), plaque.executed(), plaque.upset(), passedAmount, plaque.warning(), plaque.failed(),
                     SummaryPlaque.formatPct(plaque.total(), plaque.total()),
                     SummaryPlaque.formatPct(plaque.executable(), plaque.total()),
@@ -148,7 +147,7 @@ public final class PlaqueHtmlRenderer {
                 "  </table>\n" +
                 "</div>\n",
                 configHtml,
-                passedHeader,
+                "Passed",
                 plaque.executed(), passedAmount, plaque.warning(), plaque.failed(),
                 SummaryPlaque.formatPct(plaque.executed(), plaque.total()),
                 passedPct,

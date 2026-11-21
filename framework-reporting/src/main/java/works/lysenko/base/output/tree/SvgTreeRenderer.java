@@ -410,23 +410,20 @@ public final class SvgTreeRenderer {
                 divY, divY));
 
         final boolean hasHidden = plaque.hidden() > 0;
-        final String passedHeader = hasHidden ? "PASSED / HIDDEN" : "PASSED";
-        final String passedAmountStr = hasHidden
-                ? String.format(Locale.US, "%d / %d", plaque.passed(), plaque.hidden())
-                : String.valueOf(plaque.passed());
-        final String passedPctStr = works.lysenko.base.output.SummaryPlaque.formatPct(plaque.passed() + plaque.hidden(), plaque.total());
+        final int totalPassed = plaque.totalPassed();
+        final String passedPctStr = works.lysenko.base.output.SummaryPlaque.formatPct(totalPassed, plaque.total());
 
-        final String[] cols = {"TOTAL", "EXECUTABLE", "OFF", "EXECUTED", "UPSET", passedHeader, "WARNING", "FAILED"};
+        final String[] cols = {"TOTAL", "EXECUTABLE", "OFF", "EXECUTED", "UPSET", "PASSED", "WARNING", "FAILED"};
         final String[] colors = {"#38BDF8", "#C084FC", "#94A3B8", "#60A5FA", "#818CF8", "#22C55E", "#F59E0B", "#EF4444"};
-        final String[] amountStrs = {
-                String.valueOf(plaque.total()),
-                String.valueOf(plaque.executable()),
-                String.valueOf(plaque.off()),
-                String.valueOf(plaque.executed()),
-                String.valueOf(plaque.upset()),
-                passedAmountStr,
-                String.valueOf(plaque.warning()),
-                String.valueOf(plaque.failed())
+        final int[] amounts = {
+                plaque.total(),
+                plaque.executable(),
+                plaque.off(),
+                plaque.executed(),
+                plaque.upset(),
+                totalPassed,
+                plaque.warning(),
+                plaque.failed()
         };
         final String[] pctStrs = {
                 works.lysenko.base.output.SummaryPlaque.formatPct(plaque.total(), plaque.total()),
@@ -455,11 +452,20 @@ public final class SvgTreeRenderer {
         sb.append(String.format(Locale.US,
                 "      <text x=\"16\" y=\"%d\" fill=\"#CBD5E1\" font-size=\"10\" font-weight=\"bold\" font-family=\"sans-serif\">Amount</text>\n",
                 amountRowY));
-        for (int c = 0; c < amountStrs.length; c++) {
+        for (int c = 0; c < amounts.length; c++) {
             final int colX = colStart + c * colStep;
-            sb.append(String.format(Locale.US,
-                    "      <text x=\"%d\" y=\"%d\" fill=\"%s\" font-size=\"11\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%s</text>\n",
-                    colX, amountRowY, colors[c], amountStrs[c]));
+            if (c == 5 && hasHidden) {
+                sb.append(String.format(Locale.US,
+                        "      <text x=\"%d\" y=\"%d\" font-size=\"11\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">" +
+                        "<tspan fill=\"#22C55E\">%d </tspan>" +
+                        "<tspan fill=\"#94A3B8\" font-weight=\"normal\" font-size=\"10\">(%d)</tspan>" +
+                        "</text>\n",
+                        colX, amountRowY, totalPassed, plaque.hidden()));
+            } else {
+                sb.append(String.format(Locale.US,
+                        "      <text x=\"%d\" y=\"%d\" fill=\"%s\" font-size=\"11\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%d</text>\n",
+                        colX, amountRowY, colors[c], amounts[c]));
+            }
         }
 
         sb.append(String.format(Locale.US,
