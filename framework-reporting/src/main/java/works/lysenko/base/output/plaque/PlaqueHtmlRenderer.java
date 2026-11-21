@@ -45,6 +45,13 @@ public final class PlaqueHtmlRenderer {
             configHtml.append("    </div>\n");
         }
 
+        final boolean hasHidden = plaque.hidden() > 0;
+        final String passedHeader = hasHidden ? "Passed / Hidden" : "Passed";
+        final String passedAmount = hasHidden
+                ? String.format(Locale.US, "%d <span class=\"config-hint\">/ %d</span>", plaque.passed(), plaque.hidden())
+                : String.valueOf(plaque.passed());
+        final String passedPct = SummaryPlaque.formatPct(plaque.passed() + plaque.hidden(), plaque.total());
+
         if (plaque.perNode()) {
             return String.format(Locale.US,
                     "<div class=\"summary-card summary-plaque-card\">\n" +
@@ -58,9 +65,10 @@ public final class PlaqueHtmlRenderer {
                     "        <th></th>\n" +
                     "        <th class=\"col-total\">Total</th>\n" +
                     "        <th class=\"col-executable\">Executable</th>\n" +
+                    "        <th class=\"col-off\">Off</th>\n" +
                     "        <th class=\"col-executed\">Executed</th>\n" +
                     "        <th class=\"col-upset\" title=\"Scenarios whose execution passed, but a child failed downstream\">Upset</th>\n" +
-                    "        <th class=\"col-passed\">Passed</th>\n" +
+                    "        <th class=\"col-passed\">%s</th>\n" +
                     "        <th class=\"col-warning\">Warning</th>\n" +
                     "        <th class=\"col-failed\">Failed</th>\n" +
                     "      </tr>\n" +
@@ -70,9 +78,10 @@ public final class PlaqueHtmlRenderer {
                     "        <td class=\"row-label\">Amount</td>\n" +
                     "        <td class=\"col-total\">%d</td>\n" +
                     "        <td class=\"col-executable\">%d</td>\n" +
+                    "        <td class=\"col-off\">%d</td>\n" +
                     "        <td class=\"col-executed\">%d</td>\n" +
                     "        <td class=\"stat-upset\">%d</td>\n" +
-                    "        <td class=\"stat-passed\">%d</td>\n" +
+                    "        <td class=\"stat-passed\">%s</td>\n" +
                     "        <td class=\"stat-warning\">%d</td>\n" +
                     "        <td class=\"stat-failed\">%d</td>\n" +
                     "      </tr>\n" +
@@ -80,6 +89,7 @@ public final class PlaqueHtmlRenderer {
                     "        <td class=\"row-label\">Percentage</td>\n" +
                     "        <td class=\"col-total\">%s</td>\n" +
                     "        <td class=\"col-executable\">%s</td>\n" +
+                    "        <td class=\"col-off\">%s</td>\n" +
                     "        <td class=\"col-executed\">%s</td>\n" +
                     "        <td class=\"stat-upset\">%s</td>\n" +
                     "        <td class=\"stat-passed\">%s</td>\n" +
@@ -90,12 +100,14 @@ public final class PlaqueHtmlRenderer {
                     "  </table>\n" +
                     "</div>\n",
                     configHtml,
-                    plaque.total(), plaque.executable(), plaque.executed(), plaque.upset(), plaque.passed(), plaque.warning(), plaque.failed(),
+                    passedHeader,
+                    plaque.total(), plaque.executable(), plaque.off(), plaque.executed(), plaque.upset(), passedAmount, plaque.warning(), plaque.failed(),
                     SummaryPlaque.formatPct(plaque.total(), plaque.total()),
                     SummaryPlaque.formatPct(plaque.executable(), plaque.total()),
+                    SummaryPlaque.formatPct(plaque.off(), plaque.total()),
                     SummaryPlaque.formatPct(plaque.executed(), plaque.total()),
                     SummaryPlaque.formatPct(plaque.upset(), plaque.total()),
-                    SummaryPlaque.formatPct(plaque.passed(), plaque.total()),
+                    passedPct,
                     SummaryPlaque.formatPct(plaque.warning(), plaque.total()),
                     SummaryPlaque.formatPct(plaque.failed(), plaque.total())
             );
@@ -112,7 +124,7 @@ public final class PlaqueHtmlRenderer {
                 "      <tr>\n" +
                 "        <th></th>\n" +
                 "        <th class=\"col-executed\">Executed</th>\n" +
-                "        <th class=\"col-passed\">Passed</th>\n" +
+                "        <th class=\"col-passed\">%s</th>\n" +
                 "        <th class=\"col-warning\">Warning</th>\n" +
                 "        <th class=\"col-failed\">Failed</th>\n" +
                 "      </tr>\n" +
@@ -121,7 +133,7 @@ public final class PlaqueHtmlRenderer {
                 "      <tr>\n" +
                 "        <td class=\"row-label\">Amount</td>\n" +
                 "        <td class=\"col-executed\">%d</td>\n" +
-                "        <td class=\"col-passed\">%d</td>\n" +
+                "        <td class=\"col-passed\">%s</td>\n" +
                 "        <td class=\"col-warning\">%d</td>\n" +
                 "        <td class=\"col-failed\">%d</td>\n" +
                 "      </tr>\n" +
@@ -136,9 +148,10 @@ public final class PlaqueHtmlRenderer {
                 "  </table>\n" +
                 "</div>\n",
                 configHtml,
-                plaque.executed(), plaque.passed(), plaque.warning(), plaque.failed(),
+                passedHeader,
+                plaque.executed(), passedAmount, plaque.warning(), plaque.failed(),
                 SummaryPlaque.formatPct(plaque.executed(), plaque.total()),
-                SummaryPlaque.formatPct(plaque.passed(), plaque.total()),
+                passedPct,
                 SummaryPlaque.formatPct(plaque.warning(), plaque.total()),
                 SummaryPlaque.formatPct(plaque.failed(), plaque.total())
         );
@@ -159,6 +172,7 @@ public final class PlaqueHtmlRenderer {
                "  .summary-plaque-card td.row-label { font-weight: 600; text-align: left; color: #cbd5e1; padding-right: 16px; font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }\n" +
                "  .summary-plaque-card .col-total { color: #38bdf8; font-weight: 600; }\n" +
                "  .summary-plaque-card .col-executable { color: #c084fc; font-weight: 600; }\n" +
+               "  .summary-plaque-card .col-off { color: #94a3b8; font-weight: 600; }\n" +
                "  .summary-plaque-card .col-executed { color: #60a5fa; font-weight: 600; }\n" +
                "  .summary-plaque-card .col-passed, .summary-plaque-card .stat-passed { color: #22c55e; font-weight: 600; }\n" +
                "  .summary-plaque-card .col-warning, .summary-plaque-card .stat-warning { color: #f59e0b; font-weight: 600; }\n" +

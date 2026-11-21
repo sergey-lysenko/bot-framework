@@ -105,6 +105,7 @@ class SummaryPlaqueTest {
         // Table restored with upset and node statistics
         assertTrue(html.contains("<th class=\"col-total\">Total</th>"));
         assertTrue(html.contains("<th class=\"col-executable\">Executable</th>"));
+        assertTrue(html.contains("<th class=\"col-off\">Off</th>"));
         assertTrue(html.contains("<th class=\"col-executed\">Executed</th>"));
         assertTrue(html.contains("<th class=\"col-passed\">Passed</th>"));
         assertTrue(html.contains("<th class=\"col-warning\">Warning</th>"));
@@ -114,6 +115,7 @@ class SummaryPlaqueTest {
         // Amount row checks
         assertTrue(html.contains("<td class=\"col-total\">5</td>"));
         assertTrue(html.contains("<td class=\"col-executable\">5</td>"));
+        assertTrue(html.contains("<td class=\"col-off\">0</td>"));
         assertTrue(html.contains("<td class=\"col-executed\">4</td>"));
         assertTrue(html.contains("<td class=\"stat-passed\">1</td>"));
         assertTrue(html.contains("<td class=\"stat-warning\">1</td>"));

@@ -46,6 +46,16 @@ public final class PlaqueMetricsCalculator {
             final TreeHtml.AccessibleContext accessibleCtx,
             final Map<TreeHtml.NodeData, Boolean> executableCache,
             final Map<TreeHtml.NodeData, Boolean> childFailureCache) {
+        return computeFromNodes(nodes, config, accessibleCtx, executableCache, childFailureCache, 0);
+    }
+
+    public static SummaryPlaque computeFromNodes(
+            final List<TreeHtml.NodeData> nodes,
+            final RunConfig config,
+            final TreeHtml.AccessibleContext accessibleCtx,
+            final Map<TreeHtml.NodeData, Boolean> executableCache,
+            final Map<TreeHtml.NodeData, Boolean> childFailureCache,
+            final int hiddenCount) {
         int total = nodes.size();
         int executable = 0;
         int executed = 0;
@@ -91,7 +101,7 @@ public final class PlaqueMetricsCalculator {
 
         return new SummaryPlaque(
                 config.suite(), config.pool(), config.domain(), config.mode(), config.pathsSummary(), config.origin(), config.tag(),
-                total, executable, executed, passed, warning, upset, failed, knownIssues, true);
+                total, executable, executed, passed, warning, upset, failed, knownIssues, (total - executable), 0, true);
     }
 
     public static SummaryPlaque computeFromSections(final List<LogSection> sections) {
@@ -131,7 +141,7 @@ public final class PlaqueMetricsCalculator {
 
         return new SummaryPlaque(
                 config.suite(), config.pool(), config.domain(), config.mode(), config.pathsSummary(), config.origin(), config.tag(),
-                total, executable, executed, passed, warning, 0, failed, 0, false);
+                total, executable, executed, passed, warning, 0, failed, 0, (total - executable), 0, false);
     }
 
     public static SummaryPlaque computeFromScenEntries(final List<ScenEntry> entries) {
@@ -189,6 +199,6 @@ public final class PlaqueMetricsCalculator {
 
         return new SummaryPlaque(
                 config.suite(), config.pool(), config.domain(), config.mode(), config.pathsSummary(), config.origin(), config.tag(),
-                total, executable, executed, passed, warning, 0, failed, 0, false);
+                total, executable, executed, passed, warning, 0, failed, 0, (total - executable), 0, false);
     }
 }

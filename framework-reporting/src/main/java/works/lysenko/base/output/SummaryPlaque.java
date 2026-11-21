@@ -28,6 +28,8 @@ public record SummaryPlaque(
         int upset,
         int failed,
         int knownIssues,
+        int off,
+        int hidden,
         boolean perNode
 ) {
 
@@ -39,7 +41,7 @@ public record SummaryPlaque(
             final int warning,
             final int failed
     ) {
-        this(null, null, null, null, null, null, null, total, executable, executed, passed, warning, 0, failed, 0, false);
+        this(null, null, null, null, null, null, null, total, executable, executed, passed, warning, 0, failed, 0, (total - executable), 0, false);
     }
 
     public SummaryPlaque(
@@ -51,7 +53,7 @@ public record SummaryPlaque(
             final int upset,
             final int failed
     ) {
-        this(null, null, null, null, null, null, null, total, executable, executed, passed, warning, upset, failed, 0, true);
+        this(null, null, null, null, null, null, null, total, executable, executed, passed, warning, upset, failed, 0, (total - executable), 0, true);
     }
 
     public SummaryPlaque(
@@ -67,7 +69,7 @@ public record SummaryPlaque(
             final int warning,
             final int failed
     ) {
-        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, 0, failed, 0, false);
+        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, 0, failed, 0, (total - executable), 0, false);
     }
 
     public SummaryPlaque(
@@ -84,7 +86,7 @@ public record SummaryPlaque(
             final int failed,
             final int knownIssues
     ) {
-        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, 0, failed, knownIssues, false);
+        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, 0, failed, knownIssues, (total - executable), 0, false);
     }
 
     public SummaryPlaque(
@@ -102,7 +104,7 @@ public record SummaryPlaque(
             final int failed,
             final int knownIssues
     ) {
-        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, upset, failed, knownIssues, true);
+        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, upset, failed, knownIssues, (total - executable), 0, true);
     }
 
     public record RunConfig(String suite, String pool, String domain, String mode, String pathsSummary, String origin, String tag) {
@@ -150,6 +152,16 @@ public record SummaryPlaque(
             final java.util.Map<TreeHtml.NodeData, Boolean> executableCache,
             final java.util.Map<TreeHtml.NodeData, Boolean> childFailureCache) {
         return PlaqueMetricsCalculator.computeFromNodes(nodes, config, accessibleCtx, executableCache, childFailureCache);
+    }
+
+    public static SummaryPlaque computeFromNodes(
+            final List<TreeHtml.NodeData> nodes,
+            final RunConfig config,
+            final TreeHtml.AccessibleContext accessibleCtx,
+            final java.util.Map<TreeHtml.NodeData, Boolean> executableCache,
+            final java.util.Map<TreeHtml.NodeData, Boolean> childFailureCache,
+            final int hiddenCount) {
+        return PlaqueMetricsCalculator.computeFromNodes(nodes, config, accessibleCtx, executableCache, childFailureCache, hiddenCount);
     }
 
     public static SummaryPlaque computeFromSections(final List<LogSection> sections) {
