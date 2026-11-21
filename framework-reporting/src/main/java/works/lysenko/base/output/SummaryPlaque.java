@@ -111,6 +111,10 @@ public record SummaryPlaque(
         return passed + hidden;
     }
 
+    public int notExecuted() {
+        return Math.max(0, executable - executed);
+    }
+
     public record RunConfig(String suite, String pool, String domain, String mode, String pathsSummary, String origin, String tag) {
         public RunConfig(final String suite, final String pool, final String domain, final String mode, final String pathsSummary) {
             this(suite, pool, domain, mode, pathsSummary, null, null);

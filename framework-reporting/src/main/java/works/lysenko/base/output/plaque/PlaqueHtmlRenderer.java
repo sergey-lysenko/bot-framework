@@ -65,6 +65,7 @@ public final class PlaqueHtmlRenderer {
                     "        <th class=\"col-total\">Total</th>\n" +
                     "        <th class=\"col-executable\">Executable</th>\n" +
                     "        <th class=\"col-off\">Off</th>\n" +
+                    "        <th class=\"col-not-executed\">Not Executed</th>\n" +
                     "        <th class=\"col-executed\">Executed</th>\n" +
                     "        <th class=\"col-upset\" title=\"Scenarios whose execution passed, but a child failed downstream\">Upset</th>\n" +
                     "        <th class=\"col-passed\">%s</th>\n" +
@@ -78,6 +79,7 @@ public final class PlaqueHtmlRenderer {
                     "        <td class=\"col-total\">%d</td>\n" +
                     "        <td class=\"col-executable\">%d</td>\n" +
                     "        <td class=\"col-off\">%d</td>\n" +
+                    "        <td class=\"col-not-executed\">%d</td>\n" +
                     "        <td class=\"col-executed\">%d</td>\n" +
                     "        <td class=\"stat-upset\">%d</td>\n" +
                     "        <td class=\"stat-passed\">%s</td>\n" +
@@ -89,6 +91,7 @@ public final class PlaqueHtmlRenderer {
                     "        <td class=\"col-total\">%s</td>\n" +
                     "        <td class=\"col-executable\">%s</td>\n" +
                     "        <td class=\"col-off\">%s</td>\n" +
+                    "        <td class=\"col-not-executed\">%s</td>\n" +
                     "        <td class=\"col-executed\">%s</td>\n" +
                     "        <td class=\"stat-upset\">%s</td>\n" +
                     "        <td class=\"stat-passed\">%s</td>\n" +
@@ -100,10 +103,11 @@ public final class PlaqueHtmlRenderer {
                     "</div>\n",
                     configHtml,
                     "Passed",
-                    plaque.total(), plaque.executable(), plaque.off(), plaque.executed(), plaque.upset(), passedAmount, plaque.warning(), plaque.failed(),
+                    plaque.total(), plaque.executable(), plaque.off(), plaque.notExecuted(), plaque.executed(), plaque.upset(), passedAmount, plaque.warning(), plaque.failed(),
                     SummaryPlaque.formatPct(plaque.total(), plaque.total()),
                     SummaryPlaque.formatPct(plaque.executable(), plaque.total()),
                     SummaryPlaque.formatPct(plaque.off(), plaque.total()),
+                    SummaryPlaque.formatPct(plaque.notExecuted(), plaque.total()),
                     SummaryPlaque.formatPct(plaque.executed(), plaque.total()),
                     SummaryPlaque.formatPct(plaque.upset(), plaque.total()),
                     passedPct,
@@ -172,6 +176,7 @@ public final class PlaqueHtmlRenderer {
                "  .summary-plaque-card .col-total { color: #38bdf8; font-weight: 600; }\n" +
                "  .summary-plaque-card .col-executable { color: #c084fc; font-weight: 600; }\n" +
                "  .summary-plaque-card .col-off { color: #94a3b8; font-weight: 600; }\n" +
+               "  .summary-plaque-card .col-not-executed { color: #64748b; font-weight: 600; }\n" +
                "  .summary-plaque-card .col-executed { color: #60a5fa; font-weight: 600; }\n" +
                "  .summary-plaque-card .col-passed, .summary-plaque-card .stat-passed { color: #22c55e; font-weight: 600; }\n" +
                "  .summary-plaque-card .col-warning, .summary-plaque-card .stat-warning { color: #f59e0b; font-weight: 600; }\n" +
