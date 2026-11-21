@@ -223,7 +223,11 @@ public final class TreeHtml {
 
     public record Edge(NodeData from, NodeData to) {}
 
-    public record TreeLayout(List<NodeData> nodes, List<Edge> edges) {}
+    public record TreeLayout(List<NodeData> nodes, List<Edge> edges, SummaryPlaque plaque) {
+        public TreeLayout(List<NodeData> nodes, List<Edge> edges) {
+            this(nodes, edges, null);
+        }
+    }
 
     public static final class AccessibleContext {
         public final Set<_Scenario> scenarios;

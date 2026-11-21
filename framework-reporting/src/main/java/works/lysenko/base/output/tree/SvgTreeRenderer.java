@@ -335,12 +335,14 @@ public final class SvgTreeRenderer {
             sb.append("    </g>\n");
         }
 
-        final works.lysenko.base.output.SummaryPlaque plaque = works.lysenko.base.output.SummaryPlaque.computeFromNodes(
-                layout.nodes(),
-                rctx.runConfig(),
-                ctx,
-                executableCache,
-                childFailureCache);
+        final works.lysenko.base.output.SummaryPlaque plaque = layout.plaque() != null
+                ? layout.plaque()
+                : works.lysenko.base.output.SummaryPlaque.computeFromNodes(
+                        layout.nodes(),
+                        rctx.runConfig(),
+                        ctx,
+                        executableCache,
+                        childFailureCache);
         renderPlaqueSvg(plaque, sb, 16, HEADER_HEIGHT_BASE + 16);
 
         sb.append("  </g>\n");
@@ -382,7 +384,7 @@ public final class SvgTreeRenderer {
 
         final int extraLines = Math.max(0, configLines.size() - 1);
         final int yOffset = extraLines * 14;
-        final int plaqueW = 740;
+        final int plaqueW = 760;
         final int plaqueH = 105 + yOffset;
 
         sb.append(String.format(Locale.US,
@@ -404,18 +406,41 @@ public final class SvgTreeRenderer {
 
         final int divY = 32 + yOffset;
         sb.append(String.format(Locale.US,
-                "      <line x1=\"12\" y1=\"%d\" x2=\"728\" y2=\"%d\" stroke=\"#334155\" stroke-width=\"1\" />\n",
+                "      <line x1=\"12\" y1=\"%d\" x2=\"748\" y2=\"%d\" stroke=\"#334155\" stroke-width=\"1\" />\n",
                 divY, divY));
 
-        final String[] cols = {"TOTAL", "EXECUTABLE", "EXECUTED", "UPSET", "PASSED", "WARNING", "FAILED"};
-        final String[] colors = {"#38BDF8", "#C084FC", "#60A5FA", "#818CF8", "#22C55E", "#F59E0B", "#EF4444"};
-        final int[] amounts = {
-                plaque.total(), plaque.executable(), plaque.executed(), plaque.upset(),
-                plaque.passed(), plaque.warning(), plaque.failed()
+        final boolean hasHidden = plaque.hidden() > 0;
+        final String passedHeader = hasHidden ? "PASSED / HIDDEN" : "PASSED";
+        final String passedAmountStr = hasHidden
+                ? String.format(Locale.US, "%d / %d", plaque.passed(), plaque.hidden())
+                : String.valueOf(plaque.passed());
+        final String passedPctStr = works.lysenko.base.output.SummaryPlaque.formatPct(plaque.passed() + plaque.hidden(), plaque.total());
+
+        final String[] cols = {"TOTAL", "EXECUTABLE", "OFF", "EXECUTED", "UPSET", passedHeader, "WARNING", "FAILED"};
+        final String[] colors = {"#38BDF8", "#C084FC", "#94A3B8", "#60A5FA", "#818CF8", "#22C55E", "#F59E0B", "#EF4444"};
+        final String[] amountStrs = {
+                String.valueOf(plaque.total()),
+                String.valueOf(plaque.executable()),
+                String.valueOf(plaque.off()),
+                String.valueOf(plaque.executed()),
+                String.valueOf(plaque.upset()),
+                passedAmountStr,
+                String.valueOf(plaque.warning()),
+                String.valueOf(plaque.failed())
+        };
+        final String[] pctStrs = {
+                works.lysenko.base.output.SummaryPlaque.formatPct(plaque.total(), plaque.total()),
+                works.lysenko.base.output.SummaryPlaque.formatPct(plaque.executable(), plaque.total()),
+                works.lysenko.base.output.SummaryPlaque.formatPct(plaque.off(), plaque.total()),
+                works.lysenko.base.output.SummaryPlaque.formatPct(plaque.executed(), plaque.total()),
+                works.lysenko.base.output.SummaryPlaque.formatPct(plaque.upset(), plaque.total()),
+                passedPctStr,
+                works.lysenko.base.output.SummaryPlaque.formatPct(plaque.warning(), plaque.total()),
+                works.lysenko.base.output.SummaryPlaque.formatPct(plaque.failed(), plaque.total())
         };
 
-        final int colStart = 110;
-        final int colStep = 88;
+        final int colStart = 90;
+        final int colStep = 82;
         final int headerRowY = 48 + yOffset;
         final int amountRowY = 68 + yOffset;
         final int pctRowY = 88 + yOffset;
@@ -430,22 +455,21 @@ public final class SvgTreeRenderer {
         sb.append(String.format(Locale.US,
                 "      <text x=\"16\" y=\"%d\" fill=\"#CBD5E1\" font-size=\"10\" font-weight=\"bold\" font-family=\"sans-serif\">Amount</text>\n",
                 amountRowY));
-        for (int c = 0; c < amounts.length; c++) {
+        for (int c = 0; c < amountStrs.length; c++) {
             final int colX = colStart + c * colStep;
             sb.append(String.format(Locale.US,
-                    "      <text x=\"%d\" y=\"%d\" fill=\"%s\" font-size=\"11\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%d</text>\n",
-                    colX, amountRowY, colors[c], amounts[c]));
+                    "      <text x=\"%d\" y=\"%d\" fill=\"%s\" font-size=\"11\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%s</text>\n",
+                    colX, amountRowY, colors[c], amountStrs[c]));
         }
 
         sb.append(String.format(Locale.US,
                 "      <text x=\"16\" y=\"%d\" fill=\"#CBD5E1\" font-size=\"10\" font-weight=\"bold\" font-family=\"sans-serif\">Percentage</text>\n",
                 pctRowY));
-        for (int c = 0; c < amounts.length; c++) {
+        for (int c = 0; c < pctStrs.length; c++) {
             final int colX = colStart + c * colStep;
-            final String pct = works.lysenko.base.output.SummaryPlaque.formatPct(amounts[c], plaque.total());
             sb.append(String.format(Locale.US,
                     "      <text x=\"%d\" y=\"%d\" fill=\"%s\" font-size=\"10\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%s</text>\n",
-                    colX, pctRowY, colors[c], pct));
+                    colX, pctRowY, colors[c], pctStrs[c]));
         }
 
         sb.append("    </g>\n");

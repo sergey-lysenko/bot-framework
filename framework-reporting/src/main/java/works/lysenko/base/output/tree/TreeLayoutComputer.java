@@ -90,10 +90,19 @@ public final class TreeLayoutComputer {
         }
         final long tProc = System.currentTimeMillis();
 
+        final List<NodeData> unprunedNodes = new ArrayList<>(nodes);
+        final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(getAccessibleScenarios());
+        final Map<NodeData, Boolean> execCache = new HashMap<>();
+        final Map<NodeData, Boolean> childFailCache = new HashMap<>();
+
         final long tPruneStart = System.currentTimeMillis();
         pruneOffBranches(nodes, edges);
-        prunePassedLeaves(nodes, edges);
+        final int hiddenCount = prunePassedLeaves(nodes, edges);
         final long tPrune = System.currentTimeMillis();
+
+        final works.lysenko.base.output.SummaryPlaque plaque = works.lysenko.base.output.SummaryPlaque.computeFromNodes(
+                unprunedNodes, works.lysenko.base.output.SummaryPlaque.RunConfig.fromParameters(works.lysenko.Base.parameters),
+                accessibleCtx, execCache, childFailCache, hiddenCount);
 
         final long tOptStart = System.currentTimeMillis();
         TreeLayoutOptimizer.optimizeLayout(nodes);
@@ -101,7 +110,7 @@ public final class TreeLayoutComputer {
         final long tOpt = System.currentTimeMillis();
 
         logDebug(s("Tree layout timing (groups): process = ", tProc - tStart, " ms (known issues checked against ", logRecords.size(), " logs), prune = ", tPrune - tPruneStart, " ms, optimize = ", tOpt - tOptStart, " ms"));
-        return new TreeLayout(nodes, edges);
+        return new TreeLayout(nodes, edges, plaque);
     }
 
     public static Set<_Scenario> rootsOf(final Iterable<? extends _Scenario> scenarios) {
@@ -139,10 +148,19 @@ public final class TreeLayoutComputer {
             processScenario(root, null, 0, rows, ancestors, sorted, nodes, edges, logRecords, patternLogCache);
         final long tProc = System.currentTimeMillis();
 
+        final List<NodeData> unprunedNodes = new ArrayList<>(nodes);
+        final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(getAccessibleScenarios());
+        final Map<NodeData, Boolean> execCache = new HashMap<>();
+        final Map<NodeData, Boolean> childFailCache = new HashMap<>();
+
         final long tPruneStart = System.currentTimeMillis();
         pruneOffBranches(nodes, edges);
-        prunePassedLeaves(nodes, edges);
+        final int hiddenCount = prunePassedLeaves(nodes, edges);
         final long tPrune = System.currentTimeMillis();
+
+        final works.lysenko.base.output.SummaryPlaque plaque = works.lysenko.base.output.SummaryPlaque.computeFromNodes(
+                unprunedNodes, works.lysenko.base.output.SummaryPlaque.RunConfig.fromParameters(works.lysenko.Base.parameters),
+                accessibleCtx, execCache, childFailCache, hiddenCount);
 
         final long tOptStart = System.currentTimeMillis();
         TreeLayoutOptimizer.optimizeLayout(nodes);
@@ -150,7 +168,7 @@ public final class TreeLayoutComputer {
         final long tOpt = System.currentTimeMillis();
 
         logDebug(s("Tree layout timing (scenarios): process = ", tProc - tStart, " ms (known issues checked against ", logRecords.size(), " logs), prune = ", tPrune - tPruneStart, " ms, optimize = ", tOpt - tOptStart, " ms"));
-        return new TreeLayout(nodes, edges);
+        return new TreeLayout(nodes, edges, plaque);
     }
     public static final java.util.Map<String, Integer> offsetOverrides = new java.util.concurrent.ConcurrentHashMap<>();
     public static final java.util.Map<String, Integer> rowOffsetOverrides = new java.util.concurrent.ConcurrentHashMap<>();
@@ -585,15 +603,13 @@ public final class TreeLayoutComputer {
         if (toRemove.isEmpty()) return;
 
         nodes.removeAll(toRemove);
-
         edges.removeIf(e -> toRemove.contains(e.from()) || toRemove.contains(e.to()));
-
         for (final NodeData n : nodes) {
             n.children().removeAll(toRemove);
         }
     }
-    public static void prunePassedLeaves(final List<NodeData> nodes, final List<Edge> edges) {
-        if (!works.lysenko.util.prop.tree.HideOff.passedLeaves) return;
+    public static int prunePassedLeaves(final List<NodeData> nodes, final List<Edge> edges) {
+        if (!works.lysenko.util.prop.tree.HideOff.passedLeaves) return 0;
 
         boolean changed;
         final Set<NodeData> toRemove = new HashSet<>();
@@ -624,12 +640,14 @@ public final class TreeLayoutComputer {
             }
         } while (changed);
 
-        if (toRemove.isEmpty()) return;
+        if (toRemove.isEmpty()) return 0;
+        final int count = toRemove.size();
 
         nodes.removeAll(toRemove);
         edges.removeIf(e -> toRemove.contains(e.from()) || toRemove.contains(e.to()));
         for (final NodeData n : nodes) {
             n.children().removeAll(toRemove);
         }
+        return count;
     }
 }
