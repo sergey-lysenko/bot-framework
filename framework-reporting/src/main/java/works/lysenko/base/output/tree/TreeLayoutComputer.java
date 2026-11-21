@@ -602,6 +602,9 @@ public final class TreeLayoutComputer {
             for (final NodeData n : nodes) {
                 if (toRemove.contains(n)) continue;
                 
+                // The first-root-level nodes should always be visible
+                if (n.parent() == null) continue;
+                
                 boolean isLeaf = true;
                 for (final NodeData child : n.children()) {
                     if (!toRemove.contains(child)) {
