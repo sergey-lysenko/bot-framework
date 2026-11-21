@@ -37,7 +37,6 @@ public final class SvgTreeRenderer {
 
     private static final int PADDING_X = 40;
     private static final int PADDING_Y = 32;
-    private static final int BOTTOM_PADDING = 32;
 
     private SvgTreeRenderer() {
     }
@@ -124,12 +123,14 @@ public final class SvgTreeRenderer {
         double maxLeafOverRatio = 0.0;
 
         int fullMaxCol = 0;
+        double fullMinRow = Double.MAX_VALUE;
         double fullMaxRow = 0.0;
 
         final int totalStatsNodes = layout.nodes().size();
         for (int i = 0; i < totalStatsNodes; i++) {
             final NodeData n = layout.nodes().get(i);
             if (n.col() > fullMaxCol) fullMaxCol = n.col();
+            if (n.row() < fullMinRow) fullMinRow = n.row();
             if (n.row() > fullMaxRow) fullMaxRow = n.row();
             final int execs = (null != n.result()) ? n.result().getExecutions() : 0;
             totalExecs += execs;
@@ -143,6 +144,10 @@ public final class SvgTreeRenderer {
                 }
             }
         }
+        if (fullMinRow > fullMaxRow) {
+            fullMinRow = 0.0;
+            fullMaxRow = 0.0;
+        }
 
         final int baseW;
         final int baseH;
@@ -150,10 +155,8 @@ public final class SvgTreeRenderer {
             baseW = sessionBaseW;
             baseH = sessionBaseH;
         } else {
-            baseW = (int) evenDimension(Math.max(800L, ((long) fullMaxCol + 1L) * COL_WIDTH + PADDING_X * 2L));
-            baseH = (int) evenDimension(Math.max(
-                    400L,
-                    (long) Math.ceil((fullMaxRow + 1.0) * ROW_HEIGHT + headerHeight(baseW) + PADDING_Y + BOTTOM_PADDING)));
+            baseW = TreeCameraTransform.computeFrameWidth(fullMaxCol);
+            baseH = TreeCameraTransform.computeFrameHeight(fullMinRow, fullMaxRow, baseW);
         }
         final int headerH = headerHeight(baseW);
 
@@ -285,13 +288,13 @@ public final class SvgTreeRenderer {
         final int topY = (HEADER_HEIGHT_BASE - ProgressionChrome.BADGE_HEIGHT) / 2;
 
         // Right-to-left placement -> left-to-right display:
-        // Test #N | Leafs: X/Y (P%) | Target: T | Zoom: Z.Zx | M execs | ETA: MM:SS | Elapsed: HH:MM:SS
+        // Test #N | Leafs: X/Y (P%) | Target: T | Zoom: Z.ZZx | M execs | ETA: MM:SS | Elapsed: HH:MM:SS
         rightX = ProgressionChrome.appendBorderedBadge(sb, rctx.elapsedBadge(), rightX, topY, ProgressionChrome.BADGE_SLATE);
         final ProgressionChrome.EtaBadge etaBadge = rctx.etaBadge();
         rightX = ProgressionChrome.appendBorderedBadge(sb, etaBadge.text(), rightX, topY, etaBadge.style());
         rightX = ProgressionChrome.appendBorderedBadge(sb, totalExecs + " execs", rightX, topY, ProgressionChrome.BADGE_SLATE);
 
-        final String zoomStr = String.format(Locale.US, "Zoom: %.1fx", zoom);
+        final String zoomStr = String.format(Locale.US, "Zoom: %.2fx", zoom);
         rightX = ProgressionChrome.appendBorderedBadge(sb, zoomStr, rightX, topY, ProgressionChrome.BADGE_SKY);
 
         rightX = ProgressionChrome.appendBorderedBadge(sb, "Target: " + target, rightX, topY, ProgressionChrome.BADGE_SLATE);
@@ -317,7 +320,7 @@ public final class SvgTreeRenderer {
         ProgressionChrome.appendHeaderTitle(sb, hudMarginX, titleText);
 
         if (rctx.treeDebugEnabled()) {
-            final String debugStr = String.format(Locale.US, "dx:%.1f dy:%.1f dz:%.3f maxZ:%.1fx",
+            final String debugStr = String.format(Locale.US, "dx:%.1f dy:%.1f dz:%.3f maxZ:%.2fx",
                     rctx.debugDx(),
                     rctx.debugDy(),
                     rctx.debugDz(),
@@ -343,7 +346,9 @@ public final class SvgTreeRenderer {
                         ctx,
                         executableCache,
                         childFailureCache);
-        renderPlaqueSvg(plaque, sb, 16, HEADER_HEIGHT_BASE + 16);
+        final int plaqueMarginX = 16;
+        final int plaqueW = Math.max(810, localW - plaqueMarginX * 2);
+        renderPlaqueSvg(plaque, sb, plaqueMarginX, HEADER_HEIGHT_BASE + 16, plaqueW);
 
         sb.append("  </g>\n");
 
@@ -351,40 +356,63 @@ public final class SvgTreeRenderer {
         return sb.toString();
     }
 
-    private static void renderPlaqueSvg(final works.lysenko.base.output.SummaryPlaque plaque, final StringBuilder sb, final int x, final int y) {
+    private record PlaqueConfigItem(String label, String value, String valueColor) {
+        double estimatedWidthPx() {
+            return (label.length() + value.length()) * 6.8 + 6.0;
+        }
+    }
+
+    private static void renderPlaqueSvg(
+            final works.lysenko.base.output.SummaryPlaque plaque,
+            final StringBuilder sb,
+            final int x,
+            final int y,
+            final int plaqueW) {
         if (plaque == null) return;
 
-        final List<String> configItems = new ArrayList<>();
-        if (hasText(plaque.suite())) configItems.add("SUITE: " + plaque.suite());
-        if (hasText(plaque.pool())) configItems.add("POOL: " + plaque.pool());
-        if (hasText(plaque.domain())) configItems.add("DOMAIN: " + plaque.domain());
-        if (hasText(plaque.origin())) configItems.add("ORIGIN: " + plaque.origin());
-        if (hasText(plaque.tag())) configItems.add("TAG: " + plaque.tag());
-        if (hasText(plaque.pathsSummary())) configItems.add("PATHS: " + plaque.pathsSummary());
-        if (plaque.knownIssues() > 0) configItems.add("KNOWN ISSUES: " + plaque.knownIssues());
+        final List<PlaqueConfigItem> configItems = new ArrayList<>();
+        if (hasText(plaque.suite())) configItems.add(new PlaqueConfigItem("SUITE:", plaque.suite(), "#F8FAFC"));
+        if (hasText(plaque.pool())) configItems.add(new PlaqueConfigItem("POOL:", plaque.pool(), "#F8FAFC"));
+        if (hasText(plaque.domain())) configItems.add(new PlaqueConfigItem("DOMAIN:", plaque.domain(), "#F8FAFC"));
+        if (hasText(plaque.origin())) configItems.add(new PlaqueConfigItem("ORIGIN:", plaque.origin(), "#F8FAFC"));
+        if (hasText(plaque.tag())) configItems.add(new PlaqueConfigItem("TAG:", plaque.tag(), "#F8FAFC"));
+        if (hasText(plaque.pathsSummary())) configItems.add(new PlaqueConfigItem("PATHS:", plaque.pathsSummary(), "#F8FAFC"));
+        if (plaque.knownIssues() > 0) configItems.add(new PlaqueConfigItem("KNOWN ISSUES:", String.valueOf(plaque.knownIssues()), "#C084FC"));
 
-        final int maxFirstLineChars = 88;
-        final int maxNextLineChars = 112;
-        final List<String> configLines = new ArrayList<>();
-        StringBuilder currentLine = new StringBuilder();
-        for (final String item : configItems) {
-            final int maxChars = configLines.isEmpty() ? maxFirstLineChars : maxNextLineChars;
-            final int sepLen = currentLine.length() == 0 ? 0 : 2;
-            if (currentLine.length() > 0 && currentLine.length() + sepLen + item.length() > maxChars) {
-                configLines.add(currentLine.toString());
-                currentLine = new StringBuilder(item);
+        final boolean hasMode = hasText(plaque.mode());
+        final int modeBadgeW = hasMode ? (int) Math.ceil(plaque.mode().length() * 6.8) + 18 : 0;
+        final int modeBadgeX = plaqueW - 16 - modeBadgeW;
+
+        final int firstLineX = 176;
+        final double itemGapPx = 12.0;
+        final double firstLineMaxPx = Math.max(120.0, (hasMode ? modeBadgeX - 16 : plaqueW - 16) - firstLineX);
+        final double nextLineMaxPx = Math.max(120.0, plaqueW - 32);
+
+        final List<List<PlaqueConfigItem>> configLines = new ArrayList<>();
+        List<PlaqueConfigItem> currentLine = new ArrayList<>();
+        double currentLinePx = 0.0;
+        for (final PlaqueConfigItem item : configItems) {
+            final double maxPx = configLines.isEmpty() ? firstLineMaxPx : nextLineMaxPx;
+            final double sepPx = currentLine.isEmpty() ? 0.0 : itemGapPx;
+            final double itemPx = item.estimatedWidthPx();
+            if (!currentLine.isEmpty() && currentLinePx + sepPx + itemPx > maxPx) {
+                configLines.add(currentLine);
+                currentLine = new ArrayList<>();
+                currentLine.add(item);
+                currentLinePx = itemPx;
             } else {
-                if (sepLen > 0) currentLine.append("  ");
-                currentLine.append(item);
+                currentLine.add(item);
+                currentLinePx += sepPx + itemPx;
             }
         }
-        if (currentLine.length() > 0) {
-            configLines.add(currentLine.toString());
+        if (!currentLine.isEmpty()) {
+            configLines.add(currentLine);
         }
 
+        final List<works.lysenko.base.output.SummaryPlaque.MetricColumn> visibleCols = plaque.visibleTreeColumns();
         final int extraLines = Math.max(0, configLines.size() - 1);
         final int yOffset = extraLines * 14;
-        final int plaqueW = 810;
+        final int leftEdge = 96;
         final int plaqueH = 105 + yOffset;
 
         sb.append(String.format(Locale.US,
@@ -396,88 +424,78 @@ public final class SvgTreeRenderer {
 
         sb.append("      <text x=\"16\" y=\"22\" fill=\"#F8FAFC\" font-size=\"12\" font-weight=\"bold\" font-family=\"sans-serif\">⚡ Execution Statistics</text>\n");
 
-        for (int i = 0; i < configLines.size(); i++) {
-            final int lineX = (i == 0) ? 170 : 16;
-            final int lineY = 22 + i * 14;
+        if (hasMode) {
             sb.append(String.format(Locale.US,
-                    "      <text x=\"%d\" y=\"%d\" fill=\"#38BDF8\" font-size=\"10\" font-weight=\"bold\" font-family=\"monospace\">%s</text>\n",
-                    lineX, lineY, ProgressionChrome.escapeXml(configLines.get(i))));
+                    "      <rect x=\"%d\" y=\"9\" width=\"%d\" height=\"18\" rx=\"9\" ry=\"9\" fill=\"#A855F7\" fill-opacity=\"0.15\" stroke=\"#C084FC\" stroke-opacity=\"0.35\" stroke-width=\"1\" />\n",
+                    modeBadgeX, modeBadgeW));
+            sb.append(String.format(Locale.US,
+                    "      <text x=\"%d\" y=\"21\" fill=\"#C084FC\" font-size=\"9.5\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%s</text>\n",
+                    modeBadgeX + (modeBadgeW / 2), ProgressionChrome.escapeXml(plaque.mode())));
+        }
+
+        for (int i = 0; i < configLines.size(); i++) {
+            final int lineX = (i == 0) ? firstLineX : 16;
+            final int lineY = 22 + i * 14;
+            final List<PlaqueConfigItem> lineItems = configLines.get(i);
+            sb.append(String.format(Locale.US,
+                    "      <text x=\"%d\" y=\"%d\" font-size=\"10\" font-family=\"monospace\">",
+                    lineX, lineY));
+            for (int j = 0; j < lineItems.size(); j++) {
+                final PlaqueConfigItem item = lineItems.get(j);
+                if (j > 0) {
+                    sb.append(String.format(Locale.US,
+                            "<tspan dx=\"12\" fill=\"#94A3B8\" font-weight=\"normal\">%s</tspan>",
+                            ProgressionChrome.escapeXml(item.label())));
+                } else {
+                    sb.append(String.format(Locale.US,
+                            "<tspan fill=\"#94A3B8\" font-weight=\"normal\">%s</tspan>",
+                            ProgressionChrome.escapeXml(item.label())));
+                }
+                sb.append(String.format(Locale.US,
+                        "<tspan dx=\"4\" fill=\"%s\" font-weight=\"bold\">%s</tspan>",
+                        item.valueColor(), ProgressionChrome.escapeXml(item.value())));
+            }
+            sb.append("</text>\n");
         }
 
         final int divY = 32 + yOffset;
         sb.append(String.format(Locale.US,
-                "      <line x1=\"12\" y1=\"%d\" x2=\"798\" y2=\"%d\" stroke=\"#334155\" stroke-width=\"1\" />\n",
-                divY, divY));
+                "      <line x1=\"12\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#334155\" stroke-width=\"1\" />\n",
+                divY, plaqueW - 12, divY));
 
-        final boolean hasHidden = plaque.hidden() > 0;
-        final int totalPassed = plaque.totalPassed();
-        final String passedPctStr = works.lysenko.base.output.SummaryPlaque.formatPct(totalPassed, plaque.total());
-
-        final String[] cols = {"TOTAL", "EXECUTABLE", "OFF", "NOT EXECUTED", "EXECUTED", "UPSET", "PASSED", "WARNING", "FAILED"};
-        final String[] colors = {"#38BDF8", "#C084FC", "#94A3B8", "#64748B", "#60A5FA", "#818CF8", "#22C55E", "#F59E0B", "#EF4444"};
-        final int[] amounts = {
-                plaque.total(),
-                plaque.executable(),
-                plaque.off(),
-                plaque.notExecuted(),
-                plaque.executed(),
-                plaque.upset(),
-                totalPassed,
-                plaque.warning(),
-                plaque.failed()
-        };
-        final String[] pctStrs = {
-                works.lysenko.base.output.SummaryPlaque.formatPct(plaque.total(), plaque.total()),
-                works.lysenko.base.output.SummaryPlaque.formatPct(plaque.executable(), plaque.total()),
-                works.lysenko.base.output.SummaryPlaque.formatPct(plaque.off(), plaque.total()),
-                works.lysenko.base.output.SummaryPlaque.formatPct(plaque.notExecuted(), plaque.total()),
-                works.lysenko.base.output.SummaryPlaque.formatPct(plaque.executed(), plaque.total()),
-                works.lysenko.base.output.SummaryPlaque.formatPct(plaque.upset(), plaque.total()),
-                passedPctStr,
-                works.lysenko.base.output.SummaryPlaque.formatPct(plaque.warning(), plaque.total()),
-                works.lysenko.base.output.SummaryPlaque.formatPct(plaque.failed(), plaque.total())
-        };
-
-        final int colStart = 90;
-        final int colStep = 78;
+        final double slotW = (double) (plaqueW - 16 - leftEdge) / Math.max(1, visibleCols.size());
         final int headerRowY = 48 + yOffset;
         final int amountRowY = 68 + yOffset;
         final int pctRowY = 88 + yOffset;
 
-        for (int c = 0; c < cols.length; c++) {
-            final int colX = colStart + c * colStep;
+        for (int c = 0; c < visibleCols.size(); c++) {
+            final works.lysenko.base.output.SummaryPlaque.MetricColumn col = visibleCols.get(c);
+            final int colX = (int) Math.round(leftEdge + (c + 0.5) * slotW);
             sb.append(String.format(Locale.US,
-                    "      <text x=\"%d\" y=\"%d\" fill=\"#94A3B8\" font-size=\"8.5\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%s</text>\n",
-                    colX, headerRowY, cols[c]));
+                    "      <text x=\"%d\" y=\"%d\" fill=\"%s\" font-size=\"8.5\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%s</text>\n",
+                    colX, headerRowY, col.colorHex(), ProgressionChrome.escapeXml(col.label().toUpperCase(Locale.ROOT))));
         }
 
         sb.append(String.format(Locale.US,
                 "      <text x=\"16\" y=\"%d\" fill=\"#CBD5E1\" font-size=\"10\" font-weight=\"bold\" font-family=\"sans-serif\">Amount</text>\n",
                 amountRowY));
-        for (int c = 0; c < amounts.length; c++) {
-            final int colX = colStart + c * colStep;
-            if (c == 6 && hasHidden) {
-                sb.append(String.format(Locale.US,
-                        "      <text x=\"%d\" y=\"%d\" font-size=\"11\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">" +
-                        "<tspan fill=\"#22C55E\">%d </tspan>" +
-                        "<tspan fill=\"#94A3B8\" font-weight=\"normal\" font-size=\"10\">(%d)</tspan>" +
-                        "</text>\n",
-                        colX, amountRowY, totalPassed, plaque.hidden()));
-            } else {
-                sb.append(String.format(Locale.US,
-                        "      <text x=\"%d\" y=\"%d\" fill=\"%s\" font-size=\"11\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%d</text>\n",
-                        colX, amountRowY, colors[c], amounts[c]));
-            }
+        for (int c = 0; c < visibleCols.size(); c++) {
+            final works.lysenko.base.output.SummaryPlaque.MetricColumn col = visibleCols.get(c);
+            final int colX = (int) Math.round(leftEdge + (c + 0.5) * slotW);
+            sb.append(String.format(Locale.US,
+                    "      <text x=\"%d\" y=\"%d\" fill=\"%s\" font-size=\"11\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%d</text>\n",
+                    colX, amountRowY, col.colorHex(), col.amount()));
         }
 
         sb.append(String.format(Locale.US,
                 "      <text x=\"16\" y=\"%d\" fill=\"#CBD5E1\" font-size=\"10\" font-weight=\"bold\" font-family=\"sans-serif\">Percentage</text>\n",
                 pctRowY));
-        for (int c = 0; c < pctStrs.length; c++) {
-            final int colX = colStart + c * colStep;
+        for (int c = 0; c < visibleCols.size(); c++) {
+            final works.lysenko.base.output.SummaryPlaque.MetricColumn col = visibleCols.get(c);
+            final int colX = (int) Math.round(leftEdge + (c + 0.5) * slotW);
             sb.append(String.format(Locale.US,
                     "      <text x=\"%d\" y=\"%d\" fill=\"%s\" font-size=\"10\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%s</text>\n",
-                    colX, pctRowY, colors[c], pctStrs[c]));
+                    colX, pctRowY, col.colorHex(), col.percentage()));
         }
 
         sb.append("    </g>\n");
@@ -485,11 +503,5 @@ public final class SvgTreeRenderer {
 
     private static boolean hasText(final String text) {
         return text != null && !text.isBlank();
-    }
-
-    private static long evenDimension(final long dimension) {
-        if (dimension >= 16384L)
-            return dimension;
-        return (dimension & 1L) == 0L ? dimension : dimension + 1L;
     }
 }

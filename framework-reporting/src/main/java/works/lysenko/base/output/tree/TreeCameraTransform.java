@@ -23,13 +23,39 @@ public final class TreeCameraTransform {
         return (int) Math.round(HEADER_HEIGHT_BASE * Math.max(1.0, w / 1200.0));
     }
 
-    static int topReservedHeight(final int w) {
+    public static int topReservedHeight(final int w) {
         return Math.max(headerHeight(w), (int) Math.ceil(PLAQUE_BOTTOM_HUD_Y * (w / 1200.0)));
     }
 
     private static final int PADDING_X = 40;
     private static final int PADDING_Y = 32;
     private static final int BOTTOM_PADDING = 32;
+
+    /**
+     * Computes the even SVG frame width that fits columns {@code 0..maxCol} at {@code 1.00x} zoom.
+     */
+    public static int computeFrameWidth(final int maxCol) {
+        final long contentW = Math.max(0L, maxCol) * COL_WIDTH + CARD_WIDTH;
+        return (int) evenDimension(Math.max(800L, contentW + PADDING_X * 2L));
+    }
+
+    /**
+     * Computes the even SVG frame height that fits rows {@code minRow..maxRow} below the
+     * scaled header and execution-statistics plaque at {@code 1.00x} zoom.
+     */
+    public static int computeFrameHeight(final double minRow, final double maxRow, final int frameWidth) {
+        final double rowSpan = (maxRow >= minRow) ? (maxRow - minRow) : 0.0;
+        final double contentH = rowSpan * ROW_HEIGHT + CARD_HEIGHT;
+        final long totalH = (long) Math.ceil(contentH + topReservedHeight(frameWidth) + PADDING_Y + BOTTOM_PADDING);
+        return (int) evenDimension(Math.max(400L, totalH));
+    }
+
+    private static long evenDimension(final long dimension) {
+        if (dimension >= 16384L) {
+            return dimension;
+        }
+        return (0 == (dimension & 1L)) ? dimension : (dimension + 1L);
+    }
 
     public record Transform(double zoom, double translateX, double translateY) {}
 

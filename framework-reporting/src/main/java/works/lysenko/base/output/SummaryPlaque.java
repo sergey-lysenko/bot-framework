@@ -7,7 +7,9 @@ import works.lysenko.base.output.plaque.PlaqueHtmlRenderer;
 import works.lysenko.base.output.plaque.PlaqueMetricsCalculator;
 import works.lysenko.base.output.plaque.RunConfigParser;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Record data model and entry point for summary statistics plaques.
@@ -30,9 +32,49 @@ public record SummaryPlaque(
         int knownIssues,
         int off,
         int hidden,
+        int notice,
+        int notExecuted,
         boolean perNode
 ) {
 
+    /**
+     * A single visible statistics column for rendering in HTML or SVG plaques.
+     */
+    public record MetricColumn(
+            String label,
+            String headerClass,
+            String cellClass,
+            String colorHex,
+            String title,
+            int amount,
+            String percentage
+    ) {}
+
+    public SummaryPlaque(
+            final String suite,
+            final String pool,
+            final String domain,
+            final String mode,
+            final String pathsSummary,
+            final String origin,
+            final String tag,
+            final int total,
+            final int executable,
+            final int executed,
+            final int passed,
+            final int warning,
+            final int upset,
+            final int failed,
+            final int knownIssues,
+            final int off,
+            final int hidden,
+            final boolean perNode
+    ) {
+        this(suite, pool, domain, mode, pathsSummary, origin, tag,
+                total, executable, executed, passed, warning, upset, failed, knownIssues,
+                off, hidden, 0, Math.max(0, total - off - hidden - passed - warning - upset - failed), perNode);
+    }
+
     public SummaryPlaque(
             final int total,
             final int executable,
@@ -41,7 +83,7 @@ public record SummaryPlaque(
             final int warning,
             final int failed
     ) {
-        this(null, null, null, null, null, null, null, total, executable, executed, passed, warning, 0, failed, 0, (total - executable), 0, false);
+        this(null, null, null, null, null, null, null, total, executable, executed, passed, warning, 0, failed, 0, Math.max(0, total - executable), 0, 0, Math.max(0, executable - executed), false);
     }
 
     public SummaryPlaque(
@@ -53,7 +95,7 @@ public record SummaryPlaque(
             final int upset,
             final int failed
     ) {
-        this(null, null, null, null, null, null, null, total, executable, executed, passed, warning, upset, failed, 0, (total - executable), 0, true);
+        this(null, null, null, null, null, null, null, total, executable, executed, passed, warning, upset, failed, 0, Math.max(0, total - executable), 0, 0, Math.max(0, executable - executed), true);
     }
 
     public SummaryPlaque(
@@ -69,7 +111,7 @@ public record SummaryPlaque(
             final int warning,
             final int failed
     ) {
-        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, 0, failed, 0, (total - executable), 0, false);
+        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, 0, failed, 0, Math.max(0, total - executable), 0, 0, Math.max(0, executable - executed), false);
     }
 
     public SummaryPlaque(
@@ -86,7 +128,7 @@ public record SummaryPlaque(
             final int failed,
             final int knownIssues
     ) {
-        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, 0, failed, knownIssues, (total - executable), 0, false);
+        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, 0, failed, knownIssues, Math.max(0, total - executable), 0, 0, Math.max(0, executable - executed), false);
     }
 
     public SummaryPlaque(
@@ -104,15 +146,51 @@ public record SummaryPlaque(
             final int failed,
             final int knownIssues
     ) {
-        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, upset, failed, knownIssues, (total - executable), 0, true);
+        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, upset, failed, knownIssues, Math.max(0, total - executable), 0, 0, Math.max(0, executable - executed), true);
     }
 
     public int totalPassed() {
         return passed + hidden;
     }
 
-    public int notExecuted() {
-        return Math.max(0, executable - executed);
+    /**
+     * Returns the visible columns for per-node tree plaques (static HTML and progression SVG).
+     * {@code Total} is always included; the remaining columns partition {@code Total} into mutually
+     * exclusive node states and are omitted whenever their value is {@code 0}.
+     */
+    public List<MetricColumn> visibleTreeColumns() {
+        final List<MetricColumn> cols = new ArrayList<>(9);
+        cols.add(new MetricColumn("Total", "col-total", "col-total", "#38BDF8", null, total, formatPct(total, total)));
+        addIfPositive(cols, "Not Executable", "col-off", "col-off", "#64748B",
+                "Scenarios that cannot be executed (weight 0 or unreachable)", off);
+        addIfPositive(cols, "Not Executed", "col-not-executed", "col-not-executed", "#94A3B8",
+                "Executable scenarios that have not been executed yet", notExecuted);
+        addIfPositive(cols, "Hidden Leaves", "col-hidden", "col-hidden", "#6EE7B7",
+                "Passed leaf scenarios hidden from the tree view", hidden);
+        addIfPositive(cols, "Passed Nodes", "col-passed", "stat-passed", "#22C55E",
+                "Visible scenario nodes that passed cleanly", passed);
+        addIfPositive(cols, "Notice", "col-notice", "stat-notice", "#06B6D4",
+                "Scenarios executed with notice events", notice);
+        addIfPositive(cols, "Warning", "col-warning", "stat-warning", "#F59E0B",
+                null, warning);
+        addIfPositive(cols, "Upset", "col-upset", "stat-upset", "#818CF8",
+                "Scenarios whose execution passed, but a child failed downstream", upset);
+        addIfPositive(cols, "Failed", "col-failed", "stat-failed", "#EF4444",
+                null, failed);
+        return cols;
+    }
+
+    private void addIfPositive(
+            final List<MetricColumn> cols,
+            final String label,
+            final String headerClass,
+            final String cellClass,
+            final String colorHex,
+            final String title,
+            final int amount) {
+        if (amount > 0) {
+            cols.add(new MetricColumn(label, headerClass, cellClass, colorHex, title, amount, formatPct(amount, total)));
+        }
     }
 
     public record RunConfig(String suite, String pool, String domain, String mode, String pathsSummary, String origin, String tag) {
@@ -170,6 +248,16 @@ public record SummaryPlaque(
             final java.util.Map<TreeHtml.NodeData, Boolean> childFailureCache,
             final int hiddenCount) {
         return PlaqueMetricsCalculator.computeFromNodes(nodes, config, accessibleCtx, executableCache, childFailureCache, hiddenCount);
+    }
+
+    public static SummaryPlaque computeFromNodes(
+            final List<TreeHtml.NodeData> nodes,
+            final RunConfig config,
+            final TreeHtml.AccessibleContext accessibleCtx,
+            final java.util.Map<TreeHtml.NodeData, Boolean> executableCache,
+            final java.util.Map<TreeHtml.NodeData, Boolean> childFailureCache,
+            final Set<TreeHtml.NodeData> hiddenNodes) {
+        return PlaqueMetricsCalculator.computeFromNodes(nodes, config, accessibleCtx, executableCache, childFailureCache, hiddenNodes);
     }
 
     public static SummaryPlaque computeFromSections(final List<LogSection> sections) {

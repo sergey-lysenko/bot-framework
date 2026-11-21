@@ -50,12 +50,24 @@
 # .tree.hide.passed.leaves=false
 
 # ------------------------------------------------------------------------------
-# Whether to preserve completely empty columns in the layout. Default: false
-# .tree.allow.horizontal.gaps=false
+# Removes completely empty columns in the layout. Default: true
+# .tree.reduce.horizontal.gaps=true
 
 # ------------------------------------------------------------------------------
-# Whether to preserve completely empty rows in the layout. Default: false
-# .tree.allow.vertical.gaps=false
+# Removes completely empty rows in the layout. Default: true
+# .tree.reduce.vertical.gaps=true
+
+# ------------------------------------------------------------------------------
+# Dynamically reduces horizontal @VisualOffset shifts to compact local empty spaces while respecting minimal separation. Default: true
+# .tree.reduce.horizontal.offsets=true
+
+# ------------------------------------------------------------------------------
+# Dynamically reduces vertical @VisualRowOffset shifts to compact local empty spaces while respecting minimal separation. Default: true
+# .tree.reduce.vertical.offsets=true
+
+# ------------------------------------------------------------------------------
+# Minimum preserved separation (in columns/rows) so visually separated branches never collapse closer than this gap. Default: 1
+# .tree.min.offset.separation=1
 
 # ------------------------------------------------------------------------------
 # Displays debug coordinates and camera movement vector in tree progression frames. Default: false

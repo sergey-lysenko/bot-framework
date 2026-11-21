@@ -87,10 +87,18 @@ class SummaryPlaqueTest {
         assertEquals(5, plaque.total());
         assertEquals(5, plaque.executable());
         assertEquals(4, plaque.executed());
+        assertEquals(0, plaque.off());
+        assertEquals(1, plaque.notExecuted());
+        assertEquals(0, plaque.hidden());
         assertEquals(1, plaque.passed());
+        assertEquals(0, plaque.notice());
         assertEquals(1, plaque.warning());
         assertEquals(1, plaque.upset());
         assertEquals(1, plaque.failed());
+        assertEquals(plaque.total(),
+                plaque.off() + plaque.notExecuted() + plaque.hidden() + plaque.passed()
+                        + plaque.notice() + plaque.warning() + plaque.upset() + plaque.failed(),
+                "All mutually exclusive state buckets must sum to Total");
 
         final String html = plaque.renderHtml();
         assertNotNull(html);
@@ -102,30 +110,175 @@ class SummaryPlaqueTest {
         assertTrue(html.contains("ALL_LEAFS"));
         assertTrue(html.contains("10 / 12 / 20"));
 
-        // Table restored with upset and node statistics
+        // Non-zero partition columns shown; zero-value and subtotal columns omitted
         assertTrue(html.contains("<th class=\"col-total\">Total</th>"));
-        assertTrue(html.contains("<th class=\"col-executable\">Executable</th>"));
-        assertTrue(html.contains("<th class=\"col-off\">Off</th>"));
-        assertTrue(html.contains("<th class=\"col-executed\">Executed</th>"));
-        assertTrue(html.contains("<th class=\"col-passed\">Passed</th>"));
+        assertTrue(html.contains("<th class=\"col-not-executed\""));
+        assertTrue(html.contains("<th class=\"col-passed\" title=\"Visible scenario nodes that passed cleanly\">Passed Nodes</th>"));
         assertTrue(html.contains("<th class=\"col-warning\">Warning</th>"));
         assertTrue(html.contains("<th class=\"col-upset\" title=\"Scenarios whose execution passed, but a child failed downstream\">Upset</th>"));
         assertTrue(html.contains("<th class=\"col-failed\">Failed</th>"));
 
+        assertFalse(html.contains("<th class=\"col-executable\">Executable</th>"), "Subtotal Executable must not be shown");
+        assertFalse(html.contains("<th class=\"col-executed\">Executed</th>"), "Subtotal Executed must not be shown");
+        assertFalse(html.contains("<th class=\"col-off\""), "Zero-valued Not Executable column must be hidden");
+        assertFalse(html.contains("<th class=\"col-hidden\""), "Zero-valued Hidden column must be hidden");
+        assertFalse(html.contains("<th class=\"col-notice\""), "Zero-valued Notice column must be hidden");
+
         // Amount row checks
         assertTrue(html.contains("<td class=\"col-total\">5</td>"));
-        assertTrue(html.contains("<td class=\"col-executable\">5</td>"));
-        assertTrue(html.contains("<td class=\"col-off\">0</td>"));
-        assertTrue(html.contains("<td class=\"col-executed\">4</td>"));
+        assertTrue(html.contains("<td class=\"col-not-executed\">1</td>"));
         assertTrue(html.contains("<td class=\"stat-passed\">1</td>"));
         assertTrue(html.contains("<td class=\"stat-warning\">1</td>"));
         assertTrue(html.contains("<td class=\"stat-upset\">1</td>"));
         assertTrue(html.contains("<td class=\"stat-failed\">1</td>"));
+    }
 
-        final int execIndex = html.indexOf("<th class=\"col-executed\">Executed</th>");
-        final int upsetIndex = html.indexOf("<th class=\"col-upset\"");
-        final int passedIndex = html.indexOf("<th class=\"col-passed\">Passed</th>");
-        assertTrue(execIndex < upsetIndex && upsetIndex < passedIndex, "Upset column must be placed between Executed and Passed");
+    @Test
+    void testAllStatesPartitionTotalAndHideZerosInHtmlAndSvg() {
+        final List<TreeHtml.NodeData> nodes = new ArrayList<>();
+
+        // 1. Not Executable (weight 0, 0 execs)
+        final Result rOff = new Result(ScenarioType.LEAF, Fraction.ZERO, Fraction.ZERO, Fraction.ZERO, List.of(), 0, 1);
+        final TreeHtml.NodeData nOff = new TreeHtml.NodeData("nOff", "OffLeaf", "Tests", 0, 1.0, rOff);
+        nodes.add(nOff);
+
+        // 2. Not Executed (weight 1, 0 execs)
+        final Result rUnvisited = new Result(ScenarioType.LEAF, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 0, 1);
+        final TreeHtml.NodeData nUnvisited = new TreeHtml.NodeData("nUnvisited", "UnvisitedLeaf", "Tests", 0, 2.0, rUnvisited);
+        nodes.add(nUnvisited);
+
+        // 3. Hidden (passed leaf marked hidden)
+        final Result rHidden = new Result(ScenarioType.LEAF, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 1, 1);
+        final TreeHtml.NodeData nHidden = new TreeHtml.NodeData("nHidden", "HiddenLeaf", "Tests", 0, 3.0, rHidden);
+        nodes.add(nHidden);
+
+        // 4. Passed (visible passed)
+        final Result rPassed = new Result(ScenarioType.LEAF, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 1, 1);
+        final TreeHtml.NodeData nPassed = new TreeHtml.NodeData("nPassed", "PassedLeaf", "Tests", 0, 4.0, rPassed);
+        nodes.add(nPassed);
+
+        // 5. Notice (S3 notice event)
+        final works.lysenko.util.data.type.logr.type.Event noticeEv = new works.lysenko.util.data.type.logr.type.Event(
+                1, works.lysenko.util.data.enums.EventType.NOTICE, 2, "Minor notice", "");
+        final Result rNotice = new Result(ScenarioType.LEAF, Fraction.ONE, Fraction.ONE, Fraction.ONE,
+                List.of(new LogRecord(1, System.currentTimeMillis(), noticeEv)), 1, 1);
+        final TreeHtml.NodeData nNotice = new TreeHtml.NodeData("nNotice", "NoticeLeaf", "Tests", 0, 5.0, rNotice);
+        nodes.add(nNotice);
+
+        // 6. Warning (S2 warning event)
+        final works.lysenko.util.data.type.logr.type.Event warnEv = new works.lysenko.util.data.type.logr.type.Event(
+                1, works.lysenko.util.data.enums.EventType.WARNING, 2, "Some warning", "");
+        final Result rWarn = new Result(ScenarioType.LEAF, Fraction.ONE, Fraction.ONE, Fraction.ONE,
+                List.of(new LogRecord(1, System.currentTimeMillis(), warnEv)), 1, 1);
+        final TreeHtml.NodeData nWarn = new TreeHtml.NodeData("nWarn", "WarnLeaf", "Tests", 0, 6.0, rWarn);
+        nodes.add(nWarn);
+
+        // 7. Upset (child failed)
+        final Result rUpset = new Result(ScenarioType.NODE, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 1, 1);
+        rUpset.updateStatus(ExecutionStatus.CHILD_FAILED);
+        final TreeHtml.NodeData nUpset = new TreeHtml.NodeData("nUpset", "UpsetNode", "Tests", 0, 7.0, rUpset);
+        nodes.add(nUpset);
+
+        // 8. Failed (direct failure, even with 0 completed execs)
+        final Result rFailed = new Result(ScenarioType.LEAF, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 0, 1);
+        rFailed.updateStatus(ExecutionStatus.FAILED);
+        final TreeHtml.NodeData nFailed = new TreeHtml.NodeData("nFailed", "FailedLeaf", "Tests", 0, 8.0, rFailed);
+        nodes.add(nFailed);
+
+        final SummaryPlaque.RunConfig config = new SummaryPlaque.RunConfig("E2E", "local", "http://localhost", "ALL_LEAFS", null);
+        final SummaryPlaque plaque = SummaryPlaque.computeFromNodes(
+                nodes, config, new TreeHtml.AccessibleContext(java.util.Set.of()),
+                new java.util.HashMap<>(), new java.util.HashMap<>(), java.util.Set.of(nHidden));
+
+        assertEquals(8, plaque.total());
+        assertEquals(1, plaque.off());
+        assertEquals(1, plaque.notExecuted());
+        assertEquals(1, plaque.hidden());
+        assertEquals(1, plaque.passed());
+        assertEquals(1, plaque.notice());
+        assertEquals(1, plaque.warning());
+        assertEquals(1, plaque.upset());
+        assertEquals(1, plaque.failed());
+
+        final List<SummaryPlaque.MetricColumn> cols = plaque.visibleTreeColumns();
+        assertEquals(9, cols.size(), "Total + all 8 non-zero states must be visible");
+        final int restSum = cols.stream().skip(1).mapToInt(SummaryPlaque.MetricColumn::amount).sum();
+        assertEquals(plaque.total(), restSum, "Sum of all non-Total columns must equal Total");
+
+        final String html = plaque.renderHtml();
+        for (final String expected : List.of("Total", "Not Executable", "Not Executed", "Hidden Leaves", "Passed Nodes", "Notice", "Warning", "Upset", "Failed")) {
+            assertTrue(html.contains(">" + expected + "</th>"), "HTML must contain column: " + expected);
+        }
+
+        final TreeHtml.TreeLayout layout = new TreeHtml.TreeLayout(nodes, List.of(), plaque);
+        final String svg = works.lysenko.base.output.tree.SvgTreeRenderer.renderTreeProgressionSvg(
+                layout, 1, "Test #1", java.util.Set.of(), java.util.Set.of(),
+                new TreeHtml.AccessibleContext(java.util.Set.of()), null, null, 0, 0);
+        for (final String expected : List.of("TOTAL", "NOT EXECUTABLE", "NOT EXECUTED", "HIDDEN LEAVES", "PASSED NODES", "NOTICE", "WARNING", "UPSET", "FAILED")) {
+            assertTrue(svg.contains(">" + expected + "</text>"), "SVG must contain column: " + expected);
+        }
+        assertTrue(svg.contains("fill=\"#94A3B8\" font-weight=\"normal\">SUITE:</tspan>"));
+        assertTrue(svg.contains("fill=\"#F8FAFC\" font-weight=\"bold\">E2E</tspan>"));
+        assertTrue(svg.contains(">ALL_LEAFS</text>"));
+        assertTrue(svg.contains("width=\"1168\""), "Progression frame plaque must span full frame width (1200 - 32)");
+    }
+
+    @Test
+    void testPrunedLayoutPreservesTotalAndHiddenInStaticHtmlAndProgressionSnapshot() {
+        final boolean origBranches = works.lysenko.util.prop.tree.HideOff.branches;
+        final boolean origPassedLeaves = works.lysenko.util.prop.tree.HideOff.passedLeaves;
+        try {
+            works.lysenko.util.prop.tree.HideOff.branches = true;
+            works.lysenko.util.prop.tree.HideOff.passedLeaves = true;
+
+            final java.util.TreeMap<String, Result> sorted = new java.util.TreeMap<>();
+            sorted.put("Root", new Result(ScenarioType.NODE, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 1, 1));
+            sorted.put("root.PassedLeaf", new Result(ScenarioType.LEAF, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 1, 1));
+            sorted.put("root.OffLeaf", new Result(ScenarioType.LEAF, Fraction.ZERO, Fraction.ZERO, Fraction.ZERO, List.of(), 0, 1));
+            sorted.put("root.PendingLeaf", new Result(ScenarioType.LEAF, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 0, 1));
+
+            final TreeHtml.TreeLayout layout = TreeHtml.computeLayout(sorted);
+            assertNotNull(layout.plaque());
+            assertEquals(4, layout.plaque().total(), "Total must reflect all 4 unpruned nodes");
+            assertEquals(2, layout.nodes().size(), "OffLeaf and PassedLeaf must be pruned from visible layout");
+            assertEquals(1, layout.plaque().off());
+            assertEquals(1, layout.plaque().hidden());
+            assertEquals(1, layout.plaque().passed());
+            assertEquals(1, layout.plaque().notExecuted());
+            assertEquals(0, layout.plaque().warning());
+            assertEquals(0, layout.plaque().failed());
+
+            // Final static HTML must keep Total=4, show Not Executable / Not Executed / Hidden Leaves / Passed Nodes, and omit zeros
+            final String staticHtml = TreeHtml.renderHtml(layout);
+            assertTrue(staticHtml.contains("<td class=\"col-total\">4</td>"));
+            assertTrue(staticHtml.contains("<th class=\"col-off\""));
+            assertTrue(staticHtml.contains("<th class=\"col-hidden\""));
+            assertTrue(staticHtml.contains(">Hidden Leaves</th>"));
+            assertTrue(staticHtml.contains("<th class=\"col-not-executed\""));
+            assertTrue(staticHtml.contains(">Passed Nodes</th>"));
+            assertFalse(staticHtml.contains("<th class=\"col-warning\">Warning</th>"));
+            assertFalse(staticHtml.contains("<th class=\"col-failed\">Failed</th>"));
+
+            // Progression snapshot must preserve layout.plaque() and render identically in SVG
+            final TreeHtml.TreeLayout snapshot = TreeHtml.snapshotLayout(layout, new TreeHtml.AccessibleContext(java.util.Set.of()));
+            assertSame(layout.plaque(), snapshot.plaque(), "snapshotLayout must preserve the precomputed SummaryPlaque");
+            final String svg = works.lysenko.base.output.tree.SvgTreeRenderer.renderTreeProgressionSvg(
+                    snapshot, 1, "Test #1", java.util.Set.of(), java.util.Set.of(),
+                    new TreeHtml.AccessibleContext(java.util.Set.of()), null, null, 0, 0);
+            assertTrue(svg.contains(">TOTAL</text>"));
+            assertTrue(svg.contains(">4</text>"));
+            assertTrue(svg.contains(">NOT EXECUTABLE</text>"));
+            assertTrue(svg.contains(">NOT EXECUTED</text>"));
+            assertTrue(svg.contains(">HIDDEN LEAVES</text>"));
+            assertTrue(svg.contains(">PASSED NODES</text>"));
+            assertFalse(svg.contains(">WARNING</text>"));
+            assertFalse(svg.contains(">FAILED</text>"));
+            assertFalse(svg.contains(">UPSET</text>"));
+            assertFalse(svg.contains(">NOTICE</text>"));
+        } finally {
+            works.lysenko.util.prop.tree.HideOff.branches = origBranches;
+            works.lysenko.util.prop.tree.HideOff.passedLeaves = origPassedLeaves;
+        }
     }
 
     @Test
@@ -212,7 +365,7 @@ class SummaryPlaqueTest {
     void testCss() {
         final String css = SummaryPlaque.css();
         assertNotNull(css);
-        assertTrue(css.contains(".summary-plaque-card"));
+        assertTrue(css.contains(".summary-plaque-card { width: fit-content; max-width: 100%;"));
         assertTrue(css.contains(".col-failed"));
         assertTrue(css.contains(".col-upset"));
         assertTrue(css.contains(".col-upset, .summary-plaque-card .stat-upset { color: #818cf8;"));

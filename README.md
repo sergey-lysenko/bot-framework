@@ -159,7 +159,7 @@ Configuration is organized into 11 specialized partial files included via `src/m
 | **WebDriver**| `.test.ewait` | `30` | Explicit wait timeout in seconds |
 | **WebDriver**| `.webd.iwait` | `1000` | Implicit WebDriver element location wait in milliseconds |
 
-The framework uses OS-backed `run/.run.lock` and `run/.postprocess.lock` files to prevent a new test run from starting while a test or its detached post-processor is active.
+The framework uses OS-backed `run/.run.lock` and `run/.postprocess.lock` files to prevent concurrent active test runs while allowing a new test run to start even if a previous run's detached post-processor is still active (subsequent detached post-processors queue on `run/.postprocess.lock`).
 
 ### Applied Test Configuration Visual Legend
 

@@ -860,7 +860,7 @@ class TreeTrackerTest {
         props.setProperty("POOL", "development-local");
         props.setProperty("DOMAIN", "https://stg-dashboard.myordering.online");
         props.setProperty("ORIGIN", "0:0:0:0:0:0:0:1");
-        props.setProperty("TAG", "with-1794901136703-parameters");
+        props.setProperty("TAG", "with-1794901136703-parameters-extra-long-tag-value-for-full-frame-wrap");
         Base.parameters = new Parameters(props);
 
         final String svg = TreeTracker.renderTreeProgressionSvg(layout, 1, "Test #1", Collections.emptySet());
@@ -874,7 +874,13 @@ class TreeTrackerTest {
         assertTrue(plaqueIdx < hudGroupCloseIdx, "Statistics plaque must be inside the scaled HUD <g> group so it scales with the header");
         assertTrue(svg.contains("id=\"exec-stats-plaque\" transform=\"translate(16, 76)\""),
                 "Statistics plaque must be translated to y=76 (16 units below the 60-unit header in scaled HUD coordinates)");
-        assertTrue(svg.contains("y=\"36\" fill=\"#38BDF8\""),
+        assertTrue(svg.contains("width=\"1168\""),
+                "Statistics plaque must span full frame width (1200 - 32 in HUD coordinates)");
+        assertTrue(svg.contains("fill=\"#94A3B8\" font-weight=\"normal\">SUITE:</tspan>"),
+                "Parameter labels must use muted slate color (#94A3B8) matching HTML plaque");
+        assertTrue(svg.contains("fill=\"#F8FAFC\" font-weight=\"bold\">E2E</tspan>"),
+                "Parameter values must use bright white color (#F8FAFC) matching HTML plaque");
+        assertTrue(svg.contains("y=\"36\" font-size=\"10\" font-family=\"monospace\""),
                 "Long configuration summary must wrap onto a second line inside the plaque");
 
         // Verify that the scenarios tree is positioned and scaled below the statistics plaque
@@ -1006,5 +1012,30 @@ class TreeTrackerTest {
         final String svg = TreeTracker.renderTreeProgressionSvg(snapshot, 2, "Test #1", Set.of("leaf"));
         assertTrue(svg.contains("2 execs"), "Rendered SVG from snapshot must reflect frozen execution counts (1+1=2)");
         assertFalse(svg.contains("4 execs"), "Rendered SVG must not leak post-snapshot ticks");
+    }
+
+    @Test
+    void testWideTreeFullFrameZoomStaysNearOneAndFormatsTwoDecimalDigits() {
+        final NodeData root = new NodeData("root", "Root", "Root", 0, 1.0, result(ScenarioType.NODE, 1));
+        final NodeData topRight = new NodeData("topRight", "TopRight", "Root", 24, 1.0, result(ScenarioType.LEAF, 0));
+        final NodeData bottomRight = new NodeData("bottomRight", "BottomRight", "Root", 24, 41.0, result(ScenarioType.LEAF, 0));
+        topRight.setParent(root);
+        bottomRight.setParent(root);
+        root.children().addAll(List.of(topRight, bottomRight));
+
+        final TreeLayout wideLayout = new TreeLayout(
+                List.of(root, topRight, bottomRight),
+                List.of(new Edge(root, topRight), new Edge(root, bottomRight)));
+
+        final int baseW = works.lysenko.base.output.tree.TreeCameraTransform.computeFrameWidth(24);
+        final int baseH = works.lysenko.base.output.tree.TreeCameraTransform.computeFrameHeight(1.0, 41.0, baseW);
+        final TreeTracker.Transform tx = TreeTracker.computeZoomTransform(wideLayout, Collections.emptySet(), 1, baseW, baseH);
+
+        assertTrue(tx.zoom() >= 0.99 && tx.zoom() <= 1.02,
+                "Full-frame zoom on a wide tree must include plaque height in baseH and stay ~1.00x, was " + tx.zoom());
+
+        final String svg = TreeTracker.renderTreeProgressionSvg(wideLayout, 1, "Test #7", Collections.emptySet());
+        assertTrue(svg.contains("Zoom: 1.00x"),
+                "Zoom badge must format with two decimal digits after the dot");
     }
 }

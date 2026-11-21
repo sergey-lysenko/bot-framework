@@ -49,18 +49,6 @@ import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_;
 @SuppressWarnings({ "ClassWithoutLogger", "MagicNumber", "ClassWithTooManyFields" })
 public final class TreeTracker {
 
-    private static final int COL_WIDTH = 270;
-    private static final int ROW_HEIGHT = 60;
-    private static final int HEADER_HEIGHT_BASE = 60;
-
-    private static int headerHeight(final int w) {
-        return (int) Math.round(HEADER_HEIGHT_BASE * Math.max(1.0, w / 1200.0));
-    }
-
-    private static final int PADDING_X = 40;
-    private static final int PADDING_Y = 32;
-    private static final int BOTTOM_PADDING = 32;
-
     private static final int FPS = 10;
     private static final int DELAY_CENTISECONDS = 100 / FPS; // 100ms
     private static final int FINAL_FRAME_DELAY_CENTISECONDS = 150; // 1.5s on final frame
@@ -329,28 +317,24 @@ public final class TreeTracker {
     }
 
     private static void updateSessionDimensions(final TreeLayout layout) {
+        int maxCol = 0;
+        double minRow = Double.MAX_VALUE;
+        double maxRow = 0.0;
+        for (final NodeData n : layout.nodes()) {
+            if (n.col() > maxCol) maxCol = n.col();
+            if (n.row() < minRow) minRow = n.row();
+            if (n.row() > maxRow) maxRow = n.row();
+        }
+        if (minRow > maxRow) {
+            minRow = 0.0;
+            maxRow = 0.0;
+        }
+        final int currW = TreeCameraTransform.computeFrameWidth(maxCol);
+        final int currH = TreeCameraTransform.computeFrameHeight(minRow, maxRow, currW);
         if (sessionBaseW <= 0 || sessionBaseH <= 0 || capturedFrames.isEmpty()) {
-            int fullMaxCol = 0;
-            double fullMaxRow = 0.0;
-            for (final NodeData n : layout.nodes()) {
-                if (n.col() > fullMaxCol) fullMaxCol = n.col();
-                if (n.row() > fullMaxRow) fullMaxRow = n.row();
-            }
-            sessionBaseW = (int) evenDimension(Math.max(800L, ((long) fullMaxCol + 1L) * COL_WIDTH + PADDING_X * 2L));
-            sessionBaseH = (int) evenDimension(Math.max(
-                    400L,
-                    (long) Math.ceil((fullMaxRow + 1.0) * ROW_HEIGHT + headerHeight(sessionBaseW) + PADDING_Y + BOTTOM_PADDING)));
+            sessionBaseW = currW;
+            sessionBaseH = currH;
         } else {
-            int currentMaxCol = 0;
-            double currentMaxRow = 0.0;
-            for (final NodeData n : layout.nodes()) {
-                if (n.col() > currentMaxCol) currentMaxCol = n.col();
-                if (n.row() > currentMaxRow) currentMaxRow = n.row();
-            }
-            final int currW = (int) evenDimension(Math.max(800L, ((long) currentMaxCol + 1L) * COL_WIDTH + PADDING_X * 2L));
-            final int currH = (int) evenDimension(Math.max(
-                    400L,
-                    (long) Math.ceil((currentMaxRow + 1.0) * ROW_HEIGHT + headerHeight(currW) + PADDING_Y + BOTTOM_PADDING)));
             if (currW > sessionBaseW) sessionBaseW = currW;
             if (currH > sessionBaseH) sessionBaseH = currH;
         }
@@ -833,11 +817,5 @@ public final class TreeTracker {
             }
         }
         return new File(_RUNS_);
-    }
-
-    private static long evenDimension(final long dimension) {
-        if (dimension >= 16384L)
-            return dimension;
-        return (dimension & 1L) == 0L ? dimension : dimension + 1L;
     }
 }

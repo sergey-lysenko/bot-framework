@@ -45,76 +45,51 @@ public final class PlaqueHtmlRenderer {
             configHtml.append("    </div>\n");
         }
 
-        final boolean hasHidden = plaque.hidden() > 0;
-        final String passedAmount = hasHidden
-                ? String.format(Locale.US, "%d <span style=\"color:#94a3b8;font-weight:normal;\">(%d)</span>", plaque.totalPassed(), plaque.hidden())
-                : String.valueOf(plaque.passed());
-        final String passedPct = SummaryPlaque.formatPct(plaque.totalPassed(), plaque.total());
-
         if (plaque.perNode()) {
-            return String.format(Locale.US,
-                    "<div class=\"summary-card summary-plaque-card\">\n" +
+            final java.util.List<SummaryPlaque.MetricColumn> cols = plaque.visibleTreeColumns();
+            final StringBuilder headerCells = new StringBuilder();
+            final StringBuilder amountCells = new StringBuilder();
+            final StringBuilder pctCells = new StringBuilder();
+            for (final SummaryPlaque.MetricColumn col : cols) {
+                headerCells.append("        <th class=\"").append(col.headerClass()).append("\"");
+                if (isNotNull(col.title())) {
+                    headerCells.append(" title=\"").append(col.title()).append("\"");
+                }
+                headerCells.append(">").append(col.label()).append("</th>\n");
+                amountCells.append("        <td class=\"").append(col.cellClass()).append("\">").append(col.amount()).append("</td>\n");
+                pctCells.append("        <td class=\"").append(col.cellClass()).append("\">").append(col.percentage()).append("</td>\n");
+            }
+            return "<div class=\"summary-card summary-plaque-card\">\n" +
                     "  <div class=\"card-title\">\n" +
                     "    <span>⚡ Execution Statistics</span>\n" +
-                    "%s" +
+                    configHtml +
                     "  </div>\n" +
                     "  <table class=\"plaque-table\">\n" +
                     "    <thead>\n" +
                     "      <tr>\n" +
                     "        <th></th>\n" +
-                    "        <th class=\"col-total\">Total</th>\n" +
-                    "        <th class=\"col-executable\">Executable</th>\n" +
-                    "        <th class=\"col-off\">Off</th>\n" +
-                    "        <th class=\"col-not-executed\">Not Executed</th>\n" +
-                    "        <th class=\"col-executed\">Executed</th>\n" +
-                    "        <th class=\"col-upset\" title=\"Scenarios whose execution passed, but a child failed downstream\">Upset</th>\n" +
-                    "        <th class=\"col-passed\">%s</th>\n" +
-                    "        <th class=\"col-warning\">Warning</th>\n" +
-                    "        <th class=\"col-failed\">Failed</th>\n" +
+                    headerCells +
                     "      </tr>\n" +
                     "    </thead>\n" +
                     "    <tbody>\n" +
                     "      <tr>\n" +
                     "        <td class=\"row-label\">Amount</td>\n" +
-                    "        <td class=\"col-total\">%d</td>\n" +
-                    "        <td class=\"col-executable\">%d</td>\n" +
-                    "        <td class=\"col-off\">%d</td>\n" +
-                    "        <td class=\"col-not-executed\">%d</td>\n" +
-                    "        <td class=\"col-executed\">%d</td>\n" +
-                    "        <td class=\"stat-upset\">%d</td>\n" +
-                    "        <td class=\"stat-passed\">%s</td>\n" +
-                    "        <td class=\"stat-warning\">%d</td>\n" +
-                    "        <td class=\"stat-failed\">%d</td>\n" +
+                    amountCells +
                     "      </tr>\n" +
                     "      <tr>\n" +
                     "        <td class=\"row-label\">Percentage</td>\n" +
-                    "        <td class=\"col-total\">%s</td>\n" +
-                    "        <td class=\"col-executable\">%s</td>\n" +
-                    "        <td class=\"col-off\">%s</td>\n" +
-                    "        <td class=\"col-not-executed\">%s</td>\n" +
-                    "        <td class=\"col-executed\">%s</td>\n" +
-                    "        <td class=\"stat-upset\">%s</td>\n" +
-                    "        <td class=\"stat-passed\">%s</td>\n" +
-                    "        <td class=\"stat-warning\">%s</td>\n" +
-                    "        <td class=\"stat-failed\">%s</td>\n" +
+                    pctCells +
                     "      </tr>\n" +
                     "    </tbody>\n" +
                     "  </table>\n" +
-                    "</div>\n",
-                    configHtml,
-                    "Passed",
-                    plaque.total(), plaque.executable(), plaque.off(), plaque.notExecuted(), plaque.executed(), plaque.upset(), passedAmount, plaque.warning(), plaque.failed(),
-                    SummaryPlaque.formatPct(plaque.total(), plaque.total()),
-                    SummaryPlaque.formatPct(plaque.executable(), plaque.total()),
-                    SummaryPlaque.formatPct(plaque.off(), plaque.total()),
-                    SummaryPlaque.formatPct(plaque.notExecuted(), plaque.total()),
-                    SummaryPlaque.formatPct(plaque.executed(), plaque.total()),
-                    SummaryPlaque.formatPct(plaque.upset(), plaque.total()),
-                    passedPct,
-                    SummaryPlaque.formatPct(plaque.warning(), plaque.total()),
-                    SummaryPlaque.formatPct(plaque.failed(), plaque.total())
-            );
+                    "</div>\n";
         }
+
+        final boolean hasHidden = plaque.hidden() > 0;
+        final String passedAmount = hasHidden
+                ? String.format(Locale.US, "%d <span style=\"color:#94a3b8;font-weight:normal;\">(%d)</span>", plaque.totalPassed(), plaque.hidden())
+                : String.valueOf(plaque.passed());
+        final String passedPct = SummaryPlaque.formatPct(plaque.totalPassed(), plaque.total());
 
         return String.format(Locale.US,
                 "<div class=\"summary-card summary-plaque-card\">\n" +
@@ -161,7 +136,7 @@ public final class PlaqueHtmlRenderer {
     }
 
     public static String css() {
-        return "  .summary-plaque-card { background: rgba(15, 23, 42, 0.55) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; border: 1px solid rgba(56, 189, 248, 0.35) !important; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important; border-radius: 8px; padding: 16px 20px; margin-top: 24px; margin-bottom: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }\n" +
+        return "  .summary-plaque-card { width: fit-content; max-width: 100%; box-sizing: border-box; background: rgba(15, 23, 42, 0.55) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; border: 1px solid rgba(56, 189, 248, 0.35) !important; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important; border-radius: 8px; padding: 16px 20px; margin-top: 24px; margin-bottom: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }\n" +
                "  .summary-plaque-card .card-title { font-size: 14px; font-weight: 600; color: #f8fafc; margin-bottom: 12px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }\n" +
                "  .summary-plaque-card .plaque-config { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 11px; font-weight: normal; }\n" +
                "  .summary-plaque-card .config-item { color: #94a3b8; font-weight: normal; }\n" +
@@ -175,10 +150,12 @@ public final class PlaqueHtmlRenderer {
                "  .summary-plaque-card td.row-label { font-weight: 600; text-align: left; color: #cbd5e1; padding-right: 16px; font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }\n" +
                "  .summary-plaque-card .col-total { color: #38bdf8; font-weight: 600; }\n" +
                "  .summary-plaque-card .col-executable { color: #c084fc; font-weight: 600; }\n" +
-               "  .summary-plaque-card .col-off { color: #94a3b8; font-weight: 600; }\n" +
-               "  .summary-plaque-card .col-not-executed { color: #64748b; font-weight: 600; }\n" +
+               "  .summary-plaque-card .col-off { color: #64748b; font-weight: 600; }\n" +
+               "  .summary-plaque-card .col-not-executed { color: #94a3b8; font-weight: 600; }\n" +
                "  .summary-plaque-card .col-executed { color: #60a5fa; font-weight: 600; }\n" +
+               "  .summary-plaque-card .col-hidden { color: #6ee7b7; font-weight: 600; }\n" +
                "  .summary-plaque-card .col-passed, .summary-plaque-card .stat-passed { color: #22c55e; font-weight: 600; }\n" +
+               "  .summary-plaque-card .col-notice, .summary-plaque-card .stat-notice { color: #06b6d4; font-weight: 600; }\n" +
                "  .summary-plaque-card .col-warning, .summary-plaque-card .stat-warning { color: #f59e0b; font-weight: 600; }\n" +
                "  .summary-plaque-card .col-upset, .summary-plaque-card .stat-upset { color: #818cf8; font-weight: 600; }\n" +
                "  .summary-plaque-card .col-failed, .summary-plaque-card .stat-failed { color: #ef4444; font-weight: 600; }\n";

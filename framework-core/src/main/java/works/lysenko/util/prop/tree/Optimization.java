@@ -1,7 +1,6 @@
 package works.lysenko.util.prop.tree;
 
-import static works.lysenko.util.prop.PropEnum._TREE_ALLOW_HORIZONTAL_GAPS;
-import static works.lysenko.util.prop.PropEnum._TREE_ALLOW_VERTICAL_GAPS;
+import static works.lysenko.util.prop.PropEnum._TREE_MIN_OFFSET_SEPARATION;
 import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION;
 import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION_BANK_COLUMNS;
 import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION_MAX_ASPECT_RATIO;
@@ -10,13 +9,17 @@ import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION_SH
 import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION_SHALLOW_MIN_RATIO;
 import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION_SHALLOW_THRESHOLD;
 import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION_STANDARD_THRESHOLD;
+import static works.lysenko.util.prop.PropEnum._TREE_REDUCE_HORIZONTAL_GAPS;
+import static works.lysenko.util.prop.PropEnum._TREE_REDUCE_HORIZONTAL_OFFSETS;
+import static works.lysenko.util.prop.PropEnum._TREE_REDUCE_VERTICAL_GAPS;
+import static works.lysenko.util.prop.PropEnum._TREE_REDUCE_VERTICAL_OFFSETS;
 
 /**
  * Represents tree layout progression optimization configuration.
  * <p>
  * Provides configuration properties and thresholds for optimizing the visual
- * layout of scenario trees in generated HTML reports, including leaf packing
- * and shallow-tree handling.
+ * layout of scenario trees in generated HTML reports, including leaf packing,
+ * dynamic offset reduction, and empty gap removal.
  */
 @SuppressWarnings({"ClassWithoutLogger", "NonFinalStaticVariableUsedInClassInitialization", "StaticNonFinalField"})
 public record Optimization() {
@@ -27,14 +30,29 @@ public record Optimization() {
     public static boolean progression = _TREE_PROGRESSION_OPTIMIZATION.get();
 
     /**
-     * Whether to preserve completely empty columns in the layout.
+     * Whether to remove completely empty columns in the layout.
      */
-    public static boolean allowHorizontalGaps = _TREE_ALLOW_HORIZONTAL_GAPS.get();
+    public static boolean reduceHorizontalGaps = _TREE_REDUCE_HORIZONTAL_GAPS.get();
 
     /**
-     * Whether to preserve completely empty rows in the layout.
+     * Whether to remove completely empty rows in the layout.
      */
-    public static boolean allowVerticalGaps = _TREE_ALLOW_VERTICAL_GAPS.get();
+    public static boolean reduceVerticalGaps = _TREE_REDUCE_VERTICAL_GAPS.get();
+
+    /**
+     * Whether to dynamically reduce horizontal {@code @VisualOffset} shifts to pack separated branches into empty spaces.
+     */
+    public static boolean reduceHorizontalOffsets = _TREE_REDUCE_HORIZONTAL_OFFSETS.get();
+
+    /**
+     * Whether to dynamically reduce vertical {@code @VisualRowOffset} shifts to pack separated branches into empty spaces.
+     */
+    public static boolean reduceVerticalOffsets = _TREE_REDUCE_VERTICAL_OFFSETS.get();
+
+    /**
+     * Minimum preserved separation (in columns horizontally / rows vertically) for originally offset-separated branches.
+     */
+    public static int minOffsetSeparation = _TREE_MIN_OFFSET_SEPARATION.get();
 
     /**
      * Number of horizontal column banks to partition independent scenario trees into when aspect ratio is narrow.
@@ -76,8 +94,11 @@ public record Optimization() {
      */
     public static void refresh() {
         progression = _TREE_PROGRESSION_OPTIMIZATION.get();
-        allowHorizontalGaps = _TREE_ALLOW_HORIZONTAL_GAPS.get();
-        allowVerticalGaps = _TREE_ALLOW_VERTICAL_GAPS.get();
+        reduceHorizontalGaps = _TREE_REDUCE_HORIZONTAL_GAPS.get();
+        reduceVerticalGaps = _TREE_REDUCE_VERTICAL_GAPS.get();
+        reduceHorizontalOffsets = _TREE_REDUCE_HORIZONTAL_OFFSETS.get();
+        reduceVerticalOffsets = _TREE_REDUCE_VERTICAL_OFFSETS.get();
+        minOffsetSeparation = _TREE_MIN_OFFSET_SEPARATION.get();
         bankColumns = _TREE_PROGRESSION_OPTIMIZATION_BANK_COLUMNS.get();
         maxAspectRatio = _TREE_PROGRESSION_OPTIMIZATION_MAX_ASPECT_RATIO.get();
         packColumns = _TREE_PROGRESSION_OPTIMIZATION_PACK_COLUMNS.get();

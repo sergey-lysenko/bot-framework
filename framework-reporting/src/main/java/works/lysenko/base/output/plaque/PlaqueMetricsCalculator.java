@@ -6,12 +6,15 @@ import works.lysenko.base.output.SummaryPlaque.RunConfig;
 import works.lysenko.base.output.TreeHtml;
 import works.lysenko.base.output.loghtml.LogModels.LogSection;
 import works.lysenko.base.output.loghtml.LogModels.ScenEntry;
+import works.lysenko.base.output.tree.NodeEventClassifier;
 import works.lysenko.util.apis.data._Result;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Computes summary plaque statistics from scenario node trees, log sections,
@@ -46,7 +49,7 @@ public final class PlaqueMetricsCalculator {
             final TreeHtml.AccessibleContext accessibleCtx,
             final Map<TreeHtml.NodeData, Boolean> executableCache,
             final Map<TreeHtml.NodeData, Boolean> childFailureCache) {
-        return computeFromNodes(nodes, config, accessibleCtx, executableCache, childFailureCache, 0);
+        return computeFromNodes(nodes, config, accessibleCtx, executableCache, childFailureCache, Collections.emptySet());
     }
 
     public static SummaryPlaque computeFromNodes(
@@ -56,10 +59,33 @@ public final class PlaqueMetricsCalculator {
             final Map<TreeHtml.NodeData, Boolean> executableCache,
             final Map<TreeHtml.NodeData, Boolean> childFailureCache,
             final int hiddenCount) {
-        int total = nodes.size();
+        final SummaryPlaque base = computeFromNodes(nodes, config, accessibleCtx, executableCache, childFailureCache, Collections.emptySet());
+        if (hiddenCount <= 0) {
+            return base;
+        }
+        final int actualHidden = Math.min(hiddenCount, base.passed());
+        return new SummaryPlaque(
+                base.suite(), base.pool(), base.domain(), base.mode(), base.pathsSummary(), base.origin(), base.tag(),
+                base.total(), base.executable(), base.executed(),
+                base.passed() - actualHidden, base.warning(), base.upset(), base.failed(),
+                base.knownIssues(), base.off(), actualHidden, base.notice(), base.notExecuted(), true);
+    }
+
+    public static SummaryPlaque computeFromNodes(
+            final List<TreeHtml.NodeData> nodes,
+            final RunConfig config,
+            final TreeHtml.AccessibleContext accessibleCtx,
+            final Map<TreeHtml.NodeData, Boolean> executableCache,
+            final Map<TreeHtml.NodeData, Boolean> childFailureCache,
+            final Set<TreeHtml.NodeData> hiddenNodes) {
+        final int total = nodes.size();
         int executable = 0;
         int executed = 0;
+        int off = 0;
+        int notExecuted = 0;
+        int hidden = 0;
         int passed = 0;
+        int notice = 0;
         int warning = 0;
         int upset = 0;
         int failed = 0;
@@ -69,39 +95,53 @@ public final class PlaqueMetricsCalculator {
                 ? accessibleCtx : new TreeHtml.AccessibleContext(TreeHtml.getAccessibleScenarios());
         final Map<TreeHtml.NodeData, Boolean> execCache = (null != executableCache) ? executableCache : new HashMap<>();
         final Map<TreeHtml.NodeData, Boolean> childFailCache = (null != childFailureCache) ? childFailureCache : new HashMap<>();
+        final Set<TreeHtml.NodeData> hiddenSet = (null != hiddenNodes) ? hiddenNodes : Collections.emptySet();
 
         for (final TreeHtml.NodeData n : nodes) {
             if (!n.knownIssues().isEmpty()) {
                 knownIssues++;
             }
-            final boolean isExec = TreeHtml.isTheoreticallyExecutable(n, ctx, execCache);
-            if (isExec) executable++;
 
+            final NodeEventClassifier.Classification cls = NodeEventClassifier.classify(n);
+            final boolean failure = cls.hasFailure();
+            final boolean childFailure = !failure && TreeHtml.hasChildFailure(n, childFailCache);
             final _Result res = n.result();
             final int execs = (null != res) ? res.getExecutions() : 0;
-            final int eventCount = TreeHtml.getUnclassifiedEventCount(n);
-            final boolean failure = TreeHtml.hasFailure(n);
-            final boolean childFailure = TreeHtml.hasChildFailure(n, childFailCache);
 
             if (failure) {
                 failed++;
+                executable++;
                 if (execs > 0) executed++;
             } else if (childFailure) {
                 upset++;
+                executable++;
                 if (execs > 0) executed++;
             } else if (execs > 0) {
+                executable++;
                 executed++;
-                if (eventCount > 0) {
+                if (cls.hasWarning()) {
                     warning++;
+                } else if (cls.hasNotice()) {
+                    notice++;
+                } else if (hiddenSet.contains(n)) {
+                    hidden++;
                 } else {
                     passed++;
+                }
+            } else {
+                final boolean isExec = TreeHtml.isTheoreticallyExecutable(n, ctx, execCache);
+                if (isExec) {
+                    executable++;
+                    notExecuted++;
+                } else {
+                    off++;
                 }
             }
         }
 
         return new SummaryPlaque(
                 config.suite(), config.pool(), config.domain(), config.mode(), config.pathsSummary(), config.origin(), config.tag(),
-                total, executable, executed, passed, warning, upset, failed, knownIssues, (total - executable), 0, true);
+                total, executable, executed, passed, warning, upset, failed, knownIssues, off, hidden, notice, notExecuted, true);
     }
 
     public static SummaryPlaque computeFromSections(final List<LogSection> sections) {

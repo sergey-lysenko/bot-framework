@@ -491,29 +491,420 @@ public final class TreeLayoutOptimizer {
         return y;
     }
 
+    private static final double EPS = 1.0e-6;
+    private static final int MAX_OFFSET_REDUCTION_PASSES = 16;
+
+    /**
+     * Dynamically reduces horizontal ({@code @VisualOffset}) and vertical ({@code @VisualRowOffset})
+     * shifts to compact local 2D empty spaces while preserving at least
+     * {@link Optimization#minOffsetSeparation} grid units of separation for originally separated branches.
+     *
+     * @param nodes layout nodes after {@link #optimizeLayout(List)}
+     */
+    public static void reduceVisualOffsets(final List<NodeData> nodes) {
+        if (null == nodes || nodes.size() <= 1) return;
+        final boolean doHorizontal = Optimization.reduceHorizontalOffsets;
+        final boolean doVertical = Optimization.reduceVerticalOffsets;
+        if (!doHorizontal && !doVertical) return;
+
+        final int minSep = Math.max(0, Optimization.minOffsetSeparation);
+        boolean anyVerticalMove = false;
+
+        for (int pass = 0; pass < MAX_OFFSET_REDUCTION_PASSES; pass++) {
+            boolean moved = false;
+            if (doVertical) {
+                final boolean vMoved = reduceVerticalOffsetsPass(nodes, minSep);
+                anyVerticalMove |= vMoved;
+                moved |= vMoved;
+            }
+            if (doHorizontal) {
+                moved |= reduceHorizontalOffsetsPass(nodes, minSep);
+            }
+            if (!moved) break;
+        }
+
+        if (anyVerticalMove) {
+            normalizeMinimumRow(nodes);
+        }
+    }
+
+    private static boolean reduceHorizontalOffsetsPass(final List<NodeData> nodes, final int minSep) {
+        final List<NodeData> candidates = new ArrayList<>();
+        for (final NodeData n : nodes) {
+            if (n.colOffset() > 0) {
+                candidates.add(n);
+            }
+        }
+        if (candidates.isEmpty()) return false;
+
+        candidates.sort(Comparator.comparingInt(NodeData::col)
+                .thenComparingInt(TreeLayoutOptimizer::depthOf)
+                .thenComparingDouble(NodeData::row)
+                .thenComparing(NodeData::id));
+
+        boolean moved = false;
+        final double vertBand = 1.0 + minSep - EPS;
+
+        for (final NodeData root : candidates) {
+            final int minAllowedCol = (null != root.parent())
+                    ? (root.parent().col() + 1 + Math.min(root.colOffset(), minSep))
+                    : Math.min(root.colOffset(), minSep);
+            int maxShift = root.col() - minAllowedCol;
+            if (maxShift <= 0) continue;
+
+            final java.util.Set<NodeData> subtree = collectSubtree(root);
+            for (final NodeData u : subtree) {
+                if (u.col() < maxShift) {
+                    maxShift = u.col();
+                }
+            }
+            if (maxShift <= 0) continue;
+
+            outer:
+            for (final NodeData u : subtree) {
+                final int uCol = u.col();
+                final double uRow = u.row();
+                for (final NodeData v : nodes) {
+                    if (subtree.contains(v)) continue;
+                    if (v.col() < uCol && Math.abs(uRow - v.row()) < vertBand) {
+                        final int allowed = uCol - v.col() - 1 - minSep;
+                        if (allowed < maxShift) {
+                            maxShift = allowed;
+                            if (maxShift <= 0) break outer;
+                        }
+                    }
+                }
+            }
+
+            if (maxShift > 0) {
+                for (final NodeData u : subtree) {
+                    u.setCol(u.col() - maxShift);
+                }
+                moved = true;
+            }
+        }
+        return moved;
+    }
+
+    private static boolean reduceVerticalOffsetsPass(final List<NodeData> nodes, final int minSep) {
+        boolean moved = false;
+
+        // 1. Pull floating un-shifted leaf siblings toward their parent so they do not artificially block shifted subtrees
+        moved |= pullFloatingLeaves(nodes, minSep);
+
+        // 2. Pull explicitly row-offset subtrees toward their parent while preserving minSep separation
+        final List<NodeData> belowParent = new ArrayList<>();
+        final List<NodeData> aboveParent = new ArrayList<>();
+        for (final NodeData n : nodes) {
+            if (null == n.parent()) continue;
+            if (n.rowOffset() > 0) {
+                belowParent.add(n);
+            } else if (n.rowOffset() < 0) {
+                aboveParent.add(n);
+            }
+        }
+
+        belowParent.sort(Comparator.comparingDouble(NodeData::row).thenComparing(NodeData::id));
+        for (final NodeData root : belowParent) {
+            final double targetRow = root.parent().row() + Math.min(root.rowOffset(), minSep);
+            if (root.row() > targetRow + EPS) {
+                moved |= slideSubtreeVertically(root, nodes, root.row() - targetRow, -1, minSep);
+            }
+        }
+
+        aboveParent.sort(Comparator.comparingDouble(NodeData::row).reversed().thenComparing(NodeData::id));
+        for (final NodeData root : aboveParent) {
+            final double targetRow = root.parent().row() - Math.min(-root.rowOffset(), minSep);
+            if (root.row() < targetRow - EPS) {
+                moved |= slideSubtreeVertically(root, nodes, targetRow - root.row(), +1, minSep);
+            }
+        }
+
+        // 3. Pull un-shifted subtrees displaced by earlier siblings into newly opened vertical space
+        final List<NodeData> unshiftedBelow = new ArrayList<>();
+        final List<NodeData> unshiftedAbove = new ArrayList<>();
+        for (final NodeData n : nodes) {
+            if (null == n.parent() || n.rowOffset() != 0 || n.children().isEmpty()) continue;
+            if (n.row() > n.parent().row() + EPS) {
+                unshiftedBelow.add(n);
+            } else if (n.row() < n.parent().row() - EPS) {
+                unshiftedAbove.add(n);
+            }
+        }
+
+        unshiftedBelow.sort(Comparator.comparingDouble(NodeData::row).thenComparing(NodeData::id));
+        for (final NodeData root : unshiftedBelow) {
+            final double gap = root.row() - root.parent().row();
+            if (gap > EPS) {
+                moved |= slideSubtreeVertically(root, nodes, gap, -1, minSep);
+            }
+        }
+
+        unshiftedAbove.sort(Comparator.comparingDouble(NodeData::row).reversed().thenComparing(NodeData::id));
+        for (final NodeData root : unshiftedAbove) {
+            final double gap = root.parent().row() - root.row();
+            if (gap > EPS) {
+                moved |= slideSubtreeVertically(root, nodes, gap, +1, minSep);
+            }
+        }
+
+        // 4. Re-center parents toward their children's average when doing so also moves them closer to their own parent,
+        // unlocking child subtrees that were pinned below/above a parent whose upper/lower sibling already hit a ceiling.
+        moved |= recenterParentsTowardParent(nodes, minSep);
+
+        return moved;
+    }
+
+    private static boolean recenterParentsTowardParent(final List<NodeData> nodes, final int minSep) {
+        final List<NodeData> parents = new ArrayList<>();
+        for (final NodeData n : nodes) {
+            if (null != n.parent() && n.children().size() > 1) {
+                parents.add(n);
+            }
+        }
+        if (parents.isEmpty()) return false;
+
+        parents.sort(Comparator.comparingInt(TreeLayoutOptimizer::depthOf)
+                .thenComparingDouble(NodeData::row)
+                .thenComparing(NodeData::id));
+
+        boolean moved = false;
+        for (final NodeData p : parents) {
+            double sum = 0.0;
+            for (final NodeData c : p.children()) {
+                sum += c.row();
+            }
+            final double avgChildRow = sum / p.children().size();
+            final double parentRow = p.parent().row();
+
+            if (p.rowOffset() >= 0 && p.row() > parentRow + EPS && p.row() > avgChildRow + EPS) {
+                final double desired = parentRow + (p.rowOffset() > 0 ? Math.min(p.rowOffset(), minSep) : 0.0);
+                final double target = Math.max(desired, avgChildRow);
+                if (p.row() > target + EPS) {
+                    moved |= slideSingleNodeVertically(p, nodes, p.row() - target, -1, minSep);
+                }
+            } else if (p.rowOffset() <= 0 && p.row() < parentRow - EPS && p.row() < avgChildRow - EPS) {
+                final double desired = parentRow - (p.rowOffset() < 0 ? Math.min(-p.rowOffset(), minSep) : 0.0);
+                final double target = Math.min(desired, avgChildRow);
+                if (p.row() < target - EPS) {
+                    moved |= slideSingleNodeVertically(p, nodes, target - p.row(), +1, minSep);
+                }
+            }
+        }
+        return moved;
+    }
+
+    private static boolean pullFloatingLeaves(final List<NodeData> nodes, final int minSep) {
+        final List<NodeData> below = new ArrayList<>();
+        final List<NodeData> above = new ArrayList<>();
+        for (final NodeData n : nodes) {
+            if (null == n.parent() || !n.children().isEmpty()) continue;
+            if (n.colOffset() != 0 || n.rowOffset() != 0) continue;
+            if (n.row() > n.parent().row() + EPS) {
+                below.add(n);
+            } else if (n.row() < n.parent().row() - EPS) {
+                above.add(n);
+            }
+        }
+
+        boolean moved = false;
+        below.sort(Comparator.comparingDouble(NodeData::row).thenComparing(NodeData::id));
+        for (final NodeData leaf : below) {
+            final double maxShift = leaf.row() - leaf.parent().row();
+            if (maxShift > EPS) {
+                moved |= slideSubtreeVertically(leaf, nodes, maxShift, -1, minSep);
+            }
+        }
+
+        above.sort(Comparator.comparingDouble(NodeData::row).reversed().thenComparing(NodeData::id));
+        for (final NodeData leaf : above) {
+            final double maxShift = leaf.parent().row() - leaf.row();
+            if (maxShift > EPS) {
+                moved |= slideSubtreeVertically(leaf, nodes, maxShift, +1, minSep);
+            }
+        }
+        return moved;
+    }
+
+    private static boolean slideSingleNodeVertically(
+            final NodeData node,
+            final List<NodeData> allNodes,
+            final double requestedShift,
+            final int direction,
+            final int minSep) {
+        if (requestedShift <= EPS) return false;
+        double maxShift = requestedShift;
+        final int uCol = node.col();
+        final double uRow = node.row();
+        final NodeData uBranch = offsetBranchRoot(node);
+
+        for (final NodeData v : allNodes) {
+            if (v == node || v.col() != uCol) continue;
+            final double vRow = v.row();
+            final boolean vInSlideDirection = (direction < 0) ? (vRow < uRow - EPS) : (vRow > uRow + EPS);
+            if (!vInSlideDirection) continue;
+
+            final double required = (uBranch != offsetBranchRoot(v)) ? (1.0 + minSep) : 1.0;
+            final double allowed = Math.abs(uRow - vRow) - required;
+            if (allowed < maxShift) {
+                maxShift = allowed;
+                if (maxShift <= EPS) return false;
+            }
+        }
+
+        if (maxShift > EPS) {
+            node.setRow(uRow + direction * maxShift);
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean slideSubtreeVertically(
+            final NodeData root,
+            final List<NodeData> allNodes,
+            final double requestedShift,
+            final int direction,
+            final int minSep) {
+        if (requestedShift <= EPS) return false;
+        double maxShift = requestedShift;
+
+        final java.util.Set<NodeData> subtree = collectSubtree(root);
+
+        outer:
+        for (final NodeData u : subtree) {
+            final int uCol = u.col();
+            final double uRow = u.row();
+            final NodeData uBranch = offsetBranchRoot(u);
+
+            for (final NodeData v : allNodes) {
+                if (subtree.contains(v)) continue;
+                if (uCol != v.col()) continue;
+
+                final double vRow = v.row();
+                final boolean vInSlideDirection = (direction < 0) ? (vRow < uRow - EPS) : (vRow > uRow + EPS);
+                if (!vInSlideDirection) continue;
+
+                final double required = (uBranch != offsetBranchRoot(v)) ? (1.0 + minSep) : 1.0;
+                final double allowed = Math.abs(uRow - vRow) - required;
+                if (allowed < maxShift) {
+                    maxShift = allowed;
+                    if (maxShift <= EPS) break outer;
+                }
+            }
+        }
+
+        if (maxShift > EPS) {
+            final double delta = direction * maxShift;
+            for (final NodeData u : subtree) {
+                u.setRow(u.row() + delta);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static java.util.Set<NodeData> collectSubtree(final NodeData root) {
+        final java.util.Set<NodeData> visited = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
+        final java.util.ArrayDeque<NodeData> stack = new java.util.ArrayDeque<>();
+        stack.push(root);
+        while (!stack.isEmpty()) {
+            final NodeData cur = stack.pop();
+            if (visited.add(cur)) {
+                for (final NodeData child : cur.children()) {
+                    stack.push(child);
+                }
+            }
+        }
+        return visited;
+    }
+
+    private static int depthOf(final NodeData node) {
+        int d = 0;
+        NodeData cur = node.parent();
+        while (null != cur) {
+            d++;
+            cur = cur.parent();
+        }
+        return d;
+    }
+
+    private static NodeData offsetBranchRoot(final NodeData node) {
+        NodeData cur = node;
+        while (null != cur) {
+            if (cur.colOffset() != 0 || cur.rowOffset() != 0) {
+                return cur;
+            }
+            cur = cur.parent();
+        }
+        return null;
+    }
+
+    private static void normalizeMinimumRow(final List<NodeData> nodes) {
+        double minRow = Double.MAX_VALUE;
+        for (final NodeData n : nodes) {
+            if (n.row() < minRow) minRow = n.row();
+        }
+        if (minRow < Double.MAX_VALUE && Math.abs(minRow - 1.0) > EPS) {
+            final double shift = minRow - 1.0;
+            for (final NodeData n : nodes) {
+                n.setRow(n.row() - shift);
+            }
+        }
+    }
+
     public static void removeEmptyRowsAndColumns(final List<NodeData> nodes) {
-        if (!Optimization.allowHorizontalGaps) {
+        if (Optimization.reduceHorizontalGaps) {
             removeEmptyColumns(nodes);
         }
-        if (!Optimization.allowVerticalGaps) {
+        if (Optimization.reduceVerticalGaps) {
             removeEmptyRows(nodes);
         }
     }
 
     private static void removeEmptyColumns(final List<NodeData> nodes) {
         if (nodes.isEmpty()) return;
-        
-        final java.util.Set<Integer> usedCols = new java.util.TreeSet<>();
+
+        final int minSep = Math.max(0, Optimization.minOffsetSeparation);
+        final Map<Integer, List<NodeData>> colNodesMap = new TreeMap<>();
         for (final NodeData n : nodes) {
-            usedCols.add(n.col());
+            colNodesMap.computeIfAbsent(n.col(), k -> new ArrayList<>()).add(n);
         }
-        
-        final java.util.Map<Integer, Integer> colMapping = new HashMap<>();
-        int newCol = 0;
-        for (final int oldCol : usedCols) {
-            colMapping.put(oldCol, newCol++);
+
+        final Map<Integer, Integer> colMapping = new HashMap<>();
+        int prevOldCol = -1;
+        int prevNewCol = -1;
+
+        for (final Map.Entry<Integer, List<NodeData>> entry : colNodesMap.entrySet()) {
+            final int oldCol = entry.getKey();
+            final int newCol;
+            if (prevOldCol == -1) {
+                int initialRequired = 0;
+                if (minSep > 0 && oldCol > 0) {
+                    for (final NodeData n : entry.getValue()) {
+                        if (n.colOffset() > 0 && null == n.parent()) {
+                            initialRequired = Math.max(initialRequired, Math.min(n.colOffset(), minSep));
+                        }
+                    }
+                }
+                newCol = Math.min(oldCol, initialRequired);
+            } else {
+                final int emptyBetween = oldCol - prevOldCol - 1;
+                int requiredGap = 0;
+                if (emptyBetween > 0 && minSep > 0) {
+                    for (final NodeData n : entry.getValue()) {
+                        if (n.colOffset() > 0 && (null == n.parent() || n.parent().col() <= prevOldCol)) {
+                            requiredGap = Math.max(requiredGap, Math.min(n.colOffset(), minSep));
+                        }
+                    }
+                }
+                final int keptEmpty = Math.min(emptyBetween, requiredGap);
+                newCol = prevNewCol + 1 + keptEmpty;
+            }
+            colMapping.put(oldCol, newCol);
+            prevOldCol = oldCol;
+            prevNewCol = newCol;
         }
-        
+
         for (final NodeData n : nodes) {
             n.setCol(colMapping.get(n.col()));
         }
@@ -521,30 +912,53 @@ public final class TreeLayoutOptimizer {
 
     private static void removeEmptyRows(final List<NodeData> nodes) {
         if (nodes.isEmpty()) return;
-        
-        final java.util.Map<Integer, List<NodeData>> rowNodesMap = new TreeMap<>();
+
+        final int minSep = Math.max(0, Optimization.minOffsetSeparation);
+        final Map<Integer, List<NodeData>> rowNodesMap = new TreeMap<>();
         for (final NodeData n : nodes) {
             final int roundedRow = (int) Math.round(n.row());
             rowNodesMap.computeIfAbsent(roundedRow, k -> new ArrayList<>()).add(n);
         }
-        
+
         double shift = 0.0;
         int previousRow = -1;
-        
+        List<NodeData> previousNodes = null;
+
         for (final Map.Entry<Integer, List<NodeData>> entry : rowNodesMap.entrySet()) {
             final int currentRow = entry.getKey();
+            final List<NodeData> currentNodes = entry.getValue();
             if (previousRow != -1) {
-                final int gap = currentRow - previousRow;
-                if (gap > 1) {
-                    shift += (gap - 1);
+                final int emptyBetween = currentRow - previousRow - 1;
+                if (emptyBetween > 0) {
+                    int requiredGap = 0;
+                    if (minSep > 0 && hasOffsetSeparationBetween(previousNodes, currentNodes)) {
+                        requiredGap = minSep;
+                    }
+                    final int keptEmpty = Math.min(emptyBetween, requiredGap);
+                    shift += (emptyBetween - keptEmpty);
                 }
             }
             if (shift > 0.0) {
-                for (final NodeData n : entry.getValue()) {
+                for (final NodeData n : currentNodes) {
                     n.setRow(n.row() - shift);
                 }
             }
             previousRow = currentRow;
+            previousNodes = currentNodes;
         }
+    }
+
+    private static boolean hasOffsetSeparationBetween(final List<NodeData> prevRowNodes, final List<NodeData> currRowNodes) {
+        if (null == prevRowNodes || null == currRowNodes) return false;
+        for (final NodeData a : prevRowNodes) {
+            final NodeData branchA = offsetBranchRoot(a);
+            for (final NodeData b : currRowNodes) {
+                final NodeData branchB = offsetBranchRoot(b);
+                if (branchA != branchB) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

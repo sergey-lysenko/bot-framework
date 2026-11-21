@@ -3,6 +3,7 @@ package works.lysenko.base.core;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.FileLockInterruptionException;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,18 +44,7 @@ public final class RunLocks {
             if (null == run) {
                 throw new IllegalStateException("A test run is already active (run/.run.lock)");
             }
-            try {
-                final LockHandle postprocess = tryAcquire(directory.resolve(POSTPROCESS_LOCK));
-                if (null == postprocess) {
-                    throw new IllegalStateException(
-                            "The previous test run is still being post-processed (run/.postprocess.lock)");
-                }
-                postprocess.close();
-                return new RunLock(run);
-            } catch (final Exception e) {
-                run.close();
-                throw e;
-            }
+            return new RunLock(run);
         } catch (final IOException e) {
             throw new IllegalStateException("Unable to acquire run lock in " + directory, e);
         }
@@ -82,6 +72,35 @@ public final class RunLocks {
         final LockHandle lock = tryAcquire(directory.resolve(POSTPROCESS_LOCK));
         if (null == lock) throw new IOException("Another post-processor is already active in " + directory);
         return lock;
+    }
+
+    /**
+     * Acquires the post-process lock in the default {@code run} directory,
+     * waiting until any previous post-processor releases it.
+     *
+     * @return the acquired post-process lock handle
+     * @throws IOException          if I/O fails
+     * @throws InterruptedException if interrupted while waiting for the lock
+     */
+    public static LockHandle acquirePostprocessLockWaiting() throws IOException, InterruptedException {
+        return acquirePostprocessLockWaiting(Path.of(RUN_DIRECTORY).toAbsolutePath().normalize());
+    }
+
+    /**
+     * Acquires the post-process lock in the given directory,
+     * waiting until any previous post-processor releases it.
+     *
+     * @param directory the lock directory
+     * @return the acquired post-process lock handle
+     * @throws IOException          if I/O fails
+     * @throws InterruptedException if interrupted while waiting for the lock
+     */
+    public static LockHandle acquirePostprocessLockWaiting(final Path directory) throws IOException, InterruptedException {
+        Files.createDirectories(directory);
+        final Path lockPath = directory.resolve(POSTPROCESS_LOCK);
+        final LockHandle immediate = tryAcquire(lockPath);
+        if (null != immediate) return immediate;
+        return acquireBlocking(lockPath);
     }
 
     /**
@@ -160,6 +179,34 @@ public final class RunLocks {
         } catch (final IOException | RuntimeException e) {
             channel.close();
             throw e;
+        }
+    }
+
+    private static LockHandle acquireBlocking(final Path path) throws IOException, InterruptedException {
+        while (true) {
+            if (Thread.interrupted()) {
+                throw new InterruptedException("Interrupted while waiting for lock " + path);
+            }
+            final FileChannel channel = FileChannel.open(
+                    path,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.WRITE);
+            try {
+                final FileLock lock = channel.lock();
+                return new LockHandle(channel, lock);
+            } catch (final OverlappingFileLockException e) {
+                channel.close();
+                Thread.sleep(50);
+            } catch (final FileLockInterruptionException e) {
+                channel.close();
+                Thread.interrupted();
+                final InterruptedException ie = new InterruptedException("Interrupted while waiting for lock " + path);
+                ie.initCause(e);
+                throw ie;
+            } catch (final IOException | RuntimeException e) {
+                channel.close();
+                throw e;
+            }
         }
     }
 

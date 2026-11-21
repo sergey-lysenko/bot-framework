@@ -94,18 +94,23 @@ public final class TreeLayoutComputer {
         final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(getAccessibleScenarios());
         final Map<NodeData, Boolean> execCache = new HashMap<>();
         final Map<NodeData, Boolean> childFailCache = new HashMap<>();
+        for (final NodeData n : unprunedNodes) {
+            isTheoreticallyExecutable(n, accessibleCtx, execCache);
+            hasChildFailure(n, childFailCache);
+        }
 
         final long tPruneStart = System.currentTimeMillis();
-        pruneOffBranches(nodes, edges);
-        final int hiddenCount = prunePassedLeaves(nodes, edges);
+        pruneOffBranches(nodes, edges, accessibleCtx, execCache, childFailCache);
+        final Set<NodeData> hiddenNodes = prunePassedLeavesReturningHidden(nodes, edges, childFailCache);
         final long tPrune = System.currentTimeMillis();
 
         final works.lysenko.base.output.SummaryPlaque plaque = works.lysenko.base.output.SummaryPlaque.computeFromNodes(
                 unprunedNodes, works.lysenko.base.output.SummaryPlaque.RunConfig.fromParameters(works.lysenko.Base.parameters),
-                accessibleCtx, execCache, childFailCache, hiddenCount);
+                accessibleCtx, execCache, childFailCache, hiddenNodes);
 
         final long tOptStart = System.currentTimeMillis();
         TreeLayoutOptimizer.optimizeLayout(nodes);
+        TreeLayoutOptimizer.reduceVisualOffsets(nodes);
         TreeLayoutOptimizer.removeEmptyRowsAndColumns(nodes);
         final long tOpt = System.currentTimeMillis();
 
@@ -152,18 +157,23 @@ public final class TreeLayoutComputer {
         final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(getAccessibleScenarios());
         final Map<NodeData, Boolean> execCache = new HashMap<>();
         final Map<NodeData, Boolean> childFailCache = new HashMap<>();
+        for (final NodeData n : unprunedNodes) {
+            isTheoreticallyExecutable(n, accessibleCtx, execCache);
+            hasChildFailure(n, childFailCache);
+        }
 
         final long tPruneStart = System.currentTimeMillis();
-        pruneOffBranches(nodes, edges);
-        final int hiddenCount = prunePassedLeaves(nodes, edges);
+        pruneOffBranches(nodes, edges, accessibleCtx, execCache, childFailCache);
+        final Set<NodeData> hiddenNodes = prunePassedLeavesReturningHidden(nodes, edges, childFailCache);
         final long tPrune = System.currentTimeMillis();
 
         final works.lysenko.base.output.SummaryPlaque plaque = works.lysenko.base.output.SummaryPlaque.computeFromNodes(
                 unprunedNodes, works.lysenko.base.output.SummaryPlaque.RunConfig.fromParameters(works.lysenko.Base.parameters),
-                accessibleCtx, execCache, childFailCache, hiddenCount);
+                accessibleCtx, execCache, childFailCache, hiddenNodes);
 
         final long tOptStart = System.currentTimeMillis();
         TreeLayoutOptimizer.optimizeLayout(nodes);
+        TreeLayoutOptimizer.reduceVisualOffsets(nodes);
         TreeLayoutOptimizer.removeEmptyRowsAndColumns(nodes);
         final long tOpt = System.currentTimeMillis();
 
@@ -202,7 +212,7 @@ public final class TreeLayoutComputer {
         final String label = b(scenario.getSimpleName(), scenario.type().tag());
         final String id = s("scenario_", nodes.size(), "_", scenario.getSimpleName());
         final String group = (null == parent) ? TESTS : parent.label();
-        final NodeData node = new NodeData(id, label, group, myCol, rows[0]++, rowOffset, resultFor(scenario, sorted), scenario);
+        final NodeData node = new NodeData(id, label, group, myCol, rows[0]++, offset, rowOffset, resultFor(scenario, sorted), scenario);
 
         final KnownIssuesStore store = TreeHtml.getKnownIssuesStore();
         if (null != store) {
@@ -573,7 +583,7 @@ public final class TreeLayoutComputer {
             final long tLayout = System.currentTimeMillis();
 
             final long tRenderStart = System.currentTimeMillis();
-            final String html = TreeHtmlRenderer.renderHtml(layout.nodes(), layout.edges());
+            final String html = TreeHtmlRenderer.renderHtml(layout);
             final long tRender = System.currentTimeMillis();
 
             final long tWriteStart = System.currentTimeMillis();
@@ -588,14 +598,23 @@ public final class TreeLayoutComputer {
     }
 
     public static void pruneOffBranches(final List<NodeData> nodes, final List<Edge> edges) {
+        final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(getAccessibleScenarios());
+        pruneOffBranches(nodes, edges, accessibleCtx, new HashMap<>(), new HashMap<>());
+    }
+
+    private static void pruneOffBranches(
+            final List<NodeData> nodes,
+            final List<Edge> edges,
+            final TreeHtml.AccessibleContext accessibleCtx,
+            final Map<NodeData, Boolean> execCache,
+            final Map<NodeData, Boolean> childFailCache) {
         if (!HideOff.branches) return;
 
-        final Set<_Scenario> accessibleScenarios = getAccessibleScenarios();
-        final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(accessibleScenarios);
-        final Map<NodeData, Boolean> cache = new HashMap<>();
         final Set<NodeData> toRemove = new HashSet<>();
         for (final NodeData n : nodes) {
-            if (!isTheoreticallyExecutable(n, accessibleCtx, cache)) {
+            if (!isTheoreticallyExecutable(n, accessibleCtx, execCache)
+                    && !hasFailure(n)
+                    && !hasChildFailure(n, childFailCache)) {
                 toRemove.add(n);
             }
         }
@@ -608,8 +627,16 @@ public final class TreeLayoutComputer {
             n.children().removeAll(toRemove);
         }
     }
+
     public static int prunePassedLeaves(final List<NodeData> nodes, final List<Edge> edges) {
-        if (!works.lysenko.util.prop.tree.HideOff.passedLeaves) return 0;
+        return prunePassedLeavesReturningHidden(nodes, edges, new HashMap<>()).size();
+    }
+
+    private static Set<NodeData> prunePassedLeavesReturningHidden(
+            final List<NodeData> nodes,
+            final List<Edge> edges,
+            final Map<NodeData, Boolean> childFailCache) {
+        if (!works.lysenko.util.prop.tree.HideOff.passedLeaves) return Collections.emptySet();
 
         boolean changed;
         final Set<NodeData> toRemove = new HashSet<>();
@@ -617,10 +644,10 @@ public final class TreeLayoutComputer {
             changed = false;
             for (final NodeData n : nodes) {
                 if (toRemove.contains(n)) continue;
-                
+
                 // The first-root-level nodes should always be visible
                 if (n.parent() == null) continue;
-                
+
                 boolean isLeaf = true;
                 for (final NodeData child : n.children()) {
                     if (!toRemove.contains(child)) {
@@ -628,11 +655,15 @@ public final class TreeLayoutComputer {
                         break;
                     }
                 }
-                
+
                 if (isLeaf) {
-                    final works.lysenko.util.data.type.Result res = (works.lysenko.util.data.type.Result) n.result();
+                    final _Result res = n.result();
                     final int execs = (res != null) ? res.getExecutions() : 0;
-                    if (execs > 0 && !hasFailure(n) && !works.lysenko.base.output.TreeHtml.hasWarning(n) && !works.lysenko.base.output.TreeHtml.hasNotice(n)) {
+                    if (execs > 0
+                            && !hasFailure(n)
+                            && !hasChildFailure(n, childFailCache)
+                            && !works.lysenko.base.output.TreeHtml.hasWarning(n)
+                            && !works.lysenko.base.output.TreeHtml.hasNotice(n)) {
                         toRemove.add(n);
                         changed = true;
                     }
@@ -640,14 +671,13 @@ public final class TreeLayoutComputer {
             }
         } while (changed);
 
-        if (toRemove.isEmpty()) return 0;
-        final int count = toRemove.size();
+        if (toRemove.isEmpty()) return Collections.emptySet();
 
         nodes.removeAll(toRemove);
         edges.removeIf(e -> toRemove.contains(e.from()) || toRemove.contains(e.to()));
         for (final NodeData n : nodes) {
             n.children().removeAll(toRemove);
         }
-        return count;
+        return toRemove;
     }
 }

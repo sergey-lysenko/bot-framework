@@ -100,6 +100,20 @@ public record TreeHtmlRenderer() {
     }
 
     /**
+     * Renders the complete interactive HTML scenario tree document, preserving any
+     * precomputed {@link SummaryPlaque} attached to {@code layout}.
+     *
+     * @param layout computed tree layout
+     * @return complete HTML document string
+     */
+    public static String renderHtml(final TreeHtml.TreeLayout layout) {
+        if (null == layout) {
+            return renderHtml(Collections.emptyList(), Collections.emptyList(), null);
+        }
+        return renderHtml(layout.nodes(), layout.edges(), layout.plaque());
+    }
+
+    /**
      * Renders the complete interactive HTML scenario tree document.
      *
      * @param nodes list of tree nodes
@@ -107,6 +121,17 @@ public record TreeHtmlRenderer() {
      * @return complete HTML document string
      */
     public static String renderHtml(final List<TreeHtml.NodeData> nodes, final List<TreeHtml.Edge> edges) {
+        return renderHtml(nodes, edges, null);
+    }
+
+    /**
+     * Renders the complete interactive HTML scenario tree document using {@code precomputedPlaque}
+     * when provided, or computing statistics from {@code nodes} otherwise.
+     */
+    public static String renderHtml(
+            final List<TreeHtml.NodeData> nodes,
+            final List<TreeHtml.Edge> edges,
+            final SummaryPlaque precomputedPlaque) {
         final StringBuilder svgContent = new StringBuilder(4096);
         final Set<_Scenario> accessibleScenarios = TreeLayoutComputer.getAccessibleScenarios();
         final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(accessibleScenarios);
@@ -134,12 +159,14 @@ public record TreeHtmlRenderer() {
 
         svgContent.append(new HtmlTreeRenderer(TreeTheme.DEFAULT).renderNodes(visualNodes));
 
-        final SummaryPlaque summaryPlaque = SummaryPlaque.computeFromNodes(
-                nodes,
-                SummaryPlaque.RunConfig.fromParameters(works.lysenko.Base.parameters),
-                accessibleCtx,
-                executableCache,
-                childFailureCache);
+        final SummaryPlaque summaryPlaque = (null != precomputedPlaque)
+                ? precomputedPlaque
+                : SummaryPlaque.computeFromNodes(
+                        nodes,
+                        SummaryPlaque.RunConfig.fromParameters(works.lysenko.Base.parameters),
+                        accessibleCtx,
+                        executableCache,
+                        childFailureCache);
         final String nodeDataJson = serializeNodeData(nodeDataMap);
 
         final Map<String, String> replacements = new LinkedHashMap<>(4);

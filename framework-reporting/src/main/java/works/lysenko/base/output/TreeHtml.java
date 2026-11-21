@@ -59,6 +59,7 @@ public final class TreeHtml {
         private final String group;
         private int col;
         private double row;
+        private int colOffset = 0;
         private int rowOffset = 0;
         private final _Result result;
         private final _Scenario scenario;
@@ -69,23 +70,28 @@ public final class TreeHtml {
         private Boolean precomputedChildFailure;
         private Boolean precomputedExecutable;
 
-        public NodeData(final String id, final String label, final String group, final int col, final double row, final int rowOffset, final _Result result, final _Scenario scenario) {
+        public NodeData(final String id, final String label, final String group, final int col, final double row, final int colOffset, final int rowOffset, final _Result result, final _Scenario scenario) {
             this.id = id;
             this.label = label;
             this.group = group;
             this.col = col;
             this.row = row;
+            this.colOffset = colOffset;
             this.rowOffset = rowOffset;
             this.result = result;
             this.scenario = scenario;
         }
 
+        public NodeData(final String id, final String label, final String group, final int col, final double row, final int rowOffset, final _Result result, final _Scenario scenario) {
+            this(id, label, group, col, row, 0, rowOffset, result, scenario);
+        }
+
         public NodeData(final String id, final String label, final String group, final int col, final double row, final _Result result, final _Scenario scenario) {
-            this(id, label, group, col, row, 0, result, scenario);
+            this(id, label, group, col, row, 0, 0, result, scenario);
         }
 
         public NodeData(final String id, final String label, final String group, final int col, final double row, final _Result result) {
-            this(id, label, group, col, row, 0, result, null);
+            this(id, label, group, col, row, 0, 0, result, null);
         }
 
         public String id() { return id; }
@@ -95,6 +101,8 @@ public final class TreeHtml {
         public void setCol(final int col) { this.col = col; }
         public double row() { return row; }
         public void setRow(final double row) { this.row = row; }
+        public int colOffset() { return colOffset; }
+        public void setColOffset(final int colOffset) { this.colOffset = colOffset; }
         public int rowOffset() { return rowOffset; }
         public void setRowOffset(final int rowOffset) { this.rowOffset = rowOffset; }
         public _Result result() { return result; }
@@ -169,7 +177,7 @@ public final class TreeHtml {
      */
     public static TreeLayout snapshotLayout(final TreeLayout layout, final AccessibleContext ctx) {
         if (null == layout || layout.nodes().isEmpty()) {
-            return new TreeLayout(List.of(), List.of());
+            return new TreeLayout(List.of(), List.of(), null != layout ? layout.plaque() : null);
         }
         final AccessibleContext safeCtx = (null != ctx) ? ctx : new AccessibleContext(Set.of());
         final Map<NodeData, Boolean> liveChildFailureCache = new HashMap<>(layout.nodes().size() * 2);
@@ -188,6 +196,7 @@ public final class TreeHtml {
                     orig.group(),
                     orig.col(),
                     orig.row(),
+                    orig.colOffset(),
                     orig.rowOffset(),
                     frozenResult,
                     null);
@@ -218,7 +227,7 @@ public final class TreeHtml {
                 snapshotEdges.add(new Edge(from, to));
             }
         }
-        return new TreeLayout(snapshotNodes, snapshotEdges);
+        return new TreeLayout(snapshotNodes, snapshotEdges, layout.plaque());
     }
 
     public record Edge(NodeData from, NodeData to) {}
@@ -335,6 +344,10 @@ public final class TreeHtml {
 
     public static double[] solveColumn1D(final double[] targets) {
         return TreeLayoutOptimizer.solveColumn1D(targets);
+    }
+
+    public static String renderHtml(final TreeLayout layout) {
+        return TreeHtmlRenderer.renderHtml(layout);
     }
 
     public static String renderHtml(final List<NodeData> nodes, final List<Edge> edges) {

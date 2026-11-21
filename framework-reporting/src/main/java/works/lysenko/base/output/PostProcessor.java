@@ -89,7 +89,7 @@ public class PostProcessor {
             final long parentPid = Long.parseLong(args[0]);
             final File logFile = new File(args[1]);
             final File htmlFile = new File(args[2]);
-            try (RunLocks.LockHandle ignored = RunLocks.acquirePostprocessLock()) {
+            try (RunLocks.LockHandle ignored = RunLocks.acquirePostprocessLockWaiting()) {
                 ProcessHandle.of(parentPid).ifPresent(handle -> {
                     try {
                         handle.onExit().get(60, TimeUnit.SECONDS);
