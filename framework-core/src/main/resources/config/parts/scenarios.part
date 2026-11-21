@@ -74,16 +74,22 @@
 # .tree.progression.debug=false
 
 # ------------------------------------------------------------------------------
+# Fractional speed multiplier for tree progression movement animations (node gliding and camera pan/zoom).
+# 1 = default (alpha 0.20), < 1 = slower (e.g. 1/2), > 1 = faster (e.g. 2), >= 5 = instant snap. Default: 1
+# .tree.progression.movement.speed=1
+
+# ------------------------------------------------------------------------------
 # Enables 16:9 layout optimization and compaction for scenario execution trees. Default: true
 # .tree.progression.optimization=true
 
 # ------------------------------------------------------------------------------
-# Number of horizontal column banks to split independent scenario trees into when aspect ratio is narrow. Default: 2
-# .tree.progression.optimization.bank.columns=2
+# Number of horizontal column banks to split independent scenario trees into when aspect ratio is narrow.
+# 0 = auto-select optimal bank count for target aspect ratio, 1 = disabled (single column), >= 2 = fixed bank count. Default: 0
+# .tree.progression.optimization.bank.columns=0
 
 # ------------------------------------------------------------------------------
-# Aspect ratio threshold (width/height) below which multi-bank tree layout is activated. Default: 0.85
-# .tree.progression.optimization.max.aspect.ratio=0.85
+# Target aspect ratio (width/height) below which multi-bank tree layout is activated and toward which auto bank selection optimizes. Default: 1.78
+# .tree.progression.optimization.max.aspect.ratio=1.78
 
 # ------------------------------------------------------------------------------
 # Number of columns to split leaf children into during packing. Default: 2

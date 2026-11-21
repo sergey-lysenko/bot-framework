@@ -73,6 +73,8 @@ public record P() {
     public static final String PREEMPTIVELY = s(PR, EE, MP, TIVE, LY);
     /** Constant representing the word PREFLIGHT. */
     public static final String PREFLIGHT = s(P, RE, F, L, IGHT);
+    /** Constant representing the word PRETEST. */
+    public static final String PRETEST = s(P, RE, TEST);
     /** Constant representing the word PRESENCE. */
     public static final String PRESENCE = s(PR, ESEN, CE);
     /** Constant representing the word PREVIEW. */

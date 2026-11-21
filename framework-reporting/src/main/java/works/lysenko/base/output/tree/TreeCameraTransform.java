@@ -194,7 +194,7 @@ public final class TreeCameraTransform {
             currentTranslateY = targetTx.translateY();
             transformInitialized = true;
         } else {
-            final double alpha = 0.20;
+            final double alpha = TreeNodePositionAnimator.effectiveAlpha();
             currentZoom += alpha * debugDz;
             currentTranslateX += alpha * debugDx;
             currentTranslateY += alpha * debugDy;

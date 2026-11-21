@@ -72,7 +72,7 @@ public class Writer implements _LogsWriter {
             final String headerTitle = (testNumber == 0) ? "Test #0 (Setup / Preflight)" : ("Test #" + testNumber);
             writer.write("# Test Execution Log - " + headerTitle + System.lineSeparator() + System.lineSeparator());
             writer.write("> **Context & Schema**:" + System.lineSeparator());
-            writer.write("> - **Sections (`### Title`)**: Execution phases (Preflight, Scenario selection/execution, Data operations) are structured as Markdown headings with call site IDs and section timing." + System.lineSeparator());
+            writer.write("> - **Sections (`### Title`)**: Execution phases (Preflight, Pretest, Scenario selection/execution, Data operations) are structured as Markdown headings with call site IDs and section timing." + System.lineSeparator());
             writer.write("> - **Log Message**: Operational events, UI interactions, assertions, property reads/writes, and state changes within each section." + System.lineSeparator());
             writer.write("> - **Call Stack**: Call site references formatted as `ID:[Class.method:line]` upon first declaration. Bracketed IDs (`[ID]`) or empty cells refer to call site IDs defined earlier in the trace." + System.lineSeparator());
             writer.write("> - **Duration (ms)**: Operation execution time in milliseconds." + System.lineSeparator() + System.lineSeparator());

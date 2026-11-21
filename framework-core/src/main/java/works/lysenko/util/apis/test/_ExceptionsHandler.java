@@ -28,6 +28,19 @@ public interface _ExceptionsHandler {
     void handle(RuntimeException exception) throws SafeguardException;
 
     /**
+     * Handles the given RuntimeException with an optional fallback execution context label
+     * (for example, {@code "Pretest"}) used when no scenario is currently on the execution stack.
+     *
+     * @param exception the RuntimeException instance to be handled
+     * @param context   optional fallback context name when the scenario stack is empty
+     * @throws SafeguardException if the exception handling process requires escalation to a checked exception
+     */
+    default void handle(final RuntimeException exception, final String context) throws SafeguardException {
+
+        handle(exception);
+    }
+
+    /**
      * Sets the given scenario as exceptional, marking it for exceptional handling or processing.
      *
      * @param scenario the scenario to be set as exceptional

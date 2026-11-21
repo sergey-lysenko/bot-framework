@@ -1,5 +1,6 @@
 package works.lysenko.base.output;
 
+import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.base.output.sonifier.*;
 import works.lysenko.util.prop.PropEnum;
 
@@ -11,6 +12,7 @@ public record ProgressionSettings(
         boolean treeEnabled,
         boolean treePerNodeEnabled,
         boolean treeDebugEnabled,
+        double treeMovementSpeed,
         int maxFrames,
         int maxFramePixels,
         long maxTotalPixels,
@@ -59,6 +61,10 @@ public record ProgressionSettings(
         final Boolean treeEnabled = PropEnum._TEST_REPORT_PROGRESSION_TREE.get();
         final Boolean treePerNodeEnabled = PropEnum._TEST_REPORT_PROGRESSION_TREE_PER_NODE.get();
         final Boolean treeDebugEnabled = PropEnum._TREE_PROGRESSION_DEBUG.get();
+        final Fraction treeMovementSpeedFraction = PropEnum._TREE_PROGRESSION_MOVEMENT_SPEED.get();
+        final double treeMovementSpeed = (null != treeMovementSpeedFraction && treeMovementSpeedFraction.doubleValue() > 0.0)
+                ? treeMovementSpeedFraction.doubleValue()
+                : 1.0;
         final Integer maxFrames = PropEnum._TEST_REPORT_PROGRESSION_MAX_FRAMES.get();
         final Integer maxFramePixels = PropEnum._TEST_REPORT_PROGRESSION_MAX_FRAME_PIXELS.get();
         final Long maxTotalPixels = PropEnum._TEST_REPORT_PROGRESSION_MAX_TOTAL_PIXELS.get();
@@ -76,6 +82,7 @@ public record ProgressionSettings(
                 Boolean.TRUE.equals(treeEnabled),
                 Boolean.TRUE.equals(treePerNodeEnabled),
                 Boolean.TRUE.equals(treeDebugEnabled),
+                treeMovementSpeed,
                 maxFrames,
                 maxFramePixels,
                 maxTotalPixels,

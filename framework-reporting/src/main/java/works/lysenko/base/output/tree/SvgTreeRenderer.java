@@ -210,9 +210,9 @@ public final class SvgTreeRenderer {
         }));
 
         for (final Edge e : sortedEdges) {
-            final int startX = e.from().col() * COL_WIDTH + CARD_WIDTH + PADDING_X;
+            final int startX = (int) Math.round(e.from().visualCol() * COL_WIDTH + CARD_WIDTH + PADDING_X);
             final int startY = (int) Math.round(e.from().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + headerH + PADDING_Y);
-            final int endX = e.to().col() * COL_WIDTH + PADDING_X;
+            final int endX = (int) Math.round(e.to().visualCol() * COL_WIDTH + PADDING_X);
             final int endY = (int) Math.round(e.to().row() * ROW_HEIGHT + (CARD_HEIGHT / 2.0) + headerH + PADDING_Y);
             final int cX = (startX + endX) / 2;
 

@@ -182,9 +182,19 @@ public interface _Test {
     /**
      * Retrieves the preflight action associated with the Test object.
      *
-     * @return The postflight action.
+     * @return The preflight action.
      */
     Runnable preflight();
+
+    /**
+     * Retrieves the optional pretest action executed before each individual test iteration.
+     *
+     * @return The pretest action, or {@code null} if none was configured.
+     */
+    default Runnable pretest() {
+
+        return null;
+    }
 
     /**
      * Retrieves the Repeater object associated with the Test object.

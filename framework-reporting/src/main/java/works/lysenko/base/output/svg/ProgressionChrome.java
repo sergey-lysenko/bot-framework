@@ -181,14 +181,14 @@ public final class ProgressionChrome {
      *
      * @param covered number of covered leaf scenarios
      * @param total   total accessible leaf scenarios
-     * @return formatted Title Case badge text (e.g. {@code "Leafs: 36/253 (14%)"})
+     * @return formatted Title Case badge text (e.g. {@code "Leaves: 36/253 (14%)"})
      */
     public static String formatLeafsBadge(final int covered, final int total) {
         if (total <= 0) {
-            return "Leafs: " + covered + "/" + total;
+            return "Leaves: " + covered + "/" + total;
         }
         final int pct = Math.min(100, (covered * 100) / total);
-        return String.format(Locale.US, "Leafs: %d/%d (%d%%)", covered, total, pct);
+        return String.format(Locale.US, "Leaves: %d/%d (%d%%)", covered, total, pct);
     }
 
     /**
@@ -196,7 +196,7 @@ public final class ProgressionChrome {
      *
      * @param covered number of covered leaf scenarios
      * @param total   total accessible leaf scenarios
-     * @return green when complete, amber when in progress, neutral slate when no leafs are tracked
+     * @return green when complete, amber when in progress, neutral slate when no leaves are tracked
      */
     public static BadgeStyle leafsBadgeStyle(final int covered, final int total) {
         if (total <= 0) return BADGE_SLATE;

@@ -16,6 +16,7 @@ import works.lysenko.util.spec.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.math.NumberUtils.min;
@@ -66,6 +67,7 @@ public class Repeater implements _Repeater {
     private final _ExceptionsHandler handler;
     private final _Exec executor;
     private final _Stat statistics;
+    private final Supplier<? extends Runnable> pretestSupplier;
     private List<String> history = new ArrayList<>(1);
     private List<_Scenario> scenarios = new ArrayList<>(1);
     private Long startedAt = null;
@@ -75,7 +77,7 @@ public class Repeater implements _Repeater {
     private volatile Integer totalTests = null;
 
     /**
-     * Creates a new instance of the Repeater class.
+     * Creates a new instance of the Repeater class without a per-test pretest hook.
      *
      * @param handler    the object that handles exceptions
      * @param executor   the object that executes scenarios
@@ -83,9 +85,24 @@ public class Repeater implements _Repeater {
      */
     public Repeater(final _ExceptionsHandler handler, final _Exec executor, final _Stat statistics) {
 
+        this(handler, executor, statistics, () -> null);
+    }
+
+    /**
+     * Creates a new instance of the Repeater class with an optional per-test pretest hook supplier.
+     *
+     * @param handler         the object that handles exceptions
+     * @param executor        the object that executes scenarios
+     * @param statistics      the object that collects statistics
+     * @param pretestSupplier supplier resolving the optional per-test {@link Runnable} executed before each test iteration
+     */
+    public Repeater(final _ExceptionsHandler handler, final _Exec executor, final _Stat statistics,
+                    final Supplier<? extends Runnable> pretestSupplier) {
+
         this.handler = handler;
         this.executor = executor;
         this.statistics = statistics;
+        this.pretestSupplier = pretestSupplier;
     }
 
     /**
@@ -214,10 +231,20 @@ public class Repeater implements _Repeater {
         startedAt = Routines.msSinceStart();
         testsCount = statistics.history().size() + 1;
         title();
+        final Runnable activePretest = isNotNull(pretestSupplier) ? pretestSupplier.get() : null;
+        boolean inPretest = false;
         try {
-            executor.exec();
+            if (isNotNull(activePretest)) {
+                inPretest = true;
+                activePretest.run();
+                inPretest = false;
+            }
+            if (isNull(core) || !core.getStopFlag()) {
+                executor.exec();
+            }
         } catch (final RuntimeException exception) {
-            handler.handle(exception);
+            if (inPretest) handler.handle(exception, activePretest.getClass().getSimpleName());
+            else handler.handle(exception);
         } finally {
             info();
             close();

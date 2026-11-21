@@ -276,6 +276,15 @@ public final class TreeLayoutOptimizer {
         }
     }
 
+    private record ComponentInfo(
+            int index,
+            List<NodeData> nodes,
+            double height,
+            int minCol,
+            int rootOffset,
+            int effectiveDepth) {
+    }
+
     public static void compactDisconnectedTrees(final List<NodeData> nodes) {
         final Map<NodeData, List<NodeData>> components = new IdentityHashMap<>();
         for (final NodeData node : nodes)
@@ -296,29 +305,42 @@ public final class TreeLayoutOptimizer {
 
         if (ordered.isEmpty()) return;
 
-        if (Optimization.progression && ordered.size() >= 2 && Optimization.bankColumns >= 2) {
+        if (Optimization.progression && ordered.size() >= 2 && Optimization.bankColumns != 1 && Optimization.maxAspectRatio > 0.0) {
+            final List<ComponentInfo> infos = buildComponentInfos(ordered);
             int maxDepth = 0;
             double totalStackedRows = 0.0;
-            for (int i = 0; i < ordered.size(); i++) {
-                final List<NodeData> comp = ordered.get(i);
-                final int minC = minimumCol(comp);
-                final int maxC = maximumCol(comp);
-                final int d = maxC - minC + 1;
-                if (d > maxDepth) maxDepth = d;
-                final double h = maximumRow(comp) - minimumRow(comp) + 1.0;
-                totalStackedRows += h;
-                if (i > 0) totalStackedRows += 1.0;
+            for (final ComponentInfo info : infos) {
+                if (info.effectiveDepth > maxDepth) maxDepth = info.effectiveDepth;
+                totalStackedRows += info.height;
             }
-            final double naturalWidth = maxDepth * COL_WIDTH;
-            final double naturalHeight = totalStackedRows * ROW_HEIGHT;
-            final double naturalAspectRatio = (naturalHeight > 0.0) ? (naturalWidth / naturalHeight) : 1.0;
+            final double naturalWidth = maxDepth * (double) COL_WIDTH;
+            final double naturalHeight = totalStackedRows * (double) ROW_HEIGHT;
+            final double naturalAspectRatio = (naturalHeight > 0.0) ? (naturalWidth / naturalHeight) : Optimization.maxAspectRatio;
 
             if (naturalAspectRatio < Optimization.maxAspectRatio) {
-                layoutMultiColumnBanks(ordered);
+                layoutMultiColumnBanks(infos, Optimization.maxAspectRatio);
                 return;
             }
         }
 
+        stackComponentsVertically(ordered);
+    }
+
+    private static List<ComponentInfo> buildComponentInfos(final List<List<NodeData>> ordered) {
+        final List<ComponentInfo> infos = new ArrayList<>(ordered.size());
+        for (int i = 0; i < ordered.size(); i++) {
+            final List<NodeData> comp = ordered.get(i);
+            final int minC = minimumCol(comp);
+            final int maxC = maximumCol(comp);
+            final int rootOffset = comp.isEmpty() ? 0 : Math.max(0, rootOf(comp.get(0)).col());
+            final int effectiveDepth = Math.max(1, rootOffset + (maxC - minC) + 1);
+            final double height = maximumRow(comp) - minimumRow(comp) + 1.0;
+            infos.add(new ComponentInfo(i, comp, height, minC, rootOffset, effectiveDepth));
+        }
+        return infos;
+    }
+
+    private static void stackComponentsVertically(final List<List<NodeData>> ordered) {
         double nextRow = 1.0;
         for (final List<NodeData> component : ordered) {
             final double minimum = minimumRow(component);
@@ -330,78 +352,83 @@ public final class TreeLayoutOptimizer {
         }
     }
 
-    private static void layoutMultiColumnBanks(final List<List<NodeData>> ordered) {
-        final int numBanks = Math.max(1, Math.min(Optimization.bankColumns, ordered.size()));
-        if (numBanks <= 1) {
-            double nextRow = 1.0;
-            for (final List<NodeData> component : ordered) {
-                final double minimum = minimumRow(component);
-                final double shift = nextRow - minimum;
-                if (0.0 != shift)
-                    for (final NodeData node : component)
-                        node.setRow(node.row() + shift);
-                nextRow = maximumRow(component) + 1.0;
+    private static double bankLayoutScore(final int totalCols, final double maxRows, final double targetAspect) {
+        final double pixelW = Math.max(1, totalCols) * (double) COL_WIDTH;
+        final double pixelH = Math.max(1.0, maxRows) * (double) ROW_HEIGHT;
+        final double enclosingH = Math.max(pixelW / targetAspect, pixelH);
+        final double sqrtEnclosingArea = enclosingH * Math.sqrt(targetAspect);
+        final double sqrtActualArea = Math.sqrt(pixelW * pixelH);
+        return 0.78 * sqrtEnclosingArea + 0.22 * sqrtActualArea;
+    }
+
+    private static double evaluatePartition(final List<List<ComponentInfo>> banks, final double targetAspect) {
+        int totalCols = 0;
+        double maxRows = 0.0;
+        for (final List<ComponentInfo> bank : banks) {
+            if (bank.isEmpty()) continue;
+            int bankDepth = 0;
+            double bankHeight = 0.0;
+            for (final ComponentInfo info : bank) {
+                if (info.effectiveDepth > bankDepth) bankDepth = info.effectiveDepth;
+                bankHeight += info.height;
             }
+            totalCols += bankDepth;
+            if (bankHeight > maxRows) maxRows = bankHeight;
+        }
+        return bankLayoutScore(totalCols, maxRows, targetAspect);
+    }
+
+    private static void layoutMultiColumnBanks(final List<ComponentInfo> infos, final double targetAspect) {
+        final List<ComponentInfo> byHeightDesc = new ArrayList<>(infos);
+        byHeightDesc.sort((a, b) -> {
+            final int hCmp = Double.compare(b.height, a.height);
+            if (hCmp != 0) return hCmp;
+            final int dCmp = Integer.compare(b.effectiveDepth, a.effectiveDepth);
+            if (dCmp != 0) return dCmp;
+            return Integer.compare(a.index, b.index);
+        });
+
+        final List<ComponentInfo> byDepthDesc = new ArrayList<>(infos);
+        byDepthDesc.sort((a, b) -> {
+            final int dCmp = Integer.compare(b.effectiveDepth, a.effectiveDepth);
+            if (dCmp != 0) return dCmp;
+            final int hCmp = Double.compare(b.height, a.height);
+            if (hCmp != 0) return hCmp;
+            return Integer.compare(a.index, b.index);
+        });
+
+        final List<List<ComponentInfo>> chosenBanks;
+        if (Optimization.bankColumns >= 2) {
+            final int fixedK = Math.min(Optimization.bankColumns, infos.size());
+            chosenBanks = selectFixedBankPartition(byHeightDesc, byDepthDesc, fixedK, targetAspect);
+        } else {
+            chosenBanks = selectAutoBankPartition(infos, byHeightDesc, byDepthDesc, targetAspect);
+        }
+
+        chosenBanks.removeIf(List::isEmpty);
+        if (chosenBanks.size() <= 1) {
+            final List<List<NodeData>> single = new ArrayList<>(infos.size());
+            for (final ComponentInfo info : infos) single.add(info.nodes);
+            stackComponentsVertically(single);
             return;
         }
 
-        final List<List<NodeData>> sortedByHeight = new ArrayList<>(ordered);
-        sortedByHeight.sort((c1, c2) -> {
-            final double h1 = maximumRow(c1) - minimumRow(c1) + 1.0;
-            final double h2 = maximumRow(c2) - minimumRow(c2) + 1.0;
-            final int hCmp = Double.compare(h2, h1);
-            if (hCmp != 0) return hCmp;
-            final String l1 = c1.isEmpty() ? "" : c1.get(0).label();
-            final String l2 = c2.isEmpty() ? "" : c2.get(0).label();
-            final int lCmp = l1.compareTo(l2);
-            if (lCmp != 0) return lCmp;
-            final String id1 = c1.isEmpty() ? "" : c1.get(0).id();
-            final String id2 = c2.isEmpty() ? "" : c2.get(0).id();
-            return id1.compareTo(id2);
-        });
-
-        final List<List<List<NodeData>>> banks = new ArrayList<>();
-        for (int i = 0; i < numBanks; i++) {
-            banks.add(new ArrayList<>());
-        }
-        final double[] bankHeights = new double[numBanks];
-
-        for (final List<NodeData> component : sortedByHeight) {
-            int bestBank = 0;
-            double minHeight = bankHeights[0];
-            for (int b = 1; b < numBanks; b++) {
-                if (bankHeights[b] < minHeight) {
-                    minHeight = bankHeights[b];
-                    bestBank = b;
-                }
-            }
-            banks.get(bestBank).add(component);
-            final double compH = maximumRow(component) - minimumRow(component) + 1.0;
-            bankHeights[bestBank] += compH + 1.0;
-        }
-
-        banks.removeIf(List::isEmpty);
-
-        banks.sort(Comparator.comparingInt(bank -> bank.stream().mapToInt(ordered::indexOf).min().orElse(0)));
-
-        for (final List<List<NodeData>> bank : banks) {
-            bank.sort(Comparator.comparingInt(ordered::indexOf));
+        chosenBanks.sort(Comparator.comparingInt(bank -> bank.stream().mapToInt(ComponentInfo::index).min().orElse(0)));
+        for (final List<ComponentInfo> bank : chosenBanks) {
+            bank.sort(Comparator.comparingInt(ComponentInfo::index));
         }
 
         int currentColOffset = 0;
-        for (final List<List<NodeData>> bank : banks) {
+        for (final List<ComponentInfo> bank : chosenBanks) {
             double nextRow = 1.0;
             int bankMaxDepth = 0;
-            for (final List<NodeData> component : bank) {
+            for (final ComponentInfo info : bank) {
+                final List<NodeData> component = info.nodes;
                 final double minR = minimumRow(component);
                 final double shiftR = nextRow - minR;
-                final NodeData compRoot = rootOf(component.get(0));
-                final int rootOffset = compRoot.col();
-                final int minC = minimumCol(component);
-                final int shiftC = (currentColOffset + rootOffset) - minC;
+                final int shiftC = (currentColOffset + info.rootOffset) - info.minCol;
 
-                final int depth = maximumCol(component) - minC + 1;
-                if (depth > bankMaxDepth) bankMaxDepth = depth;
+                if (info.effectiveDepth > bankMaxDepth) bankMaxDepth = info.effectiveDepth;
 
                 for (final NodeData node : component) {
                     if (0.0 != shiftR) node.setRow(node.row() + shiftR);
@@ -411,6 +438,475 @@ public final class TreeLayoutOptimizer {
             }
             currentColOffset += bankMaxDepth;
         }
+    }
+
+    private static List<List<ComponentInfo>> selectFixedBankPartition(
+            final List<ComponentInfo> byHeightDesc,
+            final List<ComponentInfo> byDepthDesc,
+            final int fixedK,
+            final double targetAspect) {
+        final List<List<List<ComponentInfo>>> candidates = new ArrayList<>(3);
+        candidates.add(packFixedKHeightBalanced(byHeightDesc, fixedK));
+        candidates.add(packFixedKScoreGuided(byHeightDesc, fixedK, targetAspect));
+        candidates.add(packFixedKScoreGuided(byDepthDesc, fixedK, targetAspect));
+
+        List<List<ComponentInfo>> best = null;
+        double bestScore = Double.POSITIVE_INFINITY;
+        for (final List<List<ComponentInfo>> candidate : candidates) {
+            final List<List<ComponentInfo>> refined = localImprovePartition(candidate, targetAspect, false);
+            final double score = evaluatePartition(refined, targetAspect);
+            if (null == best || score < bestScore - EPS) {
+                best = refined;
+                bestScore = score;
+            }
+        }
+        return best;
+    }
+
+    private static List<List<ComponentInfo>> selectAutoBankPartition(
+            final List<ComponentInfo> infos,
+            final List<ComponentInfo> byHeightDesc,
+            final List<ComponentInfo> byDepthDesc,
+            final double targetAspect) {
+        final List<List<ComponentInfo>> singleBank = new ArrayList<>(1);
+        singleBank.add(new ArrayList<>(infos));
+        List<List<ComponentInfo>> bestOverall = singleBank;
+        double bestOverallScore = evaluatePartition(singleBank, targetAspect);
+
+        final List<Double> heightCaps = buildCandidateHeightCaps(infos);
+
+        List<List<ComponentInfo>> bestDepthCap = null;
+        double bestDepthCapScore = Double.POSITIVE_INFINITY;
+        List<List<ComponentInfo>> bestHeightCap = null;
+        double bestHeightCapScore = Double.POSITIVE_INFINITY;
+
+        for (final double capH : heightCaps) {
+            final List<List<ComponentInfo>> depthCandidate = packBestFitWithHeightCap(byDepthDesc, capH);
+            final double depthScore = evaluatePartition(depthCandidate, targetAspect);
+            if (depthScore < bestDepthCapScore - EPS) {
+                bestDepthCapScore = depthScore;
+                bestDepthCap = depthCandidate;
+            }
+
+            final List<List<ComponentInfo>> heightCandidate = packBestFitWithHeightCap(byHeightDesc, capH);
+            final double heightScore = evaluatePartition(heightCandidate, targetAspect);
+            if (heightScore < bestHeightCapScore - EPS) {
+                bestHeightCapScore = heightScore;
+                bestHeightCap = heightCandidate;
+            }
+        }
+
+        List<List<ComponentInfo>> bestScoreGuided = null;
+        double bestScoreGuidedScore = Double.POSITIVE_INFINITY;
+        final int maxSweepK = Math.min(infos.size(), 16);
+        for (int k = 2; k <= maxSweepK; k++) {
+            final List<List<ComponentInfo>> hCand = packAutoScoreGuided(byHeightDesc, k, targetAspect);
+            final double hScore = evaluatePartition(hCand, targetAspect);
+            if (hScore < bestScoreGuidedScore - EPS) {
+                bestScoreGuidedScore = hScore;
+                bestScoreGuided = hCand;
+            }
+
+            final List<List<ComponentInfo>> dCand = packAutoScoreGuided(byDepthDesc, k, targetAspect);
+            final double dScore = evaluatePartition(dCand, targetAspect);
+            if (dScore < bestScoreGuidedScore - EPS) {
+                bestScoreGuidedScore = dScore;
+                bestScoreGuided = dCand;
+            }
+        }
+
+        final List<List<List<ComponentInfo>>> finalists = new ArrayList<>(3);
+        if (null != bestDepthCap) finalists.add(bestDepthCap);
+        if (null != bestHeightCap) finalists.add(bestHeightCap);
+        if (null != bestScoreGuided) finalists.add(bestScoreGuided);
+
+        for (final List<List<ComponentInfo>> finalist : finalists) {
+            final List<List<ComponentInfo>> refined = localImprovePartition(finalist, targetAspect, true);
+            final double score = evaluatePartition(refined, targetAspect);
+            if (score < bestOverallScore - EPS) {
+                bestOverallScore = score;
+                bestOverall = refined;
+            }
+        }
+        return bestOverall;
+    }
+
+    private static List<Double> buildCandidateHeightCaps(final List<ComponentInfo> infos) {
+        double minH = 1.0;
+        double totalH = 0.0;
+        for (final ComponentInfo info : infos) {
+            if (info.height > minH) minH = info.height;
+            totalH += info.height;
+        }
+        final java.util.TreeSet<Double> caps = new java.util.TreeSet<>();
+        caps.add(minH);
+        if (totalH > minH + EPS) {
+            final int maxDiv = Math.min(infos.size(), 24);
+            for (int k = 2; k <= maxDiv; k++) {
+                final double avg = totalH / k;
+                caps.add(Math.max(minH, Math.ceil(avg)));
+                caps.add(Math.max(minH, avg * 1.05));
+            }
+            for (int step = 1; step <= 32; step++) {
+                caps.add(minH + (totalH - minH) * step / 33.0);
+            }
+        }
+        return new ArrayList<>(caps);
+    }
+
+    private static List<List<ComponentInfo>> packBestFitWithHeightCap(
+            final List<ComponentInfo> orderedComps,
+            final double capH) {
+        final List<List<ComponentInfo>> banks = new ArrayList<>();
+        final List<Double> bankHeights = new ArrayList<>();
+        final List<Integer> bankDepths = new ArrayList<>();
+
+        for (final ComponentInfo comp : orderedComps) {
+            int bestBank = -1;
+            int bestDepthIncrease = Integer.MAX_VALUE;
+            double bestResultHeight = -1.0;
+            int bestBankDepth = Integer.MAX_VALUE;
+
+            for (int b = 0; b < banks.size(); b++) {
+                final double nextH = bankHeights.get(b) + comp.height;
+                if (nextH > capH + EPS) continue;
+                final int curD = bankDepths.get(b);
+                final int depthInc = Math.max(0, comp.effectiveDepth - curD);
+                final boolean better;
+                if (bestBank == -1) {
+                    better = true;
+                } else if (depthInc != bestDepthIncrease) {
+                    better = depthInc < bestDepthIncrease;
+                } else if (Math.abs(nextH - bestResultHeight) > EPS) {
+                    better = nextH > bestResultHeight;
+                } else {
+                    better = curD < bestBankDepth;
+                }
+                if (better) {
+                    bestBank = b;
+                    bestDepthIncrease = depthInc;
+                    bestResultHeight = nextH;
+                    bestBankDepth = curD;
+                }
+            }
+
+            if (bestBank == -1) {
+                final List<ComponentInfo> newBank = new ArrayList<>();
+                newBank.add(comp);
+                banks.add(newBank);
+                bankHeights.add(comp.height);
+                bankDepths.add(comp.effectiveDepth);
+            } else {
+                banks.get(bestBank).add(comp);
+                bankHeights.set(bestBank, bankHeights.get(bestBank) + comp.height);
+                if (comp.effectiveDepth > bankDepths.get(bestBank)) {
+                    bankDepths.set(bestBank, comp.effectiveDepth);
+                }
+            }
+        }
+        return banks;
+    }
+
+    private static List<List<ComponentInfo>> packFixedKHeightBalanced(
+            final List<ComponentInfo> orderedComps,
+            final int numBanks) {
+        final List<List<ComponentInfo>> banks = new ArrayList<>(numBanks);
+        for (int i = 0; i < numBanks; i++) banks.add(new ArrayList<>());
+        final double[] bankHeights = new double[numBanks];
+        final int[] bankDepths = new int[numBanks];
+
+        for (final ComponentInfo comp : orderedComps) {
+            int bestBank = 0;
+            double minHeight = bankHeights[0];
+            int bestDepthInc = Math.max(0, comp.effectiveDepth - bankDepths[0]);
+            for (int b = 1; b < numBanks; b++) {
+                final double h = bankHeights[b];
+                final int depthInc = Math.max(0, comp.effectiveDepth - bankDepths[b]);
+                if (h < minHeight - EPS || (Math.abs(h - minHeight) <= EPS && depthInc < bestDepthInc)) {
+                    minHeight = h;
+                    bestDepthInc = depthInc;
+                    bestBank = b;
+                }
+            }
+            banks.get(bestBank).add(comp);
+            bankHeights[bestBank] += comp.height;
+            if (comp.effectiveDepth > bankDepths[bestBank]) bankDepths[bestBank] = comp.effectiveDepth;
+        }
+        return banks;
+    }
+
+    private static List<List<ComponentInfo>> packFixedKScoreGuided(
+            final List<ComponentInfo> orderedComps,
+            final int numBanks,
+            final double targetAspect) {
+        final List<List<ComponentInfo>> banks = new ArrayList<>(numBanks);
+        for (int i = 0; i < numBanks; i++) banks.add(new ArrayList<>());
+        final double[] bankHeights = new double[numBanks];
+        final int[] bankDepths = new int[numBanks];
+        int totalCols = 0;
+        double maxRows = 0.0;
+
+        for (int idx = 0; idx < orderedComps.size(); idx++) {
+            final ComponentInfo comp = orderedComps.get(idx);
+            final int chosen;
+            if (idx < numBanks) {
+                chosen = idx;
+            } else {
+                int bestB = 0;
+                double bestScore = Double.POSITIVE_INFINITY;
+                double bestBankH = Double.POSITIVE_INFINITY;
+                int bestDepthInc = Integer.MAX_VALUE;
+                for (int b = 0; b < numBanks; b++) {
+                    final int depthInc = Math.max(0, comp.effectiveDepth - bankDepths[b]);
+                    final int nextCols = totalCols + depthInc;
+                    final double nextBankH = bankHeights[b] + comp.height;
+                    final double nextMaxRows = Math.max(maxRows, nextBankH);
+                    final double score = bankLayoutScore(nextCols, nextMaxRows, targetAspect);
+                    if (score < bestScore - EPS
+                            || (Math.abs(score - bestScore) <= EPS && nextBankH < bestBankH - EPS)
+                            || (Math.abs(score - bestScore) <= EPS && Math.abs(nextBankH - bestBankH) <= EPS && depthInc < bestDepthInc)) {
+                        bestScore = score;
+                        bestBankH = nextBankH;
+                        bestDepthInc = depthInc;
+                        bestB = b;
+                    }
+                }
+                chosen = bestB;
+            }
+            banks.get(chosen).add(comp);
+            final int prevD = bankDepths[chosen];
+            if (comp.effectiveDepth > prevD) {
+                totalCols += (comp.effectiveDepth - prevD);
+                bankDepths[chosen] = comp.effectiveDepth;
+            }
+            bankHeights[chosen] += comp.height;
+            if (bankHeights[chosen] > maxRows) maxRows = bankHeights[chosen];
+        }
+        return banks;
+    }
+
+    private static List<List<ComponentInfo>> packAutoScoreGuided(
+            final List<ComponentInfo> orderedComps,
+            final int maxBanks,
+            final double targetAspect) {
+        final List<List<ComponentInfo>> banks = new ArrayList<>();
+        final List<Double> bankHeights = new ArrayList<>();
+        final List<Integer> bankDepths = new ArrayList<>();
+        int totalCols = 0;
+        double maxRows = 0.0;
+
+        for (final ComponentInfo comp : orderedComps) {
+            int bestB = -1;
+            double bestScore = Double.POSITIVE_INFINITY;
+            double bestBankH = Double.POSITIVE_INFINITY;
+            int bestDepthInc = Integer.MAX_VALUE;
+
+            for (int b = 0; b < banks.size(); b++) {
+                final int depthInc = Math.max(0, comp.effectiveDepth - bankDepths.get(b));
+                final int nextCols = totalCols + depthInc;
+                final double nextBankH = bankHeights.get(b) + comp.height;
+                final double nextMaxRows = Math.max(maxRows, nextBankH);
+                final double score = bankLayoutScore(nextCols, nextMaxRows, targetAspect);
+                if (score < bestScore - EPS
+                        || (Math.abs(score - bestScore) <= EPS && nextBankH < bestBankH - EPS)
+                        || (Math.abs(score - bestScore) <= EPS && Math.abs(nextBankH - bestBankH) <= EPS && depthInc < bestDepthInc)) {
+                    bestScore = score;
+                    bestBankH = nextBankH;
+                    bestDepthInc = depthInc;
+                    bestB = b;
+                }
+            }
+
+            if (banks.size() < maxBanks) {
+                final int nextCols = totalCols + comp.effectiveDepth;
+                final double nextMaxRows = Math.max(maxRows, comp.height);
+                final double score = bankLayoutScore(nextCols, nextMaxRows, targetAspect);
+                if (bestB == -1 || score < bestScore - EPS) {
+                    bestB = banks.size();
+                }
+            }
+
+            if (bestB == banks.size()) {
+                final List<ComponentInfo> newBank = new ArrayList<>();
+                newBank.add(comp);
+                banks.add(newBank);
+                bankHeights.add(comp.height);
+                bankDepths.add(comp.effectiveDepth);
+                totalCols += comp.effectiveDepth;
+                if (comp.height > maxRows) maxRows = comp.height;
+            } else {
+                banks.get(bestB).add(comp);
+                final int prevD = bankDepths.get(bestB);
+                if (comp.effectiveDepth > prevD) {
+                    totalCols += (comp.effectiveDepth - prevD);
+                    bankDepths.set(bestB, comp.effectiveDepth);
+                }
+                final double newH = bankHeights.get(bestB) + comp.height;
+                bankHeights.set(bestB, newH);
+                if (newH > maxRows) maxRows = newH;
+            }
+        }
+        return banks;
+    }
+
+    private static List<List<ComponentInfo>> localImprovePartition(
+            final List<List<ComponentInfo>> initial,
+            final double targetAspect,
+            final boolean allowEmptyingBank) {
+        final List<List<ComponentInfo>> current = new ArrayList<>(initial.size());
+        int totalComps = 0;
+        for (final List<ComponentInfo> bank : initial) {
+            if (!bank.isEmpty()) {
+                current.add(new ArrayList<>(bank));
+                totalComps += bank.size();
+            }
+        }
+        if (current.isEmpty()) return current;
+
+        final int maxSteps = 64;
+        for (int step = 0; step < maxSteps; step++) {
+            final int numBanks = current.size();
+            final double[] bankH = new double[numBanks];
+            final int[] bankD = new int[numBanks];
+            int totalCols = 0;
+            double maxRows = 0.0;
+            for (int b = 0; b < numBanks; b++) {
+                for (final ComponentInfo info : current.get(b)) {
+                    bankH[b] += info.height;
+                    if (info.effectiveDepth > bankD[b]) bankD[b] = info.effectiveDepth;
+                }
+                totalCols += bankD[b];
+                if (bankH[b] > maxRows) maxRows = bankH[b];
+            }
+            final double curScore = bankLayoutScore(totalCols, maxRows, targetAspect);
+
+            // 1. Try single-component move
+            int bestFromBank = -1;
+            int bestCompIdx = -1;
+            int bestToBank = -2; // -1 means new bank
+            double bestMoveScore = curScore;
+
+            for (int a = 0; a < numBanks; a++) {
+                final List<ComponentInfo> bankA = current.get(a);
+                if (!allowEmptyingBank && bankA.size() <= 1) continue;
+                for (int ci = 0; ci < bankA.size(); ci++) {
+                    final ComponentInfo c = bankA.get(ci);
+                    final double newAH = bankH[a] - c.height;
+                    final int newAD = maxDepthWithout(bankA, ci);
+
+                    for (int b = 0; b < numBanks; b++) {
+                        if (b == a) continue;
+                        final double newBH = bankH[b] + c.height;
+                        final int newBD = Math.max(bankD[b], c.effectiveDepth);
+                        final int newCols = totalCols - bankD[a] + newAD - bankD[b] + newBD;
+                        final double newMaxRows = maxRowsAfterChange(bankH, a, newAH, b, newBH, 0.0);
+                        final double score = bankLayoutScore(newCols, newMaxRows, targetAspect);
+                        if (score < bestMoveScore - EPS) {
+                            bestMoveScore = score;
+                            bestFromBank = a;
+                            bestCompIdx = ci;
+                            bestToBank = b;
+                        }
+                    }
+
+                    if (allowEmptyingBank && bankA.size() > 1) {
+                        final int newCols = totalCols - bankD[a] + newAD + c.effectiveDepth;
+                        final double newMaxRows = maxRowsAfterChange(bankH, a, newAH, -1, 0.0, c.height);
+                        final double score = bankLayoutScore(newCols, newMaxRows, targetAspect);
+                        if (score < bestMoveScore - EPS) {
+                            bestMoveScore = score;
+                            bestFromBank = a;
+                            bestCompIdx = ci;
+                            bestToBank = -1;
+                        }
+                    }
+                }
+            }
+
+            if (bestFromBank != -1) {
+                final ComponentInfo moved = current.get(bestFromBank).remove(bestCompIdx);
+                if (bestToBank == -1) {
+                    final List<ComponentInfo> newBank = new ArrayList<>();
+                    newBank.add(moved);
+                    current.add(newBank);
+                } else {
+                    current.get(bestToBank).add(moved);
+                }
+                if (current.get(bestFromBank).isEmpty()) {
+                    current.remove(bestFromBank);
+                }
+                continue;
+            }
+
+            // 2. Try pairwise swap between two banks
+            if (totalComps > 60) break;
+            int swapA = -1, swapIdxA = -1, swapB = -1, swapIdxB = -1;
+            double bestSwapScore = curScore;
+
+            for (int a = 0; a < numBanks; a++) {
+                final List<ComponentInfo> bankA = current.get(a);
+                for (int b = a + 1; b < numBanks; b++) {
+                    final List<ComponentInfo> bankB = current.get(b);
+                    for (int ia = 0; ia < bankA.size(); ia++) {
+                        final ComponentInfo c1 = bankA.get(ia);
+                        final int baseAD = maxDepthWithout(bankA, ia);
+                        for (int ib = 0; ib < bankB.size(); ib++) {
+                            final ComponentInfo c2 = bankB.get(ib);
+                            final int baseBD = maxDepthWithout(bankB, ib);
+                            final double newAH = bankH[a] - c1.height + c2.height;
+                            final double newBH = bankH[b] - c2.height + c1.height;
+                            final int newAD = Math.max(baseAD, c2.effectiveDepth);
+                            final int newBD = Math.max(baseBD, c1.effectiveDepth);
+                            final int newCols = totalCols - bankD[a] - bankD[b] + newAD + newBD;
+                            final double newMaxRows = maxRowsAfterChange(bankH, a, newAH, b, newBH, 0.0);
+                            final double score = bankLayoutScore(newCols, newMaxRows, targetAspect);
+                            if (score < bestSwapScore - EPS) {
+                                bestSwapScore = score;
+                                swapA = a;
+                                swapIdxA = ia;
+                                swapB = b;
+                                swapIdxB = ib;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (swapA != -1) {
+                final ComponentInfo c1 = current.get(swapA).get(swapIdxA);
+                final ComponentInfo c2 = current.get(swapB).get(swapIdxB);
+                current.get(swapA).set(swapIdxA, c2);
+                current.get(swapB).set(swapIdxB, c1);
+            } else {
+                break;
+            }
+        }
+        return current;
+    }
+
+    private static int maxDepthWithout(final List<ComponentInfo> bank, final int skipIndex) {
+        int maxD = 0;
+        for (int i = 0; i < bank.size(); i++) {
+            if (i != skipIndex && bank.get(i).effectiveDepth > maxD) {
+                maxD = bank.get(i).effectiveDepth;
+            }
+        }
+        return maxD;
+    }
+
+    private static double maxRowsAfterChange(
+            final double[] bankH,
+            final int idxA,
+            final double newAH,
+            final int idxB,
+            final double newBH,
+            final double extraH) {
+        double maxR = extraH;
+        for (int i = 0; i < bankH.length; i++) {
+            final double h = (i == idxA) ? newAH : (i == idxB ? newBH : bankH[i]);
+            if (h > maxR) maxR = h;
+        }
+        return maxR;
     }
 
     private static int minimumCol(final List<NodeData> nodes) {

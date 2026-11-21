@@ -166,14 +166,15 @@ public final class CycleEstimatorPanel {
         }
 
         final _Ctrl rootCtrl = new Ctrl(null, scenarios);
-        final int leafs = rootCtrl.getAccessibleLeafs().size();
-        if (0 == leafs) {
-            return "0 leafs found";
+        final int leaves = rootCtrl.getAccessibleLeafs().size();
+        if (0 == leaves) {
+            return "0 leaves found";
         }
 
         final int target = leafsCount;
         final int recommended = CoverageEstimator.estimateAverageCycles(rootCtrl, target, progressConsumer);
-        return b(s1(recommended, "test"), REQUIRED, FOR, FULL, COVERAGE, e(ROUND, s1(leafs, "leaf")));
+        final String leavesCountLabel = (1 == leaves) ? "1 leaf" : (leaves + " leaves");
+        return b(s1(recommended, "test"), REQUIRED, FOR, FULL, COVERAGE, e(ROUND, leavesCountLabel));
     }
 
     private static void setUserOverrideOptional(final TestProperties tp, final JTextField tf, final String propertyName) {

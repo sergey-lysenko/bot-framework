@@ -56,11 +56,14 @@ public record Optimization() {
 
     /**
      * Number of horizontal column banks to partition independent scenario trees into when aspect ratio is narrow.
+     * {@code 0} (default) selects the optimal bank count automatically for {@link #maxAspectRatio};
+     * {@code 1} disables multi-bank layout; {@code >= 2} enforces a fixed number of banks.
      */
     public static int bankColumns = _TREE_PROGRESSION_OPTIMIZATION_BANK_COLUMNS.get();
 
     /**
-     * Aspect ratio threshold (width/height) below which multi-bank tree layout is activated.
+     * Target aspect ratio (width/height, default {@code 1.78} for 16:9) below which multi-bank tree layout is
+     * activated and toward which automatic bank selection optimizes.
      */
     public static double maxAspectRatio = _TREE_PROGRESSION_OPTIMIZATION_MAX_ASPECT_RATIO.get();
 

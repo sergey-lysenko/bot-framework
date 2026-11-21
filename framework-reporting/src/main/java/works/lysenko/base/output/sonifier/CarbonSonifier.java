@@ -908,7 +908,7 @@ public final class CarbonSonifier implements TreeSonifier {
             }
         }
 
-        // 4. Parse header badges (Leafs: C/T and Test #N)
+        // 4. Parse header badges (Leaves: C/T or legacy Leafs: C/T, and Test #N)
         int headerCovLeaves = -1;
         int headerExecLeaves = -1;
         int testCycle = -1;
@@ -920,8 +920,8 @@ public final class CarbonSonifier implements TreeSonifier {
                 break;
             }
             final String badge = svg.substring(gt + 1, lt).trim();
-            if (badge.startsWith("Leafs:")) {
-                final String ratioStr = badge.substring(6).trim();
+            if (badge.startsWith("Leaves:") || badge.startsWith("Leafs:")) {
+                final String ratioStr = badge.substring(badge.indexOf(':') + 1).trim();
                 final int slash = ratioStr.indexOf('/');
                 if (slash > 0) {
                     headerCovLeaves = parseIntSafe(ratioStr.substring(0, slash), -1);

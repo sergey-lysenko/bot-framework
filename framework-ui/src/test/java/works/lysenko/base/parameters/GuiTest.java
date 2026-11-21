@@ -104,7 +104,7 @@ class GuiTest {
         gui.addStandardParameters();
 
         final JButton calcButton = gui.getCalculateCycles();
-        calcButton.setText("56 tests required for full coverage (37 leafs)");
+        calcButton.setText("56 tests required for full coverage (37 leaves)");
 
         final Method resetMethod;
         try {

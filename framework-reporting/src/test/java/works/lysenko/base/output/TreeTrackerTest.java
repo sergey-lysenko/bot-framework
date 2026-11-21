@@ -975,7 +975,7 @@ class TreeTrackerTest {
 
         assertTrue(svg.contains("Scenario Execution Tree Progression"), "Header title must be Title Case");
         assertTrue(svg.contains("Test #36"), "Header must include cycle badge");
-        assertTrue(svg.contains("Leafs: 1/2 (50%)"), "Leafs badge must include completion percentage");
+        assertTrue(svg.contains("Leaves: 1/2 (50%)"), "Leaves badge must include completion percentage");
         assertTrue(svg.contains("Target: 1"), "Header must include target badge");
         assertTrue(svg.contains("ETA:"), "Header must include ETA badge");
         assertTrue(svg.contains("Elapsed:"), "Header must include Elapsed badge");
@@ -1037,5 +1037,161 @@ class TreeTrackerTest {
         final String svg = TreeTracker.renderTreeProgressionSvg(wideLayout, 1, "Test #7", Collections.emptySet());
         assertTrue(svg.contains("Zoom: 1.00x"),
                 "Zoom badge must format with two decimal digits after the dot");
+    }
+
+    @Test
+    void testNodePositionAnimatorGlidesSmoothlyBloomsNewChildrenAndPreservesFractionalSvgCoords() {
+        works.lysenko.base.output.tree.TreeNodePositionAnimator.reset();
+
+        // Frame 1: root at (0, 1.0), siblingA at (1, 1.0), siblingB at (2, 1.0)
+        final NodeData r1 = new NodeData("scenario_0_Root", "Root ▷", "TESTS", 0, 1.0, result(ScenarioType.NODE, 1));
+        final NodeData a1 = new NodeData("scenario_1_A", "A ◼", "Root ▷", 1, 1.0, result(ScenarioType.LEAF, 1));
+        final NodeData b1 = new NodeData("scenario_2_B", "B ◼", "Root ▷", 2, 1.0, result(ScenarioType.LEAF, 0));
+        a1.setParent(r1);
+        b1.setParent(r1);
+        r1.children().addAll(List.of(a1, b1));
+        final TreeLayout frame1 = new TreeLayout(List.of(r1, a1, b1), List.of(new Edge(r1, a1), new Edge(r1, b1)));
+
+        works.lysenko.base.output.tree.TreeNodePositionAnimator.applySmoothPositions(frame1);
+        assertEquals(2.0, b1.visualCol(), 1e-9, "Frame 1 must snap directly to target col");
+        assertEquals(1.0, b1.row(), 1e-9, "Frame 1 must snap directly to target row");
+        assertTrue(works.lysenko.base.output.tree.TreeNodePositionAnimator.isSettled(frame1));
+
+        // Frame 2: siblingA disappears (shifting B's id from scenario_2_B -> scenario_1_B),
+        // B moves to (5, 6.0), and a brand-new child C appears at (1, 3.0)
+        final NodeData r2 = new NodeData("scenario_0_Root", "Root ▷", "TESTS", 0, 1.0, result(ScenarioType.NODE, 1));
+        final NodeData b2 = new NodeData("scenario_1_B", "B ◼", "Root ▷", 5, 6.0, result(ScenarioType.LEAF, 0));
+        final NodeData c2 = new NodeData("scenario_2_C", "C ◼", "Root ▷", 1, 3.0, result(ScenarioType.LEAF, 0));
+        b2.setParent(r2);
+        c2.setParent(r2);
+        r2.children().addAll(List.of(b2, c2));
+        final TreeLayout frame2 = new TreeLayout(List.of(r2, b2, c2), List.of(new Edge(r2, b2), new Edge(r2, c2)));
+
+        assertFalse(works.lysenko.base.output.tree.TreeNodePositionAnimator.isSettled(frame2));
+        works.lysenko.base.output.tree.TreeNodePositionAnimator.applySmoothPositions(frame2);
+
+        // B glides 20% from (2.0, 1.0) toward (5.0, 6.0) -> (2.6, 2.0), despite its id changing!
+        assertEquals(5, b2.col(), "Logical target col must stay unchanged");
+        assertEquals(2.6, b2.visualCol(), 1e-6, "visualCol must glide smoothly by alpha=0.20");
+        assertEquals(2.0, b2.row(), 1e-6, "row must glide smoothly by alpha=0.20");
+
+        // C blooms 20% out of parent Root at (0.0, 1.0) toward (1.0, 3.0) -> (0.2, 1.4)
+        assertEquals(0.2, c2.visualCol(), 1e-6, "Newly appeared node must bloom from parent col");
+        assertEquals(1.4, c2.row(), 1e-6, "Newly appeared node must bloom from parent row");
+
+        // Snapshot + SVG rendering must preserve fractional visualCol for both card and incoming edge
+        final TreeLayout snap = TreeHtml.snapshotLayout(frame2, new TreeHtml.AccessibleContext(Set.of()));
+        final NodeData snapB = snap.nodes().stream().filter(n -> "scenario_1_B".equals(n.id())).findFirst().orElseThrow();
+        assertEquals(2.6, snapB.visualCol(), 1e-6, "snapshotLayout must preserve fractional visualCol");
+
+        final String svg = TreeTracker.renderTreeProgressionSvg(snap, 1, "Test #2", Set.of("scenario_1_B"));
+        final int expectedCardX = (int) Math.round(2.6 * 270.0 + 40.0); // 742
+        assertTrue(svg.contains("id=\"scenario_1_B\" class=\"node-card unvisited\" transform=\"translate(" + expectedCardX + ","),
+                "Rendered SVG card must use smoothed fractional visualCol x=" + expectedCardX);
+        assertTrue(svg.contains(" " + expectedCardX + " "),
+                "Rendered SVG incoming edge endpoint must attach to smoothed x=" + expectedCardX);
+
+        // Repeated ticks converge cleanly to exact target and report settled
+        for (int i = 0; i < 40; i++) {
+            final NodeData rN = new NodeData("scenario_0_Root", "Root ▷", "TESTS", 0, 1.0, result(ScenarioType.NODE, 1));
+            final NodeData bN = new NodeData("scenario_1_B", "B ◼", "Root ▷", 5, 6.0, result(ScenarioType.LEAF, 0));
+            final NodeData cN = new NodeData("scenario_2_C", "C ◼", "Root ▷", 1, 3.0, result(ScenarioType.LEAF, 0));
+            bN.setParent(rN);
+            cN.setParent(rN);
+            rN.children().addAll(List.of(bN, cN));
+            final TreeLayout targetFrame = new TreeLayout(List.of(rN, bN, cN), List.of(new Edge(rN, bN), new Edge(rN, cN)));
+            if (works.lysenko.base.output.tree.TreeNodePositionAnimator.isSettled(targetFrame)) {
+                break;
+            }
+            works.lysenko.base.output.tree.TreeNodePositionAnimator.applySmoothPositions(targetFrame);
+        }
+        final NodeData rFinal = new NodeData("scenario_0_Root", "Root ▷", "TESTS", 0, 1.0, result(ScenarioType.NODE, 1));
+        final NodeData bFinal = new NodeData("scenario_1_B", "B ◼", "Root ▷", 5, 6.0, result(ScenarioType.LEAF, 0));
+        final NodeData cFinal = new NodeData("scenario_2_C", "C ◼", "Root ▷", 1, 3.0, result(ScenarioType.LEAF, 0));
+        bFinal.setParent(rFinal);
+        cFinal.setParent(rFinal);
+        rFinal.children().addAll(List.of(bFinal, cFinal));
+        final TreeLayout finalFrame = new TreeLayout(List.of(rFinal, bFinal, cFinal), List.of(new Edge(rFinal, bFinal), new Edge(rFinal, cFinal)));
+        assertTrue(works.lysenko.base.output.tree.TreeNodePositionAnimator.isSettled(finalFrame),
+                "Animator must converge and settle within 40 ticks");
+
+        works.lysenko.base.output.tree.TreeNodePositionAnimator.reset();
+    }
+
+    @Test
+    void testMovementSpeedMultiplierScalesNodeAndCameraEasing() throws Exception {
+        final String key = PropEnum._TREE_PROGRESSION_MOVEMENT_SPEED.getPropertyName();
+        try {
+            // 1/2 speed -> effective alpha = 0.10
+            setTestProperty(key, "1/2");
+            ProgressionSettings.initialize();
+            works.lysenko.base.output.tree.TreeNodePositionAnimator.reset();
+            works.lysenko.base.output.tree.TreeCameraTransform.reset();
+
+            final NodeData r1 = new NodeData("s_0", "Root ▷", "TESTS", 0, 1.0, result(ScenarioType.NODE, 1));
+            final NodeData c1 = new NodeData("s_1", "Child ◼", "Root ▷", 1, 1.0, result(ScenarioType.LEAF, 0));
+            c1.setParent(r1);
+            r1.children().add(c1);
+            final TreeLayout f1 = new TreeLayout(List.of(r1, c1), List.of(new Edge(r1, c1)));
+            works.lysenko.base.output.tree.TreeNodePositionAnimator.applySmoothPositions(f1);
+            final works.lysenko.base.output.tree.TreeCameraTransform.Transform cam1 =
+                    works.lysenko.base.output.tree.TreeCameraTransform.computeSmoothTransform(f1, Set.of("s_1"), 1, 1600, 900);
+
+            final NodeData r2 = new NodeData("s_0", "Root ▷", "TESTS", 0, 1.0, result(ScenarioType.NODE, 1));
+            final NodeData c2 = new NodeData("s_1", "Child ◼", "Root ▷", 6, 11.0, result(ScenarioType.LEAF, 0));
+            c2.setParent(r2);
+            r2.children().add(c2);
+            final TreeLayout f2 = new TreeLayout(List.of(r2, c2), List.of(new Edge(r2, c2)));
+            works.lysenko.base.output.tree.TreeNodePositionAnimator.applySmoothPositions(f2);
+
+            assertEquals(1.5, c2.visualCol(), 1e-6, "At 1/2 speed (alpha=0.10), col glides 10% from 1 to 6 -> 1.5");
+            assertEquals(2.0, c2.row(), 1e-6, "At 1/2 speed (alpha=0.10), row glides 10% from 1 to 11 -> 2.0");
+
+            final works.lysenko.base.output.tree.TreeCameraTransform.Transform camTarget =
+                    works.lysenko.base.output.tree.TreeCameraTransform.computeZoomTransform(f2, Set.of("s_1"), 1, 1600, 900);
+            final works.lysenko.base.output.tree.TreeCameraTransform.Transform camHalf =
+                    works.lysenko.base.output.tree.TreeCameraTransform.computeSmoothTransform(f2, Set.of("s_1"), 1, 1600, 900);
+            assertEquals(cam1.zoom() + 0.10 * (camTarget.zoom() - cam1.zoom()), camHalf.zoom(), 1e-6,
+                    "Camera zoom must also scale with movement speed multiplier 1/2 (alpha=0.10)");
+
+            // 2x speed -> effective alpha = 0.40
+            setTestProperty(key, "2");
+            ProgressionSettings.initialize();
+            works.lysenko.base.output.tree.TreeNodePositionAnimator.reset();
+            final NodeData r3a = new NodeData("s_0", "Root ▷", "TESTS", 0, 1.0, result(ScenarioType.NODE, 1));
+            final NodeData c3a = new NodeData("s_1", "Child ◼", "Root ▷", 1, 1.0, result(ScenarioType.LEAF, 0));
+            c3a.setParent(r3a);
+            r3a.children().add(c3a);
+            works.lysenko.base.output.tree.TreeNodePositionAnimator.applySmoothPositions(
+                    new TreeLayout(List.of(r3a, c3a), List.of(new Edge(r3a, c3a))));
+
+            final NodeData r3b = new NodeData("s_0", "Root ▷", "TESTS", 0, 1.0, result(ScenarioType.NODE, 1));
+            final NodeData c3b = new NodeData("s_1", "Child ◼", "Root ▷", 6, 11.0, result(ScenarioType.LEAF, 0));
+            c3b.setParent(r3b);
+            r3b.children().add(c3b);
+            works.lysenko.base.output.tree.TreeNodePositionAnimator.applySmoothPositions(
+                    new TreeLayout(List.of(r3b, c3b), List.of(new Edge(r3b, c3b))));
+
+            assertEquals(3.0, c3b.visualCol(), 1e-6, "At 2x speed (alpha=0.40), col glides 40% from 1 to 6 -> 3.0");
+            assertEquals(5.0, c3b.row(), 1e-6, "At 2x speed (alpha=0.40), row glides 40% from 1 to 11 -> 5.0");
+
+            // 5x speed -> effective alpha clamped to 1.0 (instant snap)
+            setTestProperty(key, "5");
+            ProgressionSettings.initialize();
+            final NodeData r4 = new NodeData("s_0", "Root ▷", "TESTS", 0, 1.0, result(ScenarioType.NODE, 1));
+            final NodeData c4 = new NodeData("s_1", "Child ◼", "Root ▷", 9, 20.0, result(ScenarioType.LEAF, 0));
+            c4.setParent(r4);
+            r4.children().add(c4);
+            final TreeLayout f4 = new TreeLayout(List.of(r4, c4), List.of(new Edge(r4, c4)));
+            works.lysenko.base.output.tree.TreeNodePositionAnimator.applySmoothPositions(f4);
+            assertEquals(9.0, c4.visualCol(), 1e-9, "At 5x speed (alpha=1.0), col must snap directly to target");
+            assertEquals(20.0, c4.row(), 1e-9, "At 5x speed (alpha=1.0), row must snap directly to target");
+            assertTrue(works.lysenko.base.output.tree.TreeNodePositionAnimator.isSettled(f4));
+        } finally {
+            setTestProperty(key, "1");
+            ProgressionSettings.initialize();
+            works.lysenko.base.output.tree.TreeNodePositionAnimator.reset();
+            works.lysenko.base.output.tree.TreeCameraTransform.reset();
+        }
     }
 }

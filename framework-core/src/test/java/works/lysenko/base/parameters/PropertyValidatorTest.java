@@ -65,6 +65,13 @@ class PropertyValidatorTest {
         assertNotNull(PropertyValidator.validate(".grid.action.marker.colour", "256,0,0,0"));
         assertNull(PropertyValidator.validate(".tree.completion.weight", "1/2"));
         assertNotNull(PropertyValidator.validate(".tree.completion.weight", "1 2"));
+        assertNull(PropertyValidator.validate(".tree.progression.movement.speed", "1"));
+        assertNull(PropertyValidator.validate(".tree.progression.movement.speed", "1/2"));
+        assertNull(PropertyValidator.validate(".tree.progression.movement.speed", "2.5"));
+        assertNull(PropertyValidator.validate(".tree.progression.movement.speed", "5"));
+        assertNotNull(PropertyValidator.validate(".tree.progression.movement.speed", "0"));
+        assertNotNull(PropertyValidator.validate(".tree.progression.movement.speed", "-1/2"));
+        assertNotNull(PropertyValidator.validate(".tree.progression.movement.speed", "fast"));
     }
 
     @Test

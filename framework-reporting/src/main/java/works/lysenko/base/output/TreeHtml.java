@@ -58,6 +58,7 @@ public final class TreeHtml {
         private final String label;
         private final String group;
         private int col;
+        private double visualCol;
         private double row;
         private int colOffset = 0;
         private int rowOffset = 0;
@@ -75,6 +76,7 @@ public final class TreeHtml {
             this.label = label;
             this.group = group;
             this.col = col;
+            this.visualCol = col;
             this.row = row;
             this.colOffset = colOffset;
             this.rowOffset = rowOffset;
@@ -98,7 +100,12 @@ public final class TreeHtml {
         public String label() { return label; }
         public String group() { return group; }
         public int col() { return col; }
-        public void setCol(final int col) { this.col = col; }
+        public void setCol(final int col) {
+            this.col = col;
+            this.visualCol = col;
+        }
+        public double visualCol() { return visualCol; }
+        public void setVisualCol(final double visualCol) { this.visualCol = visualCol; }
         public double row() { return row; }
         public void setRow(final double row) { this.row = row; }
         public int colOffset() { return colOffset; }
@@ -200,6 +207,7 @@ public final class TreeHtml {
                     orig.rowOffset(),
                     frozenResult,
                     null);
+            copy.setVisualCol(orig.visualCol());
             if (!orig.knownIssues().isEmpty()) {
                 copy.knownIssues().addAll(orig.knownIssues());
             }

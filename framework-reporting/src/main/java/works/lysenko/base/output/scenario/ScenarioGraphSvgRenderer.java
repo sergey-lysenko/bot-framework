@@ -778,8 +778,8 @@ public final class ScenarioGraphSvgRenderer {
         }
 
         final String summaryRight = denseMode
-                ? String.format(Locale.US, "%d leafs · %d branches · Peak %dx", totalCount, branchCount, maxExecs)
-                : String.format(Locale.US, "%d leafs · Peak %dx", totalCount, maxExecs);
+                ? String.format(Locale.US, "%d leaves · %d branches · Peak %dx", totalCount, branchCount, maxExecs)
+                : String.format(Locale.US, "%d leaves · Peak %dx", totalCount, maxExecs);
         sb.append(String.format(Locale.US,
                 "    <text class=\"tx1\" x=\"%d\" y=\"%d\" fill=\"%s\" text-anchor=\"end\">%s</text>\n",
                 x + w - 14, textY, ProgressionChrome.TEXT_MUTED, ProgressionChrome.escapeXml(summaryRight)));

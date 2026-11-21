@@ -18,6 +18,7 @@ import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Null.n;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Wrap.q;
+import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.lang.A.ATTEMPTING_COUNTER_ACTION;
 import static works.lysenko.util.lang.C.CAUGHT_DURING_EXECUTION_OF;
 import static works.lysenko.util.lang.E.EXCEPTIONAL_SCENARION;
@@ -58,6 +59,19 @@ public class ExceptionHandler implements _ExceptionsHandler {
      */
     public final void handle(final RuntimeException exception) throws SafeguardException {
 
+        handle(exception, null);
+    }
+
+    /**
+     * Handles a RuntimeException with an optional fallback execution context name when the scenario stack is empty.
+     *
+     * @param exception the exception to handle
+     * @param context   fallback context name (e.g., {@code "Pretest"}) when no scenario is active
+     * @throws SafeguardException if an error occurs while handling the exceptional scenario
+     */
+    @Override
+    public final void handle(final RuntimeException exception, final String context) throws SafeguardException {
+
         if (exception instanceof final works.lysenko.util.apis.exception.unchecked.BotRuntimeException bre
                 && bre.getData() instanceof final _Scenario scenario) {
             if (!scenario.hasChildFailed()) {
@@ -70,7 +84,8 @@ public class ExceptionHandler implements _ExceptionsHandler {
             printInfo();
         });
         section(ATTEMPTING_COUNTER_ACTION);
-        action(exception, exec.scenarios().currentString(true));
+        final String current = (isNotNull(exec) && isNotNull(exec.scenarios())) ? exec.scenarios().currentString(true) : null;
+        action(exception, isNotNull(current) ? current : context);
     }
 
     /**

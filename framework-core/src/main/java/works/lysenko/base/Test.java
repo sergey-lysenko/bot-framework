@@ -72,10 +72,11 @@ public class Test implements _Test {
     private final _ExceptionsHandler handler = new ExceptionHandler();
     private final _Exec executor = new works.lysenko.base.test.Exec();
     private final _Stat statistics = new Stat();
-    private final _Repeater repeater = new Repeater(handler, executor, statistics);
+    private final _Repeater repeater = new Repeater(handler, executor, statistics, this::pretest);
     private _Patience patience = new Patience(this::repeater, this::statistics);
     private Runnable postflight = null;
     private Runnable preflight = null;
+    private Runnable pretest = null;
     private _Status status = null;
 
     /**
@@ -235,6 +236,17 @@ public class Test implements _Test {
     }
 
     /**
+     * Retrieves the optional pretest action executed before each test iteration in {@link Repeater#run()}.
+     *
+     * @return the pretest {@link Runnable}, or {@code null} if none was configured
+     */
+    @Override
+    public final Runnable pretest() {
+
+        return pretest;
+    }
+
+    /**
      * Initialises the root scenario {@link works.lysenko.tree.Tree} and assigns a {@link Ctrl} controller
      * to the {@link #executor} if one has not already been configured.
      */
@@ -316,6 +328,7 @@ public class Test implements _Test {
 
         if (isNotNull(classes.exceptional())) handler.setExceptional(instantiate(classes.exceptional()));
         if (isNotNull(classes.preflight())) preflight = instantiate(classes.preflight());
+        if (isNotNull(classes.pretest())) pretest = instantiate(classes.pretest());
         if (isNotNull(classes.status())) status = instantiate(classes.status());
         if (isNotNull(classes.postflight())) postflight = instantiate(classes.postflight());
     }

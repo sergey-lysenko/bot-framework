@@ -171,7 +171,7 @@ class TreeProgressionAudioTest {
                         + "    </g>\n"
                         + "  </g>\n"
                         + "  <g transform=\"scale(1.0000)\">\n"
-                        + "    <text class=\"tx3\">Leafs: 2/2</text>\n"
+                        + "    <text class=\"tx3\">Leaves: 2/2</text>\n"
                         + "    <text class=\"tx3\">Test #2</text>\n"
                         + "  </g>\n"
                         + "</svg>\n",

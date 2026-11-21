@@ -223,11 +223,11 @@ public class VisualNodeResolver {
         // Coordinates calculation
         double x, y;
         if (includeHeaderOffset) {
-            x = node.col() * 270 + 40;
-            y = (node.row() - minRow) * 60 + headerHeight + 32;
+            x = node.visualCol() * 270.0 + 40.0;
+            y = (node.row() - minRow) * 60.0 + headerHeight + 32.0;
         } else {
-            x = node.col() * 260 + 40;
-            y = (node.row() - minRow) * 56 + 20;
+            x = node.visualCol() * 260.0 + 40.0;
+            y = (node.row() - minRow) * 56.0 + 20.0;
         }
 
         return new VisualNode(

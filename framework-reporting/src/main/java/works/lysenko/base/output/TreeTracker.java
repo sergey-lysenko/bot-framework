@@ -6,6 +6,7 @@ import works.lysenko.base.output.sonifier.TreeProgressionAudio;
 import works.lysenko.base.output.sonifier.TreeSonifier;
 import works.lysenko.base.output.tree.SvgTreeRenderer;
 import works.lysenko.base.output.tree.TreeCameraTransform;
+import works.lysenko.base.output.tree.TreeNodePositionAnimator;
 import works.lysenko.base.output.tree.TreeProgressMetrics;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.type.Result;
@@ -109,6 +110,7 @@ public final class TreeTracker {
         sessionBaseW = 0;
         sessionBaseH = 0;
         TreeCameraTransform.reset();
+        TreeNodePositionAnimator.reset();
     }
 
     /**
@@ -256,6 +258,7 @@ public final class TreeTracker {
         final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(accessibleScenarios);
         final TreeCameraTransform.Transform cameraTx = TreeCameraTransform.computeSmoothTransform(layout, recentNodeKeys, target, frameW, frameH);
         final SvgTreeRenderer.RenderContext postCameraRenderCtx = SvgTreeRenderer.RenderContext.captureCurrent();
+        TreeNodePositionAnimator.applySmoothPositions(layout);
         final TreeLayout snapshotLayout = TreeHtml.snapshotLayout(layout, accessibleCtx);
         updatePreviousExecutions(layout);
 
@@ -373,7 +376,8 @@ public final class TreeTracker {
         final Set<String> recentNodeKeys = computeRecentNodeKeys(layout);
         final int target = (isNotNull(parameters)) ? parameters.getAllLeafsExecutions()
                 : (isNotNull(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) : 1);
-        return TreeCameraTransform.isTransformSettled(layout, recentNodeKeys, target, sessionBaseW, sessionBaseH);
+        return TreeCameraTransform.isTransformSettled(layout, recentNodeKeys, target, sessionBaseW, sessionBaseH)
+                && TreeNodePositionAnimator.isSettled(layout);
     }
 
     /**
@@ -382,7 +386,10 @@ public final class TreeTracker {
      */
     public static synchronized void triggerCooldownFrames() {
         if (!ProgressionSettings.current().treeEnabled()) return;
-        int maxAdditionalFrames = 60;
+        final double speed = ProgressionSettings.current().treeMovementSpeed();
+        int maxAdditionalFrames = (speed > 0.0)
+                ? Math.min(300, Math.max(60, (int) Math.ceil(60.0 / speed)))
+                : 60;
         while (!isTransformSettled() && maxAdditionalFrames-- > 0) {
             captureFrame(null);
         }

@@ -9,13 +9,13 @@ class ProgressionChromeTest {
 
     @Test
     void formatsLeafBadgeAndSelectsSemanticStyle() {
-        assertEquals("Leafs: 0/0", ProgressionChrome.formatLeafsBadge(0, 0));
+        assertEquals("Leaves: 0/0", ProgressionChrome.formatLeafsBadge(0, 0));
         assertEquals(ProgressionChrome.BADGE_SLATE, ProgressionChrome.leafsBadgeStyle(0, 0));
 
-        assertEquals("Leafs: 36/253 (14%)", ProgressionChrome.formatLeafsBadge(36, 253));
+        assertEquals("Leaves: 36/253 (14%)", ProgressionChrome.formatLeafsBadge(36, 253));
         assertEquals(ProgressionChrome.BADGE_AMBER, ProgressionChrome.leafsBadgeStyle(36, 253));
 
-        assertEquals("Leafs: 253/253 (100%)", ProgressionChrome.formatLeafsBadge(253, 253));
+        assertEquals("Leaves: 253/253 (100%)", ProgressionChrome.formatLeafsBadge(253, 253));
         assertEquals(ProgressionChrome.BADGE_GREEN, ProgressionChrome.leafsBadgeStyle(253, 253));
     }
 

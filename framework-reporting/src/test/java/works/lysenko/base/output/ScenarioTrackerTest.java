@@ -153,7 +153,7 @@ class ScenarioTrackerTest {
         assertTrue(svg.contains("Scenario Execution Progression"), "Title must use unified Title Case");
         assertFalse(svg.contains("SCENARIO EXECUTION PROGRESSION"), "Must not use legacy ALL CAPS title");
         assertTrue(svg.contains("Test #36"), "Cycle badge must use Title Case");
-        assertTrue(svg.contains("Leafs: 12/252"), "Progress badge must use unified Leafs label");
+        assertTrue(svg.contains("Leaves: 12/252"), "Progress badge must use unified Leaves label");
         assertTrue(svg.contains("Target: 1"), "Target badge must use Title Case");
         assertTrue(svg.contains("ETA:"), "Header must include ETA badge");
         assertTrue(svg.contains("Elapsed:"), "Header must include Elapsed badge");

@@ -277,6 +277,9 @@ public final class PropertyValidator {
                 if (PropEnum._TREE_ALL_LEAFS_PATIENCE_STEEPNESS == property && parsed.doubleValue() <= 0.0) {
                     return "Steepness must be greater than zero (e.g. 1 for linear, 2 for slow-to-quick, 1/2 for quick-to-slow)";
                 }
+                if (PropEnum._TREE_PROGRESSION_MOVEMENT_SPEED == property && parsed.doubleValue() <= 0.0) {
+                    return "Movement speed multiplier must be greater than zero (e.g. 1/2 for slower, 1 for default, 2 for faster, 5 for instant)";
+                }
             } else if (works.lysenko.util.data.records.RelativeOrAbsoluteFraction.class == type) {
                 return validateRelativeOrAbsolute(value);
             } else if (Character.class == type && 1 != value.length()) {

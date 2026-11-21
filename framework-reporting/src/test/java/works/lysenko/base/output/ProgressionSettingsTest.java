@@ -29,6 +29,7 @@ class ProgressionSettingsTest {
             assertFalse(ProgressionSettings.current().treeGifEnabled());
             assertFalse(ProgressionSettings.current().treePerNodeEnabled());
             assertFalse(ProgressionSettings.current().treeSonificationEnabled());
+            assertEquals(1.0, ProgressionSettings.current().treeMovementSpeed(), 1e-9);
         } finally {
             Base.properties = previousProperties;
             ProgressionSettings.initialize();
@@ -43,6 +44,7 @@ class ProgressionSettingsTest {
                     ".test.report.progression.scenario", "false",
                     ".test.report.progression.tree", "true",
                     ".test.report.progression.tree.per.node", "true",
+                    ".tree.progression.movement.speed", "3/2",
                     ".test.report.progression.max.frames", "17",
                     ".test.report.progression.max.frame.pixels", "1234",
                     ".test.report.progression.max.total.pixels", "5678",
@@ -60,6 +62,7 @@ class ProgressionSettingsTest {
             assertFalse(snapshot.scenarioEnabled());
             assertTrue(snapshot.treeEnabled());
             assertTrue(snapshot.treePerNodeEnabled());
+            assertEquals(1.5, snapshot.treeMovementSpeed(), 1e-9);
             assertEquals(17, snapshot.maxFrames());
             assertEquals(1234, snapshot.maxFramePixels());
             assertEquals(5678, snapshot.maxTotalPixels());
@@ -74,11 +77,19 @@ class ProgressionSettingsTest {
             assertEquals("/tmp/ffmpeg", snapshot.ffmpeg());
 
             Base.properties.put(".test.report.progression.max.frames", "29");
+            Base.properties.put(".tree.progression.movement.speed", "1/4");
             assertSame(snapshot, ProgressionSettings.current());
             assertEquals(17, ProgressionSettings.current().maxFrames());
+            assertEquals(1.5, ProgressionSettings.current().treeMovementSpeed(), 1e-9);
 
             ProgressionSettings.initialize();
             assertEquals(29, ProgressionSettings.current().maxFrames());
+            assertEquals(0.25, ProgressionSettings.current().treeMovementSpeed(), 1e-9);
+
+            // Non-positive value safely falls back to 1.0
+            Base.properties.put(".tree.progression.movement.speed", "0");
+            ProgressionSettings.initialize();
+            assertEquals(1.0, ProgressionSettings.current().treeMovementSpeed(), 1e-9);
         } finally {
             Base.properties = previousProperties;
             ProgressionSettings.initialize();

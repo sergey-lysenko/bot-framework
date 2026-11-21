@@ -8,20 +8,42 @@ import java.util.Collection;
 
 /**
  * Represents a Workflow that encapsulates the various parts necessary for the
- * execution of a process, including preflight, status, exceptional scenarios,
+ * execution of a process, including preflight, pretest, status, exceptional scenarios,
  * postflight, and additional properties.
  *
- * @param preflight   the class of the preflight Runnable to be executed before the main workflow
+ * @param preflight   the class of the preflight Runnable to be executed once before the main workflow
+ * @param pretest     the class of the pretest Runnable to be executed before each individual test iteration
  * @param status      the class implementing _Status to represent the current status of the workflow
  * @param exceptional the class implementing _Scenario to handle exceptional scenarios in the workflow
- * @param postflight  the class of the postflight Runnable to be executed after the main workflow
+ * @param postflight  the class of the postflight Runnable to be executed once after the main workflow
  * @param additional  a collection of classes implementing _PropEnum, representing additional
  *                    configurable properties for the workflow
  */
 public record Workflow(
         Class<? extends Runnable> preflight,
+        Class<? extends Runnable> pretest,
         Class<? extends _Status> status,
         Class<? extends _Scenario> exceptional,
         Class<? extends Runnable> postflight,
         Collection<Class<? extends _PropEnum>> additional) {
+
+    /**
+     * Backward-compatible constructor omitting {@code pretest} (defaults to {@code null}).
+     *
+     * @param preflight   the class of the preflight Runnable to be executed once before the main workflow
+     * @param status      the class implementing _Status to represent the current status of the workflow
+     * @param exceptional the class implementing _Scenario to handle exceptional scenarios in the workflow
+     * @param postflight  the class of the postflight Runnable to be executed once after the main workflow
+     * @param additional  a collection of classes implementing _PropEnum, representing additional
+     *                    configurable properties for the workflow
+     */
+    public Workflow(
+            final Class<? extends Runnable> preflight,
+            final Class<? extends _Status> status,
+            final Class<? extends _Scenario> exceptional,
+            final Class<? extends Runnable> postflight,
+            final Collection<Class<? extends _PropEnum>> additional) {
+
+        this(preflight, null, status, exceptional, postflight, additional);
+    }
 }
