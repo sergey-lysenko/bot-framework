@@ -8,8 +8,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.BitSet;
 
 import static works.lysenko.util.func.type.Objects.isNotNull;
 
@@ -37,7 +36,10 @@ public class Writer implements _LogsWriter {
     private final BufferedWriter logWriter;
     private final BufferedWriter markdownWriter;
     private final BufferedWriter telemetryWriter;
-    private final Map<String, BufferedWriter> markdownTestWriters = new ConcurrentHashMap<>();
+    private final BitSet indexedTestNumbers = new BitSet();
+    private boolean postflightIndexed = false;
+    private String activeMarkdownKey = null;
+    private BufferedWriter activeMarkdownWriter = null;
 
     /**
      * Constructs a new Writer.
@@ -104,14 +106,14 @@ public class Writer implements _LogsWriter {
         }
     }
 
-    private static BufferedWriter createTestFileWriter(final String template, final String testNumberStr) {
+    private static BufferedWriter createTestFileWriter(final String template, final String testNumberStr, final boolean append) {
 
         try {
             final File file = new File(Layout.Files.name(template, testNumberStr));
             if (isNotNull(file.getParentFile())) {
                 file.getParentFile().mkdirs();
             }
-            return new BufferedWriter(new FileWriter(file, StandardCharsets.UTF_8));
+            return new BufferedWriter(new FileWriter(file, StandardCharsets.UTF_8, append));
         } catch (final IOException e) {
             throw new IllegalStateException(b(c(UNABLE), TO, OPEN, LOG, FILE, q(template), FOR, WRITING), e);
         }
@@ -136,33 +138,55 @@ public class Writer implements _LogsWriter {
 
         final String fileKey;
         final String title;
+        final boolean isPostflight;
 
         if (testNumber > maxTestNumber) {
             maxTestNumber = testNumber;
             fileKey = String.valueOf(testNumber);
             title = "Test #" + testNumber;
+            isPostflight = false;
         } else if (testNumber == 0 && maxTestNumber > 0) {
             fileKey = "postflight";
             title = "Postflight Logs";
+            isPostflight = true;
         } else {
             fileKey = String.valueOf(testNumber);
             title = (testNumber == 0) ? "Test #0 (Setup / Preflight)" : ("Test #" + testNumber);
+            isPostflight = false;
         }
 
-        return markdownTestWriters.computeIfAbsent(fileKey, fk -> {
-            final BufferedWriter testWriter = createTestFileWriter(RUN_LOG_MD_TEST_, fk);
-            if ("postflight".equals(fk)) {
+        if (fileKey.equals(activeMarkdownKey) && isNotNull(activeMarkdownWriter)) {
+            return activeMarkdownWriter;
+        }
+
+        closeQuietly(activeMarkdownWriter);
+        activeMarkdownWriter = null;
+        activeMarkdownKey = null;
+
+        final boolean alreadyIndexed = isPostflight
+                ? postflightIndexed
+                : (testNumber >= 0 && indexedTestNumbers.get(testNumber));
+
+        final BufferedWriter testWriter = createTestFileWriter(RUN_LOG_MD_TEST_, fileKey, alreadyIndexed);
+        if (!alreadyIndexed) {
+            if (isPostflight) {
                 writeSummaryHeader(testWriter);
+                postflightIndexed = true;
             } else {
-                writeTestHeader(testWriter, Integer.parseInt(fk));
+                writeTestHeader(testWriter, testNumber);
+                if (testNumber >= 0) {
+                    indexedTestNumbers.set(testNumber);
+                }
             }
             try {
-                markdownWriter.write("- [" + title + "](md/" + fk + ".md)" + System.lineSeparator());
+                markdownWriter.write("- [" + title + "](md/" + fileKey + ".md)" + System.lineSeparator());
                 markdownWriter.flush();
             } catch (final IOException ignored) {
             }
-            return testWriter;
-        });
+        }
+        activeMarkdownKey = fileKey;
+        activeMarkdownWriter = testWriter;
+        return testWriter;
     }
 
     @Override
@@ -172,14 +196,23 @@ public class Writer implements _LogsWriter {
     }
 
     @Override
-    public final void flushAll() {
+    public final synchronized void flushAll() {
 
         flushQuietly(logWriter);
         flushQuietly(telemetryWriter);
         flushQuietly(markdownWriter);
-        for (final BufferedWriter w : markdownTestWriters.values()) {
-            flushQuietly(w);
-        }
+        flushQuietly(activeMarkdownWriter);
+    }
+
+    @Override
+    public final synchronized void closeAll() {
+
+        closeQuietly(activeMarkdownWriter);
+        activeMarkdownWriter = null;
+        activeMarkdownKey = null;
+        closeQuietly(markdownWriter);
+        closeQuietly(logWriter);
+        closeQuietly(telemetryWriter);
     }
 
     private static void flushQuietly(final BufferedWriter writer) {
@@ -187,6 +220,20 @@ public class Writer implements _LogsWriter {
         if (isNotNull(writer)) {
             try {
                 writer.flush();
+            } catch (final IOException ignored) {
+            }
+        }
+    }
+
+    private static void closeQuietly(final BufferedWriter writer) {
+
+        if (isNotNull(writer)) {
+            try {
+                writer.flush();
+            } catch (final IOException ignored) {
+            }
+            try {
+                writer.close();
             } catch (final IOException ignored) {
             }
         }

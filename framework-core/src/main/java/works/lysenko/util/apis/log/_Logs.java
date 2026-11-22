@@ -118,4 +118,10 @@ public interface _Logs {
      * Flushes the underlying logs processor.
      */
     void flush();
+
+    /**
+     * Flushes and closes all underlying log writers.
+     */
+    default void close() {
+    }
 }

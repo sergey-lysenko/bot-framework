@@ -159,4 +159,12 @@ public class Logs implements _Logs {
 
         processor.flush();
     }
+
+    /**
+     * Flushes and closes all underlying log writers.
+     */
+    public final void close() {
+
+        processor.close();
+    }
 }

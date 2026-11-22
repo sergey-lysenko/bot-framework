@@ -8,7 +8,9 @@ import works.lysenko.util.spec.Layout;
 import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -35,7 +37,7 @@ import static works.lysenko.util.spec.Symbols._SPACE_;
         "ReturnOfNull", "StaticCollection", "BooleanVariableAlwaysNegated", "ClassIndependentOfModule"})
 public record Callstack() {
 
-    private static final List<String> references = new ArrayList<>(0);
+    private static final Map<String, Integer> references = new HashMap<>(0);
     private static final ScopedValue<Boolean> CALLSTACK_GUARD = ScopedValue.newInstance();
 
     /**
@@ -43,7 +45,9 @@ public record Callstack() {
      */
     public static void clearReferences() {
 
-        references.clear();
+        synchronized (references) {
+            references.clear();
+        }
     }
 
     /**
@@ -94,10 +98,11 @@ public record Callstack() {
         final String callstack = e(SQUARE, StringUtils.join(callers, _SPACE_));
         final boolean useReferences = Boolean.TRUE.equals(StackTrace.references);
         if (!useReferences) return callstack;
-        if (references.contains(callstack)) return e(SQUARE, references.indexOf(callstack));
-        else {
-            references.add(callstack);
-            final int index = references.indexOf(callstack);
+        synchronized (references) {
+            final Integer existing = references.get(callstack);
+            if (null != existing) return e(SQUARE, existing);
+            final int index = references.size();
+            references.put(callstack, index);
             saveCallstackReference(index, callstack);
             return s(index, _COLON_, callstack);
         }

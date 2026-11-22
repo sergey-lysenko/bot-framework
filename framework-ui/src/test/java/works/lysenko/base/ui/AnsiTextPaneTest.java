@@ -47,4 +47,18 @@ class AnsiTextPaneTest {
 
         assertEquals("first\nse!\n", text.get());
     }
+
+    @Test
+    void scrollbackTrimmingCapsLineCount() throws Exception {
+        final AtomicReference<Integer> lineCount = new AtomicReference<>();
+        SwingUtilities.invokeAndWait(() -> {
+            final AnsiTextPane pane = new AnsiTextPane();
+            for (int i = 0; i < 1200; i++) {
+                pane.appendOutput("line " + i);
+            }
+            lineCount.set(pane.getStyledDocument().getDefaultRootElement().getElementCount());
+        });
+
+        assertEquals(1000, lineCount.get());
+    }
 }

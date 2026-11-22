@@ -396,6 +396,11 @@ public class Processor implements _LogsProcessor {
         writer.flushAll();
     }
 
+    @Override
+    public synchronized final void close() {
+        writer.closeAll();
+    }
+
     /**
      * Processes queued log records synchronously in strict chronological order on the calling thread.
      *

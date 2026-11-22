@@ -26,7 +26,7 @@ final class AnsiTextPane extends JTextPane {
     static final Color DEFAULT_FOREGROUND = new Color(229, 229, 229);
     static final Color DEFAULT_BACKGROUND = new Color(30, 30, 30);
     private static final int TAB_SIZE = 8;
-    private static final int MAX_SCROLLBACK_LINES = 5000;
+    private static final int MAX_SCROLLBACK_LINES = 1000;
 
     private final MutableAttributeSet attributes = new SimpleAttributeSet();
     private int cursor;

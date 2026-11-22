@@ -44,4 +44,10 @@ public interface _LogsWriter {
      */
     default void flushAll() {
     }
+
+    /**
+     * Flushes and closes all open log, Markdown, and telemetry writers.
+     */
+    default void closeAll() {
+    }
 }

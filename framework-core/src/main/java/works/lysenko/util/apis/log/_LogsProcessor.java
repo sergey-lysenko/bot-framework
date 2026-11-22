@@ -116,4 +116,10 @@ public interface _LogsProcessor {
      * and processes the queue to ensure all logs are written out.
      */
     void flush();
+
+    /**
+     * Flushes and closes all underlying log writers.
+     */
+    default void close() {
+    }
 }
