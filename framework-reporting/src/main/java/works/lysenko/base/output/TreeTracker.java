@@ -6,6 +6,7 @@ import works.lysenko.base.output.sonifier.TreeProgressionAudio;
 import works.lysenko.base.output.sonifier.TreeSonifier;
 import works.lysenko.base.output.tree.SvgTreeRenderer;
 import works.lysenko.base.output.tree.TreeCameraTransform;
+import works.lysenko.base.output.tree.TreeLayoutOptimizer;
 import works.lysenko.base.output.tree.TreeNodePositionAnimator;
 import works.lysenko.base.output.tree.TreeProgressMetrics;
 import works.lysenko.util.apis.scenario._Scenario;
@@ -111,6 +112,7 @@ public final class TreeTracker {
         sessionBaseH = 0;
         TreeCameraTransform.reset();
         TreeNodePositionAnimator.reset();
+        TreeLayoutOptimizer.resetPinnedBankLayout();
     }
 
     /**
@@ -386,6 +388,7 @@ public final class TreeTracker {
      */
     public static synchronized void triggerCooldownFrames() {
         if (!ProgressionSettings.current().treeEnabled()) return;
+        TreeLayoutOptimizer.triggerFinalReoptimizationOnce();
         final double speed = ProgressionSettings.current().treeMovementSpeed();
         int maxAdditionalFrames = (speed > 0.0)
                 ? Math.min(300, Math.max(60, (int) Math.ceil(60.0 / speed)))

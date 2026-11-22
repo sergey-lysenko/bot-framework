@@ -6,10 +6,12 @@ import works.lysenko.util.prop.tree.Optimization;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -278,11 +280,83 @@ public final class TreeLayoutOptimizer {
 
     private record ComponentInfo(
             int index,
+            String rootKey,
             List<NodeData> nodes,
             double height,
             int minCol,
             int rootOffset,
             int effectiveDepth) {
+    }
+
+    private static final class PinnedBankState {
+        final int bankColumns;
+        final double maxAspectRatio;
+        final List<List<String>> banks;
+        final Set<String> knownRoots;
+
+        PinnedBankState(final int bankColumns, final double maxAspectRatio, final List<List<String>> banks) {
+            this.bankColumns = bankColumns;
+            this.maxAspectRatio = maxAspectRatio;
+            this.banks = banks;
+            this.knownRoots = new HashSet<>();
+            for (final List<String> bank : banks) {
+                this.knownRoots.addAll(bank);
+            }
+        }
+
+        boolean matches(final int bankCols, final double targetAspect, final List<ComponentInfo> infos) {
+            if (this.bankColumns != bankCols || Double.compare(this.maxAspectRatio, targetAspect) != 0) {
+                return false;
+            }
+            for (final ComponentInfo info : infos) {
+                if (knownRoots.contains(info.rootKey)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    private static final Object PINNED_BANK_LOCK = new Object();
+    private static PinnedBankState pinnedBankState = null;
+    private static boolean finalReoptimizationConsumed = false;
+
+    /**
+     * Clears any pinned level-1 multi-bank layout state and resets the one-shot final re-optimization
+     * gate so the next layout computes fresh bank assignments.
+     */
+    public static void resetPinnedBankLayout() {
+        synchronized (PINNED_BANK_LOCK) {
+            pinnedBankState = null;
+            finalReoptimizationConsumed = false;
+        }
+    }
+
+    /**
+     * Triggers the single post-test re-optimization pass by unpinning the in-run level-1 column bank
+     * layout once when {@link Optimization#allowFinalReordering} is enabled and
+     * {@link Optimization#allowDynamicReordering} is disabled.
+     * <p>
+     * Subsequent invocations in the same run are no-ops so the freshly compacted final bank partition
+     * stays stable across both the final HTML report and all cooldown progression frames.
+     *
+     * @return {@code true} if an active pinned bank layout was cleared for the final re-optimization pass
+     */
+    public static boolean triggerFinalReoptimizationOnce() {
+        if (!Optimization.allowFinalReordering || Optimization.allowDynamicReordering) {
+            return false;
+        }
+        synchronized (PINNED_BANK_LOCK) {
+            if (finalReoptimizationConsumed) {
+                return false;
+            }
+            finalReoptimizationConsumed = true;
+            if (null == pinnedBankState) {
+                return false;
+            }
+            pinnedBankState = null;
+            return true;
+        }
     }
 
     public static void compactDisconnectedTrees(final List<NodeData> nodes) {
@@ -307,18 +381,13 @@ public final class TreeLayoutOptimizer {
 
         if (Optimization.progression && ordered.size() >= 2 && Optimization.bankColumns != 1 && Optimization.maxAspectRatio > 0.0) {
             final List<ComponentInfo> infos = buildComponentInfos(ordered);
-            int maxDepth = 0;
-            double totalStackedRows = 0.0;
-            for (final ComponentInfo info : infos) {
-                if (info.effectiveDepth > maxDepth) maxDepth = info.effectiveDepth;
-                totalStackedRows += info.height;
+            if (!Optimization.allowDynamicReordering) {
+                layoutPinnedOrInitialBanks(infos, Optimization.maxAspectRatio);
+                return;
             }
-            final double naturalWidth = maxDepth * (double) COL_WIDTH;
-            final double naturalHeight = totalStackedRows * (double) ROW_HEIGHT;
-            final double naturalAspectRatio = (naturalHeight > 0.0) ? (naturalWidth / naturalHeight) : Optimization.maxAspectRatio;
-
-            if (naturalAspectRatio < Optimization.maxAspectRatio) {
-                layoutMultiColumnBanks(infos, Optimization.maxAspectRatio);
+            if (needsMultiBankLayout(infos, Optimization.maxAspectRatio)) {
+                final List<List<ComponentInfo>> chosenBanks = computeOptimalBankPartition(infos, Optimization.maxAspectRatio);
+                applyBankPlacement(infos, chosenBanks);
                 return;
             }
         }
@@ -326,16 +395,46 @@ public final class TreeLayoutOptimizer {
         stackComponentsVertically(ordered);
     }
 
+    private static boolean needsMultiBankLayout(final List<ComponentInfo> infos, final double targetAspect) {
+        int maxDepth = 0;
+        double totalStackedRows = 0.0;
+        for (final ComponentInfo info : infos) {
+            if (info.effectiveDepth > maxDepth) maxDepth = info.effectiveDepth;
+            totalStackedRows += info.height;
+        }
+        final double naturalWidth = maxDepth * (double) COL_WIDTH;
+        final double naturalHeight = totalStackedRows * (double) ROW_HEIGHT;
+        final double naturalAspectRatio = (naturalHeight > 0.0) ? (naturalWidth / naturalHeight) : targetAspect;
+        return naturalAspectRatio < targetAspect;
+    }
+
+    private static String baseRootKey(final NodeData root) {
+        if (null == root) return "";
+        if (null != root.scenario()) {
+            final String name = root.scenario().getName();
+            if (null != name && !name.isBlank()) return name;
+            return root.scenario().getClass().getName();
+        }
+        if (null != root.label() && !root.label().isBlank()) return root.label();
+        return (null != root.id()) ? root.id() : "";
+    }
+
     private static List<ComponentInfo> buildComponentInfos(final List<List<NodeData>> ordered) {
         final List<ComponentInfo> infos = new ArrayList<>(ordered.size());
+        final Map<String, Integer> keyCounts = new HashMap<>(ordered.size() * 2);
         for (int i = 0; i < ordered.size(); i++) {
             final List<NodeData> comp = ordered.get(i);
+            final NodeData root = comp.isEmpty() ? null : rootOf(comp.get(0));
+            final String baseKey = baseRootKey(root);
+            final int count = keyCounts.getOrDefault(baseKey, 0);
+            keyCounts.put(baseKey, count + 1);
+            final String rootKey = (0 == count) ? baseKey : (baseKey + "#" + count);
             final int minC = minimumCol(comp);
             final int maxC = maximumCol(comp);
-            final int rootOffset = comp.isEmpty() ? 0 : Math.max(0, rootOf(comp.get(0)).col());
+            final int rootOffset = (null == root) ? 0 : Math.max(0, root.col());
             final int effectiveDepth = Math.max(1, rootOffset + (maxC - minC) + 1);
             final double height = maximumRow(comp) - minimumRow(comp) + 1.0;
-            infos.add(new ComponentInfo(i, comp, height, minC, rootOffset, effectiveDepth));
+            infos.add(new ComponentInfo(i, rootKey, comp, height, minC, rootOffset, effectiveDepth));
         }
         return infos;
     }
@@ -378,7 +477,87 @@ public final class TreeLayoutOptimizer {
         return bankLayoutScore(totalCols, maxRows, targetAspect);
     }
 
-    private static void layoutMultiColumnBanks(final List<ComponentInfo> infos, final double targetAspect) {
+    private static void layoutPinnedOrInitialBanks(final List<ComponentInfo> infos, final double targetAspect) {
+        final List<List<ComponentInfo>> chosenBanks;
+        synchronized (PINNED_BANK_LOCK) {
+            if (null != pinnedBankState && pinnedBankState.matches(Optimization.bankColumns, targetAspect, infos)) {
+                chosenBanks = resolvePinnedBanks(pinnedBankState, infos);
+            } else {
+                if (needsMultiBankLayout(infos, targetAspect)) {
+                    chosenBanks = computeOptimalBankPartition(infos, targetAspect);
+                } else {
+                    chosenBanks = new ArrayList<>(1);
+                    chosenBanks.add(new ArrayList<>(infos));
+                }
+                final List<List<String>> pinnedKeys = new ArrayList<>(chosenBanks.size());
+                for (final List<ComponentInfo> bank : chosenBanks) {
+                    if (bank.isEmpty()) continue;
+                    final List<String> keys = new ArrayList<>(bank.size());
+                    for (final ComponentInfo info : bank) {
+                        keys.add(info.rootKey);
+                    }
+                    pinnedKeys.add(keys);
+                }
+                pinnedBankState = new PinnedBankState(Optimization.bankColumns, targetAspect, pinnedKeys);
+            }
+        }
+        applyBankPlacement(infos, chosenBanks);
+    }
+
+    private static List<List<ComponentInfo>> resolvePinnedBanks(
+            final PinnedBankState state,
+            final List<ComponentInfo> infos) {
+        final Map<String, ComponentInfo> byKey = new LinkedHashMap<>(infos.size() * 2);
+        for (final ComponentInfo info : infos) {
+            byKey.put(info.rootKey, info);
+        }
+        final List<List<ComponentInfo>> banks = new ArrayList<>(state.banks.size());
+        final double[] bankHeights = new double[state.banks.size()];
+        final int[] bankDepths = new int[state.banks.size()];
+        for (int b = 0; b < state.banks.size(); b++) {
+            final List<String> pinnedKeys = state.banks.get(b);
+            final List<ComponentInfo> bank = new ArrayList<>(pinnedKeys.size());
+            for (final String key : pinnedKeys) {
+                final ComponentInfo match = byKey.remove(key);
+                if (null != match) {
+                    bank.add(match);
+                    bankHeights[b] += match.height;
+                    if (match.effectiveDepth > bankDepths[b]) {
+                        bankDepths[b] = match.effectiveDepth;
+                    }
+                }
+            }
+            banks.add(bank);
+        }
+        if (!byKey.isEmpty() && !banks.isEmpty()) {
+            for (final ComponentInfo extra : byKey.values()) {
+                int bestBank = 0;
+                double minHeight = bankHeights[0];
+                int bestDepthInc = Math.max(0, extra.effectiveDepth - bankDepths[0]);
+                for (int b = 1; b < banks.size(); b++) {
+                    final double h = bankHeights[b];
+                    final int depthInc = Math.max(0, extra.effectiveDepth - bankDepths[b]);
+                    if (h < minHeight - EPS || (Math.abs(h - minHeight) <= EPS && depthInc < bestDepthInc)) {
+                        minHeight = h;
+                        bestDepthInc = depthInc;
+                        bestBank = b;
+                    }
+                }
+                banks.get(bestBank).add(extra);
+                bankHeights[bestBank] += extra.height;
+                if (extra.effectiveDepth > bankDepths[bestBank]) {
+                    bankDepths[bestBank] = extra.effectiveDepth;
+                }
+                state.banks.get(bestBank).add(extra.rootKey);
+                state.knownRoots.add(extra.rootKey);
+            }
+        }
+        return banks;
+    }
+
+    private static List<List<ComponentInfo>> computeOptimalBankPartition(
+            final List<ComponentInfo> infos,
+            final double targetAspect) {
         final List<ComponentInfo> byHeightDesc = new ArrayList<>(infos);
         byHeightDesc.sort((a, b) -> {
             final int hCmp = Double.compare(b.height, a.height);
@@ -406,20 +585,36 @@ public final class TreeLayoutOptimizer {
         }
 
         chosenBanks.removeIf(List::isEmpty);
-        if (chosenBanks.size() <= 1) {
+        chosenBanks.sort(Comparator.comparingInt(bank -> bank.stream().mapToInt(ComponentInfo::index).min().orElse(0)));
+        for (final List<ComponentInfo> bank : chosenBanks) {
+            bank.sort(Comparator.comparingInt(ComponentInfo::index));
+        }
+        return chosenBanks;
+    }
+
+    private static void applyBankPlacement(final List<ComponentInfo> infos, final List<List<ComponentInfo>> chosenBanks) {
+        final List<List<ComponentInfo>> nonEmpty = new ArrayList<>(chosenBanks.size());
+        for (final List<ComponentInfo> bank : chosenBanks) {
+            if (!bank.isEmpty()) {
+                nonEmpty.add(bank);
+            }
+        }
+        if (nonEmpty.isEmpty()) {
             final List<List<NodeData>> single = new ArrayList<>(infos.size());
             for (final ComponentInfo info : infos) single.add(info.nodes);
             stackComponentsVertically(single);
             return;
         }
-
-        chosenBanks.sort(Comparator.comparingInt(bank -> bank.stream().mapToInt(ComponentInfo::index).min().orElse(0)));
-        for (final List<ComponentInfo> bank : chosenBanks) {
-            bank.sort(Comparator.comparingInt(ComponentInfo::index));
+        if (nonEmpty.size() == 1) {
+            final List<ComponentInfo> onlyBank = nonEmpty.get(0);
+            final List<List<NodeData>> single = new ArrayList<>(onlyBank.size());
+            for (final ComponentInfo info : onlyBank) single.add(info.nodes);
+            stackComponentsVertically(single);
+            return;
         }
 
         int currentColOffset = 0;
-        for (final List<ComponentInfo> bank : chosenBanks) {
+        for (final List<ComponentInfo> bank : nonEmpty) {
             double nextRow = 1.0;
             int bankMaxDepth = 0;
             for (final ComponentInfo info : bank) {

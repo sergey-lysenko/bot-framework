@@ -191,6 +191,8 @@ public enum PropEnum implements _PropEnum {
     _TEST_TESTS(Integer.class, NULL, false, true),
     _TREE_ALL_LEAFS_PATIENCE(Fraction.class, _2_),
     _TREE_ALL_LEAFS_PATIENCE_STEEPNESS(Fraction.class, _1_),
+    _TREE_ALLOW_DYNAMIC_REORDERING(Boolean.class, FALSE),
+    _TREE_ALLOW_FINAL_REORDERING(Boolean.class, TRUE),
     _TREE_BRANCH_STALE_PENALTY(Boolean.class, TRUE, false, true),
     _TREE_COMPLETION_WEIGHT(Fraction.class, s(_4_, _DOT_, _5_), false, true),
     _TREE_DEFAULT_WEIGHT(String.class, _0_, _DOT_, _0_),

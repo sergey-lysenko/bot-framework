@@ -579,6 +579,7 @@ public final class TreeLayoutComputer {
             final TreeMap<String, Result> sorted = core.getResults().getSortedStrings(false);
 
             final long tLayoutStart = System.currentTimeMillis();
+            TreeLayoutOptimizer.triggerFinalReoptimizationOnce();
             final TreeLayout layout = computeLayout(sorted);
             final long tLayout = System.currentTimeMillis();
 

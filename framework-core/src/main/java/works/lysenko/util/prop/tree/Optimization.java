@@ -1,5 +1,7 @@
 package works.lysenko.util.prop.tree;
 
+import static works.lysenko.util.prop.PropEnum._TREE_ALLOW_DYNAMIC_REORDERING;
+import static works.lysenko.util.prop.PropEnum._TREE_ALLOW_FINAL_REORDERING;
 import static works.lysenko.util.prop.PropEnum._TREE_MIN_OFFSET_SEPARATION;
 import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION;
 import static works.lysenko.util.prop.PropEnum._TREE_PROGRESSION_OPTIMIZATION_BANK_COLUMNS;
@@ -28,6 +30,21 @@ public record Optimization() {
      * Indicates whether tree layout progression optimization is enabled.
      */
     public static boolean progression = _TREE_PROGRESSION_OPTIMIZATION.get();
+
+    /**
+     * Whether level-1 scenario roots may be dynamically reordered across column banks during execution
+     * as tree content changes. When {@code false} (default), the initial bank assignment and relative
+     * vertical order of level-1 roots are preserved across frames while all other compaction passes remain active.
+     */
+    public static boolean allowDynamicReordering = _TREE_ALLOW_DYNAMIC_REORDERING.get();
+
+    /**
+     * Whether to perform a single final re-optimization pass of level-1 column banks after test
+     * execution finishes when {@link #allowDynamicReordering} is {@code false}. When {@code true}
+     * (default), the final tree report and cooldown frames re-pack into a compact layout for better
+     * framing and zoom without interfering during test execution.
+     */
+    public static boolean allowFinalReordering = _TREE_ALLOW_FINAL_REORDERING.get();
 
     /**
      * Whether to remove completely empty columns in the layout.
@@ -97,6 +114,8 @@ public record Optimization() {
      */
     public static void refresh() {
         progression = _TREE_PROGRESSION_OPTIMIZATION.get();
+        allowDynamicReordering = _TREE_ALLOW_DYNAMIC_REORDERING.get();
+        allowFinalReordering = _TREE_ALLOW_FINAL_REORDERING.get();
         reduceHorizontalGaps = _TREE_REDUCE_HORIZONTAL_GAPS.get();
         reduceVerticalGaps = _TREE_REDUCE_VERTICAL_GAPS.get();
         reduceHorizontalOffsets = _TREE_REDUCE_HORIZONTAL_OFFSETS.get();

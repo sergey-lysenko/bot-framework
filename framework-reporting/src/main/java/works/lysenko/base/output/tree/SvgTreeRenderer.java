@@ -320,11 +320,13 @@ public final class SvgTreeRenderer {
         ProgressionChrome.appendHeaderTitle(sb, hudMarginX, titleText);
 
         if (rctx.treeDebugEnabled()) {
-            final String debugStr = String.format(Locale.US, "dx:%.1f dy:%.1f dz:%.3f maxZ:%.2fx",
+            final int totalCols = layout.nodes().isEmpty() ? 0 : (fullMaxCol + 1);
+            final String debugStr = String.format(Locale.US, "dx:%.1f dy:%.1f dz:%.3f maxZ:%.2fx cols:%d",
                     rctx.debugDx(),
                     rctx.debugDy(),
                     rctx.debugDz(),
-                    rctx.debugMaxZoom());
+                    rctx.debugMaxZoom(),
+                    totalCols);
             sb.append("    <g id=\"tree-debug-overlay\">\n");
             sb.append(String.format(Locale.US, "      <text class=\"tx3\" x=\"%d\" y=\"%d\" fill=\"#64748B\">%s</text>\n", PADDING_X, HEADER_HEIGHT_BASE - 5, debugStr));
 

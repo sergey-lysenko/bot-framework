@@ -83,6 +83,16 @@
 # .tree.progression.optimization=true
 
 # ------------------------------------------------------------------------------
+# Controls whether level-1 scenario nodes may be actively reordered across column banks during execution as tree content changes.
+# When false (default), the initial multi-bank placement is locked while all other compacting measures remain active. Default: false
+# .tree.allow.dynamic.reordering=false
+
+# ------------------------------------------------------------------------------
+# Controls whether a single final re-optimization pass is performed after test execution finishes to re-pack level-1 column banks.
+# When true (default), the final tree report and cooldown frames compact into the target aspect ratio for better zoom without interfering during the run. Default: true
+# .tree.allow.final.reordering=true
+
+# ------------------------------------------------------------------------------
 # Number of horizontal column banks to split independent scenario trees into when aspect ratio is narrow.
 # 0 = auto-select optimal bank count for target aspect ratio, 1 = disabled (single column), >= 2 = fixed bank count. Default: 0
 # .tree.progression.optimization.bank.columns=0

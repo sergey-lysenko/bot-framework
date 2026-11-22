@@ -843,6 +843,7 @@ class TreeTrackerTest {
         final String svgDebug = TreeTracker.renderTreeProgressionSvg(layout, 1, "Test #1", Collections.emptySet());
         assertTrue(svgDebug.contains("dx:"), "SVG must contain debug coordinates when debug is true");
         assertTrue(svgDebug.contains("maxZ:"), "SVG debug text must include maxZ when debug is true");
+        assertTrue(svgDebug.contains("cols:1"), "SVG debug text must include current column count when debug is true");
         assertTrue(svgDebug.contains("id=\"tree-debug-overlay\""), "SVG must contain debug overlay when debug is true");
         assertTrue(svgDebug.contains("stroke=\"#F59E0B\" stroke-width=\"2\""), "SVG must contain impulse vector line when debug is true");
     }

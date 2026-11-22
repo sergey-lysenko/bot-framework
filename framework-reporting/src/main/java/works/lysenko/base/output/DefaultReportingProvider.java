@@ -1,6 +1,7 @@
 package works.lysenko.base.output;
 
 import works.lysenko.base.issues.KnownIssuesLoader;
+import works.lysenko.base.output.tree.TreeLayoutOptimizer;
 import works.lysenko.base.responses.ExpectedResponsesLoader;
 import works.lysenko.util.apis.core._ReportingProvider;
 import works.lysenko.util.apis.core._Reports;
@@ -20,6 +21,7 @@ public final class DefaultReportingProvider implements _ReportingProvider {
 
     @Override
     public void onInitialize() {
+        TreeLayoutOptimizer.resetPinnedBankLayout();
         ProgressionSettings.initialize();
     }
 

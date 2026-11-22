@@ -519,12 +519,14 @@ public final class TreeLayoutEditorModel {
             final boolean origHGaps = Optimization.reduceHorizontalGaps;
             final boolean origVGaps = Optimization.reduceVerticalGaps;
             final int origMinSep = Optimization.minOffsetSeparation;
+            final boolean origDynamicReordering = Optimization.allowDynamicReordering;
             try {
                 Optimization.reduceHorizontalOffsets = settings.reduceHorizontalOffsets;
                 Optimization.reduceVerticalOffsets = settings.reduceVerticalOffsets;
                 Optimization.reduceHorizontalGaps = settings.reduceHorizontalGaps;
                 Optimization.reduceVerticalGaps = settings.reduceVerticalGaps;
                 Optimization.minOffsetSeparation = Math.max(0, settings.minOffsetSeparation);
+                Optimization.allowDynamicReordering = true;
 
                 TreeLayoutOptimizer.optimizeLayout(nodes);
                 if (!lightweight) {
@@ -543,6 +545,7 @@ public final class TreeLayoutEditorModel {
                 Optimization.reduceHorizontalGaps = origHGaps;
                 Optimization.reduceVerticalGaps = origVGaps;
                 Optimization.minOffsetSeparation = origMinSep;
+                Optimization.allowDynamicReordering = origDynamicReordering;
             }
         }
 

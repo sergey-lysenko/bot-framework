@@ -11,11 +11,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TreeLayoutOptimizerTest {
 
     private boolean origProgression;
+    private boolean origAllowDynamicReordering;
+    private boolean origAllowFinalReordering;
     private boolean origReduceHGaps;
     private boolean origReduceVGaps;
     private boolean origReduceHOffsets;
@@ -27,6 +30,8 @@ class TreeLayoutOptimizerTest {
     @BeforeEach
     void saveDefaults() {
         origProgression = Optimization.progression;
+        origAllowDynamicReordering = Optimization.allowDynamicReordering;
+        origAllowFinalReordering = Optimization.allowFinalReordering;
         origReduceHGaps = Optimization.reduceHorizontalGaps;
         origReduceVGaps = Optimization.reduceVerticalGaps;
         origReduceHOffsets = Optimization.reduceHorizontalOffsets;
@@ -36,6 +41,8 @@ class TreeLayoutOptimizerTest {
         origMaxAspectRatio = Optimization.maxAspectRatio;
 
         Optimization.progression = true;
+        Optimization.allowDynamicReordering = false;
+        Optimization.allowFinalReordering = true;
         Optimization.reduceHorizontalGaps = true;
         Optimization.reduceVerticalGaps = true;
         Optimization.reduceHorizontalOffsets = true;
@@ -43,11 +50,14 @@ class TreeLayoutOptimizerTest {
         Optimization.minOffsetSeparation = 1;
         Optimization.bankColumns = 0;
         Optimization.maxAspectRatio = 1.78;
+        TreeLayoutOptimizer.resetPinnedBankLayout();
     }
 
     @AfterEach
     void restoreDefaults() {
         Optimization.progression = origProgression;
+        Optimization.allowDynamicReordering = origAllowDynamicReordering;
+        Optimization.allowFinalReordering = origAllowFinalReordering;
         Optimization.reduceHorizontalGaps = origReduceHGaps;
         Optimization.reduceVerticalGaps = origReduceVGaps;
         Optimization.reduceHorizontalOffsets = origReduceHOffsets;
@@ -55,6 +65,7 @@ class TreeLayoutOptimizerTest {
         Optimization.minOffsetSeparation = origMinSep;
         Optimization.bankColumns = origBankColumns;
         Optimization.maxAspectRatio = origMaxAspectRatio;
+        TreeLayoutOptimizer.resetPinnedBankLayout();
     }
 
     private static NodeData node(final List<NodeData> list, final String id, final NodeData parent,
@@ -523,5 +534,196 @@ class TreeLayoutOptimizerTest {
         for (final NodeData other : otherRoots) {
             assertEquals(4, other.col());
         }
+    }
+
+    private static List<List<String>> extractBankMembership(final List<NodeData> nodes) {
+        final java.util.TreeMap<Integer, List<NodeData>> byCol = new java.util.TreeMap<>();
+        for (final NodeData n : nodes) {
+            if (null == n.parent()) {
+                byCol.computeIfAbsent(n.col(), k -> new ArrayList<>()).add(n);
+            }
+        }
+        final List<List<String>> result = new ArrayList<>(byCol.size());
+        for (final List<NodeData> bank : byCol.values()) {
+            bank.sort(java.util.Comparator.comparingDouble(NodeData::row));
+            final List<String> names = new ArrayList<>(bank.size());
+            for (final NodeData r : bank) {
+                names.add(r.id());
+            }
+            result.add(names);
+        }
+        return result;
+    }
+
+    private static List<NodeData> buildShrunkHeterogeneousForest(final java.util.Set<String> removedRoots) {
+        final List<NodeData> nodes = new ArrayList<>();
+        // Drastically altered heights & depths (simulating passed leaves hiding mid-run)
+        final Object[][] specs = {
+                {"Partners", 2, 2},
+                {"Billing", 7, 3},
+                {"Settings", 2, 2},
+                {"Reports", 6, 4},
+                {"AuditLogs", 1, 1},
+                {"AppManagement", 5, 2},
+                {"Payments", 2, 2},
+                {"Menu", 5, 10},
+                {"AIUsageReport", 3, 4},
+                {"Issues", 2, 3},
+                {"Storefront", 2, 15},
+                {"AuthAndSecurity", 2, 8},
+                {"FirstDelivery", 2, 4},
+                {"Dashboard", 1, 1},
+                {"EmailHealth", 1, 1},
+                {"Login", 1, 1},
+                {"Logout", 1, 1},
+                {"WrongEmail", 1, 1},
+                {"WrongPassword", 1, 1},
+                {"Profile", 1, 1}
+        };
+        double nextRow = 1.0;
+        for (final Object[] spec : specs) {
+            final String name = (String) spec[0];
+            if (removedRoots.contains(name)) continue;
+            final int depth = (Integer) spec[1];
+            final int height = (Integer) spec[2];
+            final NodeData root = node(nodes, name, null, 0, nextRow, 0, 0);
+            NodeData spine = root;
+            for (int d = 1; d < depth; d++) {
+                spine = node(nodes, name + "_d" + d, spine, d, nextRow, 0, 0);
+            }
+            if (height > 1 && depth >= 2) {
+                final NodeData parent = (depth == 2) ? root : root.children().get(0);
+                final int leafCol = parent.col() + 1;
+                for (int r = 1; r < height; r++) {
+                    node(nodes, name + "_r" + r, parent, leafCol, nextRow + r, 0, 0);
+                }
+            }
+            nextRow += height;
+        }
+        return nodes;
+    }
+
+    @Test
+    void disabledDynamicReorderingPreservesInitialBankOrderWhileStillCompacting() {
+        Optimization.allowDynamicReordering = false;
+        Optimization.bankColumns = 0;
+        Optimization.maxAspectRatio = 1.78;
+
+        final List<NodeData> initialNodes = buildHeterogeneousForest();
+        TreeLayoutOptimizer.compactDisconnectedTrees(initialNodes);
+        assertNoNodeOverlap(initialNodes);
+        final List<List<String>> initialBanks = extractBankMembership(initialNodes);
+        final double initialMaxRow = initialNodes.stream().mapToDouble(NodeData::row).max().orElse(1.0);
+        assertTrue(initialBanks.size() >= 4, "Expected >= 4 initial banks");
+
+        // Frame 2: trees shrink drastically and one entire root disappears
+        final java.util.Set<String> removed = java.util.Set.of("AuditLogs", "WrongEmail");
+        final List<NodeData> shrunkNodes = buildShrunkHeterogeneousForest(removed);
+        TreeLayoutOptimizer.compactDisconnectedTrees(shrunkNodes);
+        assertNoNodeOverlap(shrunkNodes);
+
+        final List<List<String>> shrunkBanks = extractBankMembership(shrunkNodes);
+        final List<List<String>> expectedBanks = new ArrayList<>();
+        for (final List<String> bank : initialBanks) {
+            final List<String> remaining = bank.stream().filter(name -> !removed.contains(name)).toList();
+            if (!remaining.isEmpty()) expectedBanks.add(remaining);
+        }
+
+        assertEquals(expectedBanks, shrunkBanks,
+                "Level-1 nodes must keep their initial bank assignment and relative vertical order when allowDynamicReordering=false");
+
+        final double shrunkMaxRow = shrunkNodes.stream().mapToDouble(NodeData::row).max().orElse(1.0);
+        assertTrue(shrunkMaxRow < initialMaxRow,
+                "Vertical compaction within banks must still remain active: " + shrunkMaxRow + " vs " + initialMaxRow);
+    }
+
+    @Test
+    void enabledDynamicReorderingAllowsBankRepartitioningWhenTreeChanges() {
+        Optimization.allowDynamicReordering = true;
+        Optimization.bankColumns = 0;
+        Optimization.maxAspectRatio = 1.78;
+
+        final List<NodeData> initialNodes = buildHeterogeneousForest();
+        TreeLayoutOptimizer.compactDisconnectedTrees(initialNodes);
+        final List<List<String>> initialBanks = extractBankMembership(initialNodes);
+
+        final List<NodeData> shrunkNodes = buildShrunkHeterogeneousForest(java.util.Set.of());
+        TreeLayoutOptimizer.compactDisconnectedTrees(shrunkNodes);
+        assertNoNodeOverlap(shrunkNodes);
+        final List<List<String>> shrunkBanks = extractBankMembership(shrunkNodes);
+
+        assertTrue(!initialBanks.equals(shrunkBanks),
+                "With allowDynamicReordering=true, drastically shrunk trees should dynamically repartition");
+    }
+
+    @Test
+    void finalReoptimizationCompactsOnceAfterTestsAndStaysPinned() {
+        Optimization.allowDynamicReordering = false;
+        Optimization.allowFinalReordering = true;
+        Optimization.bankColumns = 0;
+        Optimization.maxAspectRatio = 1.78;
+
+        final List<NodeData> initialNodes = buildHeterogeneousForest();
+        TreeLayoutOptimizer.compactDisconnectedTrees(initialNodes);
+        final List<List<String>> initialBanks = extractBankMembership(initialNodes);
+        assertTrue(initialBanks.size() >= 4, "Expected >= 4 initial banks");
+
+        // Mid-run frame stays pinned to initial banks
+        final java.util.Set<String> removed = java.util.Set.of("AuditLogs", "WrongEmail");
+        final List<NodeData> midRunNodes = buildShrunkHeterogeneousForest(removed);
+        TreeLayoutOptimizer.compactDisconnectedTrees(midRunNodes);
+        final List<List<String>> midRunBanks = extractBankMembership(midRunNodes);
+        final int midRunMaxCol = midRunNodes.stream().mapToInt(NodeData::col).max().orElse(0);
+
+        // Single post-test re-optimization pass clears the in-run pinning once
+        assertTrue(TreeLayoutOptimizer.triggerFinalReoptimizationOnce(),
+                "First post-test trigger should clear pinned bank layout");
+
+        final List<NodeData> finalNodes = buildShrunkHeterogeneousForest(removed);
+        TreeLayoutOptimizer.compactDisconnectedTrees(finalNodes);
+        assertNoNodeOverlap(finalNodes);
+        final List<List<String>> finalBanks = extractBankMembership(finalNodes);
+        final int finalMaxCol = finalNodes.stream().mapToInt(NodeData::col).max().orElse(0);
+
+        assertTrue(!midRunBanks.equals(finalBanks),
+                "Post-test final re-optimization must re-pack shrunk banks into a tighter layout");
+        assertTrue(finalMaxCol < midRunMaxCol,
+                "Final re-optimized layout must reduce column span for better zoom: "
+                        + finalMaxCol + " vs " + midRunMaxCol);
+
+        // Second post-test trigger in the same run (e.g., entering cooldown after tree.html) must be a no-op
+        assertFalse(TreeLayoutOptimizer.triggerFinalReoptimizationOnce(),
+                "Subsequent post-test trigger in the same run must not unpin the final layout again");
+
+        // Subsequent cooldown layout remains pinned to the freshly compacted final banks
+        final List<NodeData> cooldownNodes = buildShrunkHeterogeneousForest(removed);
+        TreeLayoutOptimizer.compactDisconnectedTrees(cooldownNodes);
+        assertEquals(finalBanks, extractBankMembership(cooldownNodes),
+                "Cooldown frames must preserve the freshly re-optimized final bank layout");
+    }
+
+    @Test
+    void disabledFinalReorderingKeepsPinnedBanksAfterTests() {
+        Optimization.allowDynamicReordering = false;
+        Optimization.allowFinalReordering = false;
+        Optimization.bankColumns = 0;
+        Optimization.maxAspectRatio = 1.78;
+
+        final List<NodeData> initialNodes = buildHeterogeneousForest();
+        TreeLayoutOptimizer.compactDisconnectedTrees(initialNodes);
+
+        final java.util.Set<String> removed = java.util.Set.of("AuditLogs", "WrongEmail");
+        final List<NodeData> midRunNodes = buildShrunkHeterogeneousForest(removed);
+        TreeLayoutOptimizer.compactDisconnectedTrees(midRunNodes);
+        final List<List<String>> midRunBanks = extractBankMembership(midRunNodes);
+
+        assertFalse(TreeLayoutOptimizer.triggerFinalReoptimizationOnce(),
+                "Post-test trigger must be a no-op when allowFinalReordering=false");
+
+        final List<NodeData> finalNodes = buildShrunkHeterogeneousForest(removed);
+        TreeLayoutOptimizer.compactDisconnectedTrees(finalNodes);
+        assertNoNodeOverlap(finalNodes);
+        assertEquals(midRunBanks, extractBankMembership(finalNodes),
+                "Final layout must keep in-run pinned banks when allowFinalReordering=false");
     }
 }
