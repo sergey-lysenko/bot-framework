@@ -6,8 +6,10 @@ import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.data.type.Result;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -20,6 +22,33 @@ public interface _Results {
      * @param lr to add as event
      */
     void addEvent(_LogRecord lr);
+
+    /**
+     * Records that a non-scenario lifecycle phase (e.g. {@code "Pretest"}, {@code "Preflight"}, {@code "Postflight"})
+     * has been executed during the run.
+     *
+     * @param phase lifecycle phase name
+     */
+    default void recordPhase(final String phase) {
+    }
+
+    /**
+     * Retrieves all non-scenario lifecycle phases executed during the run.
+     *
+     * @return unmodifiable set of executed phase names
+     */
+    default Set<String> getExecutedPhases() {
+        return Collections.emptySet();
+    }
+
+    /**
+     * Retrieves root-level events emitted outside any scenario (e.g. during {@code Pretest}).
+     *
+     * @return unmodifiable list of root events
+     */
+    default List<_LogRecord> getRootEvents() {
+        return Collections.emptyList();
+    }
 
     /**
      * @return true if there are events which marked as failing

@@ -103,4 +103,22 @@ public interface _Executes {
      */
     _Scenarios scenarios();
 
+    /**
+     * Retrieves the currently active non-scenario lifecycle phase name
+     * (for example {@code "Pretest"}, {@code "Preflight"}, or {@code "Postflight"}), or {@code null}.
+     *
+     * @return active lifecycle phase name, or {@code null}
+     */
+    default String phase() {
+        return null;
+    }
+
+    /**
+     * Sets the currently active non-scenario lifecycle phase name.
+     *
+     * @param phase active phase name, or {@code null} to clear
+     */
+    default void setPhase(final String phase) {
+    }
+
 }

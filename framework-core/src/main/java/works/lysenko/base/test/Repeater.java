@@ -232,20 +232,25 @@ public class Repeater implements _Repeater {
         testsCount = statistics.history().size() + 1;
         title();
         final Runnable activePretest = isNotNull(pretestSupplier) ? pretestSupplier.get() : null;
+        final String pretestPhase = isNotNull(activePretest) ? activePretest.getClass().getSimpleName() : null;
         boolean inPretest = false;
         try {
             if (isNotNull(activePretest)) {
                 inPretest = true;
+                if (isNotNull(exec)) exec.setPhase(pretestPhase);
+                if (isNotNull(core) && isNotNull(core.getResults())) core.getResults().recordPhase(pretestPhase);
                 activePretest.run();
                 inPretest = false;
+                if (isNotNull(exec)) exec.setPhase(null);
             }
             if (isNull(core) || !core.getStopFlag()) {
                 executor.exec();
             }
         } catch (final RuntimeException exception) {
-            if (inPretest) handler.handle(exception, activePretest.getClass().getSimpleName());
+            if (inPretest) handler.handle(exception, pretestPhase);
             else handler.handle(exception);
         } finally {
+            if (isNotNull(exec)) exec.setPhase(null);
             info();
             close();
         }

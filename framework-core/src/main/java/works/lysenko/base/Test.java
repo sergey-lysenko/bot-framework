@@ -118,7 +118,16 @@ public class Test implements _Test {
             reports();
             logEmptyLine();
             log(none, bb(TEST_SESSION_COMPLETED), false);
-            if (isNotNull(postflight)) postflight.run();
+            if (isNotNull(postflight)) {
+                final String postflightPhase = postflight.getClass().getSimpleName();
+                if (isNotNull(exec)) exec.setPhase(postflightPhase);
+                if (isNotNull(core) && isNotNull(core.getResults())) core.getResults().recordPhase(postflightPhase);
+                try {
+                    postflight.run();
+                } finally {
+                    if (isNotNull(exec)) exec.setPhase(null);
+                }
+            }
             core.conditionalClose();
         } catch (final RuntimeException e) {
             processUncheckedException(e, TESTS_UNHANDLED_EXCEPTION);
@@ -144,7 +153,16 @@ public class Test implements _Test {
 
         Traverse.freeze();
         if (exec.createDriver() && exec.createScaler()) {
-            if (isNotNull(preflight)) preflight.run();
+            if (isNotNull(preflight)) {
+                final String preflightPhase = preflight.getClass().getSimpleName();
+                exec.setPhase(preflightPhase);
+                if (isNotNull(core) && isNotNull(core.getResults())) core.getResults().recordPhase(preflightPhase);
+                try {
+                    preflight.run();
+                } finally {
+                    exec.setPhase(null);
+                }
+            }
             verifyProperties();
             prepareRoot();
             build();

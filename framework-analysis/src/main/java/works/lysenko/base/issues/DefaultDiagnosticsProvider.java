@@ -7,7 +7,6 @@ import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Scenario;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -17,14 +16,18 @@ public final class DefaultDiagnosticsProvider implements _DiagnosticsProvider {
 
     @Override
     public boolean isExpectedEvent(final _Scenario scenario, final _Result result, final _LogRecord logRecord) {
-        if (null == logRecord || null == scenario) return false;
+        if (null == logRecord) return false;
         final ExpectedResponsesStore expStore = ExpectedResponsesStore.getGlobalStore();
         if (null == expStore) return false;
-        if (expStore.isExpected(scenario, logRecord)) {
-            return true;
+        final _Scenario owner = (null != scenario) ? scenario : logRecord.scenario();
+        if (null != owner) {
+            if (expStore.isExpected(owner, logRecord)) {
+                return true;
+            }
+            final String text = logRecord.text();
+            return null != text && text.contains("[BROWSER]") && null != result && expStore.matchesNode(owner, result);
         }
-        final String text = logRecord.text();
-        return null != text && text.contains("[BROWSER]") && null != result && expStore.matchesNode(scenario, result);
+        return expStore.isExpected(logRecord.context(), logRecord);
     }
 
     @Override
@@ -32,9 +35,10 @@ public final class DefaultDiagnosticsProvider implements _DiagnosticsProvider {
         if (null == logRecord) return false;
         final KnownIssuesStore kiStore = KnownIssuesStore.getGlobalStore();
         if (null == kiStore) return false;
-        final List<KnownIssue> matches = (null != scenario)
-                ? kiStore.getForLogRecord(scenario, logRecord)
-                : kiStore.getForLogRecord(Collections.emptyList(), logRecord);
+        final _Scenario owner = (null != scenario) ? scenario : logRecord.scenario();
+        final List<KnownIssue> matches = (null != owner)
+                ? kiStore.getForLogRecord(owner, logRecord)
+                : kiStore.getForContext(logRecord.context(), logRecord);
         for (final KnownIssue ki : matches) {
             if (ki.decreaseToWarning()) {
                 return true;

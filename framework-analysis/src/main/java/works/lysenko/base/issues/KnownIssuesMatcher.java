@@ -4,6 +4,7 @@ import works.lysenko.util.apis.data.*;
 import works.lysenko.util.apis.log.*;
 import works.lysenko.util.apis.scenario.*;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -20,32 +21,24 @@ public final class KnownIssuesMatcher {
 
     private static final Map<String, Pattern> PATTERN_CACHE = new ConcurrentHashMap<>();
     private static final Map<String, PreparedRecordPattern> RECORD_PATTERN_CACHE = new ConcurrentHashMap<>();
-    private static final Pattern NON_ALPHANUMERIC = Pattern.compile("[^a-z0-9]");
 
-    private record PreparedRecordPattern(Pattern regex, String lowerPattern, String normPattern) {
+    private record PreparedRecordPattern(Pattern regex, String lowerPattern, boolean catchAll) {
         static PreparedRecordPattern compile(final String patternStr) {
             Pattern compiled = null;
+            boolean isCatchAll = false;
             try {
                 compiled = Pattern.compile(patternStr, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+                isCatchAll = compiled.matcher("").find()
+                        || (compiled.matcher("a").matches()
+                        && compiled.matcher("0").matches()
+                        && compiled.matcher("_").matches());
             } catch (final PatternSyntaxException ignored) {
             }
-            final String lower = patternStr.toLowerCase(java.util.Locale.ROOT);
-            final String norm = stripNonAlphanumeric(lower);
-            return new PreparedRecordPattern(compiled, lower, norm);
+            final String lower = patternStr.toLowerCase(Locale.ROOT);
+            return new PreparedRecordPattern(compiled, lower, isCatchAll);
         }
     }
 
-    private static String stripNonAlphanumeric(final String lowerText) {
-        final int len = lowerText.length();
-        final StringBuilder sb = new StringBuilder(len);
-        for (int i = 0; i < len; i++) {
-            final char c = lowerText.charAt(i);
-            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
-                sb.append(c);
-            }
-        }
-        return sb.toString();
-    }
     private static final String EMPTY = "";
     private static final String ASTERISK = "*";
     private static final String DOT = ".";
@@ -53,7 +46,6 @@ public final class KnownIssuesMatcher {
     private static final String DOT_STAR = ".*";
     private static final String FORMAT_CONCAT = "%s%s";
     private static final String FORMAT_REGEX = "(?i)%s";
-    private static final String FORMAT_REGEX_EXACT = "(?i)^%s$";
 
     private KnownIssuesMatcher() {
         // Utility class
@@ -65,7 +57,54 @@ public final class KnownIssuesMatcher {
     }
 
     /**
+     * Returns {@code true} if the scenario target is the explicit global wildcard {@code "*"}.
+     *
+     * @param target the scenario target string
+     * @return {@code true} when target trims to {@code "*"}
+     */
+    public static boolean isWildcardScenario(final String target) {
+        return null != target && ASTERISK.equals(target.trim());
+    }
+
+    /**
+     * Returns {@code true} if the pattern is blank/null or is a catch-all regex (such as {@code .*}, {@code .+},
+     * or any regex matching an empty string or arbitrary single characters).
+     *
+     * @param patternStr the pattern string
+     * @return {@code true} if the pattern is blank or catch-all
+     */
+    public static boolean isCatchAllPattern(final String patternStr) {
+        if (null == patternStr || patternStr.isBlank()) {
+            return true;
+        }
+        final String trimmed = patternStr.trim();
+        if (".*".equals(trimmed) || ".+".equals(trimmed) || "^.*$".equals(trimmed) || "^.+$".equals(trimmed)) {
+            return true;
+        }
+        final PreparedRecordPattern prepared = RECORD_PATTERN_CACHE.computeIfAbsent(patternStr, PreparedRecordPattern::compile);
+        return prepared.catchAll;
+    }
+
+    /**
+     * Returns {@code true} if the (scenario, pattern) rule is overly permissive and must not match automatically:
+     * either the pattern is blank/null, the scenario is blank/null, or a global wildcard scenario {@code "*"}
+     * is paired with a catch-all pattern.
+     *
+     * @param scenario   the scenario target
+     * @param patternStr the pattern string
+     * @return {@code true} if the rule should be rejected from automatic matching
+     */
+    public static boolean isCatchAllRule(final String scenario, final String patternStr) {
+        if (null == scenario || scenario.isBlank() || null == patternStr || patternStr.isBlank()) {
+            return true;
+        }
+        return isWildcardScenario(scenario) && isCatchAllPattern(patternStr);
+    }
+
+    /**
      * Checks if the given target scenario matches the fully qualified name or simple name.
+     * Enforces dot-delimited package boundaries so suffix matches cannot bleed across partial identifiers
+     * (e.g. {@code "Save"} will not match {@code "SpamSave"}).
      *
      * @param target     the target string to match
      * @param fqn        the fully qualified name of the scenario
@@ -74,32 +113,36 @@ public final class KnownIssuesMatcher {
      */
     public static boolean matchesScenario(final String target, final String fqn, final String simpleName) {
 
-        boolean match = false;
-        if (null != target && !target.isBlank()) {
-            final String trimmed = target.trim();
-            if (trimmed.equalsIgnoreCase(fqn) || trimmed.equalsIgnoreCase(simpleName)) {
-                match = true;
-            } else if (isNotNull(fqn)) {
-                final String lowerFqn = fqn.toLowerCase(java.util.Locale.ROOT);
-                final String lowerTrimmed = trimmed.toLowerCase(java.util.Locale.ROOT);
-                if (lowerFqn.endsWith(lowerTrimmed) || lowerTrimmed.endsWith(lowerFqn)) {
-                    match = true;
-                }
-            }
-
-            if (!match && trimmed.contains(ASTERISK)) {
-                String patternStr = trimmed.replace(DOT, DOT_ESCAPED).replace(ASTERISK, DOT_STAR);
-                if (!patternStr.startsWith(DOT_STAR)) patternStr = DOT_STAR + patternStr;
-                final String regex = "(?i)^" + patternStr + "$";
-                try {
-                    final Pattern pattern = getCompiledPattern(regex, 0);
-                    if (isNotNull(fqn) && pattern.matcher(fqn).matches()) match = true;
-                    else if (isNotNull(simpleName) && pattern.matcher(simpleName).matches()) match = true;
-                } catch (final PatternSyntaxException ignored) {
-                }
+        if (null == target || target.isBlank()) {
+            return false;
+        }
+        final String trimmed = target.trim();
+        if (ASTERISK.equals(trimmed)) {
+            return true;
+        }
+        if (trimmed.equalsIgnoreCase(fqn) || trimmed.equalsIgnoreCase(simpleName)) {
+            return true;
+        }
+        if (isNotNull(fqn) && !fqn.isBlank()) {
+            final String lowerFqn = fqn.toLowerCase(Locale.ROOT);
+            final String lowerTrimmed = trimmed.toLowerCase(Locale.ROOT);
+            if (lowerFqn.endsWith(DOT + lowerTrimmed)) {
+                return true;
             }
         }
-        return match;
+        if (trimmed.contains(ASTERISK)) {
+            final String regexBody = trimmed.replace(DOT, DOT_ESCAPED).replace(ASTERISK, DOT_STAR);
+            final String regex = regexBody.startsWith(DOT_STAR)
+                    ? "(?i)^" + regexBody + "$"
+                    : "(?i)^(?:.+\\.)?" + regexBody + "$";
+            try {
+                final Pattern pattern = getCompiledPattern(regex, 0);
+                if (isNotNull(fqn) && pattern.matcher(fqn).matches()) return true;
+                if (isNotNull(simpleName) && pattern.matcher(simpleName).matches()) return true;
+            } catch (final PatternSyntaxException ignored) {
+            }
+        }
+        return false;
     }
 
     /**
@@ -111,16 +154,16 @@ public final class KnownIssuesMatcher {
      */
     public static boolean matchesAnyScenario(final String scenarioTarget, final Iterable<? extends _Scenario> scenarios) {
 
-        boolean match = false;
-        if (null != scenarios) {
-            for (final _Scenario scenario : scenarios) {
-                if (null != scenario && matchesScenario(scenarioTarget, scenario.getName(), scenario.getSimpleName())) {
-                    match = true;
-                    break;
-                }
+        if (null == scenarios) {
+            return false;
+        }
+        for (final _Scenario scenario : scenarios) {
+            if (null != scenario && (matchesScenario(scenarioTarget, scenario.getName(), scenario.getSimpleName())
+                    || matchesScenario(scenarioTarget, scenario.getShortName(), scenario.getSimpleName()))) {
+                return true;
             }
         }
-        return match;
+        return false;
     }
 
     /**
@@ -135,8 +178,8 @@ public final class KnownIssuesMatcher {
         boolean match = false;
         if (null != target && !target.isBlank() && null != text && !text.isBlank()) {
             final String trimmed = target.trim();
-            final String lowerText = text.toLowerCase(java.util.Locale.ROOT);
-            final String lowerTarget = trimmed.toLowerCase(java.util.Locale.ROOT);
+            final String lowerText = text.toLowerCase(Locale.ROOT);
+            final String lowerTarget = trimmed.toLowerCase(Locale.ROOT);
             if (lowerText.contains(lowerTarget)) match = true;
             else if (trimmed.contains(ASTERISK)) {
                 String patternStr = trimmed.replace(DOT, DOT_ESCAPED).replace(ASTERISK, DOT_STAR);
@@ -156,7 +199,8 @@ public final class KnownIssuesMatcher {
     }
 
     /**
-     * Checks if the log pattern matches the execution result.
+     * Checks if the log pattern matches any event in the execution result.
+     * Blank/null patterns never match automatically.
      *
      * @param patternStr the pattern string
      * @param result     the execution result
@@ -164,21 +208,22 @@ public final class KnownIssuesMatcher {
      */
     public static boolean matchesPattern(final String patternStr, final _Result result) {
 
-        boolean match = false;
-        if (null == patternStr || patternStr.isBlank()) match = true;
-        else if (null != result && null != result.getEvents() && !result.getEvents().isEmpty()) {
+        if (null == patternStr || patternStr.isBlank()) {
+            return false;
+        }
+        if (null != result && null != result.getEvents() && !result.getEvents().isEmpty()) {
             for (final _LogRecord lr : result.getEvents()) {
                 if (matchesPatternForRecord(patternStr, lr)) {
-                    match = true;
-                    break;
+                    return true;
                 }
             }
         }
-        return match;
+        return false;
     }
 
     /**
-     * Checks if the log pattern matches the given log record.
+     * Checks if the log pattern matches the given log record using compiled regex or case-insensitive substring matching.
+     * Blank/null patterns never match automatically.
      *
      * @param patternStr the pattern string
      * @param logRecord  the log record
@@ -187,7 +232,7 @@ public final class KnownIssuesMatcher {
     public static boolean matchesPatternForRecord(final String patternStr, final _LogRecord logRecord) {
 
         if (null == patternStr || patternStr.isBlank()) {
-            return true;
+            return false;
         }
         if (null == logRecord || null == logRecord.text()) {
             return false;
@@ -205,17 +250,7 @@ public final class KnownIssuesMatcher {
         }
 
         // 2. Direct Substring match (case-insensitive)
-        // Note: text is always a substring of fullText, so checking lowerFullText covers both.
-        final String lowerFullText = fullText.toLowerCase(java.util.Locale.ROOT);
-        if (lowerFullText.contains(prepared.lowerPattern)) {
-            return true;
-        }
-
-        // 3. Normalized alphanumeric tolerance match
-        if (!prepared.normPattern.isEmpty()) {
-            final String normText = stripNonAlphanumeric(lowerFullText);
-            return normText.contains(prepared.normPattern);
-        }
-        return false;
+        final String lowerFullText = fullText.toLowerCase(Locale.ROOT);
+        return lowerFullText.contains(prepared.lowerPattern);
     }
 }

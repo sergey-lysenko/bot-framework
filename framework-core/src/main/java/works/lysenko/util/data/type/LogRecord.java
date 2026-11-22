@@ -2,6 +2,7 @@ package works.lysenko.util.data.type;
 
 import works.lysenko.util.apis.log._LogData;
 import works.lysenko.util.apis.log._LogRecord;
+import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.type.logr.AbstractLogData;
 
 import java.text.DecimalFormat;
@@ -40,6 +41,10 @@ public class LogRecord implements _LogRecord {
     private final _LogData data;
     /** The timestamp when the log record was created. */
     private final long time;
+    /** The exact scenario instance active when the log record was created, if any. */
+    private final _Scenario scenario;
+    /** The execution context/lifecycle phase name when created outside a scenario, if any. */
+    private final String context;
     /** The time span between this record and a subsequent event. */
     private int span;
 
@@ -52,9 +57,26 @@ public class LogRecord implements _LogRecord {
      */
     public LogRecord(final Integer test, final long time, final _LogData data) {
 
+        this(test, time, data, null, null);
+    }
+
+    /**
+     * Constructs a new LogRecord with explicit execution provenance.
+     *
+     * @param test     the test number
+     * @param time     the timestamp in milliseconds
+     * @param data     the log data object implementing {@link _LogData}
+     * @param scenario the active scenario instance when emitted, or {@code null}
+     * @param context  the active lifecycle phase name when outside a scenario, or {@code null}
+     */
+    public LogRecord(final Integer test, final long time, final _LogData data,
+                     final _Scenario scenario, final String context) {
+
         this.test = test;
         this.data = data;
         this.time = time;
+        this.scenario = scenario;
+        this.context = context;
         span = -1;
     }
 
@@ -66,6 +88,21 @@ public class LogRecord implements _LogRecord {
     public final _LogData data() {
 
         return data;
+    }
+
+    @Override
+    public final _Scenario scenario() {
+
+        return scenario;
+    }
+
+    @Override
+    public final String context() {
+
+        if (null != context && !context.isBlank()) {
+            return context;
+        }
+        return null != scenario ? scenario.getName() : null;
     }
 
     /**

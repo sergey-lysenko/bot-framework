@@ -1,5 +1,7 @@
 package works.lysenko.util.apis.log;
 
+import works.lysenko.util.apis.scenario._Scenario;
+
 /**
  * Log Records Interface
  */
@@ -12,6 +14,27 @@ public interface _LogRecord {
      * @return log data
      */
     _LogData data();
+
+    /**
+     * Retrieves the exact scenario instance active when this log record was emitted, if any.
+     *
+     * @return emitting scenario instance, or {@code null} when emitted outside a scenario
+     */
+    default _Scenario scenario() {
+        return null;
+    }
+
+    /**
+     * Retrieves the logical execution context name for this log record
+     * (scenario FQN when inside a scenario, or lifecycle phase such as {@code "Pretest"}, {@code "Preflight"},
+     * {@code "Postflight"} when outside any scenario).
+     *
+     * @return execution context name, or {@code null} if unspecified
+     */
+    default String context() {
+        final _Scenario s = scenario();
+        return null != s ? s.getName() : null;
+    }
 
     /**
      * Calculates and sets the time span since current time.

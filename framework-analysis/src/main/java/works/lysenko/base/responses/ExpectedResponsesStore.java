@@ -1,5 +1,6 @@
 package works.lysenko.base.responses;
 
+import works.lysenko.base.issues.KnownIssuesMatcher;
 import works.lysenko.util.apis.scenario._TreeNodeView;
 import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.apis.log._LogRecord;
@@ -41,16 +42,17 @@ public class ExpectedResponsesStore {
     }
 
     /**
-     * Checks if a log record matches any expected response for a scenario name.
+     * Checks if a log record matches any expected response for a scenario or lifecycle phase name.
      *
-     * @param scenarioName current scenario name
+     * @param scenarioName current scenario or lifecycle phase name (may be null for global {@code "*"} rules)
      * @param lr           log record
      * @return true if expected
      */
     public boolean isExpected(final String scenarioName, final _LogRecord lr) {
         if (null == responses || responses.isEmpty() || null == lr) return false;
         for (final ExpectedResponse er : responses) {
-            if (ExpectedResponsesMatcher.matchesScenario(er.scenario(), scenarioName)
+            if (!KnownIssuesMatcher.isCatchAllRule(er.scenario(), er.pattern())
+                    && ExpectedResponsesMatcher.matchesScenario(er.scenario(), scenarioName)
                     && ExpectedResponsesMatcher.matchesPatternForRecord(er.pattern(), lr)) {
                 return true;
             }
@@ -68,7 +70,8 @@ public class ExpectedResponsesStore {
     public boolean isExpected(final _Scenario scenario, final _LogRecord lr) {
         if (null == responses || responses.isEmpty() || null == scenario || null == lr) return false;
         for (final ExpectedResponse er : responses) {
-            if (ExpectedResponsesMatcher.matchesScenario(er.scenario(), scenario)
+            if (!KnownIssuesMatcher.isCatchAllRule(er.scenario(), er.pattern())
+                    && ExpectedResponsesMatcher.matchesScenario(er.scenario(), scenario)
                     && ExpectedResponsesMatcher.matchesPatternForRecord(er.pattern(), lr)) {
                 return true;
             }
@@ -86,7 +89,8 @@ public class ExpectedResponsesStore {
     public boolean isExpected(final _TreeNodeView node, final _LogRecord lr) {
         if (null == responses || responses.isEmpty() || null == node || null == lr) return false;
         for (final ExpectedResponse er : responses) {
-            if (ExpectedResponsesMatcher.matchesNodeScenario(er.scenario(), node)
+            if (!KnownIssuesMatcher.isCatchAllRule(er.scenario(), er.pattern())
+                    && ExpectedResponsesMatcher.matchesNodeScenario(er.scenario(), node)
                     && ExpectedResponsesMatcher.matchesPatternForRecord(er.pattern(), lr)) {
                 return true;
             }
@@ -105,7 +109,8 @@ public class ExpectedResponsesStore {
         if (null == responses || responses.isEmpty() || null == scenario || null == result) return false;
         if (null == result.getEvents() || result.getEvents().isEmpty()) return false;
         for (final ExpectedResponse er : responses) {
-            if (ExpectedResponsesMatcher.matchesScenario(er.scenario(), scenario)
+            if (!KnownIssuesMatcher.isCatchAllRule(er.scenario(), er.pattern())
+                    && ExpectedResponsesMatcher.matchesScenario(er.scenario(), scenario)
                     && ExpectedResponsesMatcher.matchesPattern(er.pattern(), result)) {
                 return true;
             }
@@ -123,7 +128,8 @@ public class ExpectedResponsesStore {
         if (null == responses || responses.isEmpty() || null == node || null == node.result()) return false;
         if (null == node.result().getEvents() || node.result().getEvents().isEmpty()) return false;
         for (final ExpectedResponse er : responses) {
-            if (ExpectedResponsesMatcher.matchesNodeScenario(er.scenario(), node)
+            if (!KnownIssuesMatcher.isCatchAllRule(er.scenario(), er.pattern())
+                    && ExpectedResponsesMatcher.matchesNodeScenario(er.scenario(), node)
                     && ExpectedResponsesMatcher.matchesPattern(er.pattern(), node.result())) {
                 return true;
             }
@@ -142,7 +148,8 @@ public class ExpectedResponsesStore {
         final List<ExpectedResponse> result = new ArrayList<>();
         if (null == responses || responses.isEmpty() || null == lr) return result;
         for (final ExpectedResponse er : responses) {
-            if (ExpectedResponsesMatcher.matchesScenario(er.scenario(), scenarioName)
+            if (!KnownIssuesMatcher.isCatchAllRule(er.scenario(), er.pattern())
+                    && ExpectedResponsesMatcher.matchesScenario(er.scenario(), scenarioName)
                     && ExpectedResponsesMatcher.matchesPatternForRecord(er.pattern(), lr)) {
                 result.add(er);
             }

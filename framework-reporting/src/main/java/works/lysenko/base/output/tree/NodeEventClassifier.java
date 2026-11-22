@@ -128,20 +128,13 @@ public final class NodeEventClassifier {
                 cursor = existing;
             } else {
                 final List<ExpectedResponse> matching = filterMatchingResponses(expStore, node);
-                boolean hasBlank = false;
-                for (final ExpectedResponse er : matching) {
-                    if (null == er.pattern() || er.pattern().isBlank()) {
-                        hasBlank = true;
-                        break;
-                    }
-                }
                 cursor = new ResultCursor(
                         expStore,
                         responsesSize,
                         nodeKey,
                         knownIssues.isEmpty() ? Collections.emptyList() : new ArrayList<>(knownIssues),
                         matching,
-                        hasBlank);
+                        false);
                 CURSORS.put(res, cursor);
             }
 
@@ -258,7 +251,8 @@ public final class NodeEventClassifier {
         }
         final List<ExpectedResponse> matched = new ArrayList<>(4);
         for (final ExpectedResponse er : expStore.getResponses()) {
-            if (ExpectedResponsesMatcher.matchesNodeScenario(er.scenario(), node)) {
+            if (!KnownIssuesMatcher.isCatchAllRule(er.scenario(), er.pattern())
+                    && ExpectedResponsesMatcher.matchesNodeScenario(er.scenario(), node)) {
                 matched.add(er);
             }
         }
@@ -277,7 +271,9 @@ public final class NodeEventClassifier {
     private static boolean isDecreasedToWarning(final List<KnownIssue> knownIssues, final _LogRecord lr) {
         for (int i = 0; i < knownIssues.size(); i++) {
             final KnownIssue ki = knownIssues.get(i);
-            if (ki.decreaseToWarning() && KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
+            if (ki.decreaseToWarning()
+                    && !KnownIssuesMatcher.isCatchAllRule(ki.scenario(), ki.pattern())
+                    && KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
                 return true;
             }
         }

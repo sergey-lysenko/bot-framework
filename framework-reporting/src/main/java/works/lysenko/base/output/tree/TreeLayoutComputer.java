@@ -54,18 +54,20 @@ public final class TreeLayoutComputer {
     private static long lastProgressLogTimestamp = 0;
     private static final long PROGRESS_LOG_INTERVAL_MS = 2000;
 
-    private static final class LogScanCursor {
-        int scannedUpTo;
-        _LogRecord lastRecord;
-        boolean matched;
+    private TreeLayoutComputer() {
     }
 
-    private static final Object LOG_SCAN_LOCK = new Object();
-    private static List<_LogRecord> cachedLogListRef = null;
-    private static _LogRecord cachedLogFirstRecord = null;
-    private static final Map<String, LogScanCursor> LOG_SCAN_CURSORS = new HashMap<>();
-
-    private TreeLayoutComputer() {
+    private static Map<_Scenario, List<_LogRecord>> indexLogsByScenario(final List<_LogRecord> logRecords) {
+        if (null == logRecords || logRecords.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        final Map<_Scenario, List<_LogRecord>> byScenario = new IdentityHashMap<>();
+        for (final _LogRecord lr : logRecords) {
+            if (null != lr && null != lr.scenario()) {
+                byScenario.computeIfAbsent(lr.scenario(), k -> new ArrayList<>(4)).add(lr);
+            }
+        }
+        return byScenario;
     }
 
     public static TreeLayout computeLayout(final TreeMap<String, Result> sorted) {
@@ -81,12 +83,12 @@ public final class TreeLayoutComputer {
         Arrays.fill(dy, 1);
 
         final List<_LogRecord> logRecords = (!works.lysenko.util.prop.issues.KnownIssues.failedOnly && isNotNull(exec) && isNotNull(exec.issues()))
-                ? exec.issues().latest() : Collections.emptyList();
+                ? exec.issues().latestCopy() : Collections.emptyList();
+        final Map<_Scenario, List<_LogRecord>> logsByScenario = indexLogsByScenario(logRecords);
 
-        final Map<String, Boolean> patternLogCache = new HashMap<>();
         final SortedMap<String, TreeMap<String, Result>> t = new Groups(TESTS, sorted);
         for (final Map.Entry<String, TreeMap<String, Result>> group : t.entrySet()) {
-            processGroup(group, null, 0, dy, nodes, edges, logRecords, patternLogCache);
+            processGroup(group, null, 0, dy, nodes, edges, logRecords, logsByScenario);
         }
         final long tProc = System.currentTimeMillis();
 
@@ -146,11 +148,11 @@ public final class TreeLayoutComputer {
         }
 
         final List<_LogRecord> logRecords = (!works.lysenko.util.prop.issues.KnownIssues.failedOnly && isNotNull(exec) && isNotNull(exec.issues()))
-                ? exec.issues().latest() : Collections.emptyList();
+                ? exec.issues().latestCopy() : Collections.emptyList();
+        final Map<_Scenario, List<_LogRecord>> logsByScenario = indexLogsByScenario(logRecords);
 
-        final Map<String, Boolean> patternLogCache = new HashMap<>();
         for (final _Scenario root : sortedRoots)
-            processScenario(root, null, 0, rows, ancestors, sorted, nodes, edges, logRecords, patternLogCache);
+            processScenario(root, null, 0, rows, ancestors, sorted, nodes, edges, logsByScenario);
         final long tProc = System.currentTimeMillis();
 
         final List<NodeData> unprunedNodes = new ArrayList<>(nodes);
@@ -186,8 +188,7 @@ public final class TreeLayoutComputer {
     private static void processScenario(final _Scenario scenario, final NodeData parent, final int col, final int[] rows,
                                         final Set<_Scenario> ancestors, final TreeMap<String, Result> sorted,
                                         final List<NodeData> nodes, final List<Edge> edges,
-                                        final List<_LogRecord> logRecords,
-                                        final Map<String, Boolean> patternLogCache) {
+                                        final Map<_Scenario, List<_LogRecord>> logsByScenario) {
 
         if (null == scenario || !ancestors.add(scenario)) return;
         int offset = 0;
@@ -215,22 +216,30 @@ public final class TreeLayoutComputer {
         final NodeData node = new NodeData(id, label, group, myCol, rows[0]++, offset, rowOffset, resultFor(scenario, sorted), scenario);
 
         final KnownIssuesStore store = TreeHtml.getKnownIssuesStore();
+        final works.lysenko.base.responses.ExpectedResponsesStore expStore = TreeHtml.getExpectedResponsesStore();
         if (null != store) {
             final List<KnownIssue> matchedByNode = store.getForNode(scenario, node.result());
             if (null != matchedByNode && !matchedByNode.isEmpty()) {
+                final boolean nodeHasExpected = null != expStore && null != node.result()
+                        && expStore.matchesNode(scenario, node.result());
                 for (final KnownIssue ki : matchedByNode) {
+                    if (nodeHasExpected && !matchesAnyNonExpectedEvent(ki.pattern(), scenario, node.result(), expStore)) {
+                        continue;
+                    }
                     if (!node.knownIssues().contains(ki)) node.knownIssues().add(ki);
                 }
             }
-            if (!works.lysenko.util.prop.issues.KnownIssues.failedOnly && null != logRecords && !logRecords.isEmpty()) {
+            final List<_LogRecord> ownLogs = logsByScenario.get(scenario);
+            if (null != ownLogs && !ownLogs.isEmpty()) {
                 for (final KnownIssue ki : store.getForScenario(scenario.getName(), scenario.getSimpleName())) {
                     if (node.knownIssues().contains(ki)) continue;
-                    final String scenarioTarget = ki.scenario();
-                    final boolean isWildcard = null == scenarioTarget || scenarioTarget.isBlank() || "*".equals(scenarioTarget.trim());
-                    if (isWildcard && !ki.pattern().isBlank()) continue;
-
-                    if (matchesAnyLogRecord(ki.pattern(), logRecords, s("checking known issues for scenario ", scenario.getSimpleName()), patternLogCache)) {
-                        node.knownIssues().add(ki);
+                    if (works.lysenko.base.issues.KnownIssuesMatcher.isCatchAllRule(ki.scenario(), ki.pattern())) continue;
+                    for (final _LogRecord lr : ownLogs) {
+                        if (null != expStore && expStore.isExpected(scenario, lr)) continue;
+                        if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
+                            node.knownIssues().add(ki);
+                            break;
+                        }
                     }
                 }
             }
@@ -248,9 +257,26 @@ public final class TreeLayoutComputer {
             pairs.sort(Comparator.comparing((works.lysenko.util.data.records.KeyValue<_Scenario, org.apache.commons.math3.fraction.Fraction> p) -> p.k().getSimpleName())
                     .thenComparing(p -> p.k().getName()));
             for (final var child : pairs)
-                processScenario(child.k(), node, myCol + 1, rows, ancestors, sorted, nodes, edges, logRecords, patternLogCache);
+                processScenario(child.k(), node, myCol + 1, rows, ancestors, sorted, nodes, edges, logsByScenario);
         }
         ancestors.remove(scenario);
+    }
+
+    private static boolean matchesAnyNonExpectedEvent(
+            final String pattern,
+            final _Scenario scenario,
+            final _Result result,
+            final works.lysenko.base.responses.ExpectedResponsesStore expStore) {
+        if (null == result || null == result.getEvents()) return false;
+        for (final _LogRecord lr : result.getEvents()) {
+            if (expStore.isExpected(scenario, lr)) continue;
+            final String text = lr.text();
+            if (null != text && text.contains("[BROWSER]") && expStore.matchesNode(scenario, result)) continue;
+            if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(pattern, lr)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void processGroup(final Map.Entry<String, ? extends TreeMap<String, Result>> group,
@@ -258,7 +284,7 @@ public final class TreeLayoutComputer {
                                      final int col, final int[] dy,
                                      final List<NodeData> nodes, final List<Edge> edges,
                                      final List<_LogRecord> logRecords,
-                                     final Map<String, Boolean> patternLogCache) {
+                                     final Map<_Scenario, List<_LogRecord>> logsByScenario) {
         final Map<String, NodeData> myNodes = new HashMap<>();
         final Parts parts = Parts.process(group.getValue());
 
@@ -276,6 +302,7 @@ public final class TreeLayoutComputer {
                 final String altScenarioKey = (nd.scenario() != null) ? nd.scenario().getShortName() : shortKey;
                 if (isNotNull(nd.result())) {
                     for (final KnownIssue ki : store.getIssues()) {
+                        if (works.lysenko.base.issues.KnownIssuesMatcher.isCatchAllRule(ki.scenario(), ki.pattern())) continue;
                         if (works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), fullScenarioKey, shortKey)
                                 || works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), altScenarioKey, shortKey)
                                 || works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), rawKey, shortKey)) {
@@ -285,18 +312,19 @@ public final class TreeLayoutComputer {
                         }
                     }
                 }
-                if (!works.lysenko.util.prop.issues.KnownIssues.failedOnly && null != logRecords && !logRecords.isEmpty()) {
+                final List<_LogRecord> ownLogs = (null != nd.scenario()) ? logsByScenario.get(nd.scenario()) : null;
+                if (null != ownLogs && !ownLogs.isEmpty()) {
                     for (final KnownIssue ki : store.getIssues()) {
                         if (nd.knownIssues().contains(ki)) continue;
-                        final String scenarioTarget = ki.scenario();
-                        final boolean isWildcard = null == scenarioTarget || scenarioTarget.isBlank() || "*".equals(scenarioTarget.trim());
-                        if (isWildcard && !ki.pattern().isBlank()) continue;
-
+                        if (works.lysenko.base.issues.KnownIssuesMatcher.isCatchAllRule(ki.scenario(), ki.pattern())) continue;
                         if (works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), fullScenarioKey, shortKey)
                                 || works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), altScenarioKey, shortKey)
                                 || works.lysenko.base.issues.KnownIssuesMatcher.matchesScenario(ki.scenario(), rawKey, shortKey)) {
-                            if (matchesAnyLogRecord(ki.pattern(), logRecords, s("checking known issues for ", shortKey), patternLogCache)) {
-                                nd.knownIssues().add(ki);
+                            for (final _LogRecord lr : ownLogs) {
+                                if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
+                                    nd.knownIssues().add(ki);
+                                    break;
+                                }
                             }
                         }
                     }
@@ -318,68 +346,8 @@ public final class TreeLayoutComputer {
             final String subKey = subgroup.getKey().toLowerCase();
             final NodeData subParent = myNodes.get(subKey);
             final NodeData nextParent = (null != subParent) ? subParent : parentNode;
-            processGroup(subgroup, nextParent, col + 1, dy, nodes, edges, logRecords, patternLogCache);
+            processGroup(subgroup, nextParent, col + 1, dy, nodes, edges, logRecords, logsByScenario);
         }
-    }
-
-    private static boolean matchesAnyLogRecord(
-            final String pattern,
-            final List<_LogRecord> logRecords,
-            final String progressLabel,
-            final Map<String, Boolean> perCallCache) {
-        final String cacheKey = (null == pattern) ? "" : pattern;
-        final Boolean perCall = perCallCache.get(cacheKey);
-        if (null != perCall) return perCall;
-
-        final int size = logRecords.size();
-        if (0 == size) {
-            perCallCache.put(cacheKey, Boolean.FALSE);
-            return false;
-        }
-
-        final _LogRecord firstRecord = logRecords.get(0);
-        int startIdx = 0;
-        synchronized (LOG_SCAN_LOCK) {
-            if (cachedLogListRef != logRecords || cachedLogFirstRecord != firstRecord) {
-                cachedLogListRef = logRecords;
-                cachedLogFirstRecord = firstRecord;
-                LOG_SCAN_CURSORS.clear();
-            } else {
-                final LogScanCursor cursor = LOG_SCAN_CURSORS.get(cacheKey);
-                if (null != cursor && cursor.scannedUpTo <= size) {
-                    if (0 == cursor.scannedUpTo || logRecords.get(cursor.scannedUpTo - 1) == cursor.lastRecord) {
-                        if (cursor.matched) {
-                            perCallCache.put(cacheKey, Boolean.TRUE);
-                            return true;
-                        }
-                        startIdx = cursor.scannedUpTo;
-                    }
-                }
-            }
-        }
-
-        boolean matched = false;
-        int scannedTo = size;
-        for (int i = startIdx; i < size; i++) {
-            final _LogRecord lr = logRecords.get(i);
-            logProgressIfNeeded(progressLabel, i + 1, size);
-            if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(pattern, lr)) {
-                matched = true;
-                scannedTo = i + 1;
-                break;
-            }
-        }
-
-        synchronized (LOG_SCAN_LOCK) {
-            if (cachedLogListRef == logRecords && cachedLogFirstRecord == firstRecord) {
-                final LogScanCursor cursor = LOG_SCAN_CURSORS.computeIfAbsent(cacheKey, k -> new LogScanCursor());
-                cursor.scannedUpTo = scannedTo;
-                cursor.lastRecord = (scannedTo > 0) ? logRecords.get(scannedTo - 1) : null;
-                cursor.matched = matched;
-            }
-        }
-        perCallCache.put(cacheKey, matched);
-        return matched;
     }
 
     public static boolean hasFailure(final NodeData n) {

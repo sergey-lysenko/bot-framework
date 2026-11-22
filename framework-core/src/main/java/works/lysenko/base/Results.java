@@ -45,6 +45,7 @@ public class Results implements _Results {
     @SuppressWarnings("WeakerAccess")
     private final Map<_Scenario, Result> results = new HashMap<>(0);
     private final List<_LogRecord> rootEvents = new ArrayList<>(0);
+    private final Set<String> executedPhases = new LinkedHashSet<>(4);
     private Severity max = null;
 
     /**
@@ -71,9 +72,13 @@ public class Results implements _Results {
     public void addEvent(final _LogRecord lr) {
 
         if (lr.data() instanceof final _Event event) {
-            if (isNotNull(exec) && isNotNull(exec.scenarios()) && isNotNull(exec.scenarios().current())) {
-                addEvent0(lr);
+            final _Scenario owner = resolveScenarioOwner(lr);
+            if (isNotNull(owner)) {
+                addEvent0(owner, lr);
             } else {
+                if (null != lr.context() && !lr.context().isBlank()) {
+                    recordPhase(lr.context());
+                }
                 final Severity effective = getEffectiveSeverity(null, null, lr, event.severity());
                 if (isNotNull(effective)) {
                     max = greaterSeverity(max, effective);
@@ -81,6 +86,33 @@ public class Results implements _Results {
                 rootEvents.add(lr);
             }
         }
+    }
+
+    @Override
+    public void recordPhase(final String phase) {
+
+        if (null != phase && !phase.isBlank()) {
+            executedPhases.add(phase.trim());
+        }
+    }
+
+    @Override
+    public Set<String> getExecutedPhases() {
+
+        return Collections.unmodifiableSet(executedPhases);
+    }
+
+    @Override
+    public List<_LogRecord> getRootEvents() {
+
+        return Collections.unmodifiableList(rootEvents);
+    }
+
+    private static _Scenario resolveScenarioOwner(final _LogRecord lr) {
+
+        if (null != lr.scenario()) return lr.scenario();
+        if (isNotNull(exec) && isNotNull(exec.scenarios())) return exec.scenarios().current();
+        return null;
     }
 
     private static Severity getEffectiveSeverity(
@@ -152,8 +184,14 @@ public class Results implements _Results {
         final List<String> list = new ArrayList<>(0);
         for (final _LogRecord event : rootEvents) {
             final Severity effective = getEffectiveSeverity(null, null, event, ((_Event) event.data()).severity());
-            if (isNotNull(effective) && effective.ordinal() <= Stop.atSeverity.ordinal())
-                list.add(event.data().message());
+            if (isNotNull(effective) && effective.ordinal() <= Stop.atSeverity.ordinal()) {
+                final String ctx = event.context();
+                if (null != ctx && !ctx.isBlank()) {
+                    list.add(b(event.data().message(), IN, q(ctx)));
+                } else {
+                    list.add(event.data().message());
+                }
+            }
         }
         for (final Map.Entry<_Scenario, Result> entry : results.entrySet()) {
             for (final _LogRecord event : entry.getValue().getEvents()) {
@@ -235,29 +273,27 @@ public class Results implements _Results {
     }
 
     /**
-     * Adds an event to the current scenario's result.
+     * Adds an event to the owning scenario's result.
      *
-     * @param lr The log record to add as an event
+     * @param current The owning scenario instance
+     * @param lr      The log record to add as an event
      */
-    private void addEvent0(final _LogRecord lr) {
+    private void addEvent0(final _Scenario current, final _LogRecord lr) {
 
-        if (isNotNull(exec)) {
-            final _Scenario current = exec.scenarios().current();
-            if (isNotNull(current)) {
-                final Result result = results.computeIfAbsent(current, Result::new);
-                result.addEvent(lr);
-                if (lr.data() instanceof final works.lysenko.util.apis.data._Event event) {
-                    final Severity effective = getEffectiveSeverity(current, result, lr, event.severity());
-                    if (isNotNull(effective)) {
-                        max = greaterSeverity(max, effective);
-                        if (S0 == effective || S1 == effective) {
-                            if (!current.hasChildFailed()) {
-                                current.markAsFailed();
-                            }
+        if (isNotNull(current)) {
+            final Result result = results.computeIfAbsent(current, Result::new);
+            result.addEvent(lr);
+            if (lr.data() instanceof final works.lysenko.util.apis.data._Event event) {
+                final Severity effective = getEffectiveSeverity(current, result, lr, event.severity());
+                if (isNotNull(effective)) {
+                    max = greaterSeverity(max, effective);
+                    if (S0 == effective || S1 == effective) {
+                        if (!current.hasChildFailed()) {
+                            current.markAsFailed();
                         }
                     }
                 }
-            } else throw new IllegalStateException(b(c(CURRENT), SCENARIO, IS, NULL));
-        } else throw new IllegalStateException(b(c(EXECUTION), IS, NULL));
+            }
+        } else throw new IllegalStateException(b(c(CURRENT), SCENARIO, IS, NULL));
     }
 }

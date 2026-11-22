@@ -208,7 +208,7 @@ class KnownIssuesStoreTest {
     }
 
     @Test
-    @DisplayName("Log record with scenario text should not cross-contaminate unrelated scenarios")
+    @DisplayName("Log record matching a known pattern in one scenario does not cross-contaminate unrelated scenarios")
     void testLogRecordDoesNotCrossContaminateUnrelatedScenarios() {
         final String json = """
                 {
@@ -236,15 +236,20 @@ class KnownIssuesStoreTest {
             }
         };
 
-        // Log record from another scenario failure mentioning absentData
-        final _LogRecord lrOtherScenario = new LogRecord(1, System.currentTimeMillis(),
-                new Event(1, EventType.SEVERE, 0, "ScenarioRuntimeException: ◼ 'SignIn.CorrectLogin.Partners.AddNew.Random.AbsentData.Password' Scenario execution failed due to contains(@style, 'color: red')", null));
+        // Log record ACTUALLY contains the pattern "Wrong label" AND mentions absentData in stack text,
+        // but originated inside Billing — must NOT match absentData.* issue!
+        final _LogRecord lrInBilling = new LogRecord(1, System.currentTimeMillis(),
+                new Event(1, EventType.SEVERE, 0, "Wrong label in Billing (ref: absentData.Password)", null),
+                billingScenario, null);
 
-        final List<KnownIssue> matchedForBilling = store.getForLogRecord(List.of(billingScenario), lrOtherScenario);
-        assertTrue(matchedForBilling.isEmpty(), "Known issue for absentData should NOT be attached to unrelated Billing scenario");
+        assertTrue(store.getForLogRecord(billingScenario, lrInBilling).isEmpty(),
+                "Known issue for absentData should NOT match an event emitted by Billing even when pattern matches");
+        assertTrue(store.getForLogRecord(lrInBilling).isEmpty(),
+                "Provenance-based lookup must isolate Billing event from absentData known issue");
     }
 
     @Test
+    @DisplayName("Multi-scenario and multi-issue parsing requires matching events and rejects blank patterns")
     void testMultiScenarioAndMultiIssueParsing() {
         final String json = """
                 {
@@ -253,6 +258,7 @@ class KnownIssuesStoreTest {
                       "title": "NODEJS-3132",
                       "description": "Uncaught React component crash",
                       "link": "https://biteheist.atlassian.net/browse/NODEJS-3132",
+                      "pattern": "ReactMinifiedError",
                       "scenarios": [
                         "signIn.login.appManagement.AddNew",
                         "signIn.login.Dashboard"
@@ -265,11 +271,13 @@ class KnownIssuesStoreTest {
                       "issues": [
                         {
                           "title": "NODEJS-3008",
-                          "link": "https://biteheist.atlassian.net/browse/NODEJS-3008"
+                          "link": "https://biteheist.atlassian.net/browse/NODEJS-3008",
+                          "pattern": "SaveTimeout"
                         },
                         {
                           "title": "NODEJS-3009",
-                          "link": "https://biteheist.atlassian.net/browse/NODEJS-3009"
+                          "link": "https://biteheist.atlassian.net/browse/NODEJS-3009",
+                          "pattern": ""
                         }
                       ]
                     }
@@ -295,18 +303,65 @@ class KnownIssuesStoreTest {
             @Override public String getSimpleName() { return "Save"; }
         };
 
-        final Result result = new Result(appMgmtScenario);
+        // Passing 0-event results must NEVER match
+        assertTrue(store.getForNode(appMgmtScenario, new Result(appMgmtScenario)).isEmpty());
+        assertTrue(store.getForNode(dashboardScenario, new Result(dashboardScenario)).isEmpty());
+        assertTrue(store.getForNode(saveScenario, new Result(saveScenario)).isEmpty());
 
-        List<KnownIssue> appMgmtMatches = store.getForNode(appMgmtScenario, result);
+        final Result appMgmtResult = new Result(appMgmtScenario);
+        appMgmtResult.addEvent(new LogRecord(1, 100L, new Event(1, EventType.FAILURE, 0, "Uncaught ReactMinifiedError #31", null), appMgmtScenario, null));
+        final List<KnownIssue> appMgmtMatches = store.getForNode(appMgmtScenario, appMgmtResult);
         assertEquals(1, appMgmtMatches.size());
         assertEquals("NODEJS-3132", appMgmtMatches.get(0).title());
 
-        List<KnownIssue> dashboardMatches = store.getForNode(dashboardScenario, result);
-        assertEquals(1, dashboardMatches.size());
-        assertEquals("NODEJS-3132", dashboardMatches.get(0).title());
+        final Result saveResult = new Result(saveScenario);
+        saveResult.addEvent(new LogRecord(2, 200L, new Event(2, EventType.FAILURE, 0, "Hit SaveTimeout on submit", null), saveScenario, null));
+        final List<KnownIssue> saveMatches = store.getForNode(saveScenario, saveResult);
+        assertEquals(1, saveMatches.size(), "Blank-pattern NODEJS-3009 must not auto-match");
+        assertEquals("NODEJS-3008", saveMatches.get(0).title());
+    }
 
-        List<KnownIssue> saveMatches = store.getForNode(saveScenario, result);
-        assertEquals(2, saveMatches.size());
+    @Test
+    @DisplayName("Matches Pretest lifecycle phase provenance for both KnownIssues and ExpectedResponses")
+    void testPretestPhaseProvenanceAndDiagnosticsProvider() {
+        final KnownIssuesStore prevKi = KnownIssuesStore.getGlobalStore();
+        final works.lysenko.base.responses.ExpectedResponsesStore prevExp = works.lysenko.base.responses.ExpectedResponsesStore.getGlobalStore();
+        try {
+            final KnownIssue pretestBug = new KnownIssue("Pretest", "NODEJS-3295", "Sign in 502", "https://jira/NODEJS-3295", "api/auth/local.*502", true);
+            final KnownIssue globalMaps = new KnownIssue("*", "NODEJS-3194", "Maps async", "https://jira/NODEJS-3194", "loading=async", true);
+            final KnownIssue catchAll = new KnownIssue("*", "BAD-RULE", "Catch all", "https://jira/BAD", ".*", true);
+            KnownIssuesStore.setGlobalStore(new KnownIssuesStore(List.of(pretestBug, globalMaps, catchAll)));
+
+            final works.lysenko.base.responses.ExpectedResponse pretestExp =
+                    new works.lysenko.base.responses.ExpectedResponse("Pretest", "favicon\\.ico.*404", "Ignore favicon");
+            final works.lysenko.base.responses.ExpectedResponse globalExp =
+                    new works.lysenko.base.responses.ExpectedResponse("*", "ExpectedGlobalNotice", "Global expected");
+            works.lysenko.base.responses.ExpectedResponsesStore.setGlobalStore(
+                    new works.lysenko.base.responses.ExpectedResponsesStore(List.of(pretestExp, globalExp)));
+
+            final DefaultDiagnosticsProvider provider = new DefaultDiagnosticsProvider();
+
+            final _LogRecord pretest502 = new LogRecord(1, 100L,
+                    new Event(1, EventType.FAILURE, 0, "[BROWSER] /api/auth/local responded with 502", null), null, "Pretest");
+            final _LogRecord pretestMaps = new LogRecord(2, 200L,
+                    new Event(2, EventType.WARNING, 0, "[BROWSER] Google Maps API loaded without loading=async", null), null, "Pretest");
+            final _LogRecord pretestUnrelated = new LogRecord(3, 300L,
+                    new Event(3, EventType.FAILURE, 0, "Completely new unexpected failure", null), null, "Pretest");
+            final _LogRecord pretestFavicon = new LogRecord(4, 400L,
+                    new Event(4, EventType.WARNING, 0, "[BROWSER] /favicon.ico 404", null), null, "Pretest");
+            final _LogRecord globalExpected = new LogRecord(5, 500L,
+                    new Event(5, EventType.WARNING, 0, "ExpectedGlobalNotice", null), null, "Pretest");
+
+            assertTrue(provider.shouldDecreaseToWarning(null, pretest502), "Pretest phase should match scenario='Pretest' known issue");
+            assertTrue(provider.shouldDecreaseToWarning(null, pretestMaps), "Pretest phase should match scenario='*' known issue");
+            assertFalse(provider.shouldDecreaseToWarning(null, pretestUnrelated), "Catch-all '*' + '.*' must NOT match unrelated Pretest failures");
+            assertTrue(provider.isExpectedEvent(null, null, pretestFavicon), "Pretest phase should match scenario='Pretest' expected response");
+            assertTrue(provider.isExpectedEvent(null, null, globalExpected), "Pretest phase should match scenario='*' expected response");
+            assertFalse(provider.isExpectedEvent(null, null, pretest502));
+        } finally {
+            KnownIssuesStore.setGlobalStore(prevKi);
+            works.lysenko.base.responses.ExpectedResponsesStore.setGlobalStore(prevExp);
+        }
     }
 
     @Test

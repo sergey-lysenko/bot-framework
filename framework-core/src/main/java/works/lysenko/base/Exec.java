@@ -64,6 +64,7 @@ public final class Exec extends Root implements _TestData, _Executes {
     private _Driver driver = null;
     private _Issues issues = null;
     private _Scenarios scenarios = null;
+    private String phase = null;
 
 
     /**
@@ -397,5 +398,17 @@ public final class Exec extends Root implements _TestData, _Executes {
     public _Scenarios scenarios() {
 
         return scenarios;
+    }
+
+    @Override
+    public String phase() {
+
+        return phase;
+    }
+
+    @Override
+    public void setPhase(final String phase) {
+
+        this.phase = phase;
     }
 }

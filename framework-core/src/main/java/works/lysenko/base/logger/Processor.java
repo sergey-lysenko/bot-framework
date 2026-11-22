@@ -14,6 +14,7 @@ import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.log._LogsProcessor;
 import works.lysenko.util.apis.log._LogsWriter;
 import works.lysenko.util.apis.log._Queue;
+import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.apis.util._Severity;
 import works.lysenko.util.data.enums.Ansi;
 import works.lysenko.util.data.enums.EventType;
@@ -146,10 +147,16 @@ public class Processor implements _LogsProcessor {
         final String safeText = n(NULL, text);
         final LogRecord newLogRecord;
         final Integer test = core.getCurrentTestNumber();
+        final _Scenario currentScenario = (isNotNull(exec) && isNotNull(exec.scenarios())) ? exec.scenarios().current() : null;
+        final String currentContext = (null == currentScenario && isNotNull(exec)) ? exec.phase() : null;
         if (isNotNull(severity)) {
-            newLogRecord = new LogRecord(test, time, new Event(++counter, severity.type(), depth, safeText, callstack));
+            newLogRecord = new LogRecord(test, time, new Event(++counter, severity.type(), depth, safeText, callstack),
+                    currentScenario, currentContext);
             if (isNotNull(exec)) exec.issues().add(newLogRecord);
-        } else newLogRecord = new LogRecord(test, time, new Event(++counter, EventType.UNDEFINED, depth, safeText, callstack));
+        } else {
+            newLogRecord = new LogRecord(test, time, new Event(++counter, EventType.UNDEFINED, depth, safeText, callstack),
+                    currentScenario, currentContext);
+        }
         core.getResults().addEvent(newLogRecord);
         return newLogRecord;
     }
@@ -163,7 +170,9 @@ public class Processor implements _LogsProcessor {
      */
     private static LogRecord createLogRecord(final long time, final AbstractLogData data) {
 
-        return new LogRecord(core.getCurrentTestNumber(), time, data);
+        final _Scenario currentScenario = (isNotNull(exec) && isNotNull(exec.scenarios())) ? exec.scenarios().current() : null;
+        final String currentContext = (null == currentScenario && isNotNull(exec)) ? exec.phase() : null;
+        return new LogRecord(core.getCurrentTestNumber(), time, data, currentScenario, currentContext);
     }
 
     /**

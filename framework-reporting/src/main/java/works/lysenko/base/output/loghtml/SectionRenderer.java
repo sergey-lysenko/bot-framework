@@ -176,7 +176,8 @@ public final class SectionRenderer {
                 if (isSevereOrFail || isWarn || isNotice) {
                     boolean expected = false;
                     for (final works.lysenko.base.responses.ExpectedResponse er : expList) {
-                        if (works.lysenko.base.responses.ExpectedResponsesMatcher.matchesScenario(er.scenario(), currentScen)
+                        if (!works.lysenko.base.issues.KnownIssuesMatcher.isCatchAllRule(er.scenario(), er.pattern())
+                                && works.lysenko.base.responses.ExpectedResponsesMatcher.matchesScenario(er.scenario(), currentScen)
                                 && matchesTextPattern(er.pattern(), clean)) {
                             expected = true;
                             break;
@@ -192,7 +193,8 @@ public final class SectionRenderer {
                     boolean known = false;
                     for (final works.lysenko.base.issues.KnownIssue ki : kiList) {
                         if (!ki.decreaseToWarning()) continue;
-                        final boolean scenOk = (null == ki.scenario() || ki.scenario().isBlank() || "*".equals(ki.scenario().trim()))
+                        if (works.lysenko.base.issues.KnownIssuesMatcher.isCatchAllRule(ki.scenario(), ki.pattern())) continue;
+                        final boolean scenOk = works.lysenko.base.issues.KnownIssuesMatcher.isWildcardScenario(ki.scenario())
                                 || works.lysenko.base.responses.ExpectedResponsesMatcher.matchesScenario(ki.scenario(), currentScen);
                         if (scenOk && matchesTextPattern(ki.pattern(), clean)) {
                             known = true;

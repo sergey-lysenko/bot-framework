@@ -67,7 +67,7 @@ class TreeLayoutCachingTest {
         @Override public String getSimpleName() { return simple; }
     }
 
-    private record SimpleLogRecord(String text) implements _LogRecord {
+    private record SimpleLogRecord(String text, _Scenario scenario) implements _LogRecord {
         @Override public _LogData data() { return null; }
         @Override public int setSpan(final long currentTime) { return 0; }
         @Override public int span() { return 0; }
@@ -90,12 +90,17 @@ class TreeLayoutCachingTest {
     }
 
     @Test
-    void incrementalKnownIssuesScanDetectsNewRecordsAndResetsOnNewList() throws Exception {
+    void knownIssuesScanRespectsScenarioProvenanceAndResetsOnNewList() throws Exception {
         KnownIssues.failedOnly = false;
         try (final SelectionFixture ignored = SelectionFixture.install()) {
+            final NamedLeaf leaf = new NamedLeaf(Fraction.ONE, "demo.RootNode.LeafA", "LeafA");
+            final NamedNode root = new NamedNode("demo.RootNode", "RootNode", leaf);
+            final TreeMap<String, Result> sorted = new TreeMap<>();
+
             final Issues issues = new Issues();
-            issues.add(new SimpleLogRecord("Booting test run"));
-            issues.add(new SimpleLogRecord("All good so far"));
+            issues.add(new SimpleLogRecord("Booting test run", root));
+            // Matching pattern emitted by an UNRELATED scenario (leaf) must NOT attach to root!
+            issues.add(new SimpleLogRecord("Observed CRITICAL_TIMEOUT_999 while waiting", leaf));
             final Field issuesField = Exec.class.getDeclaredField("issues");
             issuesField.setAccessible(true);
             issuesField.set(Base.exec, issues);
@@ -103,22 +108,19 @@ class TreeLayoutCachingTest {
             final KnownIssue issue = new KnownIssue("RootNode", "Boom", "Desc", "", "CRITICAL_TIMEOUT_999", false);
             TreeHtml.setKnownIssuesStore(new KnownIssuesStore(List.of(issue)));
 
-            final NamedLeaf leaf = new NamedLeaf(Fraction.ONE, "demo.RootNode.LeafA", "LeafA");
-            final NamedNode root = new NamedNode("demo.RootNode", "RootNode", leaf);
-            final TreeMap<String, Result> sorted = new TreeMap<>();
-
-            // 1. Before matching log appears: no known issue attached
+            // 1. Record from leaf must NOT bleed onto root
             final TreeLayout layoutBefore = TreeHtml.computeLayout(List.of(root), sorted);
-            assertTrue(layoutBefore.nodes().get(0).knownIssues().isEmpty());
+            assertTrue(layoutBefore.nodes().get(0).knownIssues().isEmpty(),
+                    "Log record belonging to LeafA must not attach RootNode known issue");
 
-            // 2. Append matching record to the same Issues list: incremental scan finds it
-            issues.add(new SimpleLogRecord("Observed CRITICAL_TIMEOUT_999 while waiting"));
+            // 2. Append matching record owned by root: scan attaches it to root
+            issues.add(new SimpleLogRecord("Observed CRITICAL_TIMEOUT_999 while waiting", root));
             final TreeLayout layoutAfter = TreeHtml.computeLayout(List.of(root), sorted);
             assertEquals(1, layoutAfter.nodes().get(0).knownIssues().size());
 
-            // 3. Replace Issues with a fresh list without the match: cache must reset cleanly
+            // 3. Replace Issues with a fresh list without the match: must reset cleanly
             final Issues freshIssues = new Issues();
-            freshIssues.add(new SimpleLogRecord("Clean run"));
+            freshIssues.add(new SimpleLogRecord("Clean run", root));
             issuesField.set(Base.exec, freshIssues);
             final TreeLayout layoutReset = TreeHtml.computeLayout(List.of(root), sorted);
             assertTrue(layoutReset.nodes().get(0).knownIssues().isEmpty());
