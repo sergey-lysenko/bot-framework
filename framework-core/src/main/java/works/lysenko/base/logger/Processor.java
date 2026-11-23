@@ -245,7 +245,6 @@ public class Processor implements _LogsProcessor {
             if (isNotNull(exec.wd())) {
                 if (Routines.in(CHROME)) { // Old code
                     processLogType(LogType.BROWSER, depth, redefinedTime);
-                    processLogType(LogType.CLIENT, depth, redefinedTime);
                     processLogType(LogType.DRIVER, depth, redefinedTime);
                 } else readAllDriverLogs(depth, redefinedTime);
             }

@@ -10,3 +10,4 @@ dash/
 .artifacts/
 ScratchTest.java
 skills/
+dependency-reduced-pom.xml

@@ -2,10 +2,10 @@
 
 > **Autonomous, state-driven test automation engine engineered for extreme execution resilience across Web and Android platforms.**
 
-[![Java](https://img.shields.io/badge/Java-17%2B-blue.svg)](https://openjdk.org/)
+[![Java](https://img.shields.io/badge/Java-25-blue.svg)](https://openjdk.org/)
 [![Maven](https://img.shields.io/badge/Maven-Build-green.svg)](https://maven.apache.org/)
-[![Selenium](https://img.shields.io/badge/Selenium-4.30.0-orange.svg)](https://www.selenium.dev/)
-[![Appium](https://img.shields.io/badge/Appium-9.4.0-purple.svg)](https://appium.io/)
+[![Selenium](https://img.shields.io/badge/Selenium-4.49.0-orange.svg)](https://www.selenium.dev/)
+[![Appium](https://img.shields.io/badge/Appium-10.1.1-purple.svg)](https://appium.io/)
 [![Upwork]([[https://img.shields.io/badge/Upwork-Verified%20Top%20Rated%20Plus-14a800.svg](https://img.shields.io/badge/Upwork-Expert%20Vetted-14a800.svg)](https://img.shields.io/badge/Upwork-Expert%20Vetted-14a800.svg))](https://www.upwork.com/freelancers/alasan)
 
 ---
@@ -120,7 +120,7 @@ To consume `bot-framework` in your test suite, include it in your `pom.xml`:
 <dependency>
   <groupId>works.lysenko</groupId>
   <artifactId>framework</artifactId>
-  <version>0.26.43.23</version>
+  <version>0.26.48-SNAPSHOT</version>
 </dependency>
 ```
 
