@@ -7,6 +7,7 @@ import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.enums.ScenarioType;
 import works.lysenko.util.data.type.Result;
 import works.lysenko.util.data.type.maps.SortedScenarioName;
+import works.lysenko.util.prop.tree.Notify;
 import works.lysenko.util.spec.Level;
 
 import java.text.DecimalFormat;
@@ -18,7 +19,10 @@ import static java.util.Objects.isNull;
 import static works.lysenko.Base.*;
 import static works.lysenko.util.chrs.__.NO;
 import static works.lysenko.util.chrs.__.OF;
+import static works.lysenko.util.chrs.___.AND;
+import static works.lysenko.util.chrs.___.ARE;
 import static works.lysenko.util.chrs.___.HAD;
+import static works.lysenko.util.chrs.___.NOT;
 import static works.lysenko.util.chrs.___.SET;
 import static works.lysenko.util.chrs.____.*;
 import static works.lysenko.util.data.enums.Ansi.yb;
@@ -40,6 +44,7 @@ import static works.lysenko.util.lang.word.A.AMONG;
 import static works.lysenko.util.lang.word.A.AVAILABLE;
 import static works.lysenko.util.lang.word.C.*;
 import static works.lysenko.util.lang.word.D.DOWNSTREAM;
+import static works.lysenko.util.lang.word.E.EQUAL;
 import static works.lysenko.util.lang.word.E.EXECUTED;
 import static works.lysenko.util.lang.word.P.POSSIBLE;
 import static works.lysenko.util.lang.word.S.SCENARIO;
@@ -48,8 +53,10 @@ import static works.lysenko.util.lang.word.S.STATISTICS;
 import static works.lysenko.util.lang.word.T.THESE;
 import static works.lysenko.util.lang.word.U.UNEXPECTED;
 import static works.lysenko.util.lang.word.U.UPSTREAM;
+import static works.lysenko.util.lang.word.V.VALUES;
 import static works.lysenko.util.lang.word.W.WEIGHT;
 import static works.lysenko.util.spec.Symbols.A;
+import static works.lysenko.util.spec.Symbols._COLON_;
 import static works.lysenko.util.spec.Symbols._DOT_;
 
 /**
@@ -62,7 +69,7 @@ record Scenarios() {
 
     private static final DecimalFormat PERCENTAGE_FORMAT = new DecimalFormat("####0.0");
 
-    private static Map<String, _Result> aggregateResult(final Map<? extends _Scenario, ? extends _Result> results) {
+    static Map<String, _Result> aggregateResult(final Map<? extends _Scenario, ? extends _Result> results) {
 
         final Map<String, _Result> aggResults = new SortedScenarioName();
         results.forEach((thisScenario, thisResult) ->
@@ -97,10 +104,20 @@ record Scenarios() {
                 thisUpstreamWeight.doubleValue(),
                 S3, b(c(CHANGE), OF, SCENARIO, q(name), UPSTREAM, WEIGHT));
         final Fraction thisDownstreamWeight = thisResult.getDownstreamWeight();
-        assertEqualsSilentEvent(
-                aggregatedResult.getDownstreamWeight().doubleValue(),
-                thisDownstreamWeight.doubleValue(),
-                S3, b(c(CHANGE), OF, SCENARIO, q(name), DOWNSTREAM, WEIGHT));
+        final String downstreamChangeMessage = b(c(CHANGE), OF, SCENARIO, q(name), DOWNSTREAM, WEIGHT);
+        if (Notify.muteDownstreamWeightChange) {
+            final double expected = aggregatedResult.getDownstreamWeight().doubleValue();
+            final double actual = thisDownstreamWeight.doubleValue();
+            if (1.0E-10 < Math.abs(expected - actual)) {
+                logDebug(b(s(downstreamChangeMessage, _COLON_),
+                        b(c(VALUES), q(s(expected)), AND, q(s(actual)), ARE, NOT, EQUAL)));
+            }
+        } else {
+            assertEqualsSilentEvent(
+                    aggregatedResult.getDownstreamWeight().doubleValue(),
+                    thisDownstreamWeight.doubleValue(),
+                    S3, downstreamChangeMessage);
+        }
     }
 
     /**

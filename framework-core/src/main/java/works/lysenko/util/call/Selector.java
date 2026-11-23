@@ -158,8 +158,13 @@ public final class Selector implements Callable<_Scenario> {
             if (isAllLeafs || resilient) {
                 logAccounting();
                 logDebug(a(kv(s(IGNORE, c(FAILED), c(SELECTION)), String.valueOf(true))));
-                logEvent(S3, message);
-                logEvent(S3, b(c(TESTS), WILL, GO, ON, AS, REQUESTED));
+                if (Notify.muteEmptyCandidates) {
+                    logDebug(message);
+                    logDebug(b(c(TESTS), WILL, GO, ON, AS, REQUESTED));
+                } else {
+                    logEvent(S3, message);
+                    logEvent(S3, b(c(TESTS), WILL, GO, ON, AS, REQUESTED));
+                }
                 if (Scenario.branchStalePenalty && isNotNull(ctrl.getParent())) {
                     ctrl.getParent().incrementStaleCount();
                     logDebug(b(s(FAT_BUL), "Parent scenario", q(ctrl.getParent().getShortName()), "stale count incremented to", String.valueOf(ctrl.getParent().getStaleCount()), "(due to empty candidate pool)"));
@@ -370,8 +375,13 @@ public final class Selector implements Callable<_Scenario> {
         Utils.logDebug(a(kv(s(IGNORE, c(FAILED), c(SELECTION)), s(Scenario.ignoreFailedSelection))));
 
         if (Scenario.ignoreFailedSelection) {
-            logEvent(S3, message);
-            logEvent(S3, b(c(TESTS), WILL, GO, ON, AS, REQUESTED));
+            if (Notify.muteEmptyCandidates) {
+                Utils.logDebug(message);
+                Utils.logDebug(b(c(TESTS), WILL, GO, ON, AS, REQUESTED));
+            } else {
+                logEvent(S3, message);
+                logEvent(S3, b(c(TESTS), WILL, GO, ON, AS, REQUESTED));
+            }
         } else {
             logEvent(S0, message);
             if (isNull(ctrl.getParent())) {

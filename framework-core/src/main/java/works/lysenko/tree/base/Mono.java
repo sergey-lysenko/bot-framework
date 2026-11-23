@@ -27,6 +27,16 @@ public abstract class Mono extends Leaf {
     }
 
     /**
+     * Checks whether this single-execution scenario has already been executed.
+     *
+     * @return true if already executed, false otherwise
+     */
+    public final boolean isExecuted() {
+
+        return executed;
+    }
+
+    /**
      * Checks if this single-execution scenario is still executable (has not been run yet).
      *
      * @return true if not executed and super isExecutable() returns true, false otherwise

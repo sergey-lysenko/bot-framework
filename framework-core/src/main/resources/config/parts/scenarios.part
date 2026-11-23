@@ -161,3 +161,15 @@
 # ------------------------------------------------------------------------------
 # Displays a notice when a scenario cannot be executed. Default: true
 # .tree.scenario.not.executable.notice=true
+
+# ------------------------------------------------------------------------------
+# Demotes 'is not executable' notices to debug when a scenario is non-executable solely due to goal fulfillment (completed Mono, fulfilled Leaf under forbidOverexecution, or a Node whose configured children are all fulfilled). Default: false
+# .tree.mute.fulfilled.not.executable.notice=false
+
+# ------------------------------------------------------------------------------
+# Demotes empty-candidate-pool continuation notices ('Unable to fit any scenario among ...' and 'Tests will go on as requested') to debug in ALL_LEAFS, resilient, or ignore-failed-selection modes. Default: false
+# .tree.mute.empty.candidates.notice=false
+
+# ------------------------------------------------------------------------------
+# Demotes postflight downstream-weight change notices to debug when aggregating multiple instances of shared scenarios mounted under different parents. Default: false
+# .tree.mute.downstream.weight.change.notice=false

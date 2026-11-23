@@ -7,12 +7,15 @@ import org.junit.jupiter.api.Test;
 import works.lysenko.Base;
 import works.lysenko.testing.SelectionFixture;
 import works.lysenko.tree.base.Leaf;
+import works.lysenko.tree.base.Mono;
+import works.lysenko.tree.base.Node;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.data.records.KeyValue;
 import works.lysenko.util.prop.core.Safeguard;
 import works.lysenko.util.prop.tree.Notify;
+import works.lysenko.util.prop.tree.Scenario;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -155,6 +158,93 @@ class UtilsTest {
         assertTrue(fixture.events.isEmpty(), String.valueOf(fixture.events));
     }
 
+    @Test
+    void muteFulfilledNotExecutableDemotesFulfilledLeafMonoAndNode() throws Exception {
+        final boolean prevForbid = Scenario.forbidOverexecution;
+        try {
+            Scenario.forbidOverexecution = true;
+            Notify.notExecutable = true;
+            Notify.muteFulfilledNotExecutable = true;
+
+            final Leaf fulfilledLeaf = alpha();
+            fixture.core().getResults().count(fulfilledLeaf);
+            assertFalse(fulfilledLeaf.isExecutable());
+
+            Utils.logScenarioNotExecutable(fulfilledLeaf);
+            assertTrue(fixture.events.isEmpty(), "fulfilled leaf notice should be demoted: " + fixture.events);
+
+            final Mono executedMono = new SingleRunMono();
+            final java.lang.reflect.Field executedField = Mono.class.getDeclaredField("executed");
+            executedField.setAccessible(true);
+            executedField.setBoolean(executedMono, true);
+            assertFalse(executedMono.isExecutable());
+
+            Utils.logScenarioNotExecutable(executedMono);
+            assertTrue(fixture.events.isEmpty(), "executed mono notice should be demoted: " + fixture.events);
+
+            final Leaf unconfiguredLeaf = new UnconfiguredLeaf();
+            final Node fulfilledNode = new ParentNode(fulfilledLeaf, unconfiguredLeaf);
+            assertFalse(fulfilledNode.isExecutable());
+
+            Utils.logScenarioNotExecutable(fulfilledNode);
+            assertTrue(fixture.events.isEmpty(), "node with all active children fulfilled should be demoted: " + fixture.events);
+        } finally {
+            Scenario.forbidOverexecution = prevForbid;
+        }
+    }
+
+    @Test
+    void muteFulfilledNotExecutablePreservesRealNonExecutableNotices() {
+        final boolean prevForbid = Scenario.forbidOverexecution;
+        try {
+            Scenario.forbidOverexecution = true;
+            Notify.notExecutable = true;
+            Notify.muteFulfilledNotExecutable = true;
+
+            final Leaf failedLeaf = alpha();
+            failedLeaf.markAsFailed();
+            Utils.logScenarioNotExecutable(failedLeaf);
+            assertEquals(1, fixture.events.size(), "failed leaf must still emit S3: " + fixture.events);
+
+            fixture.events.clear();
+            final Leaf exhaustedLeaf = beta();
+            exhaustedLeaf.markAsExhausted();
+            Utils.logScenarioNotExecutable(exhaustedLeaf);
+            assertEquals(1, fixture.events.size(), "exhausted leaf must still emit S3: " + fixture.events);
+
+            fixture.events.clear();
+            final Leaf blockedLeaf = new BlockedLeaf();
+            Utils.logScenarioNotExecutable(blockedLeaf);
+            assertEquals(1, fixture.events.size(), "blocked unfulfilled leaf must still emit S3: " + fixture.events);
+
+            fixture.events.clear();
+            final Node failedChildNode = new ParentNode(failedLeaf);
+            Utils.logScenarioNotExecutable(failedChildNode);
+            assertEquals(1, fixture.events.size(), "node with failed child must still emit S3: " + fixture.events);
+        } finally {
+            Scenario.forbidOverexecution = prevForbid;
+        }
+    }
+
+    @Test
+    void fulfilledLeafStillEmitsS3WhenMuteFlagIsDisabledByDefault() {
+        final boolean prevForbid = Scenario.forbidOverexecution;
+        try {
+            Scenario.forbidOverexecution = true;
+            Notify.notExecutable = true;
+            Notify.muteFulfilledNotExecutable = false;
+
+            final Leaf fulfilledLeaf = alpha();
+            fixture.core().getResults().count(fulfilledLeaf);
+
+            Utils.logScenarioNotExecutable(fulfilledLeaf);
+            assertEquals(1, fixture.events.size(), String.valueOf(fixture.events));
+            assertTrue(fixture.events.get(0).startsWith(Severity.S3 + ":"), fixture.events.get(0));
+        } finally {
+            Scenario.forbidOverexecution = prevForbid;
+        }
+    }
+
     // ----------------------------------------------------------------------------- verifyScenarioSelection
 
     @Test
@@ -220,6 +310,42 @@ class UtilsTest {
     private static final class Beta extends Leaf {
         Beta() {
             super(Fraction.ONE);
+        }
+    }
+
+    private static final class SingleRunMono extends Mono {
+        @Override
+        public Fraction weightConfigured() {
+            return Fraction.ONE;
+        }
+    }
+
+    private static final class BlockedLeaf extends Leaf {
+        BlockedLeaf() {
+            super(Fraction.ONE);
+        }
+
+        @Override
+        public boolean isExecutable() {
+            return false;
+        }
+    }
+
+    private static final class UnconfiguredLeaf extends Leaf {
+        @Override
+        public Fraction weightConfigured() {
+            return null;
+        }
+    }
+
+    private static final class ParentNode extends Node {
+        ParentNode(final _Scenario... children) {
+            super(children);
+        }
+
+        @Override
+        public Fraction weightConfigured() {
+            return Fraction.ONE;
         }
     }
 }

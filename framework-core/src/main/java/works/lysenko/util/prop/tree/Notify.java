@@ -1,5 +1,8 @@
 package works.lysenko.util.prop.tree;
 
+import static works.lysenko.util.prop.PropEnum._TREE_MUTE_DOWNSTREAM_WEIGHT_CHANGE_NOTICE;
+import static works.lysenko.util.prop.PropEnum._TREE_MUTE_EMPTY_CANDIDATES_NOTICE;
+import static works.lysenko.util.prop.PropEnum._TREE_MUTE_FULFILLED_NOT_EXECUTABLE_NOTICE;
 import static works.lysenko.util.prop.PropEnum._TREE_NOTIFY_ABOUT_EMPTY_SCENARIO_PACKAGES;
 import static works.lysenko.util.prop.PropEnum._TREE_SCENARIO_DOES_NOT_FIT_NOTICE;
 import static works.lysenko.util.prop.PropEnum._TREE_SCENARIO_NOT_EXECUTABLE_NOTICE;
@@ -30,11 +33,29 @@ public record Notify() {
     public static boolean emptyPackage = _TREE_NOTIFY_ABOUT_EMPTY_SCENARIO_PACKAGES.get();
 
     /**
+     * Whether to demote {@code is not executable} notices to debug when non-executability is caused solely by goal fulfillment.
+     */
+    public static boolean muteFulfilledNotExecutable = _TREE_MUTE_FULFILLED_NOT_EXECUTABLE_NOTICE.get();
+
+    /**
+     * Whether to demote empty-candidate-pool continuation notices in tolerant/all-leafs selection modes to debug.
+     */
+    public static boolean muteEmptyCandidates = _TREE_MUTE_EMPTY_CANDIDATES_NOTICE.get();
+
+    /**
+     * Whether to demote postflight downstream-weight change notices for shared/multi-instance scenarios to debug.
+     */
+    public static boolean muteDownstreamWeightChange = _TREE_MUTE_DOWNSTREAM_WEIGHT_CHANGE_NOTICE.get();
+
+    /**
      * Refreshes static fields from current test properties.
      */
     public static void refresh() {
         notExecutable = _TREE_SCENARIO_NOT_EXECUTABLE_NOTICE.get();
         doesNotFit = _TREE_SCENARIO_DOES_NOT_FIT_NOTICE.get();
         emptyPackage = _TREE_NOTIFY_ABOUT_EMPTY_SCENARIO_PACKAGES.get();
+        muteFulfilledNotExecutable = _TREE_MUTE_FULFILLED_NOT_EXECUTABLE_NOTICE.get();
+        muteEmptyCandidates = _TREE_MUTE_EMPTY_CANDIDATES_NOTICE.get();
+        muteDownstreamWeightChange = _TREE_MUTE_DOWNSTREAM_WEIGHT_CHANGE_NOTICE.get();
     }
 }

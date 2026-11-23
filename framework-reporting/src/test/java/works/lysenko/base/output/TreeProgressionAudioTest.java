@@ -34,6 +34,10 @@ class TreeProgressionAudioTest {
         assertTrue(TreeProgressionAudio.find("Aurora").orElseThrow() instanceof AuroraSonifier);
         assertTrue(TreeProgressionAudio.find("carbon").orElseThrow() instanceof CarbonSonifier);
         assertTrue(TreeProgressionAudio.find("Carbon").orElseThrow() instanceof CarbonSonifier);
+        assertTrue(TreeProgressionAudio.find("neon").orElseThrow() instanceof NeonSonifier);
+        assertTrue(TreeProgressionAudio.find("Neon").orElseThrow() instanceof NeonSonifier);
+        assertTrue(TreeProgressionAudio.find("jmj").orElseThrow() instanceof JmjSonifier);
+        assertTrue(TreeProgressionAudio.find("JMJ").orElseThrow() instanceof JmjSonifier);
         assertTrue(TreeProgressionAudio.find("none").isEmpty());
         assertTrue(TreeProgressionAudio.find("true").isEmpty());
         assertTrue(TreeProgressionAudio.find(null).isEmpty());
@@ -102,6 +106,276 @@ class TreeProgressionAudioTest {
         assertTrue(hasSound(wav));
         assertTrue(hasStereoSeparation(wav), "Left and right channels must reflect spatial topology");
         assertArrayEquals(wav, Files.readAllBytes(secondWav.toPath()), "Carbon synthesis must be bit-for-bit deterministic");
+    }
+
+    @Test
+    void neonSynthesizesStereoAnalogTelemetryAndCompactionSweepDeterministically(@TempDir final Path tempDir) throws Exception {
+        final NeonSonifier neon = new NeonSonifier();
+        final File frame1 = tempDir.resolve("frame_0001.svg").toFile();
+        final File frame2 = tempDir.resolve("frame_0002.svg").toFile();
+        final File frame3 = tempDir.resolve("frame_0003.svg").toFile();
+        final File frame4 = tempDir.resolve("frame_0004.svg").toFile();
+
+        // Frame 1: wide 5-column layout with partial leaf, passed branch, and unvisited far-right leaf
+        final Result branch1Res = new Result(ScenarioType.NODE, null, null, null, List.of(), 1, 0);
+        branch1Res.updateStatus(ExecutionStatus.PASSED);
+        final TreeHtml.NodeData root1 = new TreeHtml.NodeData("root", "Auth", "Suite", 0, 1, branch1Res);
+        final TreeHtml.NodeData leafA1 = new TreeHtml.NodeData(
+                "leafA", "Login", "Suite", 2, 0, new Result(ScenarioType.LEAF, null, null, null, List.of(), 1, 0));
+        final TreeHtml.NodeData leafB1 = new TreeHtml.NodeData(
+                "leafB", "Audit", "Suite", 5, 2, new Result(ScenarioType.LEAF, null, null, null, List.of(), 0, 0));
+        leafA1.setParent(root1);
+        leafB1.setParent(root1);
+        root1.children().addAll(List.of(leafA1, leafB1));
+        final TreeHtml.TreeLayout layout1 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(root1, leafA1, leafB1)), List.of());
+
+        // Frame 2: leafA completes target=2, leafB hidden/pruned (triggers pruning + column contraction sweep)
+        final TreeHtml.NodeData root2 = new TreeHtml.NodeData(
+                "root", "Auth", "Suite", 0, 1, new Result(ScenarioType.NODE, null, null, null, List.of(), 2, 0));
+        final TreeHtml.NodeData leafA2 = new TreeHtml.NodeData(
+                "leafA", "Login", "Suite", 2, 0, new Result(ScenarioType.LEAF, null, null, null, List.of(), 2, 0));
+        leafA2.setParent(root2);
+        root2.children().add(leafA2);
+        final TreeHtml.TreeLayout layout2 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(root2, leafA2)), List.of());
+
+        // Frame 3: over-execution with warning
+        final Result overWarn = new Result(ScenarioType.LEAF, null, null, null, List.of(), 3, 1);
+        overWarn.updateStatus(ExecutionStatus.WARNING);
+        final TreeHtml.NodeData root3 = new TreeHtml.NodeData(
+                "root", "Auth", "Suite", 0, 1, new Result(ScenarioType.NODE, null, null, null, List.of(), 3, 0));
+        final TreeHtml.NodeData leafA3 = new TreeHtml.NodeData("leafA", "Login", "Suite", 2, 0, overWarn);
+        leafA3.setParent(root3);
+        root3.children().add(leafA3);
+        final TreeHtml.TreeLayout layout3 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(root3, leafA3)), List.of());
+
+        // Frame 4: raw failure glitch + brooding dark finale
+        final Result rawFail = new Result(ScenarioType.LEAF, null, null, null, List.of(), 4, 1);
+        rawFail.updateStatus(ExecutionStatus.FAILED);
+        final TreeHtml.NodeData root4 = new TreeHtml.NodeData(
+                "root", "Auth", "Suite", 0, 1, new Result(ScenarioType.NODE, null, null, null, List.of(), 4, 0));
+        final TreeHtml.NodeData leafA4 = new TreeHtml.NodeData("leafA", "Login", "Suite", 1, 0, rawFail);
+        leafA4.setParent(root4);
+        root4.children().add(leafA4);
+        final TreeHtml.TreeLayout layout4 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(root4, leafA4)), List.of());
+
+        neon.capture(frame1, layout1, 2);
+        neon.capture(frame2, layout2, 2);
+        neon.capture(frame3, layout3, 2);
+        neon.capture(frame4, layout4, 2);
+
+        assertTrue(NeonSonifier.snapshotFile(frame1).isFile());
+        assertTrue(neon.canSonify(List.of(frame1, frame2, frame3, frame4)));
+
+        final File firstWav = tempDir.resolve("neon_1.wav").toFile();
+        final File secondWav = tempDir.resolve("neon_2.wav").toFile();
+        neon.writeWav(List.of(frame1, frame2, frame3, frame4), firstWav, 10);
+        neon.writeWav(List.of(frame1, frame2, frame3, frame4), secondWav, 10);
+
+        final byte[] wav = Files.readAllBytes(firstWav.toPath());
+        assertEquals("RIFF", new String(wav, 0, 4, StandardCharsets.US_ASCII));
+        assertEquals("WAVE", new String(wav, 8, 4, StandardCharsets.US_ASCII));
+        final int channels = (wav[22] & 0xFF) | ((wav[23] & 0xFF) << 8);
+        assertEquals(2, channels, "Neon must output 2-channel stereo PCM WAV");
+        final int tailSamples = (int) (44_100 * 1.25);
+        assertEquals(44 + ((4 * 4_410) + tailSamples) * 2 * Short.BYTES, wav.length);
+        assertTrue(hasSound(wav));
+        assertTrue(hasStereoSeparation(wav), "Neon stereo chorus and panning must produce L/R separation");
+        assertArrayEquals(wav, Files.readAllBytes(secondWav.toPath()), "Neon synthesis must be bit-for-bit deterministic");
+    }
+
+    @Test
+    void neonSonifiesSvgFramesDirectlyWhenSnapshotsAreAbsent(@TempDir final Path tempDir) throws Exception {
+        final NeonSonifier neon = new NeonSonifier();
+        final File svg1 = tempDir.resolve("frame_0001.svg").toFile();
+        final File svg2 = tempDir.resolve("frame_0002.svg").toFile();
+
+        Files.writeString(svg1.toPath(),
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1200\" height=\"600\">\n"
+                        + "  <g transform=\"translate(0.00, 0.00) scale(1.0000)\">\n"
+                        + "    <g id=\"scenario_0_Users\" class=\"node-card notice\" transform=\"translate(40, 92)\">\n"
+                        + "      <title>Users ▷ (Notice)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"44\" stroke=\"#06b6d4\" />\n"
+                        + "      <text class=\"tx1\">1 exec</text>\n"
+                        + "    </g>\n"
+                        + "    <g id=\"scenario_1_Verify\" class=\"node-card unvisited\" transform=\"translate(580, 92)\">\n"
+                        + "      <title>Verify ◼ (Unvisited)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"44\" stroke=\"#64748b\" />\n"
+                        + "      <text class=\"tx1\">0/1</text>\n"
+                        + "    </g>\n"
+                        + "  </g>\n"
+                        + "  <g transform=\"scale(1.0000)\">\n"
+                        + "    <text class=\"tx3\">Leaves: 0/1</text>\n"
+                        + "    <text class=\"tx3\">Test #1</text>\n"
+                        + "  </g>\n"
+                        + "</svg>\n",
+                StandardCharsets.UTF_8);
+
+        Files.writeString(svg2.toPath(),
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1200\" height=\"600\">\n"
+                        + "  <g transform=\"translate(18.00, -12.00) scale(1.2500)\">\n"
+                        + "    <g id=\"scenario_0_Users\" class=\"node-card passed\" transform=\"translate(40, 92)\">\n"
+                        + "      <title>Users ▷ (Passed)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"44\" stroke=\"#22c55e\" />\n"
+                        + "      <text class=\"tx1\">2 execs</text>\n"
+                        + "    </g>\n"
+                        + "    <g id=\"scenario_1_Verify\" class=\"node-card passed\" transform=\"translate(310, 92)\">\n"
+                        + "      <title>Verify ◼ (Passed)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"44\" stroke=\"#22c55e\" />\n"
+                        + "      <text class=\"tx1\">✓ 1/1</text>\n"
+                        + "    </g>\n"
+                        + "  </g>\n"
+                        + "  <g transform=\"scale(1.0000)\">\n"
+                        + "    <text class=\"tx3\">Leaves: 1/1</text>\n"
+                        + "    <text class=\"tx3\">Test #2</text>\n"
+                        + "  </g>\n"
+                        + "</svg>\n",
+                StandardCharsets.UTF_8);
+
+        assertTrue(neon.canSonify(List.of(svg1, svg2)));
+        final File wavOut = tempDir.resolve("neon_svg.wav").toFile();
+        neon.writeWav(List.of(svg1, svg2), wavOut, 10);
+        final byte[] wav = Files.readAllBytes(wavOut.toPath());
+        assertTrue(hasSound(wav));
+        assertTrue(hasStereoSeparation(wav));
+    }
+
+    @Test
+    void jmjSynthesizesPhasedCosmicAnalogTelemetryDeterministically(@TempDir final Path tempDir) throws Exception {
+        final JmjSonifier jmj = new JmjSonifier();
+        final File frame1 = tempDir.resolve("frame_0001.svg").toFile();
+        final File frame2 = tempDir.resolve("frame_0002.svg").toFile();
+        final File frame3 = tempDir.resolve("frame_0003.svg").toFile();
+        final File frame4 = tempDir.resolve("frame_0004.svg").toFile();
+
+        // Frame 1: opening wind + phased strings + partial leaf + unvisited far-right leaf
+        final Result branch1Res = new Result(ScenarioType.NODE, null, null, null, List.of(), 1, 0);
+        branch1Res.updateStatus(ExecutionStatus.PASSED);
+        final TreeHtml.NodeData root1 = new TreeHtml.NodeData("root", "Oxygene", "Suite", 0, 1, branch1Res);
+        final TreeHtml.NodeData leafA1 = new TreeHtml.NodeData(
+                "leafA", "Part1", "Suite", 2, 0, new Result(ScenarioType.LEAF, null, null, null, List.of(), 1, 0));
+        final TreeHtml.NodeData leafB1 = new TreeHtml.NodeData(
+                "leafB", "Part4", "Suite", 5, 2, new Result(ScenarioType.LEAF, null, null, null, List.of(), 0, 0));
+        leafA1.setParent(root1);
+        leafB1.setParent(root1);
+        root1.children().addAll(List.of(leafA1, leafB1));
+        final TreeHtml.TreeLayout layout1 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(root1, leafA1, leafB1)), List.of());
+
+        // Frame 2: leafA completes target=2 (Oxygène lead motif), leafB hidden/pruned (warm low COSMIC_FADE)
+        final TreeHtml.NodeData root2 = new TreeHtml.NodeData(
+                "root", "Oxygene", "Suite", 0, 1, new Result(ScenarioType.NODE, null, null, null, List.of(), 2, 0));
+        final TreeHtml.NodeData leafA2 = new TreeHtml.NodeData(
+                "leafA", "Part1", "Suite", 2, 0, new Result(ScenarioType.LEAF, null, null, null, List.of(), 2, 0));
+        leafA2.setParent(root2);
+        root2.children().add(leafA2);
+        final TreeHtml.TreeLayout layout2 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(root2, leafA2)), List.of());
+
+        // Frame 3: over-execution with warning horn
+        final Result overWarn = new Result(ScenarioType.LEAF, null, null, null, List.of(), 3, 1);
+        overWarn.updateStatus(ExecutionStatus.WARNING);
+        final TreeHtml.NodeData root3 = new TreeHtml.NodeData(
+                "root", "Oxygene", "Suite", 0, 1, new Result(ScenarioType.NODE, null, null, null, List.of(), 3, 0));
+        final TreeHtml.NodeData leafA3 = new TreeHtml.NodeData("leafA", "Part1", "Suite", 2, 0, overWarn);
+        leafA3.setParent(root3);
+        root3.children().add(leafA3);
+        final TreeHtml.TreeLayout layout3 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(root3, leafA3)), List.of());
+
+        // Frame 4: column contraction (wind sweep) + VCS3 ring-mod failure + cosmic finale
+        final Result rawFail = new Result(ScenarioType.LEAF, null, null, null, List.of(), 4, 1);
+        rawFail.updateStatus(ExecutionStatus.FAILED);
+        final TreeHtml.NodeData root4 = new TreeHtml.NodeData(
+                "root", "Oxygene", "Suite", 0, 1, new Result(ScenarioType.NODE, null, null, null, List.of(), 4, 0));
+        final TreeHtml.NodeData leafA4 = new TreeHtml.NodeData("leafA", "Part1", "Suite", 1, 0, rawFail);
+        leafA4.setParent(root4);
+        root4.children().add(leafA4);
+        final TreeHtml.TreeLayout layout4 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(root4, leafA4)), List.of());
+
+        jmj.capture(frame1, layout1, 2);
+        jmj.capture(frame2, layout2, 2);
+        jmj.capture(frame3, layout3, 2);
+        jmj.capture(frame4, layout4, 2);
+
+        assertTrue(JmjSonifier.snapshotFile(frame1).isFile());
+        assertTrue(jmj.canSonify(List.of(frame1, frame2, frame3, frame4)));
+
+        final File firstWav = tempDir.resolve("jmj_1.wav").toFile();
+        final File secondWav = tempDir.resolve("jmj_2.wav").toFile();
+        jmj.writeWav(List.of(frame1, frame2, frame3, frame4), firstWav, 10);
+        jmj.writeWav(List.of(frame1, frame2, frame3, frame4), secondWav, 10);
+
+        final byte[] wav = Files.readAllBytes(firstWav.toPath());
+        assertEquals("RIFF", new String(wav, 0, 4, StandardCharsets.US_ASCII));
+        assertEquals("WAVE", new String(wav, 8, 4, StandardCharsets.US_ASCII));
+        final int channels = (wav[22] & 0xFF) | ((wav[23] & 0xFF) << 8);
+        assertEquals(2, channels, "JMJ must output 2-channel stereo PCM WAV");
+        final int tailSamples = (int) (44_100 * 1.65);
+        assertEquals(44 + ((4 * 4_410) + tailSamples) * 2 * Short.BYTES, wav.length);
+        assertTrue(hasSound(wav));
+        assertTrue(hasStereoSeparation(wav), "JMJ Small Stone phaser and Space Echo must produce stereo width");
+        assertArrayEquals(wav, Files.readAllBytes(secondWav.toPath()), "JMJ synthesis must be bit-for-bit deterministic");
+    }
+
+    @Test
+    void jmjSonifiesSvgFramesDirectlyWhenSnapshotsAreAbsent(@TempDir final Path tempDir) throws Exception {
+        final JmjSonifier jmj = new JmjSonifier();
+        final File svg1 = tempDir.resolve("frame_0001.svg").toFile();
+        final File svg2 = tempDir.resolve("frame_0002.svg").toFile();
+
+        Files.writeString(svg1.toPath(),
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1200\" height=\"600\">\n"
+                        + "  <g transform=\"translate(0.00, 0.00) scale(1.0000)\">\n"
+                        + "    <g id=\"scenario_0_Equinoxe\" class=\"node-card notice\" transform=\"translate(40, 92)\">\n"
+                        + "      <title>Equinoxe ▷ (Notice)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"44\" stroke=\"#06b6d4\" />\n"
+                        + "      <text class=\"tx1\">1 exec</text>\n"
+                        + "    </g>\n"
+                        + "    <g id=\"scenario_1_Finale\" class=\"node-card unvisited\" transform=\"translate(580, 92)\">\n"
+                        + "      <title>Finale ◼ (Unvisited)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"44\" stroke=\"#64748b\" />\n"
+                        + "      <text class=\"tx1\">0/1</text>\n"
+                        + "    </g>\n"
+                        + "  </g>\n"
+                        + "  <g transform=\"scale(1.0000)\">\n"
+                        + "    <text class=\"tx3\">Leaves: 0/1</text>\n"
+                        + "    <text class=\"tx3\">Test #1</text>\n"
+                        + "  </g>\n"
+                        + "</svg>\n",
+                StandardCharsets.UTF_8);
+
+        Files.writeString(svg2.toPath(),
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1200\" height=\"600\">\n"
+                        + "  <g transform=\"translate(18.00, -12.00) scale(1.2500)\">\n"
+                        + "    <g id=\"scenario_0_Equinoxe\" class=\"node-card passed\" transform=\"translate(40, 92)\">\n"
+                        + "      <title>Equinoxe ▷ (Passed)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"44\" stroke=\"#22c55e\" />\n"
+                        + "      <text class=\"tx1\">2 execs</text>\n"
+                        + "    </g>\n"
+                        + "    <g id=\"scenario_1_Finale\" class=\"node-card passed\" transform=\"translate(310, 92)\">\n"
+                        + "      <title>Finale ◼ (Passed)</title>\n"
+                        + "      <rect class=\"card-bg\" width=\"220\" height=\"44\" stroke=\"#22c55e\" />\n"
+                        + "      <text class=\"tx1\">✓ 1/1</text>\n"
+                        + "    </g>\n"
+                        + "  </g>\n"
+                        + "  <g transform=\"scale(1.0000)\">\n"
+                        + "    <text class=\"tx3\">Leaves: 1/1</text>\n"
+                        + "    <text class=\"tx3\">Test #2</text>\n"
+                        + "  </g>\n"
+                        + "</svg>\n",
+                StandardCharsets.UTF_8);
+
+        assertTrue(jmj.canSonify(List.of(svg1, svg2)));
+        final File wavOut = tempDir.resolve("jmj_svg.wav").toFile();
+        jmj.writeWav(List.of(svg1, svg2), wavOut, 10);
+        final byte[] wav = Files.readAllBytes(wavOut.toPath());
+        assertTrue(hasSound(wav));
+        assertTrue(hasStereoSeparation(wav));
     }
 
     @Test

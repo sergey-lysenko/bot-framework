@@ -93,4 +93,15 @@ class PropEnumTest {
         assertFalse(PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_GIF.silent());
         assertFalse(PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_GIF.executionParameter());
     }
+
+    @Test
+    void noticeMutingPropertiesDefaultToFalse() {
+        Base.properties = null;
+        assertEquals(".tree.mute.fulfilled.not.executable.notice", PropEnum._TREE_MUTE_FULFILLED_NOT_EXECUTABLE_NOTICE.getPropertyName());
+        assertEquals(".tree.mute.empty.candidates.notice", PropEnum._TREE_MUTE_EMPTY_CANDIDATES_NOTICE.getPropertyName());
+        assertEquals(".tree.mute.downstream.weight.change.notice", PropEnum._TREE_MUTE_DOWNSTREAM_WEIGHT_CHANGE_NOTICE.getPropertyName());
+        assertEquals(Boolean.FALSE, PropEnum._TREE_MUTE_FULFILLED_NOT_EXECUTABLE_NOTICE.get());
+        assertEquals(Boolean.FALSE, PropEnum._TREE_MUTE_EMPTY_CANDIDATES_NOTICE.get());
+        assertEquals(Boolean.FALSE, PropEnum._TREE_MUTE_DOWNSTREAM_WEIGHT_CHANGE_NOTICE.get());
+    }
 }

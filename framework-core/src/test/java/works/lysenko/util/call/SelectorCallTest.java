@@ -35,6 +35,8 @@ class SelectorCallTest {
         Scenario.ignoreFailedSelection = false;
         Notify.doesNotFit = true;
         Notify.notExecutable = true;
+        Notify.muteFulfilledNotExecutable = false;
+        Notify.muteEmptyCandidates = false;
     }
 
     @AfterEach
@@ -147,6 +149,49 @@ class SelectorCallTest {
 
         assertNoSevereFailure();
         assertFalse(fixture.core().getStopFlag());
+    }
+
+    @Test
+    void muteEmptyCandidatesDemotesTolerantNoticesInAllLeafsAndResilientAndIgnoreModes() throws Exception {
+        Notify.doesNotFit = false;
+        Notify.muteEmptyCandidates = true;
+
+        // ALL_LEAFS mode
+        fixture.setProperty(PropEnum._TEST_ALL_LEAFS, "true");
+        Notify.doesNotFit = false;
+        Notify.muteEmptyCandidates = true;
+        final Ctrl allLeafsCtrl = new Ctrl(null);
+        allLeafsCtrl.getPool().appendScenarioWithWeight(new MisfitLeaf(), fr(1.0));
+        assertNull(new Selector(allLeafsCtrl, 3).call());
+        assertTrue(fixture.events.isEmpty(), "all-leafs empty-candidate notices should be demoted: " + fixture.events);
+        assertFalse(fixture.core().getStopFlag());
+
+        // Resilient mode
+        fixture.setProperty(PropEnum._TEST_ALL_LEAFS, "false");
+        Notify.doesNotFit = false;
+        Notify.muteEmptyCandidates = true;
+        Mode.resilient = true;
+        final Ctrl resilientCtrl = new Ctrl(null);
+        resilientCtrl.getPool().appendScenarioWithWeight(new MisfitLeaf(), fr(1.0));
+        assertNull(new Selector(resilientCtrl, 3).call());
+        assertTrue(fixture.events.isEmpty(), "resilient empty-candidate notices should be demoted: " + fixture.events);
+
+        // ignoreFailedSelection mode
+        Mode.resilient = false;
+        Scenario.ignoreFailedSelection = true;
+        final Ctrl ignoreCtrl = new Ctrl(null);
+        ignoreCtrl.getPool().appendScenarioWithWeight(new MisfitLeaf(), fr(1.0));
+        assertNull(new Selector(ignoreCtrl, 3).call());
+        assertTrue(fixture.events.isEmpty(), "ignore-failed-selection notices should be demoted: " + fixture.events);
+
+        // Strict mode still logs S0 and stops tests even when muteEmptyCandidates is true
+        Scenario.ignoreFailedSelection = false;
+        final Ctrl strictCtrl = new Ctrl(null);
+        strictCtrl.getPool().appendScenarioWithWeight(new MisfitLeaf(), fr(1.0));
+        assertNull(new Selector(strictCtrl, 3).call());
+        assertTrue(fixture.events.stream().anyMatch(e -> e.startsWith("S0:") && e.toLowerCase().contains("unable to fit any scenario")),
+                String.valueOf(fixture.events));
+        assertTrue(fixture.core().getStopFlag());
     }
 
     @Test

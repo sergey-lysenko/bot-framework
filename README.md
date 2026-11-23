@@ -200,6 +200,8 @@ When `.test.report.progression.tree.mp4 = true`, the framework uses FFmpeg to co
 - **`orpheus`**: Polyphonic modal narrative with branch melodies, leaf completion arpeggios, status harmony, and camera shimmer.
 - **`aurora`**: Ethereal Hirajoshi pentatonic pads tracking column completion with failure and warning cues.
 - **`carbon`**: True-stereo spatial FM/pad synthesis mapping tree depth left-to-right with continuous harmonic buoyancy, adaptive step/macro strumming, damped over-execution ticks, `known-issue`-aware status cues, and pruning updraft sweeps.
+- **`neon`**: Kinetic midnight-synthwave true-stereo subtractive analog engine with PolyBLEP saw/PWM oscillators, resonant ZDF filters, Juno-style stereo BBD chorus, velocity-driven rolling bass &amp; sidechain 808 kick pulse, laser leaf arpeggios, cyan notice bells, amber brass warnings, ring-modulated bitcrushed failure glitches, low fade-out leaf disappearance, and post-test column-compaction lock sweeps.
+- **`jmj`**: 1970s French cosmic analog tribute to Jean-Michel Jarre's early classics (*Oxygène* / *Équinoxe* / *Les Chants Magnétiques*) featuring phased Eminent 310 string ensembles (4-stage stereo Small Stone all-pass phaser), Matrisequencer analog bass ostinati, Korg MiniPops-7 percussion, EMS VCS3 cosmic droplets &amp; ring-modulated alarms, singing vibrato *Oxygène* leads through a Roland RE-201 Space Echo stereo ping-pong tape delay, warm low disappearing leaf sighs, and filtered pink-noise cosmic wind sweeps.
 
 ---
 

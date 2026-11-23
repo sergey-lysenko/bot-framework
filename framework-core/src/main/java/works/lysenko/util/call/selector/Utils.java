@@ -3,7 +3,10 @@ package works.lysenko.util.call.selector;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.Base;
+import works.lysenko.tree.base.Leaf;
+import works.lysenko.tree.base.Mono;
 import works.lysenko.util.apis.exception.checked.SafeguardException;
+import works.lysenko.util.apis.scenario._Node;
 import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.data.records.KeyValue;
@@ -13,13 +16,19 @@ import works.lysenko.util.prop.tree.Scenario;
 import works.lysenko.util.spec.Level;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.StreamSupport;
 
+import static java.util.Objects.isNull;
 import static works.lysenko.Base.core;
 import static works.lysenko.Base.exec;
 import static works.lysenko.Base.logTrace;
+import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.chrs.__.IS;
 import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.____.*;
@@ -156,14 +165,67 @@ public record Utils() {
 
     /**
      * Logs a warning notification when a scenario is determined to be non-executable.
+     * <p>
+     * When {@link Notify#muteFulfilledNotExecutable} is enabled and the scenario is non-executable
+     * solely due to goal fulfillment (completed {@link Mono}, fulfilled {@link Leaf} under
+     * {@code forbidOverexecution}, or a {@link _Node} whose configured children are all fulfilled),
+     * the notification is demoted to debug level instead of raising an {@code S3} event.
      *
      * @param scenario the scenario that is not executable
      */
     public static void logScenarioNotExecutable(final _Scenario scenario) {
 
         if (Notify.notExecutable) {
-            logEvent(S3, b(scenario.getName(), IS, NOT, EXECUTABLE));
+            final String message = b(scenario.getName(), IS, NOT, EXECUTABLE);
+            if (Notify.muteFulfilledNotExecutable && isNonExecutableDueToGoalFulfillment(scenario)) {
+                logDebug(message);
+            } else {
+                logEvent(S3, message);
+            }
         }
+    }
+
+    /**
+     * Checks whether a scenario is non-executable solely because its execution goal has been fulfilled.
+     *
+     * @param scenario the scenario to evaluate
+     * @return {@code true} if non-executability is due solely to goal fulfillment, {@code false} otherwise
+     */
+    static boolean isNonExecutableDueToGoalFulfillment(final _Scenario scenario) {
+
+        return isNonExecutableDueToGoalFulfillment(scenario, Collections.newSetFromMap(new IdentityHashMap<>()));
+    }
+
+    private static boolean isNonExecutableDueToGoalFulfillment(final _Scenario scenario, final Set<_Scenario> visited) {
+
+        if (isNull(scenario) || !visited.add(scenario)) return false;
+        if (scenario.hasFailed() || scenario.isExhausted()) return false;
+        if (isNull(scenario.weightConfigured())) return false;
+        if (scenario instanceof Mono mono) {
+            return mono.isExecuted() || (Scenario.forbidOverexecution && mono.isGoalFulfilled());
+        }
+        if (scenario instanceof Leaf leaf) {
+            return Scenario.forbidOverexecution && leaf.isGoalFulfilled();
+        }
+        if (scenario instanceof _Node node) {
+            if (isNull(node.getPool())) return false;
+            final List<KeyValue<_Scenario, Fraction>> pairs = node.getPool().getPairList();
+            if (isNull(pairs) || pairs.isEmpty()) return false;
+            boolean hasFulfilledChild = false;
+            for (final KeyValue<_Scenario, Fraction> pair : pairs) {
+                final _Scenario child = pair.k();
+                if (isNull(child)) continue;
+                if (child.isExecutable()) return false;
+                if (child.hasFailed() || child.isExhausted()) return false;
+                if (isNonExecutableDueToGoalFulfillment(child, visited)) {
+                    hasFulfilledChild = true;
+                } else if (isNotNull(child.weightConfigured())) {
+                    return false;
+                }
+            }
+            return hasFulfilledChild;
+        }
+        return false;
     }
 
     /**

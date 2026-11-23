@@ -53,6 +53,9 @@ public final class SelectionFixture implements AutoCloseable {
     private final boolean previousIgnoreFailedSelection = Scenario.ignoreFailedSelection;
     private final boolean previousDoesNotFit = Notify.doesNotFit;
     private final boolean previousNotExecutable = Notify.notExecutable;
+    private final boolean previousMuteFulfilledNotExecutable = Notify.muteFulfilledNotExecutable;
+    private final boolean previousMuteEmptyCandidates = Notify.muteEmptyCandidates;
+    private final boolean previousMuteDownstreamWeightChange = Notify.muteDownstreamWeightChange;
     private final SequenceMode previousSequenceMode = Sequence.mode;
     private final Severity previousSequenceSeverity = Sequence.severity;
     private final Core core;
@@ -144,6 +147,9 @@ public final class SelectionFixture implements AutoCloseable {
         Scenario.ignoreFailedSelection = previousIgnoreFailedSelection;
         Notify.doesNotFit = previousDoesNotFit;
         Notify.notExecutable = previousNotExecutable;
+        Notify.muteFulfilledNotExecutable = previousMuteFulfilledNotExecutable;
+        Notify.muteEmptyCandidates = previousMuteEmptyCandidates;
+        Notify.muteDownstreamWeightChange = previousMuteDownstreamWeightChange;
         Sequence.mode = previousSequenceMode;
         Sequence.severity = previousSequenceSeverity;
         SequenceTracker.reset();
