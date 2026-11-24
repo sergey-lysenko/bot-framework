@@ -110,7 +110,7 @@ graph TD
 | **Analysis** | `framework-analysis` | `core`, `lexicon`, Jackson | Runtime `EtaCalculator`, historical `EtaCorrection`, Monte Carlo `CoverageEstimator`, `KnownIssuesStore`/`Matcher`, and `ExpectedResponsesStore`/`Matcher`. |
 | **Grid** | `framework-grid` | `core`, `lexicon`, `jgrapht-core` | Screenshot capture, visual `OperationMarkers`, RGB/HSB/Palette/Polychromy pixel-grid validation (`Probe`, `Check`, `Theme`, `BackgroundValidator`), and `Ranger` range-verification. |
 | **Driver** | `framework-driver` | `core`, `lexicon`, `selenium-java`, `webdrivermanager`, Appium `java-client`, OkHttp, BouncyCastle, Netty | Concrete Selenium WebDriver factory (`WebDrivers`) for Chrome/Firefox/Edge/Safari and Appium `AndroidDriver` + `AppiumDriverLocalService` lifecycle (`Driver`). |
-| **Reporting** | `framework-reporting` | `core`, `analysis`, `grid`, `lexicon`, `graphviz-java`, `jsvg`, `webp-imageio`, `commons-exec`, Jackson | Detached `PostProcessor`, interactive HTML reports (`LogHtml`, `TreeHtml`, `KnownIssuesHtml`, `Scenarios`, `Tests`, `NewIssues`), `SummaryPlaque`, 16:9 `TreeLayoutOptimizer`, WebP/GIF/MP4 progression animations, and 9 procedural audio sonifiers. |
+| **Reporting** | `framework-reporting` | `core`, `analysis`, `grid`, `lexicon`, `graphviz-java`, `jsvg`, `webp-imageio`, `commons-exec`, Jackson | Detached `PostProcessor`, interactive HTML reports (`LogHtml`, `TreeHtml`, `KnownIssuesHtml`, `Scenarios`, `Tests`, `NewIssues`), `SummaryPlaque`, 16:9 `TreeLayoutOptimizer`, WebP/GIF/MP4 progression animations, and 10 procedural audio sonifiers. |
 | **UI** | `framework-ui` | `core`, `analysis`, `grid`, `reporting`, `lexicon`, Jackson | Live Swing run dashboard (`UserInterface`), pre-run parameter launcher (`Gui` + `CycleEstimatorPanel`), embedded config/suite editor (`ConfigTestsEditorPanel`), visual `@VisualOffset` editor (`TreeLayoutEditorPanel` + `TreeLayoutAutoSolver`), and `KnownIssuesPanel`. |
 | **Runner** | `framework-runner` | `core`, `lexicon` | Default `BotRunner` CLI entrypoint, `Agenda` workflow wiring, default lifecycle hooks (`Preflight`, `Pretest`, `Status`, `Specifics`, `Postflight`), and template `PropEnum`. |
 | **Umbrella** | `framework` | Aggregates all 8 modules above | Drop-in single Maven dependency; also packages a fat `framework-<version>-shaded.jar` with `ServicesResourceTransformer` merging all `META-INF/services/*` descriptors. |
@@ -291,7 +291,7 @@ When authoring a `Node`, `Leaf`, or `Mono`, override any combination of:
 
 - **`boolean fits()`** — Prerequisite guard checked *before* execution. Default behavior follows `.tree.fits.by.default` (`false` unless overridden). Returning `false` removes the scenario from the current selection candidate pool (and may prune/penalize it).
 - **`void action() throws SafeguardException`** — Primary interaction logic. Defaults to calling `verify()`.
-- **`void verify()`** (from `Verifies`) — Post-action verification hook automatically invoked after `action()` whenever a WebDriver is active.
+- **`boolean verify() throws SafeguardException`** (from `Verifies`) — Post-action verification hook automatically invoked after `action()` whenever a WebDriver is active.
 - **`void finals() throws SafeguardException`** — Cleanup/teardown step run after `action()` (and after child execution in a `Node`).
 - **`String info()`** — Short status/diagnostic string printed in logs and summaries (returns `"halted"` on halted `Node`s).
 - **`void halt()`** (on `Node`) — Skips child scenario selection for the current iteration while still executing `finals()`.
@@ -650,18 +650,21 @@ Implemented in `framework-analysis` and bridged via `_EtaProvider` and `_Diagnos
 Loaded from `src/main/resources/known/issues.json` (with classpath and legacy fallbacks) into `KnownIssuesStore`:
 
 ```json
-[
-  {
-    "scenario": "checkout.ApplyCoupon",
-    "title": "BUG-142: Intermittent coupon timeout",
-    "description": "Backend latency occasionally exceeds 30s on staging",
-    "link": "https://tracker.example.com/BUG-142",
-    "pattern": "TimeoutException",
-    "decrease-to-warning": true
-  }
-]
+{
+  "issues": [
+    {
+      "scenario": "checkout.ApplyCoupon",
+      "title": "BUG-142: Intermittent coupon timeout",
+      "description": "Backend latency occasionally exceeds 30s on staging",
+      "link": "https://tracker.example.com/BUG-142",
+      "pattern": "TimeoutException",
+      "decrease-to-warning": true
+    }
+  ]
+}
 ```
 
+- Supports `{ "issues": [...] }`, scenario-grouped `{ "scenarios": [...] }`, top-level `[...]` arrays, and multi-target `"scenarios": [...]` lists.
 - When a failure event matches a `KnownIssue` with `decrease-to-warning: true` (default), `_DiagnosticsProvider#shouldDecreaseToWarning` downgrades the event from `FAILURE`/`SEVERE` to `WARNING` so known bugs do not abort or fail CI builds while remaining clearly badged in HTML/SVG reports (`<ts>.issues.html`).
 - A run-scoped snapshot is archived to `<ts>.known.issues.json`.
 
@@ -670,15 +673,18 @@ Loaded from `src/main/resources/known/issues.json` (with classpath and legacy fa
 Loaded from `src/main/resources/expected/responses.json` into `ExpectedResponsesStore`:
 
 ```json
-[
-  {
-    "scenario": "auth.InvalidLogin",
-    "pattern": "401 Unauthorized",
-    "reason": "Negative test intentionally submits invalid credentials"
-  }
-]
+{
+  "responses": [
+    {
+      "scenario": "auth.InvalidLogin",
+      "pattern": "401 Unauthorized",
+      "reason": "Negative test intentionally submits invalid credentials"
+    }
+  ]
+}
 ```
 
+- Supports `"scenario"` (defaults to `"*"` wildcard when omitted) or `"scenarios": [...]` for multi-scenario matching.
 - Neutralizes anticipated browser console errors or negative-test failure signals via `_DiagnosticsProvider#isExpectedEvent` so intentional negative tests stay `PASSED`.
 - Archived per run to `<ts>.expected.responses.json`.
 
@@ -711,7 +717,7 @@ When a test run ends, `DefaultReportingProvider` spawns a **detached child JVM**
 
 | Artifact | Generator | Contents |
 |---|---|---|
-| `<ts>.run.log.html` | `LogHtml` (`LogFileParser`, `ChartsRenderer`, `TimelineRenderer`, `SectionRenderer`) | Full interactive report with `SummaryPlaque`, collapsible sections (Booting, Preflight, Test Cycles, Postflight), execution duration timeline, CPU/RAM telemetry chart, ETA debug chart, Exhaustive Completion chart, inline screenshots, and links to animations & sub-reports. |
+| `<ts>.run.log.html` | `LogHtml` (`LogParser`, `ChartsRenderer`, `TimelineRenderer`, `SectionRenderer`) | Full interactive report with `SummaryPlaque`, collapsible sections (Booting, Preflight, Test Cycles, Postflight), execution duration timeline, CPU/RAM telemetry chart, ETA debug chart, Exhaustive Completion chart, inline screenshots, and links to animations & sub-reports. |
 | `<ts>.tree.html` | `TreeHtml` (`TreeLayoutComputer`, `TreeLayoutOptimizer`, `SvgTreeRenderer`) | Interactive vector SVG state-tree diagram color-coded by `ExecutionStatus`, showing execution counts, weights, known-issue badges, and tooltips. Automatically compacts tall/narrow trees into 16:9 multi-bank layouts with multi-column leaf packing. |
 | `<ts>.scenarios.html` | `Scenarios` | Tabular per-scenario execution statistics, weights, counts, and outcomes. |
 | `<ts>.tests.html` | `Tests` | Per-cycle test history, durations, and executed paths. |
@@ -940,8 +946,9 @@ public class FilterActive extends Leaf {
     }
 
     @Override
-    public void verify() {
+    public boolean verify() throws SafeguardException {
         assertTrue(isPresent("//table[@data-filter='active']"), "Active filter table should be visible");
+        return true;
     }
 }
 ```
