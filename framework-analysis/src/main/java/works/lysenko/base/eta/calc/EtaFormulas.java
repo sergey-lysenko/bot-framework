@@ -11,7 +11,7 @@ import java.util.List;
 public record EtaFormulas() {
 
     /**
-     * Pure stateless ETA calculation for {@link EtaMode#ALL_LEAFS} with wandering-patience blending.
+     * Pure stateless ETA calculation for {@link EtaMode#EXHAUSTIVE} with wandering-patience blending.
      *
      * @param elapsedMs          elapsed execution duration in milliseconds
      * @param executed           executed leaf goals count
@@ -20,7 +20,7 @@ public record EtaFormulas() {
      * @param patienceEtaMs      estimated remaining patience window in ms, or {@code < 0} if unavailable
      * @return estimated remaining duration in milliseconds, or {@code 0L}
      */
-    public static long estimateAllLeafsEtaMs(
+    public static long estimateExhaustiveEtaMs(
             final long elapsedMs,
             final int executed,
             final int total,
@@ -74,22 +74,22 @@ public record EtaFormulas() {
     /**
      * Pure stateless ETA calculation for {@link EtaMode#LEAF_FALLBACK}.
      *
-     * @param elapsedMs     elapsed execution duration in milliseconds
-     * @param executedLeafs executed accessible leafs count
-     * @param totalLeafs    total accessible leafs count
+     * @param elapsedMs      elapsed execution duration in milliseconds
+     * @param executedLeaves executed accessible leaves count
+     * @param totalLeaves    total accessible leaves count
      * @return estimated remaining duration in milliseconds, or {@code 0L}
      */
     public static long estimateLeafFallbackEtaMs(
             final long elapsedMs,
-            final int executedLeafs,
-            final int totalLeafs) {
+            final int executedLeaves,
+            final int totalLeaves) {
 
-        if (elapsedMs < 1000L || totalLeafs <= 0 || executedLeafs <= 0 || executedLeafs >= totalLeafs) {
+        if (elapsedMs < 1000L || totalLeaves <= 0 || executedLeaves <= 0 || executedLeaves >= totalLeaves) {
             return 0L;
         }
-        final double avgMsPerLeaf = (double) elapsedMs / executedLeafs;
-        final int remainingLeafs = totalLeafs - executedLeafs;
-        return Math.max(0L, Math.round(remainingLeafs * avgMsPerLeaf));
+        final double avgMsPerLeaf = (double) elapsedMs / executedLeaves;
+        final int remainingLeaves = totalLeaves - executedLeaves;
+        return Math.max(0L, Math.round(remainingLeaves * avgMsPerLeaf));
     }
 
     /**

@@ -59,7 +59,7 @@ public record CorrectionInterpolator() {
         if (targetTests > 0) {
             return last.testNum() >= targetTests;
         }
-        if (null != meta && meta.allLeafs()) {
+        if (null != meta && meta.exhaustive()) {
             if (last.etaMs() > 0L
                     && (last.passedMs() >= actualTotal * 0.5 || last.errorMs() > actualTotal * 0.15)) {
                 return false;

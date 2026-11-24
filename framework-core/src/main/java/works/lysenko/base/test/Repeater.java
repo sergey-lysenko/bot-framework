@@ -179,7 +179,7 @@ public class Repeater implements _Repeater {
         if (isNull(startedAt)) return null;
         if (isNull(exec) || done) return null;
         final int current = statistics.history().size() + 1;
-        if (isAllLeafsMode() || isNull(getTotalTests())) return current;
+        if (isExhaustiveMode() || isNull(getTotalTests())) return current;
         return (current > getTotalTests()) ? null : current;
     }
 
@@ -316,14 +316,14 @@ public class Repeater implements _Repeater {
     @SuppressWarnings({"NestedConditionalExpression", "MethodWithMultipleReturnPoints"})
     private String getTitle() {
 
-        if (isAllLeafsMode()) {
-            final boolean multipleExecutions = isNotNull(parameters) && parameters.getAllLeafsExecutions() > 1;
-            final int executed = multipleExecutions
+        if (isExhaustiveMode()) {
+            final boolean multiplePasses = isNotNull(parameters) && parameters.getExhaustivePasses() > 1;
+            final int executed = multiplePasses
                     ? core.getExecutedLeafExecutionsCount()
-                    : core.getExecutedLeafsCount();
-            final int total = multipleExecutions
+                    : core.getExecutedLeavesCount();
+            final int total = multiplePasses
                     ? core.getTotalLeafExecutionsCount()
-                    : core.getAccessibleLeafs().size();
+                    : core.getAccessibleLeaves().size();
             final String progress = (0 == total) ? StringUtils.EMPTY :
                     b(s(executed, _SLASH_, total), percentString(executed, total));
             return b(q(parameters.getTest()), null == getCurrent() ? StringUtils.EMPTY :

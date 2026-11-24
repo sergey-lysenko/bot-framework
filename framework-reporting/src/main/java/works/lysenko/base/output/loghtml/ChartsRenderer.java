@@ -32,7 +32,7 @@ public final class ChartsRenderer {
     public static String renderLeafCompletionGraph(final List<LeafCompletion> completions) {
         if (completions.isEmpty()) return "";
 
-        final boolean isLeafLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_ALL_LEAF.get());
+        final boolean isLeafLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_EXHAUSTIVE.get());
         final String activeLog = isLeafLog ? " active" : "";
         final String activeLinear = isLeafLog ? "" : " active";
 
@@ -86,7 +86,7 @@ public final class ChartsRenderer {
         final StringBuilder sb = new StringBuilder();
         sb.append(s(
                 "<section id=\"leafCompletionChart\" class=\"leaf-completion-chart\"><div class=\"chart-card\">",
-                "<div class=\"card-title\"><span>All-Leaf Completion Intervals</span>",
+                "<div class=\"card-title\"><span>Exhaustive Completion Intervals</span>",
                 "<span class=\"card-subtitle\">Y: Duration &amp; Projected Total (s); X: test cycle</span></div>",
                 "<div class=\"chart-controls-bar\">",
                 "<div class=\"series-controls left-series-controls\">",

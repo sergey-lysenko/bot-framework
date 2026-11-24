@@ -171,7 +171,7 @@ public record EtaCorrection() {
 
     /**
      * Checks whether the active runtime test session completed its configured target without being
-     * stopped preemptively, aborted on failure, or cut short before finishing all leafs/tests.
+     * stopped preemptively, aborted on failure, or cut short before finishing all leaves/tests.
      * When {@link Base#core} is {@code null} (standalone unit tests), returns {@code true}.
      *
      * @return {@code true} if the current run is eligible to be persisted for historical calibration
@@ -187,9 +187,9 @@ public record EtaCorrection() {
         if (completedTests <= 0 && testsCount <= 0 && currentTestSamples.isEmpty()) {
             return false;
         }
-        if (EtaModeResolver.isAllLeafsMode()) {
-            final var leafs = Base.core.getAccessibleLeafs();
-            return isNotNull(leafs) && !leafs.isEmpty() && Base.core.areAllLeafsExecuted();
+        if (EtaModeResolver.isExhaustiveMode()) {
+            final var leaves = Base.core.getAccessibleLeaves();
+            return isNotNull(leaves) && !leaves.isEmpty() && Base.core.areAllLeavesExecuted();
         }
         final int totalTests = EtaModeResolver.resolveTotalTests();
         if (totalTests > 0) {

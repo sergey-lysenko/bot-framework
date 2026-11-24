@@ -31,9 +31,9 @@ final class MonteCarloSimulator {
 
         final Random random = new Random(42);
         final int totalScenarios = tree.totalScenarios();
-        final int accessibleLeafsCount = tree.accessibleLeafs();
-        final int maxCycles = Math.clamp(accessibleLeafsCount * targetExecutions * 20, 1000, MAX_CYCLES_PER_TRIAL);
-        final int maxStallCycles = Math.max(300, accessibleLeafsCount * 15);
+        final int accessibleLeavesCount = tree.accessibleLeaves();
+        final int maxCycles = Math.clamp(accessibleLeavesCount * targetExecutions * 20, 1000, MAX_CYCLES_PER_TRIAL);
+        final int maxStallCycles = Math.max(300, accessibleLeavesCount * 15);
 
         final int[] executions = new int[totalScenarios];
         final int[] pathBuffer = new int[totalScenarios];
@@ -52,11 +52,11 @@ final class MonteCarloSimulator {
 
         for (int trial = 0; trial < TRIALS; trial++) {
             Arrays.fill(executions, 0);
-            int coveredLeafsCount = 0;
+            int coveredLeavesCount = 0;
             int cycles = 0;
             int cyclesSinceProgress = 0;
 
-            while (coveredLeafsCount < accessibleLeafsCount && cycles < maxCycles) {
+            while (coveredLeavesCount < accessibleLeavesCount && cycles < maxCycles) {
                 cycles++;
                 pathLen[0] = 0;
                 final int selectedLeafId = simulateCycle(simRootPool, executions, targetExecutions,
@@ -71,7 +71,7 @@ final class MonteCarloSimulator {
                 final int leafExecs = executions[selectedLeafId];
 
                 if (isAccessibleLeaf[selectedLeafId] && leafExecs == targets[selectedLeafId]) {
-                    coveredLeafsCount++;
+                    coveredLeavesCount++;
                     cyclesSinceProgress = 0;
                 } else {
                     cyclesSinceProgress++;
@@ -82,7 +82,7 @@ final class MonteCarloSimulator {
                 }
             }
 
-            if (coveredLeafsCount == accessibleLeafsCount) {
+            if (coveredLeavesCount == accessibleLeavesCount) {
                 totalCycles += cycles;
                 successfulTrials++;
             }
@@ -135,12 +135,12 @@ final class MonteCarloSimulator {
 
         for (int i = 0; i < candidateCount; i++) {
             final int scId = candidateIds[i];
-            if ((isMono[scId] || Scenario.forbidOverexecution) && executions[scId] >= targets[scId]) continue;
+            if ((isMono[scId] || Scenario.exactPasses) && executions[scId] >= targets[scId]) continue;
             if (isNode[scId] && !hasRepeatableLeaf[i]) {
-                final int[] descLeafs = descLeafIds[i];
+                final int[] descLeaves = descLeafIds[i];
                 boolean hasExecutable = false;
-                for (int j = 0; j < descLeafs.length; j++) {
-                    if (executions[descLeafs[j]] == 0) {
+                for (int j = 0; j < descLeaves.length; j++) {
+                    if (executions[descLeaves[j]] == 0) {
                         hasExecutable = true;
                         break;
                     }

@@ -17,7 +17,7 @@ public class VisualNodeResolver {
     
     private final TreeTheme theme;
     private final TreeHtml.AccessibleContext accessibleCtx;
-    private final boolean isAllLeafs;
+    private final boolean isExhaustive;
     private final int target;
     private final double maxLeafOverRatio;
     private final boolean isRecent;
@@ -29,61 +29,61 @@ public class VisualNodeResolver {
      * Constructs a new VisualNodeResolver.
      * @param theme the theme
      * @param accessibleScenarios the accessibleScenarios
-     * @param isAllLeafs the isAllLeafs
+     * @param isExhaustive whether exhaustive mode is active
      */
-    public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isAllLeafs) {
-        this(theme, accessibleScenarios, isAllLeafs, 1, 0.0, false, false);
+    public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isExhaustive) {
+        this(theme, accessibleScenarios, isExhaustive, 1, 0.0, false, false);
     }
 
     /**
      * Constructs a new VisualNodeResolver.
      * @param theme the theme
      * @param accessibleScenarios the accessibleScenarios
-     * @param isAllLeafs the isAllLeafs
+     * @param isExhaustive whether exhaustive mode is active
      * @param target the target
      * @param maxLeafOverRatio the maxLeafOverRatio
      */
-    public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isAllLeafs, int target, double maxLeafOverRatio) {
-        this(theme, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, false, false);
+    public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isExhaustive, int target, double maxLeafOverRatio) {
+        this(theme, accessibleScenarios, isExhaustive, target, maxLeafOverRatio, false, false);
     }
 
     /**
      * Constructs a new VisualNodeResolver.
      * @param theme the theme
      * @param accessibleScenarios the accessibleScenarios
-     * @param isAllLeafs the isAllLeafs
+     * @param isExhaustive whether exhaustive mode is active
      * @param target the target
      * @param maxLeafOverRatio the maxLeafOverRatio
      * @param isRecent the isRecent
      * @param includeHeaderOffset the includeHeaderOffset
      */
-    public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isAllLeafs, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset) {
-        this(theme, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, isRecent, includeHeaderOffset, 0.0, 60);
+    public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isExhaustive, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset) {
+        this(theme, accessibleScenarios, isExhaustive, target, maxLeafOverRatio, isRecent, includeHeaderOffset, 0.0, 60);
     }
 
     /**
      * Constructs a new VisualNodeResolver.
      * @param theme the theme
      * @param accessibleScenarios the accessibleScenarios
-     * @param isAllLeafs the isAllLeafs
+     * @param isExhaustive whether exhaustive mode is active
      * @param target the target
      * @param maxLeafOverRatio the maxLeafOverRatio
      * @param isRecent the isRecent
      * @param includeHeaderOffset the includeHeaderOffset
      * @param minRow the minRow
      */
-    public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isAllLeafs, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset, double minRow) {
-        this(theme, accessibleScenarios, isAllLeafs, target, maxLeafOverRatio, isRecent, includeHeaderOffset, minRow, 60);
+    public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isExhaustive, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset, double minRow) {
+        this(theme, accessibleScenarios, isExhaustive, target, maxLeafOverRatio, isRecent, includeHeaderOffset, minRow, 60);
     }
 
-    public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isAllLeafs, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset, double minRow, int headerHeight) {
-        this(theme, new TreeHtml.AccessibleContext(accessibleScenarios), isAllLeafs, target, maxLeafOverRatio, isRecent, includeHeaderOffset, minRow, headerHeight);
+    public VisualNodeResolver(TreeTheme theme, Set<_Scenario> accessibleScenarios, boolean isExhaustive, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset, double minRow, int headerHeight) {
+        this(theme, new TreeHtml.AccessibleContext(accessibleScenarios), isExhaustive, target, maxLeafOverRatio, isRecent, includeHeaderOffset, minRow, headerHeight);
     }
 
-    public VisualNodeResolver(TreeTheme theme, TreeHtml.AccessibleContext accessibleCtx, boolean isAllLeafs, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset, double minRow, int headerHeight) {
+    public VisualNodeResolver(TreeTheme theme, TreeHtml.AccessibleContext accessibleCtx, boolean isExhaustive, int target, double maxLeafOverRatio, boolean isRecent, boolean includeHeaderOffset, double minRow, int headerHeight) {
         this.theme = theme;
         this.accessibleCtx = (null != accessibleCtx) ? accessibleCtx : new TreeHtml.AccessibleContext(null);
-        this.isAllLeafs = isAllLeafs;
+        this.isExhaustive = isExhaustive;
         this.target = target;
         this.maxLeafOverRatio = maxLeafOverRatio;
         this.isRecent = isRecent;
@@ -127,7 +127,7 @@ public class VisualNodeResolver {
         final int scenarioTarget = getTargetExecutions(node, target);
         final int safeTarget = Math.max(1, scenarioTarget);
         final ScenarioType type = getScenarioType(node);
-        final double overRatio = (ScenarioType.LEAF == type) ? getLeafOverExecutionRatio(node, target) : 0.0;
+        final double overRatio = (ScenarioType.LEAF == type) ? getLeafOvershootRatio(node, target) : 0.0;
 
         final boolean failure = TreeHtml.hasFailure(node);
         final boolean childFailure = !failure && TreeHtml.hasChildFailure(node, childFailureCache);
@@ -196,9 +196,9 @@ public class VisualNodeResolver {
             borderColor = new Color(251, 191, 36); // Amber #fbbf24 for known issues border
         }
 
-        // Fill ratio for progress bar (ONLY in all_leafs mode, and ONLY for LEAF and MONO nodes)
+        // Fill ratio for progress bar (ONLY in exhaustive mode, and ONLY for LEAF and MONO nodes)
         double fillRatio = -1.0;
-        if (isAllLeafs && (execs > 0 || failure) && (ScenarioType.LEAF == type || ScenarioType.MONO == type)) {
+        if (isExhaustive && (execs > 0 || failure) && (ScenarioType.LEAF == type || ScenarioType.MONO == type)) {
             if (execs == 0 && failure) {
                 fillRatio = 0.5; // Partial fill for failed / aborted test run before 1st completion
             } else {
@@ -267,18 +267,18 @@ public class VisualNodeResolver {
         };
     }
 
-    private double getLeafOverExecutionRatio(final NodeData node, final int target) {
+    private double getLeafOvershootRatio(final NodeData node, final int target) {
         final int safeTarget = Math.max(1, getTargetExecutions(node, target));
         final int execs = (null != node.result()) ? node.result().getExecutions() : 0;
         return (execs > safeTarget) ? (double) (execs - safeTarget) / safeTarget : 0.0;
     }
 
-    private int getOverExecutionPercent(final int execs, final int target) {
+    private int getOvershootPercent(final int execs, final int target) {
         final int safeTarget = Math.max(1, target);
         return (execs > safeTarget) ? (int) Math.ceil((execs - safeTarget) * 100.0 / safeTarget) : 0;
     }
 
-    private Color getOverExecutionColor(final double overRatio, final double maxOverRatio) {
+    private Color getOvershootColor(final double overRatio, final double maxOverRatio) {
         if (overRatio <= 0.0 || maxOverRatio <= 0.0)
             return theme.passedBorder();
         
@@ -311,10 +311,10 @@ public class VisualNodeResolver {
             final double maxLeafOverRatio) {
         final int execs = (null != node.result()) ? node.result().getExecutions() : 0;
         final ScenarioType type = getScenarioType(node);
-        if (ScenarioType.LEAF == type && isAllLeafs) {
-            final double overRatio = getLeafOverExecutionRatio(node, target);
+        if (ScenarioType.LEAF == type && isExhaustive) {
+            final double overRatio = getLeafOvershootRatio(node, target);
             return (overRatio > 0.0)
-                    ? getOverExecutionColor(overRatio, maxLeafOverRatio)
+                    ? getOvershootColor(overRatio, maxLeafOverRatio)
                     : getProgressColor(execs, target);
         }
         return getProgressColor(execs, 1);
@@ -326,13 +326,13 @@ public class VisualNodeResolver {
 
     private String getExecutionBadgeText(final NodeData node, final int execs, final int leafTarget) {
         final ScenarioType type = getScenarioType(node);
-        if (ScenarioType.NODE == type || ScenarioType.CORE == type || !isAllLeafs) {
+        if (ScenarioType.NODE == type || ScenarioType.CORE == type || !isExhaustive) {
             return execs + ((1 == execs) ? " exec" : " execs");
         }
 
         final int target = getTargetExecutions(node, leafTarget);
         if (execs > target && ScenarioType.LEAF == type) {
-            return execs + "/" + target + " +" + getOverExecutionPercent(execs, target) + "%";
+            return execs + "/" + target + " +" + getOvershootPercent(execs, target) + "%";
         }
         if (execs >= target && 0 < execs) {
             return "✓ " + execs + "/" + target;

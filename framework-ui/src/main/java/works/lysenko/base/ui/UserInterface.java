@@ -1,6 +1,6 @@
 package works.lysenko.base.ui;
 
-import works.lysenko.base.eta.AllLeafCompletions;
+import works.lysenko.base.eta.ExhaustiveCompletions;
 import works.lysenko.base.eta.EtaCalculator;
 import works.lysenko.base.eta.model.EtaSnapshot;
 import works.lysenko.base.util.Telemetry;
@@ -558,7 +558,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
 
     /**
      * Calculates the estimated time remaining in milliseconds for current execution across different
-     * execution modes (all-leaf coverage mode with patience-coupled blending, fixed test count mode,
+     * execution modes (exhaustive mode with patience-coupled blending, fixed test count mode,
      * or leaf-progress fallback estimation).
      *
      * @return estimated remaining execution duration in milliseconds, or {@code 0L} when completed or unavailable
@@ -572,7 +572,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
 
         final EtaSnapshot snapshot = EtaCalculator.capture(true);
         if (snapshot.remainingMs() > 0L) {
-            AllLeafCompletions.recordEtaSample(snapshot.remainingMs());
+            ExhaustiveCompletions.recordEtaSample(snapshot.remainingMs());
         }
         return snapshot.label();
     }

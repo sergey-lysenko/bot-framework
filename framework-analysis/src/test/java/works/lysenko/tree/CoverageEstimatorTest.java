@@ -38,7 +38,7 @@ class CoverageEstimatorTest {
         assertEquals(0, CoverageEstimator.estimateAverageCycles(null), "Null rootCtrl should return 0");
 
         final Ctrl emptyCtrl = new Ctrl(null);
-        assertEquals(0, CoverageEstimator.estimateAverageCycles(emptyCtrl), "RootCtrl with no accessible leafs should return 0");
+        assertEquals(0, CoverageEstimator.estimateAverageCycles(emptyCtrl), "RootCtrl with no accessible leaves should return 0");
     }
 
     @Test
@@ -52,7 +52,7 @@ class CoverageEstimatorTest {
     }
 
     @Test
-    void testTwoLeafsWithProgressConsumer() {
+    void testTwoLeavesWithProgressConsumer() {
         final Ctrl rootCtrl = new Ctrl(null);
         final TestLeaf leaf1 = new TestLeaf(fr(1.0));
         final TestLeaf leaf2 = new TestLeaf(fr(1.0));

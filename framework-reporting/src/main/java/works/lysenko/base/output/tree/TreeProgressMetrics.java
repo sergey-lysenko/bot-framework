@@ -54,12 +54,12 @@ public final class TreeProgressMetrics {
         };
     }
 
-    public static int getOverExecutionPercent(final int execs, final int target) {
+    public static int getOvershootPercent(final int execs, final int target) {
         final int safeTarget = Math.max(1, target);
         return (execs > safeTarget) ? (int) Math.ceil((execs - safeTarget) * 100.0 / safeTarget) : 0;
     }
 
-    public static Color getOverExecutionColor(final double overRatio, final double maxOverRatio) {
+    public static Color getOvershootColor(final double overRatio, final double maxOverRatio) {
         if (overRatio <= 0.0 || maxOverRatio <= 0.0)
             return GREEN_DONE;
 
@@ -71,15 +71,15 @@ public final class TreeProgressMetrics {
     }
 
     public static String getExecutionBadgeText(final NodeData node, final int execs, final int leafTarget) {
-        final boolean isAllLeafs = (null != parameters) ? parameters.isAllLeafs() : (null != PropEnum._TEST_ALL_LEAFS.get() && (Boolean) PropEnum._TEST_ALL_LEAFS.get());
+        final boolean isExhaustive = (null != parameters) ? parameters.isExhaustive() : (null != PropEnum._TEST_EXHAUSTIVE.get() && (Boolean) PropEnum._TEST_EXHAUSTIVE.get());
         final ScenarioType type = getScenarioType(node);
-        if (ScenarioType.NODE == type || ScenarioType.CORE == type || !isAllLeafs) {
+        if (ScenarioType.NODE == type || ScenarioType.CORE == type || !isExhaustive) {
             return execs + ((1 == execs) ? " exec" : " execs");
         }
 
         final int target = getTargetExecutions(node, leafTarget);
         if (execs > target && ScenarioType.LEAF == type) {
-            return execs + "/" + target + " +" + getOverExecutionPercent(execs, target) + "%";
+            return execs + "/" + target + " +" + getOvershootPercent(execs, target) + "%";
         }
         if (execs >= target && 0 < execs) {
             return "✓ " + execs + "/" + target;
@@ -99,7 +99,7 @@ public final class TreeProgressMetrics {
         return ScenarioType.LEAF == type || ScenarioType.MONO == type;
     }
 
-    public static double getLeafOverExecutionRatio(final NodeData node, final int target) {
+    public static double getLeafOvershootRatio(final NodeData node, final int target) {
         final int safeTarget = Math.max(1, target);
         final int execs = (null != node.result()) ? node.result().getExecutions() : 0;
         return (execs > safeTarget) ? (double) (execs - safeTarget) / safeTarget : 0.0;
@@ -109,21 +109,21 @@ public final class TreeProgressMetrics {
             final NodeData node,
             final int target,
             final double maxLeafOverRatio) {
-        final boolean isAllLeafs = (null != parameters) ? parameters.isAllLeafs() : (null != PropEnum._TEST_ALL_LEAFS.get() && (Boolean) PropEnum._TEST_ALL_LEAFS.get());
-        return getScenarioProgressColor(node, target, maxLeafOverRatio, isAllLeafs);
+        final boolean isExhaustive = (null != parameters) ? parameters.isExhaustive() : (null != PropEnum._TEST_EXHAUSTIVE.get() && (Boolean) PropEnum._TEST_EXHAUSTIVE.get());
+        return getScenarioProgressColor(node, target, maxLeafOverRatio, isExhaustive);
     }
 
     public static Color getScenarioProgressColor(
             final NodeData node,
             final int target,
             final double maxLeafOverRatio,
-            final boolean isAllLeafs) {
+            final boolean isExhaustive) {
         final int execs = (null != node.result()) ? node.result().getExecutions() : 0;
         final ScenarioType type = getScenarioType(node);
-        if (ScenarioType.LEAF == type && isAllLeafs) {
-            final double overRatio = getLeafOverExecutionRatio(node, target);
+        if (ScenarioType.LEAF == type && isExhaustive) {
+            final double overRatio = getLeafOvershootRatio(node, target);
             return (overRatio > 0.0)
-                    ? getOverExecutionColor(overRatio, maxLeafOverRatio)
+                    ? getOvershootColor(overRatio, maxLeafOverRatio)
                     : getProgressColor(execs, target);
         }
         return getProgressColor(execs, 1);

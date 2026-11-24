@@ -72,6 +72,8 @@ public record E() {
     public static final String EXECUTION = s(EXECUT, ION);
     /** Constant representing the word EXHAUSTED. */
     public static final String EXHAUSTED = s(EX, HAUS, TED);
+    /** Constant representing the word EXHAUSTIVE. */
+    public static final String EXHAUSTIVE = s(EX, HAUS, T, IV, E);
     /** Constant representing the word EXIST. */
     public static final String EXIST = s(EX, I, ST);
     /** Constant representing the word EXISTENT. */

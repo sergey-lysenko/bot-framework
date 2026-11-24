@@ -174,12 +174,12 @@ public final class TreeTracker {
         return TreeProgressMetrics.getTargetExecutions(node, leafTarget);
     }
 
-    static int getOverExecutionPercent(final int execs, final int target) {
-        return TreeProgressMetrics.getOverExecutionPercent(execs, target);
+    static int getOvershootPercent(final int execs, final int target) {
+        return TreeProgressMetrics.getOvershootPercent(execs, target);
     }
 
-    static Color getOverExecutionColor(final double overRatio, final double maxOverRatio) {
-        return TreeProgressMetrics.getOverExecutionColor(overRatio, maxOverRatio);
+    static Color getOvershootColor(final double overRatio, final double maxOverRatio) {
+        return TreeProgressMetrics.getOvershootColor(overRatio, maxOverRatio);
     }
 
     static String getExecutionBadgeText(final NodeData node, final int execs, final int leafTarget) {
@@ -328,8 +328,8 @@ public final class TreeTracker {
     }
 
     private static int resolveLeafTarget() {
-        return (isNotNull(parameters)) ? parameters.getAllLeafsExecutions()
-                : (isNotNull(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) : 1);
+        return (isNotNull(parameters)) ? parameters.getExhaustivePasses()
+                : (isNotNull(PropEnum._TEST_EXHAUSTIVE_PASSES.get()) ? Math.max(1, PropEnum._TEST_EXHAUSTIVE_PASSES.get()) : 1);
     }
 
     private static void restoreTargetPositions(final List<NodeData> nodes, final double[] targetRows) {

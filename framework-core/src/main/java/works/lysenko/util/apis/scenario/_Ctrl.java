@@ -82,7 +82,7 @@ public interface _Ctrl {
     /**
      * @return set of all presently accessible leaf scenarios
      */
-    Set<_Scenario> getAccessibleLeafs();
+    Set<_Scenario> getAccessibleLeaves();
 
     /**
      * @return set of all presently accessible node scenarios
@@ -90,7 +90,7 @@ public interface _Ctrl {
     Set<_Scenario> getAccessibleNodes();
 
     /**
-     * @return set of all presently accessible scenarios (both nodes and leafs)
+     * @return set of all presently accessible scenarios (both nodes and leaves)
      */
     Set<_Scenario> getAccessibleScenarios();
 }

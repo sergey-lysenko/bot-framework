@@ -12,14 +12,11 @@ import static works.lysenko.util.lang.word.C.CONNECTION;
 import static works.lysenko.util.lang.word.C.COULD;
 import static works.lysenko.util.lang.word.C.COUNTER;
 import static works.lysenko.util.lang.word.E.ELEMENT;
-import static works.lysenko.util.lang.word.E.EXCEEDED;
 import static works.lysenko.util.lang.word.G.GIVEN;
 import static works.lysenko.util.lang.word.L.LAUNCHER;
-import static works.lysenko.util.lang.word.L.LEAFS;
 import static works.lysenko.util.lang.word.L.LOCATED;
 import static works.lysenko.util.lang.word.P.PACKAGE;
 import static works.lysenko.util.lang.word.P.PARAMETERS;
-import static works.lysenko.util.lang.word.P.PATIENCE;
 import static works.lysenko.util.lang.word.R.RECORDS;
 import static works.lysenko.util.lang.word.R.REDEFINED;
 import static works.lysenko.util.lang.word.R.RESET;
@@ -31,7 +28,6 @@ import static works.lysenko.util.lang.word.U.UNEXPECTEDLY;
 import static works.lysenko.util.lang.word.U.USING;
 import static works.lysenko.util.lang.word.V.VALID;
 import static works.lysenko.util.lang.word.V.VALUES;
-import static works.lysenko.util.lang.word.W.WANDERING;
 import static works.lysenko.util.spec.Symbols.OPN_BRK;
 import static works.lysenko.util.spec.Symbols._COLON_;
 import static works.lysenko.util.spec.Symbols._DASH_;
@@ -46,9 +42,6 @@ public record A() {
 
     private static final String APPIUM_ = s(APPIUM, _COLON_);
 
-    /** Constant representing all-leafs mode aborted due to wandering patience exceeded message. */
-    public static final String ALL_LEAFS_MODE_ABORTED_WANDERING_PATIENCE_EXCEEDED = b(d(c(ALL), LEAFS), MODE,
-            s(ABORTED, _COLON_), c(WANDERING), PATIENCE, s(EXCEEDED, _DOT_));
     /** Constant representing the message when actual values are not valid. */
     public static final String ACTUAL_VALUES_ARE_NOT_VALID = b(c(ACTUAL), VALUES, ARE, NOT, VALID);
     /** Constant representing the message when adjacent log records are too similar with the same text. */

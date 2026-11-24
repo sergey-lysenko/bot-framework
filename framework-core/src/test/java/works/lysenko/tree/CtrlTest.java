@@ -48,7 +48,7 @@ class CtrlTest {
     }
 
     @Test
-    void testAccessibleLeafsNodesAndScenarios() {
+    void testAccessibleLeavesNodesAndScenarios() {
         final DummyLeaf leaf1 = new DummyLeaf(fr(1.0));
         final DummyLeaf leaf2 = new DummyLeaf(fr(1.0));
         final DummyNode subNode = new DummyNode(fr(1.0), leaf1, leaf2);
@@ -58,11 +58,11 @@ class CtrlTest {
 
         final Ctrl ctrl = new Ctrl(topNode, List.of(subNode, topLeaf));
 
-        final Set<_Scenario> accessibleLeafs = ctrl.getAccessibleLeafs();
-        assertEquals(3, accessibleLeafs.size(), "Should have 3 accessible leafs (leaf1, leaf2, topLeaf)");
-        assertTrue(accessibleLeafs.contains(leaf1));
-        assertTrue(accessibleLeafs.contains(leaf2));
-        assertTrue(accessibleLeafs.contains(topLeaf));
+        final Set<_Scenario> accessibleLeaves = ctrl.getAccessibleLeaves();
+        assertEquals(3, accessibleLeaves.size(), "Should have 3 accessible leaves (leaf1, leaf2, topLeaf)");
+        assertTrue(accessibleLeaves.contains(leaf1));
+        assertTrue(accessibleLeaves.contains(leaf2));
+        assertTrue(accessibleLeaves.contains(topLeaf));
 
         final Set<_Scenario> accessibleNodes = ctrl.getAccessibleNodes();
         assertEquals(1, accessibleNodes.size(), "Should have 1 accessible child node (subNode)");
@@ -89,7 +89,7 @@ class CtrlTest {
         assertEquals(3.5, root.weightUpstream().doubleValue(), 1e-6);
 
         final Ctrl ctrl = new Ctrl(null, List.of(root));
-        final Set<_Scenario> leafs = ctrl.getAccessibleLeafs();
-        assertEquals(Set.of(activeLeaf1, activeLeaf2), leafs);
+        final Set<_Scenario> leaves = ctrl.getAccessibleLeaves();
+        assertEquals(Set.of(activeLeaf1, activeLeaf2), leaves);
     }
 }

@@ -21,14 +21,14 @@ import static works.lysenko.Base.logEvent;
 import static works.lysenko.util.data.enums.Severity.S2;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.spec.Layout.Files.name;
-import static works.lysenko.util.spec.Layout.Templates.RUN_ALL_LEAF_COMPLETIONS_;
+import static works.lysenko.util.spec.Layout.Templates.RUN_EXHAUSTIVE_COMPLETIONS_;
 
 /**
  * Tracks leaf-goal completions, synchronizes wandering patience at cycle boundaries,
- * feeds per-cycle ETA samples into {@link EtaCorrection}, and writes {@code [ALL_LEAF_COMPLETION]} sidecar logs.
+ * feeds per-cycle ETA samples into {@link EtaCorrection}, and writes {@code [EXHAUSTIVE_COMPLETION]} sidecar logs.
  */
 @SuppressWarnings("StaticNonFinalField")
-public record AllLeafCompletions() {
+public record ExhaustiveCompletions() {
 
     private static final Map<_Scenario, Integer> lastRecordedExecs = new HashMap<>(0);
     private static long currentCycleEtaSum = 0L;
@@ -60,7 +60,7 @@ public record AllLeafCompletions() {
     }
 
     /**
-     * Appends a formatted {@code [ALL_LEAF_COMPLETION]} entry to the run sidecar log.
+     * Appends a formatted {@code [EXHAUSTIVE_COMPLETION]} entry to the run sidecar log.
      *
      * @param testNum            1-based test cycle number
      * @param elapsedMillis      elapsed run duration in milliseconds
@@ -77,8 +77,8 @@ public record AllLeafCompletions() {
             final int goalIndex,
             final String leaf) {
 
-        final Path path = Path.of(name(RUN_ALL_LEAF_COMPLETIONS_));
-        final String line = "[ALL_LEAF_COMPLETION] " + testNum + " " + elapsedMillis + " "
+        final Path path = Path.of(name(RUN_EXHAUSTIVE_COMPLETIONS_));
+        final String line = "[EXHAUSTIVE_COMPLETION] " + testNum + " " + elapsedMillis + " "
                 + EtaFormatter.formatPatience(patiencePercentage) + " " + etaMs + " "
                 + goalIndex + " " + leaf + System.lineSeparator();
         try {
@@ -88,19 +88,19 @@ public record AllLeafCompletions() {
                 lastRecordedTestNum = testNum;
             }
         } catch (final IOException e) {
-            logEvent(S2, "Unable to record all-leaf completion in " + path + ": " + e.getMessage());
+            logEvent(S2, "Unable to record exhaustive completion in " + path + ": " + e.getMessage());
         }
     }
 
     /**
-     * Records a non-leaf test cycle entry when leaf completion tracking is active and the given test cycle
+     * Records a non-leaf test cycle entry when exhaustive completion tracking is active and the given test cycle
      * finished without executing any leaf scenario (e.g. fruitless wandering cycles).
      *
      * @param testNum       completed test cycle number, or {@code null} if unknown
      * @param elapsedMillis elapsed session duration in milliseconds
      */
     public static synchronized void recordCycleIfMissing(final Integer testNum, final long elapsedMillis) {
-        if (isNull(testNum) || testNum <= lastRecordedTestNum || (!hasRecordedAny && !EtaModeResolver.isAllLeafsMode())) {
+        if (isNull(testNum) || testNum <= lastRecordedTestNum || (!hasRecordedAny && !EtaModeResolver.isExhaustiveMode())) {
             return;
         }
         checkAndRecord(elapsedMillis, null);
@@ -121,14 +121,14 @@ public record AllLeafCompletions() {
             lastRecordedTestNum = testNum;
         }
 
-        final Set<_Scenario> accessibleLeafs = Base.core.getAccessibleLeafs();
-        final boolean hasAccessibleLeafs = isNotNull(accessibleLeafs) && !accessibleLeafs.isEmpty();
+        final Set<_Scenario> accessibleLeaves = Base.core.getAccessibleLeaves();
+        final boolean hasAccessibleLeaves = isNotNull(accessibleLeaves) && !accessibleLeaves.isEmpty();
 
         boolean reachedGoal = false;
         int completedGoalIndex = 0;
 
-        if (hasAccessibleLeafs && isNotNull(completingScenario)) {
-            final int target = EtaModeResolver.resolveAllLeafsTarget();
+        if (hasAccessibleLeaves && isNotNull(completingScenario)) {
+            final int target = EtaModeResolver.resolveExhaustivePasses();
             final int execs = (isNotNull(Base.core.getResults())) ? Base.core.getResults().getExecutions(completingScenario) : 0;
             final int effectiveExecs = (execs == 0) ? 1 : execs;
             final int leafTarget = (completingScenario instanceof Mono) ? 1 : target;
@@ -143,7 +143,7 @@ public record AllLeafCompletions() {
             }
         }
 
-        if (EtaModeResolver.isAllLeafsMode() && isNotNull(Base.test)) {
+        if (EtaModeResolver.isExhaustiveMode() && isNotNull(Base.test)) {
             Base.test.syncPatienceAtCycleEnd(testNum, reachedGoal);
         }
 
@@ -153,7 +153,7 @@ public record AllLeafCompletions() {
 
         EtaCorrection.recordTestSample(testNum, elapsedMillis, cycleAvgEta);
 
-        if (Boolean.FALSE.equals(PropEnum._TEST_REPORT_ADD_ALL_LEAF.get())) return;
+        if (Boolean.FALSE.equals(PropEnum._TEST_REPORT_ADD_EXHAUSTIVE.get())) return;
 
         final String leafName = (isNotNull(completingScenario)) ? completingScenario.getShortName() : "unknown";
         final double patiencePercentage = isNotNull(Base.test) ? Base.test.getPatiencePercentage() : 0.0;

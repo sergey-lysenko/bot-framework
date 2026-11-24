@@ -74,10 +74,10 @@ public class Gui implements _GUI {
     private JTextField domain = null;
     private JCheckBox headless = null;
     private JCheckBox hideOffBranches = null;
-    private JCheckBox allLeafs = null;
-    private JTextField allLeafsExecutions = null;
+    private JCheckBox exhaustive = null;
+    private JTextField exhaustivePasses = null;
     private JTextField testsCount = null;
-    private JCheckBox forbidOverexecution = null;
+    private JCheckBox exactPasses = null;
     private JCheckBox resilientMode = null;
     private JTextField completionWeight = null;
     private JTextField origin = null;
@@ -93,7 +93,7 @@ public class Gui implements _GUI {
     private JPanel cyclesPanel = null;
     private JButton properties = null;
     private List<JTextField> aParams = null;
-    private Boolean lastAllLeafsState = null;
+    private Boolean lastExhaustiveState = null;
     private boolean isInitializingGui = false;
     private String lastSelectedSuite = null;
 
@@ -286,9 +286,9 @@ public class Gui implements _GUI {
         }
         hideOffBranches = new JCheckBox();
         hideOffBranches.setSelected(Boolean.parseBoolean(parameters.getProperty(HIDE_OFF_BRANCHES.name())));
-        allLeafs = new JCheckBox();
-        allLeafs.setSelected(parameters.isAllLeafs());
-        allLeafsExecutions = new JTextField(String.valueOf(parameters.getAllLeafsExecutions()), WIDTH);
+        exhaustive = new JCheckBox();
+        exhaustive.setSelected(parameters.isExhaustive());
+        exhaustivePasses = new JTextField(String.valueOf(parameters.getExhaustivePasses()), WIDTH);
 
         final String defaultTests = defaultIfEmpty(
                 parameters.getTests(),
@@ -296,7 +296,7 @@ public class Gui implements _GUI {
         );
         testsCount = new JTextField(defaultTests, WIDTH);
 
-        forbidOverexecution = createCheckBox(parameters.getForbidOverexecution(), PropEnum._TREE_FORBID_OVEREXECUTION);
+        exactPasses = createCheckBox(parameters.getExactPasses(), PropEnum._TREE_EXACT_PASSES);
         resilientMode = createCheckBox(parameters.getResilientMode(), PropEnum._TEST_RESILIENT_MODE);
 
         final String defaultWeight = defaultIfEmpty(
@@ -339,17 +339,17 @@ public class Gui implements _GUI {
             hideOffBranches.setSelected(parameters.isHideOffBranches());
         }
 
-        if (isNotNull(allLeafs)) {
-            allLeafs.setSelected(parameters.isAllLeafs());
+        if (isNotNull(exhaustive)) {
+            exhaustive.setSelected(parameters.isExhaustive());
         }
 
-        if (isNotNull(allLeafsExecutions)) {
-            allLeafsExecutions.setText(String.valueOf(parameters.getAllLeafsExecutions()));
+        if (isNotNull(exhaustivePasses)) {
+            exhaustivePasses.setText(String.valueOf(parameters.getExhaustivePasses()));
         }
 
-        if (isNotNull(forbidOverexecution)) {
-            final Boolean val = parameters.getForbidOverexecution();
-            forbidOverexecution.setSelected(Boolean.TRUE.equals(val));
+        if (isNotNull(exactPasses)) {
+            final Boolean val = parameters.getExactPasses();
+            exactPasses.setSelected(Boolean.TRUE.equals(val));
         }
 
         if (isNotNull(resilientMode)) {
@@ -426,11 +426,11 @@ public class Gui implements _GUI {
         cyclesPanel = CycleEstimatorPanel.createPanel(calculateCycles);
 
         attachChangeListener(test);
-        attachChangeListener(allLeafs);
-        attachChangeListener(allLeafsExecutions);
+        attachChangeListener(exhaustive);
+        attachChangeListener(exhaustivePasses);
         attachChangeListener(completionWeight);
         attachChangeListener(testsCount);
-        attachChangeListener(forbidOverexecution);
+        attachChangeListener(exactPasses);
         attachChangeListener(resilientMode);
         attachChangeListener(traverseExtensions);
     }
@@ -447,11 +447,11 @@ public class Gui implements _GUI {
         calculateCycles.setText(b(c(REQUIRED), FOR, FULL, COVERAGE));
         calculateCycles.setEnabled(true);
 
-        final boolean currentAllLeafsState = isNotNull(allLeafs) && allLeafs.isSelected();
-        final boolean needRebuild = null == lastAllLeafsState || lastAllLeafsState != currentAllLeafsState;
+        final boolean currentExhaustiveState = isNotNull(exhaustive) && exhaustive.isSelected();
+        final boolean needRebuild = null == lastExhaustiveState || lastExhaustiveState != currentExhaustiveState;
 
         if (needRebuild && isNotNull(panel)) {
-            lastAllLeafsState = currentAllLeafsState;
+            lastExhaustiveState = currentExhaustiveState;
 
             final Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
             int caretPos = -1;
@@ -504,8 +504,8 @@ public class Gui implements _GUI {
     String calculateEstimatedCycles(final String testName, final IntConsumer progressConsumer) {
 
         return CycleEstimatorPanel.calculateEstimatedCycles(
-                parameters, testName, headless, allLeafs, allLeafsExecutions,
-                testsCount, forbidOverexecution, resilientMode, completionWeight,
+                parameters, testName, headless, exhaustive, exhaustivePasses,
+                testsCount, exactPasses, resilientMode, completionWeight,
                 traverseExtensions, progressConsumer);
     }
 
@@ -567,7 +567,7 @@ public class Gui implements _GUI {
 
         if (test == null) addStandardParameters();
         panel = new JPanel(new GridBagLayout());
-        lastAllLeafsState = isNotNull(allLeafs) && allLeafs.isSelected();
+        lastExhaustiveState = isNotNull(exhaustive) && exhaustive.isSelected();
         addRows();
 
         final Dimension pref = panel.getPreferredSize();
@@ -592,14 +592,14 @@ public class Gui implements _GUI {
 
         // Add additional special properties
         rows = addRowOptional(TESTS.name(), testsCount, panel, rows);
-        if (isNotNull(allLeafs) && allLeafs.isSelected()) {
-            rows = addRowOptional(ALL_LEAFS_EXECUTIONS.name(), allLeafsExecutions, panel, rows);
+        if (isNotNull(exhaustive) && exhaustive.isSelected()) {
+            rows = addRowOptional(EXHAUSTIVE_PASSES.name(), exhaustivePasses, panel, rows);
             rows = addRowOptional(COMPLETION_WEIGHT.name(), completionWeight, panel, rows);
         }
         rows = addDivider(panel, rows);
-        rows = addRowOptional(ALL_LEAFS.name(), allLeafs, panel, rows);
-        if (isNotNull(allLeafs) && allLeafs.isSelected()) {
-            rows = addRowOptional(FORBID_OVEREXECUTION.name(), forbidOverexecution, panel, rows);
+        rows = addRowOptional(EXHAUSTIVE.name(), exhaustive, panel, rows);
+        if (isNotNull(exhaustive) && exhaustive.isSelected()) {
+            rows = addRowOptional(EXACT_PASSES.name(), exactPasses, panel, rows);
         }
         rows = addRowOptional(RESILIENT_MODE.name(), resilientMode, panel, rows);
         rows = addRowOptional(TRAVERSE_EXTENSIONS.name(), traverseExtensions, panel, rows);
@@ -648,24 +648,24 @@ public class Gui implements _GUI {
             }
         }
         
-        if (isNotNull(allLeafs)) {
-            parameters.setAllLeafs(allLeafs.isSelected());
-            if (!allLeafs.isSelected()) {
-                parameters.setAllLeafsExecutions(1);
+        if (isNotNull(exhaustive)) {
+            parameters.setExhaustive(exhaustive.isSelected());
+            if (!exhaustive.isSelected()) {
+                parameters.setExhaustivePasses(1);
             }
         }
-        if (isNotNull(allLeafs) && allLeafs.isSelected() && isNotNull(allLeafsExecutions)) {
+        if (isNotNull(exhaustive) && exhaustive.isSelected() && isNotNull(exhaustivePasses)) {
             try {
-                parameters.setAllLeafsExecutions(Integer.parseInt(allLeafsExecutions.getText()));
+                parameters.setExhaustivePasses(Integer.parseInt(exhaustivePasses.getText()));
             } catch (final NumberFormatException _) {
             }
         }
         propagatePropertyOptional(testsCount, TESTS.name());
-        if (isNotNull(allLeafs) && allLeafs.isSelected()) {
-            propagatePropertyOptional(forbidOverexecution, FORBID_OVEREXECUTION.name());
+        if (isNotNull(exhaustive) && exhaustive.isSelected()) {
+            propagatePropertyOptional(exactPasses, EXACT_PASSES.name());
             propagatePropertyOptional(completionWeight, COMPLETION_WEIGHT.name());
         } else {
-            parameters.remove(FORBID_OVEREXECUTION.name());
+            parameters.remove(EXACT_PASSES.name());
             parameters.remove(COMPLETION_WEIGHT.name());
         }
         propagatePropertyOptional(resilientMode, RESILIENT_MODE.name());

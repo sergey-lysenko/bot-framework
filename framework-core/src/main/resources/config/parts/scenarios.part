@@ -30,8 +30,8 @@
 # .tree.ignore.failed.scenario.selection=false
 
 # ------------------------------------------------------------------------------
-# When true, leaf scenarios that have reached their target execution count are set to weight 0 and marked non-executable. Default: false
-# .tree.forbid.overexecution=false
+# When true, leaf scenarios stop executing once they reach their target pass count (marked non-executable). Default: false
+# .tree.exact.passes=false
 
 # ------------------------------------------------------------------------------
 # Automatically prunes non-fitting scenarios and unreachable leaves when fits() returns false. Default: true
@@ -163,11 +163,11 @@
 # .tree.scenario.not.executable.notice=true
 
 # ------------------------------------------------------------------------------
-# Demotes 'is not executable' notices to debug when a scenario is non-executable solely due to goal fulfillment (completed Mono, fulfilled Leaf under forbidOverexecution, or a Node whose configured children are all fulfilled). Default: false
+# Demotes 'is not executable' notices to debug when a scenario is non-executable solely due to goal fulfillment (completed Mono, fulfilled Leaf under exactPasses, or a Node whose configured children are all fulfilled). Default: false
 # .tree.mute.fulfilled.not.executable.notice=false
 
 # ------------------------------------------------------------------------------
-# Demotes empty-candidate-pool continuation notices ('Unable to fit any scenario among ...' and 'Tests will go on as requested') to debug in ALL_LEAFS, resilient, or ignore-failed-selection modes. Default: false
+# Demotes empty-candidate-pool continuation notices ('Unable to fit any scenario among ...' and 'Tests will go on as requested') to debug in EXHAUSTIVE, resilient, or ignore-failed-selection modes. Default: false
 # .tree.mute.empty.candidates.notice=false
 
 # ------------------------------------------------------------------------------

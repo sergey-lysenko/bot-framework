@@ -202,7 +202,7 @@ record Scenarios() {
         final int total = core.getTotalScenarioPaths();
         final int active = core.getActiveScenarioPaths();
         final String percentage = calculatePercentage(total, active);
-        final int executed = core.getExecutedLeafsCount();
+        final int executed = core.getExecutedLeavesCount();
         final int base = 0 < active ? active : total;
         final String executedPercentage = calculatePercentage(base, executed);
         final Map<_Scenario, _Result> scenarioResults = core.getResults().getSorted();

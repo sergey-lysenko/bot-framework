@@ -128,7 +128,7 @@ public class ControlPanel extends JFrame implements _Dashboard {
         guiBox.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         final JPanel coveragePanel = gui.createCoverageEstimatePanel();
-        propertiesPanel = new PropertiesPanel(parameters.getTest(), parameters.isHeadless(), parameters.isAllLeafs(), parameters.getAllLeafsExecutions(), coveragePanel);
+        propertiesPanel = new PropertiesPanel(parameters.getTest(), parameters.isHeadless(), parameters.isExhaustive(), parameters.getExhaustivePasses(), coveragePanel);
         
         final JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, guiBox, propertiesPanel);
         // Properties panel width / Gui panel width = 1.618  =>  Gui = 1 / 2.618 ≈ 0.3819
@@ -197,8 +197,8 @@ public class ControlPanel extends JFrame implements _Dashboard {
                     propertiesPanel.reloadFromDisk(
                             parameters.getTest(),
                             parameters.isHeadless(),
-                            parameters.isAllLeafs(),
-                            parameters.getAllLeafsExecutions()
+                            parameters.isExhaustive(),
+                            parameters.getExhaustivePasses()
                     );
                 }
             }

@@ -1,9 +1,11 @@
 package works.lysenko.util.lang;
 
+import static works.lysenko.util.lang.word.A.ABORTED;
 import static works.lysenko.util.lang.word.B.BLOCKED;
 import static works.lysenko.util.chrs.__.*;
 import static works.lysenko.util.chrs.___.*;
 import static works.lysenko.util.chrs.____.GRID;
+import static works.lysenko.util.chrs.____.MODE;
 import static works.lysenko.util.chrs.____.NULL;
 import static works.lysenko.util.chrs.____.PATH;
 import static works.lysenko.util.data.enums.Brackets.SQUARE;
@@ -15,11 +17,13 @@ import static works.lysenko.util.lang.word.D.DEFINITION;
 import static works.lysenko.util.lang.word.E.*;
 import static works.lysenko.util.lang.word.F.FAILED;
 import static works.lysenko.util.lang.word.L.LOCATED;
+import static works.lysenko.util.lang.word.P.PATIENCE;
 import static works.lysenko.util.lang.word.R.REQUESTED;
 import static works.lysenko.util.lang.word.S.SCENARIO;
 import static works.lysenko.util.lang.word.U.UPDATE;
 import static works.lysenko.util.lang.word.V.VISIBILITY;
 import static works.lysenko.util.lang.word.W.WAITING;
+import static works.lysenko.util.lang.word.W.WANDERING;
 import static works.lysenko.util.spec.Symbols.*;
 
 /**
@@ -42,6 +46,9 @@ public record E() {
             VISIBILITY, OF, ELEMENT, LOCATED, BY, s(c(BY), _DOT_, X, PATH, _COLON_, _SPACE_));
     /** Constant representing exceptional scenario. */
     public static final String EXCEPTIONAL_SCENARION = b(c(EXCEPTIONAL), c(SCENARIO));
+    /** Constant representing exhaustive mode aborted due to wandering patience exceeded message. */
+    public static final String EXHAUSTIVE_MODE_ABORTED_WANDERING_PATIENCE_EXCEEDED = b(c(EXHAUSTIVE), MODE,
+            s(ABORTED, _COLON_), c(WANDERING), PATIENCE, s(EXCEEDED, _DOT_));
     /** Constant representing Markdown bold error marker prefix. */
     public static final String ERROR_MARKER = e(e(_ASTRS_, e(_ASTRS_, e(SQUARE, u(ERROR)))), true);
 }

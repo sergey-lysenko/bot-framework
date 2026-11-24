@@ -77,8 +77,8 @@ class EtaCorrectionTest {
         final Properties props = new Properties();
         props.setProperty("TEST", "Suite1");
         props.setProperty("PLATFORM", "chrome");
-        props.setProperty("ALL_LEAFS", "true");
-        props.setProperty("ALL_LEAFS_EXECUTIONS", "2");
+        props.setProperty("EXHAUSTIVE", "true");
+        props.setProperty("EXHAUSTIVE_PASSES", "2");
 
         Base.parameters = new Parameters(props);
 
@@ -228,8 +228,8 @@ class EtaCorrectionTest {
             final Properties raw = new Properties();
             raw.setProperty(PropEnum._TEST_ROOT.getPropertyName(), "demo.root");
             raw.setProperty(PropEnum._TEST_TESTS.getPropertyName(), "42");
-            raw.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), "true");
-            raw.setProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "3");
+            raw.setProperty(PropEnum._TEST_EXHAUSTIVE.getPropertyName(), "true");
+            raw.setProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), "3");
             raw.setProperty(PropEnum._TEST_APP.getPropertyName(), "sample.apk");
             raw.setProperty(PropEnum._TEST_PAUSE_LENGTH.getPropertyName(), "2500");
             raw.setProperty(PropEnum._WEBD_FORCED_PLATFORM.getPropertyName(), "android");
@@ -247,8 +247,8 @@ class EtaCorrectionTest {
             final EtaMetadata meta = EtaCorrection.currentMetadata();
             assertEquals("demo.root", meta.test());
             assertEquals("42", meta.tests());
-            assertTrue(meta.allLeafs());
-            assertEquals(3, meta.allLeafsExecutions());
+            assertTrue(meta.exhaustive());
+            assertEquals(3, meta.exhaustivePasses());
             assertEquals("demo.root", meta.root());
             assertEquals("sample.apk", meta.app());
             assertEquals(2500, meta.pauseLength());
@@ -262,10 +262,10 @@ class EtaCorrectionTest {
     @Test
     void sidecarReaderParsesModernPatienceAndLegacyCompletionFormats() {
         final List<String> lines = List.of(
-                "[ALL_LEAF_COMPLETION] 1 12000 0 95000 1 LeafAlpha",
-                "[ALL_LEAF_COMPLETION] 2 24500 37.5 68000 0 unknown",
-                "[ALL_LEAF_COMPLETION] 3 40000 50000 2 LeafBeta",
-                "[ALL_LEAF_COMPLETION] 4 55000 32000 LeafLegacy"
+                "[EXHAUSTIVE_COMPLETION] 1 12000 0 95000 1 LeafAlpha",
+                "[EXHAUSTIVE_COMPLETION] 2 24500 37.5 68000 0 unknown",
+                "[EXHAUSTIVE_COMPLETION] 3 40000 50000 2 LeafBeta",
+                "[EXHAUSTIVE_COMPLETION] 4 55000 32000 LeafLegacy"
         );
 
         final List<TestSample> samples = CompletionSidecarReader.parseLines(lines);
@@ -295,10 +295,10 @@ class EtaCorrectionTest {
 
     @Test
     void recordRunCompletionSkipsAbortedAndIncompleteRuns() throws Exception {
-        final Properties allLeafsProps = new Properties();
-        allLeafsProps.setProperty("TEST", "GuardedE2E");
-        allLeafsProps.setProperty("ALL_LEAFS", "true");
-        Base.parameters = new Parameters(allLeafsProps);
+        final Properties exhaustiveProps = new Properties();
+        exhaustiveProps.setProperty("TEST", "GuardedE2E");
+        exhaustiveProps.setProperty("EXHAUSTIVE", "true");
+        Base.parameters = new Parameters(exhaustiveProps);
 
         final _Scenario dummyLeaf = (_Scenario) java.lang.reflect.Proxy.newProxyInstance(
                 _Scenario.class.getClassLoader(),
@@ -324,33 +324,33 @@ class EtaCorrectionTest {
         EtaCorrection.recordRunCompletion(1_470_000L);
         assertFalse(correctionFile.exists(), "Stopped run must not be written to eta_correction.json");
 
-        // 2. Incomplete ALL_LEAFS run (e.g. patience abort) must not be persisted
+        // 2. Incomplete EXHAUSTIVE run (e.g. patience abort) must not be persisted
         EtaCorrection.reset();
         Base.core = createStubCore(false, false, Set.of(dummyLeaf), 74, 0);
         EtaCorrection.recordTestSample(74, 1_450_000L, 3_500_000L);
         EtaCorrection.recordRunCompletion(1_470_000L);
-        assertFalse(correctionFile.exists(), "Incomplete ALL_LEAFS run must not be written");
+        assertFalse(correctionFile.exists(), "Incomplete EXHAUSTIVE run must not be written");
 
         // 3. Incomplete FIXED_TESTS run must not be persisted
         EtaCorrection.reset();
         final Properties fixedProps = new Properties();
         fixedProps.setProperty("TEST", "GuardedFixed");
         fixedProps.setProperty("TESTS", "55");
-        fixedProps.setProperty("ALL_LEAFS", "false");
+        fixedProps.setProperty("EXHAUSTIVE", "false");
         Base.parameters = new Parameters(fixedProps);
         Base.core = createStubCore(false, false, Set.of(), 27, 55);
         EtaCorrection.recordTestSample(27, 678_000L, 757_000L);
         EtaCorrection.recordRunCompletion(679_000L);
         assertFalse(correctionFile.exists(), "Incomplete FIXED_TESTS run must not be written");
 
-        // 4. Valid completed ALL_LEAFS run IS persisted
+        // 4. Valid completed EXHAUSTIVE run IS persisted
         EtaCorrection.reset();
-        Base.parameters = new Parameters(allLeafsProps);
+        Base.parameters = new Parameters(exhaustiveProps);
         Base.core = createStubCore(false, true, Set.of(dummyLeaf), 252, 0);
         EtaCorrection.recordTestSample(1, 20_000L, 4_500_000L);
         EtaCorrection.recordTestSample(252, 4_490_000L, 0L);
         EtaCorrection.recordRunCompletion(4_493_000L);
-        assertTrue(correctionFile.exists(), "Completed ALL_LEAFS run should be persisted");
+        assertTrue(correctionFile.exists(), "Completed EXHAUSTIVE run should be persisted");
     }
 
     @Test
@@ -380,8 +380,8 @@ class EtaCorrectionTest {
                         new TestError(252, 4_498_000L, 0L, 4_498_000L, -2_000L, -0.04)),
                 2000L);
 
-        assertFalse(CorrectionInterpolator.isValidRecord(taintedAborted), "Aborted ALL_LEAFS record should be detected as tainted");
-        assertTrue(CorrectionInterpolator.isValidRecord(cleanComplete), "Completed ALL_LEAFS record should be valid");
+        assertFalse(CorrectionInterpolator.isValidRecord(taintedAborted), "Aborted EXHAUSTIVE record should be detected as tainted");
+        assertTrue(CorrectionInterpolator.isValidRecord(cleanComplete), "Completed EXHAUSTIVE record should be valid");
 
         final EtaMetadata fixedMeta = new EtaMetadata("Wave", "55", false, 1, "root", "", 5000, "Chrome");
         final CorrectionRecord taintedFixed = new CorrectionRecord(
@@ -456,16 +456,16 @@ class EtaCorrectionTest {
 
     private static Core createStubCore(
             final boolean stopFlag,
-            final boolean allLeafsExecuted,
-            final Set<_Scenario> accessibleLeafs,
+            final boolean allLeavesExecuted,
+            final Set<_Scenario> accessibleLeaves,
             final int completedTests,
             final int totalTests) throws Exception {
         final Core core = SelectionFixture.allocate(Core.class);
         core.setStopFlag(stopFlag);
 
         final Results results = new Results();
-        if (allLeafsExecuted) {
-            for (final _Scenario leaf : accessibleLeafs) {
+        if (allLeavesExecuted) {
+            for (final _Scenario leaf : accessibleLeaves) {
                 results.count(leaf);
             }
         }
@@ -491,7 +491,7 @@ class EtaCorrectionTest {
         final works.lysenko.util.apis.scenario._Ctrl ctrl = (works.lysenko.util.apis.scenario._Ctrl) java.lang.reflect.Proxy.newProxyInstance(
                 works.lysenko.util.apis.scenario._Ctrl.class.getClassLoader(),
                 new Class<?>[]{works.lysenko.util.apis.scenario._Ctrl.class},
-                (proxy, method, args) -> "getAccessibleLeafs".equals(method.getName()) ? accessibleLeafs : null);
+                (proxy, method, args) -> "getAccessibleLeaves".equals(method.getName()) ? accessibleLeaves : null);
 
         final works.lysenko.util.apis.test._Exec execProxy = (works.lysenko.util.apis.test._Exec) java.lang.reflect.Proxy.newProxyInstance(
                 works.lysenko.util.apis.test._Exec.class.getClassLoader(),

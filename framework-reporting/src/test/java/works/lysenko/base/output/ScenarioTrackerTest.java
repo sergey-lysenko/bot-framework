@@ -256,7 +256,7 @@ class ScenarioTrackerTest {
         final File customRunDir = tempDir.toFile();
         ScenarioTracker.setCustomOutputDir(customRunDir);
 
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), "2");
         setTestProperty(PropEnum._TEST_REPORT_PROGRESSION_SCENARIO_GIF.getPropertyName(), "true");
         Base.parameters = new Parameters(new Properties());
         ProgressionSettings.initialize();

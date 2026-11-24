@@ -126,11 +126,11 @@ class PatienceTest {
     }
 
     @Test
-    void routinesIsAllLeafsModeReflectsPropertiesAndParameters() throws Exception {
-        assertFalse(Routines.isAllLeafsMode());
+    void routinesIsExhaustiveModeReflectsPropertiesAndParameters() throws Exception {
+        assertFalse(Routines.isExhaustiveMode());
 
         final Properties props = new Properties();
-        props.setProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
+        props.setProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), "2");
         final TestProperties tp = new TestProperties();
         final Field ccField = TestProperties.class.getDeclaredField("commonConfiguration");
         ccField.setAccessible(true);
@@ -140,7 +140,7 @@ class PatienceTest {
         theField.set(tp, props);
         Base.properties = tp;
 
-        assertTrue(Routines.isAllLeafsMode());
+        assertTrue(Routines.isExhaustiveMode());
     }
 
     private static List<StubLeaf> installScenarioTreeWithLeaves(final int leafCount) throws Exception {

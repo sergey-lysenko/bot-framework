@@ -12,21 +12,21 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Fallback reader extracting {@link TestSample} observations from {@code .all-leaf-completions.log} sidecar files.
+ * Fallback reader extracting {@link TestSample} observations from {@code .exhaustive-completions.log} sidecar files.
  */
 public record CompletionSidecarReader() {
 
     private static final Pattern COMPLETION_LINE_RE = Pattern.compile(
-            "^\\[ALL_LEAF_COMPLETION]\\s+(\\d+)\\s+(\\d+)(?:\\s+(\\d+(?:\\.\\d+)?))?(?:\\s+(\\d+))?(?:\\s+(\\d+))?(?:\\s+(.+))?$");
+            "^\\[EXHAUSTIVE_COMPLETION]\\s+(\\d+)\\s+(\\d+)(?:\\s+(\\d+(?:\\.\\d+)?))?(?:\\s+(\\d+))?(?:\\s+(\\d+))?(?:\\s+(.+))?$");
 
     /**
-     * Reads per-cycle {@link TestSample} observations from the current run's all-leaf completions sidecar file.
+     * Reads per-cycle {@link TestSample} observations from the current run's exhaustive completions sidecar file.
      *
      * @return list of parsed {@link TestSample} entries, or empty list if absent/unreadable
      */
     public static List<TestSample> readCurrentRunSamples() {
         try {
-            final String sidecarPath = Layout.Files.name(Layout.Templates.RUN_ALL_LEAF_COMPLETIONS_);
+            final String sidecarPath = Layout.Files.name(Layout.Templates.RUN_EXHAUSTIVE_COMPLETIONS_);
             final File file = new File(sidecarPath);
             if (!file.isFile()) return List.of();
             return parseLines(Files.readAllLines(file.toPath(), StandardCharsets.UTF_8));
@@ -36,7 +36,7 @@ public record CompletionSidecarReader() {
     }
 
     /**
-     * Parses {@link TestSample} observations from raw {@code [ALL_LEAF_COMPLETION]} sidecar lines.
+     * Parses {@link TestSample} observations from raw {@code [EXHAUSTIVE_COMPLETION]} sidecar lines.
      * Supports modern lines ({@code testNum elapsedMs patiencePct etaMs goalIndex leaf}) as well as legacy formats.
      *
      * @param lines raw sidecar log lines

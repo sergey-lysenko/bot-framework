@@ -25,8 +25,8 @@ public final class SidecarLoader {
         return CompletionLoader.loadLeafCompletions(runLogFile);
     }
 
-    public static File allLeafCompletionsFile(final File runLogFile) {
-        return CompletionLoader.allLeafCompletionsFile(runLogFile);
+    public static File exhaustiveCompletionsFile(final File runLogFile) {
+        return CompletionLoader.exhaustiveCompletionsFile(runLogFile);
     }
 
     public static List<EtaDebugItem> loadEtaDebugItems(final File runLogFile) {

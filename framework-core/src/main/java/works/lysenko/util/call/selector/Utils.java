@@ -168,7 +168,7 @@ public record Utils() {
      * <p>
      * When {@link Notify#muteFulfilledNotExecutable} is enabled and the scenario is non-executable
      * solely due to goal fulfillment (completed {@link Mono}, fulfilled {@link Leaf} under
-     * {@code forbidOverexecution}, or a {@link _Node} whose configured children are all fulfilled),
+     * {@code exactPasses}, or a {@link _Node} whose configured children are all fulfilled),
      * the notification is demoted to debug level instead of raising an {@code S3} event.
      *
      * @param scenario the scenario that is not executable
@@ -202,10 +202,10 @@ public record Utils() {
         if (scenario.hasFailed() || scenario.isExhausted()) return false;
         if (isNull(scenario.weightConfigured())) return false;
         if (scenario instanceof Mono mono) {
-            return mono.isExecuted() || (Scenario.forbidOverexecution && mono.isGoalFulfilled());
+            return mono.isExecuted() || (Scenario.exactPasses && mono.isGoalFulfilled());
         }
         if (scenario instanceof Leaf leaf) {
-            return Scenario.forbidOverexecution && leaf.isGoalFulfilled();
+            return Scenario.exactPasses && leaf.isGoalFulfilled();
         }
         if (scenario instanceof _Node node) {
             if (isNull(node.getPool())) return false;

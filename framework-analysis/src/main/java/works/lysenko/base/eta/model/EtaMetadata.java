@@ -5,20 +5,20 @@ import java.util.Objects;
 /**
  * Configuration fingerprint identifying compatible test runs for historical ETA calibration.
  *
- * @param test               active test suite name or fallback root
- * @param tests              configured test count string (or empty)
- * @param allLeafs           whether all-leafs coverage mode is enabled
- * @param allLeafsExecutions target executions per leaf scenario
- * @param root               configured scenario root package
- * @param app                target mobile application path/name (or empty)
- * @param pauseLength        configured pause duration in milliseconds
- * @param platform           target execution platform identifier
+ * @param test             active test suite name or fallback root
+ * @param tests            configured test count string (or empty)
+ * @param exhaustive       whether exhaustive mode is enabled
+ * @param exhaustivePasses target passes per leaf scenario
+ * @param root             configured scenario root package
+ * @param app              target mobile application path/name (or empty)
+ * @param pauseLength      configured pause duration in milliseconds
+ * @param platform         target execution platform identifier
  */
 public record EtaMetadata(
         String test,
         String tests,
-        boolean allLeafs,
-        int allLeafsExecutions,
+        boolean exhaustive,
+        int exhaustivePasses,
         String root,
         String app,
         int pauseLength,
@@ -34,8 +34,8 @@ public record EtaMetadata(
         if (null == other) return false;
         return Objects.equals(test, other.test)
                 && Objects.equals(tests, other.tests)
-                && allLeafs == other.allLeafs
-                && allLeafsExecutions == other.allLeafsExecutions
+                && exhaustive == other.exhaustive
+                && exhaustivePasses == other.exhaustivePasses
                 && Objects.equals(root, other.root)
                 && Objects.equals(app, other.app)
                 && pauseLength == other.pauseLength

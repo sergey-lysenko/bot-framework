@@ -92,8 +92,8 @@ class CompletionWeightTest {
     }
 
     @Test
-    void testProportionalWeightReductionWithAllLeafsExecutions() {
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
+    void testProportionalWeightReductionWithExhaustivePasses() {
+        setTestProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
 
         final Results results = (Results) Base.core.getResults();
@@ -231,7 +231,7 @@ class CompletionWeightTest {
         // parentWithUnexecuted has unexecuted leaf in its subtree, so gets boosted: 1.0 + 4.5 = 5.5
         assertEquals(fr(5.5), unexecutedParentWeight);
 
-        // fullyExecutedParent has all leafs executed, so remains at base weight 1.0
+        // fullyExecutedParent has all leaves executed, so remains at base weight 1.0
         assertEquals(fr(1.0), fullyExecutedParentWeight);
 
         // Now execute the remaining leaf
@@ -243,7 +243,7 @@ class CompletionWeightTest {
                 .filter(kv -> kv.k() == parentWithUnexecuted)
                 .findFirst().orElseThrow().v();
 
-        // Now parentWithUnexecuted also has all leafs executed, so drops back to base weight 1.0
+        // Now parentWithUnexecuted also has all leaves executed, so drops back to base weight 1.0
         assertEquals(fr(1.0), weightAfter);
     }
 
@@ -283,8 +283,8 @@ class CompletionWeightTest {
     }
 
     @Test
-    void testCompletionWeightSumsUncompletedDescendantLeafs() {
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
+    void testCompletionWeightSumsUncompletedDescendantLeaves() {
+        setTestProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
 
         final Results results = (Results) Base.core.getResults();

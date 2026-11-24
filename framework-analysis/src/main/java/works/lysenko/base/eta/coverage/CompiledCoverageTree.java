@@ -27,7 +27,7 @@ import static works.lysenko.util.func.type.Objects.isNotNull;
  * for zero-allocation Monte Carlo simulation.
  *
  * @param totalScenarios     total indexed scenarios
- * @param accessibleLeafs    count of accessible leaf scenarios
+ * @param accessibleLeaves   count of accessible leaf scenarios
  * @param maxPoolCandidates  maximum candidate count across all pools
  * @param targets            target execution count per scenario ID
  * @param isMono             flag per scenario ID indicating {@link Mono}
@@ -37,7 +37,7 @@ import static works.lysenko.util.func.type.Objects.isNotNull;
  */
 record CompiledCoverageTree(
         int totalScenarios,
-        int accessibleLeafs,
+        int accessibleLeaves,
         int maxPoolCandidates,
         int[] targets,
         boolean[] isMono,
@@ -46,7 +46,7 @@ record CompiledCoverageTree(
         SimPool rootPool
 ) {
 
-    static CompiledCoverageTree compile(final _Ctrl rootCtrl, final Set<_Scenario> accessibleLeafs, final int targetExecutions) {
+    static CompiledCoverageTree compile(final _Ctrl rootCtrl, final Set<_Scenario> accessibleLeaves, final int targetExecutions) {
         final Map<_Scenario, Integer> scenarioIndexMap = new IdentityHashMap<>();
         final List<_Scenario> scenarios = new ArrayList<>();
         final Map<_Pool, Integer> poolIndexMap = new IdentityHashMap<>();
@@ -67,7 +67,7 @@ record CompiledCoverageTree(
             final _Scenario sc = scenarios.get(i);
             isMono[i] = sc instanceof Mono;
             isNode[i] = sc instanceof _Node;
-            isAccessibleLeaf[i] = accessibleLeafs.contains(sc);
+            isAccessibleLeaf[i] = accessibleLeaves.contains(sc);
             targets[i] = isMono[i] ? 1 : targetExecutions;
 
             if (sc instanceof _Node node) {
@@ -82,7 +82,7 @@ record CompiledCoverageTree(
                     final Integer dId = scenarioIndexMap.get(d);
                     if (isNotNull(dId)) {
                         scList.add(dId);
-                        if (accessibleLeafs.contains(d)) {
+                        if (accessibleLeaves.contains(d)) {
                             leafList.add(dId);
                             if (!(d instanceof Mono)) {
                                 hasRepeatable = true;
@@ -96,7 +96,7 @@ record CompiledCoverageTree(
                 hasRepeatableLeaf[i] = hasRepeatable;
             } else {
                 descScenarioIds[i] = new int[0];
-                if (accessibleLeafs.contains(sc)) {
+                if (accessibleLeaves.contains(sc)) {
                     descLeafIds[i] = new int[]{i};
                     hasRepeatableLeaf[i] = !(sc instanceof Mono);
                 } else {
@@ -121,7 +121,7 @@ record CompiledCoverageTree(
 
         return new CompiledCoverageTree(
                 totalScenarios,
-                accessibleLeafs.size(),
+                accessibleLeaves.size(),
                 maxPoolCandidates,
                 targets,
                 isMono,
@@ -232,7 +232,7 @@ record CompiledCoverageTree(
         final int[] cIds = new int[size];
         final double[] bWeights = new double[size];
         final int[][] cDescScenarios = new int[size][];
-        final int[][] cDescLeafs = new int[size][];
+        final int[][] cDescLeaves = new int[size][];
         final boolean[] cHasRepeatable = new boolean[size];
         final SimPool[] cPools = new SimPool[size];
 
@@ -241,12 +241,12 @@ record CompiledCoverageTree(
             cIds[i] = scId;
             bWeights[i] = baseWeights.get(i);
             cDescScenarios[i] = descScenarioIds[scId];
-            cDescLeafs[i] = descLeafIds[scId];
+            cDescLeaves[i] = descLeafIds[scId];
             cHasRepeatable[i] = hasRepeatableLeaf[scId];
             cPools[i] = children.get(i);
         }
 
-        final SimPool simPool = new SimPool(cIds, bWeights, cDescScenarios, cDescLeafs, cHasRepeatable, cPools);
+        final SimPool simPool = new SimPool(cIds, bWeights, cDescScenarios, cDescLeaves, cHasRepeatable, cPools);
         simPoolMap.put(pool, simPool);
         return simPool;
     }

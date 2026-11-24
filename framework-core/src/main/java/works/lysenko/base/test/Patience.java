@@ -25,7 +25,7 @@ import static works.lysenko.util.spec.Numbers.ZERO;
 
 /**
  * Tracks wandering patience consumption, fruitless-cycle budgets, leaf execution progress watermarks,
- * and rolling-window ETA estimates for all-leafs test execution mode.
+ * and rolling-window ETA estimates for exhaustive test execution mode.
  */
 @SuppressWarnings("MethodWithMultipleReturnPoints")
 public class Patience implements _Patience {

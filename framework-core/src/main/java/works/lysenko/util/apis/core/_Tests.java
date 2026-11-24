@@ -24,7 +24,7 @@ public interface _Tests {
      *
      * @return set of all presently accessible leaf scenarios
      */
-    Set<_Scenario> getAccessibleLeafs();
+    Set<_Scenario> getAccessibleLeaves();
 
     /**
      * Retrieves all accessible node scenarios.
@@ -34,7 +34,7 @@ public interface _Tests {
     Set<_Scenario> getAccessibleNodes();
 
     /**
-     * Retrieves all accessible scenarios (nodes and leafs).
+     * Retrieves all accessible scenarios (nodes and leaves).
      *
      * @return set of all presently accessible scenarios
      */
@@ -43,16 +43,16 @@ public interface _Tests {
     /**
      * Checks if all leaf scenarios have been executed.
      *
-     * @return true if all presently accessible leaf scenarios have been executed at least once
+     * @return true if all presently accessible leaf scenarios have met their target passes
      */
-    boolean areAllLeafsExecuted();
+    boolean areAllLeavesExecuted();
 
     /**
      * Retrieves the count of executed leaf scenarios.
      *
      * @return number of executed accessible leaf scenarios
      */
-    int getExecutedLeafsCount();
+    int getExecutedLeavesCount();
 
     /**
      * Retrieves the currently executed test number.

@@ -187,11 +187,11 @@ public final class Core extends Root implements _Core, _Tests {
     }
 
     @Override
-    public Set<_Scenario> getAccessibleLeafs() {
+    public Set<_Scenario> getAccessibleLeaves() {
 
         if (isNotNull(test) && isNotNull(test.executor())) {
             if (isNotNull(test.executor().ctrl()))
-                return test.executor().ctrl().getAccessibleLeafs();
+                return test.executor().ctrl().getAccessibleLeaves();
         }
         return Set.of();
     }
@@ -217,24 +217,25 @@ public final class Core extends Root implements _Core, _Tests {
     }
 
     /**
-     * Performs resolve all leafs target.
-     * @return the resolve all leafs target result
+     * Resolves the target number of passes per leaf scenario in exhaustive mode.
+     *
+     * @return the resolved target pass count (at least 1)
      */
-    public static int resolveAllLeafsTarget() {
+    public static int resolveExhaustivePasses() {
         if (isNotNull(parameters)) {
-            return parameters.getAllLeafsExecutions();
+            return parameters.getExhaustivePasses();
         }
-        final Integer prop = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
+        final Integer prop = PropEnum._TEST_EXHAUSTIVE_PASSES.get();
         return isNotNull(prop) ? Math.max(1, prop) : 1;
     }
 
     @Override
-    public boolean areAllLeafsExecuted() {
+    public boolean areAllLeavesExecuted() {
 
-        final Set<_Scenario> leafs = getAccessibleLeafs();
-        if (leafs.isEmpty()) return true;
-        final int target = resolveAllLeafsTarget();
-        for (final _Scenario leaf : leafs) {
+        final Set<_Scenario> leaves = getAccessibleLeaves();
+        if (leaves.isEmpty()) return true;
+        final int target = resolveExhaustivePasses();
+        for (final _Scenario leaf : leaves) {
             if (!leaf.isExecutable()) continue;
             final int leafTarget = (leaf instanceof Mono) ? 1 : target;
             if (getResults().getExecutions(leaf) < leafTarget)
@@ -244,12 +245,12 @@ public final class Core extends Root implements _Core, _Tests {
     }
 
     @Override
-    public int getExecutedLeafsCount() {
+    public int getExecutedLeavesCount() {
 
-        final Set<_Scenario> leafs = getAccessibleLeafs();
+        final Set<_Scenario> leaves = getAccessibleLeaves();
         int count = 0;
-        final int target = resolveAllLeafsTarget();
-        for (final _Scenario leaf : leafs) {
+        final int target = resolveExhaustivePasses();
+        for (final _Scenario leaf : leaves) {
             final int leafTarget = (leaf instanceof Mono) ? 1 : target;
             if (leafTarget <= getResults().getExecutions(leaf))
                 count++;
@@ -263,10 +264,10 @@ public final class Core extends Root implements _Core, _Tests {
      */
     public int getExecutedLeafExecutionsCount() {
 
-        final Set<_Scenario> leafs = getAccessibleLeafs();
+        final Set<_Scenario> leaves = getAccessibleLeaves();
         int count = 0;
-        final int target = resolveAllLeafsTarget();
-        for (final _Scenario leaf : leafs) {
+        final int target = resolveExhaustivePasses();
+        for (final _Scenario leaf : leaves) {
             final int leafTarget = (leaf instanceof Mono) ? 1 : target;
             count += Math.min(getResults().getExecutions(leaf), leafTarget);
         }
@@ -279,10 +280,10 @@ public final class Core extends Root implements _Core, _Tests {
      */
     public int getTotalLeafExecutionsCount() {
 
-        final Set<_Scenario> leafs = getAccessibleLeafs();
+        final Set<_Scenario> leaves = getAccessibleLeaves();
         int count = 0;
-        final int target = resolveAllLeafsTarget();
-        for (final _Scenario leaf : leafs)
+        final int target = resolveExhaustivePasses();
+        for (final _Scenario leaf : leaves)
             count += (leaf instanceof Mono) ? 1 : target;
         return count;
     }

@@ -34,7 +34,7 @@ public class SummaryGenerator {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(summaryFile, StandardCharsets.UTF_8))) {
             writer.write("# Test Execution Log - Summary" + System.lineSeparator() + System.lineSeparator());
             
-            writer.write(String.format("> **Total Scenarios**: %d | **Mode**: %s%n%n", sorted.size(), (works.lysenko.util.prop.PropEnum._TEST_ALL_LEAFS.get() != null && Boolean.TRUE.equals(works.lysenko.util.prop.PropEnum._TEST_ALL_LEAFS.get())) ? "ALL_LEAFS" : "DEFAULT"));
+            writer.write(String.format("> **Total Scenarios**: %d | **Mode**: %s%n%n", sorted.size(), (works.lysenko.util.prop.PropEnum._TEST_EXHAUSTIVE.get() != null && Boolean.TRUE.equals(works.lysenko.util.prop.PropEnum._TEST_EXHAUSTIVE.get())) ? "EXHAUSTIVE" : "DEFAULT"));
             
             writer.write("| # | Scenario Path | Result | Executions |" + System.lineSeparator());
             writer.write("| :--- | :--- | :--- | :--- |" + System.lineSeparator());

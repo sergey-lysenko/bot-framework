@@ -63,7 +63,7 @@ class ParametersRendererTest {
         assertTrue(clean.contains("(none)"), "Should render (none) when no parameters are redefined");
         assertTrue(clean.contains("# Unchanged execution parameters with default values"), "Should render defaults section header");
         assertTrue(clean.contains("PLATFORM = Chrome"), "Should list PLATFORM default");
-        assertTrue(clean.contains("ALL_LEAFS_EXECUTIONS = 1"), "Should list ALL_LEAFS_EXECUTIONS default");
+        assertTrue(clean.contains("EXHAUSTIVE_PASSES = 1"), "Should list EXHAUSTIVE_PASSES default");
         assertTrue(clean.contains("Values of 0 execution parameters were redefined, " + totalStandard + " have default values"),
                 "Summary line should match exact counts, actual:\n" + clean);
     }

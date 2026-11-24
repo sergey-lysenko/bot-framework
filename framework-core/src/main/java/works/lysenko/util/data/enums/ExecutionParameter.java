@@ -19,24 +19,6 @@ import static works.lysenko.util.lang.word.F.FALSE;
 @SuppressWarnings({"unused", "EnumClass", "CallToSuspiciousStringMethod"})
 public enum ExecutionParameter implements _Default {
 
-    /**
-     * Parameter indicating whether all leafs should be executed.
-     */
-    ALL_LEAFS(FALSE),
-
-    /**
-     * Parameter specifying all leaf executions configuration.
-     */
-    ALL_LEAFS_EXECUTIONS(EMPTY),
-
-    /**
-     * Parameter specifying all leaf executions patience offset.
-     */
-    ALL_LEAFS_PATIENCE(EMPTY),
-
-    /**
-     * Parameter for completion weight.
-     */
     COMPLETION_WEIGHT(EMPTY),
 
     /**
@@ -50,9 +32,24 @@ public enum ExecutionParameter implements _Default {
     DOMAIN(EMPTY),
 
     /**
-     * Parameter to forbid over-execution.
+     * Parameter ensuring scenarios execute at most their target number of passes.
      */
-    FORBID_OVEREXECUTION(FALSE),
+    EXACT_PASSES(FALSE),
+
+    /**
+     * Parameter indicating whether exhaustive mode should be executed.
+     */
+    EXHAUSTIVE(FALSE),
+
+    /**
+     * Parameter specifying required passes per scenario in exhaustive mode.
+     */
+    EXHAUSTIVE_PASSES(EMPTY),
+
+    /**
+     * Parameter specifying wandering patience multiplier in exhaustive mode.
+     */
+    EXHAUSTIVE_PATIENCE(EMPTY),
 
     /**
      * Parameter specifying headless mode execution.

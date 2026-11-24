@@ -36,9 +36,9 @@ public record Scenario() {
     public static boolean ignoreFailedSelection = _TREE_IGNORE_FAILED_SCENARIO_SELECTION.get();
 
     /**
-     * Indicates whether over-execution of fulfilled leaf scenarios is forbidden.
+     * Indicates whether leaf scenarios stop executing once their target passes are met.
      */
-    public static boolean forbidOverexecution = _TREE_FORBID_OVEREXECUTION.get();
+    public static boolean exactPasses = _TREE_EXACT_PASSES.get();
 
     /**
      * Indicates whether unreachable leaf scenarios should be automatically pruned when fits() returns false.
@@ -64,7 +64,7 @@ public record Scenario() {
         defaultWeight = _TREE_DEFAULT_WEIGHT.get();
         selectionRetries = _TEST_SCENARIO_SUFFICIENCY_ATTEMPTS.get();
         ignoreFailedSelection = _TREE_IGNORE_FAILED_SCENARIO_SELECTION.get();
-        forbidOverexecution = _TREE_FORBID_OVEREXECUTION.get();
+        exactPasses = _TREE_EXACT_PASSES.get();
         unreachableLeafPruning = _TREE_UNREACHABLE_LEAF_PRUNING.get();
         branchStalePenalty = _TREE_BRANCH_STALE_PENALTY.get();
         root = _TEST_ROOT.get();

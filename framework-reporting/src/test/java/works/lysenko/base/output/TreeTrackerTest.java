@@ -172,13 +172,13 @@ class TreeTrackerTest {
     }
 
     @Test
-    void testLeafOverExecutionPercentAndColor() {
-        assertEquals(0, TreeTracker.getOverExecutionPercent(2, 2));
-        assertEquals(50, TreeTracker.getOverExecutionPercent(3, 2));
-        assertEquals(100, TreeTracker.getOverExecutionPercent(4, 2));
+    void testLeafOvershootPercentAndColor() {
+        assertEquals(0, TreeTracker.getOvershootPercent(2, 2));
+        assertEquals(50, TreeTracker.getOvershootPercent(3, 2));
+        assertEquals(100, TreeTracker.getOvershootPercent(4, 2));
 
-        final Color partialOvershoot = TreeTracker.getOverExecutionColor(0.5, 1.0);
-        assertEquals(new Color(0xF8, 0xFA, 0xFC), TreeTracker.getOverExecutionColor(1.0, 1.0));
+        final Color partialOvershoot = TreeTracker.getOvershootColor(0.5, 1.0);
+        assertEquals(new Color(0xF8, 0xFA, 0xFC), TreeTracker.getOvershootColor(1.0, 1.0));
         assertTrue(partialOvershoot.getRed() > new Color(0x22, 0xC5, 0x5E).getRed());
         assertTrue(partialOvershoot.getGreen() < Color.WHITE.getGreen());
         assertTrue(partialOvershoot.getBlue() < Color.WHITE.getBlue());
@@ -192,16 +192,16 @@ class TreeTrackerTest {
     }
 
     @Test
-    void testRenderHighlightsMostOverExecutedLeaf() {
+    void testRenderHighlightsMostOvershotLeaf() {
         final NodeData root = new NodeData("root", "Root", "Root", 0, 1.0, result(ScenarioType.NODE, 2));
         final NodeData partialLeaf = new NodeData("partial", "Partial", "Root", 1, 1.0, result(ScenarioType.LEAF, 3));
-        final NodeData mostOverExecutedLeaf = new NodeData("most", "Most", "Root", 1, 2.0, result(ScenarioType.LEAF, 4));
+        final NodeData mostOvershotLeaf = new NodeData("most", "Most", "Root", 1, 2.0, result(ScenarioType.LEAF, 4));
         root.children().add(partialLeaf);
-        root.children().add(mostOverExecutedLeaf);
+        root.children().add(mostOvershotLeaf);
 
         final TreeLayout layout = new TreeLayout(
-                List.of(root, partialLeaf, mostOverExecutedLeaf),
-                List.of(new Edge(root, partialLeaf), new Edge(root, mostOverExecutedLeaf)));
+                List.of(root, partialLeaf, mostOvershotLeaf),
+                List.of(new Edge(root, partialLeaf), new Edge(root, mostOvershotLeaf)));
         final BufferedImage image = TreeTracker.renderTreeProgression(layout, 2, 1);
 
         final works.lysenko.base.output.tree.VisualNodeResolver nodeResolver =
@@ -270,7 +270,7 @@ class TreeTrackerTest {
         final File customRunDir = tempDir.toFile();
         TreeTracker.setCustomOutputDir(customRunDir);
 
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), "2");
         setTestProperty(PropEnum._TEST_REPORT_PROGRESSION_TREE_GIF.getPropertyName(), "true");
         Base.parameters = new Parameters(new Properties());
         ProgressionSettings.initialize();
@@ -379,7 +379,7 @@ class TreeTrackerTest {
             throw new RuntimeException(e);
         }
 
-        // Before any execution: both leafs exist in sortedStrings as stubs
+        // Before any execution: both leaves exist in sortedStrings as stubs
         final TreeMap<String, Result> initialSorted = Base.core.getResults().getSortedStrings(false);
         final TreeLayout layoutInitial = TreeHtml.computeLayout(initialSorted);
 
@@ -441,7 +441,7 @@ class TreeTrackerTest {
         final File customRunDir = tempDir.toFile();
         TreeTracker.setCustomOutputDir(customRunDir);
 
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
         ProgressionSettings.initialize();
 
@@ -476,7 +476,7 @@ class TreeTrackerTest {
         final File customRunDir = tempDir.toFile();
         TreeTracker.setCustomOutputDir(customRunDir);
 
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), "2");
         setTestProperty(PropEnum._TEST_REPORT_PROGRESSION_TREE_PER_NODE.getPropertyName(), "true");
         Base.parameters = new Parameters(new Properties());
         ProgressionSettings.initialize();
@@ -556,7 +556,7 @@ class TreeTrackerTest {
     }
 
     @Test
-    void testNotExecutedTreeNodesAndLeafsAreNotDisplayedAsOff() {
+    void testNotExecutedTreeNodesAndLeavesAreNotDisplayedAsOff() {
         final NodeData aiWizard = new NodeData("col_0_0", "AiWizard ▷", "Root", 0, 1.0, result(ScenarioType.NODE, 0));
         final NodeData clear = new NodeData("col_1_0", "Clear ⋄", "AiWizard", 1, 1.0, result(ScenarioType.LEAF, 0));
         final NodeData confirm = new NodeData("col_2_0", "Confirm ⋄", "Clear", 2, 1.0, result(ScenarioType.LEAF, 0));
@@ -653,7 +653,7 @@ class TreeTrackerTest {
     }
 
     @Test
-    void testHeaderLeafsCountsOnlyExecutableLeafs() {
+    void testHeaderLeavesCountsOnlyExecutableLeaves() {
         final NodeData root = new NodeData("col_0_0", "root.App", "Root", 0, 1.0, null);
         final NodeData leafPlanned = new NodeData("col_1_0", "root.auth.LoginSuccess", "Root", 1, 1.0, result(ScenarioType.LEAF, 1));
         final Result exclResult = new Result(ScenarioType.LEAF, null, null, null, new ArrayList<>(), 0, 0);
@@ -668,10 +668,10 @@ class TreeTrackerTest {
                 List.of(root, leafPlanned, leafExcluded),
                 List.of(new Edge(root, leafPlanned), new Edge(root, leafExcluded)));
 
-        // Both leafs in layout, but only 1 is executable (and executed 1/1)
+        // Both leaves in layout, but only 1 is executable (and executed 1/1)
         final BufferedImage img = TreeTracker.renderTreeProgression(layout, 1, "Test #1", Collections.emptySet());
         assertNotNull(img);
-        // Image rendered successfully without error, covered leafs == total executable leafs (1/1)
+        // Image rendered successfully without error, covered leaves == total executable leaves (1/1)
     }
 
     private static Result result(final ScenarioType type, final int executions) {

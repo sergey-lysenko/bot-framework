@@ -117,9 +117,9 @@ class LogHtmlTest {
         final works.lysenko.base.TestProperties prevProps = works.lysenko.Base.properties;
         works.lysenko.Base.properties = new works.lysenko.base.TestProperties();
         try {
-            final Path logPath = tempDir.resolve("all_leafs.run.log");
-            final Path htmlPath = tempDir.resolve("all_leafs.run.log.html");
-            final Path completionPath = tempDir.resolve("all_leafs.all-leaf-completions.log");
+            final Path logPath = tempDir.resolve("exhaustive.run.log");
+            final Path htmlPath = tempDir.resolve("exhaustive.run.log.html");
+            final Path completionPath = tempDir.resolve("exhaustive.exhaustive-completions.log");
             Files.write(logPath, List.of(
                     "[ 1][1][0.000][10] Executing First Scenario",
                     "[ 1][2][10.000][5] • Closing test 1 ...",
@@ -131,19 +131,19 @@ class LogHtmlTest {
                     "[ 3][8][14.000][5] • Closing test 3 ...",
                     "[  ][9][14.010][2] • Test time 1 s"));
             Files.write(completionPath, List.of(
-                    "[ALL_LEAF_COMPLETION] 1 1000 checkout.Cart",
-                    "[ALL_LEAF_COMPLETION] 2 4000 checkout.Payment",
-                    "[ALL_LEAF_COMPLETION] 3 4500 checkout.Confirmation"));
+                    "[EXHAUSTIVE_COMPLETION] 1 1000 checkout.Cart",
+                    "[EXHAUSTIVE_COMPLETION] 2 4000 checkout.Payment",
+                    "[EXHAUSTIVE_COMPLETION] 3 4500 checkout.Confirmation"));
 
             LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
 
         final String html = Files.readString(htmlPath);
-        assertTrue(html.contains("All-Leaf Completion Intervals"));
+        assertTrue(html.contains("Exhaustive Completion Intervals"));
         assertTrue(html.contains("checkout.Cart @ 0:01.000 (+1.00s)"));
         assertTrue(html.contains("checkout.Payment @ 0:04.000 (+3.00s)"));
         assertTrue(html.contains("checkout.Confirmation @ 0:04.500 (+500ms)"));
         assertTrue(html.contains("Projected Total (Passed + ETA)"));
-        assertTrue(html.indexOf("All-Leaf Completion Intervals") < html.indexOf("Test Executions &amp; Limbo Durations"));
+        assertTrue(html.indexOf("Exhaustive Completion Intervals") < html.indexOf("Test Executions &amp; Limbo Durations"));
         assertTrue(html.contains("<section id=\"leafCompletionChart\""));
         assertTrue(html.contains("<svg id=\"leafCompletionSvg\" class=\"timeline-line-svg\""));
         assertFalse(html.contains("leaf-chart-scroll-wrap"), "Leaf completion chart should never render a horizontal scroll wrapper");
@@ -164,21 +164,21 @@ class LogHtmlTest {
     }
 
     @Test
-    void omitsLeafCompletionGraphWithoutAllLeafCompletionMarkers(@TempDir final Path tempDir) throws IOException {
+    void omitsLeafCompletionGraphWithoutExhaustiveCompletionMarkers(@TempDir final Path tempDir) throws IOException {
         final Path logPath = tempDir.resolve("standard.run.log");
         final Path htmlPath = tempDir.resolve("standard.run.log.html");
-        Files.write(logPath, List.of("[ 1][1][1.000][10] [ALL_LEAF_COMPLETION] 1 1000 legacy.MainLogMarker"));
+        Files.write(logPath, List.of("[ 1][1][1.000][10] [EXHAUSTIVE_COMPLETION] 1 1000 legacy.MainLogMarker"));
 
         LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
 
-        assertFalse(Files.readString(htmlPath).contains("All-Leaf Completion Intervals"));
+        assertFalse(Files.readString(htmlPath).contains("Exhaustive Completion Intervals"));
     }
 
     @Test
     void rendersLeafCompletionGraphWithEtaSeries(@TempDir final Path tempDir) throws IOException {
         final Path logPath = tempDir.resolve("eta_test.run.log");
         final Path htmlPath = tempDir.resolve("eta_test.run.log.html");
-        final Path completionPath = tempDir.resolve("eta_test.all-leaf-completions.log");
+        final Path completionPath = tempDir.resolve("eta_test.exhaustive-completions.log");
         Files.write(logPath, List.of(
                 "[ 1][1][0.000][10] Executing Scenario",
                 "[ 1][2][10.000][5] • Closing test 1 ...",
@@ -187,13 +187,13 @@ class LogHtmlTest {
                 "[ 2][5][12.000][5] • Closing test 2 ...",
                 "[  ][6][12.010][2] • Test time 1 s"));
         Files.write(completionPath, List.of(
-                "[ALL_LEAF_COMPLETION] 1 1000 20000 checkout.Cart",
-                "[ALL_LEAF_COMPLETION] 2 4000 15000 checkout.Payment"));
+                "[EXHAUSTIVE_COMPLETION] 1 1000 20000 checkout.Cart",
+                "[EXHAUSTIVE_COMPLETION] 2 4000 15000 checkout.Payment"));
 
         LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
 
         final String html = Files.readString(htmlPath);
-        assertTrue(html.contains("All-Leaf Completion Intervals"));
+        assertTrue(html.contains("Exhaustive Completion Intervals"));
         assertTrue(html.contains("checkout.Cart @ 0:01.000 (+1.00s, Projected: 21.00s)"));
         assertTrue(html.contains("checkout.Payment @ 0:04.000 (+3.00s, Projected: 19.00s)"));
         assertTrue(html.contains("class=\"leaf-eta-chart-line\""));
@@ -210,7 +210,7 @@ class LogHtmlTest {
     void rendersLeafCompletionGraphWithPatienceSeries(@TempDir final Path tempDir) throws IOException {
         final Path logPath = tempDir.resolve("patience_test.run.log");
         final Path htmlPath = tempDir.resolve("patience_test.run.log.html");
-        final Path completionPath = tempDir.resolve("patience_test.all-leaf-completions.log");
+        final Path completionPath = tempDir.resolve("patience_test.exhaustive-completions.log");
         Files.write(logPath, List.of(
                 "[ 1][1][0.000][10] Executing Scenario",
                 "[ 1][2][1.000][5] • Closing test 1 ...",
@@ -224,8 +224,8 @@ class LogHtmlTest {
                 "[ 3][10][3.000][5] • Closing test 3 ...",
                 "[  ][11][3.010][2] • Test time 1 s"));
         Files.write(completionPath, List.of(
-                "[ALL_LEAF_COMPLETION] 1 1000 0 20000 1 checkout.Cart",
-                "[ALL_LEAF_COMPLETION] 2 2000 50 15000 0 checkout.Cart"));
+                "[EXHAUSTIVE_COMPLETION] 1 1000 0 20000 1 checkout.Cart",
+                "[EXHAUSTIVE_COMPLETION] 2 2000 50 15000 0 checkout.Cart"));
 
         LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
 
@@ -243,7 +243,7 @@ class LogHtmlTest {
     void recoversIdleCyclePatienceFormatFromRunLog(@TempDir final Path tempDir) throws IOException {
         final Path logPath = tempDir.resolve("idle_patience.run.log");
         final Path htmlPath = tempDir.resolve("idle_patience.run.log.html");
-        final Path completionPath = tempDir.resolve("idle_patience.all-leaf-completions.log");
+        final Path completionPath = tempDir.resolve("idle_patience.exhaustive-completions.log");
         Files.write(logPath, List.of(
                 "[ 1][1][0.000][10] Executing Scenario",
                 "[ 1][2][1.000][5] • Closing test 1 ...",
@@ -257,7 +257,7 @@ class LogHtmlTest {
                 "[ 3][10][3.000][5] • Closing test 3 ...",
                 "[  ][11][3.010][2] • Test time 1 s"));
         Files.write(completionPath, List.of(
-                "[ALL_LEAF_COMPLETION] 1 1000 0 20000 1 checkout.Cart"));
+                "[EXHAUSTIVE_COMPLETION] 1 1000 0 20000 1 checkout.Cart"));
 
         LogHtml.generateReport(logPath.toFile(), htmlPath.toFile());
 
@@ -334,7 +334,7 @@ class LogHtmlTest {
     void padsMissingCompletionsAndEtaItemsToMatchAllTestExecutions(@TempDir final Path tempDir) throws IOException {
         final Path logPath = tempDir.resolve("missing.run.log");
         final Path htmlPath = tempDir.resolve("missing.run.log.html");
-        final Path completionPath = tempDir.resolve("missing.all-leaf-completions.log");
+        final Path completionPath = tempDir.resolve("missing.exhaustive-completions.log");
         final Path etaDebugPath = tempDir.resolve("missing.eta-debug.log");
 
         Files.write(logPath, List.of(
@@ -344,10 +344,10 @@ class LogHtmlTest {
                 "[ 4][4][4.000][5] • Closing test 4 ...",
                 "[ 5][5][5.000][5] • Closing test 5 ..."));
         Files.write(completionPath, List.of(
-                "[ALL_LEAF_COMPLETION] 1 1000 10000 1 leaf1",
-                "[ALL_LEAF_COMPLETION] 2 2000 10000 2 leaf2",
-                "[ALL_LEAF_COMPLETION] 3 3000 10000 3 leaf3",
-                "[ALL_LEAF_COMPLETION] 4 4000 10000 4 leaf4"));
+                "[EXHAUSTIVE_COMPLETION] 1 1000 10000 1 leaf1",
+                "[EXHAUSTIVE_COMPLETION] 2 2000 10000 2 leaf2",
+                "[EXHAUSTIVE_COMPLETION] 3 3000 10000 3 leaf3",
+                "[EXHAUSTIVE_COMPLETION] 4 4000 10000 4 leaf4"));
         Files.write(etaDebugPath, List.of(
                 "[ETA_DEBUG] 1 1000 5000 1000 5500 Test1",
                 "[ETA_DEBUG] 2 2000 5000 1000 5200 Test2",
@@ -604,7 +604,7 @@ class LogHtmlTest {
     void rendersLogScalePresets(@TempDir final Path tempDir) throws IOException {
         final Path logPath = tempDir.resolve("logscale.run.log");
         final Path htmlPath = tempDir.resolve("logscale.run.log.html");
-        final Path completionPath = tempDir.resolve("logscale.all-leaf-completions.log");
+        final Path completionPath = tempDir.resolve("logscale.exhaustive-completions.log");
         final Path etaDebugPath = tempDir.resolve("logscale.eta-debug.log");
         final Path telemPath = tempDir.resolve("logscale.telemetry.log");
 
@@ -613,7 +613,7 @@ class LogHtmlTest {
                 "[ 1][2][10.000][5] • Closing test 1 ...",
                 "[  ][3][10.010][2] • Test time 10 s"));
         Files.write(completionPath, List.of(
-                "[ALL_LEAF_COMPLETION] 1 1000 main.Scenario"));
+                "[EXHAUSTIVE_COMPLETION] 1 1000 main.Scenario"));
         Files.write(etaDebugPath, List.of(
                 "[ETA_DEBUG] 1 1000 1200 200 1100 main.Scenario"));
         Files.write(telemPath, List.of(
@@ -626,7 +626,7 @@ class LogHtmlTest {
             f.setAccessible(true);
             final java.util.Properties props = new java.util.Properties();
             props.setProperty(".test.report.log.scale.timeline", "true");
-            props.setProperty(".test.report.log.scale.all.leaf", "true");
+            props.setProperty(".test.report.log.scale.exhaustive", "true");
             props.setProperty(".test.report.log.scale.eta.debug", "true");
             props.setProperty(".test.report.log.scale.cpu.debug", "true");
             f.set(testProps, props);

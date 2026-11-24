@@ -10,10 +10,10 @@ class ExecutionParameterTest {
     @Test
     void testByNameAndDef() {
         assertEquals(ExecutionParameter.SUITE, ExecutionParameter.byName("TEST"));
-        assertEquals(ExecutionParameter.ALL_LEAFS, ExecutionParameter.byName("all_leafs"));
+        assertEquals(ExecutionParameter.EXHAUSTIVE, ExecutionParameter.byName("exhaustive"));
         assertNull(ExecutionParameter.byName(null));
         assertNull(ExecutionParameter.byName("NON_EXISTENT"));
 
-        assertEquals("false", ExecutionParameter.ALL_LEAFS.def());
+        assertEquals("false", ExecutionParameter.EXHAUSTIVE.def());
     }
 }

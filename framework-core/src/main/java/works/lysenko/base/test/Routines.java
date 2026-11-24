@@ -58,11 +58,11 @@ public record Routines() {
 
         final String numberOfRepetitions = yb((null == total) ? TESTS : s1(total, TEST));
         final String testDescription = parameters.testDescription();
-        final String allLeafsMode = (isNotNull(parameters) && parameters.isAllLeafs())
-                ? "in ALL_LEAFS mode" //NON-NLS
+        final String exhaustiveMode = (isNotNull(parameters) && parameters.isExhaustive())
+                ? "in EXHAUSTIVE mode" //NON-NLS
                 : StringUtils.EMPTY;
 
-        log(none, b(false, c(EXECUTING), numberOfRepetitions, OF, testDescription, allLeafsMode), true);
+        log(none, b(false, c(EXECUTING), numberOfRepetitions, OF, testDescription, exhaustiveMode), true);
     }
 
     /**
@@ -85,16 +85,16 @@ public record Routines() {
     }
 
     /**
-     * Determines whether all-leafs execution mode is active, either via initialised {@code parameters}
-     * or via {@link PropEnum#_TEST_ALL_LEAFS} / {@link PropEnum#_TEST_ALL_LEAFS_EXECUTIONS}.
+     * Determines whether exhaustive execution mode is active, either via initialised {@code parameters}
+     * or via {@link PropEnum#_TEST_EXHAUSTIVE} / {@link PropEnum#_TEST_EXHAUSTIVE_PASSES}.
      *
-     * @return {@code true} if all-leafs execution mode is enabled, {@code false} otherwise
+     * @return {@code true} if exhaustive execution mode is enabled, {@code false} otherwise
      */
     @SuppressWarnings("MethodWithMultipleReturnPoints")
-    public static boolean isAllLeafsMode() {
+    public static boolean isExhaustiveMode() {
 
-        if (isNotNull(parameters)) return parameters.isAllLeafs();
-        return Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get()) || isCountAllLeafs();
+        if (isNotNull(parameters)) return parameters.isExhaustive();
+        return Boolean.TRUE.equals(PropEnum._TEST_EXHAUSTIVE.get()) || isMultiPassExhaustive();
     }
 
     /**
@@ -136,9 +136,9 @@ public record Routines() {
         if (isTestPropertiesEmpty()) logEvent(S1, TEST_PROPERTIES_ARE___);
     }
 
-    private static boolean isCountAllLeafs() {
+    private static boolean isMultiPassExhaustive() {
 
-        final Integer count = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
+        final Integer count = PropEnum._TEST_EXHAUSTIVE_PASSES.get();
         return isNotNull(count) && ONE < count;
     }
 }

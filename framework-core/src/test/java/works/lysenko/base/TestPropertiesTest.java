@@ -70,7 +70,7 @@ class TestPropertiesTest {
         Map<String, String> effective = properties.resolveEffectiveProperties("DummyTest", true, true, 2);
         assertNotNull(effective);
         assertEquals("true", effective.get(PropEnum._TEST_HEADLESS.getPropertyName()));
-        assertEquals("true", effective.get(PropEnum._TEST_ALL_LEAFS.getPropertyName()));
-        assertEquals("2", effective.get(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName()));
+        assertEquals("true", effective.get(PropEnum._TEST_EXHAUSTIVE.getPropertyName()));
+        assertEquals("2", effective.get(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName()));
     }
 }

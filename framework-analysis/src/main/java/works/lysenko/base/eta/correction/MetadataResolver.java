@@ -25,14 +25,14 @@ public record MetadataResolver() {
                 ? Base.parameters.getTest()
                 : nonNullOr(Scenario.root, "default");
         final String tests = resolveTests();
-        final int allLeafsExecutions = resolveAllLeafsExecutions();
-        final boolean allLeafs = resolveAllLeafs(allLeafsExecutions);
+        final int exhaustivePasses = resolveExhaustivePasses();
+        final boolean exhaustive = resolveExhaustive(exhaustivePasses);
         final String root = nonNullOr(Scenario.root, "");
         final String app = nonNullOr(Start.app, "");
         final int pauseLength = Time.pauseLength;
         final String platform = nonNullOr(Start.forcedPlatform, "web");
 
-        return new EtaMetadata(test, tests, allLeafs, allLeafsExecutions, root, app, pauseLength, platform);
+        return new EtaMetadata(test, tests, exhaustive, exhaustivePasses, root, app, pauseLength, platform);
     }
 
     private static String resolveTests() {
@@ -45,9 +45,9 @@ public record MetadataResolver() {
         return (null != Test.tests) ? Test.tests.toString() : "";
     }
 
-    private static int resolveAllLeafsExecutions() {
+    private static int resolveExhaustivePasses() {
         if (isNotNull(Base.parameters)) {
-            final String val = Base.parameters.getValue(ExecutionParameter.ALL_LEAFS_EXECUTIONS);
+            final String val = Base.parameters.getValue(ExecutionParameter.EXHAUSTIVE_PASSES);
             if (isNotNull(val) && !val.isEmpty()) {
                 try {
                     return Math.max(1, Integer.parseInt(val));
@@ -55,18 +55,18 @@ public record MetadataResolver() {
                 }
             }
         }
-        return Math.max(1, Test.allLeafsExecutions);
+        return Math.max(1, Test.exhaustivePasses);
     }
 
-    private static boolean resolveAllLeafs(final int allLeafsExecutions) {
-        if (allLeafsExecutions > 1) return true;
+    private static boolean resolveExhaustive(final int exhaustivePasses) {
+        if (exhaustivePasses > 1) return true;
         if (isNotNull(Base.parameters)) {
-            final String val = Base.parameters.getValue(ExecutionParameter.ALL_LEAFS);
+            final String val = Base.parameters.getValue(ExecutionParameter.EXHAUSTIVE);
             if (isNotNull(val) && !val.isEmpty()) {
                 return Boolean.parseBoolean(val);
             }
         }
-        return Test.allLeafs;
+        return Test.exhaustive;
     }
 
     private static String nonNullOr(final Object val, final String fallback) {

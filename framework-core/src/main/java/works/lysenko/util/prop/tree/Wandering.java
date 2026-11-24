@@ -5,29 +5,29 @@ import org.apache.commons.math3.fraction.Fraction;
 import static works.lysenko.util.prop.PropEnum.*;
 
 /**
- * Holds wandering patience configuration properties and curve shaping for all-leafs execution mode.
+ * Holds wandering patience configuration properties and curve shaping for exhaustive execution mode.
  */
 @SuppressWarnings({"NonFinalStaticVariableUsedInClassInitialization", "StaticNonFinalField"})
 public record Wandering() {
 
     /**
-     * Wandering threshold factor controlling the fruitless-cycle budget in all-leafs mode.
+     * Wandering threshold factor controlling the fruitless-cycle budget in exhaustive mode.
      */
-    public static Fraction patience = _TREE_ALL_LEAFS_PATIENCE.get();
+    public static Fraction patience = _TREE_EXHAUSTIVE_PATIENCE.get();
 
     /**
      * Curvature exponent controlling the shape of the patience approach from {@code 0%} to {@code 100%}
      * ({@code 1} = linear, {@code > 1} = slow-to-quick, {@code (0, 1)} = quick-to-slow).
      */
-    public static Fraction steepness = _TREE_ALL_LEAFS_PATIENCE_STEEPNESS.get();
+    public static Fraction steepness = _TREE_EXHAUSTIVE_PATIENCE_STEEPNESS.get();
 
     /**
      * Refreshes static fields from current test properties.
      */
     public static void refresh() {
 
-        patience = _TREE_ALL_LEAFS_PATIENCE.get();
-        steepness = _TREE_ALL_LEAFS_PATIENCE_STEEPNESS.get();
+        patience = _TREE_EXHAUSTIVE_PATIENCE.get();
+        steepness = _TREE_EXHAUSTIVE_PATIENCE_STEEPNESS.get();
     }
 
     /**

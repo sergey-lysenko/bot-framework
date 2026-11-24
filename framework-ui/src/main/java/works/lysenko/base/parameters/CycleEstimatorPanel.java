@@ -88,27 +88,27 @@ public final class CycleEstimatorPanel {
     /**
      * Calculates estimated average cycles required for 100% leaf coverage.
      *
-     * @param parameters          execution parameters
-     * @param testName            name of the selected test
-     * @param headless            headless checkbox
-     * @param allLeafs            all-leafs checkbox
-     * @param allLeafsExecutions       all-leafs-executions input
-     * @param testsCount          tests-count input
-     * @param forbidOverexecution forbid-overexecution checkbox
-     * @param resilientMode       resilient-mode checkbox
-     * @param completionWeight    completion-weight input
+     * @param parameters         execution parameters
+     * @param testName           name of the selected test
+     * @param headless           headless checkbox
+     * @param exhaustive         exhaustive mode checkbox
+     * @param exhaustivePasses   exhaustive-passes input
+     * @param testsCount         tests-count input
+     * @param exactPasses        exact-passes checkbox
+     * @param resilientMode      resilient-mode checkbox
+     * @param completionWeight   completion-weight input
      * @param traverseExtensions traverse-extensions checkbox
-     * @param progressConsumer    progress Consumer
+     * @param progressConsumer   progress Consumer
      * @return formatted result string
      */
     public static String calculateEstimatedCycles(
             final Parameters parameters,
             final String testName,
             final JCheckBox headless,
-            final JCheckBox allLeafs,
-            final JTextField allLeafsExecutions,
+            final JCheckBox exhaustive,
+            final JTextField exhaustivePasses,
             final JTextField testsCount,
-            final JCheckBox forbidOverexecution,
+            final JCheckBox exactPasses,
             final JCheckBox resilientMode,
             final JTextField completionWeight,
             final JCheckBox traverseExtensions,
@@ -127,23 +127,23 @@ public final class CycleEstimatorPanel {
         Base.properties = tp;
 
         final boolean isHeadless = isNotNull(headless) && headless.isSelected();
-        final boolean isAllLeafs = isNotNull(allLeafs) && allLeafs.isSelected();
+        final boolean isExhaustive = isNotNull(exhaustive) && exhaustive.isSelected();
 
-        int leafsCount = 1;
-        if (isNotNull(allLeafsExecutions) && !allLeafsExecutions.getText().isBlank()) {
+        int passesCount = 1;
+        if (isNotNull(exhaustivePasses) && !exhaustivePasses.getText().isBlank()) {
             try {
-                leafsCount = Math.max(1, Integer.parseInt(allLeafsExecutions.getText().trim()));
+                passesCount = Math.max(1, Integer.parseInt(exhaustivePasses.getText().trim()));
             } catch (final NumberFormatException _) {
-                if (isNotNull(parameters)) leafsCount = parameters.getAllLeafsExecutions();
+                if (isNotNull(parameters)) passesCount = parameters.getExhaustivePasses();
             }
         } else if (isNotNull(parameters)) {
-            leafsCount = parameters.getAllLeafsExecutions();
+            passesCount = parameters.getExhaustivePasses();
         }
 
-        tp.prepareTestConfiguration(testName, isHeadless, isAllLeafs, leafsCount);
+        tp.prepareTestConfiguration(testName, isHeadless, isExhaustive, passesCount);
         setUserOverrideOptional(tp, testsCount, PropEnum._TEST_TESTS.getPropertyName());
-        if (isAllLeafs) {
-            setUserOverrideOptional(tp, forbidOverexecution, PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName());
+        if (isExhaustive) {
+            setUserOverrideOptional(tp, exactPasses, PropEnum._TREE_EXACT_PASSES.getPropertyName());
         }
         setUserOverrideOptional(tp, resilientMode, PropEnum._TEST_RESILIENT_MODE.getPropertyName());
         setUserOverrideOptional(tp, completionWeight, PropEnum._TREE_COMPLETION_WEIGHT.getPropertyName());
@@ -166,12 +166,12 @@ public final class CycleEstimatorPanel {
         }
 
         final _Ctrl rootCtrl = new Ctrl(null, scenarios);
-        final int leaves = rootCtrl.getAccessibleLeafs().size();
+        final int leaves = rootCtrl.getAccessibleLeaves().size();
         if (0 == leaves) {
             return "0 leaves found";
         }
 
-        final int target = leafsCount;
+        final int target = passesCount;
         final int recommended = CoverageEstimator.estimateAverageCycles(rootCtrl, target, progressConsumer);
         final String leavesCountLabel = (1 == leaves) ? "1 leaf" : (leaves + " leaves");
         return b(s1(recommended, "test"), REQUIRED, FOR, FULL, COVERAGE, e(ROUND, leavesCountLabel));

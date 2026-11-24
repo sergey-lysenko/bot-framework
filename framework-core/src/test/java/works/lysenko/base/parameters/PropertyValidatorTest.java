@@ -32,7 +32,7 @@ class PropertyValidatorTest {
     @Test
     void sonificationsListAcceptsCommaSeparatedText() {
         final String name = ".test.report.progression.tree.sonifications";
-        assertNull(PropertyValidator.validate(name, "dnb, neon, jmj, carbon"));
+        assertNull(PropertyValidator.validate(name, "edm, dnb, neon, jmj, carbon"));
         assertNull(PropertyValidator.validate(name, "dnb"));
         assertNull(PropertyValidator.validate(name, ""));
     }

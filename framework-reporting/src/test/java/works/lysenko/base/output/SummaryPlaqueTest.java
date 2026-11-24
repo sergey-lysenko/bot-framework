@@ -81,7 +81,7 @@ class SummaryPlaqueTest {
         final Result r5 = new Result(ScenarioType.LEAF, Fraction.ONE, Fraction.ONE, Fraction.ONE, List.of(), 0, 1);
         nodes.add(new TreeHtml.NodeData("n5", "Scenario5", "Tests", 0, 5.0, r5));
 
-        final SummaryPlaque.RunConfig config = new SummaryPlaque.RunConfig("SuiteA", "PoolB", "http://domain", "ALL_LEAFS", "10 / 12 / 20");
+        final SummaryPlaque.RunConfig config = new SummaryPlaque.RunConfig("SuiteA", "PoolB", "http://domain", "EXHAUSTIVE", "10 / 12 / 20");
         final SummaryPlaque plaque = SummaryPlaque.computeFromNodes(nodes, config);
 
         assertEquals(5, plaque.total());
@@ -107,7 +107,7 @@ class SummaryPlaqueTest {
         assertTrue(html.contains("SuiteA"));
         assertTrue(html.contains("PoolB"));
         assertTrue(html.contains("http://domain"));
-        assertTrue(html.contains("ALL_LEAFS"));
+        assertTrue(html.contains("EXHAUSTIVE"));
         assertTrue(html.contains("10 / 12 / 20"));
 
         // Non-zero partition columns shown; zero-value and subtotal columns omitted
@@ -185,7 +185,7 @@ class SummaryPlaqueTest {
         final TreeHtml.NodeData nFailed = new TreeHtml.NodeData("nFailed", "FailedLeaf", "Tests", 0, 8.0, rFailed);
         nodes.add(nFailed);
 
-        final SummaryPlaque.RunConfig config = new SummaryPlaque.RunConfig("E2E", "local", "http://localhost", "ALL_LEAFS", null);
+        final SummaryPlaque.RunConfig config = new SummaryPlaque.RunConfig("E2E", "local", "http://localhost", "EXHAUSTIVE", null);
         final SummaryPlaque plaque = SummaryPlaque.computeFromNodes(
                 nodes, config, new TreeHtml.AccessibleContext(java.util.Set.of()),
                 new java.util.HashMap<>(), new java.util.HashMap<>(), java.util.Set.of(nHidden));
@@ -219,7 +219,7 @@ class SummaryPlaqueTest {
         }
         assertTrue(svg.contains("fill=\"#94A3B8\" font-weight=\"normal\">SUITE:</tspan>"));
         assertTrue(svg.contains("fill=\"#F8FAFC\" font-weight=\"bold\">E2E</tspan>"));
-        assertTrue(svg.contains(">ALL_LEAFS</text>"));
+        assertTrue(svg.contains(">EXHAUSTIVE</text>"));
         assertTrue(svg.contains("width=\"1168\""), "Progression frame plaque must span full frame width (1200 - 32)");
     }
 
@@ -283,13 +283,13 @@ class SummaryPlaqueTest {
 
     @Test
     void testRunConfigParsingAndRendering() {
-        final String logLine = "[  ][37][.795][  2] Executing tests of Development with development-local on https://stg-dashboard.myordering.online in ALL_LEAFS mode";
+        final String logLine = "[  ][37][.795][  2] Executing tests of Development with development-local on https://stg-dashboard.myordering.online in EXHAUSTIVE mode";
         final SummaryPlaque.RunConfig config = SummaryPlaque.RunConfig.parse(logLine);
 
         assertEquals("Development", config.suite());
         assertEquals("development-local", config.pool());
         assertEquals("https://stg-dashboard.myordering.online", config.domain());
-        assertEquals("ALL_LEAFS", config.mode());
+        assertEquals("EXHAUSTIVE", config.mode());
 
         final List<ScenEntry> entries = new ArrayList<>();
         entries.add(new ScenEntry("▷", "Scenario1", "1.0", "1", ""));
@@ -301,7 +301,7 @@ class SummaryPlaqueTest {
         assertTrue(html.contains("development-local"), "Plaque HTML must contain pool name");
         assertTrue(html.contains("https://stg-dashboard.myordering.online"), "Plaque HTML must contain domain URL");
         assertTrue(html.contains("14 / 17 / 48"), "Plaque HTML must contain path summary");
-        assertTrue(html.contains("ALL_LEAFS"), "Plaque HTML must contain mode badge");
+        assertTrue(html.contains("EXHAUSTIVE"), "Plaque HTML must contain mode badge");
     }
 
     @Test
@@ -335,7 +335,7 @@ class SummaryPlaqueTest {
 
         sections.add(new works.lysenko.base.output.loghtml.LogModels.LogSection("postflight", "Postflight", "neutral", null));
 
-        final String logLine = "Executing tests of Development with development-local on https://stg-dashboard.myordering.online in ALL_LEAFS mode";
+        final String logLine = "Executing tests of Development with development-local on https://stg-dashboard.myordering.online in EXHAUSTIVE mode";
         final SummaryPlaque plaque = SummaryPlaque.computeFromSections(sections, logLine, "14 / 17 / 48");
 
         assertEquals(16, plaque.total());

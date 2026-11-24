@@ -79,10 +79,10 @@ class EtaCalculatorTest {
 
     @Test
     void pureEstimationHelpersMatchExpectedFormulas() {
-        assertEquals(0L, EtaCalculator.estimateAllLeafsEtaMs(500L, 5, 10, 0.0, -1L));
-        assertEquals(90_000L, EtaCalculator.estimateAllLeafsEtaMs(30_000L, 25, 100, 0.0, -1L));
+        assertEquals(0L, EtaCalculator.estimateExhaustiveEtaMs(500L, 5, 10, 0.0, -1L));
+        assertEquals(90_000L, EtaCalculator.estimateExhaustiveEtaMs(30_000L, 25, 100, 0.0, -1L));
         // 50% patience blend between leafEtaMs (90_000) and patienceEtaMs (30_000) -> 60_000
-        assertEquals(60_000L, EtaCalculator.estimateAllLeafsEtaMs(30_000L, 25, 100, 50.0, 30_000L));
+        assertEquals(60_000L, EtaCalculator.estimateExhaustiveEtaMs(30_000L, 25, 100, 50.0, 30_000L));
 
         assertEquals(0L, EtaCalculator.estimateFixedTestsEtaMs(10_000L, 0, 20));
         assertEquals(30_000L, EtaCalculator.estimateFixedTestsEtaMs(10_000L, 5, 20));
@@ -173,7 +173,7 @@ class EtaCalculatorTest {
 
         final Properties props = new Properties();
         props.setProperty("TEST", "FixedSuite");
-        props.setProperty("ALL_LEAFS", "false");
+        props.setProperty("EXHAUSTIVE", "false");
         Base.parameters = new Parameters(props);
         Base.core = core;
         Base.test = testSession;
@@ -242,7 +242,7 @@ class EtaCalculatorTest {
         final Properties props = new Properties();
         props.setProperty("TEST", "CalibratedSuite");
         props.setProperty("TESTS", "20");
-        props.setProperty("ALL_LEAFS", "false");
+        props.setProperty("EXHAUSTIVE", "false");
         Base.parameters = new Parameters(props);
         Base.core = core;
         Base.test = testSession;

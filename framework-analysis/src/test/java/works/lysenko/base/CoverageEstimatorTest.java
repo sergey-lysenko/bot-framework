@@ -43,7 +43,7 @@ class CoverageEstimatorTest {
     }
 
     @Test
-    void testTwoLeafsWithCompletionWeight() {
+    void testTwoLeavesWithCompletionWeight() {
         final Ctrl rootCtrl = new Ctrl(null);
         final TestLeaf leaf1 = new TestLeaf(fr(1.0));
         final TestLeaf leaf2 = new TestLeaf(fr(1.0));
@@ -104,7 +104,7 @@ class CoverageEstimatorTest {
         rootCtrl.getPool().appendScenarioWithWeight(node2, fr(1.0));
 
         final int estimated = CoverageEstimator.estimateAverageCycles(rootCtrl);
-        // 4 leafs in a 2-level tree
+        // 4 leaves in a 2-level tree
         assertTrue(estimated >= 4 && estimated <= 10, "Estimated cycles should be reasonable: " + estimated);
     }
 
@@ -112,7 +112,7 @@ class CoverageEstimatorTest {
     void testBiteHeistTreeStructure() {
         final Ctrl rootCtrl = new Ctrl(null);
 
-        // Reports subtree (12 leafs)
+        // Reports subtree (12 leaves)
         final TestNode snapshot = new TestNode(fr(1.0), new TestLeaf(fr(1.0)), new TestLeaf(fr(1.0)));
         final TestNode sms = new TestNode(fr(1.0), new TestLeaf(fr(1.0)), new TestLeaf(fr(1.0)));
         final TestNode fd = new TestNode(fr(1.0), new TestLeaf(fr(1.0)), new TestLeaf(fr(1.0)));
@@ -120,12 +120,12 @@ class CoverageEstimatorTest {
         final TestNode repBilling = new TestNode(fr(1.0), new TestLeaf(fr(1.0)), new TestLeaf(fr(1.0)), new TestLeaf(fr(1.0)), new TestLeaf(fr(1.0)));
         final TestNode reports = new TestNode(fr(1.0), snapshot, sms, fd, orders, repBilling);
 
-        // Settings subtree (5 leafs)
+        // Settings subtree (5 leaves)
         final TestNode confProd = new TestNode(fr(1.0), new TestLeaf(fr(1.0)), new TestLeaf(fr(1.0)));
         final TestNode posConfig = new TestNode(fr(1.0), new TestLeaf(fr(1.0)), new TestLeaf(fr(1.0)), new TestLeaf(fr(1.0)));
         final TestNode settings = new TestNode(fr(1.0), confProd, posConfig);
 
-        // Billing subtree (7 leafs)
+        // Billing subtree (7 leaves)
         final TestNode customers = new TestNode(fr(1.0), new TestLeaf(fr(1.0)));
         final TestNode resellers = new TestNode(fr(1.0), new TestLeaf(fr(1.0)));
         final TestNode invoices = new TestNode(fr(1.0), new TestLeaf(fr(1.0)));
@@ -134,7 +134,7 @@ class CoverageEstimatorTest {
         final TestLeaf billDash = new TestLeaf(fr(1.0));
         final TestNode billing = new TestNode(fr(1.0), customers, resellers, invoices, modules, billingRules, billDash);
 
-        // AuditLogs subtree (4 leafs)
+        // AuditLogs subtree (4 leaves)
         final TestNode auditLogs = new TestNode(fr(1.0), new TestLeaf(fr(1.0)), new TestLeaf(fr(1.0)), new TestLeaf(fr(1.0)), new TestLeaf(fr(1.0)));
 
         // AiUsageReport subtree (1 leaf)
@@ -149,12 +149,12 @@ class CoverageEstimatorTest {
         // Payments subtree (1 leaf)
         final TestNode payments = new TestNode(fr(1.0), new TestLeaf(fr(1.0)));
 
-        // Direct leafs under CorrectLogin (3 leafs)
+        // Direct leaves under CorrectLogin (3 leaves)
         final TestLeaf corrDash = new TestLeaf(fr(1.0));
         final TestLeaf firstDel = new TestLeaf(fr(1.0));
         final TestLeaf logout = new TestLeaf(fr(1.0));
 
-        // CorrectLogin node (35 leafs total)
+        // CorrectLogin node (35 leaves total)
         final TestNode correctLogin = new TestNode(fr(1.0),
                 reports, settings, billing, auditLogs, aiUsage, appMgmt, partners, payments,
                 corrDash, firstDel, logout);
@@ -163,12 +163,12 @@ class CoverageEstimatorTest {
         final TestLeaf wrongLogin = new TestLeaf(fr(1.0));
         final TestLeaf wrongPassword = new TestLeaf(fr(1.0));
 
-        // SignIn root (37 leafs)
+        // SignIn root (37 leaves)
         final TestNode signIn = new TestNode(fr(1.0), correctLogin, wrongLogin, wrongPassword);
 
         rootCtrl.getPool().appendScenarioWithWeight(signIn, fr(1.0));
 
-        assertEquals(37, rootCtrl.getAccessibleLeafs().size());
+        assertEquals(37, rootCtrl.getAccessibleLeaves().size());
         final int estimated = CoverageEstimator.estimateAverageCycles(rootCtrl);
         System.out.println("BITEHEIST 37-LEAF TREE ESTIMATED CYCLES: " + estimated);
         assertTrue(estimated >= 50 && estimated <= 75,

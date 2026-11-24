@@ -80,7 +80,7 @@ public interface _ReportingProvider {
         if (!Holder.PROVIDERS.isEmpty()) {
             return Holder.PROVIDERS.getFirst().treeSonificationValues();
         }
-        return List.of("none", "copilot", "claude", "gemini", "orpheus", "aurora", "carbon", "neon", "jmj", "dnb");
+        return List.of("none", "copilot", "claude", "gemini", "orpheus", "aurora", "carbon", "neon", "jmj", "dnb", "edm");
     }
 
     /**

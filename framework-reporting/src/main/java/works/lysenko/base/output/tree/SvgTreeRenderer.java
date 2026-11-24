@@ -46,7 +46,7 @@ public final class SvgTreeRenderer {
      * completely asynchronously without touching global mutable state.
      */
     public record RenderContext(
-            boolean isAllLeafs,
+            boolean isExhaustive,
             long maxPixels,
             String elapsedBadge,
             ProgressionChrome.EtaBadge etaBadge,
@@ -58,10 +58,10 @@ public final class SvgTreeRenderer {
             double debugMaxZoom) {
 
         public static RenderContext captureCurrent() {
-            final boolean allLeafs = (null != parameters) && parameters.isAllLeafs();
+            final boolean exhaustive = (null != parameters) && parameters.isExhaustive();
             final long maxPx = ProgressionFrames.maxFramePixels(ProgressionSettings.current().maxFramePixels());
             return new RenderContext(
-                    allLeafs,
+                    exhaustive,
                     maxPx,
                     ProgressionChrome.formatElapsedBadge(),
                     ProgressionChrome.resolveEtaBadge(),
@@ -117,8 +117,8 @@ public final class SvgTreeRenderer {
         final Map<NodeData, Boolean> executableCache = (null != cachedExecutable) ? cachedExecutable : new HashMap<>();
         final Map<NodeData, Boolean> childFailureCache = new HashMap<>();
 
-        int totalLeafs = 0;
-        int coveredLeafs = 0;
+        int totalLeaves = 0;
+        int coveredLeaves = 0;
         int totalExecs = 0;
         double maxLeafOverRatio = 0.0;
 
@@ -135,12 +135,12 @@ public final class SvgTreeRenderer {
             final int execs = (null != n.result()) ? n.result().getExecutions() : 0;
             totalExecs += execs;
             if (ScenarioType.LEAF == TreeProgressMetrics.getScenarioType(n)) {
-                maxLeafOverRatio = Math.max(maxLeafOverRatio, TreeProgressMetrics.getLeafOverExecutionRatio(n, target));
+                maxLeafOverRatio = Math.max(maxLeafOverRatio, TreeProgressMetrics.getLeafOvershootRatio(n, target));
             }
             if (n.children().isEmpty() && TreeProgressMetrics.isTerminalScenario(n)) {
                 if (TreeHtml.isTheoreticallyExecutable(n, ctx, executableCache) || execs > 0) {
-                    totalLeafs++;
-                    if (execs >= TreeProgressMetrics.getTargetExecutions(n, target)) coveredLeafs++;
+                    totalLeaves++;
+                    if (execs >= TreeProgressMetrics.getTargetExecutions(n, target)) coveredLeaves++;
                 }
             }
         }
@@ -249,7 +249,7 @@ public final class SvgTreeRenderer {
                 } else if (toNotice) {
                     strokeColor = "#06B6D4";
                 } else {
-                    final java.awt.Color col = TreeProgressMetrics.getScenarioProgressColor(e.to(), target, maxLeafOverRatio, rctx.isAllLeafs());
+                    final java.awt.Color col = TreeProgressMetrics.getScenarioProgressColor(e.to(), target, maxLeafOverRatio, rctx.isExhaustive());
                     strokeColor = TreeTheme.DEFAULT.hex(col);
                 }
                 strokeOpacity = "";
@@ -266,9 +266,9 @@ public final class SvgTreeRenderer {
                     startX, startY, cX, startY, cX, endY, endX, endY, strokeColor, strokeOpacity, strokeW, dash));
         }
 
-        final boolean isAllLeafs = rctx.isAllLeafs();
+        final boolean isExhaustive = rctx.isExhaustive();
         final VisualNodeResolver nodeResolver =
-                new VisualNodeResolver(TreeTheme.DEFAULT, ctx, isAllLeafs, target, maxLeafOverRatio, false, true, 0.0, headerH);
+                new VisualNodeResolver(TreeTheme.DEFAULT, ctx, isExhaustive, target, maxLeafOverRatio, false, true, 0.0, headerH);
         final List<VisualNode> visualNodes = new ArrayList<>();
         for (final NodeData n : layout.nodes()) {
             visualNodes.add(nodeResolver.resolve(n, recentNodeKeys.contains(n.id()), childFailureCache, executableCache));
@@ -288,7 +288,7 @@ public final class SvgTreeRenderer {
         final int topY = (HEADER_HEIGHT_BASE - ProgressionChrome.BADGE_HEIGHT) / 2;
 
         // Right-to-left placement -> left-to-right display:
-        // Test #N | Leafs: X/Y (P%) | Target: T | Zoom: Z.ZZx | M execs | ETA: MM:SS | Elapsed: HH:MM:SS
+        // Test #N | Leaves: X/Y (P%) | Target: T | Zoom: Z.ZZx | M execs | ETA: MM:SS | Elapsed: HH:MM:SS
         rightX = ProgressionChrome.appendBorderedBadge(sb, rctx.elapsedBadge(), rightX, topY, ProgressionChrome.BADGE_SLATE);
         final ProgressionChrome.EtaBadge etaBadge = rctx.etaBadge();
         rightX = ProgressionChrome.appendBorderedBadge(sb, etaBadge.text(), rightX, topY, etaBadge.style());
@@ -300,10 +300,10 @@ public final class SvgTreeRenderer {
         rightX = ProgressionChrome.appendBorderedBadge(sb, "Target: " + target, rightX, topY, ProgressionChrome.BADGE_SLATE);
         rightX = ProgressionChrome.appendBorderedBadge(
                 sb,
-                ProgressionChrome.formatLeafsBadge(coveredLeafs, totalLeafs),
+                ProgressionChrome.formatLeavesBadge(coveredLeaves, totalLeaves),
                 rightX,
                 topY,
-                ProgressionChrome.leafsBadgeStyle(coveredLeafs, totalLeafs));
+                ProgressionChrome.leavesBadgeStyle(coveredLeaves, totalLeaves));
         rightX = ProgressionChrome.appendBorderedBadge(sb, badgeText, rightX, topY, ProgressionChrome.BADGE_SKY);
 
         final String titleText;

@@ -228,7 +228,7 @@ class WanderingPatienceTest {
     }
 
     @Test
-    void patienceTerminatesAtExactBudgetWhenZeroLeafsEverFit() throws Exception {
+    void patienceTerminatesAtExactBudgetWhenZeroLeavesEverFit() throws Exception {
         final MutableHistoryRepeater repeater = new MutableHistoryRepeater();
         final works.lysenko.base.Test session = buildTestSession(5, repeater);
 
@@ -260,8 +260,8 @@ class WanderingPatienceTest {
 
         // Refreshing TestProperties updates Wandering.patience and Wandering.steepness
         final Properties props = new Properties();
-        props.setProperty(PropEnum._TREE_ALL_LEAFS_PATIENCE.getPropertyName(), "4");
-        props.setProperty(PropEnum._TREE_ALL_LEAFS_PATIENCE_STEEPNESS.getPropertyName(), "1/2");
+        props.setProperty(PropEnum._TREE_EXHAUSTIVE_PATIENCE.getPropertyName(), "4");
+        props.setProperty(PropEnum._TREE_EXHAUSTIVE_PATIENCE_STEEPNESS.getPropertyName(), "1/2");
         bindTestProperties(props);
 
         TestProperties.refreshAllPropertyRecords();
@@ -333,7 +333,7 @@ class WanderingPatienceTest {
         final works.lysenko.base.Test session = attachSession(rootCtrl, repeater);
 
         final Properties props = new Properties();
-        props.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), "true");
+        props.setProperty(PropEnum._TEST_EXHAUSTIVE.getPropertyName(), "true");
         bindTestProperties(props);
 
         // Simulate 5 of 10 leaves executed across cycles #1..#10 (each cycle takes 10_000 ms -> elapsed = 100_000 ms)
@@ -391,7 +391,7 @@ class WanderingPatienceTest {
 
     @Test
     void propertyValidatorAcceptsPositiveSteepnessFractionsAndRejectsNonPositive() {
-        final String key = PropEnum._TREE_ALL_LEAFS_PATIENCE_STEEPNESS.getPropertyName();
+        final String key = PropEnum._TREE_EXHAUSTIVE_PATIENCE_STEEPNESS.getPropertyName();
         assertNull(PropertyValidator.validate(key, "1"));
         assertNull(PropertyValidator.validate(key, "2"));
         assertNull(PropertyValidator.validate(key, "1/2"));

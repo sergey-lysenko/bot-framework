@@ -100,11 +100,11 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         readDeviceOrDomain();
         read(HEADLESS);
         read(HIDE_OFF_BRANCHES);
-        read(ALL_LEAFS.name()); // empty default: allows fallback to properties / count inference
-        read(ALL_LEAFS_EXECUTIONS.name());
-        read(ALL_LEAFS_PATIENCE.name());
+        read(EXHAUSTIVE.name()); // empty default: allows fallback to properties / pass-count inference
+        read(EXHAUSTIVE_PASSES.name());
+        read(EXHAUSTIVE_PATIENCE.name());
         read(TESTS.name());
-        read(FORBID_OVEREXECUTION.name());
+        read(EXACT_PASSES.name());
         read(RESILIENT_MODE.name());
         read(COMPLETION_WEIGHT.name());
         read(TRAVERSE_EXTENSIONS.name());
@@ -150,10 +150,10 @@ public final class Parameters extends Properties implements _ExecutionParameterV
                 updateParameterFromConfig(TESTS, PropEnum._TEST_TESTS, configProps);
                 updateParameterFromConfig(HEADLESS, PropEnum._TEST_HEADLESS, configProps);
                 updateParameterFromConfig(HIDE_OFF_BRANCHES, PropEnum._TREE_HIDE_OFF_BRANCHES, configProps);
-                updateParameterFromConfig(ALL_LEAFS, PropEnum._TEST_ALL_LEAFS, configProps);
-                updateParameterFromConfig(ALL_LEAFS_EXECUTIONS, PropEnum._TEST_ALL_LEAFS_EXECUTIONS, configProps);
-                updateParameterFromConfig(ALL_LEAFS_PATIENCE, PropEnum._TREE_ALL_LEAFS_PATIENCE, configProps);
-                updateParameterFromConfig(FORBID_OVEREXECUTION, PropEnum._TREE_FORBID_OVEREXECUTION, configProps);
+                updateParameterFromConfig(EXHAUSTIVE, PropEnum._TEST_EXHAUSTIVE, configProps);
+                updateParameterFromConfig(EXHAUSTIVE_PASSES, PropEnum._TEST_EXHAUSTIVE_PASSES, configProps);
+                updateParameterFromConfig(EXHAUSTIVE_PATIENCE, PropEnum._TREE_EXHAUSTIVE_PATIENCE, configProps);
+                updateParameterFromConfig(EXACT_PASSES, PropEnum._TREE_EXACT_PASSES, configProps);
                 updateParameterFromConfig(RESILIENT_MODE, PropEnum._TEST_RESILIENT_MODE, configProps);
                 updateParameterFromConfig(COMPLETION_WEIGHT, PropEnum._TREE_COMPLETION_WEIGHT, configProps);
                 updateParameterFromConfig(TRAVERSE_EXTENSIONS, PropEnum._TREE_TRAVERSE_EXTENSIONS, configProps);
@@ -271,30 +271,33 @@ public final class Parameters extends Properties implements _ExecutionParameterV
     }
     
     /**
-     * Performs set all leafs.
+     * Sets exhaustive execution mode.
+     *
      * @param value the value
      */
-    public void setAllLeafs(final boolean value) {
-        
-        put(ALL_LEAFS.name(), String.valueOf(value));
+    public void setExhaustive(final boolean value) {
+
+        put(EXHAUSTIVE.name(), String.valueOf(value));
     }
-    
+
     /**
-     * Performs set all leafs executions.
-     * @param count the count
+     * Sets required passes per scenario in exhaustive mode.
+     *
+     * @param count the pass count
      */
-    public void setAllLeafsExecutions(final int count) {
-        
-        put(ALL_LEAFS_EXECUTIONS.name(), String.valueOf(count));
+    public void setExhaustivePasses(final int count) {
+
+        put(EXHAUSTIVE_PASSES.name(), String.valueOf(count));
     }
-    
+
     /**
-     * Performs set all leafs patience.
+     * Sets wandering patience multiplier in exhaustive mode.
+     *
      * @param patience the patience float value
      */
-    public void setAllLeafsPatience(final float patience) {
-        
-        put(ALL_LEAFS_PATIENCE.name(), String.valueOf(patience));
+    public void setExhaustivePatience(final float patience) {
+
+        put(EXHAUSTIVE_PATIENCE.name(), String.valueOf(patience));
     }
     
     /**
@@ -390,9 +393,9 @@ public final class Parameters extends Properties implements _ExecutionParameterV
     }
 
     @Override
-    public boolean isAllLeafs() {
+    public boolean isExhaustive() {
 
-        final String countVal = getValue(ALL_LEAFS_EXECUTIONS);
+        final String countVal = getValue(EXHAUSTIVE_PASSES);
         if (isNotNull(countVal) && !countVal.isEmpty()) {
             try {
                 if (Integer.parseInt(countVal) > 1) {
@@ -401,27 +404,27 @@ public final class Parameters extends Properties implements _ExecutionParameterV
             } catch (final NumberFormatException _) {
             }
         }
-        final String val = getValue(ALL_LEAFS);
+        final String val = getValue(EXHAUSTIVE);
         if (isNotNull(val) && !val.isEmpty()) {
             return Boolean.parseBoolean(val);
         }
-        if (getAllLeafsExecutions() > 1) {
+        if (getExhaustivePasses() > 1) {
             return true;
         }
-        return Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
+        return Boolean.TRUE.equals(PropEnum._TEST_EXHAUSTIVE.get());
     }
 
     @Override
-    public int getAllLeafsExecutions() {
+    public int getExhaustivePasses() {
 
-        final String val = getValue(ALL_LEAFS_EXECUTIONS);
+        final String val = getValue(EXHAUSTIVE_PASSES);
         if (isNotNull(val) && !val.isEmpty()) {
             try {
                 return Math.max(1, Integer.parseInt(val));
             } catch (final NumberFormatException _) {
             }
         }
-        final Integer prop = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
+        final Integer prop = PropEnum._TEST_EXHAUSTIVE_PASSES.get();
         return isNotNull(prop) ? Math.max(1, prop) : 1;
     }
 
@@ -469,12 +472,13 @@ public final class Parameters extends Properties implements _ExecutionParameterV
     }
 
     /**
-     * Performs get forbid overexecution.
-     * @return the get forbid overexecution result
+     * Retrieves the exact passes flag.
+     *
+     * @return {@code true}/{@code false} if set, or {@code null}
      */
-    public Boolean getForbidOverexecution() {
+    public Boolean getExactPasses() {
 
-        final String val = getValue(FORBID_OVEREXECUTION);
+        final String val = getValue(EXACT_PASSES);
         if (isNotNull(val) && !val.isEmpty()) return Boolean.parseBoolean(val);
         return null;
     }
@@ -731,7 +735,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         final String expectedOldSuite = isNotNull(suiteVal) ? suiteVal : EMPTY;
         for (final ExecutionParameter param : ExecutionParameter.values()) {
             final String def = switch (param) {
-                case ALL_LEAFS_EXECUTIONS -> "1";
+                case EXHAUSTIVE_PASSES -> "1";
                 case ORIGIN -> computeDefaultOrigin();
                 case TAG -> computeDefaultTag();
                 case OLD_SUITE -> expectedOldSuite;

@@ -38,7 +38,7 @@ public record Notify() {
     public static boolean muteFulfilledNotExecutable = _TREE_MUTE_FULFILLED_NOT_EXECUTABLE_NOTICE.get();
 
     /**
-     * Whether to demote empty-candidate-pool continuation notices in tolerant/all-leafs selection modes to debug.
+     * Whether to demote empty-candidate-pool continuation notices in tolerant/exhaustive selection modes to debug.
      */
     public static boolean muteEmptyCandidates = _TREE_MUTE_EMPTY_CANDIDATES_NOTICE.get();
 

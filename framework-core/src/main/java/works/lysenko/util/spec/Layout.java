@@ -25,6 +25,7 @@ import static works.lysenko.util.lang.word.A.ANFANG;
 import static works.lysenko.util.lang.word.A.APPIUM;
 import static works.lysenko.util.lang.word.C.*;
 import static works.lysenko.util.lang.word.D.*;
+import static works.lysenko.util.lang.word.E.EXHAUSTIVE;
 import static works.lysenko.util.lang.word.G.GRIDS;
 import static works.lysenko.util.lang.word.I.ISSUES;
 import static works.lysenko.util.lang.word.K.KNOWN;
@@ -233,8 +234,8 @@ public record Layout() {
         public static final String RUN_KNOWN_ISSUES_ = s($1_S, s, $1_S, _DOT_, KNOWN, _DOT_, ISSUES, _DOT_, JSON);
         /** Run expected responses template. */
         public static final String RUN_EXPECTED_RESPONSES_ = s($1_S, s, $1_S, _DOT_, "expected", _DOT_, "responses", _DOT_, JSON);
-        /** Run all leaf completions template. */
-        public static final String RUN_ALL_LEAF_COMPLETIONS_ = s($1_S, s, $1_S, _DOT_, ALL, _DASH_, LEAF, _DASH_,
+        /** Run exhaustive completions template. */
+        public static final String RUN_EXHAUSTIVE_COMPLETIONS_ = s($1_S, s, $1_S, _DOT_, EXHAUSTIVE, _DASH_,
                 "completions", _DOT_, LOG);
         /** Run ETA debug template. */
         public static final String RUN_ETA_DEBUG_ = s($1_S, s, $1_S, _DOT_, ETA, _DASH_, DEBUG, _DOT_, LOG);

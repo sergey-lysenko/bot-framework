@@ -140,12 +140,12 @@ public record TreeHtmlRenderer() {
 
         renderSvgEdges(edges, accessibleCtx, executableCache, childFailureCache, svgContent);
 
-        final boolean isAllLeafs = isAllLeafsMode();
+        final boolean isExhaustive = isExhaustiveMode();
         final int target = resolveTargetExecutions();
         final double maxLeafOverRatio = computeMaxLeafOverRatio(nodes, target);
 
         final VisualNodeResolver nodeResolver =
-                new VisualNodeResolver(TreeTheme.DEFAULT, accessibleCtx, isAllLeafs, target, maxLeafOverRatio, false, false, 0.0, 60);
+                new VisualNodeResolver(TreeTheme.DEFAULT, accessibleCtx, isExhaustive, target, maxLeafOverRatio, false, false, 0.0, 60);
         final List<VisualNode> visualNodes = new ArrayList<>(nodes.size());
         final Map<String, Map<String, Object>> nodeDataMap = new LinkedHashMap<>(nodes.size());
 
@@ -253,18 +253,18 @@ public record TreeHtmlRenderer() {
         return passingClass;
     }
 
-    private static boolean isAllLeafsMode() {
+    private static boolean isExhaustiveMode() {
         return isNotNull(works.lysenko.Base.parameters)
-                ? works.lysenko.Base.parameters.isAllLeafs()
-                : Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
+                ? works.lysenko.Base.parameters.isExhaustive()
+                : Boolean.TRUE.equals(PropEnum._TEST_EXHAUSTIVE.get());
     }
 
     private static int resolveTargetExecutions() {
         final int result;
         if (isNotNull(works.lysenko.Base.parameters)) {
-            result = works.lysenko.Base.parameters.getAllLeafsExecutions();
+            result = works.lysenko.Base.parameters.getExhaustivePasses();
         } else {
-            final Integer propVal = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
+            final Integer propVal = PropEnum._TEST_EXHAUSTIVE_PASSES.get();
             result = isNotNull(propVal) ? Math.max(1, propVal) : 1;
         }
         return result;

@@ -22,7 +22,7 @@ import static works.lysenko.util.func.type.fractions.Factory.fr;
 
 /**
  * Covers {@link Selector#call()}: fitting, retrying after misfits, and how a failed selection is reported
- * depending on strict, tolerant, resilient and all-leafs modes.
+ * depending on strict, tolerant, resilient and exhaustive modes.
  */
 class SelectorCallTest {
 
@@ -140,8 +140,8 @@ class SelectorCallTest {
     }
 
     @Test
-    void allLeafsModeKeepsRunningEvenWhenNothingFits() throws Exception {
-        fixture.setProperty(PropEnum._TEST_ALL_LEAFS, "true");
+    void exhaustiveModeKeepsRunningEvenWhenNothingFits() throws Exception {
+        fixture.setProperty(PropEnum._TEST_EXHAUSTIVE, "true");
         final Ctrl ctrl = new Ctrl(null);
         ctrl.getPool().appendScenarioWithWeight(new MisfitLeaf(), fr(1.0));
 
@@ -152,22 +152,22 @@ class SelectorCallTest {
     }
 
     @Test
-    void muteEmptyCandidatesDemotesTolerantNoticesInAllLeafsAndResilientAndIgnoreModes() throws Exception {
+    void muteEmptyCandidatesDemotesTolerantNoticesInExhaustiveAndResilientAndIgnoreModes() throws Exception {
         Notify.doesNotFit = false;
         Notify.muteEmptyCandidates = true;
 
-        // ALL_LEAFS mode
-        fixture.setProperty(PropEnum._TEST_ALL_LEAFS, "true");
+        // EXHAUSTIVE mode
+        fixture.setProperty(PropEnum._TEST_EXHAUSTIVE, "true");
         Notify.doesNotFit = false;
         Notify.muteEmptyCandidates = true;
-        final Ctrl allLeafsCtrl = new Ctrl(null);
-        allLeafsCtrl.getPool().appendScenarioWithWeight(new MisfitLeaf(), fr(1.0));
-        assertNull(new Selector(allLeafsCtrl, 3).call());
-        assertTrue(fixture.events.isEmpty(), "all-leafs empty-candidate notices should be demoted: " + fixture.events);
+        final Ctrl exhaustiveCtrl = new Ctrl(null);
+        exhaustiveCtrl.getPool().appendScenarioWithWeight(new MisfitLeaf(), fr(1.0));
+        assertNull(new Selector(exhaustiveCtrl, 3).call());
+        assertTrue(fixture.events.isEmpty(), "exhaustive empty-candidate notices should be demoted: " + fixture.events);
         assertFalse(fixture.core().getStopFlag());
 
         // Resilient mode
-        fixture.setProperty(PropEnum._TEST_ALL_LEAFS, "false");
+        fixture.setProperty(PropEnum._TEST_EXHAUSTIVE, "false");
         Notify.doesNotFit = false;
         Notify.muteEmptyCandidates = true;
         Mode.resilient = true;

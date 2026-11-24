@@ -72,7 +72,7 @@ class GuiTest {
         props.setProperty("PLATFORM", "chrome");
         props.setProperty("DOMAIN", "example.com");
         props.setProperty("HEADLESS", "false");
-        props.setProperty("ALL_LEAFS", "false");
+        props.setProperty("EXHAUSTIVE", "false");
 
         final Parameters parameters = new Parameters(props);
         final Gui gui = new Gui(parameters);
@@ -96,7 +96,7 @@ class GuiTest {
         props.setProperty("PLATFORM", "chrome");
         props.setProperty("DOMAIN", "example.com");
         props.setProperty("HEADLESS", "false");
-        props.setProperty("ALL_LEAFS", "false");
+        props.setProperty("EXHAUSTIVE", "false");
 
         final Parameters parameters = new Parameters(props);
         final Gui gui = new Gui(parameters);
@@ -127,7 +127,7 @@ class GuiTest {
         props.setProperty("PLATFORM", "chrome");
         props.setProperty("DOMAIN", "example.com");
         props.setProperty("HEADLESS", "false");
-        props.setProperty("ALL_LEAFS", "false");
+        props.setProperty("EXHAUSTIVE", "false");
 
         final Parameters parameters = new Parameters(props);
         final Gui gui = new Gui(parameters);
@@ -154,23 +154,23 @@ class GuiTest {
     }
 
     @Test
-    void testCalculateCyclesUsesUpdatedAllLeafsExecutions() throws Exception {
+    void testCalculateCyclesUsesUpdatedExhaustivePasses() throws Exception {
         final Properties props = new Properties();
         props.setProperty("TEST", "testSuite");
         props.setProperty("POOL", "");
         props.setProperty("PLATFORM", "chrome");
         props.setProperty("DOMAIN", "example.com");
         props.setProperty("HEADLESS", "false");
-        props.setProperty("ALL_LEAFS", "true");
-        props.setProperty("ALL_LEAFS_EXECUTIONS", "1");
+        props.setProperty("EXHAUSTIVE", "true");
+        props.setProperty("EXHAUSTIVE_PASSES", "1");
 
         final Parameters parameters = new Parameters(props);
         final Gui gui = new Gui(parameters);
         gui.addStandardParameters();
 
-        final Field allLeafsExecutionsField = Gui.class.getDeclaredField("allLeafsExecutions");
-        allLeafsExecutionsField.setAccessible(true);
-        final JTextField textInput = (JTextField) allLeafsExecutionsField.get(gui);
+        final Field exhaustivePassesField = Gui.class.getDeclaredField("exhaustivePasses");
+        exhaustivePassesField.setAccessible(true);
+        final JTextField textInput = (JTextField) exhaustivePassesField.get(gui);
         assertNotNull(textInput);
 
         textInput.setText("3");
@@ -185,7 +185,7 @@ class GuiTest {
         props.setProperty("PLATFORM", "chrome");
         props.setProperty("DOMAIN", "example.com");
         props.setProperty("HEADLESS", "false");
-        props.setProperty("ALL_LEAFS", "false");
+        props.setProperty("EXHAUSTIVE", "false");
 
         final Parameters parameters = new Parameters(props);
         final Gui gui = new Gui(parameters);
@@ -268,35 +268,35 @@ class GuiTest {
     }
 
     @Test
-    void testAllLeafPropertiesAreMarkedAsExecutionParametersInPropertiesPanel() {
-        assertTrue(PropEnum._TEST_ALL_LEAFS.executionParameter());
-        assertTrue(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.executionParameter());
+    void testExhaustivePropertiesAreMarkedAsExecutionParametersInPropertiesPanel() {
+        assertTrue(PropEnum._TEST_EXHAUSTIVE.executionParameter());
+        assertTrue(PropEnum._TEST_EXHAUSTIVE_PASSES.executionParameter());
         assertTrue(PropEnum._TEST_HEADLESS.executionParameter());
         assertFalse(PropEnum._LOGS_DEBUG.executionParameter());
 
         final PropertiesPanel dialog = new PropertiesPanel(new TestProperties(), "default", false, false, 1);
         final DefaultTableModel model = dialog.getModel();
-        boolean allLeafsMarked = false;
-        boolean allLeafsExecutionsMarked = false;
+        boolean exhaustiveMarked = false;
+        boolean exhaustivePassesMarked = false;
         boolean headlessMarked = false;
         for (int row = 0; row < model.getRowCount(); row++) {
             final String name = (String) model.getValueAt(row, 0);
             if (PropEnum._TEST_HEADLESS.getPropertyName().equals(name)) {
                 assertEquals("TEST_HEADLESS", model.getValueAt(row, 5));
                 headlessMarked = true;
-            } else if (PropEnum._TEST_ALL_LEAFS.getPropertyName().equals(name)) {
-                assertEquals("TEST_ALL_LEAFS", model.getValueAt(row, 5));
-                allLeafsMarked = true;
-            } else if (PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName().equals(name)) {
-                assertEquals("TEST_ALL_LEAFS_EXECUTIONS", model.getValueAt(row, 5));
-                allLeafsExecutionsMarked = true;
+            } else if (PropEnum._TEST_EXHAUSTIVE.getPropertyName().equals(name)) {
+                assertEquals("TEST_EXHAUSTIVE", model.getValueAt(row, 5));
+                exhaustiveMarked = true;
+            } else if (PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName().equals(name)) {
+                assertEquals("TEST_EXHAUSTIVE_PASSES", model.getValueAt(row, 5));
+                exhaustivePassesMarked = true;
             }
         }
-        assertTrue(allLeafsMarked);
-        assertTrue(allLeafsExecutionsMarked);
+        assertTrue(exhaustiveMarked);
+        assertTrue(exhaustivePassesMarked);
         assertTrue(headlessMarked);
-        assertTrue(PropertyHelp.getDescription(PropEnum._TEST_ALL_LEAFS.getPropertyName()).contains("ALL_LEAFS"));
-        assertTrue(PropertyHelp.getDescription(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName()).contains("ALL_LEAFS_EXECUTIONS"));
+        assertTrue(PropertyHelp.getDescription(PropEnum._TEST_EXHAUSTIVE.getPropertyName()).contains("EXHAUSTIVE"));
+        assertTrue(PropertyHelp.getDescription(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName()).contains("EXHAUSTIVE_PASSES"));
         assertTrue(PropertyHelp.getDescription(PropEnum._TEST_HEADLESS.getPropertyName()).contains("HEADLESS"));
     }
 
@@ -332,12 +332,12 @@ class GuiTest {
         final Map<String, String> baseline = tp.resolveEffectiveProperties("some_test", false, false, 1, false);
         assertNotNull(baseline);
         assertEquals(PropEnum._TEST_HEADLESS.defaultValue(), baseline.get(PropEnum._TEST_HEADLESS.getPropertyName()));
-        assertEquals(PropEnum._TEST_ALL_LEAFS.defaultValue(), baseline.get(PropEnum._TEST_ALL_LEAFS.getPropertyName()));
+        assertEquals(PropEnum._TEST_EXHAUSTIVE.defaultValue(), baseline.get(PropEnum._TEST_EXHAUSTIVE.getPropertyName()));
 
         final Map<String, String> effectiveWithHeadless = tp.resolveEffectiveProperties("some_test", true, true, 3, false);
         assertEquals("true", effectiveWithHeadless.get(PropEnum._TEST_HEADLESS.getPropertyName()));
-        assertEquals("true", effectiveWithHeadless.get(PropEnum._TEST_ALL_LEAFS.getPropertyName()));
-        assertEquals("3", effectiveWithHeadless.get(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName()));
+        assertEquals("true", effectiveWithHeadless.get(PropEnum._TEST_EXHAUSTIVE.getPropertyName()));
+        assertEquals("3", effectiveWithHeadless.get(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName()));
 
         // Test with user overrides on a property with default value
         tp.setUserOverride(PropEnum._TEST_PAUSE_LENGTH.getPropertyName(), "9999");
@@ -658,14 +658,14 @@ class GuiTest {
         final TestProperties tp = new TestProperties();
         Base.properties = tp;
 
-        // 1. First dialog opening: modify .all.leafs.executions from 1 to 2
+        // 1. First dialog opening: modify .test.exhaustive.passes from 1 to 2
         final PropertiesPanel dialog1 = new PropertiesPanel(tp, "default", false, false, 1);
         final DefaultTableModel model1 = dialog1.getModel();
         int targetRow1 = -1;
         int rootRow1 = -1;
         for (int r = 0; r < model1.getRowCount(); r++) {
             final String name = (String) model1.getValueAt(r, 0);
-            if (PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName().equals(name)) {
+            if (PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName().equals(name)) {
                 targetRow1 = r;
             }
             if (PropEnum._TEST_ROOT.getPropertyName().equals(name)) {
@@ -687,7 +687,7 @@ class GuiTest {
         assertEquals(STATUS_MODIFIED, model1.getValueAt(targetRow1, 4));
         dialog1.getOkButton().doClick();
         assertTrue(dialog1.isConfirmed());
-        assertEquals("2", tp.getUserOverrides().get(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName()));
+        assertEquals("2", tp.getUserOverrides().get(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName()));
 
         // 2. Second dialog opening: verify value is 2, default is 1, and status is Modified!
         final PropertiesPanel dialog2 = new PropertiesPanel(tp, "default", false, false, 2);
@@ -696,7 +696,7 @@ class GuiTest {
         int rootRow2 = -1;
         for (int r = 0; r < model2.getRowCount(); r++) {
             final String name = (String) model2.getValueAt(r, 0);
-            if (PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName().equals(name)) {
+            if (PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName().equals(name)) {
                 targetRow2 = r;
             }
             if (PropEnum._TEST_ROOT.getPropertyName().equals(name)) {
@@ -715,7 +715,7 @@ class GuiTest {
         // Click OK on second opening without editing
         dialog2.getOkButton().doClick();
         assertTrue(dialog2.isConfirmed());
-        assertEquals("2", tp.getUserOverrides().get(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName()),
+        assertEquals("2", tp.getUserOverrides().get(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName()),
                 "Override must not be lost or cleared on second OK");
 
         // 3. Third dialog opening: Reset Selected back to default
@@ -723,7 +723,7 @@ class GuiTest {
         final DefaultTableModel model3 = dialog3.getModel();
         int targetRow3 = -1;
         for (int r = 0; r < model3.getRowCount(); r++) {
-            if (PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName().equals(model3.getValueAt(r, 0))) {
+            if (PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName().equals(model3.getValueAt(r, 0))) {
                 targetRow3 = r;
                 break;
             }
@@ -738,7 +738,7 @@ class GuiTest {
 
         dialog3.getOkButton().doClick();
         assertTrue(dialog3.isConfirmed());
-        assertNull(tp.getUserOverrides().get(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName()),
+        assertNull(tp.getUserOverrides().get(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName()),
                 "Override should be cleared when reset to default");
     }
 
@@ -754,11 +754,11 @@ class GuiTest {
         assertNotNull(weightComp);
         assertEquals("4.5", weightComp.getText());
 
-        final Field forbidField = Gui.class.getDeclaredField("forbidOverexecution");
-        forbidField.setAccessible(true);
-        final JCheckBox forbidComp = (JCheckBox) forbidField.get(gui);
-        assertNotNull(forbidComp);
-        assertFalse(forbidComp.isSelected());
+        final Field exactPassesField = Gui.class.getDeclaredField("exactPasses");
+        exactPassesField.setAccessible(true);
+        final JCheckBox exactPassesComp = (JCheckBox) exactPassesField.get(gui);
+        assertNotNull(exactPassesComp);
+        assertFalse(exactPassesComp.isSelected());
 
         final Field traverseField = Gui.class.getDeclaredField("traverseExtensions");
         traverseField.setAccessible(true);
@@ -824,14 +824,14 @@ class GuiTest {
     }
 
     @Test
-    void testAllLeafsDependentFieldsHiddenWhenAllLeafsNotChecked() throws Exception {
+    void testExhaustiveDependentFieldsHiddenWhenExhaustiveNotChecked() throws Exception {
         final Properties props = new Properties();
         props.setProperty("TEST", "testSuite");
         props.setProperty("POOL", "");
         props.setProperty("PLATFORM", "chrome");
         props.setProperty("DOMAIN", "example.com");
         props.setProperty("HEADLESS", "false");
-        props.setProperty("ALL_LEAFS", "false");
+        props.setProperty("EXHAUSTIVE", "false");
 
         final Parameters parameters = new Parameters(props);
         final Gui gui = new Gui(parameters);
@@ -839,23 +839,23 @@ class GuiTest {
         gui.addStandardParameters();
         final JPanel panel = gui.parametersPanel();
 
-        assertFalse(hasLabel(panel, "ALL_LEAFS_EXECUTIONS"), "ALL_LEAFS_EXECUTIONS should be hidden when ALL_LEAFS is unchecked");
-        assertFalse(hasLabel(panel, "COMPLETION_WEIGHT"), "COMPLETION_WEIGHT should be hidden when ALL_LEAFS is unchecked");
-        assertFalse(hasLabel(panel, "FORBID_OVEREXECUTION"), "FORBID_OVEREXECUTION should be hidden when ALL_LEAFS is unchecked");
+        assertFalse(hasLabel(panel, "EXHAUSTIVE_PASSES"), "EXHAUSTIVE_PASSES should be hidden when EXHAUSTIVE is unchecked");
+        assertFalse(hasLabel(panel, "COMPLETION_WEIGHT"), "COMPLETION_WEIGHT should be hidden when EXHAUSTIVE is unchecked");
+        assertFalse(hasLabel(panel, "EXACT_PASSES"), "EXACT_PASSES should be hidden when EXHAUSTIVE is unchecked");
 
-        final Field allLeafsField = Gui.class.getDeclaredField("allLeafs");
-        allLeafsField.setAccessible(true);
-        final JCheckBox allLeafsCb = (JCheckBox) allLeafsField.get(gui);
-        allLeafsCb.setSelected(true);
+        final Field exhaustiveField = Gui.class.getDeclaredField("exhaustive");
+        exhaustiveField.setAccessible(true);
+        final JCheckBox exhaustiveCb = (JCheckBox) exhaustiveField.get(gui);
+        exhaustiveCb.setSelected(true);
 
-        assertTrue(hasLabel(panel, "ALL_LEAFS_EXECUTIONS"), "ALL_LEAFS_EXECUTIONS should be visible when ALL_LEAFS is checked");
-        assertTrue(hasLabel(panel, "COMPLETION_WEIGHT"), "COMPLETION_WEIGHT should be visible when ALL_LEAFS is checked");
-        assertTrue(hasLabel(panel, "FORBID_OVEREXECUTION"), "FORBID_OVEREXECUTION should be visible when ALL_LEAFS is checked");
+        assertTrue(hasLabel(panel, "EXHAUSTIVE_PASSES"), "EXHAUSTIVE_PASSES should be visible when EXHAUSTIVE is checked");
+        assertTrue(hasLabel(panel, "COMPLETION_WEIGHT"), "COMPLETION_WEIGHT should be visible when EXHAUSTIVE is checked");
+        assertTrue(hasLabel(panel, "EXACT_PASSES"), "EXACT_PASSES should be visible when EXHAUSTIVE is checked");
 
-        allLeafsCb.setSelected(false);
-        assertFalse(hasLabel(panel, "ALL_LEAFS_EXECUTIONS"), "ALL_LEAFS_EXECUTIONS should be hidden when ALL_LEAFS is unchecked again");
-        assertFalse(hasLabel(panel, "COMPLETION_WEIGHT"), "COMPLETION_WEIGHT should be hidden when ALL_LEAFS is unchecked again");
-        assertFalse(hasLabel(panel, "FORBID_OVEREXECUTION"), "FORBID_OVEREXECUTION should be hidden when ALL_LEAFS is unchecked again");
+        exhaustiveCb.setSelected(false);
+        assertFalse(hasLabel(panel, "EXHAUSTIVE_PASSES"), "EXHAUSTIVE_PASSES should be hidden when EXHAUSTIVE is unchecked again");
+        assertFalse(hasLabel(panel, "COMPLETION_WEIGHT"), "COMPLETION_WEIGHT should be hidden when EXHAUSTIVE is unchecked again");
+        assertFalse(hasLabel(panel, "EXACT_PASSES"), "EXACT_PASSES should be hidden when EXHAUSTIVE is unchecked again");
     }
 
     @Test

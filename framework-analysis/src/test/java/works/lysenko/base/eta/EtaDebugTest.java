@@ -28,7 +28,7 @@ class EtaDebugTest {
         previousCore = Base.core;
         previousTimer = Base.timer;
         EtaDebug.reset();
-        AllLeafCompletions.reset();
+        ExhaustiveCompletions.reset();
         etaDebugPath = Path.of(Layout.Files.name(RUN_ETA_DEBUG_));
         Files.deleteIfExists(etaDebugPath);
     }
@@ -38,7 +38,7 @@ class EtaDebugTest {
         Base.core = previousCore;
         Base.timer = previousTimer;
         EtaDebug.reset();
-        AllLeafCompletions.reset();
+        ExhaustiveCompletions.reset();
         if (null != etaDebugPath) {
             Files.deleteIfExists(etaDebugPath);
         }
@@ -110,7 +110,7 @@ class EtaDebugTest {
 
             final java.util.Properties props = new java.util.Properties();
             props.setProperty("TEST", "StableSuite");
-            props.setProperty("ALL_LEAFS", "false");
+            props.setProperty("EXHAUSTIVE", "false");
             Base.parameters = new works.lysenko.base.Parameters(props);
             Base.core = core;
             Base.test = testSession;

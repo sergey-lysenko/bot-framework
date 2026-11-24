@@ -2,7 +2,7 @@ package works.lysenko.util.apis.test;
 
 /**
  * Defines the contract for tracking wandering patience usage, fruitless-iteration budgets,
- * leaf execution progress, and patience-based ETA estimation in all-leafs test execution mode.
+ * leaf execution progress, and patience-based ETA estimation in exhaustive test execution mode.
  */
 @SuppressWarnings("InterfaceWithOnlyOneDirectInheritor")
 public interface _Patience {

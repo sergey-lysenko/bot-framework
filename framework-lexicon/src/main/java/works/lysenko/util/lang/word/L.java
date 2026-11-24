@@ -16,8 +16,6 @@ public record L() {
     public static final String LAUNCHER = s(LA, UN, CHER);
     /** Constant representing the word LAYOUT. */
     public static final String LAYOUT = s(LAY, OUT);
-    /** Constant representing the word LEAFS. */
-    public static final String LEAFS = s(LEAF, S);
     /** Constant representing the word LEVEL. */
     public static final String LEVEL = s(LE, V, EL);
     /** Constant representing the word LIBRARY. */

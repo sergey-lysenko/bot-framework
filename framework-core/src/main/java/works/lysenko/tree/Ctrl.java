@@ -186,11 +186,11 @@ public class Ctrl extends Root implements _Ctrl {
      * @return set of accessible leaf scenarios
      */
     @Override
-    public final Set<_Scenario> getAccessibleLeafs() {
+    public final Set<_Scenario> getAccessibleLeaves() {
 
-        final Set<_Scenario> leafs = new HashSet<>();
-        collectAccessibleLeafs(getWeightedList(), leafs, new IdentityHashMap<>());
-        return leafs;
+        final Set<_Scenario> leaves = new HashSet<>();
+        collectAccessibleLeaves(getWeightedList(), leaves, new IdentityHashMap<>());
+        return leaves;
     }
 
     /**
@@ -244,12 +244,12 @@ public class Ctrl extends Root implements _Ctrl {
      * Recursively collects accessible leaf scenarios from weighted scenario pairs.
      *
      * @param pairs      weighted scenario pairs
-     * @param leafs      target set collecting accessible leaf scenarios
+     * @param leaves     target set collecting accessible leaf scenarios
      * @param comboCache memoization map for combination checks within this traversal
      */
-    private static void collectAccessibleLeafs(
+    private static void collectAccessibleLeaves(
             final Iterable<KeyValue<_Scenario, Fraction>> pairs,
-            final Set<_Scenario> leafs,
+            final Set<_Scenario> leaves,
             final Map<_Scenario, Boolean> comboCache) {
 
         if (isNull(pairs)) return;
@@ -257,9 +257,9 @@ public class Ctrl extends Root implements _Ctrl {
             final _Scenario s = pair.k();
             if (isScenarioAccessible(s, comboCache)) {
                 if (s instanceof _Node node) {
-                    collectAccessibleLeafs(node.getPool().getPairList(), leafs, comboCache);
+                    collectAccessibleLeaves(node.getPool().getPairList(), leaves, comboCache);
                 } else {
-                    leafs.add(s);
+                    leaves.add(s);
                 }
             }
         }

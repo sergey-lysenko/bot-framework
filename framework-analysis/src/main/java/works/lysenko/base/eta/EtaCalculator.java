@@ -63,24 +63,24 @@ public record EtaCalculator() {
         boolean done = false;
         long rawEtaMs = 0L;
 
-        if (EtaModeResolver.isAllLeafsMode()) {
-            mode = EtaMode.ALL_LEAFS;
-            final boolean multipleExecs = EtaModeResolver.isMultipleExecutionsPerLeaf();
-            executed = multipleExecs
+        if (EtaModeResolver.isExhaustiveMode()) {
+            mode = EtaMode.EXHAUSTIVE;
+            final boolean multiplePasses = EtaModeResolver.isMultiplePassesPerLeaf();
+            executed = multiplePasses
                     ? core.getExecutedLeafExecutionsCount()
-                    : core.getExecutedLeafsCount();
-            total = multipleExecs
+                    : core.getExecutedLeavesCount();
+            total = multiplePasses
                     ? core.getTotalLeafExecutionsCount()
-                    : (isNotNull(core.getAccessibleLeafs()) ? core.getAccessibleLeafs().size() : 0);
+                    : (isNotNull(core.getAccessibleLeaves()) ? core.getAccessibleLeaves().size() : 0);
 
             final _Test activeTest = isNotNull(core.getTest()) ? core.getTest() : Base.test;
             patiencePct = isNotNull(activeTest) ? Math.max(0.0, activeTest.getPatiencePercentage()) : 0.0;
 
-            if (total > 0 && executed >= total && core.areAllLeafsExecuted()) {
+            if (total > 0 && executed >= total && core.areAllLeavesExecuted()) {
                 done = true;
             } else if (elapsedMs >= 1000L && total > 0) {
                 final long patienceEtaMs = isNotNull(activeTest) ? activeTest.estimatePatienceEtaMs(elapsedMs) : -1L;
-                rawEtaMs = EtaFormulas.estimateAllLeafsEtaMs(elapsedMs, executed, total, patiencePct, patienceEtaMs);
+                rawEtaMs = EtaFormulas.estimateExhaustiveEtaMs(elapsedMs, executed, total, patiencePct, patienceEtaMs);
                 if (rawEtaMs <= 0L && patiencePct >= 100.0) {
                     done = true;
                 }
@@ -96,8 +96,8 @@ public record EtaCalculator() {
             }
         } else {
             mode = EtaMode.LEAF_FALLBACK;
-            total = isNotNull(core.getAccessibleLeafs()) ? core.getAccessibleLeafs().size() : 0;
-            executed = core.getExecutedLeafsCount();
+            total = isNotNull(core.getAccessibleLeaves()) ? core.getAccessibleLeaves().size() : 0;
+            executed = core.getExecutedLeavesCount();
             if (elapsedMs >= 1000L) {
                 rawEtaMs = EtaFormulas.estimateLeafFallbackEtaMs(elapsedMs, executed, total);
             }
@@ -169,7 +169,7 @@ public record EtaCalculator() {
     }
 
     /**
-     * Pure stateless ETA calculation for {@link EtaMode#ALL_LEAFS} with wandering-patience blending.
+     * Pure stateless ETA calculation for {@link EtaMode#EXHAUSTIVE} with wandering-patience blending.
      *
      * @param elapsedMs          elapsed execution duration in milliseconds
      * @param executed           executed leaf goals count
@@ -178,13 +178,13 @@ public record EtaCalculator() {
      * @param patienceEtaMs      estimated remaining patience window in ms, or {@code < 0} if unavailable
      * @return estimated remaining duration in milliseconds, or {@code 0L}
      */
-    public static long estimateAllLeafsEtaMs(
+    public static long estimateExhaustiveEtaMs(
             final long elapsedMs,
             final int executed,
             final int total,
             final double patiencePercentage,
             final long patienceEtaMs) {
-        return EtaFormulas.estimateAllLeafsEtaMs(elapsedMs, executed, total, patiencePercentage, patienceEtaMs);
+        return EtaFormulas.estimateExhaustiveEtaMs(elapsedMs, executed, total, patiencePercentage, patienceEtaMs);
     }
 
     /**
@@ -205,16 +205,16 @@ public record EtaCalculator() {
     /**
      * Pure stateless ETA calculation for {@link EtaMode#LEAF_FALLBACK}.
      *
-     * @param elapsedMs     elapsed execution duration in milliseconds
-     * @param executedLeafs executed accessible leafs count
-     * @param totalLeafs    total accessible leafs count
+     * @param elapsedMs      elapsed execution duration in milliseconds
+     * @param executedLeaves executed accessible leaves count
+     * @param totalLeaves    total accessible leaves count
      * @return estimated remaining duration in milliseconds, or {@code 0L}
      */
     public static long estimateLeafFallbackEtaMs(
             final long elapsedMs,
-            final int executedLeafs,
-            final int totalLeafs) {
-        return EtaFormulas.estimateLeafFallbackEtaMs(elapsedMs, executedLeafs, totalLeafs);
+            final int executedLeaves,
+            final int totalLeaves) {
+        return EtaFormulas.estimateLeafFallbackEtaMs(elapsedMs, executedLeaves, totalLeaves);
     }
 
     /**

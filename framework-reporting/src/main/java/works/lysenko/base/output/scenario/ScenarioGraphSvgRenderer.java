@@ -321,7 +321,7 @@ public final class ScenarioGraphSvgRenderer {
         final int topY = (headerH - ProgressionChrome.BADGE_HEIGHT) / 2;
 
         // Right-to-left placement -> left-to-right display:
-        // Test #N | Leafs: X/Y (P%) | Target: T | M execs | ETA: MM:SS | Elapsed: HH:MM:SS
+        // Test #N | Leaves: X/Y (P%) | Target: T | M execs | ETA: MM:SS | Elapsed: HH:MM:SS
         rightX = ProgressionChrome.appendBorderedBadge(sb, snapshot.elapsedBadge, rightX, topY, ProgressionChrome.BADGE_SLATE);
         final ProgressionChrome.EtaBadge etaBadge = snapshot.etaBadge;
         rightX = ProgressionChrome.appendBorderedBadge(sb, etaBadge.text(), rightX, topY, etaBadge.style());
@@ -329,10 +329,10 @@ public final class ScenarioGraphSvgRenderer {
         rightX = ProgressionChrome.appendBorderedBadge(sb, "Target: " + safeTarget, rightX, topY, ProgressionChrome.BADGE_SLATE);
         rightX = ProgressionChrome.appendBorderedBadge(
                 sb,
-                ProgressionChrome.formatLeafsBadge(completedCount, count),
+                ProgressionChrome.formatLeavesBadge(completedCount, count),
                 rightX,
                 topY,
-                ProgressionChrome.leafsBadgeStyle(completedCount, count));
+                ProgressionChrome.leavesBadgeStyle(completedCount, count));
         ProgressionChrome.appendBorderedBadge(sb, "Test #" + currentCycle, rightX, topY, ProgressionChrome.BADGE_SKY);
 
         ProgressionChrome.appendHeaderTitle(sb, marginX, "Scenario Execution Progression");

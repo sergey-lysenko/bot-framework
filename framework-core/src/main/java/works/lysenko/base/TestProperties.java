@@ -468,25 +468,25 @@ public class TestProperties implements _TestProperties {
             if (isNotNull(hideOffVal) && !hideOffVal.isEmpty()) {
                 the.setProperty(PropEnum._TREE_HIDE_OFF_BRANCHES.getPropertyName(), String.valueOf(Boolean.parseBoolean(hideOffVal)));
             }
-            final String allLeafsVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.ALL_LEAFS);
-            if (isNotNull(allLeafsVal) && !allLeafsVal.isEmpty()) {
-                the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(Boolean.parseBoolean(allLeafsVal)));
+            final String exhaustiveVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.EXHAUSTIVE);
+            if (isNotNull(exhaustiveVal) && !exhaustiveVal.isEmpty()) {
+                the.setProperty(PropEnum._TEST_EXHAUSTIVE.getPropertyName(), String.valueOf(Boolean.parseBoolean(exhaustiveVal)));
             }
-            final String allLeafsCountVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.ALL_LEAFS_EXECUTIONS);
-            if (isNotNull(allLeafsCountVal) && !allLeafsCountVal.isEmpty()) {
-                the.setProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), allLeafsCountVal);
+            final String exhaustivePassesVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.EXHAUSTIVE_PASSES);
+            if (isNotNull(exhaustivePassesVal) && !exhaustivePassesVal.isEmpty()) {
+                the.setProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), exhaustivePassesVal);
             }
-            final String allLeafsPatienceVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.ALL_LEAFS_PATIENCE);
-            if (isNotNull(allLeafsPatienceVal) && !allLeafsPatienceVal.isEmpty()) {
-                the.setProperty(PropEnum._TREE_ALL_LEAFS_PATIENCE.getPropertyName(), allLeafsPatienceVal);
+            final String exhaustivePatienceVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.EXHAUSTIVE_PATIENCE);
+            if (isNotNull(exhaustivePatienceVal) && !exhaustivePatienceVal.isEmpty()) {
+                the.setProperty(PropEnum._TREE_EXHAUSTIVE_PATIENCE.getPropertyName(), exhaustivePatienceVal);
             }
             final String testsVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.TESTS);
             if (isNotNull(testsVal) && !testsVal.isEmpty()) {
                 the.setProperty(PropEnum._TEST_TESTS.getPropertyName(), testsVal);
             }
-            final String forbidVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.FORBID_OVEREXECUTION);
-            if (isNotNull(forbidVal) && !forbidVal.isEmpty()) {
-                the.setProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), String.valueOf(Boolean.parseBoolean(forbidVal)));
+            final String exactPassesVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.EXACT_PASSES);
+            if (isNotNull(exactPassesVal) && !exactPassesVal.isEmpty()) {
+                the.setProperty(PropEnum._TREE_EXACT_PASSES.getPropertyName(), String.valueOf(Boolean.parseBoolean(exactPassesVal)));
             }
             final String resilientVal = parameters.getValue(works.lysenko.util.data.enums.ExecutionParameter.RESILIENT_MODE);
             if (isNotNull(resilientVal) && !resilientVal.isEmpty()) {
@@ -512,7 +512,7 @@ public class TestProperties implements _TestProperties {
      * Performs prepare test configuration operation.
      */
     public final void prepareTestConfiguration(final String testName, final Boolean isHeadless,
-                                               final Boolean isAllLeafs, final Integer allLeafsCount) {
+                                               final Boolean isExhaustive, final Integer exhaustivePasses) {
 
         if (isNull(commonConfiguration)) {
             readCommonConfiguration();
@@ -536,13 +536,13 @@ public class TestProperties implements _TestProperties {
         } else if (Boolean.FALSE.equals(isHeadless)) {
             the.setProperty(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(false));
         }
-        if (Boolean.TRUE.equals(isAllLeafs) || (isNotNull(allLeafsCount) && 1 < allLeafsCount)) {
-            the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(true));
-        } else if (Boolean.FALSE.equals(isAllLeafs)) {
-            the.setProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(false));
+        if (Boolean.TRUE.equals(isExhaustive) || (isNotNull(exhaustivePasses) && 1 < exhaustivePasses)) {
+            the.setProperty(PropEnum._TEST_EXHAUSTIVE.getPropertyName(), String.valueOf(true));
+        } else if (Boolean.FALSE.equals(isExhaustive)) {
+            the.setProperty(PropEnum._TEST_EXHAUSTIVE.getPropertyName(), String.valueOf(false));
         }
-        if (isNotNull(allLeafsCount) && 1 < allLeafsCount) {
-            the.setProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), String.valueOf(allLeafsCount));
+        if (isNotNull(exhaustivePasses) && 1 < exhaustivePasses) {
+            the.setProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), String.valueOf(exhaustivePasses));
         }
         applyUserOverrides();
         refreshAllPropertyRecords();
@@ -590,9 +590,9 @@ public class TestProperties implements _TestProperties {
 
     @Override
     public final Map<String, String> resolveEffectiveProperties(final String testName, final Boolean isHeadless,
-                                                                 final Boolean isAllLeafs, final Integer allLeafsCount) {
+                                                                 final Boolean isExhaustive, final Integer exhaustivePasses) {
 
-        return resolveEffectiveProperties(testName, isHeadless, isAllLeafs, allLeafsCount, true);
+        return resolveEffectiveProperties(testName, isHeadless, isExhaustive, exhaustivePasses, true);
     }
 
     @Override
@@ -602,7 +602,7 @@ public class TestProperties implements _TestProperties {
      * @return result of resolve effective properties
      */
     public final Map<String, String> resolveEffectiveProperties(final String testName, final Boolean isHeadless,
-                                                                 final Boolean isAllLeafs, final Integer allLeafsCount,
+                                                                 final Boolean isExhaustive, final Integer exhaustivePasses,
                                                                  final boolean includeUserOverrides) {
 
         if (isNull(commonConfiguration)) readCommonConfiguration();
@@ -628,13 +628,13 @@ public class TestProperties implements _TestProperties {
         } else if (Boolean.FALSE.equals(isHeadless)) {
             effective.put(PropEnum._TEST_HEADLESS.getPropertyName(), String.valueOf(false));
         }
-        if (Boolean.TRUE.equals(isAllLeafs) || (isNotNull(allLeafsCount) && 1 < allLeafsCount)) {
-            effective.put(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(true));
-        } else if (Boolean.FALSE.equals(isAllLeafs)) {
-            effective.put(PropEnum._TEST_ALL_LEAFS.getPropertyName(), String.valueOf(false));
+        if (Boolean.TRUE.equals(isExhaustive) || (isNotNull(exhaustivePasses) && 1 < exhaustivePasses)) {
+            effective.put(PropEnum._TEST_EXHAUSTIVE.getPropertyName(), String.valueOf(true));
+        } else if (Boolean.FALSE.equals(isExhaustive)) {
+            effective.put(PropEnum._TEST_EXHAUSTIVE.getPropertyName(), String.valueOf(false));
         }
-        if (isNotNull(allLeafsCount) && 1 < allLeafsCount) {
-            effective.put(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), String.valueOf(allLeafsCount));
+        if (isNotNull(exhaustivePasses) && 1 < exhaustivePasses) {
+            effective.put(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), String.valueOf(exhaustivePasses));
         }
         if (includeUserOverrides) {
             effective.putAll(userOverrides);

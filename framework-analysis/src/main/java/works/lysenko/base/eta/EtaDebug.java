@@ -69,7 +69,7 @@ public record EtaDebug() {
         if (etaMs > 0L) {
             final long nowMs = (isNotNull(Base.timer)) ? Base.timer.msSinceStart() : 0L;
             cycleSamples.add(nowMs + etaMs);
-            AllLeafCompletions.recordEtaSample(etaMs);
+            ExhaustiveCompletions.recordEtaSample(etaMs);
         }
     }
 

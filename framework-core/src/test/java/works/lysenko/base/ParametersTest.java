@@ -10,7 +10,7 @@ import java.util.Properties;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Precedence rules of execution parameters (regression guard for ".all.leafs.executions" being ignored).
+ * Precedence rules of execution parameters (regression guard for ".test.exhaustive.passes" being ignored).
  */
 class ParametersTest {
 
@@ -43,63 +43,63 @@ class ParametersTest {
     void defaultsWhenNothingIsSet() {
 
         final Parameters parameters = with();
-        assertFalse(parameters.isAllLeafs());
-        assertEquals(1, parameters.getAllLeafsExecutions());
+        assertFalse(parameters.isExhaustive());
+        assertEquals(1, parameters.getExhaustivePasses());
         assertFalse(parameters.isHeadless());
     }
 
     @Test
-    void countAboveOneImpliesAllLeafs() {
+    void countAboveOneImpliesExhaustive() {
 
-        final Parameters parameters = with("ALL_LEAFS_EXECUTIONS", "3");
-        assertEquals(3, parameters.getAllLeafsExecutions());
-        assertTrue(parameters.isAllLeafs());
+        final Parameters parameters = with("EXHAUSTIVE_PASSES", "3");
+        assertEquals(3, parameters.getExhaustivePasses());
+        assertTrue(parameters.isExhaustive());
     }
 
     @Test
     void countAboveOneOverridesExplicitFalse() {
 
-        final Parameters parameters = with("ALL_LEAFS", "false", "ALL_LEAFS_EXECUTIONS", "3");
-        assertTrue(parameters.isAllLeafs());
-        assertEquals(3, parameters.getAllLeafsExecutions());
+        final Parameters parameters = with("EXHAUSTIVE", "false", "EXHAUSTIVE_PASSES", "3");
+        assertTrue(parameters.isExhaustive());
+        assertEquals(3, parameters.getExhaustivePasses());
     }
 
     @Test
-    void explicitAllLeafsWithSinglePass() {
+    void explicitExhaustiveWithSinglePass() {
 
-        final Parameters parameters = with("ALL_LEAFS", "true", "ALL_LEAFS_EXECUTIONS", "1");
-        assertTrue(parameters.isAllLeafs());
-        assertEquals(1, parameters.getAllLeafsExecutions());
+        final Parameters parameters = with("EXHAUSTIVE", "true", "EXHAUSTIVE_PASSES", "1");
+        assertTrue(parameters.isExhaustive());
+        assertEquals(1, parameters.getExhaustivePasses());
     }
 
     @Test
     void explicitFalseWithSinglePass() {
 
-        final Parameters parameters = with("ALL_LEAFS", "false", "ALL_LEAFS_EXECUTIONS", "1");
-        assertFalse(parameters.isAllLeafs());
+        final Parameters parameters = with("EXHAUSTIVE", "false", "EXHAUSTIVE_PASSES", "1");
+        assertFalse(parameters.isExhaustive());
     }
 
     @Test
     void emptyValuesFallBackToDefaults() {
 
-        final Parameters parameters = with("ALL_LEAFS", "", "ALL_LEAFS_EXECUTIONS", "");
-        assertFalse(parameters.isAllLeafs());
-        assertEquals(1, parameters.getAllLeafsExecutions());
+        final Parameters parameters = with("EXHAUSTIVE", "", "EXHAUSTIVE_PASSES", "");
+        assertFalse(parameters.isExhaustive());
+        assertEquals(1, parameters.getExhaustivePasses());
     }
 
     @Test
     void countIsClampedToAtLeastOne() {
 
-        assertEquals(1, with("ALL_LEAFS_EXECUTIONS", "0").getAllLeafsExecutions());
-        assertEquals(1, with("ALL_LEAFS_EXECUTIONS", "-5").getAllLeafsExecutions());
+        assertEquals(1, with("EXHAUSTIVE_PASSES", "0").getExhaustivePasses());
+        assertEquals(1, with("EXHAUSTIVE_PASSES", "-5").getExhaustivePasses());
     }
 
     @Test
     void malformedCountIsIgnored() {
 
-        final Parameters parameters = with("ALL_LEAFS_EXECUTIONS", "many");
-        assertEquals(1, parameters.getAllLeafsExecutions());
-        assertFalse(parameters.isAllLeafs());
+        final Parameters parameters = with("EXHAUSTIVE_PASSES", "many");
+        assertEquals(1, parameters.getExhaustivePasses());
+        assertFalse(parameters.isExhaustive());
     }
 
     @Test
@@ -112,12 +112,12 @@ class ParametersTest {
     @Test
     void plainAccessors() {
 
-        final Parameters parameters = with("TEST", "smoke", "POOL", "fast", "DOMAIN", "dev", "TESTS", "10", "FORBID_OVEREXECUTION", "true", "COMPLETION_WEIGHT", "2.5", "TRAVERSE_EXTENSIONS", "true");
+        final Parameters parameters = with("TEST", "smoke", "POOL", "fast", "DOMAIN", "dev", "TESTS", "10", "EXACT_PASSES", "true", "COMPLETION_WEIGHT", "2.5", "TRAVERSE_EXTENSIONS", "true");
         assertEquals("smoke", parameters.getTest());
         assertEquals("fast", parameters.getPool());
         assertEquals("dev", parameters.getDomain());
         assertEquals("10", parameters.getTests());
-        assertEquals(Boolean.TRUE, parameters.getForbidOverexecution());
+        assertEquals(Boolean.TRUE, parameters.getExactPasses());
         assertEquals("2.5", parameters.getCompletionWeight());
         assertEquals(Boolean.TRUE, parameters.getTraverseExtensions());
     }

@@ -13,38 +13,38 @@ import static works.lysenko.util.func.type.Objects.isNotNull;
 public record EtaModeResolver() {
 
     /**
-     * Checks whether all-leafs mode is currently enabled via runtime parameters or test properties.
+     * Checks whether exhaustive mode is currently enabled via runtime parameters or test properties.
      *
-     * @return {@code true} if all-leafs mode is active
+     * @return {@code true} if exhaustive mode is active
      */
-    public static boolean isAllLeafsMode() {
+    public static boolean isExhaustiveMode() {
         if (isNotNull(parameters)) {
-            return parameters.isAllLeafs();
+            return parameters.isExhaustive();
         }
-        final Integer count = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
-        return Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get()) || (isNotNull(count) && count > 1);
+        final Integer count = PropEnum._TEST_EXHAUSTIVE_PASSES.get();
+        return Boolean.TRUE.equals(PropEnum._TEST_EXHAUSTIVE.get()) || (isNotNull(count) && count > 1);
     }
 
     /**
-     * Resolves the target number of executions required per leaf scenario in all-leafs mode.
+     * Resolves the target number of passes required per leaf scenario in exhaustive mode.
      *
-     * @return positive target execution count per leaf (at least {@code 1})
+     * @return positive target pass count per leaf (at least {@code 1})
      */
-    public static int resolveAllLeafsTarget() {
+    public static int resolveExhaustivePasses() {
         if (isNotNull(parameters)) {
-            return Math.max(1, parameters.getAllLeafsExecutions());
+            return Math.max(1, parameters.getExhaustivePasses());
         }
-        final Integer prop = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
+        final Integer prop = PropEnum._TEST_EXHAUSTIVE_PASSES.get();
         return isNotNull(prop) ? Math.max(1, prop) : 1;
     }
 
     /**
-     * Checks whether multiple executions per leaf scenario are configured.
+     * Checks whether multiple passes per leaf scenario are configured.
      *
-     * @return {@code true} when target leaf execution count exceeds {@code 1}
+     * @return {@code true} when target pass count exceeds {@code 1}
      */
-    public static boolean isMultipleExecutionsPerLeaf() {
-        return resolveAllLeafsTarget() > 1;
+    public static boolean isMultiplePassesPerLeaf() {
+        return resolveExhaustivePasses() > 1;
     }
 
     /**

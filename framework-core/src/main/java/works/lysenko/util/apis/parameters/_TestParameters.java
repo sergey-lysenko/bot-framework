@@ -35,18 +35,18 @@ public interface _TestParameters {
     String getDomain();
 
     /**
-     * Checks if all leafs execution mode is enabled.
+     * Checks if exhaustive execution mode is enabled.
      *
-     * @return true if running until all leafs are executed, false otherwise
+     * @return true if running until all reachable scenarios complete their target passes, false otherwise
      */
-    boolean isAllLeafs();
+    boolean isExhaustive();
 
     /**
-     * Retrieves the required number of executions per leaf in all leafs mode.
+     * Retrieves the required number of passes per scenario in exhaustive mode.
      *
-     * @return the number of required executions per leaf
+     * @return the number of required passes per scenario
      */
-    int getAllLeafsExecutions();
+    int getExhaustivePasses();
 
     /**
      * Checks if headless mode is enabled.

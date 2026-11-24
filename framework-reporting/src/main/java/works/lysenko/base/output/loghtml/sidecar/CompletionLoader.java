@@ -23,14 +23,14 @@ import static works.lysenko.util.data.strs.Swap.s;
  */
 public final class CompletionLoader {
 
-    private static final Pattern ALL_LEAF_COMPLETION_RE = Pattern.compile("\\[ALL_LEAF_COMPLETION]\\s+(\\d+)\\s+(\\d+)(?:\\s+(\\d+(?:\\.\\d+)?))?(?:\\s+(\\d+))?(?:\\s+(\\d+))?\\s+(.+)$");
+    private static final Pattern EXHAUSTIVE_COMPLETION_RE = Pattern.compile("\\[EXHAUSTIVE_COMPLETION]\\s+(\\d+)\\s+(\\d+)(?:\\s+(\\d+(?:\\.\\d+)?))?(?:\\s+(\\d+))?(?:\\s+(\\d+))?\\s+(.+)$");
     private static final Pattern ETA_DEBUG_RE = Pattern.compile("\\[ETA_DEBUG]\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(.+)$");
 
     private CompletionLoader() {
     }
 
     public static List<LeafCompletion> loadLeafCompletions(final File runLogFile) {
-        final File completionFile = allLeafCompletionsFile(runLogFile);
+        final File completionFile = exhaustiveCompletionsFile(runLogFile);
         if (!completionFile.isFile()) return List.of();
 
         final List<LeafCompletion> completions = new ArrayList<>();
@@ -39,7 +39,7 @@ public final class CompletionLoader {
             String line;
             int legacyRoundCount = 0;
             while (null != (line = reader.readLine())) {
-                final Matcher matcher = ALL_LEAF_COMPLETION_RE.matcher(line.trim());
+                final Matcher matcher = EXHAUSTIVE_COMPLETION_RE.matcher(line.trim());
                 if (matcher.matches()) {
                     final int testNum = Integer.parseInt(matcher.group(1));
                     final long atMillis = Long.parseLong(matcher.group(2));
@@ -77,16 +77,16 @@ public final class CompletionLoader {
                 }
             }
         } catch (final IOException | NumberFormatException e) {
-            logEvent(S2, s("Failed to read all-leaf completion log ", completionFile, ": ", e.getMessage()));
+            logEvent(S2, s("Failed to read exhaustive completion log ", completionFile, ": ", e.getMessage()));
         }
         return completions;
     }
 
-    public static File allLeafCompletionsFile(final File runLogFile) {
+    public static File exhaustiveCompletionsFile(final File runLogFile) {
         final String suffix = ".run.log";
         final String name = runLogFile.getName();
         final String prefix = name.endsWith(suffix) ? name.substring(0, name.length() - suffix.length()) : name;
-        return new File(runLogFile.getParentFile(), s(prefix, ".all-leaf-completions.log"));
+        return new File(runLogFile.getParentFile(), s(prefix, ".exhaustive-completions.log"));
     }
 
     public static List<EtaDebugItem> loadEtaDebugItems(final File runLogFile) {

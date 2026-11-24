@@ -11,7 +11,7 @@ public final class DefaultEtaProvider implements _EtaProvider {
 
     @Override
     public void onReset() {
-        AllLeafCompletions.reset();
+        ExhaustiveCompletions.reset();
         EtaDebug.reset();
         EtaCorrection.reset();
     }
@@ -24,12 +24,12 @@ public final class DefaultEtaProvider implements _EtaProvider {
     @Override
     public void onCycleEnd(final String shortName, final long elapsedMs, final _Scenario completedLeaf) {
         EtaDebug.endCycle(shortName);
-        AllLeafCompletions.checkAndRecord(elapsedMs, completedLeaf);
+        ExhaustiveCompletions.checkAndRecord(elapsedMs, completedLeaf);
     }
 
     @Override
     public void onLimboCycle(final Integer testNumber, final long elapsedMs) {
-        AllLeafCompletions.recordCycleIfMissing(testNumber, elapsedMs);
+        ExhaustiveCompletions.recordCycleIfMissing(testNumber, elapsedMs);
     }
 
     @Override
@@ -41,7 +41,7 @@ public final class DefaultEtaProvider implements _EtaProvider {
     public String captureEtaJson(final boolean markDone, final long nowMs, final long elapsedMs, final String title) {
         EtaSnapshot snapshot = EtaCalculator.capture(true);
         if (!markDone && snapshot.remainingMs() > 0L) {
-            AllLeafCompletions.recordEtaSample(snapshot.remainingMs());
+            ExhaustiveCompletions.recordEtaSample(snapshot.remainingMs());
         }
         if (markDone) {
             snapshot = snapshot.asDone(nowMs, Math.max(0L, elapsedMs));

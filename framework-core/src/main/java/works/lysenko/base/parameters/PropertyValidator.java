@@ -246,7 +246,7 @@ public final class PropertyValidator {
             } else if (Fraction.class == type) {
                 final Fraction parsed = fr(value, true);
                 if (null == parsed) return "Expected a fraction (e.g. 1/2) or a decimal number";
-                if (PropEnum._TREE_ALL_LEAFS_PATIENCE_STEEPNESS == property && parsed.doubleValue() <= 0.0) {
+                if (PropEnum._TREE_EXHAUSTIVE_PATIENCE_STEEPNESS == property && parsed.doubleValue() <= 0.0) {
                     return "Steepness must be greater than zero (e.g. 1 for linear, 2 for slow-to-quick, 1/2 for quick-to-slow)";
                 }
                 if (PropEnum._TREE_PROGRESSION_MOVEMENT_SPEED == property && parsed.doubleValue() <= 0.0) {

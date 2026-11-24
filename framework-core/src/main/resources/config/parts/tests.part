@@ -6,20 +6,20 @@
 # .test.action.retries=3
 
 # ------------------------------------------------------------------------------
-# Runs all leaf tests when enabled, rather than limiting execution to selected leaf tests. Default: false
-# .test.all.leafs=false
+# Runs in exhaustive mode until every reachable scenario completes its target passes. Default: false
+# .test.exhaustive=false
 
 # ------------------------------------------------------------------------------
-# Limits the number of leaf tests selected when running all leaf tests. Default: 1
-# .test.all.leafs.executions=1
+# Number of required passes per scenario in exhaustive mode. Values > 1 enable exhaustive mode automatically. Default: 1
+# .test.exhaustive.passes=1
 
 # ------------------------------------------------------------------------------
-# Wandering threshold factor for all-leafs mode. Default: 2
-# .tree.all.leafs.patience=2
+# Wandering threshold factor for exhaustive mode. Default: 2
+# .tree.exhaustive.patience=2
 
 # ------------------------------------------------------------------------------
 # Controls the curvature of wandering patience approach (1 = linear, >1 = slow-to-quick, 0..1 = quick-to-slow). Default: 1
-# .tree.all.leafs.patience.steepness=1
+# .tree.exhaustive.patience.steepness=1
 
 # ------------------------------------------------------------------------------
 # Controls whether a failed assertion produces an exception. Default: true
@@ -81,8 +81,8 @@
 # Reporting & Progression Settings
 # ==============================================================================
 
-# Includes all-leaf completion time records in HTML reports and outputs. Default: true
-# .test.report.add.all.leaf=true
+# Includes exhaustive completion time records in HTML reports and outputs. Default: true
+# .test.report.add.exhaustive=true
 
 # ------------------------------------------------------------------------------
 # Includes CPU telemetry measurements and resource charts in HTML reports. Default: true
@@ -101,8 +101,8 @@
 # .test.report.cpu.density.per.test=true
 
 # ------------------------------------------------------------------------------
-# Initializes the All-Leaf Completion chart scale mode to logarithmic by default. Default: false
-# .test.report.log.scale.all.leaf=false
+# Initializes the Exhaustive Completion chart scale mode to logarithmic by default. Default: false
+# .test.report.log.scale.exhaustive=false
 
 # ------------------------------------------------------------------------------
 # Initializes the System Resources chart scale mode to logarithmic by default. Default: false
@@ -173,8 +173,8 @@
 # .test.report.progression.tree.sonification=true
 
 # ------------------------------------------------------------------------------
-# Comma-separated list of sonification variants to randomly select from (dnb, neon, jmj, carbon, copilot, claude, gemini, orpheus, aurora). Default: dnb, neon, jmj, carbon
-# .test.report.progression.tree.sonifications=dnb, neon, jmj, carbon
+# Comma-separated list of sonification variants to randomly select from (edm, dnb, neon, jmj, carbon, copilot, claude, gemini, orpheus, aurora). Default: edm, dnb, neon, jmj, carbon
+# .test.report.progression.tree.sonifications=edm, dnb, neon, jmj, carbon
 
 # ------------------------------------------------------------------------------
 # Generates a WebP animation of test-tree progression. Default: true

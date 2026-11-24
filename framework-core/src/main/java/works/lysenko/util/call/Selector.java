@@ -153,9 +153,9 @@ public final class Selector implements Callable<_Scenario> {
             final String message = s(b(c(UNABLE), TO, FIT, ANY, SCENARIO, AMONG,
                     createReadableScenariosList(ctrl.getWeightedList(), false, isDebug()), s(_COLON_), ALL, SCENARIOS,
                     HAVE, UNMET, REQUIREMENTS, OR, ARE, NOT, EXECUTABLE));
-            final boolean isAllLeafs = (isNotNull(works.lysenko.Base.parameters) && works.lysenko.Base.parameters.isAllLeafs()) 
-                || Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get());
-            if (isAllLeafs || resilient) {
+            final boolean isExhaustive = (isNotNull(works.lysenko.Base.parameters) && works.lysenko.Base.parameters.isExhaustive())
+                    || Boolean.TRUE.equals(PropEnum._TEST_EXHAUSTIVE.get());
+            if (isExhaustive || resilient) {
                 logAccounting();
                 logDebug(a(kv(s(IGNORE, c(FAILED), c(SELECTION)), String.valueOf(true))));
                 if (Notify.muteEmptyCandidates) {
@@ -193,8 +193,8 @@ public final class Selector implements Callable<_Scenario> {
     List<KeyValue<_Scenario, Fraction>> getExecutionCandidates() {
 
         final int target = (isNotNull(parameters))
-                ? parameters.getAllLeafsExecutions()
-                : (isNotNull(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) : 1);
+                ? parameters.getExhaustivePasses()
+                : (isNotNull(PropEnum._TEST_EXHAUSTIVE_PASSES.get()) ? Math.max(1, PropEnum._TEST_EXHAUSTIVE_PASSES.get()) : 1);
         final List<KeyValue<_Scenario, Fraction>> candidates = new LinkedList<>();
         for (final KeyValue<_Scenario, Fraction> pair : ctrl.getWeightedList()) {
             final _Scenario scenario = pair.k();

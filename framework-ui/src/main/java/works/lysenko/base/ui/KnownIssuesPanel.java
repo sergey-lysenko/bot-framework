@@ -449,8 +449,8 @@ public class KnownIssuesPanel extends JPanel {
             final Path suitePath = Path.of(works.lysenko.util.spec.Layout.Paths._SUITES_, "KnownIssues.suite");
             final StringBuilder suiteContent = new StringBuilder();
             suiteContent.append("# Generated automatically from Known Issues\n");
-            suiteContent.append(".test.all.leafs=true\n");
-            suiteContent.append(".test.all.leafs.executions=1\n");
+            suiteContent.append(".test.exhaustive=true\n");
+            suiteContent.append(".test.exhaustive.passes=1\n");
             suiteContent.append(PropEnum._TEST_RESILIENT_MODE.getPropertyName()).append("=true\n");
 
             for (final String scenario : matchingScenarios) {

@@ -137,13 +137,13 @@ public interface _TestProperties {
     /**
      * Prepares and loads the configuration for a test suite into active test properties without logging.
      *
-     * @param testName      test suite name
-     * @param isHeadless    headless toggle
-     * @param isAllLeafs    all leafs toggle
-     * @param allLeafsExecutions leaf executions target
+     * @param testName         test suite name
+     * @param isHeadless       headless toggle
+     * @param isExhaustive     exhaustive mode toggle
+     * @param exhaustivePasses required passes target
      */
     void prepareTestConfiguration(final String testName, final Boolean isHeadless,
-                                  final Boolean isAllLeafs, final Integer allLeafsExecutions);
+                                  final Boolean isExhaustive, final Integer exhaustivePasses);
 
     /**
      * Retrieves the size of the default properties.
@@ -219,27 +219,27 @@ public interface _TestProperties {
     /**
      * Resolves effective properties for the specified test configuration including user overrides.
      *
-     * @param testName       the test name
-     * @param isHeadless     headless parameter flag
-     * @param isAllLeafs     all leafs parameter flag
-     * @param allLeafsExecutions  all leafs count parameter value
+     * @param testName         the test name
+     * @param isHeadless       headless parameter flag
+     * @param isExhaustive     exhaustive mode parameter flag
+     * @param exhaustivePasses exhaustive passes parameter value
      * @return resolved map of effective properties
      */
     Map<String, String> resolveEffectiveProperties(final String testName, final Boolean isHeadless,
-                                                   final Boolean isAllLeafs, final Integer allLeafsExecutions);
+                                                   final Boolean isExhaustive, final Integer exhaustivePasses);
 
     /**
      * Resolves effective properties for the specified test configuration.
      *
      * @param testName             the test name
      * @param isHeadless           headless parameter flag
-     * @param isAllLeafs           all leafs parameter flag
-     * @param allLeafsExecutions        all leafs count parameter value
+     * @param isExhaustive         exhaustive mode parameter flag
+     * @param exhaustivePasses     exhaustive passes parameter value
      * @param includeUserOverrides whether to include user overrides
      * @return resolved map of effective properties
      */
     Map<String, String> resolveEffectiveProperties(final String testName, final Boolean isHeadless,
-                                                   final Boolean isAllLeafs, final Integer allLeafsExecutions,
+                                                   final Boolean isExhaustive, final Integer exhaustivePasses,
                                                    final boolean includeUserOverrides);
 
 }

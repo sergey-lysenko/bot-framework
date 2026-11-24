@@ -76,7 +76,7 @@ class PoolTest {
         pool.appendScenarioWithWeight(leaf2, fr(1.0));
 
         final Set<_Scenario> sortedSet = pool.getSortedSet();
-        assertEquals(2, sortedSet.size(), "Sorted set should contain both leafs");
+        assertEquals(2, sortedSet.size(), "Sorted set should contain both leaves");
         assertTrue(sortedSet.contains(leaf1));
         assertTrue(sortedSet.contains(leaf2));
     }

@@ -170,11 +170,11 @@ public final class LogParser {
         final String barsHidden = isLineDefault ? " hidden" : "";
         final String timelineToggle = mRes.testData.isEmpty() ? "" : renderTimelineToggle(isLineDefault);
         final String timelineLineGraph = renderLineGraph(mRes.testData, mRes.limboByPrevTest, mRes.tAvg, mRes.tMax, mRes.lMax);
-        final boolean addAllLeaf = Boolean.TRUE.equals(PropEnum._TEST_REPORT_ADD_ALL_LEAF.get());
+        final boolean addExhaustive = Boolean.TRUE.equals(PropEnum._TEST_REPORT_ADD_EXHAUSTIVE.get());
         final boolean addEtaDebug = Boolean.TRUE.equals(PropEnum._TEST_REPORT_ADD_ETA_DEBUG.get());
         final boolean addCpuDebug = Boolean.TRUE.equals(PropEnum._TEST_REPORT_ADD_CPU_DEBUG.get());
 
-        final List<LeafCompletion> rawCompletions = addAllLeaf ? SidecarLoader.loadLeafCompletions(logFile) : List.of();
+        final List<LeafCompletion> rawCompletions = addExhaustive ? SidecarLoader.loadLeafCompletions(logFile) : List.of();
         final List<EtaDebugItem> rawEtaDebugItems = addEtaDebug ? SidecarLoader.loadEtaDebugItems(logFile) : List.of();
         
         final List<LeafCompletion> completions = new ArrayList<>(16);
@@ -242,7 +242,7 @@ public final class LogParser {
         final String scenSubtitle = buildScenSubtitle(pRes.pathsPossibleStr, pRes.pathsChanceStr, pRes.pathsExecutedStr);
         final String scenRows = renderScenRows(pRes.scenStats);
         final String sectionsHtml = renderSections(pRes.sections, runArtifacts, activeCpuMap, telemetryCpuList, 0);
-        final String leafCompletionGraph = addAllLeaf ? ChartsRenderer.renderLeafCompletionGraph(completions) : "";
+        final String leafCompletionGraph = addExhaustive ? ChartsRenderer.renderLeafCompletionGraph(completions) : "";
         final String etaDebugGraph = addEtaDebug ? ChartsRenderer.renderEtaDebugGraph(etaDebugItems) : "";
         final String systemResourcesGraph = addCpuDebug ? ChartsRenderer.renderResourceStatsGraph(resourceItems) : "";
 

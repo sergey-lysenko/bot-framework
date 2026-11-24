@@ -157,7 +157,7 @@ public final class TimelineRenderer {
         final StringBuilder sb = new StringBuilder();
 
         final boolean timelineLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_TIMELINE.get());
-        final boolean leafLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_ALL_LEAF.get());
+        final boolean leafLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_EXHAUSTIVE.get());
         final boolean etaLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_ETA_DEBUG.get());
         final boolean resLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_CPU_DEBUG.get());
 

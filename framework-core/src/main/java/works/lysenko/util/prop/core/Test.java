@@ -2,9 +2,9 @@ package works.lysenko.util.prop.core;
 
 import works.lysenko.util.data.records.test.TestSafeguard;
 
-import static works.lysenko.util.prop.PropEnum._TEST_ALL_LEAFS;
-import static works.lysenko.util.prop.PropEnum._TEST_ALL_LEAFS_EXECUTIONS;
 import static works.lysenko.util.prop.PropEnum._TEST_EXECUTION_TIME_SAFEGUARD;
+import static works.lysenko.util.prop.PropEnum._TEST_EXHAUSTIVE;
+import static works.lysenko.util.prop.PropEnum._TEST_EXHAUSTIVE_PASSES;
 import static works.lysenko.util.prop.PropEnum._TEST_TESTS;
 
 /**
@@ -19,14 +19,14 @@ public record Test() {
     public static Integer tests = _TEST_TESTS.get();
 
     /**
-     * Indicates whether all-leafs execution mode is enabled in properties.
+     * Indicates whether exhaustive execution mode is enabled in properties.
      */
-    public static boolean allLeafs = Boolean.TRUE.equals(_TEST_ALL_LEAFS.get());
+    public static boolean exhaustive = Boolean.TRUE.equals(_TEST_EXHAUSTIVE.get());
 
     /**
-     * Configured number of executions required per leaf scenario in all-leafs mode.
+     * Configured number of passes required per leaf scenario in exhaustive mode.
      */
-    public static int allLeafsExecutions = _TEST_ALL_LEAFS_EXECUTIONS.get();
+    public static int exhaustivePasses = _TEST_EXHAUSTIVE_PASSES.get();
 
     /**
      * Test safeguard defining the maximum permissible test count and execution time in milliseconds.
@@ -38,8 +38,8 @@ public record Test() {
      */
     public static void refresh() {
         tests = _TEST_TESTS.get();
-        allLeafs = Boolean.TRUE.equals(_TEST_ALL_LEAFS.get());
-        allLeafsExecutions = _TEST_ALL_LEAFS_EXECUTIONS.get();
+        exhaustive = Boolean.TRUE.equals(_TEST_EXHAUSTIVE.get());
+        exhaustivePasses = _TEST_EXHAUSTIVE_PASSES.get();
         timeSafeguard = new TestSafeguard(_TEST_EXECUTION_TIME_SAFEGUARD.get());
     }
 }

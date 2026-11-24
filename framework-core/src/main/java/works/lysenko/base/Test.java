@@ -29,7 +29,7 @@ import static works.lysenko.Base.test;
 import static works.lysenko.Base.timer;
 import static works.lysenko.base.test.Routines.build;
 import static works.lysenko.base.test.Routines.haltService;
-import static works.lysenko.base.test.Routines.isAllLeafsMode;
+import static works.lysenko.base.test.Routines.isExhaustiveMode;
 import static works.lysenko.base.test.Routines.verifyProperties;
 import static works.lysenko.base.test.Stat.reports;
 import static works.lysenko.util.chrs.__.IN;
@@ -48,7 +48,7 @@ import static works.lysenko.util.data.strs.Time.t;
 import static works.lysenko.util.func.core.Assertions.fail;
 import static works.lysenko.util.func.core.ClassLoader.instantiate;
 import static works.lysenko.util.func.type.Objects.isNotNull;
-import static works.lysenko.util.lang.A.ALL_LEAFS_MODE_ABORTED_WANDERING_PATIENCE_EXCEEDED;
+import static works.lysenko.util.lang.E.EXHAUSTIVE_MODE_ABORTED_WANDERING_PATIENCE_EXCEEDED;
 import static works.lysenko.util.lang.I.INITIAL_SETBACK_MESSAGE;
 import static works.lysenko.util.lang.M.MANUALLY_REQUESTED_TEST_STOP_PERFORMED;
 import static works.lysenko.util.lang.T.TESTS_HAD_BEEN_STOPPED_PREEMPTIVELY;
@@ -62,7 +62,7 @@ import static works.lysenko.util.spec.Level.none;
  * <p>
  * Responsibilities include instantiating workflow hooks (preflight, postflight, status provider, and
  * custom exception handling), preparing the root scenario tree, managing test repetition across fixed-count
- * or all-leafs execution modes (delegating wandering patience tracking to {@link Patience}), handling dashboard
+ * or exhaustive execution modes (delegating wandering patience tracking to {@link Patience}), handling dashboard
  * or programmatic stop requests, and generating session completion reports.
  */
 @SuppressWarnings({"AssignmentToStaticFieldFromInstanceMethod", "ThisEscapedInObjectConstruction", "MethodWithMultipleReturnPoints"})
@@ -99,7 +99,7 @@ public class Test implements _Test {
 
     private static boolean isLostPatience() {
 
-        logEvent(S3, b(ALL_LEAFS_MODE_ABORTED_WANDERING_PATIENCE_EXCEEDED));
+        logEvent(S3, b(EXHAUSTIVE_MODE_ABORTED_WANDERING_PATIENCE_EXCEEDED));
         return false;
     }
 
@@ -351,9 +351,9 @@ public class Test implements _Test {
         if (isNotNull(classes.postflight())) postflight = instantiate(classes.postflight());
     }
 
-    private boolean isAllLeafs() {
+    private boolean isExhaustiveRemaining() {
 
-        if (core.areAllLeafsExecuted()) return false;
+        if (core.areAllLeavesExecuted()) return false;
         if (patience().isLost()) return isLostPatience();
         return true;
     }
@@ -361,7 +361,7 @@ public class Test implements _Test {
     /**
      * Determines whether test execution has remaining iterations to run.
      * <p>
-     * In all-leafs mode (see {@link Routines#isAllLeafsMode()}), checks whether required leaf executions
+     * In exhaustive mode (see {@link Routines#isExhaustiveMode()}), checks whether required passes
      * remain and wandering patience has not been lost. Otherwise, checks whether the number of completed
      * iterations is below {@code core.getTotalTests()} (or unbounded if {@code core.getTotalTests()} is {@code null}).
      *
@@ -369,7 +369,7 @@ public class Test implements _Test {
      */
     private boolean isNotExhausted() {
 
-        if (isAllLeafsMode()) return isAllLeafs();
+        if (isExhaustiveMode()) return isExhaustiveRemaining();
         return null == core.getTotalTests() || repeater.getHistory().size() < core.getTotalTests();
     }
 

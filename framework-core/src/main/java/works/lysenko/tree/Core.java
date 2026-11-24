@@ -551,15 +551,15 @@ public abstract class Core extends Root implements _Scenario, Verifies {
     }
 
     /**
-     * Checks if all leafs mode is active.
+     * Checks if exhaustive mode is active.
      *
-     * @return true if all leafs mode enabled, false otherwise
+     * @return true if exhaustive mode enabled, false otherwise
      */
-    private static boolean isAllLeafsMode() {
+    private static boolean isExhaustiveMode() {
 
-        if (isNotNull(parameters)) return parameters.isAllLeafs();
-        final Integer count = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
-        return Boolean.TRUE.equals(PropEnum._TEST_ALL_LEAFS.get()) || (isNotNull(count) && ONE < count);
+        if (isNotNull(parameters)) return parameters.isExhaustive();
+        final Integer count = PropEnum._TEST_EXHAUSTIVE_PASSES.get();
+        return Boolean.TRUE.equals(PropEnum._TEST_EXHAUSTIVE.get()) || (isNotNull(count) && ONE < count);
     }
 
     /**

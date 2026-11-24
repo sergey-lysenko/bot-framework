@@ -26,11 +26,11 @@ public final class RunConfigParser {
         final String domain = (null != parameters.getDomain() && !parameters.getDomain().isBlank()) ? parameters.getDomain() : null;
         final String origin = (null != parameters.getOrigin() && !parameters.getOrigin().isBlank()) ? parameters.getOrigin() : null;
         final String tag = (null != parameters.getTag() && !parameters.getTag().isBlank()) ? parameters.getTag() : null;
-        final String mode = parameters.isAllLeafs() ? "ALL_LEAFS" : null;
+        final String mode = parameters.isExhaustive() ? "EXHAUSTIVE" : null;
         String pathsSummary = null;
         if (isNotNull(Base.core)) {
             try {
-                pathsSummary = String.format("%d / %d / %d", Base.core.getExecutedLeafsCount(), Base.core.getActiveScenarioPaths(), Base.core.getTotalScenarioPaths());
+                pathsSummary = String.format("%d / %d / %d", Base.core.getExecutedLeavesCount(), Base.core.getActiveScenarioPaths(), Base.core.getTotalScenarioPaths());
             } catch (final Exception _) {
             }
         }

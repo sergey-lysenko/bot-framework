@@ -160,9 +160,9 @@ class UtilsTest {
 
     @Test
     void muteFulfilledNotExecutableDemotesFulfilledLeafMonoAndNode() throws Exception {
-        final boolean prevForbid = Scenario.forbidOverexecution;
+        final boolean prevExact = Scenario.exactPasses;
         try {
-            Scenario.forbidOverexecution = true;
+            Scenario.exactPasses = true;
             Notify.notExecutable = true;
             Notify.muteFulfilledNotExecutable = true;
 
@@ -189,15 +189,15 @@ class UtilsTest {
             Utils.logScenarioNotExecutable(fulfilledNode);
             assertTrue(fixture.events.isEmpty(), "node with all active children fulfilled should be demoted: " + fixture.events);
         } finally {
-            Scenario.forbidOverexecution = prevForbid;
+            Scenario.exactPasses = prevExact;
         }
     }
 
     @Test
     void muteFulfilledNotExecutablePreservesRealNonExecutableNotices() {
-        final boolean prevForbid = Scenario.forbidOverexecution;
+        final boolean prevExact = Scenario.exactPasses;
         try {
-            Scenario.forbidOverexecution = true;
+            Scenario.exactPasses = true;
             Notify.notExecutable = true;
             Notify.muteFulfilledNotExecutable = true;
 
@@ -222,15 +222,15 @@ class UtilsTest {
             Utils.logScenarioNotExecutable(failedChildNode);
             assertEquals(1, fixture.events.size(), "node with failed child must still emit S3: " + fixture.events);
         } finally {
-            Scenario.forbidOverexecution = prevForbid;
+            Scenario.exactPasses = prevExact;
         }
     }
 
     @Test
     void fulfilledLeafStillEmitsS3WhenMuteFlagIsDisabledByDefault() {
-        final boolean prevForbid = Scenario.forbidOverexecution;
+        final boolean prevExact = Scenario.exactPasses;
         try {
-            Scenario.forbidOverexecution = true;
+            Scenario.exactPasses = true;
             Notify.notExecutable = true;
             Notify.muteFulfilledNotExecutable = false;
 
@@ -241,7 +241,7 @@ class UtilsTest {
             assertEquals(1, fixture.events.size(), String.valueOf(fixture.events));
             assertTrue(fixture.events.get(0).startsWith(Severity.S3 + ":"), fixture.events.get(0));
         } finally {
-            Scenario.forbidOverexecution = prevForbid;
+            Scenario.exactPasses = prevExact;
         }
     }
 

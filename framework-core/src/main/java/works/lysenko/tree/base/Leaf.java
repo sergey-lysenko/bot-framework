@@ -57,7 +57,7 @@ public abstract class Leaf extends Core {
     public boolean isGoalFulfilled() {
 
         if (isNull(Base.core) || isNull(Base.core.getResults())) return false;
-        final int target = (this instanceof Mono) ? 1 : works.lysenko.base.Core.resolveAllLeafsTarget();
+        final int target = (this instanceof Mono) ? 1 : works.lysenko.base.Core.resolveExhaustivePasses();
         return target <= Base.core.getResults().getExecutions(this);
     }
 
@@ -71,7 +71,7 @@ public abstract class Leaf extends Core {
     public boolean isExecutable() {
 
         if (hasFailed()) return false;
-        if (Scenario.forbidOverexecution && isGoalFulfilled()) return false;
+        if (Scenario.exactPasses && isGoalFulfilled()) return false;
         return super.isExecutable();
     }
 

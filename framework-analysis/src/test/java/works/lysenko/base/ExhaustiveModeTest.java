@@ -29,13 +29,13 @@ import java.nio.file.Path;
 import java.util.Properties;
 import java.util.Set;
 
-import static works.lysenko.util.spec.Layout.Templates.RUN_ALL_LEAF_COMPLETIONS_;
+import static works.lysenko.util.spec.Layout.Templates.RUN_EXHAUSTIVE_COMPLETIONS_;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static works.lysenko.util.func.type.fractions.Factory.fr;
 
 @SuppressWarnings({"removal", "deprecation"})
-class AllLeafsCoverageTest {
+class ExhaustiveModeTest {
 
     private Core previousCore;
     private Parameters previousParameters;
@@ -90,23 +90,23 @@ class AllLeafsCoverageTest {
     }
 
     @Test
-    void testTestPropertiesValidationWithAllLeafsExecutions() throws Exception {
+    void testTestPropertiesValidationWithExhaustivePasses() throws Exception {
         final TestProperties tp = new TestProperties();
         final Field ccField = TestProperties.class.getDeclaredField("commonConfiguration");
         ccField.setAccessible(true);
         ccField.set(tp, new Properties());
         Base.properties = tp;
 
-        // Default parameters (ALL_LEAFS_EXECUTIONS = 1)
+        // Default parameters (EXHAUSTIVE_PASSES = 1)
         final java.util.Properties props1 = new java.util.Properties();
-        props1.put(ExecutionParameter.ALL_LEAFS_EXECUTIONS.name(), "1");
+        props1.put(ExecutionParameter.EXHAUSTIVE_PASSES.name(), "1");
         Base.parameters = new Parameters(props1);
 
         final java.util.Properties the1 = new java.util.Properties();
-        if (1 < Base.parameters.getAllLeafsExecutions()) {
-            the1.setProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), String.valueOf(Base.parameters.getAllLeafsExecutions()));
+        if (1 < Base.parameters.getExhaustivePasses()) {
+            the1.setProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), String.valueOf(Base.parameters.getExhaustivePasses()));
         } else {
-            the1.remove(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName());
+            the1.remove(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName());
         }
 
         final Field theField = TestProperties.class.getDeclaredField("the");
@@ -121,16 +121,16 @@ class AllLeafsCoverageTest {
         final works.lysenko.util.data.records.PropertiesMeta meta1 = new works.lysenko.util.data.records.PropertiesMeta(new java.util.HashMap<>(defaults), new java.util.ArrayList<>(0));
         assertDoesNotThrow(() -> works.lysenko.base.properties.Renderer.outputAndValidate(tp.getSorted(), meta1));
 
-        // Custom count (ALL_LEAFS_EXECUTIONS = 3)
+        // Custom count (EXHAUSTIVE_PASSES = 3)
         final java.util.Properties props3 = new java.util.Properties();
-        props3.put(ExecutionParameter.ALL_LEAFS_EXECUTIONS.name(), "3");
+        props3.put(ExecutionParameter.EXHAUSTIVE_PASSES.name(), "3");
         Base.parameters = new Parameters(props3);
 
         final java.util.Properties the3 = new java.util.Properties();
-        if (1 < Base.parameters.getAllLeafsExecutions()) {
-            the3.setProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), String.valueOf(Base.parameters.getAllLeafsExecutions()));
+        if (1 < Base.parameters.getExhaustivePasses()) {
+            the3.setProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), String.valueOf(Base.parameters.getExhaustivePasses()));
         } else {
-            the3.remove(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName());
+            the3.remove(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName());
         }
 
         theField.set(tp, the3);
@@ -139,20 +139,20 @@ class AllLeafsCoverageTest {
     }
 
     @Test
-    void testParametersAllLeafsExecutions() {
+    void testParametersExhaustivePasses() {
         final Parameters pDefault = new Parameters(new Properties());
-        assertEquals(1, pDefault.getAllLeafsExecutions());
-        assertFalse(pDefault.isAllLeafs());
+        assertEquals(1, pDefault.getExhaustivePasses());
+        assertFalse(pDefault.isExhaustive());
 
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "3");
+        setTestProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), "3");
         final Parameters p3 = new Parameters(new Properties());
-        assertEquals(3, p3.getAllLeafsExecutions());
-        assertTrue(p3.isAllLeafs());
+        assertEquals(3, p3.getExhaustivePasses());
+        assertTrue(p3.isExhaustive());
     }
 
     @Test
     void testMultiCountLeafExecutionTrackingInCore() throws Exception {
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
 
         final Ctrl rootCtrl = new Ctrl(null);
@@ -176,29 +176,29 @@ class AllLeafsCoverageTest {
         testField.setAccessible(true);
         testField.set(Base.core, mockTest);
 
-        assertEquals(0, Base.core.getExecutedLeafsCount());
-        assertFalse(Base.core.areAllLeafsExecuted());
+        assertEquals(0, Base.core.getExecutedLeavesCount());
+        assertFalse(Base.core.areAllLeavesExecuted());
 
         Base.core.getResults().count(leaf1);
-        assertEquals(0, Base.core.getExecutedLeafsCount());
-        assertFalse(Base.core.areAllLeafsExecuted());
+        assertEquals(0, Base.core.getExecutedLeavesCount());
+        assertFalse(Base.core.areAllLeavesExecuted());
 
         Base.core.getResults().count(leaf1);
-        assertEquals(1, Base.core.getExecutedLeafsCount());
-        assertFalse(Base.core.areAllLeafsExecuted());
+        assertEquals(1, Base.core.getExecutedLeavesCount());
+        assertFalse(Base.core.areAllLeavesExecuted());
 
         Base.core.getResults().count(leaf2);
-        assertEquals(1, Base.core.getExecutedLeafsCount());
-        assertFalse(Base.core.areAllLeafsExecuted());
+        assertEquals(1, Base.core.getExecutedLeavesCount());
+        assertFalse(Base.core.areAllLeavesExecuted());
 
         Base.core.getResults().count(leaf2);
-        assertEquals(2, Base.core.getExecutedLeafsCount());
-        assertTrue(Base.core.areAllLeafsExecuted());
+        assertEquals(2, Base.core.getExecutedLeavesCount());
+        assertTrue(Base.core.areAllLeavesExecuted());
     }
 
     @Test
     void testMultiCountLeafExecutionWithMonoInCore() throws Exception {
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "3");
+        setTestProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), "3");
         Base.parameters = new Parameters(new Properties());
 
         final Ctrl rootCtrl = new Ctrl(null);
@@ -222,32 +222,32 @@ class AllLeafsCoverageTest {
         testField.setAccessible(true);
         testField.set(Base.core, mockTest);
 
-        assertEquals(0, Base.core.getExecutedLeafsCount());
-        assertFalse(Base.core.areAllLeafsExecuted());
+        assertEquals(0, Base.core.getExecutedLeavesCount());
+        assertFalse(Base.core.areAllLeavesExecuted());
 
         // Mono executed once - reaches its maximum (1)
         Base.core.getResults().count(mono);
-        assertEquals(1, Base.core.getExecutedLeafsCount());
-        assertFalse(Base.core.areAllLeafsExecuted());
+        assertEquals(1, Base.core.getExecutedLeavesCount());
+        assertFalse(Base.core.areAllLeavesExecuted());
 
         // Leaf1 executed twice - not yet at target (3)
         Base.core.getResults().count(leaf1);
         Base.core.getResults().count(leaf1);
-        assertEquals(1, Base.core.getExecutedLeafsCount());
-        assertFalse(Base.core.areAllLeafsExecuted());
+        assertEquals(1, Base.core.getExecutedLeavesCount());
+        assertFalse(Base.core.areAllLeavesExecuted());
 
         // Leaf1 executed third time - reaches target (3)
         Base.core.getResults().count(leaf1);
-        assertEquals(2, Base.core.getExecutedLeafsCount());
-        assertTrue(Base.core.areAllLeafsExecuted());
+        assertEquals(2, Base.core.getExecutedLeavesCount());
+        assertTrue(Base.core.areAllLeavesExecuted());
     }
 
     @Test
-    void testMonoCompletionRecordedInAllLeafCompletions() throws Exception {
+    void testMonoCompletionRecordedInExhaustiveCompletions() throws Exception {
         if (null == Base.timer) {
             Base.timer = new Stopwatch();
         }
-        setTestProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), "true");
+        setTestProperty(PropEnum._TEST_EXHAUSTIVE.getPropertyName(), "true");
         Base.parameters = new Parameters(new Properties());
 
         final Ctrl rootCtrl = new Ctrl(null);
@@ -297,16 +297,16 @@ class AllLeafsCoverageTest {
         loggerField.setAccessible(true);
         loggerField.set(Base.core, mockLogger);
 
-        final Path completionPath = Path.of(works.lysenko.util.spec.Layout.Files.name(RUN_ALL_LEAF_COMPLETIONS_));
+        final Path completionPath = Path.of(works.lysenko.util.spec.Layout.Files.name(RUN_EXHAUSTIVE_COMPLETIONS_));
         Files.deleteIfExists(completionPath);
         try {
             final Method doneMethod = works.lysenko.tree.Core.class.getDeclaredMethod("done");
             doneMethod.setAccessible(true);
             doneMethod.invoke(mono);
 
-            assertTrue(Files.exists(completionPath), "All-leaf completions file should be created when Mono scenario completes");
+            assertTrue(Files.exists(completionPath), "Exhaustive completions file should be created when Mono scenario completes");
             final String content = Files.readString(completionPath);
-            assertTrue(content.contains("[ALL_LEAF_COMPLETION]"), "Should record completion marker");
+            assertTrue(content.contains("[EXHAUSTIVE_COMPLETION]"), "Should record completion marker");
             assertTrue(content.contains("TestMono"), "Should record mono scenario name");
         } finally {
             cleanupCompletionPath(completionPath);
@@ -314,12 +314,12 @@ class AllLeafsCoverageTest {
     }
 
     @Test
-    void testAllLeafCompletionsOnlyRecordedWhenAllLeafsCompleted() throws Exception {
+    void testExhaustiveCompletionsRecordedPerLeafPass() throws Exception {
         if (null == Base.timer) {
             Base.timer = new Stopwatch();
         }
-        setTestProperty(PropEnum._TEST_ALL_LEAFS.getPropertyName(), "true");
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
+        setTestProperty(PropEnum._TEST_EXHAUSTIVE.getPropertyName(), "true");
+        setTestProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
 
         final Ctrl rootCtrl = new Ctrl(null);
@@ -376,9 +376,9 @@ class AllLeafsCoverageTest {
         loggerField.setAccessible(true);
         loggerField.set(Base.core, mockLogger);
 
-        final Path completionPath = Path.of(works.lysenko.util.spec.Layout.Files.name(RUN_ALL_LEAF_COMPLETIONS_));
+        final Path completionPath = Path.of(works.lysenko.util.spec.Layout.Files.name(RUN_EXHAUSTIVE_COMPLETIONS_));
         Files.deleteIfExists(completionPath);
-        works.lysenko.base.eta.AllLeafCompletions.reset();
+        works.lysenko.base.eta.ExhaustiveCompletions.reset();
 
         try {
             final Method doneMethod = works.lysenko.tree.Core.class.getDeclaredMethod("done");
@@ -434,20 +434,20 @@ class AllLeafsCoverageTest {
     }
 
     @Test
-    void testParametersIsAllLeafs() {
+    void testParametersIsExhaustive() {
         final Properties propsFalse = new Properties();
-        propsFalse.put(ExecutionParameter.ALL_LEAFS.name(), "false");
+        propsFalse.put(ExecutionParameter.EXHAUSTIVE.name(), "false");
         final Parameters pFalse = new Parameters(propsFalse);
-        assertFalse(pFalse.isAllLeafs());
+        assertFalse(pFalse.isExhaustive());
 
         final Properties propsTrue = new Properties();
-        propsTrue.put(ExecutionParameter.ALL_LEAFS.name(), "true");
+        propsTrue.put(ExecutionParameter.EXHAUSTIVE.name(), "true");
         final Parameters pTrue = new Parameters(propsTrue);
-        assertTrue(pTrue.isAllLeafs());
+        assertTrue(pTrue.isExhaustive());
     }
 
     @Test
-    void testAccessibleLeafsCalculation() {
+    void testAccessibleLeavesCalculation() {
         final Ctrl rootCtrl = new Ctrl(null);
         final TestLeaf leaf1 = new TestLeaf(fr(1.0));
         final TestLeaf leaf2 = new TestLeaf(fr(2.0));
@@ -457,18 +457,18 @@ class AllLeafsCoverageTest {
         rootCtrl.getPool().appendScenarioWithWeight(leaf2, fr(2.0));
         rootCtrl.getPool().appendScenarioWithWeight(zeroLeaf, fr(0.0));
 
-        final Set<_Scenario> leafs = rootCtrl.getAccessibleLeafs();
-        assertEquals(2, leafs.size());
-        assertTrue(leafs.contains(leaf1));
-        assertTrue(leafs.contains(leaf2));
-        assertFalse(leafs.contains(zeroLeaf));
+        final Set<_Scenario> leaves = rootCtrl.getAccessibleLeaves();
+        assertEquals(2, leaves.size());
+        assertTrue(leaves.contains(leaf1));
+        assertTrue(leaves.contains(leaf2));
+        assertFalse(leaves.contains(zeroLeaf));
 
         // Theoretical minimum cycles:
         assertEquals(2, rootCtrl.getPathsCount(true));
     }
 
     @Test
-    void testNestedNodesAccessibleLeafs() {
+    void testNestedNodesAccessibleLeaves() {
         final Ctrl rootCtrl = new Ctrl(null);
         final TestLeaf leaf1 = new TestLeaf(fr(1.0));
         rootCtrl.getPool().appendScenarioWithWeight(leaf1, fr(1.0));
@@ -478,11 +478,11 @@ class AllLeafsCoverageTest {
         final TestNode node = new TestNode(fr(1.0), leaf2, leaf3);
         rootCtrl.getPool().appendScenarioWithWeight(node, fr(1.0));
 
-        final Set<_Scenario> leafs = rootCtrl.getAccessibleLeafs();
-        assertEquals(3, leafs.size());
-        assertTrue(leafs.contains(leaf1));
-        assertTrue(leafs.contains(leaf2));
-        assertTrue(leafs.contains(leaf3));
+        final Set<_Scenario> leaves = rootCtrl.getAccessibleLeaves();
+        assertEquals(3, leaves.size());
+        assertTrue(leaves.contains(leaf1));
+        assertTrue(leaves.contains(leaf2));
+        assertTrue(leaves.contains(leaf3));
         assertEquals(3, rootCtrl.getPathsCount(true));
     }
 
@@ -509,30 +509,30 @@ class AllLeafsCoverageTest {
         testField.setAccessible(true);
         testField.set(Base.core, mockTest);
 
-        assertEquals(2, Base.core.getAccessibleLeafs().size());
+        assertEquals(2, Base.core.getAccessibleLeaves().size());
         assertEquals(2, Base.core.getActiveScenarioPaths());
-        assertEquals(0, Base.core.getExecutedLeafsCount());
-        assertFalse(Base.core.areAllLeafsExecuted());
+        assertEquals(0, Base.core.getExecutedLeavesCount());
+        assertFalse(Base.core.areAllLeavesExecuted());
 
         // Execute leaf 1
         Base.core.getResults().count(leaf1);
-        assertEquals(1, Base.core.getExecutedLeafsCount());
-        assertFalse(Base.core.areAllLeafsExecuted());
+        assertEquals(1, Base.core.getExecutedLeavesCount());
+        assertFalse(Base.core.areAllLeavesExecuted());
 
         // Execute leaf 1 again
         Base.core.getResults().count(leaf1);
-        assertEquals(1, Base.core.getExecutedLeafsCount());
-        assertFalse(Base.core.areAllLeafsExecuted());
+        assertEquals(1, Base.core.getExecutedLeavesCount());
+        assertFalse(Base.core.areAllLeavesExecuted());
 
         // Execute leaf 2
         Base.core.getResults().count(leaf2);
-        assertEquals(2, Base.core.getExecutedLeafsCount());
-        assertTrue(Base.core.areAllLeafsExecuted());
+        assertEquals(2, Base.core.getExecutedLeavesCount());
+        assertTrue(Base.core.areAllLeavesExecuted());
     }
 
     @Test
-    void testIsNotExhaustedWithAllLeafsExecutions() throws Exception {
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
+    void testIsNotExhaustedWithExhaustivePasses() throws Exception {
+        setTestProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
 
         final Ctrl rootCtrl = new Ctrl(null);
@@ -575,7 +575,7 @@ class AllLeafsCoverageTest {
 
     @Test
     void testPropertyLoggingCycleProtection() throws Exception {
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "5");
+        setTestProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), "5");
         setTestProperty(PropEnum._LOGS_DEBUG.getPropertyName(), "true");
 
         final Exec mockExec = (Exec) SelectionFixture.allocate(Exec.class);
@@ -591,7 +591,7 @@ class AllLeafsCoverageTest {
             @Override
             public Integer getCurrent() {
                 // Mimics Repeater accessing property
-                return PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
+                return PropEnum._TEST_EXHAUSTIVE_PASSES.get();
             }
             @Override
             public java.util.List<java.util.List<String>> getHistory() { return java.util.List.of(); }
@@ -643,10 +643,10 @@ class AllLeafsCoverageTest {
         loggerField.setAccessible(true);
         loggerField.set(Base.core, mockLogger);
 
-        // Querying PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get() when debug is active and exec is not null
+        // Querying PropEnum._TEST_EXHAUSTIVE_PASSES.get() when debug is active and exec is not null
         // must not cause any recursion or StackOverflowError
         assertDoesNotThrow(() -> {
-            final Integer val = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();
+            final Integer val = PropEnum._TEST_EXHAUSTIVE_PASSES.get();
             assertEquals(5, val);
         });
     }
@@ -658,7 +658,7 @@ class AllLeafsCoverageTest {
     }
 
     @Test
-    void testMonoScenarioRemainsInAccessibleLeafsAfterExecution() {
+    void testMonoScenarioRemainsInAccessibleLeavesAfterExecution() {
         final Ctrl rootCtrl = new Ctrl(null);
         final TestLeaf leaf1 = new TestLeaf(fr(1.0));
         final TestMono mono = new TestMono(fr(1.0));
@@ -668,9 +668,9 @@ class AllLeafsCoverageTest {
 
         // Before execution
         assertTrue(mono.isExecutable());
-        Set<_Scenario> leafs = rootCtrl.getAccessibleLeafs();
-        assertEquals(2, leafs.size());
-        assertTrue(leafs.contains(mono));
+        Set<_Scenario> leaves = rootCtrl.getAccessibleLeaves();
+        assertEquals(2, leaves.size());
+        assertTrue(leaves.contains(mono));
 
         // Simulate Mono execution (sets executed = true)
         try {
@@ -685,15 +685,15 @@ class AllLeafsCoverageTest {
         assertFalse(mono.isExecutable());
 
         // But it remains accessible in the suite and counted for total / executed
-        leafs = rootCtrl.getAccessibleLeafs();
-        assertEquals(2, leafs.size(), "Mono must remain in accessible leafs even after executed");
-        assertTrue(leafs.contains(mono));
+        leaves = rootCtrl.getAccessibleLeaves();
+        assertEquals(2, leaves.size(), "Mono must remain in accessible leaves even after executed");
+        assertTrue(leaves.contains(mono));
     }
 
     @Test
-    void testForbidOverexecutionProperty() throws Exception {
-        setTestProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), "false");
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "2");
+    void testExactPassesProperty() throws Exception {
+        setTestProperty(PropEnum._TREE_EXACT_PASSES.getPropertyName(), "false");
+        setTestProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), "2");
         Base.parameters = new Parameters(new Properties());
         Scenario.refresh();
 
@@ -701,34 +701,34 @@ class AllLeafsCoverageTest {
         final TestLeaf leaf = new TestLeaf(fr(1.0));
         rootCtrl.getPool().appendScenarioWithWeight(leaf, fr(1.0));
 
-        // When forbidOverexecution is false, leaf remains executable even if goal fulfilled
+        // When exactPasses is false, leaf remains executable even if goal fulfilled
         Base.core.getResults().count(leaf);
         Base.core.getResults().count(leaf);
         assertTrue(leaf.isGoalFulfilled());
         assertTrue(leaf.isExecutable());
 
-        // Enable forbidOverexecution
-        setTestProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), "true");
+        // Enable exactPasses
+        setTestProperty(PropEnum._TREE_EXACT_PASSES.getPropertyName(), "true");
         Scenario.refresh();
 
         // Goal is fulfilled (2 executions >= target 2) -> leaf becomes non-executable
         assertTrue(leaf.isGoalFulfilled());
-        assertFalse(leaf.isExecutable(), "Leaf must be non-executable when forbidOverexecution is true and goal fulfilled");
+        assertFalse(leaf.isExecutable(), "Leaf must be non-executable when exactPasses is true and goal fulfilled");
 
-        // But leaf MUST remain in getAccessibleLeafs()
-        final Set<_Scenario> accessible = rootCtrl.getAccessibleLeafs();
+        // But leaf MUST remain in getAccessibleLeaves()
+        final Set<_Scenario> accessible = rootCtrl.getAccessibleLeaves();
         assertEquals(1, accessible.size());
         assertTrue(accessible.contains(leaf));
 
         // Reset property
-        setTestProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), "false");
+        setTestProperty(PropEnum._TREE_EXACT_PASSES.getPropertyName(), "false");
         Scenario.refresh();
     }
 
     @Test
     void testSaturatedNodeBranchIsNonExecutable() throws Exception {
-        setTestProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), "true");
-        setTestProperty(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.getPropertyName(), "1");
+        setTestProperty(PropEnum._TREE_EXACT_PASSES.getPropertyName(), "true");
+        setTestProperty(PropEnum._TEST_EXHAUSTIVE_PASSES.getPropertyName(), "1");
         Base.parameters = new Parameters(new Properties());
         Scenario.refresh();
 
@@ -755,8 +755,8 @@ class AllLeafsCoverageTest {
         assertFalse(branchA.isExecutable(), "Node with all saturated children must be non-executable");
         assertTrue(branchB.isExecutable(), "Node with unfulfilled child must remain executable");
 
-        // getAccessibleLeafs must still return both leaves
-        final Set<_Scenario> accessible = rootCtrl.getAccessibleLeafs();
+        // getAccessibleLeaves must still return both leaves
+        final Set<_Scenario> accessible = rootCtrl.getAccessibleLeaves();
         assertEquals(2, accessible.size());
 
         // getAccessibleNodes must return both branch nodes
@@ -770,7 +770,7 @@ class AllLeafsCoverageTest {
         assertEquals(4, accessibleScenarios.size());
 
         // Reset property
-        setTestProperty(PropEnum._TREE_FORBID_OVEREXECUTION.getPropertyName(), "false");
+        setTestProperty(PropEnum._TREE_EXACT_PASSES.getPropertyName(), "false");
         Scenario.refresh();
     }
 

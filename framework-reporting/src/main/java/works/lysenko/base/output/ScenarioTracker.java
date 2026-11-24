@@ -84,17 +84,17 @@ public final class ScenarioTracker {
         ProgressionFrames.drainDebugLogs(works.lysenko.Base::logDebug);
         if (isNull(core))
             return;
-        final Set<_Scenario> leafs = core.getAccessibleLeafs();
-        if (leafs.isEmpty())
+        final Set<_Scenario> leaves = core.getAccessibleLeaves();
+        if (leaves.isEmpty())
             return;
 
         final long t0 = System.currentTimeMillis();
-        final List<_Scenario> scenarios = new ArrayList<>(leafs);
+        final List<_Scenario> scenarios = new ArrayList<>(leaves);
         scenarios.sort(Comparator.comparing(_Scenario::getShortName, String.CASE_INSENSITIVE_ORDER)
                 .thenComparing(_Scenario::getName, String.CASE_INSENSITIVE_ORDER));
 
-        final int target = (isNotNull(parameters)) ? parameters.getAllLeafsExecutions()
-                : (isNotNull(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) : 1);
+        final int target = (isNotNull(parameters)) ? parameters.getExhaustivePasses()
+                : (isNotNull(PropEnum._TEST_EXHAUSTIVE_PASSES.get()) ? Math.max(1, PropEnum._TEST_EXHAUSTIVE_PASSES.get()) : 1);
         final int currentCycle = isNotNull(testNumber) ? testNumber : capturedFrames.size() + 1;
 
         logDebug(String.format("Rendering scenario progression graph (%d scenarios)...", scenarios.size()));
