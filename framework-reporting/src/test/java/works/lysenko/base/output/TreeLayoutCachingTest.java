@@ -248,4 +248,110 @@ class TreeLayoutCachingTest {
             TreeHtml.setExpectedResponsesStore(prevExp);
         }
     }
+
+    @Test
+    void expectedResponsesIncrementalMatchingAndNonBrowserKnownIssueFiltering() {
+        final works.lysenko.base.responses.ExpectedResponsesStore prevExp = TreeHtml.getExpectedResponsesStore();
+        try {
+            final works.lysenko.base.responses.ExpectedResponse expRule =
+                    new works.lysenko.base.responses.ExpectedResponse("*", "Google Maps.*deprecated", "expected");
+            final works.lysenko.base.responses.ExpectedResponsesStore expStore =
+                    new works.lysenko.base.responses.ExpectedResponsesStore(List.of(expRule));
+            TreeHtml.setExpectedResponsesStore(expStore);
+
+            final KnownIssue browserKi = new KnownIssue("*", "KI-Browser", "Desc", "", "Broken CDN image", false);
+            final KnownIssue appKi = new KnownIssue("LeafY", "KI-App", "Desc", "", "Order submission failed", false);
+            TreeHtml.setKnownIssuesStore(new KnownIssuesStore(List.of(browserKi, appKi)));
+
+            final NamedLeaf leaf = new NamedLeaf(Fraction.ONE, "demo.Root.LeafY", "LeafY");
+            final NamedNode root = new NamedNode("demo.Root", "Root", leaf);
+            final Result res = new Result(leaf);
+            res.tick();
+            final TreeMap<String, Result> sorted = new TreeMap<>();
+            sorted.put(leaf.getShortName() + " " + leaf.type().tag(), res);
+
+            // 1. Browser KI event before any expected response -> attaches browserKi
+            res.addEvent(new SeverityLogRecord("[BROWSER] Broken CDN image 404", works.lysenko.util.data.enums.EventType.WARNING));
+            assertFalse(expStore.matchesNode(leaf, res));
+            final TreeLayout l1 = TreeHtml.computeLayout(List.of(root), sorted);
+            final NodeData leafNode1 = l1.nodes().stream().filter(n -> n.scenario() == leaf).findFirst().orElseThrow();
+            assertEquals(List.of(browserKi), leafNode1.knownIssues());
+
+            // 2. Append an expected browser event + 400 noisy [BROWSER] events -> matchesNode flips true, browserKi suppressed
+            res.addEvent(new SeverityLogRecord("[BROWSER] Google Maps Places deprecated", works.lysenko.util.data.enums.EventType.WARNING));
+            for (int i = 0; i < 400; i++) {
+                res.addEvent(new SeverityLogRecord("[BROWSER] noisy console entry #" + i, works.lysenko.util.data.enums.EventType.WARNING));
+            }
+            assertTrue(expStore.matchesNode(leaf, res));
+            final TreeLayout l2 = TreeHtml.computeLayout(List.of(root), sorted);
+            final NodeData leafNode2 = l2.nodes().stream().filter(n -> n.scenario() == leaf).findFirst().orElseThrow();
+            assertTrue(leafNode2.knownIssues().isEmpty(), "Browser-only KI must be suppressed when node has expected response");
+
+            // 3. Append a non-browser failure matching appKi -> incrementally picked up while browserKi stays suppressed
+            res.addEvent(new SeverityLogRecord("Order submission failed with 500", works.lysenko.util.data.enums.EventType.FAILURE));
+            final TreeLayout l3 = TreeHtml.computeLayout(List.of(root), sorted);
+            final NodeData leafNode3 = l3.nodes().stream().filter(n -> n.scenario() == leaf).findFirst().orElseThrow();
+            assertEquals(List.of(appKi), leafNode3.knownIssues());
+
+            // 4. Repeated layout passes on large event history stay fast (incremental cursors, no O(E^2))
+            final long t0 = System.nanoTime();
+            for (int i = 0; i < 25; i++) {
+                final TreeLayout repeated = TreeHtml.computeLayout(List.of(root), sorted);
+                final NodeData leafRep = repeated.nodes().stream().filter(n -> n.scenario() == leaf).findFirst().orElseThrow();
+                assertEquals(List.of(appKi), leafRep.knownIssues());
+            }
+            final long elapsedMs = (System.nanoTime() - t0) / 1_000_000L;
+            assertTrue(elapsedMs < 1_000L, "25 repeated layouts on 400+ events should stay well below 1s, took " + elapsedMs + " ms");
+        } finally {
+            TreeHtml.setExpectedResponsesStore(prevExp);
+        }
+    }
+
+    @Test
+    void ownLogsKnownIssuesCacheRespectsExpectedResponsesAndScalesIncrementally() throws Exception {
+        KnownIssues.failedOnly = false;
+        final works.lysenko.base.responses.ExpectedResponsesStore prevExp = TreeHtml.getExpectedResponsesStore();
+        try (final SelectionFixture ignored = SelectionFixture.install()) {
+            final NamedLeaf leafA = new NamedLeaf(Fraction.ONE, "demo.Root.LeafA", "LeafA");
+            final NamedLeaf leafB = new NamedLeaf(Fraction.ONE, "demo.Root.LeafB", "LeafB");
+            final NamedNode root = new NamedNode("demo.Root", "Root", leafA, leafB);
+            final TreeMap<String, Result> sorted = new TreeMap<>();
+
+            final Issues issues = new Issues();
+            for (int i = 0; i < 1_500; i++) {
+                issues.add(new SimpleLogRecord("Routine log message #" + i, (i % 2 == 0) ? leafA : leafB));
+            }
+            // Suppressed by expected response rule: must NOT attach unmatchedKi
+            issues.add(new SimpleLogRecord("EXPECTED_SUPPRESSED_TOKEN_42", leafA));
+            final Field issuesField = Exec.class.getDeclaredField("issues");
+            issuesField.setAccessible(true);
+            issuesField.set(Base.exec, issues);
+
+            TreeHtml.setExpectedResponsesStore(new works.lysenko.base.responses.ExpectedResponsesStore(List.of(
+                    new works.lysenko.base.responses.ExpectedResponse("*", "EXPECTED_SUPPRESSED_TOKEN_42", "expected"))));
+            final KnownIssue neverMatches = new KnownIssue("*", "NeverMatches", "Desc", "", "NEVER_OCCURS_XYZ_999", false);
+            final KnownIssue suppressedKi = new KnownIssue("LeafA", "Suppressed", "Desc", "", "EXPECTED_SUPPRESSED_TOKEN_42", false);
+            final KnownIssue lateKi = new KnownIssue("LeafB", "LateBug", "Desc", "", "LATE_BOOM_777", false);
+            TreeHtml.setKnownIssuesStore(new KnownIssuesStore(List.of(neverMatches, suppressedKi, lateKi)));
+
+            final TreeLayout initial = TreeHtml.computeLayout(List.of(root), sorted);
+            assertTrue(initial.nodes().stream().allMatch(n -> n.knownIssues().isEmpty()),
+                    "Suppressed and non-matching rules must not attach");
+
+            // Append a late matching record for LeafB -> incremental scan picks it up
+            issues.add(new SimpleLogRecord("Observed LATE_BOOM_777 in LeafB", leafB));
+            final long t0 = System.nanoTime();
+            for (int i = 0; i < 50; i++) {
+                final TreeLayout layout = TreeHtml.computeLayout(List.of(root), sorted);
+                final NodeData nodeA = layout.nodes().stream().filter(n -> n.scenario() == leafA).findFirst().orElseThrow();
+                final NodeData nodeB = layout.nodes().stream().filter(n -> n.scenario() == leafB).findFirst().orElseThrow();
+                assertTrue(nodeA.knownIssues().isEmpty());
+                assertEquals(List.of(lateKi), nodeB.knownIssues());
+            }
+            final long elapsedMs = (System.nanoTime() - t0) / 1_000_000L;
+            assertTrue(elapsedMs < 1_000L, "50 incremental layouts over 1,500+ logs should take <1s, took " + elapsedMs + " ms");
+        } finally {
+            TreeHtml.setExpectedResponsesStore(prevExp);
+        }
+    }
 }

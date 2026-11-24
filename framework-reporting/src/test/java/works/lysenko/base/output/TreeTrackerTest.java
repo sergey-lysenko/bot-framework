@@ -1195,4 +1195,66 @@ class TreeTrackerTest {
             works.lysenko.base.output.tree.TreeCameraTransform.reset();
         }
     }
+
+    @Test
+    void testTriggerCooldownFramesConvergesSmoothlyWithStaticLayoutReuse(@TempDir final Path tempDir) throws Exception {
+        final String speedKey = ".tree.progression.movement.speed";
+        TreeTracker.reset();
+        final File customRunDir = tempDir.toFile();
+        TreeTracker.setCustomOutputDir(customRunDir);
+        try {
+            setTestProperty(speedKey, "1/4");
+            ProgressionSettings.initialize();
+
+            final TestLeaf leaf1 = new TestLeaf("root.branch.LeafOne", fr(1.0));
+            final TestLeaf leaf2 = new TestLeaf("root.branch.LeafTwo", fr(1.0));
+            final TestLeaf leaf3 = new TestLeaf("root.branch.LeafThree", fr(1.0));
+
+            final Ctrl rootCtrl = new Ctrl(null);
+            rootCtrl.getPool().appendScenarioWithWeight(leaf1, fr(1.0));
+            rootCtrl.getPool().appendScenarioWithWeight(leaf2, fr(1.0));
+
+            final _Test mockTest = (_Test) SelectionFixture.allocate(works.lysenko.base.Test.class);
+            final _Exec mockExec = (_Exec) SelectionFixture.allocate(works.lysenko.base.test.Exec.class);
+            final Field ctrlField = works.lysenko.base.test.Exec.class.getDeclaredField("ctrl");
+            ctrlField.setAccessible(true);
+            ctrlField.set(mockExec, rootCtrl);
+            final Field executorField = works.lysenko.base.Test.class.getDeclaredField("executor");
+            executorField.setAccessible(true);
+            executorField.set(mockTest, mockExec);
+
+            final Core core = (Core) SelectionFixture.allocate(Core.class);
+            final Results results = new Results();
+            final Field rf = Core.class.getDeclaredField("results");
+            rf.setAccessible(true);
+            rf.set(core, results);
+            Base.core = core;
+            final Field testField = Core.class.getDeclaredField("test");
+            testField.setAccessible(true);
+            testField.set(Base.core, mockTest);
+
+            // Frame 1: 2 leaves -> initializes camera & positions
+            results.count(leaf1);
+            TreeTracker.onLimbo(1);
+
+            // Frame 2: dynamically introduce leaf3 -> creates camera & node position impulse
+            rootCtrl.getPool().appendScenarioWithWeight(leaf3, fr(1.0));
+            results.count(leaf3);
+            TreeTracker.onLimbo(2);
+            final int beforeCooldown = TreeTracker.getCapturedFrames().size();
+            assertFalse(TreeTracker.isTransformSettled(), "Camera/nodes should still be gliding after tree expansion");
+
+            // Cooldown should emit multiple easing frames using the reused target layout and settle cleanly
+            TreeTracker.triggerCooldownFrames();
+            final int afterCooldown = TreeTracker.getCapturedFrames().size();
+            assertTrue(afterCooldown > beforeCooldown + 5,
+                    "Cooldown at speed 1/4 must emit multiple easing frames, got " + (afterCooldown - beforeCooldown));
+            assertTrue(TreeTracker.isTransformSettled(),
+                    "Both camera transform and node positions must be settled after triggerCooldownFrames");
+        } finally {
+            setTestProperty(speedKey, "1");
+            ProgressionSettings.initialize();
+            TreeTracker.reset();
+        }
+    }
 }

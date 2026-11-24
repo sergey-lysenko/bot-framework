@@ -223,11 +223,19 @@ public final class TreeTracker {
         final TreeLayout layout = TreeHtml.computeLayout(sorted);
         if (layout.nodes().isEmpty())
             return;
+        final Set<_Scenario> accessibleScenarios = TreeHtml.getAccessibleScenarios();
+        final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(accessibleScenarios);
+        captureFrameWithLayout(testNumber, layout, accessibleCtx, t0);
+    }
 
+    private static void captureFrameWithLayout(
+            final Integer testNumber,
+            final TreeLayout layout,
+            final TreeHtml.AccessibleContext accessibleCtx,
+            final long t0) {
         updateSessionDimensions(layout);
 
-        final int target = (isNotNull(parameters)) ? parameters.getAllLeafsExecutions()
-                : (isNotNull(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) : 1);
+        final int target = resolveLeafTarget();
         final String badgeText;
         if (isNotNull(testNumber)) {
             badgeText = "Test #" + testNumber;
@@ -256,8 +264,6 @@ public final class TreeTracker {
 
         final Set<String> recentNodeKeys = computeRecentNodeKeys(layout);
         logDebug(String.format("Canvas (%d nodes, %d edges)...", layout.nodes().size(), layout.edges().size()));
-        final Set<_Scenario> accessibleScenarios = TreeHtml.getAccessibleScenarios();
-        final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(accessibleScenarios);
         final TreeCameraTransform.Transform cameraTx = TreeCameraTransform.computeSmoothTransform(layout, recentNodeKeys, target, frameW, frameH);
         final SvgTreeRenderer.RenderContext postCameraRenderCtx = SvgTreeRenderer.RenderContext.captureCurrent();
         TreeNodePositionAnimator.applySmoothPositions(layout);
@@ -321,6 +327,19 @@ public final class TreeTracker {
         });
     }
 
+    private static int resolveLeafTarget() {
+        return (isNotNull(parameters)) ? parameters.getAllLeafsExecutions()
+                : (isNotNull(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) : 1);
+    }
+
+    private static void restoreTargetPositions(final List<NodeData> nodes, final double[] targetRows) {
+        for (int i = 0; i < nodes.size(); i++) {
+            final NodeData node = nodes.get(i);
+            node.setVisualCol(node.col());
+            node.setRow(targetRows[i]);
+        }
+    }
+
     private static void updateSessionDimensions(final TreeLayout layout) {
         int maxCol = 0;
         double minRow = Double.MAX_VALUE;
@@ -374,10 +393,13 @@ public final class TreeTracker {
         final TreeMap<String, Result> sorted = core.getResults().getSortedStrings(false);
         if (sorted.isEmpty()) return true;
         final TreeLayout layout = TreeHtml.computeLayout(sorted);
-        if (layout.nodes().isEmpty()) return true;
+        return isTransformSettled(layout);
+    }
+
+    private static boolean isTransformSettled(final TreeLayout layout) {
+        if (!TreeCameraTransform.isInitialized() || null == layout || layout.nodes().isEmpty()) return true;
         final Set<String> recentNodeKeys = computeRecentNodeKeys(layout);
-        final int target = (isNotNull(parameters)) ? parameters.getAllLeafsExecutions()
-                : (isNotNull(PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) ? Math.max(1, PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get()) : 1);
+        final int target = resolveLeafTarget();
         return TreeCameraTransform.isTransformSettled(layout, recentNodeKeys, target, sessionBaseW, sessionBaseH)
                 && TreeNodePositionAnimator.isSettled(layout);
     }
@@ -393,8 +415,24 @@ public final class TreeTracker {
         int maxAdditionalFrames = (speed > 0.0)
                 ? Math.min(300, Math.max(60, (int) Math.ceil(60.0 / speed)))
                 : 60;
-        while (!isTransformSettled() && maxAdditionalFrames-- > 0) {
-            captureFrame(null);
+        if (TreeCameraTransform.isInitialized() && isNotNull(core) && isNotNull(core.getResults())) {
+            final TreeMap<String, Result> sorted = core.getResults().getSortedStrings(false);
+            if (!sorted.isEmpty()) {
+                final TreeLayout targetLayout = TreeHtml.computeLayout(sorted);
+                if (!targetLayout.nodes().isEmpty()) {
+                    final List<NodeData> nodes = targetLayout.nodes();
+                    final double[] targetRows = new double[nodes.size()];
+                    for (int i = 0; i < nodes.size(); i++) {
+                        targetRows[i] = nodes.get(i).row();
+                    }
+                    final TreeHtml.AccessibleContext accessibleCtx = new TreeHtml.AccessibleContext(TreeHtml.getAccessibleScenarios());
+                    while (!isTransformSettled(targetLayout) && maxAdditionalFrames-- > 0) {
+                        ProgressionFrames.drainDebugLogs(works.lysenko.Base::logDebug);
+                        captureFrameWithLayout(null, targetLayout, accessibleCtx, System.currentTimeMillis());
+                        restoreTargetPositions(nodes, targetRows);
+                    }
+                }
+            }
         }
         ProgressionFrames.awaitCompletion();
         ProgressionFrames.drainDebugLogs(works.lysenko.Base::logDebug);

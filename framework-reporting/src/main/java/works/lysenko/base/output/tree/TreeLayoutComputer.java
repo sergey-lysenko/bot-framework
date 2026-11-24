@@ -24,11 +24,13 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.WeakHashMap;
 
 import static org.apache.commons.lang3.StringUtils.SPACE;
 import static works.lysenko.Base.core;
@@ -54,7 +56,149 @@ public final class TreeLayoutComputer {
     private static long lastProgressLogTimestamp = 0;
     private static final long PROGRESS_LOG_INTERVAL_MS = 2000;
 
+    private static final class NonExpectedEventsCursor {
+        final works.lysenko.base.responses.ExpectedResponsesStore expStore;
+        final int expResponsesSize;
+        final List<_LogRecord> nonBrowserNonExpected = new ArrayList<>(4);
+        int scannedUpTo;
+        _LogRecord firstRecord;
+        _LogRecord lastRecord;
+
+        NonExpectedEventsCursor(final works.lysenko.base.responses.ExpectedResponsesStore expStore, final int expResponsesSize) {
+            this.expStore = expStore;
+            this.expResponsesSize = expResponsesSize;
+        }
+    }
+
+    private static final Object NON_EXPECTED_CURSOR_LOCK = new Object();
+    private static final Map<_Result, Map<String, NonExpectedEventsCursor>> NON_EXPECTED_CURSORS = new WeakHashMap<>();
+
+    private static final Object OWN_LOGS_CACHE_LOCK = new Object();
+    private static KnownIssuesStore ownLogsStore;
+    private static int ownLogsStoreSize;
+    private static works.lysenko.base.responses.ExpectedResponsesStore ownLogsExpStore;
+    private static int ownLogsExpSize;
+    private static int ownLogsScannedUpTo;
+    private static _LogRecord ownLogsFirstRecord;
+    private static _LogRecord ownLogsLastRecord;
+    private static final Map<_Scenario, Set<KnownIssue>> ownLogsMatchedByScenario = new IdentityHashMap<>();
+
     private TreeLayoutComputer() {
+    }
+
+    private static Map<_Scenario, List<KnownIssue>> resolveOwnLogKnownIssues(
+            final List<_LogRecord> logRecords,
+            final KnownIssuesStore store,
+            final works.lysenko.base.responses.ExpectedResponsesStore expStore) {
+        if (null == store || null == logRecords || logRecords.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        final int storeSize = store.getIssues().size();
+        final int expSize = (null != expStore && null != expStore.getResponses()) ? expStore.getResponses().size() : 0;
+        final int totalLogs = logRecords.size();
+        final _LogRecord firstRecord = logRecords.get(0);
+
+        synchronized (OWN_LOGS_CACHE_LOCK) {
+            final boolean valid = ownLogsStore == store
+                    && ownLogsStoreSize == storeSize
+                    && ownLogsExpStore == expStore
+                    && ownLogsExpSize == expSize
+                    && ownLogsScannedUpTo <= totalLogs
+                    && (0 == ownLogsScannedUpTo
+                    || (firstRecord == ownLogsFirstRecord && logRecords.get(ownLogsScannedUpTo - 1) == ownLogsLastRecord));
+            if (!valid) {
+                ownLogsStore = store;
+                ownLogsStoreSize = storeSize;
+                ownLogsExpStore = expStore;
+                ownLogsExpSize = expSize;
+                ownLogsScannedUpTo = 0;
+                ownLogsFirstRecord = null;
+                ownLogsLastRecord = null;
+                ownLogsMatchedByScenario.clear();
+            }
+
+            if (ownLogsScannedUpTo < totalLogs) {
+                for (int i = ownLogsScannedUpTo; i < totalLogs; i++) {
+                    final _LogRecord lr = logRecords.get(i);
+                    if (null == lr || null == lr.scenario()) continue;
+                    final _Scenario sc = lr.scenario();
+                    final List<KnownIssue> candidates = store.getForScenario(sc.getName(), sc.getSimpleName());
+                    if (candidates.isEmpty()) continue;
+                    final Set<KnownIssue> matched = ownLogsMatchedByScenario.computeIfAbsent(sc, k -> new LinkedHashSet<>(4));
+                    if (matched.size() >= candidates.size()) continue;
+                    if (null != expStore && expStore.isExpected(sc, lr)) continue;
+                    for (int c = 0; c < candidates.size(); c++) {
+                        final KnownIssue ki = candidates.get(c);
+                        if (matched.contains(ki)) continue;
+                        if (works.lysenko.base.issues.KnownIssuesMatcher.isCatchAllRule(ki.scenario(), ki.pattern())) continue;
+                        if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
+                            matched.add(ki);
+                        }
+                    }
+                }
+                ownLogsScannedUpTo = totalLogs;
+                ownLogsFirstRecord = firstRecord;
+                ownLogsLastRecord = logRecords.get(totalLogs - 1);
+            }
+
+            if (ownLogsMatchedByScenario.isEmpty()) {
+                return Collections.emptyMap();
+            }
+            final Map<_Scenario, List<KnownIssue>> snapshot = new IdentityHashMap<>(ownLogsMatchedByScenario.size() * 2);
+            for (final Map.Entry<_Scenario, Set<KnownIssue>> entry : ownLogsMatchedByScenario.entrySet()) {
+                if (!entry.getValue().isEmpty()) {
+                    snapshot.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+                }
+            }
+            return snapshot;
+        }
+    }
+
+    private static List<_LogRecord> getNonBrowserNonExpectedEvents(
+            final _Scenario scenario,
+            final _Result result,
+            final works.lysenko.base.responses.ExpectedResponsesStore expStore) {
+        if (null == result || null == result.getEvents() || result.getEvents().isEmpty()) {
+            return Collections.emptyList();
+        }
+        final List<_LogRecord> events = result.getEvents();
+        final int eventCount = events.size();
+        final int expSize = (null != expStore && null != expStore.getResponses()) ? expStore.getResponses().size() : 0;
+        final String scenarioKey = (null != scenario)
+                ? ((null != scenario.getName() ? scenario.getName() : "") + '\0' + (null != scenario.getSimpleName() ? scenario.getSimpleName() : ""))
+                : "";
+        final _LogRecord firstRecord = events.get(0);
+
+        synchronized (NON_EXPECTED_CURSOR_LOCK) {
+            final Map<String, NonExpectedEventsCursor> perScenario = NON_EXPECTED_CURSORS.computeIfAbsent(result, r -> new HashMap<>(2));
+            NonExpectedEventsCursor cursor = perScenario.get(scenarioKey);
+            final boolean valid = null != cursor
+                    && cursor.expStore == expStore
+                    && cursor.expResponsesSize == expSize
+                    && cursor.scannedUpTo <= eventCount
+                    && (0 == cursor.scannedUpTo
+                    || (cursor.firstRecord == firstRecord && events.get(cursor.scannedUpTo - 1) == cursor.lastRecord));
+            if (!valid) {
+                cursor = new NonExpectedEventsCursor(expStore, expSize);
+                perScenario.put(scenarioKey, cursor);
+            }
+            if (cursor.scannedUpTo < eventCount) {
+                for (int i = cursor.scannedUpTo; i < eventCount; i++) {
+                    final _LogRecord lr = events.get(i);
+                    if (null == lr) continue;
+                    final String text = lr.text();
+                    if (null != text && text.contains("[BROWSER]")) continue;
+                    if (null != expStore && expStore.isExpected(scenario, lr)) continue;
+                    cursor.nonBrowserNonExpected.add(lr);
+                }
+                cursor.scannedUpTo = eventCount;
+                cursor.firstRecord = firstRecord;
+                cursor.lastRecord = events.get(eventCount - 1);
+            }
+            return cursor.nonBrowserNonExpected.isEmpty()
+                    ? Collections.emptyList()
+                    : new ArrayList<>(cursor.nonBrowserNonExpected);
+        }
     }
 
     private static Map<_Scenario, List<_LogRecord>> indexLogsByScenario(final List<_LogRecord> logRecords) {
@@ -149,10 +293,12 @@ public final class TreeLayoutComputer {
 
         final List<_LogRecord> logRecords = (!works.lysenko.util.prop.issues.KnownIssues.failedOnly && isNotNull(exec) && isNotNull(exec.issues()))
                 ? exec.issues().latestCopy() : Collections.emptyList();
-        final Map<_Scenario, List<_LogRecord>> logsByScenario = indexLogsByScenario(logRecords);
+        final KnownIssuesStore store = TreeHtml.getKnownIssuesStore();
+        final works.lysenko.base.responses.ExpectedResponsesStore expStore = TreeHtml.getExpectedResponsesStore();
+        final Map<_Scenario, List<KnownIssue>> ownLogKnownIssues = resolveOwnLogKnownIssues(logRecords, store, expStore);
 
         for (final _Scenario root : sortedRoots)
-            processScenario(root, null, 0, rows, ancestors, sorted, nodes, edges, logsByScenario);
+            processScenario(root, null, 0, rows, ancestors, sorted, nodes, edges, ownLogKnownIssues, store, expStore);
         final long tProc = System.currentTimeMillis();
 
         final List<NodeData> unprunedNodes = new ArrayList<>(nodes);
@@ -188,7 +334,9 @@ public final class TreeLayoutComputer {
     private static void processScenario(final _Scenario scenario, final NodeData parent, final int col, final int[] rows,
                                         final Set<_Scenario> ancestors, final TreeMap<String, Result> sorted,
                                         final List<NodeData> nodes, final List<Edge> edges,
-                                        final Map<_Scenario, List<_LogRecord>> logsByScenario) {
+                                        final Map<_Scenario, List<KnownIssue>> ownLogKnownIssues,
+                                        final KnownIssuesStore store,
+                                        final works.lysenko.base.responses.ExpectedResponsesStore expStore) {
 
         if (null == scenario || !ancestors.add(scenario)) return;
         int offset = 0;
@@ -215,31 +363,31 @@ public final class TreeLayoutComputer {
         final String group = (null == parent) ? TESTS : parent.label();
         final NodeData node = new NodeData(id, label, group, myCol, rows[0]++, offset, rowOffset, resultFor(scenario, sorted), scenario);
 
-        final KnownIssuesStore store = TreeHtml.getKnownIssuesStore();
-        final works.lysenko.base.responses.ExpectedResponsesStore expStore = TreeHtml.getExpectedResponsesStore();
         if (null != store) {
             final List<KnownIssue> matchedByNode = store.getForNode(scenario, node.result());
             if (null != matchedByNode && !matchedByNode.isEmpty()) {
                 final boolean nodeHasExpected = null != expStore && null != node.result()
                         && expStore.matchesNode(scenario, node.result());
-                for (final KnownIssue ki : matchedByNode) {
-                    if (nodeHasExpected && !matchesAnyNonExpectedEvent(ki.pattern(), scenario, node.result(), expStore)) {
-                        continue;
+                if (!nodeHasExpected) {
+                    for (final KnownIssue ki : matchedByNode) {
+                        if (!node.knownIssues().contains(ki)) node.knownIssues().add(ki);
                     }
-                    if (!node.knownIssues().contains(ki)) node.knownIssues().add(ki);
+                } else {
+                    final List<_LogRecord> nonExpectedEvents = getNonBrowserNonExpectedEvents(scenario, node.result(), expStore);
+                    if (!nonExpectedEvents.isEmpty()) {
+                        for (final KnownIssue ki : matchedByNode) {
+                            if (matchesAnyRecord(ki.pattern(), nonExpectedEvents)) {
+                                if (!node.knownIssues().contains(ki)) node.knownIssues().add(ki);
+                            }
+                        }
+                    }
                 }
             }
-            final List<_LogRecord> ownLogs = logsByScenario.get(scenario);
-            if (null != ownLogs && !ownLogs.isEmpty()) {
-                for (final KnownIssue ki : store.getForScenario(scenario.getName(), scenario.getSimpleName())) {
-                    if (node.knownIssues().contains(ki)) continue;
-                    if (works.lysenko.base.issues.KnownIssuesMatcher.isCatchAllRule(ki.scenario(), ki.pattern())) continue;
-                    for (final _LogRecord lr : ownLogs) {
-                        if (null != expStore && expStore.isExpected(scenario, lr)) continue;
-                        if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
-                            node.knownIssues().add(ki);
-                            break;
-                        }
+            final List<KnownIssue> ownMatches = ownLogKnownIssues.get(scenario);
+            if (null != ownMatches && !ownMatches.isEmpty()) {
+                for (final KnownIssue ki : ownMatches) {
+                    if (!node.knownIssues().contains(ki)) {
+                        node.knownIssues().add(ki);
                     }
                 }
             }
@@ -257,22 +405,14 @@ public final class TreeLayoutComputer {
             pairs.sort(Comparator.comparing((works.lysenko.util.data.records.KeyValue<_Scenario, org.apache.commons.math3.fraction.Fraction> p) -> p.k().getSimpleName())
                     .thenComparing(p -> p.k().getName()));
             for (final var child : pairs)
-                processScenario(child.k(), node, myCol + 1, rows, ancestors, sorted, nodes, edges, logsByScenario);
+                processScenario(child.k(), node, myCol + 1, rows, ancestors, sorted, nodes, edges, ownLogKnownIssues, store, expStore);
         }
         ancestors.remove(scenario);
     }
 
-    private static boolean matchesAnyNonExpectedEvent(
-            final String pattern,
-            final _Scenario scenario,
-            final _Result result,
-            final works.lysenko.base.responses.ExpectedResponsesStore expStore) {
-        if (null == result || null == result.getEvents()) return false;
-        for (final _LogRecord lr : result.getEvents()) {
-            if (expStore.isExpected(scenario, lr)) continue;
-            final String text = lr.text();
-            if (null != text && text.contains("[BROWSER]") && expStore.matchesNode(scenario, result)) continue;
-            if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(pattern, lr)) {
+    private static boolean matchesAnyRecord(final String pattern, final List<_LogRecord> records) {
+        for (int i = 0; i < records.size(); i++) {
+            if (works.lysenko.base.issues.KnownIssuesMatcher.matchesPatternForRecord(pattern, records.get(i))) {
                 return true;
             }
         }
