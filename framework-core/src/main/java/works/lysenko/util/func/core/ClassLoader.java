@@ -5,7 +5,6 @@ import works.lysenko.util.data.records.Descriptor;
 import works.lysenko.util.func.data.Regexes;
 import works.lysenko.util.spec.Symbols;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -22,7 +21,6 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -66,7 +64,7 @@ import static works.lysenko.util.spec.Symbols._SLASH_;
 /**
  * The ClassLoader class provides methods for loading classes from packages and instantiating objects of a given class.
  */
-@SuppressWarnings({"MethodWithMultipleReturnPoints", "CallToPrintStackTrace", "IOResourceOpenedButNotSafelyClosed"})
+@SuppressWarnings({"MethodWithMultipleReturnPoints", "CallToPrintStackTrace"})
 public record ClassLoader() {
 
     private static final Class<?>[] ZERO_LENGTH_ARRAY = {};
@@ -124,7 +122,7 @@ public record ClassLoader() {
 
         try {
             return Class.forName(s(packageName, s(_DOT_), className.substring(0, className.lastIndexOf(_DOT_))));
-        } catch (final ClassNotFoundException e) {
+        } catch (final ClassNotFoundException _) {
             //
         }
         return null;
@@ -138,13 +136,16 @@ public record ClassLoader() {
      * @return A1 set of Class objects representing the scenarios from the input stream.
      */
     @SuppressWarnings("StandardVariableNames")
-    private static Set<Class<?>> getClassesSetFromInputStream(final InputStream inputStream, final String pack) {
+    private static Set<Class<?>> getClassesSetFromInputStream(final InputStream inputStream, final String pack)
+            throws IOException {
 
-        final InputStreamReader inputReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-        final Stream<String> bufferedReader = new BufferedReader(inputReader).lines();
-        final Stream<String> classStream = bufferedReader.filter(l -> l.endsWith(DOT_CLASS));
-        final Stream<? extends Class<?>> mapStream = classStream.map(l -> getClassFromNameAndPackage(l, pack)).filter(Objects::nonNull);
-        return mapStream.collect(Collectors.toSet());
+        try (final InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+            return reader.readAllLines().stream()
+                    .filter(l -> l.endsWith(DOT_CLASS))
+                    .map(l -> getClassFromNameAndPackage(l, pack))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+        }
     }
 
     /**
@@ -160,7 +161,7 @@ public record ClassLoader() {
 
         try {
             return z.getConstructor(t);
-        } catch (final NoSuchMethodException e) {
+        } catch (final NoSuchMethodException _) {
             final String[] tokens = z.getName().split(Regexes.dot);
             final String trueName = tokens[tokens.length - 1];
             if (trueName.contains(s(Symbols._DOLLAR)))
@@ -327,7 +328,7 @@ public record ClassLoader() {
             while (entries.hasMoreElements()) {
                 processJarEntry(entries, descriptor, resources);
             }
-        } catch (final ClassNotFoundException e) {
+        } catch (final ClassNotFoundException _) {
             notFound(descriptor.pack(), THREE, silent);
         }
     }
@@ -347,7 +348,7 @@ public record ClassLoader() {
         try {
             final URL jarURL = clazz.getClassLoader().getResource(s(clazz.getName().replace(s(_DOT_), s(_SLASH_)), DOT_CLASS));
             if (isNotNull(jarURL) && JAR.equals(jarURL.getProtocol())) readJarFile(jarURL, descriptor, resources, silent);
-        } catch (final IOException e) {
+        } catch (final IOException _) {
             notFound(descriptor.pack(), FOUR, silent);
         }
         return resources;

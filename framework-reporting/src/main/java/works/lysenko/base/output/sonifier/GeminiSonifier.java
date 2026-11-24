@@ -73,7 +73,7 @@ public final class GeminiSonifier extends AbstractTreeSonifier {
             final boolean isCompleted = executions >= leafTarget;
             final boolean isActive = executions > 0 && executions < leafTarget;
             
-            stats.computeIfAbsent(col, k -> new ColumnStats(0, 0, 0)).add(isActive, isCompleted);
+            stats.computeIfAbsent(col, _ -> new ColumnStats(0, 0, 0)).add(isActive, isCompleted);
         }
 
         try (BufferedWriter writer = Files.newBufferedWriter(
@@ -102,7 +102,7 @@ public final class GeminiSonifier extends AbstractTreeSonifier {
 
         // First pass: measure initial total tree size and max columns
         if (!frames.isEmpty()) {
-            final Map<Integer, ColumnStats> first = readSnapshot(snapshotFile(frames.get(0)));
+            final Map<Integer, ColumnStats> first = readSnapshot(snapshotFile(frames.getFirst()));
             for (final ColumnStats s : first.values()) {
                 initialTotalNodes += s.total;
             }
@@ -133,7 +133,7 @@ public final class GeminiSonifier extends AbstractTreeSonifier {
             }
             previousTotalNodes = currentTotalNodes;
 
-            final double shrinkRatio = Math.max(0.0, Math.min(1.0, (double) currentTotalNodes / Math.max(1, initialTotalNodes)));
+            final double shrinkRatio = Math.clamp((double) currentTotalNodes / Math.max(1, initialTotalNodes), 0.0, 1.0);
             final double shrinkProgress = 1.0 - shrinkRatio; // 0.0 at full initial tree, approaching 1.0 as tree shrinks
 
             // Diatonic lift (up to a perfect fifth, +7 semitones) as tree condenses, keeping low drone grounded >= C2

@@ -116,7 +116,7 @@ public record Telemetry(Data data, String rendered) {
 
         if (deltaWallNs <= 0L || deltaCpuNs <= 0L || cores <= 0) return 0.0;
         final double rawPct = (deltaCpuNs * 100.0) / ((double) deltaWallNs * cores);
-        final double clamped = Math.min(100.0, Math.max(0.0, rawPct));
+        final double clamped = Math.clamp(rawPct, 0.0, 100.0);
         return Math.round(clamped * 100.0) / 100.0;
     }
 

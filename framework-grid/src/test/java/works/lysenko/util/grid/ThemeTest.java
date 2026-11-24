@@ -182,4 +182,31 @@ class ThemeTest {
         Theme.clearActive();
         assertNull(Theme.active());
     }
+
+    @Test
+    void scopedActiveThemeOverridesAndRestoresGlobalFallback() {
+        final Theme global = Theme.of("global", Map.of("SURFACE_BG", 0xFF111111));
+        final Theme scoped = Theme.of("scoped", Map.of("SURFACE_BG", 0xFF222222));
+        final Theme nested = Theme.of("nested", Map.of("SURFACE_BG", 0xFF333333));
+
+        Theme.setActive(global);
+        assertEquals(global, Theme.active());
+
+        final Integer resolved = Theme.withActive(scoped, () -> {
+            assertEquals(scoped, Theme.active());
+            Theme.withActive(nested, () -> assertEquals(nested, Theme.active()));
+            assertEquals(scoped, Theme.active());
+            Theme.withActive(null, () -> assertNull(Theme.active()));
+            assertEquals(scoped, Theme.active());
+            return Theme.resolveToken("SURFACE_BG", Theme.active());
+        });
+        assertEquals(0xFF222222, resolved);
+        assertEquals(global, Theme.active());
+
+        assertThrows(IllegalStateException.class, () -> Theme.withActive(scoped, (Runnable) () -> {
+            assertEquals(scoped, Theme.active());
+            throw new IllegalStateException("boom");
+        }));
+        assertEquals(global, Theme.active());
+    }
 }

@@ -450,7 +450,7 @@ public final class LogFileParser {
                 if (sidecar.exists()) {
                     try (final java.io.FileInputStream fis = new java.io.FileInputStream(sidecar)) {
                         return works.lysenko.base.issues.KnownIssuesLoader.loadFromStream(fis);
-                    } catch (final Exception ignored) {
+                    } catch (final Exception _) {
                     }
                 }
             }
@@ -493,7 +493,7 @@ public final class LogFileParser {
         if (cleanLine.contains(patternStr)) return true;
         try {
             return Pattern.compile(patternStr, Pattern.DOTALL).matcher(cleanLine).find();
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
             return false;
         }
     }

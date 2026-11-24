@@ -221,7 +221,7 @@ public final class ProgressionFrames {
         if (matcher.matches()) {
             try {
                 return Long.parseLong(matcher.group(1));
-            } catch (final NumberFormatException ignored) {
+            } catch (final NumberFormatException _) {
             }
         }
         return Long.MAX_VALUE;
@@ -268,7 +268,7 @@ public final class ProgressionFrames {
                 maxHeight);
 
         if (allFrames.size() <= frameLimit) return allFrames;
-        if (frameLimit == 1) return List.of(allFrames.get(allFrames.size() - 1));
+        if (frameLimit == 1) return List.of(allFrames.getLast());
 
         final List<File> sampled = new ArrayList<>(frameLimit);
         for (int i = 0; i < frameLimit; i++) {
@@ -279,11 +279,11 @@ public final class ProgressionFrames {
     }
 
     static int maxFrames(final int configuredMaxFrames) {
-        return Math.max(1, Math.min(MAX_FRAMES, configuredMaxFrames));
+        return Math.clamp(configuredMaxFrames, 1, MAX_FRAMES);
     }
 
     public static int maxFramePixels(final int configuredMaxPixels) {
-        return Math.max(1, Math.min(MAX_FRAME_PIXELS, configuredMaxPixels));
+        return Math.clamp(configuredMaxPixels, 1, MAX_FRAME_PIXELS);
     }
 
     static int frameLimit(
@@ -620,7 +620,7 @@ public final class ProgressionFrames {
                 }
             }
             directory.delete();
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
         }
     }
 

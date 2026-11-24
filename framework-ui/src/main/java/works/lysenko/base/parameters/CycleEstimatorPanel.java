@@ -58,12 +58,12 @@ public final class CycleEstimatorPanel {
 
         if (isNull(comp)) return;
         if (comp instanceof JComboBox<?> cb) {
-            cb.addActionListener(e -> listener.run());
+            cb.addActionListener(_ -> listener.run());
         } else if (comp instanceof JCheckBox cb) {
-            cb.addActionListener(e -> listener.run());
-            cb.addItemListener(e -> listener.run());
+            cb.addActionListener(_ -> listener.run());
+            cb.addItemListener(_ -> listener.run());
         } else if (comp instanceof JTextField tf) {
-            tf.addActionListener(e -> listener.run());
+            tf.addActionListener(_ -> listener.run());
             tf.getDocument().addDocumentListener(new DocumentListener() {
                 @Override public void insertUpdate(final DocumentEvent e) { listener.run(); }
                 @Override public void removeUpdate(final DocumentEvent e) { listener.run(); }
@@ -119,7 +119,7 @@ public final class CycleEstimatorPanel {
         }
         try {
             readTestPropertiesFromFile(new TestPropertiesDescriptor(_SUITES_, testName, SUITE_PROPERTIES_EXTENSION));
-        } catch (final RuntimeException e) {
+        } catch (final RuntimeException _) {
             return "Test configuration not found";
         }
 
@@ -133,7 +133,7 @@ public final class CycleEstimatorPanel {
         if (isNotNull(allLeafsExecutions) && !allLeafsExecutions.getText().isBlank()) {
             try {
                 leafsCount = Math.max(1, Integer.parseInt(allLeafsExecutions.getText().trim()));
-            } catch (final NumberFormatException ignored) {
+            } catch (final NumberFormatException _) {
                 if (isNotNull(parameters)) leafsCount = parameters.getAllLeafsExecutions();
             }
         } else if (isNotNull(parameters)) {

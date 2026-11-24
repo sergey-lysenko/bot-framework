@@ -69,7 +69,7 @@ public final class KnownIssuesLoader {
                     }
                 }
             }
-        } catch (final SecurityException | IOException ignored) {
+        } catch (final SecurityException | IOException _) {
         }
         return is;
     }
@@ -83,7 +83,7 @@ public final class KnownIssuesLoader {
         List<KnownIssue> issues = Collections.emptyList();
         try (final InputStream is = findInputStream()) {
             if (isNotNull(is)) issues = loadFromStream(is);
-        } catch (final IOException ignored) {
+        } catch (final IOException _) {
         }
         return issues;
     }
@@ -192,7 +192,7 @@ public final class KnownIssuesLoader {
                     issues.add(new KnownIssue(key.trim(), key.trim(), val.trim(), "", val.trim(), true));
                 }
             }
-        } catch (final IOException ignored) {
+        } catch (final IOException _) {
         }
 
         return issues;

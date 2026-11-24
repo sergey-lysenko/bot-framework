@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.stream.Collectors;
-import org.reflections.Reflections;
 
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.func.type.fractions.Factory.fr;
@@ -88,51 +87,25 @@ public final class PropertyValidator {
                     }
                 }
 
-                final org.reflections.util.ConfigurationBuilder builder = new org.reflections.util.ConfigurationBuilder();
-                final Set<java.net.URL> urls = new LinkedHashSet<>();
                 for (final String pkg : packagesToScan) {
                     try {
                         final Class<?> cls = Class.forName(pkg + ".util.spec.PropEnum");
                         if (_PropEnum.class.isAssignableFrom(cls)) {
                             classes.add((Class<? extends _PropEnum>) cls);
                         }
-                    } catch (final Throwable ignored) {
+                    } catch (final Throwable _) {
                     }
                     try {
                         final Class<?> cls = Class.forName(pkg + ".shared.util.spec.PropEnum");
                         if (_PropEnum.class.isAssignableFrom(cls)) {
                             classes.add((Class<? extends _PropEnum>) cls);
                         }
-                    } catch (final Throwable ignored) {
+                    } catch (final Throwable _) {
                     }
-                    try {
-                        urls.addAll(org.reflections.util.ClasspathHelper.forPackage(pkg));
-                    } catch (final Exception ignored) {
-                    }
-                }
-                try {
-                    urls.addAll(org.reflections.util.ClasspathHelper.forClassLoader());
-                } catch (final Exception ignored) {
-                }
-                try {
-                    urls.addAll(org.reflections.util.ClasspathHelper.forJavaClassPath());
-                } catch (final Exception ignored) {
-                }
-                try {
-                    final java.io.File classesDir = new java.io.File(System.getProperty("user.dir"), "target/classes");
-                    if (classesDir.exists()) {
-                        urls.add(classesDir.toURI().toURL());
-                    }
-                } catch (final Exception ignored) {
                 }
 
-                builder.setUrls(urls);
-                final Reflections reflections = new Reflections(builder);
-                final Set<Class<? extends _PropEnum>> subTypes = reflections.getSubTypesOf(_PropEnum.class);
-                if (isNotNull(subTypes)) {
-                    classes.addAll(subTypes);
-                }
-            } catch (final Exception ignored) {
+                classes.addAll(ClasspathSubtypeScanner.findSubTypesOf(_PropEnum.class, packagesToScan, true));
+            } catch (final Exception _) {
             }
 
             cachedPropEnumClasses = Collections.unmodifiableSet(classes);
@@ -348,11 +321,16 @@ public final class PropertyValidator {
                         collectVirtualScenarioNames(branch, scenarioNames);
                     }
                 }
-            } catch (final Exception ignored) {
+            } catch (final Exception _) {
             }
 
             try {
-                final Reflections reflections = new Reflections(rootPackage);
+                final List<Class<?>> scenarioBaseTypes = List.of(
+                        works.lysenko.tree.base.Node.class,
+                        works.lysenko.tree.base.Leaf.class,
+                        works.lysenko.tree.base.Mono.class);
+                final Map<Class<?>, Set<Class<?>>> discovered = ClasspathSubtypeScanner.findSubTypesOf(
+                        scenarioBaseTypes, List.of(rootPackage), false);
 
                 final java.util.function.Consumer<Class<?>> addStrippedName = c -> {
                     final String name = c.getName();
@@ -361,10 +339,10 @@ public final class PropertyValidator {
                     }
                 };
 
-                reflections.getSubTypesOf(works.lysenko.tree.base.Node.class).forEach(addStrippedName);
-                reflections.getSubTypesOf(works.lysenko.tree.base.Leaf.class).forEach(addStrippedName);
-                reflections.getSubTypesOf(works.lysenko.tree.base.Mono.class).forEach(addStrippedName);
-            } catch (final Exception ignored) {
+                for (final Class<?> baseType : scenarioBaseTypes) {
+                    discovered.getOrDefault(baseType, Set.of()).forEach(addStrippedName);
+                }
+            } catch (final Exception _) {
             }
 
             tempProperties.addAll(scenarioNames);

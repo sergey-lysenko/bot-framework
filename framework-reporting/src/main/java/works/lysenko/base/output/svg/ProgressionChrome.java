@@ -234,7 +234,7 @@ public final class ProgressionChrome {
                         : snapshot.formattedRemaining();
                 return new EtaBadge("ETA: " + remaining, BADGE_INDIGO);
             }
-        } catch (final RuntimeException ignored) {
+        } catch (final RuntimeException _) {
             // Best-effort HUD badge; never interrupt frame rendering
         }
         return new EtaBadge("ETA: --:--", BADGE_SLATE);

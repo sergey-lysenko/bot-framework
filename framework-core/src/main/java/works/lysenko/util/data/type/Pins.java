@@ -103,7 +103,7 @@ public class Pins implements _Pins {
 
         final List<String> list = new ArrayList<>(List.of(strip(bits.toString(),
                 s(CLS_CUB, OPN_CUB)).split(s(L1))));
-        if (1 == list.size() && list.get(0).equals(EMPTY)) list.remove(0);
+        if (1 == list.size() && list.getFirst().equals(EMPTY)) list.removeFirst();
         return list;
     }
 

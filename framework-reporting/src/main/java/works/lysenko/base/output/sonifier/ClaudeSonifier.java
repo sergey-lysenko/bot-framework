@@ -85,7 +85,7 @@ public final class ClaudeSonifier extends AbstractTreeSonifier {
                 if (distance(previous[index], current[index]) >= CHANGE_THRESHOLD) {
                     changed++;
                     // progress colours run amber (g - r < 0) to green (g - r > 0)
-                    greenness += Math.max(0.0, Math.min(1.0, (current[index][1] - current[index][0] + 90) / 255.0));
+                    greenness += Math.clamp((current[index][1] - current[index][0] + 90) / 255.0, 0.0, 1.0);
                 }
             }
             if (0 < changed) {

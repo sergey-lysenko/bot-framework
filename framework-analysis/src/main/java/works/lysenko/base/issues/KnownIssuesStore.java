@@ -130,7 +130,7 @@ public final class KnownIssuesStore {
             return Collections.emptyList();
         }
         final String key = (null != fqn ? fqn : "") + '\0' + (null != simpleName ? simpleName : "");
-        return scenarioIssuesCache.computeIfAbsent(key, k -> {
+        return scenarioIssuesCache.computeIfAbsent(key, _ -> {
             final List<KnownIssue> matched = new ArrayList<>(4);
             for (final KnownIssue ki : issues) {
                 if (!KnownIssuesMatcher.isCatchAllRule(ki.scenario(), ki.pattern())
@@ -171,10 +171,10 @@ public final class KnownIssuesStore {
         }
 
         final String scenarioKey = (null != fqn ? fqn : "") + '\0' + (null != simpleName ? simpleName : "");
-        final _LogRecord firstRecord = events.get(0);
+        final _LogRecord firstRecord = events.getFirst();
 
         synchronized (nodeCursorLock) {
-            final Map<String, NodeScanCursor> perScenario = nodeScanCursors.computeIfAbsent(result, r -> new HashMap<>(2));
+            final Map<String, NodeScanCursor> perScenario = nodeScanCursors.computeIfAbsent(result, _ -> new HashMap<>(2));
             NodeScanCursor cursor = perScenario.get(scenarioKey);
             final boolean cursorValid = null != cursor
                     && cursor.candidates == candidates

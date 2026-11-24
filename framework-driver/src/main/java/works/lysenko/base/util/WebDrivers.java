@@ -125,7 +125,7 @@ public final class WebDrivers {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 driver.quit();
-            } catch (final RuntimeException ignored) {
+            } catch (final RuntimeException _) {
                 // Driver is already closed or unreachable
             }
         }, "webdriver-quit-hook"));

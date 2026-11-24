@@ -85,7 +85,7 @@ record ResultMarker() {
         }
 
         if (isNotNull(core) && isNotNull(core.getResults()) && !core.getResults().getFailures().isEmpty()) {
-            String clean = core.getResults().getFailures().get(0).trim().replace(_LFD_, _BULLT_);
+            String clean = core.getResults().getFailures().getFirst().trim().replace(_LFD_, _BULLT_);
             if (!clean.startsWith("[FAILURE]") && !clean.startsWith("[ERROR]")) {
                 clean = b(s("[FAILURE]"), clean);
             }

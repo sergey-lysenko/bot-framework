@@ -25,8 +25,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>25</maven.compiler.source>
-    <maven.compiler.target>25</maven.compiler.target>
+    <maven.compiler.release>25</maven.compiler.release>
     <maven.test.failure.ignore>false</maven.test.failure.ignore>
 
     <!-- Dependencies versions -->
@@ -35,7 +34,6 @@
     <appium.version>10.1.1</appium.version>
     <aspectj.version>1.9.27</aspectj.version>
     <commons-lang3.version>3.18.0</commons-lang3.version>
-    <reflections.version>0.10.2</reflections.version>
     <bcprov-jdk18on.version>1.80</bcprov-jdk18on.version>
     <netty-codec.version>4.1.125.Final</netty-codec.version>
     <jackson.version>2.18.2</jackson.version>
@@ -160,11 +158,6 @@
         <version>${jsvg.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.reflections</groupId>
-        <artifactId>reflections</artifactId>
-        <version>${reflections.version}</version>
-      </dependency>
-      <dependency>
         <groupId>io.appium</groupId>
         <artifactId>java-client</artifactId>
         <version>${appium.version}</version>
@@ -248,8 +241,7 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven-compiler-plugin.version}</version>
         <configuration>
-          <source>${maven.compiler.source}</source>
-          <target>${maven.compiler.target}</target>
+          <release>${maven.compiler.release}</release>
         </configuration>
       </plugin>
       <plugin>

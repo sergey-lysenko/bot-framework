@@ -7,20 +7,20 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntConsumer;
+import java.util.stream.Gatherers;
+import java.util.stream.Stream;
 
 final class ProgressionMp4 {
 
@@ -107,53 +107,41 @@ final class ProgressionMp4 {
 
         final int finalW = maxWidth;
         final int finalH = maxHeight;
-        final int threads = Math.max(2, Runtime.getRuntime().availableProcessors());
+        final int windowSize = Math.max(2, Runtime.getRuntime().availableProcessors()) * 2;
 
         try {
-            try (ExecutorService renderExecutor = Executors.newFixedThreadPool(
-                    threads,
-                    Thread.ofPlatform().daemon().name("mp4-frame-renderer-", 0).factory());
-                 OutputStream input = process.getOutputStream()) {
-                final int windowSize = threads * 2;
-                final List<Future<BufferedImage>> futures = new ArrayList<>(frames.size());
-
-                try {
-                    for (int i = 0; i < Math.min(windowSize, frames.size()); i++) {
-                        final File file = frames.get(i);
-                        futures.add(renderExecutor.submit(() -> ProgressionFrames.read(file, maxFramePixels, finalW, finalH)));
+            try (OutputStream input = process.getOutputStream();
+                 Stream<BufferedImage> rendered = frames.stream().gather(Gatherers.mapConcurrent(
+                         windowSize,
+                         file -> {
+                             try {
+                                 return ProgressionFrames.read(file, maxFramePixels, finalW, finalH);
+                             } catch (final IOException e) {
+                                 throw new UncheckedIOException(e);
+                             }
+                         }))) {
+                final Iterator<BufferedImage> it = rendered.iterator();
+                long lastLogTime = System.currentTimeMillis();
+                for (int i = 0; it.hasNext(); i++) {
+                    final BufferedImage image = it.next();
+                    validateDimensions(image.getWidth(), image.getHeight());
+                    if (!javax.imageio.ImageIO.write(image, "png", input)) {
+                        throw new IOException("No PNG ImageIO writer is available for MP4 input");
                     }
-
-                    long lastLogTime = System.currentTimeMillis();
-                    for (int i = 0; i < frames.size(); i++) {
-                        final int nextToSubmit = i + windowSize;
-                        if (nextToSubmit < frames.size()) {
-                            final File file = frames.get(nextToSubmit);
-                            futures.add(renderExecutor.submit(() -> ProgressionFrames.read(file, maxFramePixels, finalW, finalH)));
-                        }
-
-                        final BufferedImage image = futures.get(i).get();
-                        futures.set(i, null);
-
-                        validateDimensions(image.getWidth(), image.getHeight());
-                        if (!javax.imageio.ImageIO.write(image, "png", input)) {
-                            throw new IOException("No PNG ImageIO writer is available for MP4 input");
-                        }
-                        input.flush();
-                        final int pct = (int) (((i + 1L) * 100) / frames.size());
-                        progress.accept(pct);
-                        final long now = System.currentTimeMillis();
-                        if (now - lastLogTime >= 3000 || i == frames.size() - 1) {
-                            lastLogTime = now;
-                            logDebug(String.format("Encoding MP4 video (%s)... %d/%d frames (%d%%)", outputFile.getName(), i + 1, frames.size(), pct));
-                        }
+                    input.flush();
+                    final int pct = (int) (((i + 1L) * 100) / frames.size());
+                    progress.accept(pct);
+                    final long now = System.currentTimeMillis();
+                    if (now - lastLogTime >= 3000 || i == frames.size() - 1) {
+                        lastLogTime = now;
+                        logDebug(String.format("Encoding MP4 video (%s)... %d/%d frames (%d%%)", outputFile.getName(), i + 1, frames.size(), pct));
                     }
-                } catch (final IOException | InterruptedException | ExecutionException | RuntimeException e) {
-                    renderExecutor.shutdownNow();
-                    throw e;
                 }
-            } catch (final ExecutionException e) {
-                if (e.getCause() instanceof IOException ioe) throw ioe;
-                throw new IOException("Failed during parallel frame rendering: " + e.getMessage(), e);
+            } catch (final UncheckedIOException e) {
+                throw e.getCause();
+            }
+            if (Thread.interrupted()) {
+                throw new InterruptedException("Interrupted during parallel frame rendering");
             }
 
             final boolean exited = process.waitFor(10, TimeUnit.MINUTES);

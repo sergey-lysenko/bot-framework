@@ -122,7 +122,7 @@ public final class CopilotSonifier extends AbstractTreeSonifier {
                     final double amplitude = state.executions() >= state.target()
                             ? TARGET_AMPLITUDE
                             : NORMAL_AMPLITUDE * Math.sqrt(gained) * (0.5 + 0.5 * completion);
-                    notesByFrame.computeIfAbsent(beatFrame, ignored -> new ArrayList<>())
+                    notesByFrame.computeIfAbsent(beatFrame, _ -> new ArrayList<>())
                             .add(new AudioNote((long) beatFrame * samplesPerFrame, midi, amplitude));
                 } else if (overGained > 0) {
                     final int beatFrame = Math.min(frames.size() - 1,
@@ -130,7 +130,7 @@ public final class CopilotSonifier extends AbstractTreeSonifier {
                     final int midi = Math.min(96, pitch(identity, identityOrder.get(identity)) + 12);
                     final int overTotal = Math.max(1, state.executions() - state.target());
                     final double amplitude = OVER_TARGET_AMPLITUDE / (1.0 + 0.25 * (overTotal - 1));
-                    notesByFrame.computeIfAbsent(beatFrame, ignored -> new ArrayList<>())
+                    notesByFrame.computeIfAbsent(beatFrame, _ -> new ArrayList<>())
                             .add(new AudioNote((long) beatFrame * samplesPerFrame, midi, amplitude, 0.6));
                 }
             }
@@ -184,7 +184,7 @@ public final class CopilotSonifier extends AbstractTreeSonifier {
         final String branch = (path.length > 1) ? path[1] : path[0];
         final int tonic = SCALE[Math.floorMod(branch.hashCode(), SCALE.length)];
         final int chord = TRIAD[Math.floorMod(identity.hashCode() + index, TRIAD.length)];
-        final int depthRegister = Math.min(2, Math.max(0, path.length - 3));
+        final int depthRegister = Math.clamp(path.length - 3, 0, 2);
         return 48 + tonic + chord + 12 * depthRegister;
     }
 

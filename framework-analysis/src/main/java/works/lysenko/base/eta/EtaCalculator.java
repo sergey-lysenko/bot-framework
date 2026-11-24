@@ -116,14 +116,14 @@ public record EtaCalculator() {
             try {
                 correctedRemainingMs = EtaCorrection.estimateCorrectedRemainingMs(elapsedMs, rawEtaMs);
                 correctionMs = rawEtaMs - correctedRemainingMs;
-            } catch (final Exception ignored) {
+            } catch (final Exception _) {
                 correctionMs = 0L;
                 correctedRemainingMs = rawEtaMs;
             }
         }
 
         final double progressPercent = (total > 0)
-                ? Math.min(100.0, Math.max(0.0, (100.0 * executed) / total))
+                ? Math.clamp((100.0 * executed) / total, 0.0, 100.0)
                 : 0.0;
 
         final String formattedRemaining;

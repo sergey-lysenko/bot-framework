@@ -58,7 +58,7 @@ public final class AuroraSonifier extends AbstractTreeSonifier {
             final boolean isFailed = TreeHtml.hasFailure(node);
             final boolean isWarning = TreeHtml.hasWarning(node);
             
-            stats.computeIfAbsent(col, k -> new ColumnStats(0, 0, 0, 0, 0)).add(isActive, isCompleted, isFailed, isWarning);
+            stats.computeIfAbsent(col, _ -> new ColumnStats(0, 0, 0, 0, 0)).add(isActive, isCompleted, isFailed, isWarning);
         }
 
         try (BufferedWriter writer = Files.newBufferedWriter(

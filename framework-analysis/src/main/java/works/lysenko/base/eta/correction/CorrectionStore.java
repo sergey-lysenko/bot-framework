@@ -79,7 +79,7 @@ public record CorrectionStore() {
             try {
                 final List<CorrectionRecord> loaded = MAPPER.readValue(file, new TypeReference<>() {});
                 if (null != loaded) records.addAll(loaded);
-            } catch (final Exception ignored) {
+            } catch (final Exception _) {
             }
         }
 
@@ -92,7 +92,7 @@ public record CorrectionStore() {
         }
 
         while (matchingForMeta.size() >= MAX_HISTORY_PER_CONFIG) {
-            final CorrectionRecord oldest = matchingForMeta.remove(0);
+            final CorrectionRecord oldest = matchingForMeta.removeFirst();
             records.remove(oldest);
         }
 

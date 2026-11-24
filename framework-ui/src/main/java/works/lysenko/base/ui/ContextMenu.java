@@ -41,19 +41,19 @@ public final class ContextMenu {
 
         final JMenuItem cutItem = new JMenuItem("Cut");
         cutItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, mask));
-        cutItem.addActionListener(e -> component.cut());
+        cutItem.addActionListener(_ -> component.cut());
 
         final JMenuItem copyItem = new JMenuItem("Copy");
         copyItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, mask));
-        copyItem.addActionListener(e -> component.copy());
+        copyItem.addActionListener(_ -> component.copy());
 
         final JMenuItem pasteItem = new JMenuItem("Paste");
         pasteItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, mask));
-        pasteItem.addActionListener(e -> component.paste());
+        pasteItem.addActionListener(_ -> component.paste());
 
         final JMenuItem selectAllItem = new JMenuItem("Select All");
         selectAllItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, mask));
-        selectAllItem.addActionListener(e -> component.selectAll());
+        selectAllItem.addActionListener(_ -> component.selectAll());
 
         menu.add(cutItem);
         menu.add(copyItem);
@@ -113,7 +113,7 @@ public final class ContextMenu {
     private static boolean isClipboardStringAvailable() {
         try {
             return Toolkit.getDefaultToolkit().getSystemClipboard().isDataFlavorAvailable(DataFlavor.stringFlavor);
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
             return true;
         }
     }

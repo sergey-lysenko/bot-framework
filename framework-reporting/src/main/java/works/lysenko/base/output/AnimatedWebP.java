@@ -7,15 +7,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.function.IntConsumer;
+import java.util.stream.Gatherers;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Writes animated WebP by muxing ImageIO-encoded WebP frames into a RIFF container.
@@ -33,7 +34,7 @@ final class AnimatedWebP {
             final File outputFile,
             final int frameDelayMillis,
             final int finalFrameDelayMillis) throws IOException {
-        write(images, outputFile, frameDelayMillis, finalFrameDelayMillis, percentage -> { });
+        write(images, outputFile, frameDelayMillis, finalFrameDelayMillis, _ -> { });
     }
 
     static void write(
@@ -122,46 +123,28 @@ final class AnimatedWebP {
                     }
                     final int threads = Math.min(frameCount, Math.max(2, Runtime.getRuntime().availableProcessors()));
                     final int windowSize = ((long) width * height > 8_000_000L) ? threads : threads * 2;
-                    try (ExecutorService encoderExecutor = Executors.newFixedThreadPool(
-                            threads,
-                            Thread.ofPlatform().daemon().name("webp-frame-encoder-", 0).factory())) {
-                        final List<Future<EncodedFrame>> futures = new ArrayList<>(frameCount);
-                        try {
-                            for (int i = 0; i < Math.min(windowSize, frameCount); i++) {
-                                final int idx = i;
-                                futures.add(encoderExecutor.submit(() -> {
+                    try (Stream<EncodedFrame> encodedFrames = IntStream.range(0, frameCount)
+                            .boxed()
+                            .gather(Gatherers.mapConcurrent(windowSize, idx -> {
+                                try {
                                     final BufferedImage img = (idx == 0) ? first : frames.load(idx);
                                     return encodeValidatedFrame(img, width, height, maxFramePixels);
-                                }));
-                            }
-                            for (int i = 0; i < frameCount; i++) {
-                                final int nextToSubmit = i + windowSize;
-                                if (nextToSubmit < frameCount) {
-                                    futures.add(encoderExecutor.submit(() -> {
-                                        final BufferedImage img = frames.load(nextToSubmit);
-                                        return encodeValidatedFrame(img, width, height, maxFramePixels);
-                                    }));
+                                } catch (final IOException e) {
+                                    throw new UncheckedIOException(e);
                                 }
-                                final EncodedFrame encoded = futures.get(i).get();
-                                futures.set(i, null);
-                                final int delay = (i == frameCount - 1) ? finalFrameDelayMillis : frameDelayMillis;
-                                writeEncodedFrame(chunkOutput, encoded, width, height, delay);
-                                progress.accept((int) (((i + 1L) * 100) / frameCount));
-                            }
-                        } catch (final ExecutionException e) {
-                            encoderExecutor.shutdownNow();
-                            if (e.getCause() instanceof IOException ioe) throw ioe;
-                            if (e.getCause() instanceof RuntimeException re) throw re;
-                            if (e.getCause() instanceof Error err) throw err;
-                            throw new IOException("Failed during parallel WebP frame encoding", e.getCause());
-                        } catch (final InterruptedException e) {
-                            encoderExecutor.shutdownNow();
-                            Thread.currentThread().interrupt();
-                            throw new IOException("Interrupted during parallel WebP frame encoding", e);
-                        } catch (final IOException | RuntimeException e) {
-                            encoderExecutor.shutdownNow();
-                            throw e;
+                            }))) {
+                        final Iterator<EncodedFrame> it = encodedFrames.iterator();
+                        for (int i = 0; it.hasNext(); i++) {
+                            final EncodedFrame encoded = it.next();
+                            final int delay = (i == frameCount - 1) ? finalFrameDelayMillis : frameDelayMillis;
+                            writeEncodedFrame(chunkOutput, encoded, width, height, delay);
+                            progress.accept((int) (((i + 1L) * 100) / frameCount));
                         }
+                    } catch (final UncheckedIOException e) {
+                        throw e.getCause();
+                    }
+                    if (Thread.currentThread().isInterrupted()) {
+                        throw new IOException("Interrupted during parallel WebP frame encoding");
                     }
                 }
             }

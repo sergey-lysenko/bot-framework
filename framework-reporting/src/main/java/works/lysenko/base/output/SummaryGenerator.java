@@ -56,7 +56,7 @@ public class SummaryGenerator {
             writer.write(System.lineSeparator() + "### Run Statistics" + System.lineSeparator());
             writer.write(String.format("* **Total Executed Scenarios:** %d%n", sorted.size()));
             
-        } catch (final IOException ignored) {
+        } catch (final IOException _) {
         }
     }
     

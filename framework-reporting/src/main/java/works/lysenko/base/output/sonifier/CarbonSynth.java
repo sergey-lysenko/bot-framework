@@ -291,7 +291,7 @@ final class CarbonSynth {
             this.kind = event.kind();
             this.amplitude = Math.max(0.0, event.amplitude());
 
-            final double clampedPan = Math.max(-1.0, Math.min(1.0, event.pan()));
+            final double clampedPan = Math.clamp(event.pan(), -1.0, 1.0);
             final double panAngle = (clampedPan + 1.0) * (Math.PI * 0.25);
             this.gainL = Math.cos(panAngle);
             this.gainR = Math.sin(panAngle);
@@ -304,7 +304,7 @@ final class CarbonSynth {
             this.padRightGainR = Math.sin(rightAngle);
 
             final double baseFreq = 440.0 * Math.pow(2.0, (event.midiPitch() - 69.0) / 12.0);
-            final double safeBrightness = Math.max(0.0, Math.min(1.0, event.brightness()));
+            final double safeBrightness = Math.clamp(event.brightness(), 0.0, 1.0);
 
             switch (kind) {
                 case HORIZON_PAD -> {

@@ -49,7 +49,7 @@ public final class TelemetryLogLoader {
                     if (!"-".equals(valStr)) {
                         try {
                             lastVal = Double.parseDouble(valStr);
-                        } catch (final NumberFormatException ignored) {
+                        } catch (final NumberFormatException _) {
                         }
                     }
                     if (parts.length >= 5) {
@@ -58,7 +58,7 @@ public final class TelemetryLogLoader {
                             try {
                                 final int parsedCores = Integer.parseInt(coresStr);
                                 if (parsedCores > 0) lastCores = parsedCores;
-                            } catch (final NumberFormatException ignored) {
+                            } catch (final NumberFormatException _) {
                             }
                         }
                     }
@@ -70,7 +70,7 @@ public final class TelemetryLogLoader {
                     cpuMap.put(sampleNum, normalizedVal);
                 }
             }
-        } catch (final IOException ignored) {
+        } catch (final IOException _) {
         }
         return cpuMap;
     }
@@ -96,7 +96,7 @@ public final class TelemetryLogLoader {
                     if (!"-".equals(valStr)) {
                         try {
                             lastVal = Double.parseDouble(valStr);
-                        } catch (final NumberFormatException ignored) {
+                        } catch (final NumberFormatException _) {
                         }
                     }
                     if (parts.length >= 5) {
@@ -105,7 +105,7 @@ public final class TelemetryLogLoader {
                             try {
                                 final int parsedCores = Integer.parseInt(coresStr);
                                 if (parsedCores > 0) lastCores = parsedCores;
-                            } catch (final NumberFormatException ignored) {
+                            } catch (final NumberFormatException _) {
                             }
                         }
                     }
@@ -116,7 +116,7 @@ public final class TelemetryLogLoader {
                     cpuLoads.add(normalizedVal);
                 }
             }
-        } catch (final IOException ignored) {
+        } catch (final IOException _) {
         }
         return cpuLoads;
     }
@@ -164,19 +164,19 @@ public final class TelemetryLogLoader {
                         try {
                             final int parsedCores = Integer.parseInt(coresStr);
                             if (parsedCores > 0) lastCores = parsedCores;
-                        } catch (final NumberFormatException ignored) {}
+                        } catch (final NumberFormatException _) {}
                     }
                     if (!"-".equals(cpuStr)) {
-                        try { lastCpu = Double.parseDouble(cpuStr); } catch (final NumberFormatException ignored) {}
+                        try { lastCpu = Double.parseDouble(cpuStr); } catch (final NumberFormatException _) {}
                     }
                     if (!"-".equals(threadsStr)) {
-                        try { lastThreads = Integer.parseInt(threadsStr); } catch (final NumberFormatException ignored) {}
+                        try { lastThreads = Integer.parseInt(threadsStr); } catch (final NumberFormatException _) {}
                     }
                     if (!"-".equals(freeStr)) {
-                        try { lastFreeM = Double.parseDouble(freeStr); } catch (final NumberFormatException ignored) {}
+                        try { lastFreeM = Double.parseDouble(freeStr); } catch (final NumberFormatException _) {}
                     }
                     if (!"-".equals(totalStr)) {
-                        try { lastTotalM = Double.parseDouble(totalStr); } catch (final NumberFormatException ignored) {}
+                        try { lastTotalM = Double.parseDouble(totalStr); } catch (final NumberFormatException _) {}
                     }
 
                     double normalizedCpu = lastCpu;
@@ -189,7 +189,7 @@ public final class TelemetryLogLoader {
                     items.add(new SystemResourceItem(sampleNum, normalizedCpu, usedMb, totalMb, lastThreads));
                 }
             }
-        } catch (final IOException ignored) {
+        } catch (final IOException _) {
         }
 
         List<SystemResourceItem> trimmedItems = trimTelemetryToTestPeriod(items, minTestOp, maxTestOp);
@@ -314,7 +314,7 @@ public final class TelemetryLogLoader {
                     }
                 }
             }
-        } catch (final IOException | NumberFormatException ignored) {
+        } catch (final IOException | NumberFormatException _) {
         }
 
         return new int[]{minOp, maxOp};
@@ -374,7 +374,7 @@ public final class TelemetryLogLoader {
                     }
                 }
             }
-        } catch (final IOException | NumberFormatException ignored) {
+        } catch (final IOException | NumberFormatException _) {
         }
 
         final List<int[]> result = new ArrayList<>(testCount);

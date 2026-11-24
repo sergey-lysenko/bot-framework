@@ -50,7 +50,7 @@ public class ValidatingCellEditor extends AbstractCellEditor implements TableCel
             comboBox.setSelectedItem(validValues.stream()
                     .filter(option -> option.equalsIgnoreCase(currentValue))
                     .findFirst()
-                    .orElse(validValues.get(0)));
+                    .orElse(validValues.getFirst()));
             field = null;
             normalBorder = null;
             return comboBox;

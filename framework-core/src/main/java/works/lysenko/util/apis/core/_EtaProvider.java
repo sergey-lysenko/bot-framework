@@ -133,7 +133,7 @@ public interface _EtaProvider {
      */
     static String resolveEtaJson(final boolean markDone, final long nowMs, final long elapsedMs, final String title) {
         if (!Holder.PROVIDERS.isEmpty()) {
-            return Holder.PROVIDERS.get(0).captureEtaJson(markDone, nowMs, elapsedMs, title);
+            return Holder.PROVIDERS.getFirst().captureEtaJson(markDone, nowMs, elapsedMs, title);
         }
         return null;
     }

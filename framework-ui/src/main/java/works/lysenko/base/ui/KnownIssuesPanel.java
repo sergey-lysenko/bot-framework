@@ -86,13 +86,13 @@ public class KnownIssuesPanel extends JPanel {
 
         final JPanel formButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
         final JButton newBtn = new JButton("New");
-        newBtn.addActionListener(e -> clearForm());
+        newBtn.addActionListener(_ -> clearForm());
 
         final JButton saveEntryBtn = new JButton("Save Entry");
-        saveEntryBtn.addActionListener(e -> saveCurrentFormEntry());
+        saveEntryBtn.addActionListener(_ -> saveCurrentFormEntry());
 
         final JButton deleteEntryBtn = new JButton("Delete Entry");
-        deleteEntryBtn.addActionListener(e -> deleteSelectedEntry());
+        deleteEntryBtn.addActionListener(_ -> deleteSelectedEntry());
 
         formButtons.add(newBtn);
         formButtons.add(saveEntryBtn);
@@ -126,13 +126,13 @@ public class KnownIssuesPanel extends JPanel {
 
         final JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
         final JButton reloadBtn = new JButton("Reload");
-        reloadBtn.addActionListener(e -> loadFromFile());
+        reloadBtn.addActionListener(_ -> loadFromFile());
 
         final JButton saveFileBtn = new JButton("Save File");
-        saveFileBtn.addActionListener(e -> saveToFile());
+        saveFileBtn.addActionListener(_ -> saveToFile());
 
         final JToggleButton toggleViewBtn = new JToggleButton("Raw JSON View");
-        toggleViewBtn.addActionListener(e -> {
+        toggleViewBtn.addActionListener(_ -> {
             if (toggleViewBtn.isSelected()) {
                 syncTableToRawJson();
                 cardLayout.show(centerPanel, "RAW");
@@ -146,7 +146,7 @@ public class KnownIssuesPanel extends JPanel {
         prepareKnownIssuesBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         prepareKnownIssuesBtn.setForeground(new Color(0x02, 0x84, 0xC7));
         prepareKnownIssuesBtn.setToolTipText("Generates KnownIssues.suite and switches to Run Setup tab");
-        prepareKnownIssuesBtn.addActionListener(e -> prepareKnownIssuesVerification());
+        prepareKnownIssuesBtn.addActionListener(_ -> prepareKnownIssuesVerification());
 
         toolbar.add(reloadBtn);
         toolbar.add(saveFileBtn);
@@ -322,7 +322,7 @@ public class KnownIssuesPanel extends JPanel {
                     if (scList.size() > 1) {
                         item.put("scenarios", scList);
                     } else {
-                        item.put("scenario", scList.isEmpty() ? "" : scList.get(0));
+                        item.put("scenario", scList.isEmpty() ? "" : scList.getFirst());
                     }
                 } else {
                     item.put("scenario", scVal);
@@ -355,7 +355,7 @@ public class KnownIssuesPanel extends JPanel {
                 if (scList.size() > 1) {
                     existingItem.put("scenarios", scList);
                 } else if (scList.size() == 1) {
-                    existingItem.put("scenario", scList.get(0));
+                    existingItem.put("scenario", scList.getFirst());
                 }
             }
         }
@@ -369,7 +369,7 @@ public class KnownIssuesPanel extends JPanel {
     private void syncTableToRawJson() {
         try {
             rawJsonArea.setText(generateJsonString());
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
         }
     }
 
@@ -390,7 +390,7 @@ public class KnownIssuesPanel extends JPanel {
                     });
                 }
             }
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
         }
     }
 

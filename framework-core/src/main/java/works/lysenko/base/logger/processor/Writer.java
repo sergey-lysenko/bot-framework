@@ -64,7 +64,7 @@ public class Writer implements _LogsWriter {
             writer.write("> - **Duration (ms)**: Operation execution time in milliseconds." + System.lineSeparator() + System.lineSeparator());
             writer.write("## Segmented Log Files" + System.lineSeparator() + System.lineSeparator());
             writer.flush();
-        } catch (final IOException ignored) {
+        } catch (final IOException _) {
         }
     }
 
@@ -79,7 +79,7 @@ public class Writer implements _LogsWriter {
             writer.write("> - **Call Stack**: Call site references formatted as `ID:[Class.method:line]` upon first declaration. Bracketed IDs (`[ID]`) or empty cells refer to call site IDs defined earlier in the trace." + System.lineSeparator());
             writer.write("> - **Duration (ms)**: Operation execution time in milliseconds." + System.lineSeparator() + System.lineSeparator());
             writer.flush();
-        } catch (final IOException ignored) {
+        } catch (final IOException _) {
         }
     }
 
@@ -93,7 +93,7 @@ public class Writer implements _LogsWriter {
             writer.write("> - **Call Stack**: Call site references formatted as `ID:[Class.method:line]`. The full mapping is stored in `<run_id>.callstacks.properties` in the run directory." + System.lineSeparator());
             writer.write("> - **Duration (ms)**: Operation execution time in milliseconds." + System.lineSeparator() + System.lineSeparator());
             writer.flush();
-        } catch (final IOException ignored) {
+        } catch (final IOException _) {
         }
     }
 
@@ -181,7 +181,7 @@ public class Writer implements _LogsWriter {
             try {
                 markdownWriter.write("- [" + title + "](md/" + fileKey + ".md)" + System.lineSeparator());
                 markdownWriter.flush();
-            } catch (final IOException ignored) {
+            } catch (final IOException _) {
             }
         }
         activeMarkdownKey = fileKey;
@@ -220,7 +220,7 @@ public class Writer implements _LogsWriter {
         if (isNotNull(writer)) {
             try {
                 writer.flush();
-            } catch (final IOException ignored) {
+            } catch (final IOException _) {
             }
         }
     }
@@ -230,11 +230,11 @@ public class Writer implements _LogsWriter {
         if (isNotNull(writer)) {
             try {
                 writer.flush();
-            } catch (final IOException ignored) {
+            } catch (final IOException _) {
             }
             try {
                 writer.close();
-            } catch (final IOException ignored) {
+            } catch (final IOException _) {
             }
         }
     }

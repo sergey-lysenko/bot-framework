@@ -89,7 +89,7 @@ public class PostProcessor {
             final long parentPid = Long.parseLong(args[0]);
             final File logFile = new File(args[1]);
             final File htmlFile = new File(args[2]);
-            try (RunLocks.LockHandle ignored = RunLocks.acquirePostprocessLockWaiting()) {
+            try (RunLocks.LockHandle _ = RunLocks.acquirePostprocessLockWaiting()) {
                 ProcessHandle.of(parentPid).ifPresent(handle -> {
                     try {
                         handle.onExit().get(60, TimeUnit.SECONDS);
@@ -139,7 +139,7 @@ public class PostProcessor {
                             treeSonification);
                 }
             }
-        } catch (final InterruptedException e) {
+        } catch (final InterruptedException _) {
             Thread.currentThread().interrupt();
             System.err.println("Post-processing was interrupted");
         } catch (final Exception e) {

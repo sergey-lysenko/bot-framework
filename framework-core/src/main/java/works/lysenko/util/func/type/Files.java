@@ -122,7 +122,7 @@ public record Files() {
     @SuppressWarnings("unused")
     public static String loadStringFromFile(final Path name) {
 
-        return loadLinesFromFile(name).get(0);
+        return loadLinesFromFile(name).getFirst();
     }
 
     /**

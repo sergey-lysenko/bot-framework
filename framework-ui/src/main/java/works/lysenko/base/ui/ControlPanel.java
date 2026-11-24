@@ -42,7 +42,7 @@ public class ControlPanel extends JFrame implements _Dashboard {
                     }
                 }
             }
-        } catch (final Exception ignored) {}
+        } catch (final Exception _) {}
         applyMenuShortcutKeyMask();
     }
 
@@ -70,7 +70,7 @@ public class ControlPanel extends JFrame implements _Dashboard {
                     im.put(KeyStroke.getKeyStroke(KeyEvent.VK_A, mask), DefaultEditorKit.selectAllAction);
                 }
             }
-        } catch (final Exception ignored) {}
+        } catch (final Exception _) {}
     }
 
     /**
@@ -141,21 +141,21 @@ public class ControlPanel extends JFrame implements _Dashboard {
 
         final JButton cancelButton = new JButton(" Cancel ");
         cancelButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 13));
-        cancelButton.addActionListener(e -> cancelRun());
+        cancelButton.addActionListener(_ -> cancelRun());
 
         final JButton startExecButton = new JButton("  Start & Exec  ");
         startExecButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
         startExecButton.setBackground(new Color(0x16, 0xA3, 0x4A));
         startExecButton.setForeground(Color.WHITE);
         startExecButton.setFocusPainted(false);
-        startExecButton.addActionListener(e -> startRun(2));
+        startExecButton.addActionListener(_ -> startRun(2));
 
         final JButton startTreeButton = new JButton("  Start & Tree  ");
         startTreeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
         startTreeButton.setBackground(new Color(0x16, 0xA3, 0x4A));
         startTreeButton.setForeground(Color.WHITE);
         startTreeButton.setFocusPainted(false);
-        startTreeButton.addActionListener(e -> startRun(3));
+        startTreeButton.addActionListener(_ -> startRun(3));
 
         runPanel.add(cancelButton);
         runPanel.add(startExecButton);

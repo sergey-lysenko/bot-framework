@@ -119,7 +119,7 @@ public final class NodeEventClassifier {
         final int responsesSize = (null != expStore && null != expStore.getResponses()) ? expStore.getResponses().size() : 0;
         final List<KnownIssue> knownIssues = (null != node.knownIssues()) ? node.knownIssues() : Collections.emptyList();
         final String nodeKey = buildNodeKey(node);
-        final _LogRecord firstRecord = events.get(0);
+        final _LogRecord firstRecord = events.getFirst();
 
         final ResultCursor cursor;
         synchronized (CURSOR_LOCK) {

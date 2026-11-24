@@ -31,7 +31,7 @@ public final class RunConfigParser {
         if (isNotNull(Base.core)) {
             try {
                 pathsSummary = String.format("%d / %d / %d", Base.core.getExecutedLeafsCount(), Base.core.getActiveScenarioPaths(), Base.core.getTotalScenarioPaths());
-            } catch (final Exception ignored) {
+            } catch (final Exception _) {
             }
         }
         return new RunConfig(suite, pool, domain, mode, pathsSummary, origin, tag);

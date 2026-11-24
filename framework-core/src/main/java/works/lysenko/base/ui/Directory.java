@@ -209,10 +209,10 @@ public final class Directory implements _Dashboard {
             Files.writeString(tmp, json, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
             try {
                 Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (final IOException ignored) {
+            } catch (final IOException _) {
                 Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
             }
-        } catch (final IOException ignored) {
+        } catch (final IOException _) {
             // Never disrupt test execution if dash/eta cannot be written
         }
     }

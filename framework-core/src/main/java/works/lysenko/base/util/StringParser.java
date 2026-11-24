@@ -154,7 +154,7 @@ public final class StringParser<T> implements _Result<T> {
                 if (trimmed.length() > 1 && (trimmed.startsWith("s") || trimmed.startsWith("S"))) {
                     try {
                         return (T) ((Integer) Integer.parseInt(trimmed.substring(1)));
-                    } catch (final NumberFormatException ignored) {
+                    } catch (final NumberFormatException _) {
                     }
                 }
                 logDebug(b(c(TYPE), aType.getName(), OF, q(source), IS, NOT, SUPPORTED, BY, STRING, P.PARSER));
@@ -183,7 +183,7 @@ public final class StringParser<T> implements _Result<T> {
                     if (code >= 0 && code < Severity.values().length) {
                         return (T) Severity.byCode(code);
                     }
-                } catch (final NumberFormatException ignored) {
+                } catch (final NumberFormatException _) {
                 }
             }
             try {

@@ -106,7 +106,7 @@ public class Gui implements _GUI {
         works.lysenko.base.ui.ControlPanel.initializeLookAndFeel();
         try {
             javax.swing.ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE);
-        } catch (final Exception ignored) {}
+        } catch (final Exception _) {}
     }
 
     /**
@@ -222,7 +222,7 @@ public class Gui implements _GUI {
         platform.setSelectedItem(parameters.getProperty(PLATFORM.name()));
         reset = new JButton((null == forcedPlatform) ? RESET : b(FIXED, BY, CONFIGURATION));
         reset.setEnabled(null == forcedPlatform);
-        reset.addActionListener(e -> {
+        reset.addActionListener(_ -> {
             reset();
             _Test.processCode(PLATFORMS_RESET);
         });
@@ -275,7 +275,7 @@ public class Gui implements _GUI {
         isInitializingGui = true;
 
         test = addFromFiles(SUITE.name(), _SUITES_, SUITE_PROPERTIES_EXTENSION);
-        test.addActionListener(e -> updateTestsFromSelectedTestConfiguration());
+        test.addActionListener(_ -> updateTestsFromSelectedTestConfiguration());
         pool = addFromFiles(POOL.name(), ETC_, USERS_POOL_EXTENSION);
         addPlatforms();
 
@@ -421,7 +421,7 @@ public class Gui implements _GUI {
     private void initCyclesComponents() {
 
         calculateCycles = new JButton(b(c(REQUIRED), FOR, FULL, COVERAGE));
-        calculateCycles.addActionListener(e -> onCalculateCycles());
+        calculateCycles.addActionListener(_ -> onCalculateCycles());
 
         cyclesPanel = CycleEstimatorPanel.createPanel(calculateCycles);
 
@@ -475,7 +475,7 @@ public class Gui implements _GUI {
                         if (selStart >= 0 && selEnd >= 0 && selStart != selEnd) {
                             tc.select(selStart, selEnd);
                         }
-                    } catch (final Exception ignored) {}
+                    } catch (final Exception _) {}
                 }
             }
         }
@@ -487,7 +487,7 @@ public class Gui implements _GUI {
     private void initPropertiesComponents() {
 
         properties = new JButton(s(c(MODIFY), DOTS));
-        properties.addActionListener(e -> {}); // Handled by unified Control Panel now
+        properties.addActionListener(_ -> {}); // Handled by unified Control Panel now
     }
 
     /**
@@ -657,7 +657,7 @@ public class Gui implements _GUI {
         if (isNotNull(allLeafs) && allLeafs.isSelected() && isNotNull(allLeafsExecutions)) {
             try {
                 parameters.setAllLeafsExecutions(Integer.parseInt(allLeafsExecutions.getText()));
-            } catch (final NumberFormatException ignored) {
+            } catch (final NumberFormatException _) {
             }
         }
         propagatePropertyOptional(testsCount, TESTS.name());

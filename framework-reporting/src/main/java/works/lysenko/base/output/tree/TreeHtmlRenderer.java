@@ -399,7 +399,7 @@ public record TreeHtmlRenderer() {
         String nodeDataJson = "{}";
         try {
             nodeDataJson = MAPPER.writeValueAsString(nodeDataMap);
-        } catch (final JsonProcessingException ignored) {
+        } catch (final JsonProcessingException _) {
         }
         return nodeDataJson;
     }

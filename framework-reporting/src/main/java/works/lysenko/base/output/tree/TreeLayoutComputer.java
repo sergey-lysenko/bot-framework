@@ -96,7 +96,7 @@ public final class TreeLayoutComputer {
         final int storeSize = store.getIssues().size();
         final int expSize = (null != expStore && null != expStore.getResponses()) ? expStore.getResponses().size() : 0;
         final int totalLogs = logRecords.size();
-        final _LogRecord firstRecord = logRecords.get(0);
+        final _LogRecord firstRecord = logRecords.getFirst();
 
         synchronized (OWN_LOGS_CACHE_LOCK) {
             final boolean valid = ownLogsStore == store
@@ -124,7 +124,7 @@ public final class TreeLayoutComputer {
                     final _Scenario sc = lr.scenario();
                     final List<KnownIssue> candidates = store.getForScenario(sc.getName(), sc.getSimpleName());
                     if (candidates.isEmpty()) continue;
-                    final Set<KnownIssue> matched = ownLogsMatchedByScenario.computeIfAbsent(sc, k -> new LinkedHashSet<>(4));
+                    final Set<KnownIssue> matched = ownLogsMatchedByScenario.computeIfAbsent(sc, _ -> new LinkedHashSet<>(4));
                     if (matched.size() >= candidates.size()) continue;
                     if (null != expStore && expStore.isExpected(sc, lr)) continue;
                     for (int c = 0; c < candidates.size(); c++) {
@@ -167,10 +167,10 @@ public final class TreeLayoutComputer {
         final String scenarioKey = (null != scenario)
                 ? ((null != scenario.getName() ? scenario.getName() : "") + '\0' + (null != scenario.getSimpleName() ? scenario.getSimpleName() : ""))
                 : "";
-        final _LogRecord firstRecord = events.get(0);
+        final _LogRecord firstRecord = events.getFirst();
 
         synchronized (NON_EXPECTED_CURSOR_LOCK) {
-            final Map<String, NonExpectedEventsCursor> perScenario = NON_EXPECTED_CURSORS.computeIfAbsent(result, r -> new HashMap<>(2));
+            final Map<String, NonExpectedEventsCursor> perScenario = NON_EXPECTED_CURSORS.computeIfAbsent(result, _ -> new HashMap<>(2));
             NonExpectedEventsCursor cursor = perScenario.get(scenarioKey);
             final boolean valid = null != cursor
                     && cursor.expStore == expStore
@@ -208,7 +208,7 @@ public final class TreeLayoutComputer {
         final Map<_Scenario, List<_LogRecord>> byScenario = new IdentityHashMap<>();
         for (final _LogRecord lr : logRecords) {
             if (null != lr && null != lr.scenario()) {
-                byScenario.computeIfAbsent(lr.scenario(), k -> new ArrayList<>(4)).add(lr);
+                byScenario.computeIfAbsent(lr.scenario(), _ -> new ArrayList<>(4)).add(lr);
             }
         }
         return byScenario;
@@ -639,7 +639,7 @@ public final class TreeLayoutComputer {
                 if (isNotNull(accessible) && !accessible.isEmpty()) {
                     return accessible;
                 }
-            } catch (final Throwable ignored) {
+            } catch (final Throwable _) {
             }
         }
         return Collections.emptySet();

@@ -20,7 +20,7 @@ public record OperationMarkers() {
             new ClassicMarker()
     );
 
-    private static final OperationMarker DEFAULT_MARKER = ALL.get(0); // Neutral Marker default
+    private static final OperationMarker DEFAULT_MARKER = ALL.getFirst(); // Neutral Marker default
 
     /**
      * @return list of modes for all registered operation markers

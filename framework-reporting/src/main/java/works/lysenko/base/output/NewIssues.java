@@ -207,7 +207,7 @@ record NewIssues() {
             for (final KnownIssue ki : matched) {
                 confirmedIssues.add(ki);
                 if (lr.test() > 0) {
-                    issueTests.computeIfAbsent(ki, k -> new TreeSet<>()).add(lr.test());
+                    issueTests.computeIfAbsent(ki, _ -> new TreeSet<>()).add(lr.test());
                 }
             }
         }
@@ -216,7 +216,7 @@ record NewIssues() {
         final Map<String, RefAggregation> aggregated = new LinkedHashMap<>();
         for (final KnownIssue ki : allKnownIssues) {
             final String ref = getReference(ki);
-            final RefAggregation agg = aggregated.computeIfAbsent(ref, k -> new RefAggregation(ki, ref));
+            final RefAggregation agg = aggregated.computeIfAbsent(ref, _ -> new RefAggregation(ki, ref));
             if (confirmedIssues.contains(ki)) {
                 if (!agg.confirmed) {
                     agg.representative = ki;

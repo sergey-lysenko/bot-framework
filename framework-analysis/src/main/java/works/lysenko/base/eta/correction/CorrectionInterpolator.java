@@ -8,6 +8,7 @@ import works.lysenko.base.eta.model.TestSample;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Gatherers;
 
 /**
  * Pure stateless interpolation and error-trajectory calculations for historical ETA calibration.
@@ -50,7 +51,7 @@ public record CorrectionInterpolator() {
             return true;
         }
 
-        final TestError last = errors.get(errors.size() - 1);
+        final TestError last = errors.getLast();
         final EtaMetadata meta = record.metadata();
         final long actualTotal = record.actualTotalMs();
         final int targetTests = parsePositiveInt((null != meta) ? meta.tests() : null);
@@ -122,12 +123,12 @@ public record CorrectionInterpolator() {
         final List<Point> points = new ArrayList<>();
         final long initialY = (record.overEstimationMs() != 0L)
                 ? record.overEstimationMs()
-                : errors.get(0).errorMs();
+                : errors.getFirst().errorMs();
         points.add(new Point(0L, initialY));
 
         for (final TestError err : errors) {
             final Point p = new Point(err.passedMs(), err.errorMs());
-            final Point prev = points.get(points.size() - 1);
+            final Point prev = points.getLast();
             if (prev.x < p.x) {
                 points.add(p);
             } else if (prev.x == p.x) {
@@ -135,27 +136,27 @@ public record CorrectionInterpolator() {
             }
         }
 
-        if (timeMs <= points.get(0).x) {
-            return points.get(0).y;
+        if (timeMs <= points.getFirst().x) {
+            return points.getFirst().y;
         }
 
-        final Point last = points.get(points.size() - 1);
+        final Point last = points.getLast();
         if (timeMs >= last.x) {
             return last.y;
         }
 
-        for (int i = 0; i < points.size() - 1; i++) {
-            final Point p1 = points.get(i);
-            final Point p2 = points.get(i + 1);
-            if (timeMs >= p1.x && timeMs <= p2.x) {
-                if (p2.x == p1.x) return p1.y;
-                final double ratio = (double) (timeMs - p1.x) / (double) (p2.x - p1.x);
-                final double interpolated = p1.y + ratio * (p2.y - p1.y);
-                return Math.round(interpolated);
-            }
-        }
-
-        return last.y;
+        return points.stream()
+                .gather(Gatherers.windowSliding(2))
+                .filter(seg -> timeMs >= seg.getFirst().x && timeMs <= seg.getLast().x)
+                .findFirst()
+                .map(seg -> {
+                    final Point p1 = seg.getFirst();
+                    final Point p2 = seg.getLast();
+                    if (p2.x == p1.x) return p1.y;
+                    final double ratio = (double) (timeMs - p1.x) / (double) (p2.x - p1.x);
+                    return Math.round(p1.y + ratio * (p2.y - p1.y));
+                })
+                .orElse(last.y);
     }
 
     /**
@@ -239,30 +240,32 @@ public record CorrectionInterpolator() {
         }
 
         final List<ScalePoint> points = new ArrayList<>(merged.size() + 1);
-        if (record.initialPredictedTotalMs() > 0L && merged.get(0).x > 1e-6) {
+        if (record.initialPredictedTotalMs() > 0L && merged.getFirst().x > 1e-6) {
             points.add(new ScalePoint(0.0, clampScale((double) actualTotal / (double) record.initialPredictedTotalMs())));
         }
         points.addAll(merged);
 
-        final double clampedProgress = Math.max(0.0, Math.min(1.0, rawProgress));
-        if (clampedProgress <= points.get(0).x) {
-            return points.get(0).y;
+        final double clampedProgress = Math.clamp(rawProgress, 0.0, 1.0);
+        if (clampedProgress <= points.getFirst().x) {
+            return points.getFirst().y;
         }
-        final ScalePoint last = points.get(points.size() - 1);
+        final ScalePoint last = points.getLast();
         if (clampedProgress >= last.x) {
             return last.y;
         }
 
-        for (int i = 0; i < points.size() - 1; i++) {
-            final ScalePoint p1 = points.get(i);
-            final ScalePoint p2 = points.get(i + 1);
-            if (clampedProgress >= p1.x && clampedProgress <= p2.x) {
-                if (p2.x <= p1.x) return p1.y;
-                final double ratio = (clampedProgress - p1.x) / (p2.x - p1.x);
-                return clampScale(p1.y + ratio * (p2.y - p1.y));
-            }
-        }
-        return last.y;
+        return points.stream()
+                .gather(Gatherers.windowSliding(2))
+                .filter(seg -> clampedProgress >= seg.getFirst().x && clampedProgress <= seg.getLast().x)
+                .findFirst()
+                .map(seg -> {
+                    final ScalePoint p1 = seg.getFirst();
+                    final ScalePoint p2 = seg.getLast();
+                    if (p2.x <= p1.x) return p1.y;
+                    final double ratio = (clampedProgress - p1.x) / (p2.x - p1.x);
+                    return clampScale(p1.y + ratio * (p2.y - p1.y));
+                })
+                .orElse(last.y);
     }
 
     /**
@@ -290,7 +293,7 @@ public record CorrectionInterpolator() {
 
     private static double clampScale(final double scale) {
         if (Double.isNaN(scale) || Double.isInfinite(scale)) return 1.0;
-        return Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
+        return Math.clamp(scale, MIN_SCALE, MAX_SCALE);
     }
 
     private static int parsePositiveInt(final String value) {
@@ -298,7 +301,7 @@ public record CorrectionInterpolator() {
         try {
             final int parsed = Integer.parseInt(value.trim());
             return Math.max(0, parsed);
-        } catch (final NumberFormatException ignored) {
+        } catch (final NumberFormatException _) {
             return 0;
         }
     }

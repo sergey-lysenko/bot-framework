@@ -91,7 +91,7 @@ public record EtaCorrection() {
      */
     public static synchronized CorrectionRecord getMatchingRecord() {
         final List<CorrectionRecord> list = getMatchingRecords();
-        return (null != list && !list.isEmpty()) ? list.get(list.size() - 1) : null;
+        return (null != list && !list.isEmpty()) ? list.getLast() : null;
     }
 
     /**
@@ -112,7 +112,7 @@ public record EtaCorrection() {
      */
     public static synchronized CorrectionRecord loadMatchingRecord(final EtaMetadata metadata) {
         final List<CorrectionRecord> list = CorrectionStore.loadMatchingRecords(metadata);
-        return (!list.isEmpty()) ? list.get(list.size() - 1) : null;
+        return (!list.isEmpty()) ? list.getLast() : null;
     }
 
     /**
@@ -214,7 +214,7 @@ public record EtaCorrection() {
         final List<TestError> testErrors = CorrectionInterpolator.buildTestErrors(currentTestSamples, actualTotalMs);
         final long initialPredicted = (currentInitialPredictedTotalMs > 0L)
                 ? currentInitialPredictedTotalMs
-                : (!testErrors.isEmpty() ? testErrors.get(0).projectedTotalMs() : actualTotalMs);
+                : (!testErrors.isEmpty() ? testErrors.getFirst().projectedTotalMs() : actualTotalMs);
         final long overEstimationMs = Math.max(0L, initialPredicted - actualTotalMs);
 
         final CorrectionRecord newRecord = new CorrectionRecord(

@@ -116,15 +116,15 @@ record Poster() {
         return b(VALUE, q(failure.actual().render()), IS, getComparison(failure), s(expectation));
     }
 
-    @SuppressWarnings("ChainOfInstanceofChecks")
     private static String getExpectation(final Failure failure) {
 
-        final _Value<?> expected = failure.expected();
-        if (expected.value() instanceof Integer) return s(expected.value());
-        if (expected.value() instanceof Fraction) return Render.toString((Fraction) expected.value());
-        if (expected.value() instanceof IntegerRange) return (expected.value()).toString();
-        if (expected.value() instanceof FractionRange) return (expected.value()).toString();
-        return null;
+        return switch (failure.expected().value()) {
+            case final Integer i -> s(i);
+            case final Fraction f -> Render.toString(f);
+            case final IntegerRange r -> r.toString();
+            case final FractionRange r -> r.toString();
+            case null, default -> null;
+        };
     }
 
     @SuppressWarnings("CallToSuspiciousStringMethod")
@@ -182,18 +182,15 @@ record Poster() {
      *                values.
      * @return The calculated margin as a Fraction, or null if the value types are unsupported.
      */
-    @SuppressWarnings({"MethodWithMultipleReturnPoints", "DataFlowIssue", "ChainOfInstanceofChecks"})
+    @SuppressWarnings({"MethodWithMultipleReturnPoints", "DataFlowIssue"})
     private static Fraction margin(final Failure failure) {
 
-        final _Value<?> expected = failure.expected();
-        if (expected.value() instanceof Integer)
-            return Fractions.dV(fr((Integer) expected.value()), fr((Integer) failure.actual().value()));
-        if (expected.value() instanceof Fraction)
-            return Fractions.dV((Fraction) expected.value(), (Fraction) failure.actual().value());
-        if (expected.value() instanceof IntegerRange)
-            return fr(((IntegerRange) expected.value()).margin((Integer) failure.actual().value()));
-        if (expected.value() instanceof FractionRange)
-            return ((FractionRange) expected.value()).margin((Fraction) failure.actual().value());
-        return null;
+        return switch (failure.expected().value()) {
+            case final Integer i -> Fractions.dV(fr(i), fr((Integer) failure.actual().value()));
+            case final Fraction f -> Fractions.dV(f, (Fraction) failure.actual().value());
+            case final IntegerRange r -> fr(r.margin((Integer) failure.actual().value()));
+            case final FractionRange r -> r.margin((Fraction) failure.actual().value());
+            case null, default -> null;
+        };
     }
 }

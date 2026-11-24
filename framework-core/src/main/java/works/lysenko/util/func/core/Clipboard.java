@@ -54,7 +54,7 @@ public record Clipboard() {
         if (null != text) {
             try {
                 Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null);
-            } catch (final Exception ignored) {
+            } catch (final Exception _) {
             }
         }
     }

@@ -426,7 +426,7 @@ public final class CarbonSonifier implements TreeSonifier {
                 }
             } else if (!partialLeaves.isEmpty()) {
                 // 5. Partial Leaf Progress (expectant rising fourth dyad)
-                final NodeState leaf = partialLeaves.get(0);
+                final NodeState leaf = partialLeaves.getFirst();
                 final int firstMidi = pitchForNode(melodyRoot - 12, scale, leaf.col(), maxCol, leaf.rowTenths(), maxRowTenths);
                 final int secondMidi = Math.min(88, firstMidi + 5);
                 final double ratio = clamp01((double) leaf.executions() / Math.max(1, leaf.target()));
@@ -450,7 +450,7 @@ public final class CarbonSonifier implements TreeSonifier {
                         pan));
             } else if (!overExecutedLeaves.isEmpty()) {
                 // 6. Monte-Carlo Over-Execution Telemetry Tick (crisp, damped against ear fatigue)
-                final NodeState leaf = overExecutedLeaves.get(overExecutedLeaves.size() - 1);
+                final NodeState leaf = overExecutedLeaves.getLast();
                 final int overCount = Math.max(1, leaf.executions() - leaf.target());
                 final double damping = Math.max(0.30, 1.0 / (1.0 + 0.32 * (overCount - 1)));
                 final int midi = Math.min(91,
@@ -468,7 +468,7 @@ public final class CarbonSonifier implements TreeSonifier {
 
             // 7. Semantic Telemetry Cues (Notice, Warning, Known Failure, Unexpected Failure)
             if (!newlyRawFailNodes.isEmpty()) {
-                final NodeState failed = newlyRawFailNodes.get(0);
+                final NodeState failed = newlyRawFailNodes.getFirst();
                 final double pan = panForColumn(failed.col(), maxCol);
                 final double boost = Math.min(1.25, Math.sqrt(newlyRawFailNodes.size()));
                 frameEvents.add(new SynthEvent(
@@ -488,7 +488,7 @@ public final class CarbonSonifier implements TreeSonifier {
                         0.82,
                         pan));
             } else if (!newlyKnownFailNodes.isEmpty() && frameIndex - lastKnownFailFrame >= KNOWN_ISSUE_COOLDOWN_FRAMES) {
-                final NodeState knownFail = newlyKnownFailNodes.get(0);
+                final NodeState knownFail = newlyKnownFailNodes.getFirst();
                 final double pan = panForColumn(knownFail.col(), maxCol);
                 frameEvents.add(new SynthEvent(
                         frameStart + subFrameOffset(samplesPerFrame, 14),
@@ -510,7 +510,7 @@ public final class CarbonSonifier implements TreeSonifier {
             }
 
             if (!newlyRawWarnNodes.isEmpty()) {
-                final NodeState warned = newlyRawWarnNodes.get(0);
+                final NodeState warned = newlyRawWarnNodes.getFirst();
                 final double pan = panForColumn(warned.col(), maxCol);
                 final int baseMidi = pitchForNode(melodyRoot, scale, warned.col(), maxCol, warned.rowTenths(), maxRowTenths);
                 frameEvents.add(new SynthEvent(
@@ -530,7 +530,7 @@ public final class CarbonSonifier implements TreeSonifier {
                         0.52,
                         pan));
             } else if (!newlyKnownWarnNodes.isEmpty() && frameIndex - lastKnownWarnFrame >= KNOWN_ISSUE_COOLDOWN_FRAMES) {
-                final NodeState knownWarn = newlyKnownWarnNodes.get(0);
+                final NodeState knownWarn = newlyKnownWarnNodes.getFirst();
                 final double pan = panForColumn(knownWarn.col(), maxCol);
                 final int baseMidi = pitchForNode(melodyRoot, scale, knownWarn.col(), maxCol, knownWarn.rowTenths(), maxRowTenths);
                 frameEvents.add(new SynthEvent(
@@ -543,7 +543,7 @@ public final class CarbonSonifier implements TreeSonifier {
                         pan));
                 lastKnownWarnFrame = frameIndex;
             } else if (!newlyNoticeNodes.isEmpty()) {
-                final NodeState noticed = newlyNoticeNodes.get(0);
+                final NodeState noticed = newlyNoticeNodes.getFirst();
                 final double pan = panForColumn(noticed.col(), maxCol);
                 final int midi = pitchForNode(melodyRoot, scale, noticed.col(), maxCol, noticed.rowTenths(), maxRowTenths) + 7;
                 frameEvents.add(new SynthEvent(
@@ -672,7 +672,7 @@ public final class CarbonSonifier implements TreeSonifier {
         final int degree = (int) Math.round(normCol * 9.0) + (int) Math.round(normHeight * 2.0);
         final int octave = degree / scale.length;
         final int step = scale[degree % scale.length];
-        return Math.max(36, Math.min(88, baseMidi + octave * 12 + step));
+        return Math.clamp(baseMidi + octave * 12 + step, 36, 88);
     }
 
     private static double panForColumn(final int col, final int maxCol) {
@@ -683,11 +683,11 @@ public final class CarbonSonifier implements TreeSonifier {
     }
 
     private static double clampPan(final double pan) {
-        return Math.max(-0.90, Math.min(0.90, pan));
+        return Math.clamp(pan, -0.90, 0.90);
     }
 
     private static double clamp01(final double value) {
-        return Math.max(0.0, Math.min(1.0, value));
+        return Math.clamp(value, 0.0, 1.0);
     }
 
     private static long subFrameOffset(final int samplesPerFrame, final int desiredMillis) {
@@ -979,7 +979,7 @@ public final class CarbonSonifier implements TreeSonifier {
         }
         if (segments.size() == 1) {
             final int col = Math.max(0, (int) Math.round((cards.get(index).x - 40.0) / 270.0));
-            return col + ":" + segments.get(0);
+            return col + ":" + segments.getFirst();
         }
         java.util.Collections.reverse(segments);
         return String.join("/", segments);
@@ -1161,7 +1161,7 @@ public final class CarbonSonifier implements TreeSonifier {
     private static int parseIntSafe(final String text, final int fallback) {
         try {
             return Integer.parseInt(text.trim());
-        } catch (final NumberFormatException ignored) {
+        } catch (final NumberFormatException _) {
             return fallback;
         }
     }
@@ -1169,7 +1169,7 @@ public final class CarbonSonifier implements TreeSonifier {
     private static double parseDoubleSafe(final String text, final double fallback) {
         try {
             return Double.parseDouble(text.trim());
-        } catch (final NumberFormatException ignored) {
+        } catch (final NumberFormatException _) {
             return fallback;
         }
     }
@@ -1215,7 +1215,7 @@ public final class CarbonSonifier implements TreeSonifier {
 
         double coverageRatio() {
             if (headerExecutableLeaves > 0 && headerCoveredLeaves >= 0) {
-                return Math.max(0.0, Math.min(1.0, (double) headerCoveredLeaves / headerExecutableLeaves));
+                return Math.clamp((double) headerCoveredLeaves / headerExecutableLeaves, 0.0, 1.0);
             }
             int total = 0;
             int covered = 0;

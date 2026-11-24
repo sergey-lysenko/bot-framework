@@ -80,7 +80,7 @@ public record Callstack() {
                         java.nio.charset.StandardCharsets.UTF_8,
                         java.nio.file.StandardOpenOption.CREATE,
                         java.nio.file.StandardOpenOption.APPEND);
-            } catch (final Exception ignored) {
+            } catch (final Exception _) {
                 // Suppressed to prevent failure during callstack formatting
             }
         });

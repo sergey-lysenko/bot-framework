@@ -142,7 +142,7 @@ public final class RunLocks {
                 if (!isPostprocessLockHeld()) return;
                 Thread.sleep(250);
             }
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
         }
     }
 

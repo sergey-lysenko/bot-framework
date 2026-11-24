@@ -128,7 +128,7 @@ public class Calculator implements _GridCalculator {
                             ? raw
                             : snapCache.computeIfAbsent(raw, rgb -> snapToNearestQuota(rgb, spreadQuotas));
                     counts.put(bucket, counts.getOrDefault(bucket, 0) + 1);
-                    bins.computeIfAbsent(bucket, k -> new BitSet(1)).set(i);
+                    bins.computeIfAbsent(bucket, _ -> new BitSet(1)).set(i);
                 }
             }
         }

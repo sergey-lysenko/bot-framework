@@ -98,7 +98,7 @@ public final class TimelineRenderer {
      */
     public static String renderPhaseBar(final TelemetryItem item, final String extraClass, final double maxSec) {
         if (null == item) return "";
-        final int pct = maxSec > 0 ? Math.max(6, Math.min(100, (int) Math.round((item.sec / maxSec) * 100))) : 6;
+        final int pct = maxSec > 0 ? Math.clamp(Math.round((item.sec / maxSec) * 100), 6, 100) : 6;
         final String valStr = (item.sec >= 1.0)
                 ? String.format(Locale.ROOT, "%.2fs", item.sec)
                 : Math.round(item.ms) + "ms";

@@ -32,7 +32,7 @@ final class MonteCarloSimulator {
         final Random random = new Random(42);
         final int totalScenarios = tree.totalScenarios();
         final int accessibleLeafsCount = tree.accessibleLeafs();
-        final int maxCycles = Math.min(MAX_CYCLES_PER_TRIAL, Math.max(1000, accessibleLeafsCount * targetExecutions * 20));
+        final int maxCycles = Math.clamp(accessibleLeafsCount * targetExecutions * 20, 1000, MAX_CYCLES_PER_TRIAL);
         final int maxStallCycles = Math.max(300, accessibleLeafsCount * 15);
 
         final int[] executions = new int[totalScenarios];

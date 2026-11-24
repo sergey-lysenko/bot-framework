@@ -251,7 +251,7 @@ public final class LogFormatting {
         if (val <= 0.0) return marginTop + plotH;
         final double logMax = Math.log10(Math.max(1.0, maxVal) + 1.0);
         final double logVal = Math.log10(Math.min(maxVal, val) + 1.0);
-        final double norm = Math.min(1.0, Math.max(0.0, logVal / logMax));
+        final double norm = Math.clamp(logVal / logMax, 0.0, 1.0);
         return (marginTop + plotH) - norm * plotH;
     }
 

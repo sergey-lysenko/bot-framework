@@ -603,7 +603,7 @@ public final class TreeLayoutEditorModel {
         nodes.add(node);
         nodeById.put(id, node);
         classNameByNodeId.put(id, bp.className());
-        nodesByClassName.computeIfAbsent(bp.className(), ignored -> new ArrayList<>()).add(node);
+        nodesByClassName.computeIfAbsent(bp.className(), _ -> new ArrayList<>()).add(node);
 
         if (null != parent) {
             node.setParent(parent);

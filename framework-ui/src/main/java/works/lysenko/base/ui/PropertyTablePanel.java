@@ -101,7 +101,7 @@ public class PropertyTablePanel extends JPanel {
         searchPanel.add(new JLabel("Search:"));
         final JButton clearBtn = new JButton("Clear");
         clearBtn.setMargin(new Insets(2, 6, 2, 6));
-        clearBtn.addActionListener(e -> searchField.setText(""));
+        clearBtn.addActionListener(_ -> searchField.setText(""));
         searchPanel.add(searchField);
         searchPanel.add(clearBtn);
         if (null != extraSearchComponent) {
@@ -115,7 +115,7 @@ public class PropertyTablePanel extends JPanel {
         for (final String filter : quickFilters) {
             final JButton filterBtn = new JButton(filter);
             filterBtn.setMargin(new Insets(2, 6, 2, 6));
-            filterBtn.addActionListener(e -> searchField.setText(filter));
+            filterBtn.addActionListener(_ -> searchField.setText(filter));
             quickFiltersPanel.add(filterBtn);
         }
         topContainer.add(quickFiltersPanel, BorderLayout.SOUTH);
@@ -155,7 +155,7 @@ public class PropertyTablePanel extends JPanel {
         valueContainer.add(valueField, BorderLayout.CENTER);
         selectPartsBtn.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
         selectPartsBtn.setVisible(false);
-        selectPartsBtn.addActionListener(e -> showPartsSelectionDialog());
+        selectPartsBtn.addActionListener(_ -> showPartsSelectionDialog());
         valueContainer.add(selectPartsBtn, BorderLayout.EAST);
         formPanel.add(valueContainer, gbc);
         row++;
@@ -168,7 +168,7 @@ public class PropertyTablePanel extends JPanel {
         row++;
 
         final JPanel formButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
-        newEntryBtn.addActionListener(e -> clearForm());
+        newEntryBtn.addActionListener(_ -> clearForm());
         formButtons.add(newEntryBtn);
         formButtons.add(saveEntryBtn);
         formButtons.add(deleteEntryBtn);
@@ -387,7 +387,7 @@ public class PropertyTablePanel extends JPanel {
                         }
                         relativePaths.add(relStr);
                     });
-        } catch (final Exception ignored) {}
+        } catch (final Exception _) {}
     }
 
     /**
@@ -473,9 +473,9 @@ public class PropertyTablePanel extends JPanel {
 
         final JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
         final JButton selectAllBtn = new JButton("Select All");
-        selectAllBtn.addActionListener(e -> localList.forEach(cb -> cb.setSelected(true)));
+        selectAllBtn.addActionListener(_ -> localList.forEach(cb -> cb.setSelected(true)));
         final JButton deselectAllBtn = new JButton("Deselect All");
-        deselectAllBtn.addActionListener(e -> localList.forEach(cb -> cb.setSelected(false)));
+        deselectAllBtn.addActionListener(_ -> localList.forEach(cb -> cb.setSelected(false)));
         toolbar.add(selectAllBtn);
         toolbar.add(deselectAllBtn);
 

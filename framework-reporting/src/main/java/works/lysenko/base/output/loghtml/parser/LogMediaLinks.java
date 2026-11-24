@@ -219,7 +219,7 @@ public final class LogMediaLinks {
                     .ofPattern("yyyy-MM-dd HH:mm:ss")
                     .withZone(ZoneId.systemDefault());
             timeStr = dtf.format(Instant.ofEpochMilli(epoch));
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
             // Ignored
         }
 

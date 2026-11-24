@@ -77,7 +77,7 @@ public final class TreeLayoutOptimizer {
         final Map<Integer, List<NodeData>> colMap = new TreeMap<>();
         int maxCol = 0;
         for (final NodeData n : nodes) {
-            colMap.computeIfAbsent(n.col(), k -> new ArrayList<>()).add(n);
+            colMap.computeIfAbsent(n.col(), _ -> new ArrayList<>()).add(n);
             if (n.col() > maxCol) maxCol = n.col();
         }
 
@@ -230,7 +230,7 @@ public final class TreeLayoutOptimizer {
 
         final Map<NodeData, List<NodeData>> parentGroups = new LinkedHashMap<>();
         for (final NodeData n : colNodes) {
-            parentGroups.computeIfAbsent(n.parent(), k -> new ArrayList<>()).add(n);
+            parentGroups.computeIfAbsent(n.parent(), _ -> new ArrayList<>()).add(n);
         }
 
         for (final List<NodeData> siblings : parentGroups.values()) {
@@ -362,18 +362,18 @@ public final class TreeLayoutOptimizer {
     public static void compactDisconnectedTrees(final List<NodeData> nodes) {
         final Map<NodeData, List<NodeData>> components = new IdentityHashMap<>();
         for (final NodeData node : nodes)
-            components.computeIfAbsent(rootOf(node), ignored -> new ArrayList<>()).add(node);
+            components.computeIfAbsent(rootOf(node), _ -> new ArrayList<>()).add(node);
 
         final List<List<NodeData>> ordered = new ArrayList<>(components.values());
         ordered.sort((c1, c2) -> {
             final int mCmp = Double.compare(minimumRow(c1), minimumRow(c2));
             if (mCmp != 0) return mCmp;
-            final String l1 = c1.isEmpty() ? "" : c1.get(0).label();
-            final String l2 = c2.isEmpty() ? "" : c2.get(0).label();
+            final String l1 = c1.isEmpty() ? "" : c1.getFirst().label();
+            final String l2 = c2.isEmpty() ? "" : c2.getFirst().label();
             final int lCmp = l1.compareTo(l2);
             if (lCmp != 0) return lCmp;
-            final String id1 = c1.isEmpty() ? "" : c1.get(0).id();
-            final String id2 = c2.isEmpty() ? "" : c2.get(0).id();
+            final String id1 = c1.isEmpty() ? "" : c1.getFirst().id();
+            final String id2 = c2.isEmpty() ? "" : c2.getFirst().id();
             return id1.compareTo(id2);
         });
 
@@ -424,7 +424,7 @@ public final class TreeLayoutOptimizer {
         final Map<String, Integer> keyCounts = new HashMap<>(ordered.size() * 2);
         for (int i = 0; i < ordered.size(); i++) {
             final List<NodeData> comp = ordered.get(i);
-            final NodeData root = comp.isEmpty() ? null : rootOf(comp.get(0));
+            final NodeData root = comp.isEmpty() ? null : rootOf(comp.getFirst());
             final String baseKey = baseRootKey(root);
             final int count = keyCounts.getOrDefault(baseKey, 0);
             keyCounts.put(baseKey, count + 1);
@@ -606,7 +606,7 @@ public final class TreeLayoutOptimizer {
             return;
         }
         if (nonEmpty.size() == 1) {
-            final List<ComponentInfo> onlyBank = nonEmpty.get(0);
+            final List<ComponentInfo> onlyBank = nonEmpty.getFirst();
             final List<List<NodeData>> single = new ArrayList<>(onlyBank.size());
             for (final ComponentInfo info : onlyBank) single.add(info.nodes);
             stackComponentsVertically(single);
@@ -1147,12 +1147,12 @@ public final class TreeLayoutOptimizer {
             final double z = targets[i] - i;
             blocks.add(new Block(z, 1));
             while (blocks.size() > 1) {
-                final Block b2 = blocks.get(blocks.size() - 1);
+                final Block b2 = blocks.getLast();
                 final Block b1 = blocks.get(blocks.size() - 2);
                 if (b1.avg() > b2.avg()) {
                     b1.sum += b2.sum;
                     b1.count += b2.count;
-                    blocks.remove(blocks.size() - 1);
+                    blocks.removeLast();
                 } else {
                     break;
                 }
@@ -1558,7 +1558,7 @@ public final class TreeLayoutOptimizer {
         final int minSep = Math.max(0, Optimization.minOffsetSeparation);
         final Map<Integer, List<NodeData>> colNodesMap = new TreeMap<>();
         for (final NodeData n : nodes) {
-            colNodesMap.computeIfAbsent(n.col(), k -> new ArrayList<>()).add(n);
+            colNodesMap.computeIfAbsent(n.col(), _ -> new ArrayList<>()).add(n);
         }
 
         final Map<Integer, Integer> colMapping = new HashMap<>();
@@ -1608,7 +1608,7 @@ public final class TreeLayoutOptimizer {
         final Map<Integer, List<NodeData>> rowNodesMap = new TreeMap<>();
         for (final NodeData n : nodes) {
             final int roundedRow = (int) Math.round(n.row());
-            rowNodesMap.computeIfAbsent(roundedRow, k -> new ArrayList<>()).add(n);
+            rowNodesMap.computeIfAbsent(roundedRow, _ -> new ArrayList<>()).add(n);
         }
 
         double shift = 0.0;

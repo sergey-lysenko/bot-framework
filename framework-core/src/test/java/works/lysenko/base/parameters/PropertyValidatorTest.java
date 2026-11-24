@@ -79,4 +79,23 @@ class PropertyValidatorTest {
     void customPropertiesAreFreeForm() {
         assertNull(PropertyValidator.validate("my.custom.key", "anything"));
     }
+
+    @Test
+    void classFileScannerDiscoversDirectAndTransitiveSubtypes() {
+        final var propEnums = ClasspathSubtypeScanner.findSubTypesOf(
+                works.lysenko.util.apis._PropEnum.class,
+                java.util.List.of("works.lysenko"),
+                true);
+        org.junit.jupiter.api.Assertions.assertTrue(
+                propEnums.contains(PropEnum.class),
+                "Class-File API scanner must discover PropEnum implementing _PropEnum");
+
+        final var scenarios = ClasspathSubtypeScanner.findSubTypesOf(
+                java.util.List.of(works.lysenko.tree.base.Node.class, works.lysenko.tree.base.Leaf.class),
+                java.util.List.of("works.lysenko.tree"),
+                false);
+        org.junit.jupiter.api.Assertions.assertTrue(
+                scenarios.get(works.lysenko.tree.base.Leaf.class).contains(works.lysenko.tree.base.Mono.class),
+                "Class-File API scanner must discover Mono extending Leaf");
+    }
 }

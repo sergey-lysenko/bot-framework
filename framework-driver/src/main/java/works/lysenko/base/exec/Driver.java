@@ -257,7 +257,7 @@ public class Driver implements _Driver {
         try (final ServerSocket socket = new ServerSocket(port)) {
             socket.setReuseAddress(true);
             return true;
-        } catch (final IOException ignored) {
+        } catch (final IOException _) {
             return false;
         }
     }
@@ -373,7 +373,7 @@ public class Driver implements _Driver {
                         return line.substring(line.indexOf(MSG_ORIGINAL_ERROR));
                     }
                 }
-            } catch (final Exception ignored) {
+            } catch (final Exception _) {
                 // fallback to exception analysis
             }
         }
@@ -475,6 +475,6 @@ public class Driver implements _Driver {
             capabilities.setCapability(APPIUM_APP_PACKAGE, bid);
             capabilities.setCapability(APPIUM_APP_ACTIVITY, s(bid, _DOT_, MAIN_ACTIVITY));
             capabilities.setCapability(APPIUM_NO_RESET, true);
-        } else capabilities.setCapability(APP, app.getAbsolutePath());
+        } else capabilities.setCapability(APPIUM_APP, app.getAbsolutePath());
     }
 }

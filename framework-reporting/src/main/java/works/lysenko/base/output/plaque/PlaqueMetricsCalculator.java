@@ -206,7 +206,7 @@ public final class PlaqueMetricsCalculator {
             try {
                 final String cStr = e.count.contains(":") ? e.count.split(":")[0] : e.count;
                 count = Integer.parseInt(cStr.trim());
-            } catch (final Exception ignored) {
+            } catch (final Exception _) {
             }
 
             boolean isExec = true;
@@ -214,7 +214,7 @@ public final class PlaqueMetricsCalculator {
                 final String cleanWeight = e.weight.replaceAll("[\\[\\]()]", "").trim();
                 try {
                     isExec = Double.parseDouble(cleanWeight) != 0.0;
-                } catch (final Exception ignored) {
+                } catch (final Exception _) {
                     isExec = !("0".equals(cleanWeight) || "0.0".equals(cleanWeight));
                 }
             }

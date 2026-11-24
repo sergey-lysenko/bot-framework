@@ -83,7 +83,7 @@ public final class DetachedProcessLauncher {
                         sb.append(File.pathSeparator).append(locPath);
                     }
                 }
-            } catch (final Throwable ignored) {
+            } catch (final Throwable _) {
             }
         }
 
@@ -95,7 +95,7 @@ public final class DetachedProcessLauncher {
                     if (paths.add(urlPath)) {
                         sb.append(File.pathSeparator).append(urlPath);
                     }
-                } catch (final Exception ignored) {
+                } catch (final Exception _) {
                 }
             }
         }

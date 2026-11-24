@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static java.util.Objects.isNull;
 import static works.lysenko.util.data.strs.Swap.s;
@@ -35,6 +36,7 @@ public record Theme(String name, Map<String, Integer> colours) {
 
     private static final String CLASSPATH_THEMES_PREFIX = "themes/";
     private static final AtomicReference<Theme> ACTIVE = new AtomicReference<>();
+    private static final ScopedValue<Theme> SCOPED = ScopedValue.newInstance();
 
     /**
      * Compact constructor enforcing an immutable copy of the palette map.
@@ -46,14 +48,41 @@ public record Theme(String name, Map<String, Integer> colours) {
         colours = Collections.unmodifiableMap(copy);
     }
 
-    /**
-     * Returns the globally active theme, or {@code null} when no theme is active.
-     *
-     * @return active theme or {@code null}
-     */
+    /// Returns the active theme for the current dynamic scope, falling back to the
+    /// globally active theme, or `null` when no theme is active.
+    ///
+    /// A theme bound via [#withActive(Theme, Runnable)] or [#withActive(Theme, Supplier)]
+    /// takes precedence over the global [#setActive(Theme)] fallback (including an explicit
+    /// `null` binding that suppresses the global theme within that scope).
+    ///
+    /// @return active theme or `null`
     public static Theme active() {
 
-        return ACTIVE.get();
+        return SCOPED.isBound() ? SCOPED.get() : ACTIVE.get();
+    }
+
+    /// Runs `action` with `theme` bound as the active theme for the current thread
+    /// and any structured child virtual threads for the dynamic extent of the call.
+    /// Passing `null` suppresses any globally active theme inside the scope.
+    ///
+    /// @param theme  scoped active theme (may be `null` to clear within the scope)
+    /// @param action operation to execute while `theme` is bound
+    public static void withActive(final Theme theme, final Runnable action) {
+
+        ScopedValue.where(SCOPED, theme).run(action);
+    }
+
+    /// Evaluates `supplier` with `theme` bound as the active theme for the current thread
+    /// and any structured child virtual threads for the dynamic extent of the call.
+    /// Passing `null` suppresses any globally active theme inside the scope.
+    ///
+    /// @param theme    scoped active theme (may be `null` to clear within the scope)
+    /// @param supplier operation producing a result while `theme` is bound
+    /// @param <T>      result type
+    /// @return result returned by `supplier`
+    public static <T> T withActive(final Theme theme, final Supplier<T> supplier) {
+
+        return ScopedValue.where(SCOPED, theme).call(supplier::get);
     }
 
     /**
@@ -81,12 +110,12 @@ public record Theme(String name, Map<String, Integer> colours) {
                 ? cl.getResourceAsStream(resource)
                 : Theme.class.getClassLoader().getResourceAsStream(resource)) {
             if (isNotNull(in)) return true;
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
             return false;
         }
         try (InputStream in = Theme.class.getClassLoader().getResourceAsStream(resource)) {
             return isNotNull(in);
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
             return false;
         }
     }
@@ -105,7 +134,7 @@ public record Theme(String name, Map<String, Integer> colours) {
         try {
             Integer.parseInt(trimmed);
             return true;
-        } catch (final NumberFormatException ignored) {
+        } catch (final NumberFormatException _) {
             return false;
         }
     }
@@ -208,7 +237,7 @@ public record Theme(String name, Map<String, Integer> colours) {
                     return (int) Long.parseLong(hex, 16);
                 }
                 return null;
-            } catch (final NumberFormatException ignored) {
+            } catch (final NumberFormatException _) {
                 return null;
             }
         }

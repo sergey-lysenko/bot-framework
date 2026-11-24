@@ -163,7 +163,7 @@ public final class TreeCameraTransform {
             final double scaleY = availH / activeH;
             final double maxSingleNodeZoom = Math.max(1.0, Math.min(availW / CARD_WIDTH, availH / CARD_HEIGHT));
             debugMaxZoom = maxSingleNodeZoom;
-            zoom = Math.max(0.1, Math.min(Math.min(scaleX, scaleY), maxSingleNodeZoom));
+            zoom = Math.clamp(Math.min(scaleX, scaleY), 0.1, maxSingleNodeZoom);
         }
 
         final double targetCenterX = baseW / 2.0;

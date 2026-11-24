@@ -1,6 +1,5 @@
 package works.lysenko.base.output.loghtml;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -43,13 +42,8 @@ public final class TemplateEngine {
                 logEvent(S2, s("Template resource not found on classpath: ", resourcePath));
                 return "";
             }
-            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                final StringBuilder sb = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    sb.append(s(line, "\n"));
-                }
-                return sb.toString();
+            try (final InputStreamReader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
+                return reader.readAllAsString();
             }
         } catch (final IOException e) {
             logEvent(S2, s("Failed to load template resource ", resourcePath, ": ", e.getMessage()));

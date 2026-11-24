@@ -78,14 +78,16 @@ public class PropertiesPanel extends JPanel {
     public PropertiesPanel(final String testName, final boolean isHeadless,
                            final boolean isAllLeafs, final int allLeafsExecutions) {
 
-        this((isNotNull(Base.properties)) ? Base.properties : new TestProperties(), testName, isHeadless, isAllLeafs, allLeafsExecutions);
+        final _TestProperties props = isNotNull(Base.properties) ? Base.properties : new TestProperties();
+        this(props, testName, isHeadless, isAllLeafs, allLeafsExecutions);
     }
 
     public PropertiesPanel(final String testName, final boolean isHeadless,
                            final boolean isAllLeafs, final int allLeafsExecutions,
                            final JComponent extraSearchComponent) {
 
-        this((isNotNull(Base.properties)) ? Base.properties : new TestProperties(), testName, isHeadless, isAllLeafs, allLeafsExecutions, extraSearchComponent);
+        final _TestProperties props = isNotNull(Base.properties) ? Base.properties : new TestProperties();
+        this(props, testName, isHeadless, isAllLeafs, allLeafsExecutions, extraSearchComponent);
     }
 
     /**
@@ -145,20 +147,20 @@ public class PropertiesPanel extends JPanel {
         copyPropertyNameBtn = new JButton("Copy Property Name");
         copyPropertyNameBtn.setToolTipText("Copy the selected property name to the clipboard");
         copyPropertyNameBtn.setEnabled(false);
-        copyPropertyNameBtn.addActionListener(e -> copySelectedPropertyName());
+        copyPropertyNameBtn.addActionListener(_ -> copySelectedPropertyName());
         resetSelectedBtn = new JButton(b(c(RESET), c(SELECTED)));
-        resetSelectedBtn.addActionListener(e -> onResetSelected());
+        resetSelectedBtn.addActionListener(_ -> onResetSelected());
         resetAllBtn = new JButton(b(c(RESET), "All"));
-        resetAllBtn.addActionListener(e -> onResetAll());
+        resetAllBtn.addActionListener(_ -> onResetAll());
         leftActions.add(copyPropertyNameBtn);
         leftActions.add(resetSelectedBtn);
         leftActions.add(resetAllBtn);
 
         final JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         // cancelBtn = new JButton("Cancel");
-        // cancelBtn.addActionListener(e -> onCancel());
+        // cancelBtn.addActionListener(_ -> onCancel());
         okBtn = new JButton("Apply");
-        okBtn.addActionListener(e -> applyChanges());
+        okBtn.addActionListener(_ -> applyChanges());
         // rightActions.add(cancelBtn);
         rightActions.add(okBtn);
 
@@ -369,7 +371,7 @@ public class PropertiesPanel extends JPanel {
         try {
             Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(propertyName), null);
             validationLabel.setText(" ");
-        } catch (final IllegalStateException e) {
+        } catch (final IllegalStateException _) {
             validationLabel.setText("Unable to copy property name: clipboard is unavailable.");
         }
     }

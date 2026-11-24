@@ -78,7 +78,7 @@ public interface _ReportingProvider {
      */
     static List<String> resolveTreeSonificationValues() {
         if (!Holder.PROVIDERS.isEmpty()) {
-            return Holder.PROVIDERS.get(0).treeSonificationValues();
+            return Holder.PROVIDERS.getFirst().treeSonificationValues();
         }
         return List.of("none", "copilot", "claude", "gemini", "orpheus", "aurora", "carbon", "neon", "jmj", "dnb");
     }

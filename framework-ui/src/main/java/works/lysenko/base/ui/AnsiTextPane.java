@@ -159,7 +159,7 @@ final class AnsiTextPane extends JTextPane {
         for (int i = 0; i < parts.length; i++) {
             try {
                 result[i] = parts[i].isEmpty() ? 0 : Integer.parseInt(parts[i]);
-            } catch (final NumberFormatException ignored) {
+            } catch (final NumberFormatException _) {
                 result[i] = 0;
             }
         }
@@ -220,11 +220,11 @@ final class AnsiTextPane extends JTextPane {
     }
 
     private static int clampColor(final int component) {
-        return Math.max(0, Math.min(255, component));
+        return Math.clamp(component, 0, 255);
     }
 
     private static Color indexedColor(final int index) {
-        final int safeIndex = Math.max(0, Math.min(255, index));
+        final int safeIndex = Math.clamp(index, 0, 255);
         if (safeIndex < 8) return COLORS[safeIndex];
         if (safeIndex < 16) return BRIGHT_COLORS[safeIndex - 8];
         if (safeIndex < 232) {
@@ -324,7 +324,7 @@ final class AnsiTextPane extends JTextPane {
     private void moveHorizontal(final int amount) {
         final int start = lineStart(cursor);
         final int end = lineEnd(cursor);
-        cursor = Math.max(start, Math.min(end, cursor + amount));
+        cursor = Math.clamp(cursor + amount, start, end);
     }
 
     private void moveVertical(final int amount) {

@@ -26,7 +26,7 @@ public final class GuiLayoutBuilder {
     static {
         try {
             ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE);
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
         }
     }
 

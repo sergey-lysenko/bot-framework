@@ -71,7 +71,7 @@ public class ExpectedResponsesStore {
             return Collections.emptyList();
         }
         final String key = (null != scenarioName) ? scenarioName : NULL_SCENARIO_KEY;
-        return scenarioNameCache.computeIfAbsent(key, k -> {
+        return scenarioNameCache.computeIfAbsent(key, _ -> {
             final List<ExpectedResponse> matched = new ArrayList<>(4);
             for (final ExpectedResponse er : responses) {
                 if (!KnownIssuesMatcher.isCatchAllRule(er.scenario(), er.pattern())
@@ -94,7 +94,7 @@ public class ExpectedResponsesStore {
         if (responses.isEmpty() || null == scenario) {
             return Collections.emptyList();
         }
-        return scenarioCache.computeIfAbsent(scenarioKey(scenario), k -> {
+        return scenarioCache.computeIfAbsent(scenarioKey(scenario), _ -> {
             final List<ExpectedResponse> matched = new ArrayList<>(4);
             for (final ExpectedResponse er : responses) {
                 if (!KnownIssuesMatcher.isCatchAllRule(er.scenario(), er.pattern())
@@ -115,7 +115,7 @@ public class ExpectedResponsesStore {
         if (responses.isEmpty() || null == node) {
             return Collections.emptyList();
         }
-        return nodeViewCache.computeIfAbsent(nodeViewKey(node), k -> {
+        return nodeViewCache.computeIfAbsent(nodeViewKey(node), _ -> {
             final List<ExpectedResponse> matched = new ArrayList<>(4);
             for (final ExpectedResponse er : responses) {
                 if (!KnownIssuesMatcher.isCatchAllRule(er.scenario(), er.pattern())
@@ -139,9 +139,9 @@ public class ExpectedResponsesStore {
         if (0 == eventCount) {
             return false;
         }
-        final _LogRecord firstRecord = events.get(0);
+        final _LogRecord firstRecord = events.getFirst();
         synchronized (nodeCursorLock) {
-            final Map<String, NodeMatchCursor> perKey = nodeMatchCursors.computeIfAbsent(result, r -> new HashMap<>(2));
+            final Map<String, NodeMatchCursor> perKey = nodeMatchCursors.computeIfAbsent(result, _ -> new HashMap<>(2));
             NodeMatchCursor cursor = perKey.get(cursorKey);
             final boolean cursorValid = null != cursor
                     && cursor.candidates == candidates

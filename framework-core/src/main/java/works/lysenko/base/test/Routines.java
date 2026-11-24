@@ -77,7 +77,7 @@ public record Routines() {
             log(CLOSING_TEST_SERVICE);
             try {
                 service.close();
-            } catch (final java.io.IOException ignored) {
+            } catch (final java.io.IOException _) {
                 // Service closure is best-effort
             }
             log(b(DOTS, DONE));

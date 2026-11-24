@@ -30,7 +30,7 @@ public record CompletionSidecarReader() {
             final File file = new File(sidecarPath);
             if (!file.isFile()) return List.of();
             return parseLines(Files.readAllLines(file.toPath(), StandardCharsets.UTF_8));
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
             return List.of();
         }
     }
@@ -75,7 +75,7 @@ public record CompletionSidecarReader() {
                 if (passedMs > 0L && etaMs >= 0L) {
                     samples.add(new TestSample(testNum, passedMs, etaMs));
                 }
-            } catch (final NumberFormatException ignored) {
+            } catch (final NumberFormatException _) {
             }
         }
         return samples;

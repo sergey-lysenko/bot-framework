@@ -230,7 +230,7 @@ public class TestProperties implements _TestProperties {
                         configFileDefaults.put(k, res.properties().getProperty(k));
                     }
                 }
-            } catch (final RuntimeException ignored) {
+            } catch (final RuntimeException _) {
             }
         }
     }
@@ -527,7 +527,7 @@ public class TestProperties implements _TestProperties {
                 if (isNotNull(res) && isNotNull(res.properties())) {
                     the.putAll(res.properties());
                 }
-            } catch (final RuntimeException ignored) {
+            } catch (final RuntimeException _) {
             }
         }
         updateConfigFileDefaults(testName);
@@ -620,7 +620,7 @@ public class TestProperties implements _TestProperties {
                         effective.put(k, res.properties().getProperty(k));
                     }
                 }
-            } catch (final RuntimeException ignored) {
+            } catch (final RuntimeException _) {
             }
         }
         if (Boolean.TRUE.equals(isHeadless)) {

@@ -358,7 +358,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
                     }
                 }
             }
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
             // Fallback
         }
         return "127.0.0.1";
@@ -398,7 +398,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
                 if (Integer.parseInt(countVal) > 1) {
                     return true;
                 }
-            } catch (final NumberFormatException ignored) {
+            } catch (final NumberFormatException _) {
             }
         }
         final String val = getValue(ALL_LEAFS);
@@ -418,7 +418,7 @@ public final class Parameters extends Properties implements _ExecutionParameterV
         if (isNotNull(val) && !val.isEmpty()) {
             try {
                 return Math.max(1, Integer.parseInt(val));
-            } catch (final NumberFormatException ignored) {
+            } catch (final NumberFormatException _) {
             }
         }
         final Integer prop = PropEnum._TEST_ALL_LEAFS_EXECUTIONS.get();

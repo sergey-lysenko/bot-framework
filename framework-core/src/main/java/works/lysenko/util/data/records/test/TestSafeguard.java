@@ -21,6 +21,7 @@ public record TestSafeguard(int tests, int milliseconds) {
      */
     public TestSafeguard(final String str) {
 
-        this(inn(str.split(l0)[ZERO]), inn(str.split(l0)[ONE]));
+        final String[] parts = str.split(l0);
+        this(inn(parts[ZERO]), inn(parts[ONE]));
     }
 }

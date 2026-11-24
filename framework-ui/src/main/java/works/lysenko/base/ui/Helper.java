@@ -179,12 +179,12 @@ public final class Helper extends JFrame {
         final JPanel fileBtnRow = new JPanel(new GridLayout(1, 3, 4, 4));
         final JButton saveBtn = new JButton("Save");
         saveBtn.setToolTipText("Save changes to grid file (Cmd+S)");
-        saveBtn.addActionListener(e -> saveCurrentGrid());
+        saveBtn.addActionListener(_ -> saveCurrentGrid());
         final JButton autoImgBtn = new JButton("Find Img");
         autoImgBtn.setToolTipText("Auto-locate recent screenshot for this grid");
-        autoImgBtn.addActionListener(e -> autoLocateScreenshot());
+        autoImgBtn.addActionListener(_ -> autoLocateScreenshot());
         final JButton recalcBtn = new JButton(c(RECALCULATE));
-        recalcBtn.addActionListener(e -> recalculate());
+        recalcBtn.addActionListener(_ -> recalculate());
         fileBtnRow.add(saveBtn);
         fileBtnRow.add(autoImgBtn);
         fileBtnRow.add(recalcBtn);
@@ -214,10 +214,10 @@ public final class Helper extends JFrame {
         downBtn.setPreferredSize(arrowDim);
         rightBtn.setPreferredSize(arrowDim);
 
-        leftBtn.addActionListener(e -> nudgeHorizontal(-0.002));
-        rightBtn.addActionListener(e -> nudgeHorizontal(0.002));
-        upBtn.addActionListener(e -> nudgeVertical(-0.002));
-        downBtn.addActionListener(e -> nudgeVertical(0.002));
+        leftBtn.addActionListener(_ -> nudgeHorizontal(-0.002));
+        rightBtn.addActionListener(_ -> nudgeHorizontal(0.002));
+        upBtn.addActionListener(_ -> nudgeVertical(-0.002));
+        downBtn.addActionListener(_ -> nudgeVertical(0.002));
 
         nudgeRow.add(leftBtn);
         nudgeRow.add(upBtn);
@@ -285,11 +285,11 @@ public final class Helper extends JFrame {
         final JPanel btnInspectRow = new JPanel(new GridLayout(1, 2, 4, 4));
         final JButton addColorBtn = new JButton("+ Add Pixel");
         addColorBtn.setToolTipText("Add inspected pixel color to Colours list");
-        addColorBtn.addActionListener(e -> addInspectedColor());
+        addColorBtn.addActionListener(_ -> addInspectedColor());
 
         final JButton sampleGridBtn = new JButton("Sample Grid");
         sampleGridBtn.setToolTipText("Analyze all grid sample points on screenshot");
-        sampleGridBtn.addActionListener(e -> sampleGridColours());
+        sampleGridBtn.addActionListener(_ -> sampleGridColours());
 
         btnInspectRow.add(addColorBtn);
         btnInspectRow.add(sampleGridBtn);
@@ -324,7 +324,7 @@ public final class Helper extends JFrame {
 
         final JButton fillColoursBtn = new JButton("Apply Detected Colours to Field");
         fillColoursBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-        fillColoursBtn.addActionListener(e -> applyDetectedColours());
+        fillColoursBtn.addActionListener(_ -> applyDetectedColours());
         inspectCard.add(Box.createVerticalStrut(4));
         inspectCard.add(fillColoursBtn);
 
@@ -356,12 +356,12 @@ public final class Helper extends JFrame {
 
         final JButton zoom100 = new JButton("100%");
         zoom100.setPreferredSize(new Dimension(65, 24));
-        zoom100.addActionListener(e -> slider.setValue(100));
+        zoom100.addActionListener(_ -> slider.setValue(100));
         zoomPanel.add(zoom100);
 
         final JButton zoomFit = new JButton("Fit");
         zoomFit.setPreferredSize(new Dimension(55, 24));
-        zoomFit.addActionListener(e -> fitImageToView());
+        zoomFit.addActionListener(_ -> fitImageToView());
         zoomPanel.add(zoomFit);
 
         bottomBar.add(zoomPanel, BorderLayout.EAST);
@@ -416,22 +416,22 @@ public final class Helper extends JFrame {
         final JMenu fileMenu = new JMenu("File");
         final JMenuItem openGridItem = new JMenuItem("Open Grid...");
         openGridItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
-        openGridItem.addActionListener(e -> chooseAndOpenGrid());
+        openGridItem.addActionListener(_ -> chooseAndOpenGrid());
 
         final JMenuItem openImgItem = new JMenuItem("Open Screenshot...");
-        openImgItem.addActionListener(e -> chooseAndOpenImage());
+        openImgItem.addActionListener(_ -> chooseAndOpenImage());
 
         final JMenuItem saveItem = new JMenuItem("Save Grid");
         saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
-        saveItem.addActionListener(e -> saveCurrentGrid());
+        saveItem.addActionListener(_ -> saveCurrentGrid());
 
         final JMenuItem saveAsItem = new JMenuItem("Save Grid As...");
         saveAsItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
                 Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() | InputEvent.SHIFT_DOWN_MASK));
-        saveAsItem.addActionListener(e -> saveGridAs());
+        saveAsItem.addActionListener(_ -> saveGridAs());
 
         final JMenuItem exitItem = new JMenuItem("Exit");
-        exitItem.addActionListener(e -> dispose());
+        exitItem.addActionListener(_ -> dispose());
 
         fileMenu.add(openGridItem);
         fileMenu.add(openImgItem);
@@ -445,13 +445,13 @@ public final class Helper extends JFrame {
         final JMenu editMenu = new JMenu("Edit");
         final JMenuItem recalcItem = new JMenuItem("Recalculate");
         recalcItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
-        recalcItem.addActionListener(e -> recalculate());
+        recalcItem.addActionListener(_ -> recalculate());
 
         final JMenuItem sampleItem = new JMenuItem("Sample Grid Colours");
-        sampleItem.addActionListener(e -> sampleGridColours());
+        sampleItem.addActionListener(_ -> sampleGridColours());
 
         final JMenuItem copyColoursItem = new JMenuItem("Copy Colours to Clipboard");
-        copyColoursItem.addActionListener(e -> {
+        copyColoursItem.addActionListener(_ -> {
             final String sel = colours.getText();
             Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(sel), null);
             statusLabel.setText("Colours copied to clipboard.");
@@ -513,7 +513,7 @@ public final class Helper extends JFrame {
             if (e.isMetaDown() || e.isControlDown()) {
                 final int notches = e.getWheelRotation();
                 final int current = slider.getValue();
-                slider.setValue(Math.max(10, Math.min(500, current - notches * 15)));
+                slider.setValue(Math.clamp(current - notches * 15, 10, 500));
                 e.consume();
             }
         });
@@ -550,18 +550,18 @@ public final class Helper extends JFrame {
 
         try {
             final double val = fr(horizontal.getText()).doubleValue() + delta;
-            horizontal.setText(String.format(Locale.US, "%.4f", Math.max(0.0, Math.min(1.0, val))));
+            horizontal.setText(String.format(Locale.US, "%.4f", Math.clamp(val, 0.0, 1.0)));
             recalculate();
-        } catch (final Exception ignored) {}
+        } catch (final Exception _) {}
     }
 
     private void nudgeVertical(final double delta) {
 
         try {
             final double val = fr(vertical.getText()).doubleValue() + delta;
-            vertical.setText(String.format(Locale.US, "%.4f", Math.max(0.0, Math.min(1.0, val))));
+            vertical.setText(String.format(Locale.US, "%.4f", Math.clamp(val, 0.0, 1.0)));
             recalculate();
-        } catch (final Exception ignored) {}
+        } catch (final Exception _) {}
     }
 
     private void updatePixelInspection(final Point panelPoint) {
@@ -687,7 +687,7 @@ public final class Helper extends JFrame {
 
         // Otherwise return the most recently modified screenshot
         candidates.sort((f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
-        return candidates.get(0);
+        return candidates.getFirst();
     }
 
     private static void collectPngFiles(final File dir, final List<File> list, final int depth) {
@@ -896,7 +896,7 @@ public final class Helper extends JFrame {
             imagePanel.setImage(result.image());
             imageScrollPane.repaint();
             fitImageToView();
-        } catch (final Exception ignored) {}
+        } catch (final Exception _) {}
     }
 
     private void recalculate() {

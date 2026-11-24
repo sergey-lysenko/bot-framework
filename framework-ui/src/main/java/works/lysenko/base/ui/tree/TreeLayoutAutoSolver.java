@@ -414,7 +414,7 @@ public final class TreeLayoutAutoSolver {
         final double startScore = state.bestMetrics.score();
 
         final int rowSpan = Math.max(4, (int) Math.ceil(state.bestMetrics.rows()));
-        final int maxColProbe = Math.min(MAX_COL_OFFSET, Math.max(8, state.bestMetrics.cols() + 3));
+        final int maxColProbe = Math.clamp(state.bestMetrics.cols() + 3, 8, MAX_COL_OFFSET);
 
         final Map<String, Offsets> trial = new LinkedHashMap<>(state.bestOffsets);
         Offsets localBestOff = startOff;
@@ -619,7 +619,7 @@ public final class TreeLayoutAutoSolver {
     private static List<Integer> buildCoarseCols(final int currentCol, final int maxCol) {
         final TreeSet<Integer> cols = new TreeSet<>();
         cols.add(0);
-        cols.add(Math.max(0, Math.min(MAX_COL_OFFSET, currentCol)));
+        cols.add(Math.clamp(currentCol, 0, MAX_COL_OFFSET));
         cols.add(1);
         cols.add(2);
         if (maxCol >= 4) cols.add(4);
@@ -635,14 +635,14 @@ public final class TreeLayoutAutoSolver {
         rows.add(0);
         rows.add(clampRow(currentRow));
         if (shiftedCol) {
-            final int half = Math.max(4, Math.min(MAX_ROW_OFFSET, rowSpan / 2));
+            final int half = Math.clamp(rowSpan / 2, 4, MAX_ROW_OFFSET);
             final int quarter = Math.max(2, half / 2);
             rows.add(-half);
             rows.add(-quarter);
             rows.add(quarter);
             rows.add(half);
         } else {
-            final int mild = Math.max(2, Math.min(12, rowSpan / 5));
+            final int mild = Math.clamp(rowSpan / 5, 2, 12);
             rows.add(-mild);
             rows.add(mild);
             if (rowSpan >= 16) {
@@ -655,7 +655,7 @@ public final class TreeLayoutAutoSolver {
     }
 
     private static int clampRow(final int r) {
-        return Math.max(-MAX_ROW_OFFSET, Math.min(MAX_ROW_OFFSET, r));
+        return Math.clamp(r, -MAX_ROW_OFFSET, MAX_ROW_OFFSET);
     }
 
     private static List<CandidateInfo> collectCandidates(
@@ -749,7 +749,7 @@ public final class TreeLayoutAutoSolver {
         if (edges.isEmpty() || nodes.size() <= 2) return 0;
         final Map<Integer, List<NodeData>> byCol = new HashMap<>();
         for (final NodeData n : nodes) {
-            byCol.computeIfAbsent(n.col(), k -> new ArrayList<>()).add(n);
+            byCol.computeIfAbsent(n.col(), _ -> new ArrayList<>()).add(n);
         }
 
         int occlusions = 0;
@@ -771,7 +771,7 @@ public final class TreeLayoutAutoSolver {
                 final List<NodeData> colNodes = byCol.get(col);
                 if (null == colNodes) continue;
                 final double xMid = col * COL_WIDTH + CARD_WIDTH * 0.5;
-                final double u = Math.max(0.0, Math.min(1.0, (xMid - x1) / dx));
+                final double u = Math.clamp((xMid - x1) / dx, 0.0, 1.0);
                 // Smoothstep approximates the horizontal-tangent cubic Bezier rendered in SVG/Canvas
                 final double smooth = u * u * (3.0 - 2.0 * u);
                 final double yAtCol = y1 + (y2 - y1) * smooth;

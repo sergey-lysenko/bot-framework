@@ -463,7 +463,7 @@ public final class ScenarioTracker {
                 final File parent = logFile.getParentFile();
                 if (isNotNull(parent))
                     return parent;
-            } catch (final Exception ignored) {
+            } catch (final Exception _) {
             }
         }
         return new File(_RUNS_);

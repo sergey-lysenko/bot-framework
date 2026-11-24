@@ -42,7 +42,7 @@ public final class DefaultDriverProvider implements _DriverProvider {
                     if (null != service) {
                         platforms.add(Platform.ANDROID);
                     }
-                } catch (final Exception ignored) {
+                } catch (final Exception _) {
                     // Appium executable is not installed or available
                 }
             } else {
@@ -50,7 +50,7 @@ public final class DefaultDriverProvider implements _DriverProvider {
                     if (isDriverAvailable(platform)) {
                         platforms.add(platform);
                     }
-                } catch (final Exception ignored) {
+                } catch (final Exception _) {
                     // Driver not available or failed to initialize
                 }
             }

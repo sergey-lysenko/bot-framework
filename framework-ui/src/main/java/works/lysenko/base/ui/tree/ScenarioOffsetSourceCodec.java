@@ -84,7 +84,7 @@ public final class ScenarioOffsetSourceCodec {
         }
         try {
             return parseOffsets(Files.readAllLines(sourcePath, StandardCharsets.UTF_8));
-        } catch (final IOException ignored) {
+        } catch (final IOException _) {
             return (null != fallback) ? fallback : Offsets.ZERO;
         }
     }

@@ -21,7 +21,9 @@ public final class GridProperties extends ScaledProperties implements _GridPrope
      */
     public GridProperties(final String name, final boolean isPath) {
 
-        super(isPath ? name : _GridProperties.getGridPath(name), new ScaledPropertiesOptions(isPath ? YES : NO, false, false));
+        final String path = isPath ? name : _GridProperties.getGridPath(name);
+        final ScaledPropertiesOptions options = new ScaledPropertiesOptions(isPath ? YES : NO, false, false);
+        super(path, options);
     }
 
     /**

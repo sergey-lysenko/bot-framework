@@ -42,15 +42,17 @@ public class MarkdownLogRenderer implements LogRenderer {
         }
 
         final _LogData data = record.data();
-        if (data instanceof LineFeed) {
-            needsTableHeader = true;
-            return EMPTY;
-        }
-
-        if (data instanceof final Section sec) {
-            final String title = Fractions.deUnicode(removeANSICodes(sec.title()));
-            final String cleanStack = formatCallstack(sec.callstack());
-            return processSectionHeader(sec.depth(), title, cleanStack);
+        switch (data) {
+            case LineFeed _ -> {
+                needsTableHeader = true;
+                return EMPTY;
+            }
+            case final Section sec -> {
+                final String title = Fractions.deUnicode(removeANSICodes(sec.title()));
+                final String cleanStack = formatCallstack(sec.callstack());
+                return processSectionHeader(sec.depth(), title, cleanStack);
+            }
+            default -> { }
         }
 
         final String cleanMsg = formatMessage(data);
@@ -117,28 +119,24 @@ public class MarkdownLogRenderer implements LogRenderer {
     }
 
     private static String getHeadingPrefix(final int depth) {
-        final int level = Math.min(6, Math.max(3, 3 + (depth > 0 ? depth - 1 : 0)));
+        final int level = Math.clamp(3 + (depth > 0 ? depth - 1 : 0), 3, 6);
         return "#".repeat(level) + " ";
     }
 
     private static String formatMessage(final _LogData data) {
-        String msg;
-        if (data instanceof final Event e) {
-            final String severityMarker = switch (e.severity()) {
-                case S1 -> WARNING_MARKER;
-                case S2 -> ERROR_MARKER;
-                case S0 -> EMPTY;
-                default -> EMPTY;
-            };
-            final String clean = removeANSICodes(e.message());
-            msg = s(SPACE.repeat(e.depth()), severityMarker, clean);
-        } else if (data instanceof final Log ld) {
-            msg = s(SPACE.repeat(ld.depth()), removeANSICodes(ld.message()));
-        } else {
-            msg = removeANSICodes(data.message());
-        }
-        msg = Fractions.deUnicode(msg);
-        return replaceLeadingSpacesWithNbsp(msg);
+        final String msg = switch (data) {
+            case final Event e -> {
+                final String severityMarker = switch (e.severity()) {
+                    case S1 -> WARNING_MARKER;
+                    case S2 -> ERROR_MARKER;
+                    default -> EMPTY;
+                };
+                yield s(SPACE.repeat(e.depth()), severityMarker, removeANSICodes(e.message()));
+            }
+            case final Log ld -> s(SPACE.repeat(ld.depth()), removeANSICodes(ld.message()));
+            default -> removeANSICodes(data.message());
+        };
+        return replaceLeadingSpacesWithNbsp(Fractions.deUnicode(msg));
     }
 
     private static String replaceLeadingSpacesWithNbsp(final String str) {

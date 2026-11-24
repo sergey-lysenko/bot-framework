@@ -113,9 +113,9 @@ public class ConfigTestsEditorPanel extends JPanel {
         final JMenuItem duplicateItem = new JMenuItem("Duplicate...");
         final JMenuItem deleteItem = new JMenuItem("Delete");
 
-        renameItem.addActionListener(e -> renameSelectedFile());
-        duplicateItem.addActionListener(e -> duplicateSelectedFile());
-        deleteItem.addActionListener(e -> deleteSelectedFile());
+        renameItem.addActionListener(_ -> renameSelectedFile());
+        duplicateItem.addActionListener(_ -> duplicateSelectedFile());
+        deleteItem.addActionListener(_ -> deleteSelectedFile());
 
         treePopupMenu.add(renameItem);
         treePopupMenu.add(duplicateItem);
@@ -174,17 +174,17 @@ public class ConfigTestsEditorPanel extends JPanel {
         final JButton newFileBtn = new JButton("+ New File...");
         newFileBtn.setFont(btnFont);
         newFileBtn.setToolTipText("Create a new .suite or .part file");
-        newFileBtn.addActionListener(e -> createNewFile());
+        newFileBtn.addActionListener(_ -> createNewFile());
 
         final JButton deleteFileBtn = new JButton("Delete File");
         deleteFileBtn.setFont(btnFont);
         deleteFileBtn.setToolTipText("Delete selected file");
-        deleteFileBtn.addActionListener(e -> deleteSelectedFile());
+        deleteFileBtn.addActionListener(_ -> deleteSelectedFile());
 
         final JButton refreshTreeBtn = new JButton("Refresh");
         refreshTreeBtn.setFont(btnFont);
         refreshTreeBtn.setToolTipText("Refresh file tree from disk");
-        refreshTreeBtn.addActionListener(e -> {
+        refreshTreeBtn.addActionListener(_ -> {
             if (promptToSaveIfModified()) {
                 refreshTreeFromDisk();
             }
@@ -218,16 +218,16 @@ public class ConfigTestsEditorPanel extends JPanel {
         final JButton saveFileBtn = new JButton(" Save ");
         saveFileBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
         saveFileBtn.setToolTipText("Save current file (Ctrl+S / Cmd+S)");
-        saveFileBtn.addActionListener(e -> saveSelectedFile());
+        saveFileBtn.addActionListener(_ -> saveSelectedFile());
 
         final JButton reloadBtn = new JButton("Reload");
-        reloadBtn.addActionListener(e -> {
+        reloadBtn.addActionListener(_ -> {
             if (promptToSaveIfModified()) {
                 loadSelectedFile();
             }
         });
 
-        toggleViewBtn.addActionListener(e -> {
+        toggleViewBtn.addActionListener(_ -> {
             if (toggleViewBtn.isSelected()) {
                 syncTableToRawText();
                 cardLayout.show(centerPanel, "RAW");
@@ -456,7 +456,7 @@ public class ConfigTestsEditorPanel extends JPanel {
                         .forEach(p -> partsFolder.add(new DefaultMutableTreeNode(
                                 new FileNodeObject(p.getFileName().toString(), p, FileCategory.CONFIG_PART, true)
                         )));
-            } catch (final Exception ignored) {}
+            } catch (final Exception _) {}
             configFolder.add(partsFolder);
         }
 
@@ -474,7 +474,7 @@ public class ConfigTestsEditorPanel extends JPanel {
                         .forEach(p -> suitesFolder.add(new DefaultMutableTreeNode(
                                 new FileNodeObject(p.getFileName().toString(), p, FileCategory.TEST_SUITE, true)
                         )));
-            } catch (final Exception ignored) {}
+            } catch (final Exception _) {}
 
             // parts/ inside suites/
             final Path suitePartsDir = Path.of(_SUITES_, "parts");
@@ -488,7 +488,7 @@ public class ConfigTestsEditorPanel extends JPanel {
                             .forEach(p -> suitePartsFolder.add(new DefaultMutableTreeNode(
                                     new FileNodeObject(p.getFileName().toString(), p, FileCategory.SUITE_PART, true)
                             )));
-                } catch (final Exception ignored) {}
+                } catch (final Exception _) {}
                 suitesFolder.add(suitePartsFolder);
             }
 
@@ -724,7 +724,7 @@ public class ConfigTestsEditorPanel extends JPanel {
         if (!invalidDetails.isEmpty()) {
             final String countStr = invalidDetails.size() == 1 ? "1 invalid property" : invalidDetails.size() + " invalid properties";
             scopeWarningLabel.setText("\u26a0\ufe0f " + countStr + " found in " + currentSelectedNode.displayName() +
-                    ": " + invalidDetails.get(0) + ". Invalid properties are preserved when saving.");
+                    ": " + invalidDetails.getFirst() + ". Invalid properties are preserved when saving.");
             scopeWarningLabel.setVisible(true);
         } else {
             scopeWarningLabel.setVisible(false);
@@ -818,7 +818,7 @@ public class ConfigTestsEditorPanel extends JPanel {
             rawTextArea.setText(content);
             originalFileContent = content;
             updateActiveFileHeader(currentSelectedNode);
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
         }
     }
 

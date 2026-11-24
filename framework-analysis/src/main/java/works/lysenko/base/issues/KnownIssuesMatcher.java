@@ -32,7 +32,7 @@ public final class KnownIssuesMatcher {
                         || (compiled.matcher("a").matches()
                         && compiled.matcher("0").matches()
                         && compiled.matcher("_").matches());
-            } catch (final PatternSyntaxException ignored) {
+            } catch (final PatternSyntaxException _) {
             }
             final String lower = patternStr.toLowerCase(Locale.ROOT);
             return new PreparedRecordPattern(compiled, lower, isCatchAll);
@@ -53,7 +53,7 @@ public final class KnownIssuesMatcher {
 
     private static Pattern getCompiledPattern(final String regex, final int flags) {
         final String key = flags + ":" + regex;
-        return PATTERN_CACHE.computeIfAbsent(key, k -> Pattern.compile(regex, flags));
+        return PATTERN_CACHE.computeIfAbsent(key, _ -> Pattern.compile(regex, flags));
     }
 
     /**
@@ -139,7 +139,7 @@ public final class KnownIssuesMatcher {
                 final Pattern pattern = getCompiledPattern(regex, 0);
                 if (isNotNull(fqn) && pattern.matcher(fqn).matches()) return true;
                 if (isNotNull(simpleName) && pattern.matcher(simpleName).matches()) return true;
-            } catch (final PatternSyntaxException ignored) {
+            } catch (final PatternSyntaxException _) {
             }
         }
         return false;

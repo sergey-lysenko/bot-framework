@@ -63,7 +63,7 @@ public class Stat implements _Stat {
     public final List<String> previous() {
 
         final List<List<String>> the = List.copyOf(history);
-        return (the.isEmpty()) ? null : the.get(the.size() - 1);
+        return (the.isEmpty()) ? null : the.getLast();
     }
 
     /**

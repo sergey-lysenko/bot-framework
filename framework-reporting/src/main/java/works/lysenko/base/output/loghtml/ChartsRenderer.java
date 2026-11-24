@@ -201,7 +201,7 @@ public final class ChartsRenderer {
                     : (marginTop + plotH) - Math.min(plotH, (corrProjSec / ceilProjectedSec) * plotH);
 
             final double pPct = completions.get(i).patiencePercentage;
-            final double yPatience = (marginTop + plotH) - Math.min(1.0, Math.max(0.0, pPct / 100.0)) * plotH;
+            final double yPatience = (marginTop + plotH) - Math.clamp(pPct / 100.0, 0.0, 1.0) * plotH;
 
             if (i == 0) {
                 etaPath.append(String.format(Locale.ROOT, "M %.2f %.2f", x, yEta));

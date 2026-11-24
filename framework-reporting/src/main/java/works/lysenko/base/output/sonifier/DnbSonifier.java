@@ -641,7 +641,7 @@ public final class DnbSonifier implements TreeSonifier {
                 final int removed = Math.max(vanishedCount, Math.max(1, previousNodeCount - currentNodeCount));
                 final double fadeIntensity = Math.min(1.0, removed / 8.0);
                 final double vanishPan = (vanishedCount > 0)
-                        ? clampPan((Math.max(0.0, Math.min(1.0, (vanishedColSum / vanishedCount) / panSpan))) * 1.50 - 0.75)
+                        ? clampPan(Math.clamp((vanishedColSum / vanishedCount) / panSpan, 0.0, 1.0) * 1.50 - 0.75)
                         : 0.0;
                 // Silky downward liquid low-pass exhale panned to vanished leaves
                 scheduleEvent(eventsByFrame, samplesPerFrame, new DnbEvent(
@@ -1098,7 +1098,7 @@ public final class DnbSonifier implements TreeSonifier {
             final int samplesPerFrame,
             final DnbEvent event) {
         final int frameBucket = (int) Math.max(0L, event.startSample() / samplesPerFrame);
-        eventsByFrame.computeIfAbsent(frameBucket, ignored -> new ArrayList<>()).add(event);
+        eventsByFrame.computeIfAbsent(frameBucket, _ -> new ArrayList<>()).add(event);
     }
 
     private static int resolveSubRoot(final int mood, final int barIndex) {
@@ -1152,12 +1152,12 @@ public final class DnbSonifier implements TreeSonifier {
         if (span <= 0) {
             return 0.0;
         }
-        final double normalized = Math.max(0.0, Math.min(1.0, (double) col / span));
+        final double normalized = Math.clamp((double) col / span, 0.0, 1.0);
         return clampPan(normalized * 1.52 - 0.76);
     }
 
     private static double clampPan(final double pan) {
-        return Math.max(-0.84, Math.min(0.84, pan));
+        return Math.clamp(pan, -0.84, 0.84);
     }
 
     private static int computeFrameMaxCol(final FrameState state) {
@@ -1172,7 +1172,7 @@ public final class DnbSonifier implements TreeSonifier {
 
     private static double computeCoverage(final FrameState state) {
         if (state.executableLeaves() > 0) {
-            return Math.max(0.0, Math.min(1.0, (double) state.coveredLeaves() / state.executableLeaves()));
+            return Math.clamp((double) state.coveredLeaves() / state.executableLeaves(), 0.0, 1.0);
         }
         int leaves = 0;
         int covered = 0;
@@ -1552,7 +1552,7 @@ public final class DnbSonifier implements TreeSonifier {
     private static int parseIntSafe(final String text, final int fallback) {
         try {
             return Integer.parseInt(text.trim());
-        } catch (final NumberFormatException ignored) {
+        } catch (final NumberFormatException _) {
             return fallback;
         }
     }
@@ -1560,7 +1560,7 @@ public final class DnbSonifier implements TreeSonifier {
     private static double parseDoubleSafe(final String text, final double fallback) {
         try {
             return Double.parseDouble(text.trim());
-        } catch (final NumberFormatException ignored) {
+        } catch (final NumberFormatException _) {
             return fallback;
         }
     }

@@ -46,30 +46,30 @@ public class AnsiLogRenderer implements LogRenderer {
     }
 
     private String renderData(_LogData data) {
-        if (data instanceof LineFeed) {
-            return EMPTY;
-        } else if (data instanceof Event e) {
-            final Severity severity = e.severity();
-            if (isNotNull(severity)) {
-                return b(s(SPACE.repeat(max(0, e.depth())), Ansi.ansi(e.message(), severity.color())), gray(e.callstack()));
+        return switch (data) {
+            case LineFeed _ -> EMPTY;
+            case Event e -> {
+                final Severity severity = e.severity();
+                yield isNotNull(severity)
+                        ? b(s(SPACE.repeat(max(0, e.depth())), Ansi.ansi(e.message(), severity.color())), gray(e.callstack()))
+                        : null;
             }
-            return null;
-        } else if (data instanceof Log l) {
-            final String baseMsg = (0 == l.level()) ? l.message() : b(s(works.lysenko.util.spec.Symbols._BULLT_).repeat(max(0, l.level())), l.message());
-            final String indented = s(SPACE.repeat(max(0, l.depth())), baseMsg);
-            if (isNotNull(l.callstack()) && !l.callstack().isEmpty()) {
-                return b(indented, gray(l.callstack()));
+            case Log l -> {
+                final String baseMsg = (0 == l.level()) ? l.message() : b(s(works.lysenko.util.spec.Symbols._BULLT_).repeat(max(0, l.level())), l.message());
+                final String indented = s(SPACE.repeat(max(0, l.depth())), baseMsg);
+                yield (isNotNull(l.callstack()) && !l.callstack().isEmpty())
+                        ? b(indented, gray(l.callstack()))
+                        : indented;
             }
-            return indented;
-        } else if (data instanceof works.lysenko.util.data.type.logr.type.Section s) {
-            final String formattedMsg = bb(e(works.lysenko.util.spec.Symbols._EQUAL_, e(s.title())));
-            final String indented = s(SPACE.repeat(max(0, s.depth())), formattedMsg);
-            if (isNotNull(s.callstack()) && !s.callstack().isEmpty()) {
-                return b(indented, gray(s.callstack()));
+            case works.lysenko.util.data.type.logr.type.Section s -> {
+                final String formattedMsg = bb(e(works.lysenko.util.spec.Symbols._EQUAL_, e(s.title())));
+                final String indented = s(SPACE.repeat(max(0, s.depth())), formattedMsg);
+                yield (isNotNull(s.callstack()) && !s.callstack().isEmpty())
+                        ? b(indented, gray(s.callstack()))
+                        : indented;
             }
-            return indented;
-        }
-        return data.message();
+            default -> data.message();
+        };
     }
 
     private String renderTest(_LogRecord record, Integer totalTests) {
@@ -106,7 +106,7 @@ public class AnsiLogRenderer implements LogRenderer {
                 ? SPACE.repeat(max(0, width + 2))
                 : e(SQUARE, s(SPACE.repeat(max(0, width - stringedSpan.length())), stringedSpan));
 
-        final Function<String, String> spanColor = rendered -> {
+        final Function<String, String> spanColor = _ -> {
             if (span > red) return rb(renderedSpan);
             if (span > yellow) return yb(renderedSpan);
             if (span > green) return gb(renderedSpan);

@@ -152,8 +152,8 @@ public record BufferedImages() {
         final int imgHeight = image.getHeight();
         if (imgWidth <= 0 || imgHeight <= 0) return null;
 
-        final int x = Math.max(0, Math.min(rect.x, imgWidth));
-        final int y = Math.max(0, Math.min(rect.y, imgHeight));
+        final int x = Math.clamp(rect.x, 0, imgWidth);
+        final int y = Math.clamp(rect.y, 0, imgHeight);
         final int width = Math.min(rect.width, imgWidth - x);
         final int height = Math.min(rect.height, imgHeight - y);
 

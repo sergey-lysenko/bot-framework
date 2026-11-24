@@ -413,7 +413,7 @@ public final class TreeTracker {
         TreeLayoutOptimizer.triggerFinalReoptimizationOnce();
         final double speed = ProgressionSettings.current().treeMovementSpeed();
         int maxAdditionalFrames = (speed > 0.0)
-                ? Math.min(300, Math.max(60, (int) Math.ceil(60.0 / speed)))
+                ? Math.clamp((int) Math.ceil(60.0 / speed), 60, 300)
                 : 60;
         if (TreeCameraTransform.isInitialized() && isNotNull(core) && isNotNull(core.getResults())) {
             final TreeMap<String, Result> sorted = core.getResults().getSortedStrings(false);
@@ -861,7 +861,7 @@ public final class TreeTracker {
                 final File parent = logFile.getParentFile();
                 if (isNotNull(parent))
                     return parent;
-            } catch (final Exception ignored) {
+            } catch (final Exception _) {
             }
         }
         return new File(_RUNS_);

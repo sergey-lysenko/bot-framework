@@ -112,7 +112,7 @@ public final class SvgPreviewPanel extends JPanel {
             pendingSvg.set(null);
             try {
                 applySvgFrame(ProgressionFrames.parseSvg(svgContent, ProgressionSettings.current().maxFramePixels()));
-            } catch (final IOException ignored) {
+            } catch (final IOException _) {
             }
             return;
         }
@@ -124,7 +124,7 @@ public final class SvgPreviewPanel extends JPanel {
                         final ProgressionFrames.SvgFrame frame =
                                 ProgressionFrames.parseSvg(next, ProgressionSettings.current().maxFramePixels());
                         SwingUtilities.invokeLater(() -> applySvgFrame(frame));
-                    } catch (final IOException ignored) {
+                    } catch (final IOException _) {
                     }
                 }
             });

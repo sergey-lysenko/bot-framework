@@ -35,7 +35,7 @@ public final class BootCapture {
                 if (null != attachedWriter) {
                     try {
                         attachedWriter.write(b);
-                    } catch (final IOException ignored) {
+                    } catch (final IOException _) {
                     }
                 } else {
                     BUFFER.write(b);
@@ -48,7 +48,7 @@ public final class BootCapture {
                 if (null != attachedWriter) {
                     try {
                         attachedWriter.write(new String(b, off, len, StandardCharsets.UTF_8));
-                    } catch (final IOException ignored) {
+                    } catch (final IOException _) {
                     }
                 } else {
                     BUFFER.write(b, off, len);
@@ -61,7 +61,7 @@ public final class BootCapture {
                 if (null != attachedWriter) {
                     try {
                         attachedWriter.flush();
-                    } catch (final IOException ignored) {
+                    } catch (final IOException _) {
                     }
                 } else {
                     BUFFER.flush();
@@ -85,7 +85,7 @@ public final class BootCapture {
                     writer.write(captured);
                     writer.flush();
                 }
-            } catch (final IOException ignored) {
+            } catch (final IOException _) {
             }
             attachedWriter = writer;
         }

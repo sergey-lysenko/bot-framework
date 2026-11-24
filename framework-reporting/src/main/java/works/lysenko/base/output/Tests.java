@@ -107,7 +107,7 @@ record Tests() {
     private static void defineCSwidths() {
 
         for (final List<String> row : list) {
-            maxC = max(maxC, row.get(0).length());
+            maxC = max(maxC, row.getFirst().length());
             maxT = max(maxT, row.get(1).length());
         }
     }
@@ -137,7 +137,7 @@ record Tests() {
      */
     private static TestTime getTestTime(final List<String> row) {
 
-        final String test = StringUtils.leftPad(row.get(0), maxC);
+        final String test = StringUtils.leftPad(row.getFirst(), maxC);
         final String time = StringUtils.leftPad(row.get(1), maxT);
         return new TestTime(test, time);
     }
@@ -148,7 +148,7 @@ record Tests() {
     private static void process() {
 
         if (!common.isEmpty()) {
-            while (!common.isEmpty() && null == common.get(common.size() - 1)) common.remove(common.size() - 1);
+            while (!common.isEmpty() && null == common.getLast()) common.removeLast();
             final String add = (7 < (maxC + maxT)) ? SPACE.repeat((maxC + maxT) - 7) : EMPTY;
             final StringBuilder path = new StringBuilder(b(s(add, c(COMMON)), s(PATH, _COLON_, SPACE)));
             for (int i = 2; i < common.size(); i++)

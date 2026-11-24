@@ -24,7 +24,7 @@ public final class JBotButton extends JButton implements _BotButton {
 
         super(text);
         this.inactiveText = text;
-        addActionListener(e -> {
+        addActionListener(_ -> {
             active = !active;
             actualizeUI();
         });

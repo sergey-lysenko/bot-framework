@@ -51,7 +51,7 @@ public record MetadataResolver() {
             if (isNotNull(val) && !val.isEmpty()) {
                 try {
                     return Math.max(1, Integer.parseInt(val));
-                } catch (final NumberFormatException ignored) {
+                } catch (final NumberFormatException _) {
                 }
             }
         }

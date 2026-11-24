@@ -214,7 +214,7 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
             if (previousTotalNodes > 0 && currentTotalNodes < previousTotalNodes) {
                 final int prunedCount = previousTotalNodes - currentTotalNodes;
                 final double pruneScale = Math.min(1.0, Math.sqrt(prunedCount / 8.0));
-                final int cascadeNotes = Math.min(4, Math.max(2, 1 + prunedCount / 4));
+                final int cascadeNotes = Math.clamp(1 + prunedCount / 4, 2, 4);
                 for (int i = 0; i < cascadeNotes; i++) {
                     final long offset = subFrameOffset(samplesPerFrame, i * 18, cascadeNotes);
                     final int cascadeMidi = rootMidi + PENTATONIC_CASCADE[i % PENTATONIC_CASCADE.length];
@@ -281,7 +281,7 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
 
             // 4. Terminal leaf partial progress (rising dyad)
             if (!partialLeaves.isEmpty()) {
-                final NodeSnapshot leaf = partialLeaves.get(0);
+                final NodeSnapshot leaf = partialLeaves.getFirst();
                 final int baseDegree = leaf.col() + Math.floorMod(leaf.identity().hashCode(), 3);
                 final int firstMidi = scalePitch(rootMidi - 12, scale, baseDegree);
                 final int secondMidi = scalePitch(rootMidi - 12, scale, baseDegree + 2);
@@ -297,7 +297,7 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
 
             // 5. Terminal leaf completion bloom (micro-staggered 3-note ascending harp arpeggio)
             if (!completedLeaves.isEmpty()) {
-                final NodeSnapshot leaf = completedLeaves.get(0);
+                final NodeSnapshot leaf = completedLeaves.getFirst();
                 final int baseDegree = leaf.col() + Math.floorMod(leaf.identity().hashCode(), 4);
                 final double gainBoost = Math.min(1.35, Math.sqrt(completedLeaves.size()));
                 for (int i = 0; i < 3; i++) {
@@ -310,7 +310,7 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
 
             // 6. Over-execution crystalline harmonic ping
             if (!overExecutedLeaves.isEmpty()) {
-                final NodeSnapshot leaf = overExecutedLeaves.get(0);
+                final NodeSnapshot leaf = overExecutedLeaves.getFirst();
                 final int overCount = Math.max(1, leaf.executions() - leaf.target());
                 final int degree = leaf.col() + Math.floorMod(leaf.rowTenths() / 10, scale.length);
                 final int midi = Math.min(96, scalePitch(rootMidi, scale, degree));
@@ -324,7 +324,7 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
 
             // 7. Semantic status harmony: warnings/known-issues (sus4 color) and failures (minor/tritone cadence)
             if (!newlyWarnedNodes.isEmpty()) {
-                final NodeSnapshot warned = newlyWarnedNodes.get(0);
+                final NodeSnapshot warned = newlyWarnedNodes.getFirst();
                 final int baseMidi = scalePitch(rootMidi + 12, scale, warned.col());
                 final long offset = subFrameOffset(samplesPerFrame, 18, 1);
                 frameNotes.add(new AudioNote(frameStartSample + offset, baseMidi + 5, WARNING_AMPLITUDE, 0.45));
@@ -407,7 +407,7 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
         final int safeDegree = Math.max(0, degree);
         final int octave = Math.min(2, safeDegree / scale.length);
         final int noteInScale = scale[safeDegree % scale.length];
-        return Math.max(24, Math.min(96, baseMidi + octave * 12 + noteInScale));
+        return Math.clamp(baseMidi + octave * 12 + noteInScale, 24, 96);
     }
 
     private static long subFrameOffset(final int samplesPerFrame, final int desiredMillis, final int totalVoices) {
@@ -533,7 +533,7 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
                 translateX = Double.parseDouble(camMatcher.group(1));
                 translateY = Double.parseDouble(camMatcher.group(2));
                 zoom = Double.parseDouble(camMatcher.group(3));
-            } catch (final NumberFormatException ignored) {
+            } catch (final NumberFormatException _) {
                 // Keep default camera transform if unparseable
             }
         }
@@ -628,7 +628,7 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
                         Math.max(0, Integer.parseInt(left)),
                         Math.max(1, Integer.parseInt(right))
                 };
-            } catch (final NumberFormatException ignored) {
+            } catch (final NumberFormatException _) {
                 return new int[]{0, 1};
             }
         }
@@ -636,7 +636,7 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
         if (spaceIdx > 0) {
             try {
                 return new int[]{Math.max(0, Integer.parseInt(cleaned.substring(0, spaceIdx).trim())), 1};
-            } catch (final NumberFormatException ignored) {
+            } catch (final NumberFormatException _) {
                 return new int[]{0, 1};
             }
         }

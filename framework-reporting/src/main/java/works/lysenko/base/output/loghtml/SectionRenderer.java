@@ -223,7 +223,7 @@ public final class SectionRenderer {
         if (text.contains(patternStr)) return true;
         try {
             return Pattern.compile(patternStr, Pattern.DOTALL).matcher(text).find();
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
             return false;
         }
     }
@@ -598,10 +598,10 @@ public final class SectionRenderer {
         if (first == -1) {
             int pos = Collections.binarySearch(sortedValues, val);
             if (pos < 0) pos = -pos - 1;
-            return Math.min(1.0, Math.max(0.0, (double) pos / (n - 1)));
+            return Math.clamp((double) pos / (n - 1), 0.0, 1.0);
         }
         final double avgIdx = (first + last) / 2.0;
-        return Math.min(1.0, Math.max(0.0, avgIdx / (n - 1)));
+        return Math.clamp(avgIdx / (n - 1), 0.0, 1.0);
     }
 
     /**

@@ -36,7 +36,7 @@ public record EtaFormulas() {
             leafEtaMs = Math.round(remainingExecutions * avgMsPerExecution);
         }
 
-        final double w = Math.min(1.0, Math.max(0.0, patiencePercentage / 100.0));
+        final double w = Math.clamp(patiencePercentage / 100.0, 0.0, 1.0);
         final long rawEtaMs;
         if (leafEtaMs >= 0L && patienceEtaMs >= 0L && w > 0.0) {
             rawEtaMs = Math.round((1.0 - w) * leafEtaMs + w * patienceEtaMs);

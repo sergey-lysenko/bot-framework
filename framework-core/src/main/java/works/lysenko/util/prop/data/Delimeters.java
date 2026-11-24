@@ -15,7 +15,7 @@ public record Delimeters() {
                 final Object val = works.lysenko.Base.properties.getEnum(p);
                 if (val instanceof CharSequence cs && cs.length() > 0) return cs.charAt(0);
             }
-        } catch (final Exception ignored) {}
+        } catch (final Exception _) {}
         return fallback;
     }
 

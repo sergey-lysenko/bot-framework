@@ -408,9 +408,9 @@ final class JmjSynth {
             this.baseFreqHz = midiToHz(event.midiPitch());
             this.endFreqHz = midiToHz(event.endMidiPitch());
             this.amplitude = event.amplitude();
-            this.brightness = Math.max(0.0, Math.min(1.0, event.brightness()));
+            this.brightness = Math.clamp(event.brightness(), 0.0, 1.0);
 
-            final double clampedPan = Math.max(-1.0, Math.min(1.0, event.pan()));
+            final double clampedPan = Math.clamp(event.pan(), -1.0, 1.0);
             final double angle = (clampedPan + 1.0) * (Math.PI * 0.25);
             this.gainL = Math.cos(angle);
             this.gainR = Math.sin(angle);
@@ -460,7 +460,7 @@ final class JmjSynth {
         }
 
         private void updateSvf(final double cutoffHz, final double q) {
-            final double clampedHz = Math.max(45.0, Math.min(15_000.0, cutoffHz));
+            final double clampedHz = Math.clamp(cutoffHz, 45.0, 15_000.0);
             final double g = Math.tan(Math.PI * clampedHz / SAMPLE_RATE);
             svfK = 1.0 / Math.max(0.55, q);
             svfA1 = 1.0 / (1.0 + g * (g + svfK));

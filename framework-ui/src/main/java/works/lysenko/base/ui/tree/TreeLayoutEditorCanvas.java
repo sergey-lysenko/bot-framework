@@ -288,7 +288,7 @@ public final class TreeLayoutEditorCanvas extends JPanel {
         final double worldH = WORLD_PAD_Y * 2.0 + Math.max(1.0, preview.totalRows()) * ROW_HEIGHT;
         final double scaleX = (getWidth() - 24.0) / worldW;
         final double scaleY = (getHeight() - 24.0) / worldH;
-        zoom = clamp(Math.min(1.0, Math.min(scaleX, scaleY)), MIN_ZOOM, MAX_ZOOM);
+        zoom = Math.clamp(Math.min(1.0, Math.min(scaleX, scaleY)), MIN_ZOOM, MAX_ZOOM);
         panX = (getWidth() - worldW * zoom) / 2.0;
         panY = (getHeight() - worldH * zoom) / 2.0;
         repaint();
@@ -298,7 +298,7 @@ public final class TreeLayoutEditorCanvas extends JPanel {
         if (null == className || getWidth() <= 0 || getHeight() <= 0) return;
         final List<NodeData> nodes = model.latestPreview().nodesByClassName().get(className);
         if (null == nodes || nodes.isEmpty()) return;
-        final NodeData target = nodes.get(0);
+        final NodeData target = nodes.getFirst();
         if (boostZoom && zoom < 0.75) {
             zoom = 0.85;
         }
@@ -310,7 +310,7 @@ public final class TreeLayoutEditorCanvas extends JPanel {
     }
 
     private void zoomAround(final double screenX, final double screenY, final double nextZoom) {
-        final double clamped = clamp(nextZoom, MIN_ZOOM, MAX_ZOOM);
+        final double clamped = Math.clamp(nextZoom, MIN_ZOOM, MAX_ZOOM);
         final double worldX = (screenX - panX) / zoom;
         final double worldY = (screenY - panY) / zoom;
         zoom = clamped;
@@ -630,10 +630,6 @@ public final class TreeLayoutEditorCanvas extends JPanel {
 
     private static double nodeY(final double row) {
         return WORLD_PAD_Y + (row - 1.0) * ROW_HEIGHT;
-    }
-
-    private static double clamp(final double val, final double min, final double max) {
-        return Math.max(min, Math.min(max, val));
     }
 
     private static String escapeHtml(final String text) {

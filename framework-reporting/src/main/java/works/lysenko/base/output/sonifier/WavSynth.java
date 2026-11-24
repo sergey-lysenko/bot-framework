@@ -96,7 +96,7 @@ final class WavSynth {
                     }
                     value += note.amplitude() * chordScale * envelope * wave;
                 }
-                final int pcm = (int) Math.round(Math.max(-1.0, Math.min(1.0, value)) * Short.MAX_VALUE);
+                final int pcm = (int) Math.round(Math.clamp(value, -1.0, 1.0) * Short.MAX_VALUE);
                 writeLittleEndianShort(stream, pcm);
             }
         }

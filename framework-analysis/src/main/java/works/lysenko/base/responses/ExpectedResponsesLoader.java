@@ -66,7 +66,7 @@ public final class ExpectedResponsesLoader {
                     }
                 }
             }
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
         }
         return is;
     }
@@ -79,7 +79,7 @@ public final class ExpectedResponsesLoader {
     public static List<ExpectedResponse> loadDefault() {
         try (final InputStream is = findInputStream()) {
             if (isNotNull(is)) return loadFromStream(is);
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
         }
         return Collections.emptyList();
     }
@@ -94,7 +94,7 @@ public final class ExpectedResponsesLoader {
         if (null == file || !file.exists() || !file.isFile()) return Collections.emptyList();
         try (final InputStream is = new java.io.FileInputStream(file)) {
             return loadFromStream(is);
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
             return Collections.emptyList();
         }
     }
@@ -160,7 +160,7 @@ public final class ExpectedResponsesLoader {
                     }
                 }
             }
-        } catch (final Exception ignored) {
+        } catch (final Exception _) {
         }
         return list;
     }

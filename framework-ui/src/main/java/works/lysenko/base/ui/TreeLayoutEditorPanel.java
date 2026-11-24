@@ -267,24 +267,24 @@ public class TreeLayoutEditorPanel extends JPanel {
         final JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
 
         final JButton fitBtn = compactButton("Fit", "Fit entire tree to canvas (F)");
-        fitBtn.addActionListener(e -> canvas.fitToView());
+        fitBtn.addActionListener(_ -> canvas.fitToView());
 
         final JButton zoom100Btn = compactButton("100%", "Reset zoom to 100%");
-        zoom100Btn.addActionListener(e -> canvas.resetZoom());
+        zoom100Btn.addActionListener(_ -> canvas.resetZoom());
 
         final JButton focusBtn = compactButton("Focus", "Center canvas on selected node");
-        focusBtn.addActionListener(e -> {
+        focusBtn.addActionListener(_ -> {
             if (null != selectedClassName) canvas.focusNode(selectedClassName, true);
         });
 
         gridCheck.setToolTipText("Show column/row grid lines and indices");
-        gridCheck.addActionListener(e -> canvas.setShowGrid(gridCheck.isSelected()));
+        gridCheck.addActionListener(_ -> canvas.setShowGrid(gridCheck.isSelected()));
 
         ghostsCheck.setToolTipText("Show dashed ghost outlines for pre-compaction positions of shifted nodes");
-        ghostsCheck.addActionListener(e -> canvas.setShowRawGhosts(ghostsCheck.isSelected()));
+        ghostsCheck.addActionListener(_ -> canvas.setShowRawGhosts(ghostsCheck.isSelected()));
 
         compactedCheck.setToolTipText("Toggle between compacted layout (actual output) and raw initial offsets");
-        compactedCheck.addActionListener(e -> {
+        compactedCheck.addActionListener(_ -> {
             model.previewSettings().compacted = compactedCheck.isSelected();
             ghostsCheck.setEnabled(compactedCheck.isSelected());
             recomputeAndRepaint();
@@ -292,7 +292,7 @@ public class TreeLayoutEditorPanel extends JPanel {
 
         minSepSpinner.setPreferredSize(new Dimension(52, 24));
         minSepSpinner.setToolTipText("Preview .tree.min.offset.separation (does not alter test configuration)");
-        minSepSpinner.addChangeListener(e -> {
+        minSepSpinner.addChangeListener(_ -> {
             if (syncingUi) return;
             model.previewSettings().minOffsetSeparation = ((Number) minSepSpinner.getValue()).intValue();
             recomputeAndRepaint();
@@ -300,7 +300,7 @@ public class TreeLayoutEditorPanel extends JPanel {
 
         final JButton optionsBtn = compactButton("Options ▾", "Toggle preview compaction stages");
         final JPopupMenu optionsMenu = buildPreviewOptionsMenu();
-        optionsBtn.addActionListener(e -> optionsMenu.show(optionsBtn, 0, optionsBtn.getHeight()));
+        optionsBtn.addActionListener(_ -> optionsMenu.show(optionsBtn, 0, optionsBtn.getHeight()));
 
         controls.add(fitBtn);
         controls.add(zoom100Btn);
@@ -325,16 +325,16 @@ public class TreeLayoutEditorPanel extends JPanel {
         final PreviewSettings ps = model.previewSettings();
 
         final JCheckBoxMenuItem hOff = new JCheckBoxMenuItem("Reduce Horizontal Offsets", ps.reduceHorizontalOffsets);
-        hOff.addActionListener(e -> { ps.reduceHorizontalOffsets = hOff.isSelected(); recomputeAndRepaint(); });
+        hOff.addActionListener(_ -> { ps.reduceHorizontalOffsets = hOff.isSelected(); recomputeAndRepaint(); });
 
         final JCheckBoxMenuItem vOff = new JCheckBoxMenuItem("Reduce Vertical Offsets", ps.reduceVerticalOffsets);
-        vOff.addActionListener(e -> { ps.reduceVerticalOffsets = vOff.isSelected(); recomputeAndRepaint(); });
+        vOff.addActionListener(_ -> { ps.reduceVerticalOffsets = vOff.isSelected(); recomputeAndRepaint(); });
 
         final JCheckBoxMenuItem hGap = new JCheckBoxMenuItem("Reduce Horizontal Gaps", ps.reduceHorizontalGaps);
-        hGap.addActionListener(e -> { ps.reduceHorizontalGaps = hGap.isSelected(); recomputeAndRepaint(); });
+        hGap.addActionListener(_ -> { ps.reduceHorizontalGaps = hGap.isSelected(); recomputeAndRepaint(); });
 
         final JCheckBoxMenuItem vGap = new JCheckBoxMenuItem("Reduce Vertical Gaps", ps.reduceVerticalGaps);
-        vGap.addActionListener(e -> { ps.reduceVerticalGaps = vGap.isSelected(); recomputeAndRepaint(); });
+        vGap.addActionListener(_ -> { ps.reduceVerticalGaps = vGap.isSelected(); recomputeAndRepaint(); });
 
         menu.add(hOff);
         menu.add(vOff);
@@ -356,7 +356,7 @@ public class TreeLayoutEditorPanel extends JPanel {
         final JPanel searchInputWrap = new JPanel(new BorderLayout(2, 0));
         searchField.setToolTipText("Filter scenarios by name or class");
         final JButton clearSearchBtn = compactButton("×", "Clear search");
-        clearSearchBtn.addActionListener(e -> searchField.setText(""));
+        clearSearchBtn.addActionListener(_ -> searchField.setText(""));
         searchInputWrap.add(searchField, BorderLayout.CENTER);
         searchInputWrap.add(clearSearchBtn, BorderLayout.EAST);
 
@@ -366,8 +366,8 @@ public class TreeLayoutEditorPanel extends JPanel {
         styleToggle(tableViewBtn);
         viewGroup.add(treeViewBtn);
         viewGroup.add(tableViewBtn);
-        treeViewBtn.addActionListener(e -> setTreeViewActive(true));
-        tableViewBtn.addActionListener(e -> setTreeViewActive(false));
+        treeViewBtn.addActionListener(_ -> setTreeViewActive(true));
+        tableViewBtn.addActionListener(_ -> setTreeViewActive(false));
         viewToggleWrap.add(treeViewBtn);
         viewToggleWrap.add(tableViewBtn);
 
@@ -381,10 +381,10 @@ public class TreeLayoutEditorPanel extends JPanel {
             filterGroup.add(btn);
             filterRow.add(btn);
         }
-        filterAllBtn.addActionListener(e -> setFilterMode(FilterMode.ALL));
-        filterBranchesBtn.addActionListener(e -> setFilterMode(FilterMode.BRANCHES));
-        filterShiftedBtn.addActionListener(e -> setFilterMode(FilterMode.SHIFTED));
-        filterModifiedBtn.addActionListener(e -> setFilterMode(FilterMode.MODIFIED));
+        filterAllBtn.addActionListener(_ -> setFilterMode(FilterMode.ALL));
+        filterBranchesBtn.addActionListener(_ -> setFilterMode(FilterMode.BRANCHES));
+        filterShiftedBtn.addActionListener(_ -> setFilterMode(FilterMode.SHIFTED));
+        filterModifiedBtn.addActionListener(_ -> setFilterMode(FilterMode.MODIFIED));
 
         searchField.getDocument().addDocumentListener(new DocumentListener() {
             @Override public void insertUpdate(final DocumentEvent e) { rebuildNavigatorViews(); }
@@ -476,12 +476,12 @@ public class TreeLayoutEditorPanel extends JPanel {
                 BorderFactory.createEmptyBorder(6, 8, 6, 8)));
 
         final JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-        undoBtn.addActionListener(e -> performUndo());
-        redoBtn.addActionListener(e -> performRedo());
+        undoBtn.addActionListener(_ -> performUndo());
+        redoBtn.addActionListener(_ -> performRedo());
         revertAllBtn.setToolTipText("Discard unsaved edits and restore offsets from sources");
-        revertAllBtn.addActionListener(e -> performRevertAll());
+        revertAllBtn.addActionListener(_ -> performRevertAll());
         resetAllZeroBtn.setToolTipText("Set all @VisualOffset and @VisualRowOffset values to 0 (undoable)");
-        resetAllZeroBtn.addActionListener(e -> performResetAllToZero());
+        resetAllZeroBtn.addActionListener(_ -> performResetAllToZero());
 
         final JSeparator sep = new JSeparator(SwingConstants.VERTICAL);
         sep.setPreferredSize(new Dimension(2, 22));
@@ -489,7 +489,7 @@ public class TreeLayoutEditorPanel extends JPanel {
         aspectPresetCombo.setSelectedItem(AspectPreset.WIDESCREEN_16_9);
         aspectPresetCombo.setToolTipText("Target proportions for Auto-Layout");
         autoLayoutBtn.setToolTipText("Optimize @VisualOffset and @VisualRowOffset starting from current layout (undoable)");
-        autoLayoutBtn.addActionListener(e -> performAutoLayoutOrCancel());
+        autoLayoutBtn.addActionListener(_ -> performAutoLayoutOrCancel());
 
         left.add(undoBtn);
         left.add(redoBtn);
@@ -501,13 +501,13 @@ public class TreeLayoutEditorPanel extends JPanel {
 
         final JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         final JButton reloadBtn = new JButton("Reload from Sources");
-        reloadBtn.addActionListener(e -> confirmAndReload());
+        reloadBtn.addActionListener(_ -> confirmAndReload());
 
         final JButton browserBtn = new JButton("Open in Browser");
-        browserBtn.addActionListener(e -> openInBrowser());
+        browserBtn.addActionListener(_ -> openInBrowser());
 
         saveBtn.setFont(saveBtn.getFont().deriveFont(Font.BOLD));
-        saveBtn.addActionListener(e -> saveToSources());
+        saveBtn.addActionListener(_ -> saveToSources());
 
         right.add(reloadBtn);
         right.add(browserBtn);
@@ -651,7 +651,7 @@ public class TreeLayoutEditorPanel extends JPanel {
     }
 
     private void configureInspector() {
-        colOffsetSpinner.addChangeListener(e -> {
+        colOffsetSpinner.addChangeListener(_ -> {
             if (syncingUi || null == selectedClassName) return;
             final int nextCol = ((Number) colOffsetSpinner.getValue()).intValue();
             final int curRow = model.currentOffsets(selectedClassName).rowOffset();
@@ -659,7 +659,7 @@ public class TreeLayoutEditorPanel extends JPanel {
                 refreshAfterOffsetMutation();
             }
         });
-        rowOffsetSpinner.addChangeListener(e -> {
+        rowOffsetSpinner.addChangeListener(_ -> {
             if (syncingUi || null == selectedClassName) return;
             final int curCol = model.currentOffsets(selectedClassName).colOffset();
             final int nextRow = ((Number) rowOffsetSpinner.getValue()).intValue();
@@ -667,7 +667,7 @@ public class TreeLayoutEditorPanel extends JPanel {
                 refreshAfterOffsetMutation();
             }
         });
-        resetColBtn.addActionListener(e -> {
+        resetColBtn.addActionListener(_ -> {
             if (null != selectedClassName) {
                 final int curRow = model.currentOffsets(selectedClassName).rowOffset();
                 if (model.setOffsets(selectedClassName, 0, curRow)) {
@@ -675,7 +675,7 @@ public class TreeLayoutEditorPanel extends JPanel {
                 }
             }
         });
-        resetRowBtn.addActionListener(e -> {
+        resetRowBtn.addActionListener(_ -> {
             if (null != selectedClassName) {
                 final int curCol = model.currentOffsets(selectedClassName).colOffset();
                 if (model.setOffsets(selectedClassName, curCol, 0)) {
@@ -683,12 +683,12 @@ public class TreeLayoutEditorPanel extends JPanel {
                 }
             }
         });
-        revertNodeBtn.addActionListener(e -> {
+        revertNodeBtn.addActionListener(_ -> {
             if (null != selectedClassName && model.revertNode(selectedClassName)) {
                 refreshAfterOffsetMutation();
             }
         });
-        focusNodeBtn.addActionListener(e -> {
+        focusNodeBtn.addActionListener(_ -> {
             if (null != selectedClassName) {
                 canvas.focusNode(selectedClassName, true);
             }
@@ -814,7 +814,7 @@ public class TreeLayoutEditorPanel extends JPanel {
             @Override
             protected void process(final List<SolveProgress> chunks) {
                 if (chunks.isEmpty() || solverCancelled.get()) return;
-                final SolveProgress p = chunks.get(chunks.size() - 1);
+                final SolveProgress p = chunks.getLast();
                 statusMetricsLabel.setText(String.format(Locale.ROOT,
                         "Optimizing (%s)… %s · %d×%d (%.2f:1)",
                         preset.label(),
@@ -1098,7 +1098,7 @@ public class TreeLayoutEditorPanel extends JPanel {
             final PreviewResult preview = model.latestPreview();
             final List<NodeData> nodes = preview.nodesByClassName().get(selectedClassName);
             if (null != nodes && !nodes.isEmpty()) {
-                final NodeData n = nodes.get(0);
+                final NodeData n = nodes.getFirst();
                 final Point2DGrid raw = preview.rawPositionByNodeId().get(n.id());
                 final StringBuilder pos = new StringBuilder(
                         String.format("Grid: C%d, R%.2f", n.col(), n.row()));

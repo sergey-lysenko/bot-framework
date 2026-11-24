@@ -419,7 +419,7 @@ public final class ScenarioGraphSvgRenderer {
         }
 
         // Bars
-        final int barW = Math.max(2, Math.min(28, (int) Math.floor(slotW * 0.72)));
+        final int barW = Math.clamp((int) Math.floor(slotW * 0.72), 2, 28);
         final int barRx = (barW >= 6) ? 3 : 1;
         final boolean showAllCounts = !denseMode && barW >= 12;
         int lastLabeledBarCenterX = -100;
@@ -593,7 +593,7 @@ public final class ScenarioGraphSvgRenderer {
             final double gx2 = chartX + (grp.endIdx() + 1) * slotW - 2.0;
             final double groupW = Math.max(2.0, gx2 - gx1);
             final double midX = (gx1 + gx2) / 2.0;
-            final String label = truncate(grp.label(), Math.max(10, Math.min(20, (int) Math.floor((groupW + 56.0) / 6.2))));
+            final String label = truncate(grp.label(), Math.clamp((int) Math.floor((groupW + 56.0) / 6.2), 10, 20));
             final String sub = grp.completed() + "/" + grp.total();
             final double halfPx = Math.max(label.length() * 6.0, sub.length() * 5.6) / 2.0;
             final double clampedMidX = Math.max(chartX + halfPx, Math.min(chartX + chartW - halfPx, midX));
@@ -648,7 +648,7 @@ public final class ScenarioGraphSvgRenderer {
             }
 
             // Pick a collision-free staggered horizontal label row
-            final String label = truncate(grp.label(), Math.max(10, Math.min(20, (int) Math.floor((groupW + 56.0) / 6.2))));
+            final String label = truncate(grp.label(), Math.clamp((int) Math.floor((groupW + 56.0) / 6.2), 10, 20));
             final String sub = grp.completed() + "/" + grp.total();
             final double labelPx = Math.max(label.length() * 6.0, sub.length() * 5.6);
             final double halfPx = labelPx / 2.0;
@@ -754,7 +754,7 @@ public final class ScenarioGraphSvgRenderer {
         final int cy = y + (h / 2);
         final int textY = y + 19;
         if (!activeIndices.isEmpty()) {
-            final int primary = activeIndices.get(0);
+            final int primary = activeIndices.getFirst();
             final String extra = (activeIndices.size() > 1) ? (" (+" + (activeIndices.size() - 1) + " more)") : "";
             final String activeText = String.format(Locale.US, "Active: %s (%d/%d · %s)%s",
                     truncate(displayNames[primary], 78),
@@ -805,7 +805,7 @@ public final class ScenarioGraphSvgRenderer {
 
         final int level;
         if (labelLevel > 0) {
-            level = Math.min(Math.max(labelLevel, minLevel), maxDepth);
+            level = Math.clamp(labelLevel, minLevel, maxDepth);
         } else {
             level = autoLabelLevel(rawShortNames, minLevel, maxDepth);
         }
@@ -813,7 +813,7 @@ public final class ScenarioGraphSvgRenderer {
 
         // If names are flat (no hierarchy) or excessively fragmented, fall back to clean uniform buckets
         if (raw.size() > MAX_HIERARCHICAL_GROUPS && (double) count / raw.size() < 2.2) {
-            final int bucketCount = Math.min(12, Math.max(4, count / 20));
+            final int bucketCount = Math.clamp(count / 20, 4, 12);
             final List<BranchGroup> buckets = new ArrayList<>(bucketCount);
             for (int b = 0; b < bucketCount; b++) {
                 final int start = (b * count) / bucketCount;
