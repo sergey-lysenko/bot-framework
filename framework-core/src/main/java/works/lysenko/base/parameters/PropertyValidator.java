@@ -34,7 +34,6 @@ public final class PropertyValidator {
      * Per-property constraints on string values (compared case-insensitively).
      */
     private static final Map<_PropEnum, List<String>> ALLOWED_VALUES = Map.of(
-            PropEnum._TEST_REPORT_PROGRESSION_TREE_SONIFICATION, _ReportingProvider.resolveTreeSonificationValues(),
             PropEnum._SCREENSHOTS_MARKER_VARIANT, _GridProvider.availableMarkerModes());
 
     private static List<String> cachedProperties = null;

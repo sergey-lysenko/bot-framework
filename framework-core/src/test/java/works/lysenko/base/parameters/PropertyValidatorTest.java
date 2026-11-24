@@ -19,28 +19,32 @@ class PropertyValidatorTest {
     }
 
     @Test
-    void sonificationAcceptsOnlyKnownModes() {
+    void sonificationAcceptsBooleanValues() {
         final String name = ".test.report.progression.tree.sonification";
-        for (final String ok : new String[]{
-                "none", "copilot", "claude", "Claude", "gemini", "Gemini",
-                "orpheus", "Orpheus", "aurora", "Aurora", "carbon", "Carbon",
-                "neon", "Neon", "jmj", "JMJ", "dnb", "DnB", ""}) {
+        for (final String ok : new String[]{"true", "false", "True", "FALSE", ""}) {
             assertNull(PropertyValidator.validate(name, ok), ok);
         }
-        for (final String bad : new String[]{"true", "false"}) {
+        for (final String bad : new String[]{"none", "dnb", "neon", "1", "0"}) {
             assertNotNull(PropertyValidator.validate(name, bad), bad);
         }
     }
 
     @Test
+    void sonificationsListAcceptsCommaSeparatedText() {
+        final String name = ".test.report.progression.tree.sonifications";
+        assertNull(PropertyValidator.validate(name, "dnb, neon, jmj, carbon"));
+        assertNull(PropertyValidator.validate(name, "dnb"));
+        assertNull(PropertyValidator.validate(name, ""));
+    }
+
+    @Test
     void exposesFiniteKnownValuesForGuiSelection() {
-        assertEquals(
-                java.util.List.of("none", "copilot", "claude", "gemini", "orpheus", "aurora", "carbon", "neon", "jmj", "dnb"),
-                PropertyValidator.validValues(".test.report.progression.tree.sonification"));
+        assertEquals(java.util.List.of("true", "false"), PropertyValidator.validValues(".test.report.progression.tree.sonification"));
         assertEquals(java.util.List.of("true", "false"), PropertyValidator.validValues(".test.report.progression.tree"));
         assertEquals(
                 java.util.Arrays.stream(Severity.values()).map(Enum::name).toList(),
                 PropertyValidator.validValues(".test.assertions.severity"));
+        assertEquals(java.util.List.of(), PropertyValidator.validValues(".test.report.progression.tree.sonifications"));
         assertEquals(java.util.List.of(), PropertyValidator.validValues(".test.report.progression.max.frames"));
         assertEquals(java.util.List.of(), PropertyValidator.validValues("custom.property"));
     }

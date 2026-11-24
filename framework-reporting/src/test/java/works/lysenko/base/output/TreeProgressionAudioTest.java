@@ -46,6 +46,24 @@ class TreeProgressionAudioTest {
     }
 
     @Test
+    void selectRandomPicksFromCandidates() {
+        assertEquals("none", TreeProgressionAudio.selectRandom(null));
+        assertEquals("none", TreeProgressionAudio.selectRandom(""));
+        assertEquals("none", TreeProgressionAudio.selectRandom("unknown, invalid, none"));
+        assertEquals("dnb", TreeProgressionAudio.selectRandom("dnb"));
+        assertEquals("neon", TreeProgressionAudio.selectRandom("neon, invalid"));
+
+        final java.util.Set<String> chosen = new java.util.HashSet<>();
+        final String candidates = "dnb, neon, jmj, carbon";
+        for (int i = 0; i < 50; i++) {
+            final String selected = TreeProgressionAudio.selectRandom(candidates);
+            assertTrue(java.util.List.of("dnb", "neon", "jmj", "carbon").contains(selected));
+            chosen.add(selected);
+        }
+        assertTrue(chosen.size() > 1, "Random selection should pick multiple distinct options over 50 iterations");
+    }
+
+    @Test
     void carbonSynthesizesStereoSpatialTelemetryDeterministically(@TempDir final Path tempDir) throws Exception {
         final CarbonSonifier carbon = new CarbonSonifier();
         final File frame1 = tempDir.resolve("frame_0001.svg").toFile();

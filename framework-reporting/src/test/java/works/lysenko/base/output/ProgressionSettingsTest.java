@@ -28,7 +28,7 @@ class ProgressionSettingsTest {
             assertFalse(ProgressionSettings.current().scenarioGifEnabled());
             assertFalse(ProgressionSettings.current().treeGifEnabled());
             assertFalse(ProgressionSettings.current().treePerNodeEnabled());
-            assertFalse(ProgressionSettings.current().treeSonificationEnabled());
+            assertTrue(ProgressionSettings.current().treeSonificationEnabled());
             assertEquals(1.0, ProgressionSettings.current().treeMovementSpeed(), 1e-9);
         } finally {
             Base.properties = previousProperties;
@@ -54,7 +54,8 @@ class ProgressionSettingsTest {
                     ".test.report.progression.tree.gif", "true",
                     ".test.report.progression.tree.webp", "false",
                     ".test.report.progression.tree.mp4", "true",
-                    ".test.report.progression.tree.sonification", "copilot",
+                    ".test.report.progression.tree.sonification", "true",
+                    ".test.report.progression.tree.sonifications", "copilot",
                     ".test.report.progression.ffmpeg", "/tmp/ffmpeg");
             ProgressionSettings.initialize();
             final ProgressionSettings snapshot = ProgressionSettings.current();
@@ -90,6 +91,12 @@ class ProgressionSettingsTest {
             Base.properties.put(".tree.progression.movement.speed", "0");
             ProgressionSettings.initialize();
             assertEquals(1.0, ProgressionSettings.current().treeMovementSpeed(), 1e-9);
+
+            // Sonification disabled sets treeSonification to "none"
+            Base.properties.put(".test.report.progression.tree.sonification", "false");
+            ProgressionSettings.initialize();
+            assertFalse(ProgressionSettings.current().treeSonificationEnabled());
+            assertEquals("none", ProgressionSettings.current().treeSonification());
         } finally {
             Base.properties = previousProperties;
             ProgressionSettings.initialize();

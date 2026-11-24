@@ -169,8 +169,12 @@
 # .test.report.progression.tree.per.node=false
 
 # ------------------------------------------------------------------------------
-# Adds deterministic musical sonification to tree progression MP4s (none, copilot, claude, gemini, orpheus, aurora, carbon, neon, jmj, dnb). Default: none
-# .test.report.progression.tree.sonification=none
+# Enables deterministic musical sonification in tree progression MP4s. Default: true
+# .test.report.progression.tree.sonification=true
+
+# ------------------------------------------------------------------------------
+# Comma-separated list of sonification variants to randomly select from (dnb, neon, jmj, carbon, copilot, claude, gemini, orpheus, aurora). Default: dnb, neon, jmj, carbon
+# .test.report.progression.tree.sonifications=dnb, neon, jmj, carbon
 
 # ------------------------------------------------------------------------------
 # Generates a WebP animation of test-tree progression. Default: true

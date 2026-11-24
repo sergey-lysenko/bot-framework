@@ -667,6 +667,7 @@ public final class TreeTracker {
                         logDebug("Generating tree progression MP4 from " + rasterizedFrames.size() + " frames...");
                         final java.util.Optional<TreeSonifier> sonifier = TreeProgressionAudio.find(treeSonification);
                         if (sonifier.isPresent() && sonifier.get().canSonify(framesToProcess)) {
+                            log("Generating tree progression audio with '" + sonifier.get().mode() + "' sonifier...");
                             audioFile = File.createTempFile("tree-progression-audio-", ".wav", runDir);
                             sonifier.get().writeWav(framesToProcess, audioFile, FPS);
                         }

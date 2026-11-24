@@ -75,7 +75,16 @@ public record ProgressionSettings(
         final Boolean treeGifEnabled = PropEnum._TEST_REPORT_PROGRESSION_TREE_GIF.get();
         final Boolean treeWebpEnabled = PropEnum._TEST_REPORT_PROGRESSION_TREE_WEBP.get();
         final Boolean treeMp4Enabled = PropEnum._TEST_REPORT_PROGRESSION_TREE_MP4.get();
-        final String treeSonification = PropEnum._TEST_REPORT_PROGRESSION_TREE_SONIFICATION.get();
+        final Boolean sonificationConfigured = PropEnum._TEST_REPORT_PROGRESSION_TREE_SONIFICATION.get();
+        final String sonificationsList = PropEnum._TEST_REPORT_PROGRESSION_TREE_SONIFICATIONS.get();
+        final String treeSonification;
+        if (Boolean.TRUE.equals(sonificationConfigured)) {
+            final String chosen = TreeProgressionAudio.selectRandom(sonificationsList);
+            works.lysenko.Base.log("Selected tree progression sonification: " + chosen);
+            treeSonification = chosen;
+        } else {
+            treeSonification = "none";
+        }
         final String ffmpeg = PropEnum._TEST_REPORT_PROGRESSION_FFMPEG.get();
         current = new ProgressionSettings(
                 Boolean.TRUE.equals(scenarioEnabled),

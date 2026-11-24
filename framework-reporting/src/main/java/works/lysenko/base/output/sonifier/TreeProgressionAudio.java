@@ -42,4 +42,29 @@ public final class TreeProgressionAudio {
         final String normalized = mode.trim().toLowerCase(Locale.ROOT);
         return ALL.stream().filter(sonifier -> sonifier.mode().equals(normalized)).findFirst();
     }
+
+    /**
+     * Selects a random sonifier mode from a comma-separated list of candidate mode names.
+     * Whitespace is trimmed, empty tokens are ignored, and candidates are checked against registered modes.
+     *
+     * @param candidatesCommaSeparated comma-separated list of mode names, e.g. "dnb, neon, jmj, carbon"
+     * @return selected mode name, or "none" if no valid candidates found
+     */
+    public static String selectRandom(final String candidatesCommaSeparated) {
+        if (null == candidatesCommaSeparated || candidatesCommaSeparated.isBlank()) {
+            return "none";
+        }
+        final List<String> available = new java.util.ArrayList<>();
+        for (final String part : candidatesCommaSeparated.split(",")) {
+            final String trimmed = part.trim().toLowerCase(Locale.ROOT);
+            if (!trimmed.isEmpty() && !"none".equals(trimmed) && find(trimmed).isPresent()) {
+                available.add(trimmed);
+            }
+        }
+        if (available.isEmpty()) {
+            return "none";
+        }
+        final int index = java.util.concurrent.ThreadLocalRandom.current().nextInt(available.size());
+        return available.get(index);
+    }
 }
