@@ -65,6 +65,8 @@ public record A() {
 
     /** Constant representing Appium automation name capability. */
     public static final String APPIUM_AUTOMATION_NAME = s(APPIUM_, AUTOMATION, c(NAME));
+    /** Constant representing Appium app capability. */
+    public static final String APPIUM_APP = s(APPIUM_, APP);
     /** Constant representing Appium app package capability. */
     public static final String APPIUM_APP_PACKAGE = s(APPIUM_, APP, c(PACKAGE));
     /** Constant representing Appium app activity capability. */
