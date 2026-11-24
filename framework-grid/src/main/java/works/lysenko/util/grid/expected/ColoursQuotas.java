@@ -10,6 +10,7 @@ import works.lysenko.util.data.records.RGB24;
 import works.lysenko.util.data.records.RangedMargin;
 import works.lysenko.util.data.records.Slack;
 import works.lysenko.util.func.grid.Renderers;
+import works.lysenko.util.grid.Theme;
 import works.lysenko.util.grid.record.misc.IgnoreHSB;
 import works.lysenko.util.grid.record.misc.Limits;
 
@@ -99,7 +100,25 @@ public class ColoursQuotas extends AbstractQuotas implements _ColoursQuotas {
     public ColoursQuotas(final String origin, final String source, final Limits limits, final Set<ColoursIgnore> ignore,
                          final IgnoreHSB ignoreHSB, final IntegerRange amount, final boolean silent) {
 
-        super(source, origin, COLOUR, silent);
+        this(origin, source, limits, ignore, ignoreHSB, amount, silent, null);
+    }
+
+    /**
+     * Constructs a ColoursQuotas object with the given parameters and optional active {@link Theme}.
+     *
+     * @param origin    The origin identifier for this ColoursQuotas object.
+     * @param source    The source string containing colour quotas (numeric ARGBs or symbolic tokens).
+     * @param limits    The Limits object containing border and allowed margin.
+     * @param ignore    The set specifying which colour properties to ignore.
+     * @param ignoreHSB The IgnoreHSB object specifying the range of HSB values to ignore.
+     * @param amount    The IntegerRange representing the range for the amount of each colour share.
+     * @param silent    A boolean indicating whether the process should run silently without logging.
+     * @param theme     Optional {@link Theme} used to resolve symbolic colour tokens.
+     */
+    public ColoursQuotas(final String origin, final String source, final Limits limits, final Set<ColoursIgnore> ignore,
+                         final IgnoreHSB ignoreHSB, final IntegerRange amount, final boolean silent, final Theme theme) {
+
+        super(source, origin, COLOUR, silent, theme);
         if (isNotNull(limits)) {
             border = limits.border();
             margin = limits.margin();

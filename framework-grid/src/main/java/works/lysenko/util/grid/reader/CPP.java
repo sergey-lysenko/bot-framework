@@ -10,6 +10,7 @@ import works.lysenko.util.data.enums.ColoursIgnore;
 import works.lysenko.util.data.range.FractionRange;
 import works.lysenko.util.data.range.IntegerRange;
 import works.lysenko.util.data.records.RangedMargin;
+import works.lysenko.util.grid.Theme;
 import works.lysenko.util.grid.expected.ColoursQuotas;
 import works.lysenko.util.grid.expected.Palette;
 import works.lysenko.util.grid.expected.Polychromy;
@@ -49,6 +50,22 @@ public record CPP() {
     public static _ColoursQuotas getColours(final _GridProperties grid, final _ImageRequirements predefined,
                                             final String origin, final boolean silent) {
 
+        return getColours(grid, predefined, origin, silent, Theme.active());
+    }
+
+    /**
+     * Retrieves the ColoursQuotas based on the provided parameters and optional {@link Theme}.
+     *
+     * @param grid       The _ScaledProperties grid containing colour-related key-value pairs
+     * @param predefined The ImageRequirements object containing predefined colour information
+     * @param origin     The origin information for the ColoursQuotas
+     * @param silent     A boolean indicating whether to run the operation silently
+     * @param theme      Optional {@link Theme} for resolving symbolic colour tokens (may be {@code null})
+     * @return The ColoursQuotas object based on the inputs and predefined colours
+     */
+    public static _ColoursQuotas getColours(final _GridProperties grid, final _ImageRequirements predefined,
+                                            final String origin, final boolean silent, final Theme theme) {
+
         final String coloursProperty = grid.getKV(COLOURS, true).v();
         final String coloursIgnore = grid.getKV(CDI, true).v();
         final String coloursAmount = grid.getKV(CDA, true).v();
@@ -62,7 +79,7 @@ public record CPP() {
                         ColoursIgnore.set(coloursIgnore),
                         IgnoreHSB.of(getI(grid, CDIH), getI(grid, CDIS), getI(grid, CDIB)),
                         (isNull(coloursAmount)) ? null :
-                                new IntegerRange(coloursAmount), silent) : predefined.colours();
+                                new IntegerRange(coloursAmount), silent, theme) : predefined.colours();
     }
 
     /**

@@ -10,6 +10,7 @@ import works.lysenko.util.apis.grid.t._Region;
 import works.lysenko.util.apis.grid.t._RelativePosition;
 import works.lysenko.util.data.records.Location;
 import works.lysenko.util.data.type.RelativePosition;
+import works.lysenko.util.grid.Theme;
 import works.lysenko.util.grid.record.ImageRequirements;
 import works.lysenko.util.grid.record.Request;
 import works.lysenko.util.grid.record.gsrc.Resolution;
@@ -47,6 +48,30 @@ public record Check() {
     }
 
     /**
+     * Creates a themed Request object with the given grid name and {@link Theme}.
+     *
+     * @param name  the name of the validation request
+     * @param theme the theme used to resolve symbolic colour tokens
+     * @return a new Request object
+     */
+    public static Request byGrid(final String name, final Theme theme) {
+
+        return image(null, name, theme);
+    }
+
+    /**
+     * Creates a themed Request object with the given grid name and theme name.
+     *
+     * @param name      the name of the validation request
+     * @param themeName the theme identifier under {@code themes/<themeName>.colours}
+     * @return a new Request object
+     */
+    public static Request byGrid(final String name, final String themeName) {
+
+        return image(null, name, Theme.of(themeName));
+    }
+
+    /**
      * Creates a Request object with the given name, bufferedImage, and requirements.
      *
      * @param name          the name of the validation request
@@ -61,6 +86,25 @@ public record Check() {
                                                final BufferedImage bufferedImage,
                                                final _ImageRequirements predefined) {
 
+        return byImageRequirements(name, bufferedImage, predefined, Theme.active());
+    }
+
+    /**
+     * Creates a Request object with the given name, bufferedImage, requirements, and optional {@link Theme}.
+     *
+     * @param name          the name of the validation request
+     * @param bufferedImage the BufferedImage object can be null
+     * @param predefined    the ImageRequirements object representing the expectations for image analysis
+     * @param theme         optional {@link Theme} used to resolve symbolic colour tokens (may be {@code null})
+     * @return a new Request object
+     */
+    @SuppressWarnings("WeakerAccess")
+    public static Request byImageRequirements(
+            final String name,
+            final BufferedImage bufferedImage,
+            final _ImageRequirements predefined,
+            final Theme theme) {
+
         final _GridProperties gridProperties = getGridPropertiesByName(name);
         final BufferedImage image = (null == bufferedImage) ? makeScreenAndCodeSnapshot(d(DEFAULT, FULLSCREEN, BY,
                 VALIDATION, REQUESTED)) : bufferedImage;
@@ -69,7 +113,7 @@ public record Check() {
         final _Resolution resolution = works.lysenko.util.grid.validation.Routines.getResolution(gridProperties);
 
         return new Request(name, image, position, scale, resolution, null, _ImageRequirements.read(name,
-                gridProperties, predefined, false));
+                gridProperties, predefined, false, theme));
     }
 
     /**
@@ -123,6 +167,32 @@ public record Check() {
     }
 
     /**
+     * Generates a themed Request object for the provided image, grid name, and {@link Theme}.
+     *
+     * @param bufferedImage the BufferedImage object representing the image to be validated
+     * @param name          the name of the validation request
+     * @param theme         the theme used to resolve symbolic colour tokens
+     * @return a new Request object
+     */
+    public static Request image(final BufferedImage bufferedImage, final String name, final Theme theme) {
+
+        return byImageRequirements(name, bufferedImage, null, theme);
+    }
+
+    /**
+     * Generates a themed Request object for the provided image, grid name, and theme name.
+     *
+     * @param bufferedImage the BufferedImage object representing the image to be validated
+     * @param name          the name of the validation request
+     * @param themeName     the theme identifier under {@code themes/<themeName>.colours}
+     * @return a new Request object
+     */
+    public static Request image(final BufferedImage bufferedImage, final String name, final String themeName) {
+
+        return byImageRequirements(name, bufferedImage, null, Theme.of(themeName));
+    }
+
+    /**
      * Creates a Request object based on the specified locator and name.
      *
      * @param locator the locator used to identify the web element
@@ -135,6 +205,19 @@ public record Check() {
     }
 
     /**
+     * Creates a themed Request object based on the specified locator, grid name, and {@link Theme}.
+     *
+     * @param locator the locator used to identify the web element
+     * @param name    the name of the validation request
+     * @param theme   the theme used to resolve symbolic colour tokens
+     * @return a new Request object
+     */
+    public static Request element(final String locator, final String name, final Theme theme) {
+
+        return byImageRequirements(name, makeScreenshot(find(locator)), null, theme);
+    }
+
+    /**
      * Creates a Request object using the provided WebElement and name.
      *
      * @param element the WebElement from which a screenshot is taken to create the validation request
@@ -144,6 +227,19 @@ public record Check() {
     public static Request element(final WebElement element, final String name) { // 14 usages
 
         return byImageRequirements(name, makeScreenshot(element), null);
+    }
+
+    /**
+     * Creates a themed Request object using the provided WebElement, grid name, and {@link Theme}.
+     *
+     * @param element the WebElement from which a screenshot is taken to create the validation request
+     * @param name    the name of the validation request
+     * @param theme   the theme used to resolve symbolic colour tokens
+     * @return a new Request object
+     */
+    public static Request element(final WebElement element, final String name, final Theme theme) {
+
+        return byImageRequirements(name, makeScreenshot(element), null, theme);
     }
 
     /**

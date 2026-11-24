@@ -36,9 +36,10 @@ import static works.lysenko.util.spec.Numbers.ZERO;
  * @param stamp     The identifier stamp string.
  * @param min       The minimum allowable fraction.
  * @param max       The maximum allowable fraction.
+ * @param symbol    Optional symbolic colour token name (e.g. {@code SURFACE_BG}); {@code null} for literal values.
  */
 @SuppressWarnings({"CallToSuspiciousStringMethod"})
-public record Quota<T>(T value, T precision, String stamp, Fraction min, Fraction max) implements _Quota<T> {
+public record Quota<T>(T value, T precision, String stamp, Fraction min, Fraction max, String symbol) implements _Quota<T> {
 
     /**
      * Represents the maximum share value.
@@ -65,6 +66,20 @@ public record Quota<T>(T value, T precision, String stamp, Fraction min, Fractio
         if (MIN > max.doubleValue() || MAX < max.doubleValue()) {
             throw new IllegalArgumentException(b(c(MAXIMUM), FRACTION, ts(min), IS, NOT, IN, s(MIN), DOTS, s(MAX), RANGE));
         }
+    }
+
+    /**
+     * Constructs a Quota without a symbolic token name.
+     *
+     * @param value     The underlying value associated with this quota.
+     * @param precision The precision or granularity constraint.
+     * @param stamp     The identifier stamp string.
+     * @param min       The minimum allowable fraction.
+     * @param max       The maximum allowable fraction.
+     */
+    public Quota(final T value, final T precision, final String stamp, final Fraction min, final Fraction max) {
+
+        this(value, precision, stamp, min, max, null);
     }
 
     /**
@@ -175,7 +190,41 @@ public record Quota<T>(T value, T precision, String stamp, Fraction min, Fractio
     public static Quota<Integer> shareOfInteger(final int value, final Integer precision, final String stamp,
                                                 final Fraction min, final Fraction max) {
 
-        return new Quota<>(value, precision, stamp, min, max);
+        return new Quota<>(value, precision, stamp, min, max, null);
+    }
+
+    /**
+     * Creates a Quota object of type Integer using the provided value, precision, stamp, symbolic token, minimum, and maximum fractions.
+     *
+     * @param value     The integer value to initialise the Quota object.
+     * @param precision An Integer specifying the precision level, which defines the granularity of the Quota.
+     * @param stamp     A String identifier or marker for the resulting Quota.
+     * @param symbol    Optional symbolic colour token name (e.g. {@code SURFACE_BG}).
+     * @param min       A Fraction specifying the minimum allowable value for the Quota.
+     * @param max       A Fraction specifying the maximum allowable value for the Quota.
+     * @return A Quota object of type Integer initialised with the specified fields.
+     */
+    public static Quota<Integer> shareOfInteger(final int value, final Integer precision, final String stamp,
+                                                final String symbol, final Fraction min, final Fraction max) {
+
+        return new Quota<>(value, precision, stamp, min, max, symbol);
+    }
+
+    /**
+     * Creates a Quota object of type Integer preserving an optional symbolic token name.
+     *
+     * @param value     The integer value to assign to the Quota object.
+     * @param precision An Integer specifying the precision level.
+     * @param stamp     A String identifier or marker for the resulting Quota.
+     * @param symbol    Optional symbolic colour token name.
+     * @param share     A _ValuedRangeResult containing the fractional value used to calculate the exact share.
+     * @return A Quota object of type Integer.
+     */
+    public static Quota<Integer> shareOfInteger(final int value, final Integer precision, final String stamp,
+                                                final String symbol, final _ValuedRangeResult share) {
+
+        final Fraction exactShare = share.value();
+        return new Quota<>(value, precision, stamp, exactShare, exactShare, symbol);
     }
 
     /**
@@ -247,7 +296,8 @@ public record Quota<T>(T value, T precision, String stamp, Fraction min, Fractio
     public String toString() {
 
         final String range = (ts(min).equals(ts(max))) ? ts(min) : b(L0, ts(min), ts(max));
-        return b(L0, s(value), range);
+        final String label = (null == symbol) ? s(value) : symbol;
+        return b(L0, label, range);
     }
 
     /**

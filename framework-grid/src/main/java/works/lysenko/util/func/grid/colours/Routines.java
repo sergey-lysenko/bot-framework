@@ -97,9 +97,9 @@ public record Routines() {
         // Mapping
         final boolean ignoreOrder = vr.irq().colours().ignore(ORDER);
         final boolean ignoreOther = vr.irq().colours().ignore(OTHER);
-        final Map<Integer, _ValuedRangeResult> actual = grid.processor().getColoursByRates(vr.irq().colours().border(),
-                vr.irq().colours().ignoreHSB());
         final _ColoursQuotas expected = vr.irq().colours();
+        final Map<Integer, _ValuedRangeResult> actual = grid.processor().getColoursByRates(vr.irq().colours().border(),
+                vr.irq().colours().ignoreHSB(), expected);
         final IntegerRange amount = vr.irq().colours().amount();
         final _RangedMargin margin = vr.irq().colours().margin();
 

@@ -89,6 +89,17 @@ public interface _Quota<T> {
     String stamp();
 
     /**
+     * Returns the optional symbolic colour token name (for example {@code SURFACE_BG}) from which this quota
+     * was resolved, or {@code null} when defined directly by a literal numeric value.
+     *
+     * @return symbolic token name, or {@code null}
+     */
+    default String symbol() {
+
+        return null;
+    }
+
+    /**
      * Calculates and returns the width of the share.
      *
      * @return the width as a double value

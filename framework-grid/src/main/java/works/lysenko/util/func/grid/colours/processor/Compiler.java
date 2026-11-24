@@ -106,10 +106,11 @@ public record Compiler() {
         final String oldPercentage = expected.percentage();
         final double median = expected.median();
         final double radius = abs(median - actual.doubleValue());
-        final String newPercentage = expected.percentage();
         final Fraction min = fr(median - radius);
         final Fraction max = fr(median + radius);
-        final Quota<Integer> newExpected = new Quota<>(key, (Integer) expected.precision(), expected.stamp(), min, max);
+        final Quota<Integer> newExpected = new Quota<>(key, (Integer) expected.precision(), expected.stamp(),
+                min, max, expected.symbol());
+        final String newPercentage = newExpected.percentage();
         explain(actual, expected, oldPercentage, newPercentage);
         in.add(newExpected);
     }
@@ -153,7 +154,7 @@ public record Compiler() {
         final Fraction max = fr(max(actual.doubleValue(), expected.max().doubleValue()));
         final FractionRange fractionRange = new FractionRange(min, max);
         Trace.log(traceable(fractionRange));
-        in.add(new Quota<>(key, expected.precision(), expected.stamp(), min, max));
+        in.add(new Quota<>(key, expected.precision(), expected.stamp(), min, max, expected.symbol()));
     }
 
     /**

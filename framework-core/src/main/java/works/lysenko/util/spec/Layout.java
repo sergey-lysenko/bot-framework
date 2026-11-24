@@ -93,6 +93,8 @@ public record Layout() {
         static final String SUITES_ = s(SUITES, s);
         /** Grids directory path with separator. */
         static final String GRIDS_ = s(GRIDS, s);
+        /** Themes directory path with separator. */
+        static final String THEMES_ = s("themes", s);
         /** Config directory path with separator. */
         static final String CONFIG_ = s(CONFIG, s);
     }
@@ -116,6 +118,8 @@ public record Layout() {
         public static final String _SUITES_ = s(_RESOURCES_, SUITES_);
         /** Grids path. */
         public static final String _GRIDS_ = s(_RESOURCES_, GRIDS_);
+        /** Themes path. */
+        public static final String _THEMES_ = s(_RESOURCES_, THEMES_);
         /** Runs path. */
         public static final String _RUNS_ = s(RESULT_, RUNS_);
     }
@@ -131,6 +135,8 @@ public record Layout() {
         public static final String SUITE_PROPERTIES_EXTENSION = s(_DOT_, SUITE);
         /** Grid file extension. */
         public static final String GRID_EXTENSION = s(_DOT_, GRID);
+        /** Theme palette file extension. */
+        public static final String THEME_EXTENSION = s(_DOT_, COLOURS);
         /** Test properties parts file extension. */
         public static final String TEST_PROPERTIES_PARTS_EXTENSION = s(_DOT_, PART);
         /** Users pool file extension. */

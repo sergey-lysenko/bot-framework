@@ -2,20 +2,23 @@ package works.lysenko.util.grid;
 
 import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.util.apis.grid.g._GridCalculator;
+import works.lysenko.util.apis.grid.q._ColoursQuotas;
+import works.lysenko.util.apis.grid.q._Quota;
 import works.lysenko.util.data.records.Element;
+import works.lysenko.util.data.records.RGB24;
 import works.lysenko.util.data.records.diff.Pair;
 import works.lysenko.util.data.type.Grid;
 import works.lysenko.util.grid.record.rgbc.HSB;
 import works.lysenko.util.prop.grid.Stamps;
 
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 import static java.util.Objects.isNull;
 import static works.lysenko.util.data.records.RGB24.rgb24;
 import static works.lysenko.util.data.strs.Compressor.compress;
+import static works.lysenko.util.func.type.Objects.isNotNull;
+import static works.lysenko.util.grid.record.rgbc.Colour.distance;
 
 /**
  * Represents a Calculator object that performs various calculations on a grid.
@@ -89,6 +92,68 @@ public class Calculator implements _GridCalculator {
             }
 
         return getIntegerPairMap(counts, bins);
+    }
+
+    @Override
+    @SuppressWarnings({"ObjectAllocationInLoop", "MethodWithMultipleLoops"})
+    public final Map<Integer, Pair<Integer, String>> countPixelsByColor(final _ColoursQuotas expected) {
+
+        if (isNull(expected) || isNull(expected.get()) || expected.get().isEmpty()) {
+            return countPixelsByColor();
+        }
+        final List<_Quota<?>> spreadQuotas = new ArrayList<>();
+        final Set<Integer> exactTargets = new HashSet<>();
+        for (final _Quota<?> quota : expected.get()) {
+            if (quota.value() instanceof Integer rgb) {
+                exactTargets.add(rgb);
+                if (quota.precision() instanceof Integer prec && prec > 0) {
+                    spreadQuotas.add(quota);
+                }
+            }
+        }
+        if (spreadQuotas.isEmpty()) {
+            return countPixelsByColor();
+        }
+
+        final Map<Integer, Integer> snapCache = new HashMap<>();
+        final Map<Integer, Integer> counts = new HashMap<>(0);
+        final Map<Integer, BitSet> bins = new HashMap<>(0);
+        int i = -1;
+        for (final Element[] row : grid.getGrid()) {
+            for (final Element pixel : row) {
+                i++;
+                if (null != pixel) {
+                    final int raw = pixel.colour();
+                    final int bucket = exactTargets.contains(raw)
+                            ? raw
+                            : snapCache.computeIfAbsent(raw, rgb -> snapToNearestQuota(rgb, spreadQuotas));
+                    counts.put(bucket, counts.getOrDefault(bucket, 0) + 1);
+                    bins.computeIfAbsent(bucket, k -> new BitSet(1)).set(i);
+                }
+            }
+        }
+        return getIntegerPairMap(counts, bins);
+    }
+
+    private static int snapToNearestQuota(final int rgb, final List<_Quota<?>> spreadQuotas) {
+
+        final RGB24 sample = rgb24(rgb);
+        if (isNull(sample)) return rgb;
+        int bestTarget = rgb;
+        double bestDistance = Double.MAX_VALUE;
+        for (final _Quota<?> quota : spreadQuotas) {
+            final int target = (Integer) quota.value();
+            final int precision = (Integer) quota.precision();
+            final RGB24 origin = rgb24(target);
+            if (isNotNull(origin)) {
+                final double dist = distance(origin, sample);
+                if (dist < precision && dist < bestDistance) {
+                    bestDistance = dist;
+                    bestTarget = target;
+                }
+            }
+        }
+        return bestTarget;
     }
 
     /**

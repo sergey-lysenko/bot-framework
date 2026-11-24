@@ -84,6 +84,8 @@ public record Get() {
 
         for (final _Quota<?> quota : quotas.get()) {
             if (quota.value().equals(value)) return quota;
+        }
+        for (final _Quota<?> quota : quotas.get()) {
             if (quotas.isWithinPrecision(value, quota)) return quota;
         }
         final Severity severity = ignoreOther ? Severity.values()[meta.max().ordinal() + Allowed.otherSeverityReduction] :

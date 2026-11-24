@@ -9,6 +9,7 @@ import works.lysenko.util.data.records.KeyValue;
 import works.lysenko.util.data.records.Slack;
 import works.lysenko.util.data.type.Value;
 import works.lysenko.util.func.grid.Renderers;
+import works.lysenko.util.grid.Theme;
 import works.lysenko.util.prop.grid.Ranges;
 
 import java.util.*;
@@ -120,10 +121,26 @@ public abstract class AbstractQuotas implements _Quotas {
     @SuppressWarnings("ConstructorNotProtectedInAbstractClass")
     public AbstractQuotas(final String source, final String origin, final String type, final boolean silent) {
 
+        this(source, origin, type, silent, null);
+    }
+
+    /**
+     * Parses ExpectedDistribution from string, resolving optional symbolic colour tokens via {@code theme}.
+     *
+     * @param source The source string in format {value}|{min}|{max},...
+     * @param origin The origin string.
+     * @param type   The type of data.
+     * @param silent A boolean indicating whether to log debug information.
+     * @param theme  Optional active {@link Theme} used to resolve symbolic colour names (may be {@code null}).
+     */
+    @SuppressWarnings("ConstructorNotProtectedInAbstractClass")
+    public AbstractQuotas(final String source, final String origin, final String type, final boolean silent,
+                          final Theme theme) {
+
         this.type = type;
         final List<_Quota<?>> candidates;
         if (isNull(source)) candidates = null;
-        else candidates = generate(source, origin, type, silent);
+        else candidates = generate(source, origin, type, silent, theme);
         quotas = candidates;
     }
 
@@ -137,12 +154,38 @@ public abstract class AbstractQuotas implements _Quotas {
      * @param value      the integer value used for calculations and updating the candidates
      * @param precision  the precision for calculations when updating candidates
      */
-    private static void add(final Collection<? super KeyValue> list, final FractionRange fractions, final Collection<?
-            super Quota<Integer>> candidates, final Integer value, final Integer precision, final String stamp) {
+    @SuppressWarnings("unchecked")
+    private static void add(final Collection<? super KeyValue> list, final FractionRange fractions,
+                            final List<_Quota<?>> candidates, final Integer value, final Integer precision,
+                            final String stamp, final String symbol) {
 
         list.add(kv(MIN, ts(fractions.min())));
         list.add(kv(MAX, ts(fractions.max())));
-        if (isNotNull(candidates)) candidates.add(shareOfInteger(value, precision, stamp, fractions.min(), fractions.max()));
+        if (isNotNull(candidates)) {
+            if (isNotNull(symbol)) {
+                for (int idx = 0; idx < candidates.size(); idx++) {
+                    final _Quota<?> existing = candidates.get(idx);
+                    if (Objects.equals(existing.value(), value)
+                            && isNotNull(existing.symbol())
+                            && !existing.symbol().equals(symbol)) {
+                        final Fraction mergedMin = (0 <= existing.min().compareTo(fractions.min()))
+                                ? fractions.min() : existing.min();
+                        final double combinedMax = Math.min(1.0,
+                                existing.max().doubleValue() + fractions.max().doubleValue());
+                        final Fraction mergedMax = fr(combinedMax);
+                        final Integer existingPrec = (Integer) existing.precision();
+                        final Integer mergedPrec;
+                        if (isNull(existingPrec)) mergedPrec = precision;
+                        else if (isNull(precision)) mergedPrec = existingPrec;
+                        else mergedPrec = Math.max(existingPrec, precision);
+                        candidates.set(idx, shareOfInteger(value, mergedPrec, existing.stamp(),
+                                existing.symbol(), mergedMin, mergedMax));
+                        return;
+                    }
+                }
+            }
+            candidates.add(shareOfInteger(value, precision, stamp, symbol, fractions.min(), fractions.max()));
+        }
     }
 
     /**
@@ -154,27 +197,36 @@ public abstract class AbstractQuotas implements _Quotas {
      */
     @SuppressWarnings("CallToSuspiciousStringMethod")
     private static List<_Quota<?>> generate(final String source, final String origin, final String type,
-                                            final boolean silent) {
+                                            final boolean silent, final Theme theme) {
 
         List<_Quota<?>> candidates;
         final String[] array = source.trim().split(s(L1));
         candidates = new ArrayList<>(array.length);
-        for (final String item : array) candidates = test(origin, type, item, candidates, silent);
+        for (final String item : array) candidates = test(origin, type, item, candidates, silent, theme);
         return candidates;
     }
 
     /**
-     * Determines if the specified value is a duplicate in the given collection of ShareOfIntValue objects.
+     * Determines if the specified value/symbol is a duplicate in the given collection of quotas.
+     * Two distinct symbolic tokens that resolve to the same ARGB integer under a theme are NOT
+     * treated as duplicates; their share ranges are merged instead.
      *
-     * @param value The value to check for duplicates.
-     * @param in    The collection of ShareOfIntValue objects.
-     * @return true if the value is a duplicate, false otherwise.
+     * @param value  The resolved integer value to check.
+     * @param symbol Optional symbolic colour token name.
+     * @param in     The collection of quotas.
+     * @return true if the value or symbol is duplicated erroneously.
      */
-    private static boolean isDuplicate(final Integer value, final Iterable<? extends _Quota<?>> in) {
+    private static boolean isDuplicate(final Integer value, final String symbol, final Iterable<? extends _Quota<?>> in) {
 
-        boolean result = false;
-        for (final _Quota share : in) result = result || (Objects.equals(share.value(), value));
-        return result;
+        for (final _Quota share : in) {
+            if (isNotNull(symbol) && symbol.equals(share.symbol())) return true;
+            if (Objects.equals(share.value(), value)) {
+                final boolean bothDistinctSymbols = isNotNull(symbol) && isNotNull(share.symbol())
+                        && !symbol.equals(share.symbol());
+                if (!bothDistinctSymbols) return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -188,16 +240,20 @@ public abstract class AbstractQuotas implements _Quotas {
      * @return The updated list of candidates.
      */
     @SuppressWarnings("MethodWithTooManyParameters")
-    private static List<_Quota<?>> process(final String origin, final String type, final String[] values, final List<_Quota<
-            ?>> candidates, final Collection<? super KeyValue> list) {
+    private static List<_Quota<?>> process(final String origin, final String type, final String[] values,
+                                           final List<_Quota<?>> candidates, final Collection<? super KeyValue> list,
+                                           final Theme theme) {
 
         List<_Quota<?>> newCandidates = candidates;
-        final Value value = validateValue(values[ZERO], newCandidates, origin);
+        final Value value = validateValue(values[ZERO], newCandidates, origin, theme);
 
-        if (!isAnyNull(newCandidates, value)) {
+        if (isNull(value) || isNull(value.value())) {
+            return null;
+        }
+        if (isNotNull(newCandidates)) {
             list.add(kv(c(type), value.value()));
             if (ONE < values.length)
-                newCandidates = update(values, newCandidates, list, value.value(), value.precision(), value.stamp());
+                newCandidates = update(values, newCandidates, list, value.value(), value.precision(), value.stamp(), value.symbol());
         }
         return newCandidates;
     }
@@ -215,12 +271,12 @@ public abstract class AbstractQuotas implements _Quotas {
      */
     @SuppressWarnings({"CallToSuspiciousStringMethod", "MethodWithTooManyParameters"})
     private static List<_Quota<?>> test(final String origin, final String type, final String item,
-                                        final List<_Quota<?>> candidates, final boolean silent) {
+                                        final List<_Quota<?>> candidates, final boolean silent, final Theme theme) {
 
         List<_Quota<?>> newCandidates = candidates;
         final Collection<KeyValue> list = new ArrayList<>(0);
         final String[] values = item.trim().split(l0);
-        if (ZERO < values.length) newCandidates = process(origin, type, values, newCandidates, list);
+        if (ZERO < values.length) newCandidates = process(origin, type, values, newCandidates, list, theme);
         if (!list.isEmpty() && isDebug() && !silent) Base.logTrace(a(list.toString(), COMMA_SPACE));
         return newCandidates;
     }
@@ -234,13 +290,15 @@ public abstract class AbstractQuotas implements _Quotas {
      * @param value      The Integer value.
      * @return The updated list of candidates.
      */
-    private static List<_Quota<?>> update(final String[] values, final List<_Quota<?>> candidates, final Collection<?
-            super KeyValue> list, final Integer value, final Integer precision, final String stamp) {
+    @SuppressWarnings("MethodWithTooManyParameters")
+    private static List<_Quota<?>> update(final String[] values, final List<_Quota<?>> candidates,
+                                          final Collection<? super KeyValue> list, final Integer value,
+                                          final Integer precision, final String stamp, final String symbol) {
 
         List<_Quota<?>> newCandidates = candidates;
         final FractionRange fractions = validateAndCreateFractions(values);
         if (isNull(fractions)) newCandidates = null;
-        else add(list, fractions, newCandidates, value, precision, stamp);
+        else add(list, fractions, newCandidates, value, precision, stamp, symbol);
         return newCandidates;
     }
 
@@ -268,35 +326,50 @@ public abstract class AbstractQuotas implements _Quotas {
     }
 
     /**
-     * Validates the given value by converting it to an Integer and checking if it meets certain criteria.
+     * Validates the given value by converting it to an Integer (or resolving a symbolic colour token via the active
+     * {@link Theme} / {@code known/colours}) and checking for duplicates.
      *
      * @param rawValue   the raw value to be validated
-     * @param candidates the list of ShareOfIntValue objects representing the expected ranges of Integer share values
-     * @return the validated Integer value, or null if validation fails
+     * @param candidates the list of quotas already parsed
+     * @param origin     origin identifier for diagnostics
+     * @param theme      optional active theme
+     * @return the validated Value object, or a Value with null value if validation fails
      */
     @SuppressWarnings({"AssignmentToMethodParameter", "UnusedAssignment", "ReassignedVariable"})
-    private static Value validateValue(final String rawValue, Iterable<? extends _Quota<?>> candidates, final String origin) {
+    private static Value validateValue(final String rawValue, final Iterable<? extends _Quota<?>> candidates,
+                                       final String origin, final Theme theme) {
 
         Integer value = null;
         Integer precision = null;
         String stamp = null;
+        String symbol = null;
         try {
+            final String rawKey;
             if (rawValue.contains(s(L2))) {
-                value = i(rawValue.split(s(L2))[ZERO]);
-                precision = i(rawValue.split(s(L2))[ONE]);
-                if (rawValue.split(s(L2)).length > TWO) stamp = rawValue.split(s(L2))[TWO];
-            } else value = i(rawValue);
+                final String[] parts = rawValue.split(s(L2));
+                rawKey = parts[ZERO].trim();
+                precision = i(parts[ONE].trim());
+                if (parts.length > TWO) stamp = parts[TWO].trim();
+            } else {
+                rawKey = rawValue.trim();
+            }
+            if (Theme.isLiteralInteger(rawKey)) {
+                value = i(rawKey);
+            } else {
+                value = Theme.resolveToken(rawKey, theme);
+                symbol = rawKey;
+                if (isNull(value)) {
+                    logEvent(S0, b(q(rawKey), IS_NOT_AN_INTEGER_IN___, origin));
+                }
+            }
         } catch (final NumberFormatException e) {
             logEvent(S0, b(q(rawValue), IS_NOT_AN_INTEGER_IN___, origin));
-            candidates = null;
         }
-        if (isNotNull(candidates)) {
-            if (isDuplicate(value, candidates)) {
-                logEvent(S1, b(q(n(NULL, s(value))), IS_DEFINED_MORE_THAN___, origin));
-                candidates = null;
-            }
+        if (isNotNull(value) && isNotNull(candidates) && isDuplicate(value, symbol, candidates)) {
+            logEvent(S1, b(q(n(NULL, isNotNull(symbol) ? symbol : s(value))), IS_DEFINED_MORE_THAN___, origin));
+            return new Value(null, precision, stamp, symbol);
         }
-        return new Value(value, precision, stamp);
+        return new Value(value, precision, stamp, symbol);
     }
 
     /**
@@ -337,7 +410,7 @@ public abstract class AbstractQuotas implements _Quotas {
     private static String getText(final _Quota quota) {
 
         final Collection<String> list = new ArrayList<>(1);
-        list.add(s(quota.value()));
+        list.add(isNotNull(quota.symbol()) ? quota.symbol() : s(quota.value()));
         if (isNotNull(quota.precision())) list.add(s(quota.precision()));
         if (isNotNull(quota.stamp())) {
             if (isNull(quota.precision())) list.add(s(_0_));
@@ -377,7 +450,7 @@ public abstract class AbstractQuotas implements _Quotas {
                 // value
                 .toList();
         for (int i = 0; i < quotas.size(); i++) if (quotas.get(i).value() != sortedRanges.get(i).value()) diff++;
-        if (Ranges.logSortCheck) if (0 < diff) logEvent(S2, b(THE_SORTED___, percentString(diff, quotas.size())));
+        if (!silent && Ranges.logSortCheck && 0 < diff) logEvent(S2, b(THE_SORTED___, percentString(diff, quotas.size())));
         return sortedRanges;
     }
 

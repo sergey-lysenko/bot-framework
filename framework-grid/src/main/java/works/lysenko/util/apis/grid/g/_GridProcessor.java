@@ -1,6 +1,7 @@
 package works.lysenko.util.apis.grid.g;
 
 import org.apache.commons.math3.fraction.Fraction;
+import works.lysenko.util.apis.grid.q._ColoursQuotas;
 import works.lysenko.util.apis.grid.q._FractionQuotas;
 import works.lysenko.util.apis.grid.v._ValuedRangeResult;
 import works.lysenko.util.grid.record.misc.IgnoreHSB;
@@ -45,6 +46,21 @@ public interface _GridProcessor {
      * @return a map containing the pixel values as keys and their corresponding rates as values 0.0 ... 1.0
      */
     Map<Integer, _ValuedRangeResult> getColoursByRates(final Fraction threshold, final IgnoreHSB ignoreHSB);
+
+    /**
+     * Retrieves the pixel colours by rates, optionally snapping pixels within expected quota precision bounds
+     * into their canonical colour buckets prior to applying the threshold cutoff.
+     *
+     * @param threshold a fraction representing rate threshold of pixels to be ignored
+     * @param ignoreHSB an instance of IgnoreHSB representing the range to ignore for HSB values
+     * @param expected  expected colour quotas providing optional per-colour Euclidean RGB precision
+     * @return a map containing the pixel values as keys and their corresponding rates as values 0.0 ... 1.0
+     */
+    default Map<Integer, _ValuedRangeResult> getColoursByRates(final Fraction threshold, final IgnoreHSB ignoreHSB,
+                                                               final _ColoursQuotas expected) {
+
+        return getColoursByRates(threshold, ignoreHSB);
+    }
 
     /**
      * Retrieves the hues by rates for a given SharesOfHue object.

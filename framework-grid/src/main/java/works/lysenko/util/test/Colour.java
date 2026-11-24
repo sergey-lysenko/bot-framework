@@ -4,6 +4,7 @@ import works.lysenko.util.apis.grid.g._GridProperties;
 import works.lysenko.util.apis.grid.q._Quota;
 import works.lysenko.util.apis.grid.r._ImageRequirements;
 import works.lysenko.util.data.records.RGB24;
+import works.lysenko.util.grid.Theme;
 import works.lysenko.util.prop.grid.Verify;
 
 import java.util.Collection;
@@ -45,9 +46,22 @@ public record Colour() {
      */
     private static void verifyGridUndefinedColours(final String path, final Collection<Integer> unknownColours) {
 
+        verifyGridUndefinedColours(path, unknownColours, Theme.active());
+    }
+
+    /**
+     * Verifies undefined colours within a specific grid file using the provided {@link Theme}.
+     *
+     * @param path           the file path of the grid properties
+     * @param unknownColours collection accumulating unknown colour integer values
+     * @param theme          optional theme for resolving symbolic colour tokens
+     */
+    private static void verifyGridUndefinedColours(final String path, final Collection<Integer> unknownColours,
+                                                   final Theme theme) {
+
         final _GridProperties gridProperties = _GridProperties.getGridPropertiesByPath(path);
         if (isNotNull(gridProperties.getKV(COLOURS, true).v())) {
-            final _ImageRequirements imageRequirements = _ImageRequirements.read(path, gridProperties, null, true);
+            final _ImageRequirements imageRequirements = _ImageRequirements.read(path, gridProperties, null, true, theme);
             if (isNotNull(imageRequirements) && isNotNull(imageRequirements.colours())) {
                 final List<_Quota<?>> ranges = imageRequirements.colours().get();
                 if (isNotNull(ranges)) {
@@ -65,9 +79,9 @@ public record Colour() {
      * Verifies undefined colour definitions across all grid configuration files located
      * in the directory defined by {@code _GRIDS_}.
      * <p>
-     * If colour verification is enabled ({@code Verify.colours}), a section is logged,
-     * and each matching grid file is checked for unknown colours that are not present
-     * in {@code knownColours}. Any discovered unknown colours are logged as events with severity {@code S2}.
+     * When themes are defined under {@code src/main/resources/themes/}, each grid file is validated
+     * against every defined theme so symbolic colour tokens are verified across all palettes.
+     * Any discovered unknown colours are logged as events with severity {@code S2}.
      */
     public static void verifyUndefinedColours() {
 
@@ -75,8 +89,15 @@ public record Colour() {
             section(b(c(VALIDATING), COLOUR, DEFINITIONS));
             final List<String> files = getFilesList(_GRIDS_, GRID_EXTENSION);
             if (isNotNull(files)) {
+                final List<Theme> themes = Theme.listDefined();
                 final Set<Integer> unknownColours = new HashSet<>(0);
-                files.forEach(path -> verifyGridUndefinedColours(path, unknownColours));
+                if (themes.isEmpty()) {
+                    files.forEach(path -> verifyGridUndefinedColours(path, unknownColours));
+                } else {
+                    for (final Theme theme : themes) {
+                        files.forEach(path -> verifyGridUndefinedColours(path, unknownColours, theme));
+                    }
+                }
                 for (final Integer unknownColour : unknownColours) {
                     logEvent(S2, b(RGB24.shortRgb(unknownColour), COLOUR, IS, UNKNOWN));
                 }

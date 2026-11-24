@@ -1,5 +1,6 @@
 package works.lysenko.util.apis.grid.g;
 
+import works.lysenko.util.apis.grid.q._ColoursQuotas;
 import works.lysenko.util.data.records.diff.Pair;
 import works.lysenko.util.grid.record.rgbc.HSB;
 
@@ -32,6 +33,18 @@ public interface _GridCalculator {
      * @return a map containing the count of pixels for each color
      */
     Map<Integer, Pair<Integer, String>> countPixelsByColor();
+
+    /**
+     * Retrieves the count of pixels by color in the pixel grid, optionally snapping slightly-shifted pixels
+     * into expected colour quotas that declare a positive Euclidean RGB {@code precision} spread.
+     *
+     * @param expected expected colour quotas (may be {@code null})
+     * @return a map containing the count of pixels for each color
+     */
+    default Map<Integer, Pair<Integer, String>> countPixelsByColor(final _ColoursQuotas expected) {
+
+        return countPixelsByColor();
+    }
 
     /**
      * Counts the number of pixels by hue level based on the provided fences value.

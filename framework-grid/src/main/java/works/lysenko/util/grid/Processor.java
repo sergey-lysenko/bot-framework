@@ -3,6 +3,7 @@ package works.lysenko.util.grid;
 import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.util.apis.grid.g._GridCalculator;
 import works.lysenko.util.apis.grid.g._GridProcessor;
+import works.lysenko.util.apis.grid.q._ColoursQuotas;
 import works.lysenko.util.apis.grid.q._FractionQuotas;
 import works.lysenko.util.apis.grid.v._ValuedRangeResult;
 import works.lysenko.util.data.records.diff.Pair;
@@ -163,7 +164,15 @@ public class Processor implements _GridProcessor {
     @SuppressWarnings("ContinueStatement")
     public final Map<Integer, _ValuedRangeResult> getColoursByRates(final Fraction threshold, final IgnoreHSB ignoreHSB) {
 
-        final Map<Integer, _ValuedRangeResult> in = getRatesWithThreshold(calculator.countPixelsByColor(), threshold);
+        return getColoursByRates(threshold, ignoreHSB, null);
+    }
+
+    @Override
+    @SuppressWarnings("ContinueStatement")
+    public final Map<Integer, _ValuedRangeResult> getColoursByRates(final Fraction threshold, final IgnoreHSB ignoreHSB,
+                                                                    final _ColoursQuotas expected) {
+
+        final Map<Integer, _ValuedRangeResult> in = getRatesWithThreshold(calculator.countPixelsByColor(expected), threshold);
         final Map<Integer, _ValuedRangeResult> out = new LinkedHashMap<>(0);
         for (final Map.Entry<Integer, _ValuedRangeResult> entry : in.entrySet()) {
             final HSB colourHSB = HSB.convertRGBtoHSB(rgb24(entry.getKey()));

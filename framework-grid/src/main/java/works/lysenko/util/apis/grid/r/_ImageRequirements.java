@@ -3,6 +3,7 @@ package works.lysenko.util.apis.grid.r;
 import works.lysenko.util.apis.grid.g._GridProperties;
 import works.lysenko.util.apis.grid.q._ColoursQuotas;
 import works.lysenko.util.apis.grid.q._FractionQuotas;
+import works.lysenko.util.grid.Theme;
 import works.lysenko.util.grid.record.ImageRequirements;
 
 import static works.lysenko.util.chrs.__.OF;
@@ -55,9 +56,26 @@ public interface _ImageRequirements {
     static _ImageRequirements read(final String origin, final _GridProperties grid, final _ImageRequirements predefined,
                                    final boolean silent) {
 
+        return read(origin, grid, predefined, silent, Theme.active());
+    }
+
+    /**
+     * Reads the image requirements from properties using an optional {@link Theme} to resolve symbolic colour tokens.
+     *
+     * @param origin     The origin of the requirements.
+     * @param grid       The property object containing the requirements.
+     * @param predefined The predefined ImageRequirements object.
+     * @param silent     A flag indicating whether to run silently.
+     * @param theme      Optional {@link Theme} for symbolic colour resolution (may be {@code null}).
+     * @return An ImageRequirements object with the read requirements.
+     */
+    @SuppressWarnings("MethodWithMultipleReturnPoints")
+    static _ImageRequirements read(final String origin, final _GridProperties grid, final _ImageRequirements predefined,
+                                   final boolean silent, final Theme theme) {
+
         try {
             final _Palette palette = getPalette(grid, predefined);
-            final _ColoursQuotas colours = getColours(grid, predefined, origin, silent);
+            final _ColoursQuotas colours = getColours(grid, predefined, origin, silent, theme);
             final _Polychromy polychromy = getPolychromy(grid, predefined);
             final _FractionQuotas hue = getHue(grid, predefined);
             final _FractionQuotas saturation = getSaturation(grid, predefined);
