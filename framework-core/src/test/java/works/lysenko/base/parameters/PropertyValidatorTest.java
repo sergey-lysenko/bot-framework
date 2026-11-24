@@ -24,7 +24,7 @@ class PropertyValidatorTest {
         for (final String ok : new String[]{
                 "none", "copilot", "claude", "Claude", "gemini", "Gemini",
                 "orpheus", "Orpheus", "aurora", "Aurora", "carbon", "Carbon",
-                "neon", "Neon", "jmj", "JMJ", ""}) {
+                "neon", "Neon", "jmj", "JMJ", "dnb", "DnB", ""}) {
             assertNull(PropertyValidator.validate(name, ok), ok);
         }
         for (final String bad : new String[]{"true", "false"}) {
@@ -35,7 +35,7 @@ class PropertyValidatorTest {
     @Test
     void exposesFiniteKnownValuesForGuiSelection() {
         assertEquals(
-                java.util.List.of("none", "copilot", "claude", "gemini", "orpheus", "aurora", "carbon", "neon", "jmj"),
+                java.util.List.of("none", "copilot", "claude", "gemini", "orpheus", "aurora", "carbon", "neon", "jmj", "dnb"),
                 PropertyValidator.validValues(".test.report.progression.tree.sonification"));
         assertEquals(java.util.List.of("true", "false"), PropertyValidator.validValues(".test.report.progression.tree"));
         assertEquals(

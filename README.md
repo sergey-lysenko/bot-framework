@@ -153,7 +153,7 @@ Configuration is organized into 11 specialized partial files included via `src/m
 | **Tests** | `.test.resilient.mode` | `false` | Enables resilient mode (executes full suite despite failures) |
 | **Tests** | `.test.report.progression.scenario.label.level` | `0` | Tree level (1 = root) used to group/label bars in the Scenario Execution Progression chart; `0` = auto |
 | **Tests** | `.test.report.progression.tree.mp4` | `true` | Generates MP4 video of scenario tree progression (FFmpeg) |
-| **Tests** | `.test.report.progression.tree.sonification` | `none` | Adds deterministic musical audio to progression MP4 (`none`, `copilot`, `claude`, `gemini`, `orpheus`, `aurora`, `carbon`) |
+| **Tests** | `.test.report.progression.tree.sonification` | `none` | Adds deterministic musical audio to progression MP4 (`none`, `copilot`, `claude`, `gemini`, `orpheus`, `aurora`, `carbon`, `neon`, `jmj`, `dnb`) |
 | **UI** | `.screen.to.spawn.dashboard` | `0` | Screen index on which to open the dashboard |
 | **UI** | `.mobi.native.x.resolution` | `1080` | Mobile native screen width in pixels |
 | **WebDriver**| `.test.ewait` | `30` | Explicit wait timeout in seconds |
@@ -202,6 +202,7 @@ When `.test.report.progression.tree.mp4 = true`, the framework uses FFmpeg to co
 - **`carbon`**: True-stereo spatial FM/pad synthesis mapping tree depth left-to-right with continuous harmonic buoyancy, adaptive step/macro strumming, damped over-execution ticks, `known-issue`-aware status cues, and pruning updraft sweeps.
 - **`neon`**: Kinetic midnight-synthwave true-stereo subtractive analog engine with PolyBLEP saw/PWM oscillators, resonant ZDF filters, Juno-style stereo BBD chorus, velocity-driven rolling bass &amp; sidechain 808 kick pulse, laser leaf arpeggios, cyan notice bells, amber brass warnings, ring-modulated bitcrushed failure glitches, low fade-out leaf disappearance, and post-test column-compaction lock sweeps.
 - **`jmj`**: 1970s French cosmic analog tribute to Jean-Michel Jarre's early classics (*Oxygène* / *Équinoxe* / *Les Chants Magnétiques*) featuring phased Eminent 310 string ensembles (4-stage stereo Small Stone all-pass phaser), Matrisequencer analog bass ostinati, Korg MiniPops-7 percussion, EMS VCS3 cosmic droplets &amp; ring-modulated alarms, singing vibrato *Oxygène* leads through a Roland RE-201 Space Echo stereo ping-pong tape delay, warm low disappearing leaf sighs, and filtered pink-noise cosmic wind sweeps.
+- **`dnb`**: Liquid Drum &amp; Bass stereo sonifier driven by a sample-accurate 175 BPM breakbeat clock with kick-ducked Fender Rhodes chords, deep F-minor sub/Reese bass, breathing two-step drums (ghost snares, 4-bar turnarounds, and half-time cooldown breakdowns to stay non-fatiguing on long runs), tempo-locked stereo dub tape delay, distinct cues for every tree event (branches, partial/complete leaves, `MONO` chimes, over-executions, notices, raw vs. known warnings, `UPSET` ancestors, raw vs. known failures, hidden-leaf exhales, bank-compaction air risers), and a 5-state verdict outro conveying the exact test outcome purely by ear.
 
 ---
 

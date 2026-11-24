@@ -18,7 +18,8 @@ public final class TreeProgressionAudio {
             new AuroraSonifier(),
             new CarbonSonifier(),
             new NeonSonifier(),
-            new JmjSonifier());
+            new JmjSonifier(),
+            new DnbSonifier());
 
     private TreeProgressionAudio() {
     }

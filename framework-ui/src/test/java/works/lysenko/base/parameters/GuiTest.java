@@ -442,7 +442,7 @@ class GuiTest {
         assertTrue(table.editCellAt(sonificationViewRow, 2));
         assertInstanceOf(JComboBox.class, table.getEditorComponent());
         final JComboBox<?> choices = (JComboBox<?>) table.getEditorComponent();
-        assertEquals(9, choices.getItemCount());
+        assertEquals(10, choices.getItemCount());
         assertEquals("none", choices.getItemAt(0));
         assertEquals("copilot", choices.getItemAt(1));
         assertEquals("claude", choices.getItemAt(2));
@@ -452,6 +452,7 @@ class GuiTest {
         assertEquals("carbon", choices.getItemAt(6));
         assertEquals("neon", choices.getItemAt(7));
         assertEquals("jmj", choices.getItemAt(8));
+        assertEquals("dnb", choices.getItemAt(9));
         assertNotEquals("", choices.getSelectedItem());
         table.getCellEditor().cancelCellEditing();
 

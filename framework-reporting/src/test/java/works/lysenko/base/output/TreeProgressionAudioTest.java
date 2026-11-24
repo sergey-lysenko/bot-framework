@@ -38,6 +38,8 @@ class TreeProgressionAudioTest {
         assertTrue(TreeProgressionAudio.find("Neon").orElseThrow() instanceof NeonSonifier);
         assertTrue(TreeProgressionAudio.find("jmj").orElseThrow() instanceof JmjSonifier);
         assertTrue(TreeProgressionAudio.find("JMJ").orElseThrow() instanceof JmjSonifier);
+        assertTrue(TreeProgressionAudio.find("dnb").orElseThrow() instanceof DnbSonifier);
+        assertTrue(TreeProgressionAudio.find("DnB").orElseThrow() instanceof DnbSonifier);
         assertTrue(TreeProgressionAudio.find("none").isEmpty());
         assertTrue(TreeProgressionAudio.find("true").isEmpty());
         assertTrue(TreeProgressionAudio.find(null).isEmpty());
@@ -376,6 +378,162 @@ class TreeProgressionAudioTest {
         final byte[] wav = Files.readAllBytes(wavOut.toPath());
         assertTrue(hasSound(wav));
         assertTrue(hasStereoSeparation(wav));
+    }
+
+    @Test
+    void dnbSynthesizesLiquidBreakbeatTelemetryDeterministically(@TempDir final Path tempDir) throws Exception {
+        final DnbSonifier dnb = new DnbSonifier();
+        final File frame1 = tempDir.resolve("frame_0001.svg").toFile();
+        final File frame2 = tempDir.resolve("frame_0002.svg").toFile();
+        final File frame3 = tempDir.resolve("frame_0003.svg").toFile();
+        final File frame4 = tempDir.resolve("frame_0004.svg").toFile();
+
+        // Frame 1: branch + partial leaf + mono leaf + unvisited far-right leaf
+        final Result branch1Res = new Result(ScenarioType.NODE, null, null, null, List.of(), 1, 0);
+        branch1Res.updateStatus(ExecutionStatus.PASSED);
+        final TreeHtml.NodeData root1 = new TreeHtml.NodeData("root", "Checkout", "Suite", 0, 1, branch1Res);
+        final TreeHtml.NodeData leafA1 = new TreeHtml.NodeData(
+                "leafA", "CardPay", "Suite", 2, 0, new Result(ScenarioType.LEAF, null, null, null, List.of(), 1, 0));
+        final TreeHtml.NodeData mono1 = new TreeHtml.NodeData(
+                "monoA", "Receipt", "Suite", 3, 1, new Result(ScenarioType.MONO, null, null, null, List.of(), 0, 0));
+        final TreeHtml.NodeData leafB1 = new TreeHtml.NodeData(
+                "leafB", "Promo", "Suite", 5, 2, new Result(ScenarioType.LEAF, null, null, null, List.of(), 0, 0));
+        leafA1.setParent(root1);
+        mono1.setParent(root1);
+        leafB1.setParent(root1);
+        root1.children().addAll(List.of(leafA1, mono1, leafB1));
+        final TreeHtml.TreeLayout layout1 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(root1, leafA1, mono1, leafB1)), List.of());
+
+        // Frame 2: leafA completes target=2 (3-note liquid cadence), monoA completes (crystalline chime), leafB pruned
+        final TreeHtml.NodeData root2 = new TreeHtml.NodeData(
+                "root", "Checkout", "Suite", 0, 1, new Result(ScenarioType.NODE, null, null, null, List.of(), 2, 0));
+        final TreeHtml.NodeData leafA2 = new TreeHtml.NodeData(
+                "leafA", "CardPay", "Suite", 2, 0, new Result(ScenarioType.LEAF, null, null, null, List.of(), 2, 0));
+        final TreeHtml.NodeData mono2 = new TreeHtml.NodeData(
+                "monoA", "Receipt", "Suite", 3, 1, new Result(ScenarioType.MONO, null, null, null, List.of(), 1, 0));
+        leafA2.setParent(root2);
+        mono2.setParent(root2);
+        root2.children().addAll(List.of(leafA2, mono2));
+        final TreeHtml.TreeLayout layout2 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(root2, leafA2, mono2)), List.of());
+
+        // Frame 3: over-execution with raw warning horn + rim tap
+        final Result overWarn = new Result(ScenarioType.LEAF, null, null, null, List.of(), 3, 1);
+        overWarn.updateStatus(ExecutionStatus.WARNING);
+        final TreeHtml.NodeData root3 = new TreeHtml.NodeData(
+                "root", "Checkout", "Suite", 0, 1, new Result(ScenarioType.NODE, null, null, null, List.of(), 3, 0));
+        final TreeHtml.NodeData leafA3 = new TreeHtml.NodeData("leafA", "CardPay", "Suite", 2, 0, overWarn);
+        leafA3.setParent(root3);
+        root3.children().add(leafA3);
+        final TreeHtml.TreeLayout layout3 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(root3, leafA3)), List.of());
+
+        // Frame 4: column contraction + raw failure Reese dive + upset parent + dark verdict outro
+        final Result rawFail = new Result(ScenarioType.LEAF, null, null, null, List.of(), 4, 1);
+        rawFail.updateStatus(ExecutionStatus.FAILED);
+        final TreeHtml.NodeData root4 = new TreeHtml.NodeData(
+                "root", "Checkout", "Suite", 0, 1, new Result(ScenarioType.NODE, null, null, null, List.of(), 4, 0));
+        final TreeHtml.NodeData leafA4 = new TreeHtml.NodeData("leafA", "CardPay", "Suite", 1, 0, rawFail);
+        leafA4.setParent(root4);
+        root4.children().add(leafA4);
+        final TreeHtml.TreeLayout layout4 = new TreeHtml.TreeLayout(
+                new ArrayList<>(List.of(root4, leafA4)), List.of());
+
+        dnb.capture(frame1, layout1, 2);
+        dnb.capture(frame2, layout2, 2);
+        dnb.capture(frame3, layout3, 2);
+        dnb.capture(frame4, layout4, 2);
+
+        assertTrue(DnbSonifier.snapshotFile(frame1).isFile());
+        assertTrue(dnb.canSonify(List.of(frame1, frame2, frame3, frame4)));
+
+        final File firstWav = tempDir.resolve("dnb_1.wav").toFile();
+        final File secondWav = tempDir.resolve("dnb_2.wav").toFile();
+        dnb.writeWav(List.of(frame1, frame2, frame3, frame4), firstWav, 10);
+        dnb.writeWav(List.of(frame1, frame2, frame3, frame4), secondWav, 10);
+
+        final byte[] wav = Files.readAllBytes(firstWav.toPath());
+        assertEquals("RIFF", new String(wav, 0, 4, StandardCharsets.US_ASCII));
+        assertEquals("WAVE", new String(wav, 8, 4, StandardCharsets.US_ASCII));
+        final int channels = (wav[22] & 0xFF) | ((wav[23] & 0xFF) << 8);
+        assertEquals(2, channels, "DnB must output 2-channel stereo PCM WAV");
+        final int tailSamples = (int) (44_100 * 1.85);
+        assertEquals(44 + ((4 * 4_410) + tailSamples) * 2 * Short.BYTES, wav.length);
+        assertTrue(hasSound(wav));
+        assertTrue(hasStereoSeparation(wav), "DnB stereo dub delay, chorus, and panning must produce L/R separation");
+        assertArrayEquals(wav, Files.readAllBytes(secondWav.toPath()), "DnB synthesis must be bit-for-bit deterministic");
+    }
+
+    @Test
+    void dnbDistinguishesCleanWarningAndFailureOutcomesFromSvgFrames(@TempDir final Path tempDir) throws Exception {
+        final DnbSonifier dnb = new DnbSonifier();
+        final File cleanSvg = tempDir.resolve("clean_0001.svg").toFile();
+        final File warnSvg = tempDir.resolve("warn_0001.svg").toFile();
+        final File failSvg = tempDir.resolve("fail_0001.svg").toFile();
+
+        Files.writeString(cleanSvg.toPath(),
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1200\" height=\"600\">\n"
+                        + "  <g transform=\"translate(0.00, 0.00) scale(1.0000)\">\n"
+                        + "    <g id=\"scenario_0_Root\" class=\"node-card passed\" transform=\"translate(40, 92)\">\n"
+                        + "      <title>Root ▷ (Passed)</title><text class=\"tx1\">1 exec</text>\n"
+                        + "    </g>\n"
+                        + "    <g id=\"scenario_1_Leaf\" class=\"node-card passed\" transform=\"translate(310, 92)\">\n"
+                        + "      <title>Leaf ◼ (Passed)</title><text class=\"tx1\">✓ 1/1</text>\n"
+                        + "    </g>\n"
+                        + "  </g>\n"
+                        + "  <text class=\"tx3\">Leaves: 1/1</text><text class=\"tx3\">Test #1</text>\n"
+                        + "</svg>\n",
+                StandardCharsets.UTF_8);
+
+        Files.writeString(warnSvg.toPath(),
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1200\" height=\"600\">\n"
+                        + "  <g transform=\"translate(0.00, 0.00) scale(1.0000)\">\n"
+                        + "    <g id=\"scenario_0_Root\" class=\"node-card passed\" transform=\"translate(40, 92)\">\n"
+                        + "      <title>Root ▷ (Passed)</title><text class=\"tx1\">1 exec</text>\n"
+                        + "    </g>\n"
+                        + "    <g id=\"scenario_1_Leaf\" class=\"node-card warning\" transform=\"translate(310, 92)\">\n"
+                        + "      <title>Leaf ◼ (Warning)</title><text class=\"tx1\">✓ 1/1</text>\n"
+                        + "    </g>\n"
+                        + "  </g>\n"
+                        + "  <text class=\"tx3\">Leaves: 1/1</text><text class=\"tx3\">Test #1</text>\n"
+                        + "</svg>\n",
+                StandardCharsets.UTF_8);
+
+        Files.writeString(failSvg.toPath(),
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1200\" height=\"600\">\n"
+                        + "  <g transform=\"translate(0.00, 0.00) scale(1.0000)\">\n"
+                        + "    <g id=\"scenario_0_Root\" class=\"node-card child_failed\" transform=\"translate(40, 92)\">\n"
+                        + "      <title>Root ▷ (Upset)</title><text class=\"tx1\">1 exec</text>\n"
+                        + "    </g>\n"
+                        + "    <g id=\"scenario_1_Leaf\" class=\"node-card failed\" transform=\"translate(310, 92)\">\n"
+                        + "      <title>Leaf ◼ (Failed)</title><text class=\"tx1\">1/1</text>\n"
+                        + "    </g>\n"
+                        + "  </g>\n"
+                        + "  <text class=\"tx3\">Leaves: 1/1</text><text class=\"tx3\">Test #1</text>\n"
+                        + "</svg>\n",
+                StandardCharsets.UTF_8);
+
+        final File cleanWav = tempDir.resolve("dnb_clean.wav").toFile();
+        final File warnWav = tempDir.resolve("dnb_warn.wav").toFile();
+        final File failWav = tempDir.resolve("dnb_fail.wav").toFile();
+
+        assertTrue(dnb.canSonify(List.of(cleanSvg)));
+        dnb.writeWav(List.of(cleanSvg), cleanWav, 10);
+        dnb.writeWav(List.of(warnSvg), warnWav, 10);
+        dnb.writeWav(List.of(failSvg), failWav, 10);
+
+        final byte[] cleanBytes = Files.readAllBytes(cleanWav.toPath());
+        final byte[] warnBytes = Files.readAllBytes(warnWav.toPath());
+        final byte[] failBytes = Files.readAllBytes(failWav.toPath());
+
+        assertTrue(hasSound(cleanBytes));
+        assertTrue(hasSound(warnBytes));
+        assertTrue(hasSound(failBytes));
+        assertTrue(hasStereoSeparation(cleanBytes));
+        assertTrue(!java.util.Arrays.equals(cleanBytes, warnBytes), "Clean and warning verdicts must sound distinct");
+        assertTrue(!java.util.Arrays.equals(cleanBytes, failBytes), "Clean and failure verdicts must sound distinct");
+        assertTrue(!java.util.Arrays.equals(warnBytes, failBytes), "Warning and failure verdicts must sound distinct");
     }
 
     @Test
