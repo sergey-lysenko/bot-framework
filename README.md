@@ -516,7 +516,7 @@ Suite files hold **both** dotted framework/project properties (`.test.*`, `.tree
 | `.test.report.progression.tree.per.node` | `Boolean` | `false` | Capture a tree frame on every node execution (vs per cycle). |
 | `.test.report.progression.scenario.label.level` | `Integer` | `0` | Grouping depth for scenario chart bars (`0` = auto). |
 | `.test.report.progression.tree.sonification` | `Boolean` | `true` | Attach procedural audio soundtrack to tree progression MP4. |
-| `.test.report.progression.tree.sonifications` | `String` | `edm, dnb, neon, jmj, carbon` | Pool of sonifier engines sampled randomly per run. |
+| `.test.report.progression.tree.sonifications` | `String` | `adp, edm, dnb, neon, jmj, carbon` | Pool of sonifier engines sampled randomly per run. |
 | `.test.report.progression.ffmpeg` | `String` | `ffmpeg` | FFmpeg binary name or path for MP4 muxing. |
 | `.test.report.progression.max.frames` | `Integer` | `5000` | Max frames retained per animation. |
 | `.test.report.progression.max.frame.pixels` / `.max.total.pixels` | `Integer` / `Long` | `168M` / `100G` | Pixel-budget safeguards for rasterization. |
@@ -727,9 +727,9 @@ When a test run ends, `DefaultReportingProvider` spawns a **detached child JVM**
 
 ### Procedural Musical Sonification (`works.lysenko.base.output.sonifier`)
 
-When `.test.report.progression.tree.sonification=true`, tree progression MP4s include a **deterministic procedural WAV soundtrack** synthesized directly from tree execution events (depths, statuses, milestones, warnings, failures) and muxed via FFmpeg. Ten synthesizer/sonifier engines are registered in `TreeProgressionAudio`:
+When `.test.report.progression.tree.sonification=true`, tree progression MP4s include a **deterministic procedural WAV soundtrack** synthesized directly from tree execution events (depths, statuses, milestones, warnings, failures) and muxed via FFmpeg. Eleven synthesizer/sonifier engines are registered in `TreeProgressionAudio`:
 
-- **Default random pool:** `edm` (`EdmSonifier`/`EdmSynth` - 128 BPM deadmau5 progressive house with filter sweep chords & sidechain pump), `dnb` (`DnbSonifier`/`DnbSynth`), `neon` (`NeonSonifier`/`NeonSynth`), `jmj` (`JmjSonifier`/`JmjSynth`), `carbon` (`CarbonSonifier`/`CarbonSynth`)
+- **Default random pool:** `adp` (`AdpSonifier`/`AdpSynth` - 136 BPM 7/8 Angine de Poitrine 24-TET microtonal math-rock with Karplus-Strong Strat/P-bass, ring modulator & cloth-muffled drums), `edm` (`EdmSonifier`/`EdmSynth` - 128 BPM deadmau5 progressive house with filter sweep chords & sidechain pump), `dnb` (`DnbSonifier`/`DnbSynth`), `neon` (`NeonSonifier`/`NeonSynth`), `jmj` (`JmjSonifier`/`JmjSynth`), `carbon` (`CarbonSonifier`/`CarbonSynth`)
 - **Additional engines:** `copilot`, `claude`, `gemini`, `orpheus`, `aurora` (or `none` to disable)
 
 ---

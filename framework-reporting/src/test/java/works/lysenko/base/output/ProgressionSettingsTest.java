@@ -37,6 +37,20 @@ class ProgressionSettingsTest {
     }
 
     @Test
+    void defaultSonificationsPropertyDerivesFromRegisteredSonifiers() throws Exception {
+        final String expected = String.join(", ", works.lysenko.base.output.sonifier.TreeProgressionAudio.defaultModes());
+        assertEquals("adp, edm, dnb, neon, jmj, carbon", expected);
+        assertEquals(expected, works.lysenko.util.prop.PropEnum._TEST_REPORT_PROGRESSION_TREE_SONIFICATIONS.defaultValue());
+
+        try (var stream = ProgressionSettings.class.getResourceAsStream("/config/parts/tests.part")) {
+            assertTrue(stream != null, "tests.part resource should be on classpath");
+            final String content = new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            assertTrue(content.contains("Default: " + expected),
+                    "tests.part documented default should match derived sonifications default: " + expected);
+        }
+    }
+
+    @Test
     void cachesProgressionPropertiesUntilExplicitlyReinitialized() throws Exception {
         final TestProperties previousProperties = Base.properties;
         try {

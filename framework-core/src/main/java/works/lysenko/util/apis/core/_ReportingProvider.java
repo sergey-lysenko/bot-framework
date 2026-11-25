@@ -22,6 +22,15 @@ public interface _ReportingProvider {
     List<String> treeSonificationValues();
 
     /**
+     * Returns the default tree sonification mode names for random selection.
+     *
+     * @return default sonification mode names
+     */
+    default List<String> defaultTreeSonifications() {
+        return List.of();
+    }
+
+    /**
      * Invoked when a scenario node starts execution.
      */
     void onNode();
@@ -72,7 +81,7 @@ public interface _ReportingProvider {
     }
 
     /**
-     * Resolves accepted tree sonification mode values from the active reporting provider (or built-in defaults).
+     * Resolves accepted tree sonification mode values from the active reporting provider.
      *
      * @return list of valid sonification mode strings
      */
@@ -80,7 +89,19 @@ public interface _ReportingProvider {
         if (!Holder.PROVIDERS.isEmpty()) {
             return Holder.PROVIDERS.getFirst().treeSonificationValues();
         }
-        return List.of("none", "copilot", "claude", "gemini", "orpheus", "aurora", "carbon", "neon", "jmj", "dnb", "edm");
+        return List.of("none");
+    }
+
+    /**
+     * Resolves default tree sonification mode names from the active reporting provider.
+     *
+     * @return list of default sonification mode strings, or empty list when no reporting provider is present
+     */
+    static List<String> resolveDefaultTreeSonifications() {
+        if (!Holder.PROVIDERS.isEmpty()) {
+            return Holder.PROVIDERS.getFirst().defaultTreeSonifications();
+        }
+        return List.of();
     }
 
     /**

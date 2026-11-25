@@ -1,6 +1,7 @@
 package works.lysenko.base.output;
 
 import works.lysenko.base.issues.KnownIssuesLoader;
+import works.lysenko.base.output.sonifier.TreeProgressionAudio;
 import works.lysenko.base.output.tree.TreeLayoutOptimizer;
 import works.lysenko.base.responses.ExpectedResponsesLoader;
 import works.lysenko.util.apis.core._ReportingProvider;
@@ -28,6 +29,11 @@ public final class DefaultReportingProvider implements _ReportingProvider {
     @Override
     public List<String> treeSonificationValues() {
         return ProgressionSettings.treeSonificationValues();
+    }
+
+    @Override
+    public List<String> defaultTreeSonifications() {
+        return TreeProgressionAudio.defaultModes();
     }
 
     @Override

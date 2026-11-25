@@ -3,24 +3,31 @@ package works.lysenko.base.output.sonifier;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Registry of available tree progression sonifiers, selected by the {@code .progression.tree.sonification} value.
- * To add a variant: implement {@link TreeSonifier} and list it in {@link #ALL}.
+ * To add a variant: implement {@link TreeSonifier} and list it in {@link #DEFAULTS} or {@link #ALL}.
  */
 public final class TreeProgressionAudio {
 
-    private static final List<TreeSonifier> ALL = List.of(
-            new CopilotSonifier(),
-            new ClaudeSonifier(),
-            new GeminiSonifier(),
-            new OrpheusSonifier(),
-            new AuroraSonifier(),
-            new CarbonSonifier(),
+    private static final List<TreeSonifier> DEFAULTS = List.of(
+            new AdpSonifier(),
+            new EdmSonifier(),
+            new DnbSonifier(),
             new NeonSonifier(),
             new JmjSonifier(),
-            new DnbSonifier(),
-            new EdmSonifier());
+            new CarbonSonifier());
+
+    private static final List<TreeSonifier> ALL = Stream.concat(
+            DEFAULTS.stream(),
+            Stream.of(
+                    new OrpheusSonifier(),
+                    new AuroraSonifier(),
+                    new GeminiSonifier(),
+                    new ClaudeSonifier(),
+                    new CopilotSonifier()))
+            .toList();
 
     private TreeProgressionAudio() {
     }
@@ -31,6 +38,14 @@ public final class TreeProgressionAudio {
     public static List<String> modes() {
 
         return ALL.stream().map(TreeSonifier::mode).toList();
+    }
+
+    /**
+     * @return modes of sonifiers included in the default random pool
+     */
+    public static List<String> defaultModes() {
+
+        return DEFAULTS.stream().map(TreeSonifier::mode).toList();
     }
 
     /**

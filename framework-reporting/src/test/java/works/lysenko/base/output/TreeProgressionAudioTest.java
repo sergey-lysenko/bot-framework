@@ -42,9 +42,14 @@ class TreeProgressionAudioTest {
         assertTrue(TreeProgressionAudio.find("DnB").orElseThrow() instanceof DnbSonifier);
         assertTrue(TreeProgressionAudio.find("edm").orElseThrow() instanceof EdmSonifier);
         assertTrue(TreeProgressionAudio.find("EDM").orElseThrow() instanceof EdmSonifier);
+        assertTrue(TreeProgressionAudio.find("adp").orElseThrow() instanceof AdpSonifier);
+        assertTrue(TreeProgressionAudio.find("ADP").orElseThrow() instanceof AdpSonifier);
         assertTrue(TreeProgressionAudio.find("none").isEmpty());
         assertTrue(TreeProgressionAudio.find("true").isEmpty());
         assertTrue(TreeProgressionAudio.find(null).isEmpty());
+        assertEquals(List.of("adp", "edm", "dnb", "neon", "jmj", "carbon"), TreeProgressionAudio.defaultModes());
+        assertEquals(11, TreeProgressionAudio.modes().size());
+        assertTrue(TreeProgressionAudio.modes().containsAll(TreeProgressionAudio.defaultModes()));
     }
 
     @Test
@@ -54,13 +59,14 @@ class TreeProgressionAudioTest {
         assertEquals("none", TreeProgressionAudio.selectRandom("unknown, invalid, none"));
         assertEquals("dnb", TreeProgressionAudio.selectRandom("dnb"));
         assertEquals("edm", TreeProgressionAudio.selectRandom("edm"));
+        assertEquals("adp", TreeProgressionAudio.selectRandom("adp"));
         assertEquals("neon", TreeProgressionAudio.selectRandom("neon, invalid"));
 
         final java.util.Set<String> chosen = new java.util.HashSet<>();
-        final String candidates = "edm, dnb, neon, jmj, carbon";
+        final String candidates = "adp, edm, dnb, neon, jmj, carbon";
         for (int i = 0; i < 50; i++) {
             final String selected = TreeProgressionAudio.selectRandom(candidates);
-            assertTrue(java.util.List.of("edm", "dnb", "neon", "jmj", "carbon").contains(selected));
+            assertTrue(java.util.List.of("adp", "edm", "dnb", "neon", "jmj", "carbon").contains(selected));
             chosen.add(selected);
         }
         assertTrue(chosen.size() > 1, "Random selection should pick multiple distinct options over 50 iterations");

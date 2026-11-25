@@ -173,8 +173,8 @@
 # .test.report.progression.tree.sonification=true
 
 # ------------------------------------------------------------------------------
-# Comma-separated list of sonification variants to randomly select from (edm, dnb, neon, jmj, carbon, copilot, claude, gemini, orpheus, aurora). Default: edm, dnb, neon, jmj, carbon
-# .test.report.progression.tree.sonifications=edm, dnb, neon, jmj, carbon
+# Comma-separated list of sonification variants to randomly select from (adp, edm, dnb, neon, jmj, carbon, copilot, claude, gemini, orpheus, aurora). Default: adp, edm, dnb, neon, jmj, carbon
+# .test.report.progression.tree.sonifications=adp, edm, dnb, neon, jmj, carbon
 
 # ------------------------------------------------------------------------------
 # Generates a WebP animation of test-tree progression. Default: true

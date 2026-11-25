@@ -70,6 +70,10 @@ public class ConfigAuditTest {
                             if (prevLine.contains("Default:")) {
                                 String commentDefault = prevLine.substring(prevLine.indexOf("Default:") + "Default:".length()).trim();
                                 PropEnum pe = knownProperties.get(key);
+                                if (pe == PropEnum._TEST_REPORT_PROGRESSION_TREE_SONIFICATIONS
+                                        && works.lysenko.util.apis.core._ReportingProvider.providers().isEmpty()) {
+                                    continue;
+                                }
                                 String expectedDefault = pe.defaultValue();
                                 if (expectedDefault == null) expectedDefault = "";
                                 if (!commentDefault.equalsIgnoreCase(expectedDefault) && !(commentDefault.isEmpty() && expectedDefault.isEmpty())) {

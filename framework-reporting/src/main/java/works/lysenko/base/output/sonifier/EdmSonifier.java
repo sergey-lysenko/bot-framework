@@ -72,8 +72,10 @@ public final class EdmSonifier implements TreeSonifier {
             {0, 4, 7, 10, 13}  // A7(b9)
     };
 
-    // D natural minor / F major melodic scale degrees (D4=62 anchor)
-    private static final int[] EDM_MELODY_SCALE = {0, 3, 5, 7, 10, 12, 14, 15, 17, 19, 22, 24};
+    // D minor pentatonic melodic pitches spanning a warm progressive-house mid register (G3=55 .. C5=72)
+    private static final int[] EDM_MELODY_NOTES = {55, 57, 60, 62, 65, 67, 69, 72};
+    private static final int MIN_MELODY_MIDI = 55; // G3 (~196 Hz)
+    private static final int MAX_MELODY_MIDI = 72; // C5 (~523 Hz)
 
     // Amplitudes
     private static final double KICK_AMP = 0.58;
@@ -222,7 +224,7 @@ public final class EdmSonifier implements TreeSonifier {
                 && frame.length() > 0L;
     }
 
-    private static Map<Integer, List<EdmEvent>> composeEdmEvents(
+    static Map<Integer, List<EdmEvent>> composeEdmEvents(
             final List<File> frames,
             final int samplesPerFrame) throws IOException {
 
@@ -804,15 +806,30 @@ public final class EdmSonifier implements TreeSonifier {
         };
     }
 
-    private static double resolveEdmPitch(
+    static double resolveEdmPitch(
             final int subRoot,
             final int[] chordIntervals,
             final NodeState node,
             final double rowRatio) {
-        final int scaleIdx = Math.abs(node.col() * 3 + node.rowTenths()) % EDM_MELODY_SCALE.length;
-        final int interval = EDM_MELODY_SCALE[scaleIdx];
-        final int octaveShift = (rowRatio > 0.65) ? 24 : ((rowRatio > 0.35) ? 12 : 0);
-        return subRoot + 24.0 + interval + octaveShift;
+        final double clampedRow = Math.clamp(rowRatio, 0.0, 1.0);
+        final int selector = Math.abs(node.col() * 3 + node.rowTenths());
+        int midi;
+        if (0 == (selector % 3)) {
+            final int chordAnchor = chordIntervals[selector % chordIntervals.length];
+            midi = subRoot + 12 + chordAnchor + ((clampedRow > 0.50) ? 12 : 0);
+        } else {
+            final int rowBias = (int) Math.round(clampedRow * 4.0);
+            final int noteIdx = Math.min(EDM_MELODY_NOTES.length - 1, rowBias + (selector % 4));
+            midi = EDM_MELODY_NOTES[noteIdx];
+        }
+        // Keep regular execution melodies in a warm progressive-house mid register [55..72] (G3..C5)
+        while (midi < MIN_MELODY_MIDI) {
+            midi += 12;
+        }
+        while (midi > MAX_MELODY_MIDI) {
+            midi -= 12;
+        }
+        return midi;
     }
 
     private static double computeStereoPan(final int col, final int panSpan) {

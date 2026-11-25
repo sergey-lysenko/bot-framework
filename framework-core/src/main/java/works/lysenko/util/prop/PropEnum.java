@@ -2,9 +2,11 @@ package works.lysenko.util.prop;
 
 import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.util.apis._PropEnum;
+import works.lysenko.util.apis.core._ReportingProvider;
 import works.lysenko.util.data.enums.*;
 
 import java.awt.Color;
+import java.util.function.Supplier;
 
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -18,6 +20,7 @@ import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.*;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Strings.NULL;
+import static works.lysenko.util.lang.C.*;
 import static works.lysenko.util.lang.word.F.*;
 import static works.lysenko.util.lang.word.N.*;
 import static works.lysenko.util.lang.word.S.*;
@@ -183,7 +186,9 @@ public enum PropEnum implements _PropEnum {
     _TEST_REPORT_PROGRESSION_TREE_MP4(Boolean.class, TRUE),
     _TEST_REPORT_PROGRESSION_TREE_PER_NODE(Boolean.class, FALSE),
     _TEST_REPORT_PROGRESSION_TREE_SONIFICATION(Boolean.class, TRUE),
-    _TEST_REPORT_PROGRESSION_TREE_SONIFICATIONS(String.class, "edm, dnb, neon, jmj, carbon"),
+    _TEST_REPORT_PROGRESSION_TREE_SONIFICATIONS(
+            String.class,
+            () -> String.join(COMMA_SPACE, _ReportingProvider.resolveDefaultTreeSonifications())),
     _TEST_REPORT_PROGRESSION_TREE_WEBP(Boolean.class, TRUE),
     _TEST_RESILIENT_MODE(Boolean.class, FALSE, true, true),
     _TEST_ROOT(String.class, EMPTY),
@@ -236,7 +241,7 @@ public enum PropEnum implements _PropEnum {
     _WEBD_RECREATE_DRIVER_AFTER_EXCEPTION(Boolean.class, TRUE);
 
     private final Class<?> type;
-    private final String defaultValue;
+    private final Supplier<String> defaultValue;
     private final boolean silent;
     private final boolean executionParameter;
 
@@ -252,7 +257,7 @@ public enum PropEnum implements _PropEnum {
             final boolean executionParameter) {
 
         this.type = type;
-        this.defaultValue = defaultValue;
+        this.defaultValue = () -> defaultValue;
         this.silent = silent;
         this.executionParameter = executionParameter;
     }
@@ -281,6 +286,20 @@ public enum PropEnum implements _PropEnum {
     }
 
     /**
+     * Initialises a property with the specified type and lazy default-value supplier.
+     *
+     * @param type         the class type which the property corresponds to
+     * @param defaultValue supplier providing the default value for the property
+     */
+    PropEnum(final Class<?> type, final Supplier<String> defaultValue) {
+
+        this.type = type;
+        this.defaultValue = defaultValue;
+        this.silent = false;
+        this.executionParameter = false;
+    }
+
+    /**
      * Initialises a property with the specified type and default character values.
      *
      * @param type         the class type which the property corresponds to
@@ -294,7 +313,7 @@ public enum PropEnum implements _PropEnum {
     @Override
     public String defaultValue() {
 
-        return defaultValue;
+        return defaultValue.get();
     }
 
     @Override
@@ -305,9 +324,9 @@ public enum PropEnum implements _PropEnum {
      */
     public <T> T get() {
 
-        if (isNull(properties)) return (T) create(defaultValue, type).result();
+        if (isNull(properties)) return (T) create(defaultValue(), type).result();
         final T val = properties.getEnum(this);
-        return isNull(val) ? (T) create(defaultValue, type).result() : val;
+        return isNull(val) ? (T) create(defaultValue(), type).result() : val;
     }
 
     @Override
