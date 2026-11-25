@@ -39,7 +39,7 @@ public record Files() {
     public static void deleteFile(final String name) {
 
         try {
-            java.nio.file.Files.delete(Paths.get(name));
+            java.nio.file.Files.deleteIfExists(Paths.get(name));
         } catch (final IOException e) {
             e.printStackTrace();
         }

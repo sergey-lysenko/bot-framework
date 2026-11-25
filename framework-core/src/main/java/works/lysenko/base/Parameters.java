@@ -870,8 +870,8 @@ public final class Parameters extends Properties implements _ExecutionParameterV
     public String testDescription() {
 
         return s(yb(getTest()),
-                (getPool().isBlank()) ? EMPTY : s(e(WITH), yb(getPool())),
-                (getDomain().isBlank()) ? EMPTY : s(e(ON), yb(getDomain())),
+                (null == getPool() || getPool().isBlank()) ? EMPTY : s(e(WITH), yb(getPool())),
+                (null == getDomain() || getDomain().isBlank()) ? EMPTY : s(e(ON), yb(getDomain())),
                 (null == getOrigin() || getOrigin().isBlank()) ? EMPTY : s(e(FROM), yb(getOrigin())),
                 (null == getTag() || getTag().isBlank()) ? EMPTY : s("[", yb(getTag()), "]")
         );
