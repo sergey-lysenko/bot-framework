@@ -3,6 +3,7 @@ package works.lysenko.util.func.ui;
 import org.apache.commons.math3.fraction.Fraction;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import works.lysenko.util.func.ui.snapshot.Snapshots;
 import org.openqa.selenium.interactions.Interactive;
 import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
@@ -106,6 +107,7 @@ public record Click() {
         logDebug(b(b(c(PERFORMING), d(LONG, CLICK), AT, COORDINATES),
                 s(X, x1), s(Y, y1), WITH, s(duration, MS), DURATION));
         ((Interactive) wd).perform(List.of(click));
+        Snapshots.invalidateSnapshot();
         longClickScreenshot(AFTER, duration, x1, y1);
         logDebug(DONE);
     }

@@ -16,6 +16,7 @@ import works.lysenko.util.func.core.Callstack;
 import works.lysenko.util.func.type.Points;
 import works.lysenko.util.func.type.Strings;
 import works.lysenko.util.func.ui.Locators;
+import works.lysenko.util.func.ui.snapshot.Snapshots;
 import works.lysenko.util.prop.core.Exceptions;
 import works.lysenko.util.prop.core.Screenshot;
 import works.lysenko.util.prop.core.Sleeping;
@@ -196,6 +197,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     public static void back() {
 
         exec.wd().navigate().back();
+        Snapshots.invalidateSnapshot();
     }
 
     /**
@@ -211,6 +213,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     public static void forward() {
 
         exec.wd().navigate().forward();
+        Snapshots.invalidateSnapshot();
     }
 
     /**
@@ -237,6 +240,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             element.sendKeys(Keys.CONTROL, s(A));
             element.sendKeys(Keys.BACK_SPACE);
         } else element.clear();
+        Snapshots.invalidateSnapshot();
         logDebug(b(TEXT_IN, describe(element), b(AFTER, s(CLEARING, _COLON_)), element.getAttribute(VALUE)));
     }
 
@@ -1389,6 +1393,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     public final void sendKeys(final CharSequence keys, int i) {
 
         do new Actions(exec.wd()).sendKeys(keys).build().perform(); while (0 < --i);
+        Snapshots.invalidateSnapshot();
     }
 
     /**
@@ -1399,6 +1404,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     public final void sendKeys(final String locator, final CharSequence keysToSend) {
 
         find(locator).sendKeys(keysToSend);
+        Snapshots.invalidateSnapshot();
     }
 
     /**
@@ -1604,6 +1610,8 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             final Actions action = new Actions(exec.wd());
             action.moveToElement(element).click().sendKeys(s(content)).build().perform();
             return true;
+        } finally {
+            Snapshots.invalidateSnapshot();
         }
     }
 
@@ -2117,6 +2125,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             writeScreenshot(img, false, b(CLICK, ON, desc));
         }
         element.click();
+        Snapshots.invalidateSnapshot();
     }
 
     /**
@@ -2136,6 +2145,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
             log(b(c(SCROLLING), a(DX, dx, _COMMA_), a(DY, dy)));
             if (isNotNull(getWebDriver()))
                 ((JavascriptExecutor) getWebDriver()).executeScript(s("window.scrollBy(", dx, ",", dy, ")"), "");
+            Snapshots.invalidateSnapshot();
         }
     }
 

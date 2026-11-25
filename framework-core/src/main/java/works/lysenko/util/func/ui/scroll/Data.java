@@ -1,6 +1,7 @@
 package works.lysenko.util.func.ui.scroll;
 
 import org.openqa.selenium.WebDriver;
+import works.lysenko.util.func.ui.snapshot.Snapshots;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Interactive;
 import org.openqa.selenium.interactions.PointerInput;
@@ -167,6 +168,7 @@ public record Data(WebElement scroller, int height, int width, PointerInput fing
                 PointerInput.Origin.viewport(), t.x, t.y));
         d.q().addAction(d.finger().createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
         ((Interactive) wd).perform(List.of(d.q()));
+        Snapshots.invalidateSnapshot();
         logDebug(S7);
         exec.sleepShort();
     }
