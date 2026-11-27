@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Structural/Geometric sonifier ({@code gemini}): "harmonic cascade".
  * <p>
@@ -81,7 +83,7 @@ public final class GeminiSonifier extends AbstractTreeSonifier {
                 StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
             for (final Map.Entry<Integer, ColumnStats> entry : stats.entrySet()) {
                 final ColumnStats s = entry.getValue();
-                writer.write(entry.getKey() + "\t" + s.total + "\t" + s.active + "\t" + s.completed);
+                writer.write(s(entry.getKey(), "\t", s.total, "\t", s.active, "\t", s.completed));
                 writer.newLine();
             }
         }
@@ -202,7 +204,7 @@ public final class GeminiSonifier extends AbstractTreeSonifier {
             String line;
             while (null != (line = reader.readLine())) {
                 final String[] fields = line.split("\\t", -1);
-                if (4 != fields.length) throw new IOException("Invalid gemini audio snapshot: " + file);
+                if (4 != fields.length) throw new IOException(s("Invalid gemini audio snapshot: ", file));
                 try {
                     final int col = Integer.parseInt(fields[0]);
                     final int total = Integer.parseInt(fields[1]);
@@ -210,7 +212,7 @@ public final class GeminiSonifier extends AbstractTreeSonifier {
                     final int completed = Integer.parseInt(fields[3]);
                     result.put(col, new ColumnStats(total, active, completed));
                 } catch (final NumberFormatException e) {
-                    throw new IOException("Invalid gemini audio snapshot format: " + file, e);
+                    throw new IOException(s("Invalid gemini audio snapshot format: ", file), e);
                 }
             }
         }

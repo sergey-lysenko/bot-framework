@@ -13,6 +13,7 @@ import java.util.Set;
 import static works.lysenko.base.output.loghtml.LogFormatting.getNiceCeil;
 import static works.lysenko.base.output.loghtml.LogFormatting.logScaleY;
 import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.spec.Symbols._LFD_;
 
 /**
  * SVG chart renderers for Leaf Completion intervals and ETA Debug metrics.
@@ -121,12 +122,12 @@ public final class ChartsRenderer {
                 "</div>",
                 "</div>",
                 "<div class=\"line-graph-svg-wrap\"><svg id=\"leafCompletionSvg\" class=\"timeline-line-svg\" viewBox=\"0 0 1000 240\">",
-                "  <defs>\n",
-                "    <linearGradient id=\"leafAreaGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n",
-                "      <stop offset=\"0%\" stop-color=\"#a855f7\" stop-opacity=\"0.35\"/>\n",
-                "      <stop offset=\"100%\" stop-color=\"#a855f7\" stop-opacity=\"0.02\"/>\n",
-                "    </linearGradient>\n",
-                "  </defs>\n"
+                "  <defs>", _LFD_,
+                "    <linearGradient id=\"leafAreaGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">", _LFD_,
+                "      <stop offset=\"0%\" stop-color=\"#a855f7\" stop-opacity=\"0.35\"/>", _LFD_,
+                "      <stop offset=\"100%\" stop-color=\"#a855f7\" stop-opacity=\"0.02\"/>", _LFD_,
+                "    </linearGradient>", _LFD_,
+                "  </defs>", _LFD_
         ));
 
         final double logMaxInterval = Math.log10(ceilIntervalSec + 1.0);
@@ -138,25 +139,25 @@ public final class ChartsRenderer {
             final double valIntervalSec = isLeafLog ? ((ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logMaxInterval) - 1.0) : ratio * ceilIntervalSec;
             final double valProjectedSec = isLeafLog ? ((ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logMaxProjected) - 1.0) : ratio * ceilProjectedSec;
             sb.append(String.format(Locale.ROOT,
-                    "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.06)\" stroke-dasharray=\"3,3\" />\n",
+                    s("  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.06)\" stroke-dasharray=\"3,3\" />", _LFD_),
                     marginLeft, y, marginLeft + plotW, y));
 
             final String leftLabel = (valIntervalSec < 1.0)
-                    ? Math.round(valIntervalSec * 1000.0) + "ms"
+                    ? s(Math.round(valIntervalSec * 1000.0), "ms")
                     : (valIntervalSec < 10.0)
                     ? String.format(Locale.ROOT, "%.1fs", valIntervalSec)
                     : String.format(Locale.ROOT, "%.0fs", valIntervalSec);
             sb.append(String.format(Locale.ROOT,
-                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"end\" fill=\"#a855f7\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>\n",
+                    s("  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"end\" fill=\"#a855f7\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>", _LFD_),
                     marginLeft - 8, y + 3.5, leftLabel));
 
             final String rightLabel = (valProjectedSec < 1.0)
-                    ? Math.round(valProjectedSec * 1000.0) + "ms"
+                    ? s(Math.round(valProjectedSec * 1000.0), "ms")
                     : (valProjectedSec < 10.0)
                     ? String.format(Locale.ROOT, "%.1fs", valProjectedSec)
                     : String.format(Locale.ROOT, "%.0fs", valProjectedSec);
             sb.append(String.format(Locale.ROOT,
-                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"start\" fill=\"#38bdf8\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>\n",
+                    s("  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"start\" fill=\"#38bdf8\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>", _LFD_),
                     marginLeft + plotW + 8, y + 3.5, rightLabel));
         }
 
@@ -175,10 +176,10 @@ public final class ChartsRenderer {
             final double x = marginLeft + (N > 1 ? (double) idx / (N - 1) * plotW : plotW / 2.0);
             final int tNum = completions.get(idx).testNum;
             sb.append(String.format(Locale.ROOT,
-                    "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.15)\" />\n",
+                    s("  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.15)\" />", _LFD_),
                     x, marginTop + plotH, x, marginTop + plotH + 4));
             sb.append(String.format(Locale.ROOT,
-                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">#%d</text>\n",
+                    s("  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">#%d</text>", _LFD_),
                     x, height - 10, tNum));
         }
 
@@ -228,10 +229,10 @@ public final class ChartsRenderer {
         }
 
         sb.append(s(
-                "  <path d=\"", leafPath, "\" class=\"leaf-chart-line\" fill=\"none\" stroke=\"#a855f7\" stroke-width=\"2\" />\n",
-                "  <path d=\"", etaPath, "\" class=\"leaf-eta-chart-line\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"2\" stroke-dasharray=\"4,3\" />\n",
-                "  <path d=\"", patiencePath, "\" class=\"leaf-patience-chart-line\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"2\" stroke-dasharray=\"2,4\" />\n",
-                hasCorrectionData ? s("  <path d=\"", corrEtaPath, "\" class=\"leaf-corr-eta-chart-line\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"2\" />\n") : ""
+                "  <path d=\"", leafPath, "\" class=\"leaf-chart-line\" fill=\"none\" stroke=\"#a855f7\" stroke-width=\"2\" />", _LFD_,
+                "  <path d=\"", etaPath, "\" class=\"leaf-eta-chart-line\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"2\" stroke-dasharray=\"4,3\" />", _LFD_,
+                "  <path d=\"", patiencePath, "\" class=\"leaf-patience-chart-line\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"2\" stroke-dasharray=\"2,4\" />", _LFD_,
+                hasCorrectionData ? s("  <path d=\"", corrEtaPath, "\" class=\"leaf-corr-eta-chart-line\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"2\" />", _LFD_) : ""
         ));
 
         for (int i = 0; i < N; i++) {
@@ -240,23 +241,23 @@ public final class ChartsRenderer {
                 final double intervalSec = roundIntervals[i] / 1000.0;
                 final double yInterval = logScaleY(intervalSec, ceilIntervalSec, marginTop, plotH);
                 sb.append(String.format(Locale.ROOT,
-                        "  <circle cx=\"%.1f\" cy=\"%.1f\" r=\"4\" fill=\"#a855f7\" stroke=\"#ffffff\" stroke-width=\"1.5\" />\n",
+                        s("  <circle cx=\"%.1f\" cy=\"%.1f\" r=\"4\" fill=\"#a855f7\" stroke=\"#ffffff\" stroke-width=\"1.5\" />", _LFD_),
                         x, yInterval));
             }
         }
 
         sb.append(s(
                 String.format(Locale.ROOT,
-                        "  <line id=\"leafCrosshair\" x1=\"0\" y1=\"%.1f\" x2=\"0\" y2=\"%.1f\" stroke=\"#94a3b8\" stroke-dasharray=\"2,2\" stroke-width=\"1\" opacity=\"0\" pointer-events=\"none\" />\n",
+                        s("  <line id=\"leafCrosshair\" x1=\"0\" y1=\"%.1f\" x2=\"0\" y2=\"%.1f\" stroke=\"#94a3b8\" stroke-dasharray=\"2,2\" stroke-width=\"1\" opacity=\"0\" pointer-events=\"none\" />", _LFD_),
                         marginTop, marginTop + plotH),
-                "  <circle id=\"leafDot\" cx=\"0\" cy=\"0\" r=\"5\" fill=\"#a855f7\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />\n",
-                "  <circle id=\"leafEtaDot\" cx=\"0\" cy=\"0\" r=\"4\" fill=\"#38bdf8\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />\n",
-                "  <circle id=\"leafPatienceDot\" cx=\"0\" cy=\"0\" r=\"4\" fill=\"#f59e0b\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />\n",
+                "  <circle id=\"leafDot\" cx=\"0\" cy=\"0\" r=\"5\" fill=\"#a855f7\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />", _LFD_,
+                "  <circle id=\"leafEtaDot\" cx=\"0\" cy=\"0\" r=\"4\" fill=\"#38bdf8\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />", _LFD_,
+                "  <circle id=\"leafPatienceDot\" cx=\"0\" cy=\"0\" r=\"4\" fill=\"#f59e0b\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />", _LFD_,
                 String.format(Locale.ROOT,
-                        "  <rect id=\"leafOverlay\" x=\"%.1f\" y=\"%.1f\" width=\"%.1f\" height=\"%.1f\" fill=\"transparent\" style=\"cursor: crosshair;\" onmousemove=\"onLeafHover(event)\" onmouseleave=\"onLeafLeave()\" onclick=\"onLeafClick()\" />\n",
+                        s("  <rect id=\"leafOverlay\" x=\"%.1f\" y=\"%.1f\" width=\"%.1f\" height=\"%.1f\" fill=\"transparent\" style=\"cursor: crosshair;\" onmousemove=\"onLeafHover(event)\" onmouseleave=\"onLeafLeave()\" onclick=\"onLeafClick()\" />", _LFD_),
                         marginLeft, marginTop, plotW, plotH),
-                "</svg>\n",
-                "<div id=\"leafTooltip\" class=\"lg-tooltip hidden\"></div>\n",
+                "</svg>", _LFD_,
+                "<div id=\"leafTooltip\" class=\"lg-tooltip hidden\"></div>", _LFD_,
                 "</div></div></section>"
         ));
 
@@ -355,21 +356,21 @@ public final class ChartsRenderer {
             final double errPct = isEtaLog ? ((ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logMaxErr) - 1.0) : ratio * ceilErrorPct;
 
             sb.append(String.format(Locale.ROOT,
-                    "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.06)\" stroke-dasharray=\"3,3\" />\n",
+                    s("  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.06)\" stroke-dasharray=\"3,3\" />", _LFD_),
                     marginLeft, y, marginLeft + plotW, y));
 
             final String leftLabel = (instPct < 10.0)
                     ? String.format(Locale.ROOT, "%.1f%%", instPct)
                     : String.format(Locale.ROOT, "%.0f%%", instPct);
             sb.append(String.format(Locale.ROOT,
-                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"end\" fill=\"#ec4899\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>\n",
+                    s("  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"end\" fill=\"#ec4899\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>", _LFD_),
                     marginLeft - 8, y + 3.5, leftLabel));
 
             final String rightLabel = (errPct < 10.0)
                     ? String.format(Locale.ROOT, "%.1f%%", errPct)
                     : String.format(Locale.ROOT, "%.0f%%", errPct);
             sb.append(String.format(Locale.ROOT,
-                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"start\" fill=\"#f59e0b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>\n",
+                    s("  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"start\" fill=\"#f59e0b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>", _LFD_),
                     marginLeft + plotW + 8, y + 3.5, rightLabel));
         }
 
@@ -388,10 +389,10 @@ public final class ChartsRenderer {
             final double x = marginLeft + (N > 1 ? (double) idx / (N - 1) * plotW : plotW / 2.0);
             final int tNum = items.get(idx).testNum;
             sb.append(String.format(Locale.ROOT,
-                    "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.15)\" />\n",
+                    s("  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.15)\" />", _LFD_),
                     x, marginTop + plotH, x, marginTop + plotH + 4));
             sb.append(String.format(Locale.ROOT,
-                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">#%d</text>\n",
+                    s("  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">#%d</text>", _LFD_),
                     x, height - 10, tNum));
         }
 
@@ -418,18 +419,18 @@ public final class ChartsRenderer {
         }
 
         sb.append(s(
-                "  <path d=\"", instabilityPath, "\" class=\"eta-instability-chart-line\" fill=\"none\" stroke=\"#ec4899\" stroke-width=\"2\" />\n",
-                "  <path d=\"", errorPath, "\" class=\"eta-error-chart-line\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"2\" stroke-dasharray=\"4,3\" />\n",
+                "  <path d=\"", instabilityPath, "\" class=\"eta-instability-chart-line\" fill=\"none\" stroke=\"#ec4899\" stroke-width=\"2\" />", _LFD_,
+                "  <path d=\"", errorPath, "\" class=\"eta-error-chart-line\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"2\" stroke-dasharray=\"4,3\" />", _LFD_,
                 String.format(Locale.ROOT,
-                        "  <line id=\"etaDebugCrosshair\" x1=\"0\" y1=\"%.1f\" x2=\"0\" y2=\"%.1f\" stroke=\"#94a3b8\" stroke-dasharray=\"2,2\" stroke-width=\"1\" opacity=\"0\" pointer-events=\"none\" />\n",
+                        s("  <line id=\"etaDebugCrosshair\" x1=\"0\" y1=\"%.1f\" x2=\"0\" y2=\"%.1f\" stroke=\"#94a3b8\" stroke-dasharray=\"2,2\" stroke-width=\"1\" opacity=\"0\" pointer-events=\"none\" />", _LFD_),
                         marginTop, marginTop + plotH),
-                "  <circle id=\"etaInstabilityDot\" cx=\"0\" cy=\"0\" r=\"4\" fill=\"#ec4899\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />\n",
-                "  <circle id=\"etaErrorDot\" cx=\"0\" cy=\"0\" r=\"4\" fill=\"#f59e0b\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />\n",
+                "  <circle id=\"etaInstabilityDot\" cx=\"0\" cy=\"0\" r=\"4\" fill=\"#ec4899\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />", _LFD_,
+                "  <circle id=\"etaErrorDot\" cx=\"0\" cy=\"0\" r=\"4\" fill=\"#f59e0b\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />", _LFD_,
                 String.format(Locale.ROOT,
-                        "  <rect id=\"etaDebugOverlay\" x=\"%.1f\" y=\"%.1f\" width=\"%.1f\" height=\"%.1f\" fill=\"transparent\" style=\"cursor: crosshair;\" onmousemove=\"onEtaDebugHover(event)\" onmouseleave=\"onEtaDebugLeave()\" onclick=\"onEtaDebugClick()\" />\n",
+                        s("  <rect id=\"etaDebugOverlay\" x=\"%.1f\" y=\"%.1f\" width=\"%.1f\" height=\"%.1f\" fill=\"transparent\" style=\"cursor: crosshair;\" onmousemove=\"onEtaDebugHover(event)\" onmouseleave=\"onEtaDebugLeave()\" onclick=\"onEtaDebugClick()\" />", _LFD_),
                         marginLeft, marginTop, plotW, plotH),
-                "</svg>\n",
-                "<div id=\"etaDebugTooltip\" class=\"lg-tooltip hidden\"></div>\n",
+                "</svg>", _LFD_,
+                "<div id=\"etaDebugTooltip\" class=\"lg-tooltip hidden\"></div>", _LFD_,
                 "</div></div></section>"
         ));
 
@@ -487,7 +488,7 @@ public final class ChartsRenderer {
                 "</div>",
                 "<div class=\"line-graph-svg-wrap\"><svg id=\"resourceStatsSvg\" class=\"timeline-line-svg\" viewBox=\"0 0 1000 240\">",
                 "  <text x=\"500\" y=\"120\" fill=\"#94a3b8\" text-anchor=\"middle\" font-size=\"14\">Loading resource statistics...</text>",
-                "</svg></div></div></section>\n"
+                "</svg></div></div></section>", _LFD_
         ));
         return sb.toString();
     }

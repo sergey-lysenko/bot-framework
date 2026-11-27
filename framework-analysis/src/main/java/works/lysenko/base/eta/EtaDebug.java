@@ -16,6 +16,8 @@ import java.util.List;
 
 import static works.lysenko.Base.logEvent;
 import static works.lysenko.util.data.enums.Severity.S2;
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.sn;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.spec.Layout.Files.name;
 import static works.lysenko.util.spec.Layout.Templates.RUN_ETA_DEBUG_;
@@ -127,12 +129,12 @@ public record EtaDebug() {
             final String name) {
 
         final Path path = Path.of(name(RUN_ETA_DEBUG_));
-        final String line = "[ETA_DEBUG] " + testNum + " " + realMs + " " + meanEtaMs + " "
-                + stdDevEtaMs + " " + predictedMs + " " + name + System.lineSeparator();
+        final String line = s("[ETA_DEBUG] ", testNum, " ", realMs, " ", meanEtaMs, " ",
+                stdDevEtaMs, " ", predictedMs, " ", name, System.lineSeparator());
         try {
             Files.writeString(path, line, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (final IOException e) {
-            logEvent(S2, "Unable to record eta debug in " + path + ": " + e.getMessage());
+            logEvent(S2, sn("Unable to record eta debug in ", path, ": ", e.getMessage()));
         }
     }
 }

@@ -39,7 +39,7 @@ public record TestProperties() {
                 final String key = k.toString().trim();
                 if (!key.startsWith(".") && !key.equalsIgnoreCase("include")) {
                     throw new IllegalStateException(b(
-                            "Invalid key", key, "in part file", filename + ":",
+                            "Invalid key", key, "in part file", s(filename, ":"),
                             "Part files must only contain configuration keys starting with '.' (e.g., '.key'). Bare scenario references are disallowed in part files."
                     ));
                 }

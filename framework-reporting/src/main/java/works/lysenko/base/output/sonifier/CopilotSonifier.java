@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Data-driven sonifier ({@code copilot}): each new leaf execution plays a note whose pitch derives from the leaf path
  * and whose loudness reflects progress to target. Relies on per-frame leaf state snapshots written alongside frames.
@@ -146,7 +148,7 @@ public final class CopilotSonifier extends AbstractTreeSonifier {
             String line;
             while (null != (line = reader.readLine())) {
                 final String[] fields = line.split("\\t", -1);
-                if (3 != fields.length) throw new IOException("Invalid tree progression audio snapshot: " + file);
+                if (3 != fields.length) throw new IOException(s("Invalid tree progression audio snapshot: ", file));
                 final String identity;
                 final int executions;
                 final int target;
@@ -155,7 +157,7 @@ public final class CopilotSonifier extends AbstractTreeSonifier {
                     executions = Integer.parseInt(fields[1]);
                     target = Integer.parseInt(fields[2]);
                 } catch (final IllegalArgumentException e) {
-                    throw new IOException("Invalid tree progression audio snapshot: " + file, e);
+                    throw new IOException(s("Invalid tree progression audio snapshot: ", file), e);
                 }
                 result.put(identity, new LeafState(Math.max(0, executions), Math.max(1, target)));
             }

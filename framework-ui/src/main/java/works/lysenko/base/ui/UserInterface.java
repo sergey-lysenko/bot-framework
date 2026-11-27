@@ -9,20 +9,15 @@ import works.lysenko.util.apis.util._BotButton;
 import works.lysenko.util.apis.util._Dashboard;
 import works.lysenko.util.data.enums.Brackets;
 
-import works.lysenko.util.prop.PropEnum;
-
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
-import static works.lysenko.util.func.type.Objects.isNotNull;
-import static works.lysenko.Base.core;
 import static works.lysenko.Base.exec;
-import static works.lysenko.Base.parameters;
 import static works.lysenko.Base.timer;
 import static works.lysenko.util.chrs.__.IN;
 import static works.lysenko.util.chrs.__.OF;
@@ -33,6 +28,7 @@ import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Case.l;
 import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Swap.s1;
+import static works.lysenko.util.data.strs.Swap.sn;
 import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.lang.word.A.AFTER;
 import static works.lysenko.util.lang.word.C.CLASSES;
@@ -49,13 +45,16 @@ import static works.lysenko.util.lang.word.S.SECONDS;
 import static works.lysenko.util.lang.word.T.TESTING;
 import static works.lysenko.util.lang.word.T.THREAD;
 import static works.lysenko.util.spec.Symbols.QUS_MRK;
+import static works.lysenko.util.spec.Symbols.RHT_ARR;
 import static works.lysenko.util.spec.Symbols.VRT_BAR;
+import static works.lysenko.util.spec.Symbols._LFD_;
 import static works.lysenko.util.spec.Symbols._PRCNT_;
+import static works.lysenko.util.spec.Symbols._SPACE_;
 
 
 /**
  * The Dashboard class provides a graphical user interface for displaying system telemetry and logs.
- * It extends the JFrame class and implements the ProvidesDashboard interface.
+ * It extends the JPanel class and implements the _Dashboard interface.
  */
 @SuppressWarnings({"ClassWithoutLogger", "FieldHasSetterButNoGetter", "FeatureEnvy", "ClassWithTooManyFields",
         "ImplicitNumericConversion",
@@ -63,9 +62,6 @@ import static works.lysenko.util.spec.Symbols._PRCNT_;
         "FinalClass",
         "ChainedMethodCall", "NestedMethodCall", "ClassWithTooManyDependencies", "ClassWithTooManyTransitiveDependencies",
         "ClassWithTooManyTransitiveDependents", "CyclicClassDependency", "AutoBoxing", "AutoUnboxing", "LawOfDemeter"})
-/**
- * The UserInterface class.
- */
 public final class UserInterface extends JPanel implements _Dashboard {
 
     private static final int bytesInMiB = 1 << 20;
@@ -73,6 +69,13 @@ public final class UserInterface extends JPanel implements _Dashboard {
     private static final float GREEN_HUE = 0.333F;
     private static final float SATURATION = 1.0F;
     private static final float BRIGHTNESS = 0.75F;
+    private static final int STATUS_FONT_SIZE = 12;
+    private static final int HORIZONTAL_PADDING = 12;
+    private static final int LOG_BATCH_INITIAL_CAPACITY = 256;
+    private static final char CARRIAGE_RETURN = 13;
+    private static final Color STATUS_COLOR = new Color(0x02, 0x84, 0xC7);
+    private static final Color SECTION_BORDER_COLOR = new Color(0xCB, 0xD5, 0xE1);
+    private static final String BREADCRUMB_SEPARATOR = s(_SPACE_, RHT_ARR, _SPACE_);
     private final JPanel container = new JPanel();
     private final JPanel breadcrumb = new JPanel();
     private final JPanel statusboard = new JPanel();
@@ -292,24 +295,31 @@ public final class UserInterface extends JPanel implements _Dashboard {
     public void setBreadcrumb(final List<? extends _Scenario> content) {
 
         final List<_Scenario> safeContent = (null == content) ? List.of() : new ArrayList<>(content);
-        final Runnable r = () -> {
-            breadcrumb.removeAll();
-            for (int i = 0; i < safeContent.size(); i++) {
-                if (i > 0) {
-                    final JLabel separator = new JLabel(" \u2192 ");
-                    separator.setForeground(Color.GRAY);
-                    breadcrumb.add(separator);
-                }
-                final JLabel scenarioLabel = createScenarioLabel(safeContent.get(i));
-                breadcrumb.add(scenarioLabel);
-            }
-            breadcrumb.revalidate();
-            breadcrumb.repaint();
-            container.revalidate();
-            container.repaint();
-        };
+        final Runnable r = () -> renderBreadcrumb(safeContent);
         if (SwingUtilities.isEventDispatchThread()) r.run();
         else SwingUtilities.invokeLater(r);
+    }
+
+    private void renderBreadcrumb(final List<? extends _Scenario> safeContent) {
+
+        breadcrumb.removeAll();
+        for (int i = 0; i < safeContent.size(); i++) {
+            if (0 < i) {
+                breadcrumb.add(createSeparatorLabel());
+            }
+            breadcrumb.add(createScenarioLabel(safeContent.get(i)));
+        }
+        breadcrumb.revalidate();
+        breadcrumb.repaint();
+        container.revalidate();
+        container.repaint();
+    }
+
+    private static JLabel createSeparatorLabel() {
+
+        final JLabel separator = new JLabel(BREADCRUMB_SEPARATOR);
+        separator.setForeground(Color.GRAY);
+        return separator;
     }
 
     /**
@@ -321,9 +331,9 @@ public final class UserInterface extends JPanel implements _Dashboard {
      */
     public void setInfo(final String message, final Telemetry telemetry) {
 
-        final int depth = works.lysenko.Base.exec == null ? 0 : works.lysenko.Base.exec.scenarios().depth();
+        final int depth = null == exec ? 0 : exec.scenarios().depth();
         final String indent = "  ".repeat(Math.max(0, depth));
-        logQueue.add(new LogUpdate(indent + message, telemetry));
+        logQueue.add(new LogUpdate(sn(indent, message), telemetry));
 
         if (logFlushScheduled.compareAndSet(false, true)) {
             SwingUtilities.invokeLater(this::flushLogQueue);
@@ -339,25 +349,14 @@ public final class UserInterface extends JPanel implements _Dashboard {
         final JScrollBar scrollBar = logScrollPane.getVerticalScrollBar();
         final boolean followOutput = scrollBar.getValue() + scrollBar.getVisibleAmount() >= scrollBar.getMaximum() - 2;
 
-        LogUpdate item;
-        Telemetry lastTelemetry = null;
-        final StringBuilder batchText = new StringBuilder();
-
-        while (null != (item = logQueue.poll())) {
-            batchText.append(item.message());
-            if (!item.message().endsWith("\n") && !item.message().endsWith("\r")) {
-                batchText.append("\n");
-            }
-            if (null != item.telemetry()) {
-                lastTelemetry = item.telemetry();
-            }
-        }
+        final StringBuilder batchText = new StringBuilder(LOG_BATCH_INITIAL_CAPACITY);
+        final Telemetry lastTelemetry = drainLogQueue(batchText);
 
         if (null != lastTelemetry) {
             refreshStatusBoard(lastTelemetry);
         }
 
-        if (batchText.length() > 0) {
+        if (!batchText.isEmpty()) {
             log.appendOutput(batchText.toString());
         }
 
@@ -368,6 +367,42 @@ public final class UserInterface extends JPanel implements _Dashboard {
         if (!logQueue.isEmpty() && logFlushScheduled.compareAndSet(false, true)) {
             SwingUtilities.invokeLater(this::flushLogQueue);
         }
+    }
+
+    private Telemetry drainLogQueue(final StringBuilder batchText) {
+
+        Telemetry lastTelemetry = null;
+        LogUpdate item = logQueue.poll();
+        while (null != item) {
+            batchText.append(item.message());
+            if (!endsWithLineBreak(item.message())) {
+                batchText.append(_LFD_);
+            }
+            if (null != item.telemetry()) {
+                lastTelemetry = item.telemetry();
+            }
+            item = logQueue.poll();
+        }
+        return lastTelemetry;
+    }
+
+    private static boolean endsWithLineBreak(final CharSequence message) {
+
+        final boolean result;
+        if (message.isEmpty()) {
+            result = false;
+        } else {
+            final char last = message.charAt(message.length() - 1);
+            result = _LFD_ == last || CARRIAGE_RETURN == last;
+        }
+        return result;
+    }
+
+    private static Border createSectionBorder(final int verticalPadding) {
+
+        return BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, SECTION_BORDER_COLOR),
+                BorderFactory.createEmptyBorder(verticalPadding, HORIZONTAL_PADDING, verticalPadding, HORIZONTAL_PADDING));
     }
 
     /**
@@ -381,11 +416,9 @@ public final class UserInterface extends JPanel implements _Dashboard {
 
     private void buildBusiness() {
 
-        status.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
-        status.setForeground(new Color(0x02, 0x84, 0xC7));
-        business.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0xCB, 0xD5, 0xE1)),
-                BorderFactory.createEmptyBorder(4, 12, 4, 12)));
+        status.setFont(new Font(Font.SANS_SERIF, Font.BOLD, STATUS_FONT_SIZE));
+        status.setForeground(STATUS_COLOR);
+        business.setBorder(createSectionBorder(4));
         business.add(status);
     }
 
@@ -396,23 +429,19 @@ public final class UserInterface extends JPanel implements _Dashboard {
      */
     private void buildContainer() {
 
-        breadcrumb.setLayout(new FlowLayout(FlowLayout.LEFT, 4, 2));
-        breadcrumb.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0xCB, 0xD5, 0xE1)),
-                BorderFactory.createEmptyBorder(6, 12, 6, 12)));
+        breadcrumb.setLayout(new FlowLayout(FlowLayout.LEADING, 4, 2));
+        breadcrumb.setBorder(createSectionBorder(6));
 
-        statusboard.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0xCB, 0xD5, 0xE1)),
-                BorderFactory.createEmptyBorder(6, 12, 6, 12)));
+        statusboard.setBorder(createSectionBorder(6));
 
-        switchboard.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        switchboard.setBorder(BorderFactory.createEmptyBorder(8, HORIZONTAL_PADDING, 8, HORIZONTAL_PADDING));
 
         container.setLayout(new BoxLayout(container, BoxLayout.PAGE_AXIS));
         container.add(breadcrumb);
         container.add(statusboard);
         container.add(business);
         container.add(switchboard);
-        add(container, BorderLayout.NORTH);
+        add(container, BorderLayout.PAGE_START);
         add(logScrollPane, BorderLayout.CENTER);
     }
 
@@ -552,7 +581,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
     }
 
     @Override
-    public void setTitle(String title) {
+    public void setTitle(final String title) {
         // Ignored for JPanel, handled by ControlPanel
     }
 
@@ -571,7 +600,7 @@ public final class UserInterface extends JPanel implements _Dashboard {
     private static String calculateEtaString() {
 
         final EtaSnapshot snapshot = EtaCalculator.capture(true);
-        if (snapshot.remainingMs() > 0L) {
+        if (0L < snapshot.remainingMs()) {
             ExhaustiveCompletions.recordEtaSample(snapshot.remainingMs());
         }
         return snapshot.label();

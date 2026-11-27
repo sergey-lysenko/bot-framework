@@ -277,10 +277,10 @@ public record Weights() {
         private DownstreamMatcher(final _Scenario scenario) {
 
             shortName = scenario.getShortName().toLowerCase();
-            shortNameDot = shortName.isEmpty() ? null : shortName + ".";
+            shortNameDot = shortName.isEmpty() ? null : s(shortName, ".");
             propKey = getScenarioPropertyKey(scenario).toLowerCase();
             hasDistinctPropKey = !propKey.isEmpty() && !propKey.equals(shortName);
-            propKeyDot = hasDistinctPropKey ? propKey + "." : null;
+            propKeyDot = hasDistinctPropKey ? s(propKey, ".") : null;
 
             List<String> supers = null;
             if (Traverse.extensions) {

@@ -4,6 +4,8 @@ import works.lysenko.base.eta.model.EtaSnapshot;
 
 import java.util.Locale;
 
+import static works.lysenko.util.spec.Symbols._LFD_;
+
 /**
  * Stateless formatting and JSON serialization utilities for ETA durations, patience metrics, and snapshots.
  */
@@ -105,10 +107,13 @@ public record EtaFormatter() {
         final StringBuilder out = new StringBuilder(s.length() + 8);
         for (int i = 0; i < s.length(); i++) {
             final char c = s.charAt(i);
+            if (_LFD_ == c) {
+                out.append("\\n");
+                continue;
+            }
             switch (c) {
                 case '\"' -> out.append("\\\"");
                 case '\\' -> out.append("\\\\");
-                case '\n' -> out.append("\\n");
                 case '\r' -> out.append("\\r");
                 case '\t' -> out.append("\\t");
                 default -> {

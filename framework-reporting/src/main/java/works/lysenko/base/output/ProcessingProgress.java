@@ -1,5 +1,7 @@
 package works.lysenko.base.output;
 
+import static works.lysenko.util.data.strs.Swap.sn;
+
 /**
  * Reports progress for detached test-run post-processing.
  */
@@ -18,7 +20,7 @@ public interface ProcessingProgress {
     }
 
     default void failed(final String task, final Exception failure) {
-        System.err.println("Failed to process " + task + ": " + failure.getMessage());
+        System.err.println(sn("Failed to process ", task, ": ", failure.getMessage()));
         update(task, 100);
     }
 

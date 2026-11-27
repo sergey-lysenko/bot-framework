@@ -15,6 +15,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.sn;
+
 /**
  * Handles classpath resolution, command construction, and background JVM process
  * launching for detached post-processing.
@@ -118,10 +121,10 @@ public final class DetachedProcessLauncher {
             }
             final File parent = postProcessorLog.getAbsoluteFile().getParentFile();
             if (null != parent && !parent.isDirectory() && !parent.mkdirs()) {
-                throw new IOException("Unable to create post-processor log directory: " + parent);
+                throw new IOException(s("Unable to create post-processor log directory: ", parent));
             }
             final String javaBin = ProcessHandle.current().info().command().orElse(
-                    System.getProperty("java.home") + File.separator + "bin" + File.separator + "java"
+                    sn(System.getProperty("java.home"), File.separator, "bin", File.separator, "java")
             );
             final String cp = resolveClassPath();
             final long parentPid = ProcessHandle.current().pid();
@@ -145,7 +148,7 @@ public final class DetachedProcessLauncher {
             postProcessor.destroyForcibly();
             throw new IOException("Detached post-processor did not acquire run/.postprocess.lock");
         } catch (final Exception e) {
-            final String message = "Unable to launch detached post-processor: " + e + System.lineSeparator();
+            final String message = s("Unable to launch detached post-processor: ", e, System.lineSeparator());
             try {
                 Files.writeString(
                         postProcessorLog.toPath(),
@@ -155,7 +158,7 @@ public final class DetachedProcessLauncher {
                         StandardOpenOption.APPEND);
             } catch (final IOException logFailure) {
                 System.err.println(message.trim());
-                System.err.println("Unable to write post-processor log: " + logFailure.getMessage());
+                System.err.println(sn("Unable to write post-processor log: ", logFailure.getMessage()));
             }
         }
     }
@@ -211,8 +214,8 @@ public final class DetachedProcessLauncher {
         final String name = runLogFile.getName();
         final String suffix = ".run.log";
         final String logName = name.endsWith(suffix)
-                ? name.substring(0, name.length() - suffix.length()) + ".post-processing.log"
-                : name + ".post-processing.log";
+                ? s(name.substring(0, name.length() - suffix.length()), ".post-processing.log")
+                : s(name, ".post-processing.log");
         return new File(runLogFile.getAbsoluteFile().getParentFile(), logName);
     }
 }

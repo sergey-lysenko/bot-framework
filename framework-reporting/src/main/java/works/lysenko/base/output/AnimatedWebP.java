@@ -18,6 +18,8 @@ import java.util.stream.Gatherers;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Writes animated WebP by muxing ImageIO-encoded WebP frames into a RIFF container.
  */
@@ -169,8 +171,8 @@ final class AnimatedWebP {
             throw new IllegalArgumentException("WebP dimensions must be between 1 and 16383 pixels");
         }
         if ((long) width * height > ProgressionFrames.maxFramePixels(maxFramePixels)) {
-            throw new IllegalArgumentException("WebP frame exceeds configured pixel limit: "
-                    + width + "x" + height);
+            throw new IllegalArgumentException(s("WebP frame exceeds configured pixel limit: ",
+                    width, "x", height));
         }
     }
 

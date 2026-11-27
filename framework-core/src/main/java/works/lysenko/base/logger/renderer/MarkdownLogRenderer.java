@@ -26,7 +26,7 @@ import static works.lysenko.util.spec.Symbols.*;
 public class MarkdownLogRenderer implements LogRenderer {
 
     private static final double THOUSAND = 1000.0;
-    private static final String TABLE_HEADER = "| Log Message | Call Stack | Duration (ms) |" + System.lineSeparator() + "| :--- | :--- | :--- |"; //NON-NLS
+    private static final String TABLE_HEADER = s("| Log Message | Call Stack | Duration (ms) |", System.lineSeparator(), "| :--- | :--- | :--- |"); //NON-NLS
 
     private boolean needsTableHeader = true;
     private String pendingSectionHeader = null;
@@ -80,7 +80,7 @@ public class MarkdownLogRenderer implements LogRenderer {
 
         out.append(String.format("| %s | %s | %s |",
                 escapePipe(cleanMsg),
-                cleanStack.isEmpty() ? EMPTY : "`" + escapePipe(cleanStack) + "`",
+                cleanStack.isEmpty() ? EMPTY : s("`", escapePipe(cleanStack), "`"),
                 stamp));
 
         return out.toString();
@@ -120,7 +120,7 @@ public class MarkdownLogRenderer implements LogRenderer {
 
     private static String getHeadingPrefix(final int depth) {
         final int level = Math.clamp(3 + (depth > 0 ? depth - 1 : 0), 3, 6);
-        return "#".repeat(level) + " ";
+        return s("#".repeat(level), " ");
     }
 
     private static String formatMessage(final _LogData data) {
@@ -146,12 +146,12 @@ public class MarkdownLogRenderer implements LogRenderer {
             count++;
         }
         if (count == 0) return str;
-        return "&nbsp;".repeat(count) + str.substring(count);
+        return s("&nbsp;".repeat(count), str.substring(count));
     }
 
     private static String formatCallstack(final String callstack) {
         if (callstack == null || callstack.isEmpty()) return EMPTY;
-        return removeANSICodes(callstack).replace("\n", "<br>").replace("\r", "");
+        return removeANSICodes(callstack).replace(s(_LFD_), "<br>").replace("\r", "");
     }
 
     private static String escapePipe(final String input) {

@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.IntConsumer;
 
+import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 
 /**
@@ -107,7 +108,7 @@ public final class AnimatedGifWriter {
         final ImageWriter writer = writers.next();
         if (isNotNull(outFile.getParentFile()) && !outFile.getParentFile().mkdirs()
                 && !outFile.getParentFile().isDirectory()) {
-            throw new IOException("Unable to create GIF output directory: " + outFile.getParent());
+            throw new IOException(s("Unable to create GIF output directory: ", outFile.getParent()));
         }
 
         try (final ImageOutputStream ios = ImageIO.createImageOutputStream(outFile)) {

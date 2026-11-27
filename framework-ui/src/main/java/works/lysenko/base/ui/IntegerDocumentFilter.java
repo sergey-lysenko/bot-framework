@@ -1,9 +1,9 @@
 package works.lysenko.base.ui;
 
-@SuppressWarnings({"unused", "MissingJavadoc", "WeakerAccess"})
 /**
  * The IntegerDocumentFilter class.
  */
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class IntegerDocumentFilter extends IntegerRangeDocumentFilter {
 
     /**

@@ -991,7 +991,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
      */
     public final void logEvent(final Severity severity, final String message) {
         if (ROOT_LOG_EVENT_RECURSION_GUARD.isBound()) {
-            System.err.println("[RECURSION GUARD] Blocked nested Root.logEvent: " + severity + " - " + message);
+            System.err.println(sn("[RECURSION GUARD] Blocked nested Root.logEvent: ", severity, " - ", message));
             return;
         }
         ScopedValue.where(ROOT_LOG_EVENT_RECURSION_GUARD, Boolean.TRUE).run(() ->
@@ -1046,8 +1046,8 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     public final void open(final String u) {
 
         URL url = tryParseUrl(u);
-        if (null == url) url = tryParseUrl("https://" + u);
-        if (null == url) url = tryParseUrl("http://" + u);
+        if (null == url) url = tryParseUrl(sn("https://", u));
+        if (null == url) url = tryParseUrl(sn("http://", u));
         if (null == url) {
             throw new IllegalArgumentException(s(UNABLE_TO_OPEN, b(UNKNOWN, s(U, R, L))));
         }
@@ -1064,7 +1064,7 @@ public abstract class Root implements ClearsWebElements, ClicksOnWebElements, Co
     public final void open(final String p, final String u) {
 
         URL url = tryParseUrl(u);
-        if (null == url) url = tryParseUrl(p + "://" + u);
+        if (null == url) url = tryParseUrl(sn(p, "://", u));
         if (null == url) {
             throw new IllegalArgumentException(s(UNABLE_TO_OPEN, b(UNKNOWN, s(U, R, L))));
         }

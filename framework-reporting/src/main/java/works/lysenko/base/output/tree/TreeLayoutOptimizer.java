@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Optimizes scenario tree coordinates, balancing multi-column banks, compacting
  * disconnected trees, and solving 1D non-overlapping row constraints.
@@ -428,7 +430,7 @@ public final class TreeLayoutOptimizer {
             final String baseKey = baseRootKey(root);
             final int count = keyCounts.getOrDefault(baseKey, 0);
             keyCounts.put(baseKey, count + 1);
-            final String rootKey = (0 == count) ? baseKey : (baseKey + "#" + count);
+            final String rootKey = (0 == count) ? baseKey : s(baseKey, "#", count);
             final int minC = minimumCol(comp);
             final int maxC = maximumCol(comp);
             final int rootOffset = (null == root) ? 0 : Math.max(0, root.col());

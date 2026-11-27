@@ -164,7 +164,7 @@ public interface _GridProvider {
     static boolean verifyImage(final BufferedImage image, final String name) {
         if (Holder.PROVIDER.isEmpty()) {
             if (isNotNull(exec)) {
-                logEvent(Severity.S1, "Unable to verify image '" + name + "': no _GridProvider implementation on classpath (missing framework-grid)");
+                logEvent(Severity.S1, s("Unable to verify image '", name, "': no _GridProvider implementation on classpath (missing framework-grid)"));
             }
             return false;
         }

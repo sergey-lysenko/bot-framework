@@ -12,6 +12,8 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Smoothly interpolates scenario tree node positions ({@code visualCol}, {@code row}) across
  * progression frames using exponential easing matching {@link TreeCameraTransform}.
@@ -196,10 +198,10 @@ public final class TreeNodePositionAnimator {
             final String segment = (null != n.scenario())
                     ? n.scenario().getClass().getName()
                     : ((null != n.label()) ? n.label() : n.id());
-            final String baseKey = (null != parentKey) ? (parentKey + "/" + segment) : segment;
+            final String baseKey = (null != parentKey) ? s(parentKey, "/", segment) : segment;
             final int count = siblingCounts.getOrDefault(baseKey, 0);
             siblingCounts.put(baseKey, count + 1);
-            keys.put(n, (0 == count) ? baseKey : (baseKey + "#" + count));
+            keys.put(n, (0 == count) ? baseKey : s(baseKey, "#", count));
         }
         return keys;
     }

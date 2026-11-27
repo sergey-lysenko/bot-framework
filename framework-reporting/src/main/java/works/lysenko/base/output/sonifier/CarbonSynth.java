@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Deterministic multi-timbral stereo synthesizer rendering 44.1 kHz, 16-bit stereo PCM WAV tracks
  * for {@link CarbonSonifier}.
@@ -410,7 +412,7 @@ final class CarbonSynth {
                     this.octaveShimmer = 0.28;
                     this.octaveShimmerMul = perSampleDecay(0.180);
                 }
-                default -> throw new IllegalStateException("Unhandled voice kind: " + kind);
+                default -> throw new IllegalStateException(s("Unhandled voice kind: ", kind));
             }
         }
 

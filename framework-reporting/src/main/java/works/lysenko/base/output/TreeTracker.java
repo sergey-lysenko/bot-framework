@@ -37,6 +37,8 @@ import static works.lysenko.Base.log;
 import static works.lysenko.Base.logDebug;
 import static works.lysenko.Base.parameters;
 import static works.lysenko.Base.timer;
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.sn;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.spec.Layout.Files.name;
 import static works.lysenko.util.spec.Layout.Paths._RUNS_;
@@ -238,12 +240,12 @@ public final class TreeTracker {
         final int target = resolveLeafTarget();
         final String badgeText;
         if (isNotNull(testNumber)) {
-            badgeText = "Test #" + testNumber;
+            badgeText = s("Test #", testNumber);
             lastBadgeText = badgeText;
         } else if (isNotNull(lastBadgeText)) {
             badgeText = lastBadgeText;
         } else {
-            badgeText = "Step #" + (capturedFrames.size() + 1);
+            badgeText = s("Step #", capturedFrames.size() + 1);
             lastBadgeText = badgeText;
         }
 
@@ -257,8 +259,8 @@ public final class TreeTracker {
         if (frameW > ProgressionFrames.MAX_DIMENSION
                 || frameH > ProgressionFrames.MAX_DIMENSION
                 || (long) frameW * frameH > renderCtx.maxPixels()) {
-            System.err.println("Skipped tree progression frame: Rendered tree frame would exceed the configured limit ("
-                    + frameW + "x" + frameH + ", max pixels " + renderCtx.maxPixels() + ")");
+            System.err.println(s("Skipped tree progression frame: Rendered tree frame would exceed the configured limit (",
+                    frameW, "x", frameH, ", max pixels ", renderCtx.maxPixels(), ")"));
             return;
         }
 
@@ -302,7 +304,7 @@ public final class TreeTracker {
                         frameH,
                         postCameraRenderCtx);
             } catch (final IllegalArgumentException e) {
-                System.err.println("Skipped tree progression frame: " + e.getMessage());
+                System.err.println(sn("Skipped tree progression frame: ", e.getMessage()));
                 return;
             }
             latestFrameSvg = svgContent;
@@ -312,14 +314,14 @@ public final class TreeTracker {
             try {
                 Files.writeString(frameFile.toPath(), svgContent, StandardCharsets.UTF_8);
             } catch (final IOException e) {
-                System.err.println("Failed to save progression SVG frame: " + e.getMessage());
+                System.err.println(sn("Failed to save progression SVG frame: ", e.getMessage()));
                 return;
             }
             if (sonifier.isPresent()) {
                 try {
                     sonifier.get().capture(frameFile, snapshotLayout, target, accessibleCtx);
                 } catch (final IOException e) {
-                    System.err.println("Failed tree sonification: " + e.getMessage());
+                    System.err.println(sn("Failed tree sonification: ", e.getMessage()));
                 }
             }
             final long duration = System.currentTimeMillis() - t0;
@@ -619,7 +621,7 @@ public final class TreeTracker {
             final List<Runnable> encoderTasks = new ArrayList<>(3);
             if (gifEnabled) {
                 encoderTasks.add(() -> {
-                    final File gifFile = new File(runDir, prefix + ".tree.progression.gif");
+                    final File gifFile = new File(runDir, s(prefix, ".tree.progression.gif"));
                     try {
                         ScenarioTracker.writeAnimatedGifFiles(
                                 rasterizedFrames,
@@ -629,7 +631,7 @@ public final class TreeTracker {
                                 maxFramePixels,
                                 percentage -> progress.update(gifTask, 10 + (percentage * 45 / 100)));
                         progress.complete(gifTask);
-                        log("Tree progression GIF generated: " + gifFile.getAbsolutePath());
+                        log(s("Tree progression GIF generated: ", gifFile.getAbsolutePath()));
                     } catch (final Exception e) {
                         progress.failed(gifTask, e);
                     }
@@ -640,7 +642,7 @@ public final class TreeTracker {
 
             if (webpEnabled) {
                 encoderTasks.add(() -> {
-                    final File webpFile = new File(runDir, prefix + ".tree.progression.webp");
+                    final File webpFile = new File(runDir, s(prefix, ".tree.progression.webp"));
                     try {
                         AnimatedWebP.write(
                                 rasterizedFrames,
@@ -650,7 +652,7 @@ public final class TreeTracker {
                                 maxFramePixels,
                                 percentage -> progress.update(webpTask, 10 + (percentage * 90 / 100)));
                         progress.complete(webpTask);
-                        log("Tree progression WebP generated: " + webpFile.getAbsolutePath());
+                        log(s("Tree progression WebP generated: ", webpFile.getAbsolutePath()));
                     } catch (final Exception e) {
                         progress.failed(webpTask, e);
                     }
@@ -661,13 +663,13 @@ public final class TreeTracker {
 
             if (mp4Enabled) {
                 encoderTasks.add(() -> {
-                    final File mp4File = new File(runDir, prefix + ".tree.progression.mp4");
+                    final File mp4File = new File(runDir, s(prefix, ".tree.progression.mp4"));
                     File audioFile = null;
                     try {
-                        logDebug("Generating tree progression MP4 from " + rasterizedFrames.size() + " frames...");
+                        logDebug(s("Generating tree progression MP4 from ", rasterizedFrames.size(), " frames..."));
                         final java.util.Optional<TreeSonifier> sonifier = TreeProgressionAudio.find(treeSonification);
                         if (sonifier.isPresent() && sonifier.get().canSonify(framesToProcess)) {
-                            log("Generating tree progression audio with '" + sonifier.get().mode() + "' sonifier...");
+                            log(s("Generating tree progression audio with '", sonifier.get().mode(), "' sonifier..."));
                             audioFile = File.createTempFile("tree-progression-audio-", ".wav", runDir);
                             sonifier.get().writeWav(framesToProcess, audioFile, FPS);
                         }
@@ -680,12 +682,12 @@ public final class TreeTracker {
                                 audioFile,
                                 percentage -> progress.update(mp4Task, percentage));
                         progress.complete(mp4Task);
-                        log("Tree progression MP4 generated: " + mp4File.getAbsolutePath());
+                        log(s("Tree progression MP4 generated: ", mp4File.getAbsolutePath()));
                     } catch (final Exception e) {
                         progress.failed(mp4Task, e);
                     } finally {
                         if (null != audioFile && !audioFile.delete()) {
-                            log("Unable to remove temporary tree progression audio: " + audioFile.getAbsolutePath());
+                            log(s("Unable to remove temporary tree progression audio: ", audioFile.getAbsolutePath()));
                         }
                     }
                 });
@@ -740,7 +742,7 @@ public final class TreeTracker {
             final TreeLayout layout,
             final int target,
             final int currentCycle) {
-        return renderTreeProgressionSvg(layout, target, "Test #" + currentCycle, Collections.emptySet(), getAccessibleScenarios());
+        return renderTreeProgressionSvg(layout, target, s("Test #", currentCycle), Collections.emptySet(), getAccessibleScenarios());
     }
 
     public static String renderTreeProgressionSvg(
@@ -748,7 +750,7 @@ public final class TreeTracker {
             final int target,
             final int currentCycle,
             final Set<String> recentNodeKeys) {
-        return renderTreeProgressionSvg(layout, target, "Test #" + currentCycle, recentNodeKeys);
+        return renderTreeProgressionSvg(layout, target, s("Test #", currentCycle), recentNodeKeys);
     }
 
     public static String renderTreeProgressionSvg(
@@ -796,7 +798,7 @@ public final class TreeTracker {
             final TreeLayout layout,
             final int target,
             final int currentCycle) {
-        return renderTreeProgression(layout, target, "Test #" + currentCycle, Collections.emptySet(), getAccessibleScenarios());
+        return renderTreeProgression(layout, target, s("Test #", currentCycle), Collections.emptySet(), getAccessibleScenarios());
     }
 
     public static BufferedImage renderTreeProgression(
@@ -804,7 +806,7 @@ public final class TreeTracker {
             final int target,
             final int currentCycle,
             final Set<String> recentNodeKeys) {
-        return renderTreeProgression(layout, target, "Test #" + currentCycle, recentNodeKeys);
+        return renderTreeProgression(layout, target, s("Test #", currentCycle), recentNodeKeys);
     }
 
     public static BufferedImage renderTreeProgression(
@@ -848,7 +850,7 @@ public final class TreeTracker {
         try {
             return ProgressionFrames.renderSvg(svgContent, ProgressionSettings.current().maxFramePixels());
         } catch (final IOException e) {
-            throw new IllegalStateException("Failed to rasterize tree progression SVG frame: " + e.getMessage(), e);
+            throw new IllegalStateException(sn("Failed to rasterize tree progression SVG frame: ", e.getMessage()), e);
         }
     }
 

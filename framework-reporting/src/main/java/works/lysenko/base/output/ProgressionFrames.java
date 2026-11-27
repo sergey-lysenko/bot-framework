@@ -40,6 +40,9 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.sn;
+
 public final class ProgressionFrames {
 
     private static final Pattern FRAME_NAME = Pattern.compile("frame_(\\d+)\\.(svg|png)");
@@ -90,11 +93,11 @@ public final class ProgressionFrames {
                     try {
                         postSave.run();
                     } catch (final Exception e) {
-                        System.err.println("Failed post-save hook: " + e.getMessage());
+                        System.err.println(sn("Failed post-save hook: ", e.getMessage()));
                     }
                 }
             } catch (final IOException e) {
-                System.err.println("Failed to save progression frame: " + e.getMessage());
+                System.err.println(sn("Failed to save progression frame: ", e.getMessage()));
             } finally {
                 WRITER_SEMAPHore.release();
             }
@@ -115,11 +118,11 @@ public final class ProgressionFrames {
                     try {
                         postSave.run();
                     } catch (final Exception e) {
-                        System.err.println("Failed post-save hook: " + e.getMessage());
+                        System.err.println(sn("Failed post-save hook: ", e.getMessage()));
                     }
                 }
             } catch (final IOException e) {
-                System.err.println("Failed to save progression SVG frame: " + e.getMessage());
+                System.err.println(sn("Failed to save progression SVG frame: ", e.getMessage()));
             } finally {
                 WRITER_SEMAPHore.release();
             }
@@ -137,7 +140,7 @@ public final class ProgressionFrames {
             try {
                 task.run();
             } catch (final Exception e) {
-                System.err.println("Failed async progression frame task: " + e.getMessage());
+                System.err.println(sn("Failed async progression frame task: ", e.getMessage()));
             } finally {
                 WRITER_SEMAPHore.release();
             }
@@ -315,9 +318,9 @@ public final class ProgressionFrames {
             return renderSvg(file, maxFramePixels, targetWidth, targetHeight);
         }
         try (ImageInputStream input = ImageIO.createImageInputStream(file)) {
-            if (null == input) throw new IOException("Unable to open progression frame: " + file);
+            if (null == input) throw new IOException(s("Unable to open progression frame: ", file));
             final Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
-            if (!readers.hasNext()) throw new IOException("No image reader for progression frame: " + file);
+            if (!readers.hasNext()) throw new IOException(s("No image reader for progression frame: ", file));
             final ImageReader reader = readers.next();
             try {
                 reader.setInput(input, true, true);
@@ -445,7 +448,7 @@ public final class ProgressionFrames {
             validateDimensions("inline.svg", svgWidth, svgHeight, maxFramePixels);
             return new SvgFrame(doc, size, svgWidth, svgHeight);
         } catch (final LinkageError e) {
-            throw new IOException("JSVG library is missing from classpath. Please reload Maven dependencies in your IDE: " + e.getMessage(), e);
+            throw new IOException(sn("JSVG library is missing from classpath. Please reload Maven dependencies in your IDE: ", e.getMessage()), e);
         }
     }
 
@@ -457,14 +460,14 @@ public final class ProgressionFrames {
         try (InputStream input = Files.newInputStream(file.toPath())) {
             final SVGLoader loader = new SVGLoader();
             final SVGDocument doc = loader.load(input, file.toURI(), LoaderContext.createDefault());
-            if (null == doc) throw new IOException("Unable to parse SVG file: " + file);
+            if (null == doc) throw new IOException(s("Unable to parse SVG file: ", file));
             final FloatSize size = doc.size();
             final int svgWidth = (int) Math.ceil(size.width);
             final int svgHeight = (int) Math.ceil(size.height);
             return new SvgFrame(doc, size, svgWidth, svgHeight)
                     .toBufferedImage(file.getName(), maxFramePixels, targetWidth, targetHeight);
         } catch (final LinkageError e) {
-            throw new IOException("JSVG library is missing from classpath. Please reload Maven dependencies in your IDE: " + e.getMessage(), e);
+            throw new IOException(sn("JSVG library is missing from classpath. Please reload Maven dependencies in your IDE: ", e.getMessage()), e);
         }
     }
 
@@ -473,20 +476,20 @@ public final class ProgressionFrames {
             try (InputStream input = Files.newInputStream(file.toPath())) {
                 final SVGLoader loader = new SVGLoader();
                 final SVGDocument doc = loader.load(input, file.toURI(), LoaderContext.createDefault());
-                if (null == doc) throw new IOException("Unable to parse SVG file: " + file);
+                if (null == doc) throw new IOException(s("Unable to parse SVG file: ", file));
                 final FloatSize size = doc.size();
                 final int width = (int) Math.ceil(size.width);
                 final int height = (int) Math.ceil(size.height);
                 validateDimensions(file, width, height, maxFramePixels);
                 return new int[]{width, height};
             } catch (final LinkageError e) {
-                throw new IOException("JSVG library is missing from classpath. Please reload Maven dependencies in your IDE: " + e.getMessage(), e);
+                throw new IOException(sn("JSVG library is missing from classpath. Please reload Maven dependencies in your IDE: ", e.getMessage()), e);
             }
         }
         try (ImageInputStream input = ImageIO.createImageInputStream(file)) {
-            if (null == input) throw new IOException("Unable to open progression frame: " + file);
+            if (null == input) throw new IOException(s("Unable to open progression frame: ", file));
             final Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
-            if (!readers.hasNext()) throw new IOException("No image reader for progression frame: " + file);
+            if (!readers.hasNext()) throw new IOException(s("No image reader for progression frame: ", file));
             final ImageReader reader = readers.next();
             try {
                 reader.setInput(input, true, true);
@@ -520,7 +523,7 @@ public final class ProgressionFrames {
         }
 
         if (!tmpDir.exists() && !tmpDir.mkdirs()) {
-            throw new IOException("Failed to create temporary raster directory: " + tmpDir);
+            throw new IOException(s("Failed to create temporary raster directory: ", tmpDir));
         }
 
         final int[] maxDims = maxDimensions(frames, maxFramePixels);
@@ -640,8 +643,8 @@ public final class ProgressionFrames {
         if (width <= 0 || height <= 0
                 || width > MAX_DIMENSION || height > MAX_DIMENSION
                 || (long) width * height > maxFramePixels(configuredMaxPixels)) {
-            throw new IOException("Progression frame exceeds configured dimensions/pixel limit: "
-                    + sourceName + " (" + width + "x" + height + ")");
+            throw new IOException(s("Progression frame exceeds configured dimensions/pixel limit: ",
+                    sourceName, " (", width, "x", height, ")"));
         }
     }
 }

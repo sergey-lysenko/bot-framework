@@ -9,6 +9,7 @@ import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 
+import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 
 /**
@@ -54,12 +55,12 @@ public final class GuiParameters {
             for (final File file : files) {
                 if (file.isDirectory()) {
                     if (!"parts".equalsIgnoreCase(file.getName())) {
-                        scanDirectoryFiles(file, prefix + file.getName() + "/", filter, entityList);
+                        scanDirectoryFiles(file, s(prefix, file.getName(), "/"), filter, entityList);
                     }
                 } else if (file.getName().endsWith(filter) && !file.getName().endsWith(".part")) {
                     final String rawName = file.getName();
                     final String entityName = rawName.contains(".") ? rawName.substring(0, rawName.lastIndexOf('.')) : rawName;
-                    final String fullEntity = prefix + entityName;
+                    final String fullEntity = s(prefix, entityName);
                     if (!entityList.contains(fullEntity)) {
                         entityList.add(fullEntity);
                     }

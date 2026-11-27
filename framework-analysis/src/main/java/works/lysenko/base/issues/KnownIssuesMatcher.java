@@ -11,6 +11,8 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import static works.lysenko.Base.*;
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.sn;
 import static works.lysenko.util.func.type.Objects.*;
 
 /**
@@ -52,7 +54,7 @@ public final class KnownIssuesMatcher {
     }
 
     private static Pattern getCompiledPattern(final String regex, final int flags) {
-        final String key = flags + ":" + regex;
+        final String key = s(flags, ":", regex);
         return PATTERN_CACHE.computeIfAbsent(key, _ -> Pattern.compile(regex, flags));
     }
 
@@ -126,15 +128,15 @@ public final class KnownIssuesMatcher {
         if (isNotNull(fqn) && !fqn.isBlank()) {
             final String lowerFqn = fqn.toLowerCase(Locale.ROOT);
             final String lowerTrimmed = trimmed.toLowerCase(Locale.ROOT);
-            if (lowerFqn.endsWith(DOT + lowerTrimmed)) {
+            if (lowerFqn.endsWith(s(DOT, lowerTrimmed))) {
                 return true;
             }
         }
         if (trimmed.contains(ASTERISK)) {
             final String regexBody = trimmed.replace(DOT, DOT_ESCAPED).replace(ASTERISK, DOT_STAR);
             final String regex = regexBody.startsWith(DOT_STAR)
-                    ? "(?i)^" + regexBody + "$"
-                    : "(?i)^(?:.+\\.)?" + regexBody + "$";
+                    ? s("(?i)^", regexBody, "$")
+                    : s("(?i)^(?:.+\\.)?", regexBody, "$");
             try {
                 final Pattern pattern = getCompiledPattern(regex, 0);
                 if (isNotNull(fqn) && pattern.matcher(fqn).matches()) return true;
@@ -191,7 +193,7 @@ public final class KnownIssuesMatcher {
                         match = true;
                     }
                 } catch (final PatternSyntaxException e) {
-                    log("Invalid known issue pattern: " + e.getMessage());
+                    log(sn("Invalid known issue pattern: ", e.getMessage()));
                 }
             }
         }
@@ -241,7 +243,7 @@ public final class KnownIssuesMatcher {
         final String text = logRecord.text();
         final String dataStr = (null != logRecord.data()) ? logRecord.data().toString() : EMPTY;
         final boolean hasData = !dataStr.isBlank();
-        final String fullText = hasData ? dataStr + " " + text : text;
+        final String fullText = hasData ? s(dataStr, " ", text) : text;
 
         // 1. Direct Regex match
         if (null != prepared.regex) {

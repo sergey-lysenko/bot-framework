@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static works.lysenko.Base.core;
+import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_MD_TEST_;
 
 public class SummaryGenerator {
@@ -32,12 +33,12 @@ public class SummaryGenerator {
         }
         
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(summaryFile, StandardCharsets.UTF_8))) {
-            writer.write("# Test Execution Log - Summary" + System.lineSeparator() + System.lineSeparator());
+            writer.write(s("# Test Execution Log - Summary", System.lineSeparator(), System.lineSeparator()));
             
             writer.write(String.format("> **Total Scenarios**: %d | **Mode**: %s%n%n", sorted.size(), (works.lysenko.util.prop.PropEnum._TEST_EXHAUSTIVE.get() != null && Boolean.TRUE.equals(works.lysenko.util.prop.PropEnum._TEST_EXHAUSTIVE.get())) ? "EXHAUSTIVE" : "DEFAULT"));
             
-            writer.write("| # | Scenario Path | Result | Executions |" + System.lineSeparator());
-            writer.write("| :--- | :--- | :--- | :--- |" + System.lineSeparator());
+            writer.write(s("| # | Scenario Path | Result | Executions |", System.lineSeparator()));
+            writer.write(s("| :--- | :--- | :--- | :--- |", System.lineSeparator()));
             
             int index = 1;
             for (final Map.Entry<_Scenario, _Result> entry : sorted.entrySet()) {
@@ -53,7 +54,7 @@ public class SummaryGenerator {
                         result.getExecutions()));
             }
             
-            writer.write(System.lineSeparator() + "### Run Statistics" + System.lineSeparator());
+            writer.write(s(System.lineSeparator(), "### Run Statistics", System.lineSeparator()));
             writer.write(String.format("* **Total Executed Scenarios:** %d%n", sorted.size()));
             
         } catch (final IOException _) {

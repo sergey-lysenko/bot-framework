@@ -9,6 +9,8 @@ import java.util.Locale;
 import static works.lysenko.Base.core;
 import static works.lysenko.Base.logEvent;
 import static works.lysenko.util.data.enums.Severity.S2;
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.sn;
 import static works.lysenko.util.spec.Layout.Files.name;
 import static works.lysenko.util.spec.Layout.Templates.RUN_LOG_HTML_;
 
@@ -36,7 +38,7 @@ public final class LogHtml {
                 }
             }
         } catch (final Exception e) {
-            logEvent(S2, "Failed to flush run log before report generation: " + e.getMessage());
+            logEvent(S2, sn("Failed to flush run log before report generation: ", e.getMessage()));
         }
     }
 
@@ -167,7 +169,7 @@ public final class LogHtml {
                 new ProcessBuilder("xdg-open", htmlFile.getAbsolutePath()).start();
             }
         } catch (final Exception e) {
-            logEvent(S2, "Unable to auto-open report in browser: " + e.getMessage());
+            logEvent(S2, sn("Unable to auto-open report in browser: ", e.getMessage()));
         }
     }
 
@@ -182,8 +184,8 @@ public final class LogHtml {
         } else if (args.length == 1) {
             final File logFile = new File(args[0]);
             final String outName = logFile.getAbsolutePath().endsWith(".log")
-                    ? logFile.getAbsolutePath() + ".html"
-                    : logFile.getAbsolutePath() + ".run.log.html";
+                    ? s(logFile.getAbsolutePath(), ".html")
+                    : s(logFile.getAbsolutePath(), ".run.log.html");
             generateReport(logFile, new File(outName));
         }
     }

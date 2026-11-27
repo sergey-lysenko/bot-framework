@@ -8,6 +8,7 @@ import works.lysenko.util.prop.PropEnum;
 import java.awt.Color;
 
 import static works.lysenko.Base.parameters;
+import static works.lysenko.util.data.strs.Swap.s;
 
 /**
  * Utility calculations for scenario tree progression metrics, progress colors,
@@ -74,17 +75,17 @@ public final class TreeProgressMetrics {
         final boolean isExhaustive = (null != parameters) ? parameters.isExhaustive() : (null != PropEnum._TEST_EXHAUSTIVE.get() && (Boolean) PropEnum._TEST_EXHAUSTIVE.get());
         final ScenarioType type = getScenarioType(node);
         if (ScenarioType.NODE == type || ScenarioType.CORE == type || !isExhaustive) {
-            return execs + ((1 == execs) ? " exec" : " execs");
+            return s(execs, (1 == execs) ? " exec" : " execs");
         }
 
         final int target = getTargetExecutions(node, leafTarget);
         if (execs > target && ScenarioType.LEAF == type) {
-            return execs + "/" + target + " +" + getOvershootPercent(execs, target) + "%";
+            return s(execs, "/", target, " +", getOvershootPercent(execs, target), "%");
         }
         if (execs >= target && 0 < execs) {
-            return "✓ " + execs + "/" + target;
+            return s("✓ ", execs, "/", target);
         }
-        return execs + "/" + target;
+        return s(execs, "/", target);
     }
 
     public static ScenarioType getScenarioType(final NodeData node) {

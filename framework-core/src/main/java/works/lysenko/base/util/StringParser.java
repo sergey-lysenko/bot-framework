@@ -114,7 +114,7 @@ public final class StringParser<T> implements _Result<T> {
         final double value = Double.parseDouble(numberPart.trim());
         final double total = value * multiplier;
         if (Double.isNaN(total) || Double.isInfinite(total) || total < 0 || total > Long.MAX_VALUE) {
-            throw new NumberFormatException("Out of range: " + text);
+            throw new NumberFormatException(s("Out of range: ", text));
         }
         return Math.round(total);
     }
@@ -127,7 +127,7 @@ public final class StringParser<T> implements _Result<T> {
     public static int parseSuffixedInt(final String text) throws NumberFormatException {
         final long val = parseSuffixedLong(text);
         if (val < Integer.MIN_VALUE || val > Integer.MAX_VALUE) {
-            throw new NumberFormatException("Integer overflow: " + text);
+            throw new NumberFormatException(s("Integer overflow: ", text));
         }
         return (int) val;
     }

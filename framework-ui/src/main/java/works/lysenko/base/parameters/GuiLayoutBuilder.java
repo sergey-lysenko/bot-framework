@@ -16,6 +16,7 @@ import java.awt.Insets;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 
 /**
@@ -58,7 +59,7 @@ public final class GuiLayoutBuilder {
 
         final String help = PropertyHelp.findHelp(label);
         if (isNotNull(help) && !help.isBlank()) {
-            final String toolTip = "<html><body style='width: 320px; padding: 2px;'>" + help + "</body></html>";
+            final String toolTip = s("<html><body style='width: 320px; padding: 2px;'>", help, "</body></html>");
             l.setToolTipText(toolTip);
             if (comp instanceof JComponent jComp) {
                 jComp.setToolTipText(toolTip);

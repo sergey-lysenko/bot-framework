@@ -1,65 +1,292 @@
 package works.lysenko.base.ui;
 
-import works.lysenko.base.issues.KnownIssue;
-import works.lysenko.base.issues.KnownIssuesStore;
-import works.lysenko.base.issues.KnownIssuesMatcher;
-import works.lysenko.util.prop.PropEnum;
+import org.apache.commons.lang3.StringUtils;
 import works.lysenko.base.parameters.PropertyValidator;
+import works.lysenko.util.apis.parameters._ConfigFileCategory;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import javax.swing.border.Border;
+import javax.swing.event.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
-import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.text.JTextComponent;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.IOException;
+import java.io.Serial;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
+import static works.lysenko.util.chrs.__.*;
+import static works.lysenko.util.chrs.___.*;
+import static works.lysenko.util.chrs.____.*;
+import static works.lysenko.util.chrs._____.VALUE;
+import static works.lysenko.util.data.enums.Brackets.ROUND;
+import static works.lysenko.util.data.strs.Bind.b;
+import static works.lysenko.util.data.strs.Case.c;
+import static works.lysenko.util.data.strs.Case.u;
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.sn;
+import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.func.type.Objects.isNotNull;
+import static works.lysenko.util.lang.word.A.ACTION;
+import static works.lysenko.util.lang.word.C.*;
+import static works.lysenko.util.lang.word.D.DELETE;
+import static works.lysenko.util.lang.word.D.DUPLICATE;
+import static works.lysenko.util.lang.word.D.DUPLICATED;
+import static works.lysenko.util.lang.word.E.EMPTY;
+import static works.lysenko.util.lang.word.F.FOUND;
+import static works.lysenko.util.lang.word.I.INCLUDE;
+import static works.lysenko.util.lang.word.I.INVALID;
+import static works.lysenko.util.lang.word.L.LOADING;
+import static works.lysenko.util.lang.word.M.MODIFIED;
+import static works.lysenko.util.lang.word.N.NOTICE;
+import static works.lysenko.util.lang.word.P.PARTIAL;
+import static works.lysenko.util.lang.word.P.PROPERTY;
+import static works.lysenko.util.lang.word.R.RELOAD;
+import static works.lysenko.util.lang.word.R.RESOURCES;
+import static works.lysenko.util.lang.word.S.*;
+import static works.lysenko.util.lang.word.T.TESTS;
+import static works.lysenko.util.lang.word.U.UNSAVED;
+import static works.lysenko.util.lang.word.U.UPDATED;
+import static works.lysenko.util.lang.word.V.VALIDATION;
+import static works.lysenko.util.lang.word.W.WEIGHT;
+import static works.lysenko.util.spec.Layout.Files.COMMON_CONFIGURATION;
 import static works.lysenko.util.spec.Layout.Parts.SUITE_PROPERTIES_EXTENSION;
+import static works.lysenko.util.spec.Layout.Parts.TEST_PROPERTIES_PARTS_EXTENSION;
+import static works.lysenko.util.spec.Layout.Parts._DOT_PROPERTIES;
 import static works.lysenko.util.spec.Layout.Paths._CONFIG_;
 import static works.lysenko.util.spec.Layout.Paths._SUITES_;
+import static works.lysenko.util.spec.Symbols.*;
 
 /**
  * Embedded Micro-IDE style panel for managing configuration files, parts, and test suites.
  * Integrates PropertyValidator for real-time validation, invalid key/value indications, inline editing,
  * and prompting the user to save changes upon losing focus or switching files.
  */
-public class ConfigTestsEditorPanel extends JPanel {
+public final class ConfigTestsEditorPanel extends JPanel {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     static {
         ControlPanel.initializeLookAndFeel();
     }
 
+    private static final int SIDEBAR_WIDTH = 360;
+    private static final double SPLIT_RESIZE_WEIGHT = 0.32;
+    private static final int SCOPE_COLUMN_MAX_WIDTH = 110;
+    private static final int COL_SCOPE = 0;
+    private static final int COL_KEY = 1;
+    private static final int COL_VALUE = 2;
+    private static final int TOOLBAR_HGAP = 6;
+    private static final int TOOLBAR_VGAP = 4;
+    private static final int HEADER_HGAP = 8;
+    private static final int HEADER_VGAP = 4;
+    private static final int FORM_VGAP = 8;
+    private static final int EDITOR_GAP = 6;
+    private static final int EDITOR_PADDING = 6;
+    private static final int BADGE_VPAD = 2;
+    private static final int BADGE_HPAD = 6;
+    private static final int WARNING_VPAD = 6;
+    private static final int WARNING_HPAD = 10;
+    private static final int INITIAL_CONTENT_CAPACITY = 256;
+    private static final int INITIAL_INVALID_LIST_CAPACITY = 8;
+
+    private static final Font FONT_SANS_12 = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+    private static final Font FONT_SANS_BOLD_10 = new Font(Font.SANS_SERIF, Font.BOLD, 10);
+    private static final Font FONT_SANS_BOLD_12 = new Font(Font.SANS_SERIF, Font.BOLD, 12);
+    private static final Font FONT_SANS_BOLD_13 = new Font(Font.SANS_SERIF, Font.BOLD, 13);
+    private static final Font FONT_MONO_12 = new Font(Font.MONOSPACED, Font.PLAIN, 12);
+
+    private static final Color COLOR_ERROR_BG = new Color(0xFE, 0xF2, 0xF2);
+    private static final Color COLOR_ERROR_ROW_BG = new Color(0xFF, 0xF1, 0xF1);
+    private static final Color COLOR_ERROR_FG = new Color(0x99, 0x1B, 0x1B);
+    private static final Color COLOR_ERROR_BORDER = new Color(0xF8, 0x71, 0x71);
+    private static final Color COLOR_AMBER_BG = new Color(0xFE, 0xF3, 0xC7);
+    private static final Color COLOR_AMBER_FG = new Color(0x92, 0x40, 0x0E);
+    private static final Color COLOR_BLUE_BG = new Color(0xDB, 0xEA, 0xFE);
+    private static final Color COLOR_BLUE_FG = new Color(0x1E, 0x40, 0xAF);
+    private static final Color COLOR_GREEN_BG = new Color(0xDC, 0xFC, 0xE7);
+    private static final Color COLOR_GREEN_FG = new Color(0x16, 0x65, 0x34);
+    private static final Color COLOR_INDIGO_BG = new Color(0xEE, 0xF2, 0xFF);
+    private static final Color COLOR_INDIGO_FG = new Color(0x37, 0x30, 0xA3);
+    private static final Border ERROR_LINE_BORDER = BorderFactory.createLineBorder(COLOR_ERROR_BORDER);
+
+    private static final Pattern INVALID_FILENAME_CHARS = Pattern.compile("[^a-zA-Z0-9_\\-]");
+
+    private static final String WORD_ERROR = works.lysenko.util.lang.word.E.ERROR;
+    private static final String WORD_PROPERTIES = works.lysenko.util.lang.word.P.PROPERTIES;
+    private static final String WORD_SAVING = "saving";
+    private static final String EMPTY_STRING = StringUtils.EMPTY;
+    private static final String ELLIPSIS = s(_DOT_, _DOT_, _DOT_);
+    private static final String COMMON_CONFIG_FILE = s(COMMON_CONFIGURATION, _DOT_PROPERTIES);
+    private static final String PROPERTY_HELP_FILE = "property-help.properties";
+    private static final String PARTS_DIR_NAME = s(PART, S);
+    private static final String CARD_FORM = u(FORM);
+    private static final String CARD_RAW = u(RAW);
+    private static final String SAVE_ACTION_KEY = b(UND_SCR, u(SAVE), u(FILE), u(ACTION));
+    private static final String PREFIX_DOT_INCLUDE = s(_DOT_, INCLUDE);
+    private static final String SUITES_PREFIX = s(SUITES, _SLASH_);
+    private static final String SUITES_PARTS_PREFIX = s(SUITES, _SLASH_, PARTS_DIR_NAME, _SLASH_);
+    private static final String CONFIG_SEGMENT = s(_SLASH_, CONFIG, _SLASH_);
+    private static final String CONFIG_SUFFIX = s(_SLASH_, CONFIG);
+
+    private static final String LABEL_NO_FILE_SELECTED = b(c(NO), FILE, SELECTED);
+    private static final String LABEL_RAW_TEXT_VIEW = b(c(RAW), c(TEXT), c(VIEW));
+    private static final String LABEL_SAVE_BUTTON = e(c(SAVE));
+    private static final String LABEL_NEW_FILE_BUTTON = s(_PLUS_, _SPACE_, b(c(NEW), c(FILE)), ELLIPSIS);
+    private static final String LABEL_DELETE_FILE_BUTTON = b(c(DELETE), c(FILE));
+    private static final String LABEL_REFRESH_BUTTON = "Refresh";
+    private static final String LABEL_MENU_RENAME = "Rename...";
+    private static final String LABEL_MENU_DUPLICATE = s(c(DUPLICATE), ELLIPSIS);
+    private static final String LABEL_PROJECT_EXPLORER = "Project Explorer";
+    private static final String TOOLTIP_NEW_FILE = "Create a new .suite or .part file";
+    private static final String TOOLTIP_DELETE_FILE = b(c(DELETE), SELECTED, FILE);
+    private static final String TOOLTIP_REFRESH = "Refresh file tree from disk";
+    private static final String TOOLTIP_SAVE_LEFT = "Save current file (Ctrl+S";
+    private static final String TOOLTIP_SAVE_RIGHT = "Cmd+S)";
+    private static final String TOOLTIP_SAVE_FILE = b(TOOLTIP_SAVE_LEFT, s(_SLASH_), TOOLTIP_SAVE_RIGHT);
+
+    private static final String COL_HEADER_SCOPE = "Scope";
+    private static final String COL_HEADER_KEY = b(c(KEY), s(_SLASH_), c(PROPERTY));
+    private static final String COL_HEADER_VALUE = b(c(VALUE), s(_SLASH_), c(WEIGHT));
+
+    private static final String BADGE_GLOBAL_CONFIG = "GLOBAL CONFIG";
+    private static final String BADGE_CONFIG_PART = b(u(CONFIG), u(PARTIAL));
+    private static final String BADGE_TEST_SUITE = b(u(TEST), u(SUITE));
+    private static final String BADGE_SUITE_PART = b(u(SUITE), u(PARTIAL));
+    private static final String BADGE_FILE = u(FILE);
+    private static final String SUFFIX_MODIFIED_BADGE = s(_SPACE_, e(ROUND, u(MODIFIED)));
+    private static final String SUFFIX_MODIFIED_STAR = s(_SPACE_, _ASTRS_);
+
+    private static final String SCOPE_INVALID = u(INVALID);
+    private static final String SCOPE_INCLUDE = u(INCLUDE);
+    private static final String SCOPE_CONFIG = u(CONFIG);
+    private static final String SCOPE_COMMENT = "COMMENT";
+    private static final String SCOPE_SCENARIO = u(SCENARIO);
+
+    private static final String ICON_WARNING = "⚠️ ";
+    private static final String ICON_GEAR = "⚙️ ";
+    private static final String ICON_PUZZLE = "🧩 ";
+    private static final String ICON_TEST_TUBE = "🧪 ";
+    private static final String ICON_FOLDER = "📁 ";
+
+    private static final String TITLE_ERROR = c(WORD_ERROR);
+    private static final String TITLE_FILE_ERROR = b(c(FILE), c(WORD_ERROR));
+    private static final String TITLE_SAVE_ERROR = b(c(SAVE), c(WORD_ERROR));
+    private static final String TITLE_FILE_SAVED = b(c(FILE), c(SAVED));
+    private static final String TITLE_VALIDATION_ERROR = b(c(VALIDATION), c(WORD_ERROR));
+    private static final String TITLE_VALIDATION_NOTICE = b(c(PROPERTY), c(VALIDATION), c(NOTICE));
+    private static final String TITLE_NEW_FILE = b(c(NEW), c(FILE));
+    private static final String TITLE_CONFIRM_DELETE = b(c(CONFIRM), c(DELETE));
+    private static final String TITLE_DELETED = "Deleted";
+    private static final String TITLE_PROTECTED_FILE = "Protected File";
+    private static final String TITLE_RENAME_FILE = "Rename File";
+    private static final String TITLE_RENAMED = "Renamed";
+    private static final String TITLE_DUPLICATE_FILE = b(c(DUPLICATE), c(FILE));
+    private static final String TITLE_DUPLICATED = c(DUPLICATED);
+
+    private static final String MSG_UNSAVED_PREFIX = "The file '";
+    private static final String MSG_UNSAVED_SUFFIX = "' has unsaved changes.";
+    private static final String MSG_UNSAVED_PROMPT = "Do you want to save them before proceeding?";
+    private static final String MSG_KEY_EMPTY = s(b(c(KEY), s(_SLASH_), c(PROPERTY), NAME, CANNOT, BE, EMPTY), _DOT_);
+    private static final String MSG_VALIDATION_PREFIX = "Validation notice for '";
+    private static final String MSG_VALIDATION_SAVE_PROMPT = "Save entry as invalid anyway?";
+    private static final String MSG_INVALID_PRESERVED = ". Invalid properties are preserved when saving.";
+    private static final String MSG_ERR_LOADING = s(b(c(WORD_ERROR), LOADING, FILE), _COLON_, _SPACE_);
+    private static final String MSG_ERR_SAVING = s(b(c(WORD_ERROR), WORD_SAVING, FILE), _COLON_, _SPACE_);
+    private static final String MSG_ERR_CREATING = s(b(c(WORD_ERROR), CREATING, FILE), _COLON_, _SPACE_);
+    private static final String MSG_ERR_DELETING = "Error deleting file: ";
+    private static final String MSG_ERR_RENAMING = "Error renaming file: ";
+    private static final String MSG_ERR_DUPLICATING = "Error duplicating file: ";
+    private static final String MSG_FILE_EXISTS = "File already exists: ";
+    private static final String MSG_INVALID_FILENAME = s(b(c(INVALID), FILE, NAME), _DOT_);
+    private static final String MSG_SELECT_FILE_TYPE = s(b(c(SELECT), FILE, TYPE), _COLON_);
+    private static final String MSG_ENTER_FILE_NAME = "Enter file name (without extension):";
+    private static final String MSG_ENTER_NEW_NAME = "Enter new file name (without extension):";
+    private static final String MSG_ENTER_DUPLICATE_NAME = "Enter name for duplicate file (without extension):";
+    private static final String MSG_CANNOT_DELETE_GLOBAL = "Cannot delete global system file: ";
+    private static final String MSG_CONFIRM_DELETE_PREFIX = "Are you sure you want to delete file ";
+    private static final String MSG_FILE_DELETED = "File deleted successfully.";
+    private static final String MSG_CANNOT_RENAME_COMMON = "Cannot rename the common configuration file.";
+    private static final String MSG_CANNOT_DUPLICATE_COMMON = "Cannot duplicate the common configuration file.";
+    private static final String MSG_FILE_RENAMED = "File renamed successfully to ";
+    private static final String MSG_FILE_DUPLICATED = s(b(c(FILE), DUPLICATED, SUCCESSFULLY, AS), _SPACE_);
+    private static final String SUFFIX_COPY = "_copy";
+
+    private static final String HEADER_GENERATED_LEFT = "# Generated";
+    private static final String HEADER_MICRO_IDE = "Micro-IDE";
+    private static final String GENERATED_FILE_HEADER = b(
+            HEADER_GENERATED_LEFT, s(_SLASH_), c(UPDATED), BY, c(CONFIG), s(_AMPRS_), c(TESTS), HEADER_MICRO_IDE
+    );
+
+    private static final String TYPE_TEST_SUITE = b(
+            c(TEST), c(SUITE), e(ROUND, b(s(_ASTRS_, SUITE_PROPERTIES_EXTENSION), IN, SUITES_PREFIX))
+    );
+    private static final String TYPE_SUITE_PART = b(
+            c(SUITE), c(PART), e(ROUND, b(s(_ASTRS_, TEST_PROPERTIES_PARTS_EXTENSION), IN, SUITES_PARTS_PREFIX))
+    );
+    private static final String TYPE_CONFIG_PART = b(
+            c(CONFIG), c(PART), e(ROUND, b(s(_ASTRS_, TEST_PROPERTIES_PARTS_EXTENSION), IN, s(CONFIG, _SLASH_, PARTS_DIR_NAME, _SLASH_)))
+    );
+
+    private static final Map<String, ScopeStyle> SCOPE_STYLES = Map.of(
+            SCOPE_INVALID, new ScopeStyle(s(ICON_WARNING, SCOPE_INVALID), COLOR_ERROR_BG, COLOR_ERROR_FG, true),
+            SCOPE_CONFIG, new ScopeStyle(SCOPE_CONFIG, COLOR_BLUE_BG, COLOR_BLUE_FG, false),
+            SCOPE_SCENARIO, new ScopeStyle(SCOPE_SCENARIO, COLOR_AMBER_BG, COLOR_AMBER_FG, false),
+            SCOPE_INCLUDE, new ScopeStyle(SCOPE_INCLUDE, COLOR_GREEN_BG, COLOR_GREEN_FG, false)
+    );
+
     /**
      * The FileCategory enum.
      */
-    public enum FileCategory implements works.lysenko.util.apis.parameters._ConfigFileCategory {
-        ROOT_DIR, CATEGORY_DIR, GLOBAL_CONFIG, CONFIG_PART, TEST_SUITE, SUITE_PART;
+    public enum FileCategory implements _ConfigFileCategory {
+        /** Root directory node in the explorer tree. */
+        ROOT_DIR,
+        /** Logical category folder node (e.g. config, suites, parts). */
+        CATEGORY_DIR,
+        /** Global configuration properties file. */
+        GLOBAL_CONFIG,
+        /** Reusable configuration partial file under config/parts. */
+        CONFIG_PART,
+        /** Executable test suite file under suites. */
+        TEST_SUITE,
+        /** Reusable suite partial file under suites/parts. */
+        SUITE_PART;
 
         @Override
         public boolean isConfigOnlyScope() {
-            return this == GLOBAL_CONFIG || this == CONFIG_PART;
+            return GLOBAL_CONFIG == this || CONFIG_PART == this;
         }
     }
 
     /**
      * The FileNodeObject record.
+     *
+     * @param displayName the file or folder display name shown in the explorer tree
+     * @param path        the filesystem path represented by this node
+     * @param category    the logical category of this node
+     * @param deletable   whether this file may be deleted from the UI
      */
     public record FileNodeObject(String displayName, Path path, FileCategory category, boolean deletable) {
         @Override
@@ -68,26 +295,19 @@ public class ConfigTestsEditorPanel extends JPanel {
         }
     }
 
-    private final JTree fileTree;
-    private final DefaultTreeModel treeModel;
-    private final DefaultMutableTreeNode treeRootNode;
+    private record BadgeStyle(String label, Color background, Color foreground) {
+    }
 
-    private final JLabel activeFileLabel = new JLabel("No file selected");
-    private final JLabel activeFileBadge = new JLabel();
+    private record ScopeStyle(String text, Color background, Color foreground, boolean bordered) {
+    }
 
-    private final DefaultTableModel tableModel;
-    private final PropertyTablePanel propertyTablePanel;
-    private final JLabel scopeWarningLabel = new JLabel();
+    private record SplitFileName(String baseName, String extension) {
+    }
 
-    private final JTextArea rawTextArea = new JTextArea();
-    private final CardLayout cardLayout = new CardLayout();
-    private final JPanel centerPanel = new JPanel(cardLayout);
-    private final JToggleButton toggleViewBtn = new JToggleButton("Raw Text View");
-
-    private FileNodeObject currentSelectedNode = null;
-    private String originalFileContent = "";
-    private boolean isUpdatingTree = false;
-    private boolean isUpdatingForm = false;
+    private final EditorState state = new EditorState();
+    private final TreeExplorerControls treeExplorer;
+    private final EditorHeaderControls headerControls;
+    private final EditorViews editorViews;
 
     /**
      * Constructs a new ConfigTestsEditorPanel.
@@ -95,268 +315,56 @@ public class ConfigTestsEditorPanel extends JPanel {
     public ConfigTestsEditorPanel() {
         setLayout(new BorderLayout(0, 0));
 
-        // ---------------------------------------------------------------------
-        // LEFT SIDEBAR: File Tree Explorer (Micro-IDE)
-        // ---------------------------------------------------------------------
-        treeRootNode = new DefaultMutableTreeNode("resources");
-        treeModel = new DefaultTreeModel(treeRootNode);
-        fileTree = new JTree(treeModel);
-        fileTree.setCellRenderer(new FileTreeCellRenderer());
-        fileTree.getSelectionModel().addTreeSelectionListener(e -> {
-            if (!isUpdatingTree) {
-                onTreeSelectionChanged();
-            }
-        });
+        editorViews = new EditorViews(
+                state::currentSelectedNode,
+                this::onCellValidationMessage,
+                this::onTableModelChanged,
+                this::saveCurrentFormEntry,
+                this::deleteSelectedEntry,
+                this::onRawTextChanged
+        );
+        headerControls = new EditorHeaderControls(
+                this::onReloadRequested,
+                this::onToggleView,
+                this::isSelectedFileSaved
+        );
+        final FileOperations fileOperations = new FileOperations(
+                editorViews.centerPanel(),
+                state,
+                this::refreshTreeFromDisk,
+                this::selectFileByName,
+                this::promptToSaveIfModified,
+                this::isSelectedFileSaved,
+                this::isModified
+        );
+        treeExplorer = TreeExplorerControls.create(
+                this::onTreeSelectionChanged,
+                fileOperations::createNewFile,
+                fileOperations::deleteSelectedFile,
+                this::onRefreshTreeRequested,
+                fileOperations::renameSelectedFile,
+                fileOperations::duplicateSelectedFile
+        );
 
-        final JPopupMenu treePopupMenu = new JPopupMenu();
-        final JMenuItem renameItem = new JMenuItem("Rename...");
-        final JMenuItem duplicateItem = new JMenuItem("Duplicate...");
-        final JMenuItem deleteItem = new JMenuItem("Delete");
+        final JPanel sidebarPanel = treeExplorer.buildSidebarPanel();
+        final JPanel editorAreaPanel = buildEditorAreaPanel();
 
-        renameItem.addActionListener(_ -> renameSelectedFile());
-        duplicateItem.addActionListener(_ -> duplicateSelectedFile());
-        deleteItem.addActionListener(_ -> deleteSelectedFile());
-
-        treePopupMenu.add(renameItem);
-        treePopupMenu.add(duplicateItem);
-        treePopupMenu.addSeparator();
-        treePopupMenu.add(deleteItem);
-
-        treePopupMenu.addPopupMenuListener(new PopupMenuListener() {
-            @Override
-            public void popupMenuWillBecomeVisible(final PopupMenuEvent e) {
-                final DefaultMutableTreeNode node = (DefaultMutableTreeNode) fileTree.getLastSelectedPathComponent();
-                boolean allow = false;
-                if (node != null && node.getUserObject() instanceof FileNodeObject fileObj) {
-                    if (fileObj.category() != FileCategory.CATEGORY_DIR && fileObj.category() != FileCategory.ROOT_DIR
-                            && !fileObj.displayName().equals("common.configuration.properties")) {
-                        allow = true;
-                    }
-                }
-                renameItem.setEnabled(allow);
-                duplicateItem.setEnabled(allow);
-                deleteItem.setEnabled(allow);
-            }
-
-            @Override public void popupMenuWillBecomeInvisible(final PopupMenuEvent e) {}
-            @Override public void popupMenuCanceled(final PopupMenuEvent e) {}
-        });
-
-        fileTree.setComponentPopupMenu(treePopupMenu);
-        fileTree.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(final MouseEvent e) {
-                maybeSelectOnRightClick(e);
-            }
-
-            @Override
-            public void mouseReleased(final MouseEvent e) {
-                maybeSelectOnRightClick(e);
-            }
-
-            private void maybeSelectOnRightClick(final MouseEvent e) {
-                if (e.isPopupTrigger()) {
-                    final TreePath path = fileTree.getClosestPathForLocation(e.getX(), e.getY());
-                    if (path != null) {
-                        fileTree.setSelectionPath(path);
-                    }
-                }
-            }
-        });
-
-        final JScrollPane treeScrollPane = new JScrollPane(fileTree);
-        treeScrollPane.setPreferredSize(new Dimension(360, 0));
-
-        // Sidebar Toolbar
-        final JPanel treeToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
-        final Font btnFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
-
-        final JButton newFileBtn = new JButton("+ New File...");
-        newFileBtn.setFont(btnFont);
-        newFileBtn.setToolTipText("Create a new .suite or .part file");
-        newFileBtn.addActionListener(_ -> createNewFile());
-
-        final JButton deleteFileBtn = new JButton("Delete File");
-        deleteFileBtn.setFont(btnFont);
-        deleteFileBtn.setToolTipText("Delete selected file");
-        deleteFileBtn.addActionListener(_ -> deleteSelectedFile());
-
-        final JButton refreshTreeBtn = new JButton("Refresh");
-        refreshTreeBtn.setFont(btnFont);
-        refreshTreeBtn.setToolTipText("Refresh file tree from disk");
-        refreshTreeBtn.addActionListener(_ -> {
-            if (promptToSaveIfModified()) {
-                refreshTreeFromDisk();
-            }
-        });
-
-        treeToolbar.add(newFileBtn);
-        treeToolbar.add(deleteFileBtn);
-        treeToolbar.add(refreshTreeBtn);
-
-        final JPanel sidebarPanel = new JPanel(new BorderLayout());
-        sidebarPanel.setBorder(BorderFactory.createTitledBorder("Project Explorer"));
-        sidebarPanel.setPreferredSize(new Dimension(360, 0));
-        sidebarPanel.add(treeToolbar, BorderLayout.NORTH);
-        sidebarPanel.add(treeScrollPane, BorderLayout.CENTER);
-
-        // ---------------------------------------------------------------------
-        // RIGHT SIDE: Editor Area
-        // ---------------------------------------------------------------------
-        // Top Active File Header
-        activeFileLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
-        activeFileBadge.setOpaque(true);
-        activeFileBadge.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 10));
-        activeFileBadge.setBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
-
-        final JPanel activeFileHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
-        activeFileHeader.add(activeFileBadge);
-        activeFileHeader.add(activeFileLabel);
-
-        // Action Toolbar
-        final JPanel editorToolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 4));
-        final JButton saveFileBtn = new JButton(" Save ");
-        saveFileBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
-        saveFileBtn.setToolTipText("Save current file (Ctrl+S / Cmd+S)");
-        saveFileBtn.addActionListener(_ -> saveSelectedFile());
-
-        final JButton reloadBtn = new JButton("Reload");
-        reloadBtn.addActionListener(_ -> {
-            if (promptToSaveIfModified()) {
-                loadSelectedFile();
-            }
-        });
-
-        toggleViewBtn.addActionListener(_ -> {
-            if (toggleViewBtn.isSelected()) {
-                syncTableToRawText();
-                cardLayout.show(centerPanel, "RAW");
-            } else {
-                syncRawTextToTable();
-                cardLayout.show(centerPanel, "FORM");
-            }
-        });
-
-        editorToolbar.add(reloadBtn);
-        editorToolbar.add(toggleViewBtn);
-        editorToolbar.add(saveFileBtn);
-
-        final JPanel topHeaderPanel = new JPanel(new BorderLayout());
-        topHeaderPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
-        topHeaderPanel.add(activeFileHeader, BorderLayout.WEST);
-        topHeaderPanel.add(editorToolbar, BorderLayout.EAST);
-
-        // --- Form View setup ---
-        final String[] columns = {"Scope", "Key / Property", "Value / Weight"};
-        tableModel = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(final int row, final int column) {
-                return column == 2;
-            }
-
-            @Override
-            public void setValueAt(final Object aValue, final int row, final int column) {
-                if (row >= 0 && row < getRowCount() && column >= 0 && column < getColumnCount()) {
-                    super.setValueAt(aValue, row, column);
-                }
-            }
-        };
-        propertyTablePanel = new PropertyTablePanel(tableModel, 1, 2, false, null);
-        propertyTablePanel.setSearchAndFiltersVisible(false);
-        propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);
-        
-        final JTable table = propertyTablePanel.getTable();
-        table.getColumnModel().getColumn(0).setMaxWidth(110);
-        table.getColumnModel().getColumn(0).setCellRenderer(new ScopeCellRenderer());
-        final PropertyCellRenderer propRenderer = new PropertyCellRenderer();
-        table.getColumnModel().getColumn(1).setCellRenderer(propRenderer);
-        table.getColumnModel().getColumn(2).setCellRenderer(propRenderer);
-
-        table.getColumnModel().getColumn(2).setCellEditor(new ValidatingCellEditor(1, msg -> {
-            if (msg != null) {
-                scopeWarningLabel.setText("\u26a0\ufe0f " + msg);
-                scopeWarningLabel.setVisible(true);
-            } else {
-                validateContainerScope();
-            }
-        }));
-
-        tableModel.addTableModelListener(e -> {
-            if (isUpdatingForm) return;
-            final int r = e.getFirstRow();
-            final int col = e.getColumn();
-            if (col == 1 || col == 2) {
-                if (r >= 0 && r < tableModel.getRowCount()) {
-                    isUpdatingForm = true;
-                    try {
-                        final String k = (String) tableModel.getValueAt(r, 1);
-                        final String v = (String) tableModel.getValueAt(r, 2);
-                        final FileCategory cat = isNotNull(currentSelectedNode) ? currentSelectedNode.category() : null;
-                        final String newScope = determineScope(k, v, cat);
-                        final String oldScope = (String) tableModel.getValueAt(r, 0);
-                        if (!newScope.equals(oldScope)) {
-                            tableModel.setValueAt(newScope, r, 0);
-                        }
-                        validateContainerScope();
-                    } finally {
-                        isUpdatingForm = false;
-                    }
-                }
-            }
-            if (isNotNull(currentSelectedNode)) {
-                updateActiveFileHeader(currentSelectedNode);
-            }
-        });
-
-        // Scope / Value warning banner
-        scopeWarningLabel.setOpaque(true);
-        scopeWarningLabel.setBackground(new Color(0xFE, 0xF2, 0xF2));
-        scopeWarningLabel.setForeground(new Color(0x99, 0x1B, 0x1B));
-        scopeWarningLabel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(0xF8, 0x71, 0x71)),
-                BorderFactory.createEmptyBorder(6, 10, 6, 10)
-        ));
-        scopeWarningLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
-        scopeWarningLabel.setVisible(false);
-
-        propertyTablePanel.setFormSaveAction(e -> saveCurrentFormEntry());
-        propertyTablePanel.setFormDeleteAction(e -> deleteSelectedEntry());
-
-        final JPanel formViewPanel = new JPanel(new BorderLayout(0, 8));
-        formViewPanel.add(scopeWarningLabel, BorderLayout.NORTH);
-        formViewPanel.add(propertyTablePanel, BorderLayout.CENTER);
-
-        // Attach context menu
-        ContextMenu.attach((JTextComponent) propertyTablePanel.getKeyField().getEditor().getEditorComponent(), propertyTablePanel.getValueField(), rawTextArea);
-
-        rawTextArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        rawTextArea.getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(final DocumentEvent e) { if (!isUpdatingForm && isNotNull(currentSelectedNode)) updateActiveFileHeader(currentSelectedNode); }
-            @Override public void removeUpdate(final DocumentEvent e) { if (!isUpdatingForm && isNotNull(currentSelectedNode)) updateActiveFileHeader(currentSelectedNode); }
-            @Override public void changedUpdate(final DocumentEvent e) { if (!isUpdatingForm && isNotNull(currentSelectedNode)) updateActiveFileHeader(currentSelectedNode); }
-        });
-        final JScrollPane rawScrollPane = new JScrollPane(rawTextArea);
-
-        centerPanel.add(formViewPanel, "FORM");
-        centerPanel.add(rawScrollPane, "RAW");
-
-        final JPanel editorAreaPanel = new JPanel(new BorderLayout(0, 6));
-        editorAreaPanel.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
-        editorAreaPanel.add(topHeaderPanel, BorderLayout.NORTH);
-        editorAreaPanel.add(centerPanel, BorderLayout.CENTER);
-
-        // --- Split Pane: Sidebar Tree + Editor Area ---
         final JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, sidebarPanel, editorAreaPanel);
-        splitPane.setDividerLocation(360);
-        splitPane.setResizeWeight(0.32);
-
+        splitPane.setDividerLocation(SIDEBAR_WIDTH);
+        splitPane.setResizeWeight(SPLIT_RESIZE_WEIGHT);
         add(splitPane, BorderLayout.CENTER);
 
-        // Setup Cmd+S / Ctrl+S Save Keyboard Shortcut
         setupSaveKeyboardShortcut();
-
         refreshTreeFromDisk();
-        selectDefaultFileNode();
+        treeExplorer.selectByFileName(COMMON_CONFIG_FILE);
+    }
+
+    private JPanel buildEditorAreaPanel() {
+        final JPanel editorAreaPanel = new JPanel(new BorderLayout(0, EDITOR_GAP));
+        editorAreaPanel.setBorder(BorderFactory.createEmptyBorder(EDITOR_PADDING, EDITOR_PADDING, EDITOR_PADDING, EDITOR_PADDING));
+        editorAreaPanel.add(headerControls.buildTopHeaderPanel(), BorderLayout.PAGE_START);
+        editorAreaPanel.add(editorViews.centerPanel(), BorderLayout.CENTER);
+        return editorAreaPanel;
     }
 
     /**
@@ -364,15 +372,17 @@ public class ConfigTestsEditorPanel extends JPanel {
      *
      * @return true if modified, false otherwise
      */
-    public boolean isModified() {
-        if (null == currentSelectedNode) return false;
-        final String currentContent;
-        if (rawTextArea.isShowing()) {
-            currentContent = rawTextArea.getText();
+    boolean isModified() {
+        final boolean modified;
+        if (null == state.currentSelectedNode()) {
+            modified = false;
         } else {
-            currentContent = generateFileContentFromTable();
+            final String currentContent = editorViews.isRawViewShowing()
+                    ? editorViews.getRawText()
+                    : editorViews.generateFileContent();
+            modified = !Objects.equals(state.originalFileContent(), currentContent);
         }
-        return !currentContent.equals(originalFileContent);
+        return modified;
     }
 
     /**
@@ -380,727 +390,1310 @@ public class ConfigTestsEditorPanel extends JPanel {
      *
      * @return true if navigation/switching should proceed (saved or discarded), false if action was cancelled
      */
-    public boolean promptToSaveIfModified() {
-        if (!isModified() || null == currentSelectedNode) {
-            return true;
-        }
-
-        final int result = JOptionPane.showConfirmDialog(
-                this,
-                "The file '" + currentSelectedNode.displayName() + "' has unsaved changes.\nDo you want to save them before proceeding?",
-                "Unsaved Changes in " + currentSelectedNode.displayName(),
-                JOptionPane.YES_NO_CANCEL_OPTION,
-                JOptionPane.WARNING_MESSAGE
-        );
-
-        if (result == JOptionPane.YES_OPTION) {
-            return saveSelectedFile();
-        } else if (result == JOptionPane.NO_OPTION) {
-            return true;
+    boolean promptToSaveIfModified() {
+        final boolean proceed;
+        final FileNodeObject currentNode = state.currentSelectedNode();
+        if (!isModified() || null == currentNode) {
+            proceed = true;
         } else {
-            return false;
+            final int result = JOptionPane.showConfirmDialog(
+                    this,
+                    s(MSG_UNSAVED_PREFIX, currentNode.displayName(), MSG_UNSAVED_SUFFIX, _LFD_, MSG_UNSAVED_PROMPT),
+                    s(b(c(UNSAVED), c(CHANGES), IN), _SPACE_, currentNode.displayName()),
+                    JOptionPane.YES_NO_CANCEL_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+            proceed = JOptionPane.YES_OPTION == result ? isSelectedFileSaved() : JOptionPane.NO_OPTION == result;
         }
+        return proceed;
+    }
+
+    /**
+     * Performs refresh tree from disk.
+     */
+    void refreshTreeFromDisk() {
+        state.setTreeSelectionEventsEnabled(false);
+        try {
+            treeExplorer.refreshFromDisk();
+        } finally {
+            state.setTreeSelectionEventsEnabled(true);
+        }
+    }
+
+    /**
+     * Performs get property table panel.
+     *
+     * @return the property table panel
+     */
+    PropertyTablePanel getPropertyTablePanel() {
+        return editorViews.propertyTablePanel();
+    }
+
+    private void selectFileByName(final String fileName) {
+        treeExplorer.selectByFileName(fileName);
     }
 
     private void setupSaveKeyboardShortcut() {
         final int mask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
         final KeyStroke saveKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_S, mask);
 
-        final InputMap inputMap = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        final InputMap inputMap = getInputMap(WHEN_IN_FOCUSED_WINDOW);
         final ActionMap actionMap = getActionMap();
 
-        inputMap.put(saveKeyStroke, "SAVE_FILE_ACTION");
-        actionMap.put("SAVE_FILE_ACTION", new AbstractAction() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                saveSelectedFile();
-            }
-        });
+        inputMap.put(saveKeyStroke, SAVE_ACTION_KEY);
+        actionMap.put(SAVE_ACTION_KEY, new SaveFileAction());
     }
 
-    /**
-     * Performs refresh tree from disk.
-     */
-    public void refreshTreeFromDisk() {
-        isUpdatingTree = true;
-        treeRootNode.removeAllChildren();
-
-        // 1. config/
-        final DefaultMutableTreeNode configFolder = new DefaultMutableTreeNode(
-                new FileNodeObject("config", Path.of(_CONFIG_), FileCategory.CATEGORY_DIR, false)
-        );
-
-        final Path commonConfigPath = Path.of(_CONFIG_, "common.configuration.properties");
-        if (Files.exists(commonConfigPath)) {
-            configFolder.add(new DefaultMutableTreeNode(
-                    new FileNodeObject("common.configuration.properties", commonConfigPath, FileCategory.GLOBAL_CONFIG, false)
-            ));
-        }
-
-        final Path propertyHelpPath = Path.of(_CONFIG_, "property-help.properties");
-        if (Files.exists(propertyHelpPath)) {
-            configFolder.add(new DefaultMutableTreeNode(
-                    new FileNodeObject("property-help.properties", propertyHelpPath, FileCategory.GLOBAL_CONFIG, false)
-            ));
-        }
-
-        // parts/ inside config/
-        final Path partsDir = Path.of(_CONFIG_, "parts");
-        if (Files.exists(partsDir) && Files.isDirectory(partsDir)) {
-            final DefaultMutableTreeNode partsFolder = new DefaultMutableTreeNode(
-                    new FileNodeObject("parts", partsDir, FileCategory.CATEGORY_DIR, false)
-            );
-            try (final var stream = Files.list(partsDir)) {
-                stream.filter(p -> p.toString().endsWith(".part"))
-                        .sorted()
-                        .forEach(p -> partsFolder.add(new DefaultMutableTreeNode(
-                                new FileNodeObject(p.getFileName().toString(), p, FileCategory.CONFIG_PART, true)
-                        )));
-            } catch (final Exception _) {}
-            configFolder.add(partsFolder);
-        }
-
-        treeRootNode.add(configFolder);
-
-        // 2. suites/
-        final Path suitesDir = Path.of(_SUITES_);
-        if (Files.exists(suitesDir) && Files.isDirectory(suitesDir)) {
-            final DefaultMutableTreeNode suitesFolder = new DefaultMutableTreeNode(
-                    new FileNodeObject("suites", suitesDir, FileCategory.CATEGORY_DIR, false)
-            );
-            try (final var stream = Files.list(suitesDir)) {
-                stream.filter(p -> p.toString().endsWith(SUITE_PROPERTIES_EXTENSION))
-                        .sorted()
-                        .forEach(p -> suitesFolder.add(new DefaultMutableTreeNode(
-                                new FileNodeObject(p.getFileName().toString(), p, FileCategory.TEST_SUITE, true)
-                        )));
-            } catch (final Exception _) {}
-
-            // parts/ inside suites/
-            final Path suitePartsDir = Path.of(_SUITES_, "parts");
-            if (Files.exists(suitePartsDir) && Files.isDirectory(suitePartsDir)) {
-                final DefaultMutableTreeNode suitePartsFolder = new DefaultMutableTreeNode(
-                        new FileNodeObject("parts", suitePartsDir, FileCategory.CATEGORY_DIR, false)
-                );
-                try (final var stream = Files.list(suitePartsDir)) {
-                    stream.filter(p -> p.toString().endsWith(".part") || p.toString().endsWith(SUITE_PROPERTIES_EXTENSION))
-                            .sorted()
-                            .forEach(p -> suitePartsFolder.add(new DefaultMutableTreeNode(
-                                    new FileNodeObject(p.getFileName().toString(), p, FileCategory.SUITE_PART, true)
-                            )));
-                } catch (final Exception _) {}
-                suitesFolder.add(suitePartsFolder);
-            }
-
-            treeRootNode.add(suitesFolder);
-        }
-
-        treeModel.reload();
-
-        // Expand all root nodes
-        for (int i = 0; i < fileTree.getRowCount(); i++) {
-            fileTree.expandRow(i);
-        }
-
-        isUpdatingTree = false;
-    }
-
-    private void selectDefaultFileNode() {
-        findAndSelectNodeByFileName("common.configuration.properties");
-    }
-
-    private void findAndSelectNodeByFileName(final String targetFileName) {
-        final DefaultMutableTreeNode root = (DefaultMutableTreeNode) treeModel.getRoot();
-        findNodeAndSelect(root, targetFileName);
-    }
-
-    private boolean findNodeAndSelect(final DefaultMutableTreeNode node, final String targetFileName) {
-        if (node.getUserObject() instanceof FileNodeObject obj) {
-            if (obj.displayName().equals(targetFileName)) {
-                final TreePath path = new TreePath(node.getPath());
-                fileTree.setSelectionPath(path);
-                fileTree.scrollPathToVisible(path);
-                return true;
-            }
-        }
-        for (int i = 0; i < node.getChildCount(); i++) {
-            if (findNodeAndSelect((DefaultMutableTreeNode) node.getChildAt(i), targetFileName)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Performs stop or cancel table editing.
-     */
-    public void stopOrCancelTableEditing() {
-        if (isNotNull(propertyTablePanel) && isNotNull(propertyTablePanel.getTable()) && propertyTablePanel.getTable().isEditing()) {
-            final TableCellEditor editor = propertyTablePanel.getTable().getCellEditor();
-            if (isNotNull(editor)) {
-                editor.stopCellEditing();
-                if (propertyTablePanel.getTable().isEditing()) {
-                    editor.cancelCellEditing();
-                }
-            }
+    private void onRefreshTreeRequested() {
+        if (promptToSaveIfModified()) {
+            refreshTreeFromDisk();
         }
     }
 
-    private void onTreeSelectionChanged() {
-        stopOrCancelTableEditing();
-        final DefaultMutableTreeNode node = (DefaultMutableTreeNode) fileTree.getLastSelectedPathComponent();
-        if (null == node) return;
-
-        final Object userObj = node.getUserObject();
-        if (userObj instanceof FileNodeObject fileObj) {
-            if (fileObj.category() == FileCategory.CATEGORY_DIR || fileObj.category() == FileCategory.ROOT_DIR) {
-                return;
-            }
-            if (isNotNull(currentSelectedNode) && currentSelectedNode.equals(fileObj)) {
-                return;
-            }
-            if (!promptToSaveIfModified()) {
-                isUpdatingTree = true;
-                try {
-                    if (isNotNull(currentSelectedNode)) {
-                        findAndSelectNodeByFileName(currentSelectedNode.displayName());
-                    }
-                } finally {
-                    isUpdatingTree = false;
-                }
-                return;
-            }
-            currentSelectedNode = fileObj;
-            updateActiveFileHeader(fileObj);
+    private void onReloadRequested() {
+        if (promptToSaveIfModified()) {
             loadSelectedFile();
         }
     }
 
-    private void updateActiveFileHeader(final FileNodeObject fileObj) {
-        if (null == fileObj) {
-            activeFileLabel.setText("No file selected");
-            activeFileBadge.setText("");
-            activeFileBadge.setVisible(false);
-            return;
+    private void onToggleView() {
+        if (headerControls.isRawViewSelected()) {
+            syncTableToRawText();
+            editorViews.showRawView();
+        } else {
+            syncRawTextToTable();
+            editorViews.showFormView();
         }
+    }
 
-        final boolean modified = isModified();
-        final String pathStr = fileObj.path().toString() + (modified ? " *" : "");
-        activeFileLabel.setText(pathStr);
+    private void onCellValidationMessage(final String message) {
+        if (null == message) {
+            editorViews.validateContainerScope(state.currentSelectedNode());
+        } else {
+            editorViews.showValidationWarning(s(ICON_WARNING, message));
+        }
+    }
 
-        final String baseBadge;
-        switch (fileObj.category()) {
-            case GLOBAL_CONFIG -> {
-                baseBadge = "GLOBAL CONFIG";
-                activeFileBadge.setBackground(modified ? new Color(0xFE, 0xF3, 0xC7) : new Color(0xDB, 0xEA, 0xFE));
-                activeFileBadge.setForeground(modified ? new Color(0x92, 0x40, 0x0E) : new Color(0x1E, 0x40, 0xAF));
+    private void onTableModelChanged(final TableModelEvent event) {
+        if (state.isFormEventsEnabled()) {
+            final int row = event.getFirstRow();
+            final int col = event.getColumn();
+            if (COL_KEY == col || COL_VALUE == col) {
+                recalculateRowScope(row);
             }
-            case CONFIG_PART -> {
-                baseBadge = "CONFIG PARTIAL";
-                activeFileBadge.setBackground(modified ? new Color(0xFE, 0xF3, 0xC7) : new Color(0xDC, 0xFC, 0xE7));
-                activeFileBadge.setForeground(modified ? new Color(0x92, 0x40, 0x0E) : new Color(0x16, 0x65, 0x34));
-            }
-            case TEST_SUITE -> {
-                baseBadge = "TEST SUITE";
-                activeFileBadge.setBackground(new Color(0xFE, 0xF3, 0xC7));
-                activeFileBadge.setForeground(new Color(0x92, 0x40, 0x0E));
-            }
-            case SUITE_PART -> {
-                activeFileBadge.setText("SUITE PARTIAL");
-                activeFileBadge.setBackground(modified ? new Color(0xFE, 0xF3, 0xC7) : new Color(0xEE, 0xF2, 0xFF));
-                activeFileBadge.setForeground(modified ? new Color(0x92, 0x40, 0x0E) : new Color(0x37, 0x30, 0xA3));
-                baseBadge = "SUITE PARTIAL";
-            }
-            default -> {
-                baseBadge = "FILE";
-                activeFileBadge.setBackground(Color.LIGHT_GRAY);
-                activeFileBadge.setForeground(Color.BLACK);
+            updateHeaderForCurrentNode();
+        }
+    }
+
+    private void recalculateRowScope(final int row) {
+        final DefaultTableModel model = editorViews.tableModel();
+        if (0 <= row && row < model.getRowCount()) {
+            state.setFormEventsEnabled(false);
+            try {
+                final String key = (String) model.getValueAt(row, COL_KEY);
+                final String val = (String) model.getValueAt(row, COL_VALUE);
+                final FileNodeObject currentNode = state.currentSelectedNode();
+                final _ConfigFileCategory cat = isNotNull(currentNode) ? currentNode.category() : null;
+                final String newScope = EditorViews.determineScope(key, val, cat);
+                final String oldScope = (String) model.getValueAt(row, COL_SCOPE);
+                if (!Objects.equals(newScope, oldScope)) {
+                    model.setValueAt(newScope, row, COL_SCOPE);
+                }
+                editorViews.validateContainerScope(currentNode);
+            } finally {
+                state.setFormEventsEnabled(true);
             }
         }
-        activeFileBadge.setText(modified ? baseBadge + " (MODIFIED)" : baseBadge);
-        activeFileBadge.setVisible(true);
+    }
+
+    private void onRawTextChanged() {
+        if (state.isFormEventsEnabled()) {
+            updateHeaderForCurrentNode();
+        }
+    }
+
+    private void updateHeaderForCurrentNode() {
+        final FileNodeObject currentNode = state.currentSelectedNode();
+        if (isNotNull(currentNode)) {
+            headerControls.updateHeader(currentNode, isModified());
+        }
+    }
+
+    private void onTreeSelectionChanged() {
+        if (state.isTreeSelectionEventsEnabled()) {
+            editorViews.stopOrCancelTableEditing();
+            final FileNodeObject selected = treeExplorer.getSelectedFileNode();
+            if (isNotNull(selected) && isFileNodeCategory(selected.category())
+                    && !Objects.equals(state.currentSelectedNode(), selected)) {
+                switchToFileNode(selected);
+            }
+        }
+    }
+
+    private void switchToFileNode(final FileNodeObject targetNode) {
+        if (promptToSaveIfModified()) {
+            state.setCurrentSelectedNode(targetNode);
+            headerControls.updateHeader(targetNode, isModified());
+            loadSelectedFile();
+        } else {
+            restoreTreeSelectionToCurrentNode();
+        }
+    }
+
+    private void restoreTreeSelectionToCurrentNode() {
+        state.setTreeSelectionEventsEnabled(false);
+        try {
+            final FileNodeObject currentNode = state.currentSelectedNode();
+            if (isNotNull(currentNode)) {
+                treeExplorer.selectByFileName(currentNode.displayName());
+            }
+        } finally {
+            state.setTreeSelectionEventsEnabled(true);
+        }
     }
 
     private void saveCurrentFormEntry() {
-        final String key = propertyTablePanel.getKeyField().getText().trim();
-        final String val = propertyTablePanel.getValueField().getText().trim();
+        final PropertyTablePanel panel = editorViews.propertyTablePanel();
+        final String key = panel.getKeyField().getText().strip();
+        final String val = panel.getValueField().getText().strip();
         if (key.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Key / Property name cannot be empty.", "Validation Error", JOptionPane.ERROR_MESSAGE);
-            return;
+            JOptionPane.showMessageDialog(this, MSG_KEY_EMPTY, TITLE_VALIDATION_ERROR, JOptionPane.ERROR_MESSAGE);
+        } else if (isFormEntryConfirmedForSave(key, val)) {
+            applyFormEntryToTable(key, val);
         }
+    }
 
-        final FileCategory category = isNotNull(currentSelectedNode) ? currentSelectedNode.category() : null;
+    private boolean isFormEntryConfirmedForSave(final String key, final String val) {
+        final FileNodeObject currentNode = state.currentSelectedNode();
+        final _ConfigFileCategory category = isNotNull(currentNode) ? currentNode.category() : null;
         final String valErr = PropertyValidator.validateProperty(key, val, category);
-        if (isNotNull(valErr)) {
+        final boolean confirmed;
+        if (null == valErr) {
+            confirmed = true;
+        } else {
             final int confirm = JOptionPane.showConfirmDialog(
                     this,
-                    "Validation notice for '" + key + "':\n" + valErr + "\n\nSave entry as invalid anyway?",
-                    "Property Validation Notice",
+                    s(MSG_VALIDATION_PREFIX, key, _QUOTE_, _COLON_, _LFD_, valErr, _LFD_, _LFD_, MSG_VALIDATION_SAVE_PROMPT),
+                    TITLE_VALIDATION_NOTICE,
                     JOptionPane.YES_NO_OPTION,
                     JOptionPane.WARNING_MESSAGE
             );
-            if (confirm != JOptionPane.YES_OPTION) {
-                return;
-            }
+            confirmed = JOptionPane.YES_OPTION == confirm;
         }
+        return confirmed;
+    }
 
-        final String scope = determineScope(key, val, category);
-        final JTable table = propertyTablePanel.getTable();
-        final int selectedViewRow = table.getSelectedRow();
+    private void applyFormEntryToTable(final String key, final String val) {
+        final FileNodeObject currentNode = state.currentSelectedNode();
+        final _ConfigFileCategory category = isNotNull(currentNode) ? currentNode.category() : null;
+        final String scope = EditorViews.determineScope(key, val, category);
 
-        isUpdatingForm = true;
+        state.setFormEventsEnabled(false);
         try {
-            if (selectedViewRow >= 0) {
-                final int modelRow = table.convertRowIndexToModel(selectedViewRow);
-                if (modelRow >= 0 && modelRow < tableModel.getRowCount()) {
-                    tableModel.setValueAt(scope, modelRow, 0);
-                    tableModel.setValueAt(key, modelRow, 1);
-                    tableModel.setValueAt(val, modelRow, 2);
-                }
-            } else {
-                final Object[] rowData = {scope, key, val};
-                tableModel.addRow(rowData);
-                final int modelRow = tableModel.getRowCount() - 1;
-                final int viewRow = table.convertRowIndexToView(modelRow);
-                if (viewRow >= 0) {
-                    table.setRowSelectionInterval(viewRow, viewRow);
-                }
-            }
+            editorViews.saveFormEntry(scope, key, val);
         } finally {
-            isUpdatingForm = false;
+            state.setFormEventsEnabled(true);
         }
 
-        validateContainerScope();
-        if (isNotNull(currentSelectedNode)) {
-            updateActiveFileHeader(currentSelectedNode);
-        }
+        editorViews.validateContainerScope(currentNode);
+        updateHeaderForCurrentNode();
     }
 
     private void deleteSelectedEntry() {
-        final JTable table = propertyTablePanel.getTable();
-        final int selectedRow = table.getSelectedRow();
-        if (selectedRow >= 0 && selectedRow < tableModel.getRowCount()) {
-            tableModel.removeRow(table.convertRowIndexToModel(selectedRow));
-            propertyTablePanel.clearForm();
-            validateContainerScope();
-            if (isNotNull(currentSelectedNode)) {
-                updateActiveFileHeader(currentSelectedNode);
-            }
+        if (editorViews.isSelectedRowDeleted()) {
+            editorViews.validateContainerScope(state.currentSelectedNode());
+            updateHeaderForCurrentNode();
         }
     }
 
-    private static String determineScope(final String key, final String val, final FileCategory category) {
-        if (null == key || key.isBlank()) return "INVALID";
-        final String err = PropertyValidator.validateProperty(key, val, category);
-        if (isNotNull(err)) {
-            return "INVALID";
-        }
-        if (key.startsWith(".include") || key.startsWith("include")) {
-            return "INCLUDE";
-        } else if (key.startsWith(".")) {
-            return "CONFIG";
-        } else if (key.startsWith("#")) {
-            return "COMMENT";
-        } else {
-            return "SCENARIO";
-        }
-    }
-
-    private void validateContainerScope() {
-        if (null == currentSelectedNode) return;
-
-        final FileCategory category = currentSelectedNode.category();
-        final List<String> invalidDetails = new ArrayList<>();
-
-        for (int i = 0; i < tableModel.getRowCount(); i++) {
-            final String k = (String) tableModel.getValueAt(i, 1);
-            final String v = (String) tableModel.getValueAt(i, 2);
-            final String err = PropertyValidator.validateProperty(k, v, category);
-            if (isNotNull(err)) {
-                invalidDetails.add("Row " + (i + 1) + " ('" + k + "'): " + err);
-            }
-        }
-
-        if (!invalidDetails.isEmpty()) {
-            final String countStr = invalidDetails.size() == 1 ? "1 invalid property" : invalidDetails.size() + " invalid properties";
-            scopeWarningLabel.setText("\u26a0\ufe0f " + countStr + " found in " + currentSelectedNode.displayName() +
-                    ": " + invalidDetails.getFirst() + ". Invalid properties are preserved when saving.");
-            scopeWarningLabel.setVisible(true);
-        } else {
-            scopeWarningLabel.setVisible(false);
-        }
-    }
-
-    /**
-     * Performs load selected file.
-     */
-    public void loadSelectedFile() {
-        if (null == currentSelectedNode) return;
-
-        stopOrCancelTableEditing();
-        updatePartsModeForCurrentNode();
-        isUpdatingForm = true;
-        try {
-            tableModel.setRowCount(0);
-            propertyTablePanel.clearForm();
-
-            if (Files.exists(currentSelectedNode.path())) {
-                final List<String> lines = Files.readAllLines(currentSelectedNode.path(), StandardCharsets.UTF_8);
-                rawTextArea.setText(String.join("\n", lines));
-
-                for (final String line : lines) {
-                    final String trimmed = line.trim();
-                    if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
-
-                    final int eqIdx = trimmed.indexOf('=');
-                    if (eqIdx > 0) {
-                        final String k = trimmed.substring(0, eqIdx).trim();
-                        final String v = trimmed.substring(eqIdx + 1).trim();
-                        final String scope = determineScope(k, v, currentSelectedNode.category());
-                        tableModel.addRow(new Object[]{scope, k, v});
-                    }
+    private void loadSelectedFile() {
+        final FileNodeObject currentNode = state.currentSelectedNode();
+        if (isNotNull(currentNode)) {
+            editorViews.stopOrCancelTableEditing();
+            editorViews.updatePartsMode(currentNode);
+            state.setFormEventsEnabled(false);
+            try {
+                editorViews.clearTableAndForm();
+                if (Files.exists(currentNode.path())) {
+                    final List<String> lines = Files.readAllLines(currentNode.path(), StandardCharsets.UTF_8);
+                    editorViews.setRawText(String.join(s(_LFD_), lines));
+                    editorViews.loadLinesIntoTable(lines, currentNode.category());
                 }
+            } catch (final IOException e) {
+                JOptionPane.showMessageDialog(this, sn(MSG_ERR_LOADING, e.getMessage()), TITLE_FILE_ERROR, JOptionPane.ERROR_MESSAGE);
+            } finally {
+                state.setFormEventsEnabled(true);
             }
-        } catch (final Exception e) {
-            JOptionPane.showMessageDialog(this, "Error loading file: " + e.getMessage(), "File Error", JOptionPane.ERROR_MESSAGE);
-        } finally {
-            isUpdatingForm = false;
-        }
 
-        originalFileContent = generateFileContentFromTable();
-        updateActiveFileHeader(currentSelectedNode);
-        validateContainerScope();
+            state.setOriginalFileContent(editorViews.generateFileContent());
+            headerControls.updateHeader(currentNode, isModified());
+            editorViews.validateContainerScope(currentNode);
+        }
     }
 
-    /**
-     * Saves the currently selected file.
-     *
-     * @return true if save succeeded, false otherwise
-     */
-    public boolean saveSelectedFile() {
-        if (null == currentSelectedNode) return false;
-
-        try {
-            if (rawTextArea.isShowing()) {
+    private boolean isSelectedFileSaved() {
+        boolean saved = false;
+        final FileNodeObject currentNode = state.currentSelectedNode();
+        if (isNotNull(currentNode)) {
+            if (editorViews.isRawViewShowing()) {
                 syncRawTextToTable();
             }
-
-            validateContainerScope();
-
-            final String content = generateFileContentFromTable();
-            Files.createDirectories(currentSelectedNode.path().getParent());
-            Files.writeString(currentSelectedNode.path(), content, StandardCharsets.UTF_8);
-            rawTextArea.setText(content);
-            originalFileContent = content;
-            updateActiveFileHeader(currentSelectedNode);
-
-            JOptionPane.showMessageDialog(this, "Saved " + currentSelectedNode.displayName() + " successfully.", "File Saved", JOptionPane.INFORMATION_MESSAGE);
-            return true;
-        } catch (final Exception e) {
-            JOptionPane.showMessageDialog(this, "Error saving file: " + e.getMessage(), "Save Error", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-    }
-
-    /**
-     * Performs save silently if modified.
-     */
-    public void saveSilentlyIfModified() {
-        if (null == currentSelectedNode || !isModified()) return;
-        try {
-            stopOrCancelTableEditing();
-            if (rawTextArea.isShowing()) {
-                syncRawTextToTable();
+            editorViews.validateContainerScope(currentNode);
+            final String content = editorViews.generateFileContent();
+            saved = isContentWrittenToFile(currentNode, content);
+            if (saved) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        s(c(SAVED), _SPACE_, currentNode.displayName(), _SPACE_, SUCCESSFULLY, _DOT_),
+                        TITLE_FILE_SAVED,
+                        JOptionPane.INFORMATION_MESSAGE
+                );
             }
-            final String content = generateFileContentFromTable();
-            Files.createDirectories(currentSelectedNode.path().getParent());
-            Files.writeString(currentSelectedNode.path(), content, StandardCharsets.UTF_8);
-            rawTextArea.setText(content);
-            originalFileContent = content;
-            updateActiveFileHeader(currentSelectedNode);
-        } catch (final Exception _) {
         }
+        return saved;
     }
 
-    private String generateFileContentFromTable() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("# Generated / Updated by Config & Tests Micro-IDE\n");
-        for (int i = 0; i < tableModel.getRowCount(); i++) {
-            final String k = (String) tableModel.getValueAt(i, 1);
-            final String v = (String) tableModel.getValueAt(i, 2);
-            sb.append(k).append("=").append(v).append("\n");
+    private boolean isContentWrittenToFile(final FileNodeObject currentNode, final String content) {
+        boolean written = false;
+        try {
+            final Path parent = currentNode.path().getParent();
+            if (isNotNull(parent)) {
+                Files.createDirectories(parent);
+            }
+            Files.writeString(currentNode.path(), content, StandardCharsets.UTF_8);
+            editorViews.setRawText(content);
+            state.setOriginalFileContent(content);
+            headerControls.updateHeader(currentNode, isModified());
+            written = true;
+        } catch (final IOException e) {
+            JOptionPane.showMessageDialog(this, sn(MSG_ERR_SAVING, e.getMessage()), TITLE_SAVE_ERROR, JOptionPane.ERROR_MESSAGE);
         }
-        return sb.toString();
+        return written;
     }
 
     private void syncTableToRawText() {
-        rawTextArea.setText(generateFileContentFromTable());
+        editorViews.setRawText(editorViews.generateFileContent());
     }
 
     private void syncRawTextToTable() {
-        stopOrCancelTableEditing();
-        isUpdatingForm = true;
+        editorViews.stopOrCancelTableEditing();
+        final FileNodeObject currentNode = state.currentSelectedNode();
+        state.setFormEventsEnabled(false);
         try {
+            final _ConfigFileCategory category = isNotNull(currentNode) ? currentNode.category() : null;
+            editorViews.loadRawTextIntoTable(category);
+        } finally {
+            state.setFormEventsEnabled(true);
+        }
+        editorViews.validateContainerScope(currentNode);
+    }
+
+    private static boolean isFileNodeCategory(final FileCategory category) {
+        return FileCategory.CATEGORY_DIR != category && FileCategory.ROOT_DIR != category;
+    }
+
+    private static final class EditorState {
+
+        private FileNodeObject currentSelectedNode = null;
+        private String originalFileContent = EMPTY_STRING;
+        private boolean treeSelectionEventsEnabled = true;
+        private boolean formEventsEnabled = true;
+
+        private FileNodeObject currentSelectedNode() {
+            return currentSelectedNode;
+        }
+
+        private void setCurrentSelectedNode(final FileNodeObject node) {
+            currentSelectedNode = node;
+        }
+
+        private String originalFileContent() {
+            return originalFileContent;
+        }
+
+        private void setOriginalFileContent(final String content) {
+            originalFileContent = content;
+        }
+
+        private boolean isTreeSelectionEventsEnabled() {
+            return treeSelectionEventsEnabled;
+        }
+
+        private void setTreeSelectionEventsEnabled(final boolean enabled) {
+            treeSelectionEventsEnabled = enabled;
+        }
+
+        private boolean isFormEventsEnabled() {
+            return formEventsEnabled;
+        }
+
+        private void setFormEventsEnabled(final boolean enabled) {
+            formEventsEnabled = enabled;
+        }
+    }
+
+    private record FileOperations(
+            Component parentComponent,
+            EditorState state,
+            Runnable onRefresh,
+            Consumer<? super String> onSelectFile,
+            BooleanSupplier onPromptSave,
+            BooleanSupplier onSave,
+            BooleanSupplier isModified
+    ) {
+
+        private void createNewFile() {
+            if (onPromptSave.getAsBoolean()) {
+                final String[] types = {TYPE_TEST_SUITE, TYPE_SUITE_PART, TYPE_CONFIG_PART};
+                final String selectedType = (String) JOptionPane.showInputDialog(
+                        parentComponent,
+                        MSG_SELECT_FILE_TYPE,
+                        TITLE_NEW_FILE,
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        types,
+                        types[0]
+                );
+                if (isNotNull(selectedType)) {
+                    promptAndCreateFileOfType(selectedType);
+                }
+            }
+        }
+
+        private void promptAndCreateFileOfType(final String selectedType) {
+            final String rawName = JOptionPane.showInputDialog(
+                    parentComponent, MSG_ENTER_FILE_NAME, TITLE_NEW_FILE, JOptionPane.PLAIN_MESSAGE
+            );
+            if (isNotNull(rawName) && !rawName.isBlank()) {
+                final String cleanName = sanitizeFileName(rawName);
+                final Path targetPath = resolveNewFilePath(selectedType, cleanName);
+                if (Files.exists(targetPath)) {
+                    JOptionPane.showMessageDialog(
+                            parentComponent, s(MSG_FILE_EXISTS, targetPath.getFileName()), TITLE_ERROR, JOptionPane.ERROR_MESSAGE
+                    );
+                } else {
+                    writeNewFileAndSelect(targetPath, cleanName);
+                }
+            }
+        }
+
+        private void writeNewFileAndSelect(final Path targetPath, final String cleanName) {
+            try {
+                final Path parent = targetPath.getParent();
+                if (isNotNull(parent)) {
+                    Files.createDirectories(parent);
+                }
+                Files.writeString(targetPath, s(_NUMBR_, _SPACE_, cleanName, _LFD_), StandardCharsets.UTF_8);
+                onRefresh.run();
+                onSelectFile.accept(targetPath.getFileName().toString());
+            } catch (final IOException e) {
+                JOptionPane.showMessageDialog(
+                        parentComponent, sn(MSG_ERR_CREATING, e.getMessage()), TITLE_ERROR, JOptionPane.ERROR_MESSAGE
+                );
+            }
+        }
+
+        private void deleteSelectedFile() {
+            final FileNodeObject currentNode = state.currentSelectedNode();
+            if (isNotNull(currentNode)) {
+                if (currentNode.deletable()) {
+                    confirmAndDeleteFile(currentNode);
+                } else {
+                    JOptionPane.showMessageDialog(
+                            parentComponent,
+                            s(MSG_CANNOT_DELETE_GLOBAL, currentNode.displayName()),
+                            TITLE_PROTECTED_FILE,
+                            JOptionPane.WARNING_MESSAGE
+                    );
+                }
+            }
+        }
+
+        private void confirmAndDeleteFile(final FileNodeObject currentNode) {
+            final int confirm = JOptionPane.showConfirmDialog(
+                    parentComponent,
+                    s(MSG_CONFIRM_DELETE_PREFIX, currentNode.displayName(), QUS_MRK),
+                    TITLE_CONFIRM_DELETE,
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+            if (JOptionPane.YES_OPTION == confirm) {
+                boolean deleted = false;
+                try {
+                    Files.deleteIfExists(currentNode.path());
+                    onRefresh.run();
+                    onSelectFile.accept(COMMON_CONFIG_FILE);
+                    deleted = true;
+                } catch (final IOException e) {
+                    JOptionPane.showMessageDialog(
+                            parentComponent, sn(MSG_ERR_DELETING, e.getMessage()), TITLE_ERROR, JOptionPane.ERROR_MESSAGE
+                    );
+                }
+                if (deleted) {
+                    JOptionPane.showMessageDialog(
+                            parentComponent, MSG_FILE_DELETED, TITLE_DELETED, JOptionPane.INFORMATION_MESSAGE
+                    );
+                }
+            }
+        }
+
+        private void renameSelectedFile() {
+            final FileNodeObject currentNode = state.currentSelectedNode();
+            if (isNotNull(currentNode)) {
+                if (isProtectedConfigFile(currentNode)) {
+                    JOptionPane.showMessageDialog(
+                            parentComponent, MSG_CANNOT_RENAME_COMMON, TITLE_PROTECTED_FILE, JOptionPane.WARNING_MESSAGE
+                    );
+                } else if (onPromptSave.getAsBoolean()) {
+                    executeRename(currentNode);
+                }
+            }
+        }
+
+        private void executeRename(final FileNodeObject currentNode) {
+            final SplitFileName parts = splitFileName(currentNode.displayName());
+            final Path newPath = promptForValidatedSiblingPath(
+                    currentNode.path(), parts.extension(), MSG_ENTER_NEW_NAME, TITLE_RENAME_FILE, parts.baseName()
+            );
+            if (isNotNull(newPath)) {
+                final String newFileName = newPath.getFileName().toString();
+                boolean renamed = false;
+                try {
+                    Files.move(currentNode.path(), newPath);
+                    onRefresh.run();
+                    onSelectFile.accept(newFileName);
+                    renamed = true;
+                } catch (final IOException e) {
+                    JOptionPane.showMessageDialog(
+                            parentComponent, sn(MSG_ERR_RENAMING, e.getMessage()), TITLE_ERROR, JOptionPane.ERROR_MESSAGE
+                    );
+                }
+                if (renamed) {
+                    JOptionPane.showMessageDialog(
+                            parentComponent, s(MSG_FILE_RENAMED, newFileName), TITLE_RENAMED, JOptionPane.INFORMATION_MESSAGE
+                    );
+                }
+            }
+        }
+
+        private void duplicateSelectedFile() {
+            final FileNodeObject currentNode = state.currentSelectedNode();
+            if (isNotNull(currentNode)) {
+                if (isProtectedConfigFile(currentNode)) {
+                    JOptionPane.showMessageDialog(
+                            parentComponent, MSG_CANNOT_DUPLICATE_COMMON, TITLE_PROTECTED_FILE, JOptionPane.WARNING_MESSAGE
+                    );
+                } else {
+                    if (isModified.getAsBoolean()) {
+                        onSave.getAsBoolean();
+                    }
+                    executeDuplicate(currentNode);
+                }
+            }
+        }
+
+        private void executeDuplicate(final FileNodeObject currentNode) {
+            final SplitFileName parts = splitFileName(currentNode.displayName());
+            final Path newPath = promptForValidatedSiblingPath(
+                    currentNode.path(),
+                    parts.extension(),
+                    MSG_ENTER_DUPLICATE_NAME,
+                    TITLE_DUPLICATE_FILE,
+                    s(parts.baseName(), SUFFIX_COPY)
+            );
+            if (isNotNull(newPath)) {
+                final String newFileName = newPath.getFileName().toString();
+                boolean duplicated = false;
+                try {
+                    Files.copy(currentNode.path(), newPath);
+                    onRefresh.run();
+                    onSelectFile.accept(newFileName);
+                    duplicated = true;
+                } catch (final IOException e) {
+                    JOptionPane.showMessageDialog(
+                            parentComponent, sn(MSG_ERR_DUPLICATING, e.getMessage()), TITLE_ERROR, JOptionPane.ERROR_MESSAGE
+                    );
+                }
+                if (duplicated) {
+                    JOptionPane.showMessageDialog(
+                            parentComponent, s(MSG_FILE_DUPLICATED, newFileName), TITLE_DUPLICATED, JOptionPane.INFORMATION_MESSAGE
+                    );
+                }
+            }
+        }
+
+        private Path promptForValidatedSiblingPath(final Path existingPath, final String extension,
+                                                   final String promptMessage, final String dialogTitle,
+                                                   final String initialBaseName) {
+            Path validatedPath = null;
+            final String rawName = (String) JOptionPane.showInputDialog(
+                    parentComponent, promptMessage, dialogTitle, JOptionPane.PLAIN_MESSAGE, null, null, initialBaseName
+            );
+            if (isNotNull(rawName) && !rawName.isBlank()) {
+                final String cleanName = sanitizeFileName(rawName);
+                if (cleanName.isBlank()) {
+                    JOptionPane.showMessageDialog(
+                            parentComponent, MSG_INVALID_FILENAME, TITLE_ERROR, JOptionPane.ERROR_MESSAGE
+                    );
+                } else {
+                    final String newFileName = s(cleanName, extension);
+                    final Path candidatePath = existingPath.resolveSibling(newFileName);
+                    if (Files.exists(candidatePath)) {
+                        JOptionPane.showMessageDialog(
+                                parentComponent, s(MSG_FILE_EXISTS, newFileName), TITLE_ERROR, JOptionPane.ERROR_MESSAGE
+                        );
+                    } else {
+                        validatedPath = candidatePath;
+                    }
+                }
+            }
+            return validatedPath;
+        }
+
+        private static Path resolveNewFilePath(final String selectedType, final String cleanName) {
+            final Path targetPath;
+            if (selectedType.contains(SUITES_PARTS_PREFIX)) {
+                targetPath = Path.of(_SUITES_, PARTS_DIR_NAME, s(cleanName, TEST_PROPERTIES_PARTS_EXTENSION));
+            } else if (selectedType.contains(SUITES_PREFIX)) {
+                targetPath = Path.of(_SUITES_, s(cleanName, SUITE_PROPERTIES_EXTENSION));
+            } else {
+                targetPath = Path.of(_CONFIG_, PARTS_DIR_NAME, s(cleanName, TEST_PROPERTIES_PARTS_EXTENSION));
+            }
+            return targetPath;
+        }
+
+        private static SplitFileName splitFileName(final String fileName) {
+            final int dotIdx = fileName.lastIndexOf(_DOT_);
+            final SplitFileName result;
+            if (0 <= dotIdx) {
+                result = new SplitFileName(fileName.substring(0, dotIdx), fileName.substring(dotIdx));
+            } else {
+                result = new SplitFileName(fileName, EMPTY_STRING);
+            }
+            return result;
+        }
+
+        private static String sanitizeFileName(final String rawName) {
+            return INVALID_FILENAME_CHARS.matcher(rawName.strip()).replaceAll(EMPTY_STRING);
+        }
+
+        private static boolean isProtectedConfigFile(final FileNodeObject fileObj) {
+            return Objects.equals(COMMON_CONFIG_FILE, fileObj.displayName());
+        }
+    }
+
+    private record TreeExplorerControls(
+            DefaultMutableTreeNode treeRootNode,
+            DefaultTreeModel treeModel,
+            JTree fileTree,
+            Runnable onNewFile,
+            Runnable onDeleteFile,
+            Runnable onRefresh
+    ) {
+
+        private static TreeExplorerControls create(final Runnable onSelectionChanged,
+                                                   final Runnable onNewFile,
+                                                   final Runnable onDeleteFile,
+                                                   final Runnable onRefresh,
+                                                   final Runnable onRename,
+                                                   final Runnable onDuplicate) {
+            final DefaultMutableTreeNode root = new DefaultMutableTreeNode(RESOURCES);
+            final DefaultTreeModel model = new DefaultTreeModel(root);
+            final JTree tree = new JTree(model);
+            tree.setCellRenderer(new FileTreeCellRenderer());
+            tree.getSelectionModel().addTreeSelectionListener(_ -> onSelectionChanged.run());
+            tree.setComponentPopupMenu(buildTreePopupMenu(tree, onRename, onDuplicate, onDeleteFile));
+            tree.addMouseListener(new TreeRightClickListener(tree));
+            return new TreeExplorerControls(root, model, tree, onNewFile, onDeleteFile, onRefresh);
+        }
+
+        private static JPopupMenu buildTreePopupMenu(final JTree tree,
+                                                     final Runnable onRename,
+                                                     final Runnable onDuplicate,
+                                                     final Runnable onDelete) {
+            final JPopupMenu popupMenu = new JPopupMenu();
+            final JMenuItem renameItem = new JMenuItem(LABEL_MENU_RENAME);
+            final JMenuItem duplicateItem = new JMenuItem(LABEL_MENU_DUPLICATE);
+            final JMenuItem deleteItem = new JMenuItem(c(DELETE));
+
+            renameItem.addActionListener(_ -> onRename.run());
+            duplicateItem.addActionListener(_ -> onDuplicate.run());
+            deleteItem.addActionListener(_ -> onDelete.run());
+
+            popupMenu.add(renameItem);
+            popupMenu.add(duplicateItem);
+            popupMenu.addSeparator();
+            popupMenu.add(deleteItem);
+            popupMenu.addPopupMenuListener(new TreePopupMenuListener(tree, renameItem, duplicateItem, deleteItem));
+            return popupMenu;
+        }
+
+        private JPanel buildSidebarPanel() {
+            final JScrollPane treeScrollPane = new JScrollPane(fileTree);
+            treeScrollPane.setPreferredSize(new Dimension(SIDEBAR_WIDTH, 0));
+
+            final JPanel sidebarPanel = new JPanel(new BorderLayout());
+            sidebarPanel.setBorder(BorderFactory.createTitledBorder(LABEL_PROJECT_EXPLORER));
+            sidebarPanel.setPreferredSize(new Dimension(SIDEBAR_WIDTH, 0));
+            sidebarPanel.add(buildTreeToolbar(), BorderLayout.PAGE_START);
+            sidebarPanel.add(treeScrollPane, BorderLayout.CENTER);
+            return sidebarPanel;
+        }
+
+        private JPanel buildTreeToolbar() {
+            final JPanel treeToolbar = new JPanel(new FlowLayout(FlowLayout.LEADING, TOOLBAR_HGAP, TOOLBAR_VGAP));
+            treeToolbar.add(createToolbarButton(LABEL_NEW_FILE_BUTTON, TOOLTIP_NEW_FILE, onNewFile));
+            treeToolbar.add(createToolbarButton(LABEL_DELETE_FILE_BUTTON, TOOLTIP_DELETE_FILE, onDeleteFile));
+            treeToolbar.add(createToolbarButton(LABEL_REFRESH_BUTTON, TOOLTIP_REFRESH, onRefresh));
+            return treeToolbar;
+        }
+
+        private static JButton createToolbarButton(final String text, final String tooltip, final Runnable action) {
+            final JButton button = new JButton(text);
+            button.setFont(FONT_SANS_12);
+            button.setToolTipText(tooltip);
+            button.addActionListener(_ -> action.run());
+            return button;
+        }
+
+        private FileNodeObject getSelectedFileNode() {
+            FileNodeObject result = null;
+            final DefaultMutableTreeNode node = (DefaultMutableTreeNode) fileTree.getLastSelectedPathComponent();
+            if (isNotNull(node) && node.getUserObject() instanceof final FileNodeObject fileObj) {
+                result = fileObj;
+            }
+            return result;
+        }
+
+        private void refreshFromDisk() {
+            treeRootNode.removeAllChildren();
+            treeRootNode.add(buildConfigFolderNode());
+
+            final Path suitesDir = Path.of(_SUITES_);
+            if (Files.isDirectory(suitesDir)) {
+                treeRootNode.add(buildSuitesFolderNode(suitesDir));
+            }
+
+            treeModel.reload();
+            for (int i = 0; i < fileTree.getRowCount(); i++) {
+                fileTree.expandRow(i);
+            }
+        }
+
+        private static DefaultMutableTreeNode buildConfigFolderNode() {
+            final DefaultMutableTreeNode configFolder = new DefaultMutableTreeNode(
+                    new FileNodeObject(CONFIG, Path.of(_CONFIG_), FileCategory.CATEGORY_DIR, false)
+            );
+            addGlobalConfigIfPresent(configFolder, COMMON_CONFIG_FILE);
+            addGlobalConfigIfPresent(configFolder, PROPERTY_HELP_FILE);
+
+            final Path partsDir = Path.of(_CONFIG_, PARTS_DIR_NAME);
+            if (Files.isDirectory(partsDir)) {
+                final DefaultMutableTreeNode partsFolder = new DefaultMutableTreeNode(
+                        new FileNodeObject(PARTS_DIR_NAME, partsDir, FileCategory.CATEGORY_DIR, false)
+                );
+                addMatchingFiles(partsDir, partsFolder, FileCategory.CONFIG_PART, TEST_PROPERTIES_PARTS_EXTENSION);
+                configFolder.add(partsFolder);
+            }
+            return configFolder;
+        }
+
+        private static void addGlobalConfigIfPresent(final DefaultMutableTreeNode parent, final String fileName) {
+            final Path path = Path.of(_CONFIG_, fileName);
+            if (Files.exists(path)) {
+                parent.add(new DefaultMutableTreeNode(
+                        new FileNodeObject(fileName, path, FileCategory.GLOBAL_CONFIG, false)
+                ));
+            }
+        }
+
+        private static DefaultMutableTreeNode buildSuitesFolderNode(final Path suitesDir) {
+            final DefaultMutableTreeNode suitesFolder = new DefaultMutableTreeNode(
+                    new FileNodeObject(SUITES, suitesDir, FileCategory.CATEGORY_DIR, false)
+            );
+            addMatchingFiles(suitesDir, suitesFolder, FileCategory.TEST_SUITE, SUITE_PROPERTIES_EXTENSION);
+
+            final Path suitePartsDir = Path.of(_SUITES_, PARTS_DIR_NAME);
+            if (Files.isDirectory(suitePartsDir)) {
+                final DefaultMutableTreeNode suitePartsFolder = new DefaultMutableTreeNode(
+                        new FileNodeObject(PARTS_DIR_NAME, suitePartsDir, FileCategory.CATEGORY_DIR, false)
+                );
+                addMatchingFiles(suitePartsDir, suitePartsFolder, FileCategory.SUITE_PART,
+                        TEST_PROPERTIES_PARTS_EXTENSION, SUITE_PROPERTIES_EXTENSION);
+                suitesFolder.add(suitePartsFolder);
+            }
+            return suitesFolder;
+        }
+
+        private static void addMatchingFiles(final Path dir, final DefaultMutableTreeNode folderNode,
+                                             final FileCategory category, final String... extensions) {
+            try (final Stream<Path> stream = Files.list(dir)) {
+                stream.filter(path -> hasAnyExtension(path, extensions))
+                        .sorted()
+                        .forEach(path -> folderNode.add(new DefaultMutableTreeNode(
+                                new FileNodeObject(path.getFileName().toString(), path, category, true)
+                        )));
+            } catch (final IOException _) {
+                // Directory listing failures leave folder empty
+            }
+        }
+
+        private static boolean hasAnyExtension(final Path path, final String... extensions) {
+            final String pathStr = path.toString();
+            return Stream.of(extensions).anyMatch(pathStr::endsWith);
+        }
+
+        private void selectByFileName(final String targetFileName) {
+            final DefaultMutableTreeNode root = (DefaultMutableTreeNode) treeModel.getRoot();
+            isNodeFoundAndSelected(root, targetFileName);
+        }
+
+        private boolean isNodeFoundAndSelected(final DefaultMutableTreeNode node, final String targetFileName) {
+            boolean found = false;
+            if (node.getUserObject() instanceof final FileNodeObject obj && Objects.equals(targetFileName, obj.displayName())) {
+                final TreePath path = new TreePath(node.getPath());
+                fileTree.setSelectionPath(path);
+                fileTree.scrollPathToVisible(path);
+                found = true;
+            } else {
+                for (int i = 0; i < node.getChildCount() && !found; i++) {
+                    found = isNodeFoundAndSelected((DefaultMutableTreeNode) node.getChildAt(i), targetFileName);
+                }
+            }
+            return found;
+        }
+    }
+
+    private static final class EditorHeaderControls {
+
+        private final JLabel activeFileLabel = new JLabel(LABEL_NO_FILE_SELECTED);
+        private final JLabel activeFileBadge = new JLabel();
+        private final JToggleButton toggleViewBtn = new JToggleButton(LABEL_RAW_TEXT_VIEW);
+        private final Runnable onReload;
+        private final Runnable onSave;
+
+        private EditorHeaderControls(final Runnable onReload, final Runnable onToggleView, final Runnable onSave) {
+            this.onReload = onReload;
+            this.onSave = onSave;
+            toggleViewBtn.addActionListener(_ -> onToggleView.run());
+        }
+
+        private JPanel buildTopHeaderPanel() {
+            activeFileLabel.setFont(FONT_SANS_BOLD_13);
+            activeFileBadge.setOpaque(true);
+            activeFileBadge.setFont(FONT_SANS_BOLD_10);
+            activeFileBadge.setBorder(BorderFactory.createEmptyBorder(BADGE_VPAD, BADGE_HPAD, BADGE_VPAD, BADGE_HPAD));
+
+            final JPanel activeFileHeader = new JPanel(new FlowLayout(FlowLayout.LEADING, HEADER_HGAP, HEADER_VGAP));
+            activeFileHeader.add(activeFileBadge);
+            activeFileHeader.add(activeFileLabel);
+
+            final JPanel topHeaderPanel = new JPanel(new BorderLayout());
+            topHeaderPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
+            topHeaderPanel.add(activeFileHeader, BorderLayout.LINE_START);
+            topHeaderPanel.add(buildEditorToolbar(), BorderLayout.LINE_END);
+            return topHeaderPanel;
+        }
+
+        private JPanel buildEditorToolbar() {
+            final JPanel editorToolbar = new JPanel(new FlowLayout(FlowLayout.TRAILING, TOOLBAR_HGAP, TOOLBAR_VGAP));
+
+            final JButton saveFileBtn = new JButton(LABEL_SAVE_BUTTON);
+            saveFileBtn.setFont(FONT_SANS_BOLD_12);
+            saveFileBtn.setToolTipText(TOOLTIP_SAVE_FILE);
+            saveFileBtn.addActionListener(_ -> onSave.run());
+
+            final JButton reloadBtn = new JButton(c(RELOAD));
+            reloadBtn.addActionListener(_ -> onReload.run());
+
+            editorToolbar.add(reloadBtn);
+            editorToolbar.add(toggleViewBtn);
+            editorToolbar.add(saveFileBtn);
+            return editorToolbar;
+        }
+
+        private boolean isRawViewSelected() {
+            return toggleViewBtn.isSelected();
+        }
+
+        private void updateHeader(final FileNodeObject fileObj, final boolean modified) {
+            if (null == fileObj) {
+                activeFileLabel.setText(LABEL_NO_FILE_SELECTED);
+                activeFileBadge.setText(EMPTY_STRING);
+                activeFileBadge.setVisible(false);
+            } else {
+                activeFileLabel.setText(s(fileObj.path().toString(), modified ? SUFFIX_MODIFIED_STAR : EMPTY_STRING));
+                final BadgeStyle style = resolveBadgeStyle(fileObj.category(), modified);
+                activeFileBadge.setBackground(style.background());
+                activeFileBadge.setForeground(style.foreground());
+                activeFileBadge.setText(modified ? s(style.label(), SUFFIX_MODIFIED_BADGE) : style.label());
+                activeFileBadge.setVisible(true);
+            }
+        }
+
+        private static BadgeStyle resolveBadgeStyle(final FileCategory category, final boolean modified) {
+            return switch (category) {
+                case GLOBAL_CONFIG -> new BadgeStyle(
+                        BADGE_GLOBAL_CONFIG,
+                        modified ? COLOR_AMBER_BG : COLOR_BLUE_BG,
+                        modified ? COLOR_AMBER_FG : COLOR_BLUE_FG
+                );
+                case CONFIG_PART -> new BadgeStyle(
+                        BADGE_CONFIG_PART,
+                        modified ? COLOR_AMBER_BG : COLOR_GREEN_BG,
+                        modified ? COLOR_AMBER_FG : COLOR_GREEN_FG
+                );
+                case TEST_SUITE -> new BadgeStyle(BADGE_TEST_SUITE, COLOR_AMBER_BG, COLOR_AMBER_FG);
+                case SUITE_PART -> new BadgeStyle(
+                        BADGE_SUITE_PART,
+                        modified ? COLOR_AMBER_BG : COLOR_INDIGO_BG,
+                        modified ? COLOR_AMBER_FG : COLOR_INDIGO_FG
+                );
+                case ROOT_DIR, CATEGORY_DIR -> new BadgeStyle(BADGE_FILE, Color.LIGHT_GRAY, Color.BLACK);
+            };
+        }
+    }
+
+    private static final class EditorViews {
+
+        private final CardLayout cardLayout = new CardLayout();
+        private final JPanel centerPanel = new JPanel(cardLayout);
+        private final JTextArea rawTextArea = new JTextArea();
+        private final JLabel scopeWarningLabel = new JLabel();
+        private final DefaultTableModel tableModel;
+        private final PropertyTablePanel propertyTablePanel;
+
+        private EditorViews(final Supplier<FileNodeObject> currentNodeSupplier,
+                            final Consumer<String> cellValidationConsumer,
+                            final TableModelListener tableModelListener,
+                            final Runnable onFormSave,
+                            final Runnable onFormDelete,
+                            final Runnable onRawTextChanged) {
+            final String[] columns = {COL_HEADER_SCOPE, COL_HEADER_KEY, COL_HEADER_VALUE};
+            tableModel = new PropertiesTableModel(columns);
+            propertyTablePanel = new PropertyTablePanel(tableModel, COL_KEY, COL_VALUE, false, null);
+            propertyTablePanel.setSearchAndFiltersVisible(false);
+            propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);
+            propertyTablePanel.setFormSaveAction(_ -> onFormSave.run());
+            propertyTablePanel.setFormDeleteAction(_ -> onFormDelete.run());
+
+            configureTable(currentNodeSupplier, new ValidatingCellEditor(COL_KEY, cellValidationConsumer));
+            tableModel.addTableModelListener(tableModelListener);
+            configureScopeWarningBanner();
+            configureRawTextArea(onRawTextChanged);
+
+            final JPanel formViewPanel = new JPanel(new BorderLayout(0, FORM_VGAP));
+            formViewPanel.add(scopeWarningLabel, BorderLayout.PAGE_START);
+            formViewPanel.add(propertyTablePanel, BorderLayout.CENTER);
+
+            ContextMenu.attach(
+                    (JTextComponent) propertyTablePanel.getKeyField().getEditor().getEditorComponent(),
+                    propertyTablePanel.getValueField(),
+                    rawTextArea
+            );
+
+            centerPanel.add(formViewPanel, CARD_FORM);
+            centerPanel.add(new JScrollPane(rawTextArea), CARD_RAW);
+        }
+
+        private void configureTable(final Supplier<FileNodeObject> currentNodeSupplier,
+                                    final TableCellEditor valueCellEditor) {
+            final JTable table = propertyTablePanel.getTable();
+            table.getColumnModel().getColumn(COL_SCOPE).setMaxWidth(SCOPE_COLUMN_MAX_WIDTH);
+            table.getColumnModel().getColumn(COL_SCOPE).setCellRenderer(new ScopeCellRenderer());
+            final TableCellRenderer propRenderer = new PropertyCellRenderer(tableModel, currentNodeSupplier);
+            table.getColumnModel().getColumn(COL_KEY).setCellRenderer(propRenderer);
+            table.getColumnModel().getColumn(COL_VALUE).setCellRenderer(propRenderer);
+            table.getColumnModel().getColumn(COL_VALUE).setCellEditor(valueCellEditor);
+        }
+
+        private void configureScopeWarningBanner() {
+            scopeWarningLabel.setOpaque(true);
+            scopeWarningLabel.setBackground(COLOR_ERROR_BG);
+            scopeWarningLabel.setForeground(COLOR_ERROR_FG);
+            scopeWarningLabel.setBorder(BorderFactory.createCompoundBorder(
+                    ERROR_LINE_BORDER,
+                    BorderFactory.createEmptyBorder(WARNING_VPAD, WARNING_HPAD, WARNING_VPAD, WARNING_HPAD)
+            ));
+            scopeWarningLabel.setFont(FONT_SANS_BOLD_12);
+            scopeWarningLabel.setVisible(false);
+        }
+
+        private void configureRawTextArea(final Runnable onRawTextChanged) {
+            rawTextArea.setFont(FONT_MONO_12);
+            rawTextArea.getDocument().addDocumentListener(new RawTextDocumentListener(onRawTextChanged));
+        }
+
+        private JPanel centerPanel() {
+            return centerPanel;
+        }
+
+        private DefaultTableModel tableModel() {
+            return tableModel;
+        }
+
+        private PropertyTablePanel propertyTablePanel() {
+            return propertyTablePanel;
+        }
+
+        private void showRawView() {
+            cardLayout.show(centerPanel, CARD_RAW);
+        }
+
+        private void showFormView() {
+            cardLayout.show(centerPanel, CARD_FORM);
+        }
+
+        private boolean isRawViewShowing() {
+            return rawTextArea.isShowing();
+        }
+
+        private String getRawText() {
+            return rawTextArea.getText();
+        }
+
+        private void setRawText(final String text) {
+            rawTextArea.setText(text);
+        }
+
+        private void showValidationWarning(final String text) {
+            scopeWarningLabel.setText(text);
+            scopeWarningLabel.setVisible(true);
+        }
+
+        private void clearTableAndForm() {
+            tableModel.setRowCount(0);
+            propertyTablePanel.clearForm();
+        }
+
+        private void stopOrCancelTableEditing() {
+            final JTable table = propertyTablePanel.getTable();
+            if (isNotNull(table) && table.isEditing()) {
+                final TableCellEditor editor = table.getCellEditor();
+                if (isNotNull(editor)) {
+                    editor.stopCellEditing();
+                    if (table.isEditing()) {
+                        editor.cancelCellEditing();
+                    }
+                }
+            }
+        }
+
+        private void saveFormEntry(final String scope, final String key, final String val) {
+            final JTable table = propertyTablePanel.getTable();
+            final int selectedViewRow = table.getSelectedRow();
+            if (0 <= selectedViewRow) {
+                final int modelRow = table.convertRowIndexToModel(selectedViewRow);
+                if (0 <= modelRow && modelRow < tableModel.getRowCount()) {
+                    tableModel.setValueAt(scope, modelRow, COL_SCOPE);
+                    tableModel.setValueAt(key, modelRow, COL_KEY);
+                    tableModel.setValueAt(val, modelRow, COL_VALUE);
+                }
+            } else {
+                addPropertyRow(scope, key, val);
+                final int modelRow = tableModel.getRowCount() - 1;
+                final int viewRow = table.convertRowIndexToView(modelRow);
+                if (0 <= viewRow) {
+                    table.setRowSelectionInterval(viewRow, viewRow);
+                }
+            }
+        }
+
+        private boolean isSelectedRowDeleted() {
+            boolean deleted = false;
+            final JTable table = propertyTablePanel.getTable();
+            final int selectedRow = table.getSelectedRow();
+            if (0 <= selectedRow && selectedRow < tableModel.getRowCount()) {
+                tableModel.removeRow(table.convertRowIndexToModel(selectedRow));
+                propertyTablePanel.clearForm();
+                deleted = true;
+            }
+            return deleted;
+        }
+
+        private void validateContainerScope(final FileNodeObject currentNode) {
+            if (isNotNull(currentNode)) {
+                final FileCategory category = currentNode.category();
+                final List<String> invalidDetails = new ArrayList<>(INITIAL_INVALID_LIST_CAPACITY);
+
+                for (int i = 0; i < tableModel.getRowCount(); i++) {
+                    final String key = (String) tableModel.getValueAt(i, COL_KEY);
+                    final String val = (String) tableModel.getValueAt(i, COL_VALUE);
+                    final String err = PropertyValidator.validateProperty(key, val, category);
+                    if (isNotNull(err)) {
+                        invalidDetails.add(s(c(ROW), _SPACE_, i + 1, _SPACE_, OPN_BRK, _QUOTE_, key, _QUOTE_, CLS_BRK, _COLON_, _SPACE_, err));
+                    }
+                }
+
+                if (invalidDetails.isEmpty()) {
+                    scopeWarningLabel.setVisible(false);
+                } else {
+                    final String countStr = 1 == invalidDetails.size()
+                            ? b(s(_1_), INVALID, PROPERTY)
+                            : s(invalidDetails.size(), _SPACE_, b(INVALID, WORD_PROPERTIES));
+                    scopeWarningLabel.setText(s(
+                            ICON_WARNING, countStr, _SPACE_, b(FOUND, IN), _SPACE_, currentNode.displayName(),
+                            _COLON_, _SPACE_, invalidDetails.getFirst(), MSG_INVALID_PRESERVED
+                    ));
+                    scopeWarningLabel.setVisible(true);
+                }
+            }
+        }
+
+        private String generateFileContent() {
+            final StringBuilder sb = new StringBuilder(INITIAL_CONTENT_CAPACITY);
+            sb.append(GENERATED_FILE_HEADER).append(_LFD_);
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                final String key = (String) tableModel.getValueAt(i, COL_KEY);
+                final String val = (String) tableModel.getValueAt(i, COL_VALUE);
+                sb.append(key).append(_EQUAL_).append(val).append(_LFD_);
+            }
+            return sb.toString();
+        }
+
+        private void loadRawTextIntoTable(final _ConfigFileCategory category) {
             tableModel.setRowCount(0);
             final String text = rawTextArea.getText();
             if (isNotNull(text)) {
-                final String[] lines = text.split("\n");
-                for (final String line : lines) {
-                    final String trimmed = line.trim();
-                    if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
+                loadLinesIntoTable(List.of(text.split(s(_LFD_))), category);
+            }
+        }
 
-                    final int eqIdx = trimmed.indexOf('=');
-                    if (eqIdx > 0) {
-                        final String k = trimmed.substring(0, eqIdx).trim();
-                        final String v = trimmed.substring(eqIdx + 1).trim();
-                        final String scope = determineScope(k, v, isNotNull(currentSelectedNode) ? currentSelectedNode.category() : null);
-                        tableModel.addRow(new Object[]{scope, k, v});
-                    }
+        private void loadLinesIntoTable(final Iterable<String> lines, final _ConfigFileCategory category) {
+            for (final String line : lines) {
+                parseAndAddLine(line, category);
+            }
+        }
+
+        private void parseAndAddLine(final String line, final _ConfigFileCategory category) {
+            final String trimmed = line.strip();
+            if (!trimmed.isEmpty() && _NUMBR_ != trimmed.charAt(0)) {
+                final int eqIdx = trimmed.indexOf(_EQUAL_);
+                if (0 < eqIdx) {
+                    final String key = trimmed.substring(0, eqIdx).strip();
+                    final String val = trimmed.substring(eqIdx + 1).strip();
+                    final String scope = determineScope(key, val, category);
+                    addPropertyRow(scope, key, val);
                 }
             }
-        } finally {
-            isUpdatingForm = false;
-        }
-        validateContainerScope();
-    }
-
-    private void createNewFile() {
-        if (!promptToSaveIfModified()) return;
-
-        final String[] types = {
-                "Test Suite (*.suite in suites/)",
-                "Suite Part (*.part in suites/parts/)",
-                "Config Part (*.part in config/parts/)"
-        };
-        final String selectedType = (String) JOptionPane.showInputDialog(
-                this,
-                "Select file type:",
-                "New File",
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                types,
-                types[0]
-        );
-
-        if (null == selectedType) return;
-
-        final String rawName = JOptionPane.showInputDialog(this, "Enter file name (without extension):", "New File", JOptionPane.PLAIN_MESSAGE);
-        if (null == rawName || rawName.isBlank()) return;
-
-        final String cleanName = rawName.trim().replaceAll("[^a-zA-Z0-9_\\-]", "");
-        final Path targetPath;
-        final String extension;
-        if (selectedType.contains("suites/parts/")) {
-            extension = ".part";
-            targetPath = Path.of(_SUITES_, "parts", cleanName + extension);
-        } else if (selectedType.contains("suites/")) {
-            extension = SUITE_PROPERTIES_EXTENSION;
-            targetPath = Path.of(_SUITES_, cleanName + extension);
-        } else {
-            extension = ".part";
-            targetPath = Path.of(_CONFIG_, "parts", cleanName + extension);
         }
 
-        if (Files.exists(targetPath)) {
-            JOptionPane.showMessageDialog(this, "File already exists: " + targetPath.getFileName(), "Error", JOptionPane.ERROR_MESSAGE);
-            return;
+        private void addPropertyRow(final String scope, final String key, final String val) {
+            tableModel.addRow(new Object[]{scope, key, val});
         }
 
-        try {
-            Files.createDirectories(targetPath.getParent());
-            Files.writeString(targetPath, "# " + cleanName + "\n", StandardCharsets.UTF_8);
-
-            refreshTreeFromDisk();
-            findAndSelectNodeByFileName(cleanName + extension);
-        } catch (final Exception e) {
-            JOptionPane.showMessageDialog(this, "Error creating file: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void deleteSelectedFile() {
-        if (null == currentSelectedNode) return;
-
-        if (!currentSelectedNode.deletable()) {
-            JOptionPane.showMessageDialog(this, "Cannot delete global system file: " + currentSelectedNode.displayName(), "Protected File", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        final int confirm = JOptionPane.showConfirmDialog(
-                this,
-                "Are you sure you want to delete file " + currentSelectedNode.displayName() + "?",
-                "Confirm Delete",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE
-        );
-
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                Files.deleteIfExists(currentSelectedNode.path());
-                refreshTreeFromDisk();
-                selectDefaultFileNode();
-                JOptionPane.showMessageDialog(this, "File deleted successfully.", "Deleted", JOptionPane.INFORMATION_MESSAGE);
-            } catch (final Exception e) {
-                JOptionPane.showMessageDialog(this, "Error deleting file: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        private void updatePartsMode(final FileNodeObject currentNode) {
+            final PropertyTablePanel.PartsMode mode;
+            if (null == currentNode) {
+                mode = PropertyTablePanel.PartsMode.CONFIG_ONLY;
+            } else {
+                mode = switch (currentNode.category()) {
+                    case GLOBAL_CONFIG, CONFIG_PART -> PropertyTablePanel.PartsMode.CONFIG_ONLY;
+                    case TEST_SUITE, SUITE_PART -> PropertyTablePanel.PartsMode.SUITES_ONLY;
+                    case ROOT_DIR, CATEGORY_DIR -> resolvePartsModeByPath(currentNode.path());
+                };
             }
+            propertyTablePanel.setPartsMode(mode);
+        }
+
+        private static PropertyTablePanel.PartsMode resolvePartsModeByPath(final Path path) {
+            final String pathStr = path.toString().replace(REW_SOL, _SLASH_);
+            final boolean isConfigPath = pathStr.contains(CONFIG_SEGMENT)
+                    || pathStr.endsWith(CONFIG_SUFFIX)
+                    || path.startsWith(Path.of(_CONFIG_));
+            return isConfigPath ? PropertyTablePanel.PartsMode.CONFIG_ONLY : PropertyTablePanel.PartsMode.SUITES_ONLY;
+        }
+
+        private static String determineScope(final String key, final String val, final _ConfigFileCategory category) {
+            final String result;
+            if (null == key || key.isBlank() || isNotNull(PropertyValidator.validateProperty(key, val, category))) {
+                result = SCOPE_INVALID;
+            } else if (key.startsWith(PREFIX_DOT_INCLUDE) || key.startsWith(INCLUDE)) {
+                result = SCOPE_INCLUDE;
+            } else {
+                result = classifyValidScope(key);
+            }
+            return result;
+        }
+
+        private static String classifyValidScope(final CharSequence key) {
+            final String result;
+            if (_DOT_ == key.charAt(0)) {
+                result = SCOPE_CONFIG;
+            } else if (_NUMBR_ == key.charAt(0)) {
+                result = SCOPE_COMMENT;
+            } else {
+                result = SCOPE_SCENARIO;
+            }
+            return result;
         }
     }
 
-    private void renameSelectedFile() {
-        if (null == currentSelectedNode) return;
-        if (currentSelectedNode.displayName().equals("common.configuration.properties")) {
-            JOptionPane.showMessageDialog(this, "Cannot rename the common configuration file.", "Protected File", JOptionPane.WARNING_MESSAGE);
-            return;
+    private static final class PropertiesTableModel extends DefaultTableModel {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        private PropertiesTableModel(final Object[] columnNames) {
+            super(columnNames, 0);
         }
 
-        if (!promptToSaveIfModified()) return;
-
-        final String oldName = currentSelectedNode.displayName();
-        final String baseName = oldName.contains(".") ? oldName.substring(0, oldName.lastIndexOf('.')) : oldName;
-        final String extension = oldName.contains(".") ? oldName.substring(oldName.lastIndexOf('.')) : "";
-
-        final String rawName = (String) JOptionPane.showInputDialog(
-                this,
-                "Enter new file name (without extension):",
-                "Rename File",
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                null,
-                baseName
-        );
-
-        if (null == rawName || rawName.isBlank()) return;
-
-        final String cleanName = rawName.trim().replaceAll("[^a-zA-Z0-9_\\-]", "");
-        if (cleanName.isBlank()) {
-            JOptionPane.showMessageDialog(this, "Invalid file name.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        final String newFileName = cleanName + extension;
-        final Path oldPath = currentSelectedNode.path();
-        final Path newPath = oldPath.resolveSibling(newFileName);
-
-        if (Files.exists(newPath)) {
-            JOptionPane.showMessageDialog(this, "File already exists: " + newFileName, "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        try {
-            Files.move(oldPath, newPath);
-            refreshTreeFromDisk();
-            findAndSelectNodeByFileName(newFileName);
-            JOptionPane.showMessageDialog(this, "File renamed successfully to " + newFileName, "Renamed", JOptionPane.INFORMATION_MESSAGE);
-        } catch (final Exception e) {
-            JOptionPane.showMessageDialog(this, "Error renaming file: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void duplicateSelectedFile() {
-        if (null == currentSelectedNode) return;
-        if (currentSelectedNode.displayName().equals("common.configuration.properties")) {
-            JOptionPane.showMessageDialog(this, "Cannot duplicate the common configuration file.", "Protected File", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        if (isModified()) {
-            saveSelectedFile();
-        }
-
-        final String oldName = currentSelectedNode.displayName();
-        final String baseName = oldName.contains(".") ? oldName.substring(0, oldName.lastIndexOf('.')) : oldName;
-        final String extension = oldName.contains(".") ? oldName.substring(oldName.lastIndexOf('.')) : "";
-
-        final String rawName = (String) JOptionPane.showInputDialog(
-                this,
-                "Enter name for duplicate file (without extension):",
-                "Duplicate File",
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                null,
-                baseName + "_copy"
-        );
-
-        if (null == rawName || rawName.isBlank()) return;
-
-        final String cleanName = rawName.trim().replaceAll("[^a-zA-Z0-9_\\-]", "");
-        if (cleanName.isBlank()) {
-            JOptionPane.showMessageDialog(this, "Invalid file name.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        final String newFileName = cleanName + extension;
-        final Path oldPath = currentSelectedNode.path();
-        final Path newPath = oldPath.resolveSibling(newFileName);
-
-        if (Files.exists(newPath)) {
-            JOptionPane.showMessageDialog(this, "File already exists: " + newFileName, "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        try {
-            Files.copy(oldPath, newPath);
-            refreshTreeFromDisk();
-            findAndSelectNodeByFileName(newFileName);
-            JOptionPane.showMessageDialog(this, "File duplicated successfully as " + newFileName, "Duplicated", JOptionPane.INFORMATION_MESSAGE);
-        } catch (final Exception e) {
-            JOptionPane.showMessageDialog(this, "Error duplicating file: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    // --- Cell Renderers ---
-
-    private static class FileTreeCellRenderer extends DefaultTreeCellRenderer {
         @Override
-        public Component getTreeCellRendererComponent(final JTree t, final Object val, final boolean sel,
-                                                      final boolean exp, final boolean leaf, final int r, final boolean foc) {
-            final JLabel label = (JLabel) super.getTreeCellRendererComponent(t, val, sel, exp, leaf, r, foc);
-            if (val instanceof DefaultMutableTreeNode node) {
-                final Object obj = node.getUserObject();
-                if (obj instanceof FileNodeObject fileObj) {
-                    label.setText(fileObj.displayName());
-                    switch (fileObj.category()) {
-                        case GLOBAL_CONFIG -> label.setText("\u2699\ufe0f " + fileObj.displayName());
-                        case CONFIG_PART, SUITE_PART -> label.setText("\ud83e\udde9 " + fileObj.displayName());
-                        case TEST_SUITE -> label.setText("\ud83e\uddea " + fileObj.displayName());
-                        case CATEGORY_DIR -> label.setText("\ud83d\udcc1 " + fileObj.displayName());
-                        default -> {}
-                    }
+        public boolean isCellEditable(final int row, final int column) {
+            return COL_VALUE == column;
+        }
+
+        @Override
+        public void setValueAt(final Object aValue, final int row, final int column) {
+            final boolean validRow = 0 <= row && row < getRowCount();
+            final boolean validColumn = 0 <= column && column < getColumnCount();
+            if (validRow && validColumn) {
+                super.setValueAt(aValue, row, column);
+            }
+        }
+    }
+
+    private record TreePopupMenuListener(
+            JTree fileTree,
+            JMenuItem renameItem,
+            JMenuItem duplicateItem,
+            JMenuItem deleteItem
+    ) implements PopupMenuListener {
+
+        @Override
+        public void popupMenuWillBecomeVisible(final PopupMenuEvent e) {
+            final DefaultMutableTreeNode node = (DefaultMutableTreeNode) fileTree.getLastSelectedPathComponent();
+            final boolean allow = isNotNull(node)
+                    && node.getUserObject() instanceof final FileNodeObject fileObj
+                    && isEditableFileNode(fileObj);
+            renameItem.setEnabled(allow);
+            duplicateItem.setEnabled(allow);
+            deleteItem.setEnabled(allow);
+        }
+
+        @Override
+        public void popupMenuWillBecomeInvisible(final PopupMenuEvent e) {
+            // No action required
+        }
+
+        @Override
+        public void popupMenuCanceled(final PopupMenuEvent e) {
+            // No action required
+        }
+
+        private static boolean isEditableFileNode(final FileNodeObject fileObj) {
+            return isFileNodeCategory(fileObj.category()) && !FileOperations.isProtectedConfigFile(fileObj);
+        }
+    }
+
+    private static final class TreeRightClickListener extends MouseAdapter {
+
+        private final JTree fileTree;
+
+        private TreeRightClickListener(final JTree fileTree) {
+            this.fileTree = fileTree;
+        }
+
+        @Override
+        public void mousePressed(final MouseEvent e) {
+            maybeSelectOnRightClick(e);
+        }
+
+        @Override
+        public void mouseReleased(final MouseEvent e) {
+            maybeSelectOnRightClick(e);
+        }
+
+        private void maybeSelectOnRightClick(final MouseEvent e) {
+            if (e.isPopupTrigger()) {
+                final TreePath path = fileTree.getClosestPathForLocation(e.getX(), e.getY());
+                if (null != path) {
+                    fileTree.setSelectionPath(path);
                 }
+            }
+        }
+    }
+
+    private record RawTextDocumentListener(Runnable onChanged) implements DocumentListener {
+
+        @Override
+        public void insertUpdate(final DocumentEvent e) {
+            onChanged.run();
+        }
+
+        @Override
+        public void removeUpdate(final DocumentEvent e) {
+            onChanged.run();
+        }
+
+        @Override
+        public void changedUpdate(final DocumentEvent e) {
+            onChanged.run();
+        }
+    }
+
+    private final class SaveFileAction extends AbstractAction {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+            isSelectedFileSaved();
+        }
+
+        @Override
+        public Object clone() throws CloneNotSupportedException {
+            throw new CloneNotSupportedException(getClass().getName());
+        }
+    }
+
+    private static final class FileTreeCellRenderer extends DefaultTreeCellRenderer {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Component getTreeCellRendererComponent(final JTree tree, final Object value, final boolean sel,
+                                                      final boolean expanded, final boolean leaf, final int row,
+                                                      final boolean hasFocus) {
+            final JLabel label = (JLabel) super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+            if (value instanceof final DefaultMutableTreeNode node
+                    && node.getUserObject() instanceof final FileNodeObject fileObj) {
+                final String prefix = switch (fileObj.category()) {
+                    case GLOBAL_CONFIG -> ICON_GEAR;
+                    case CONFIG_PART, SUITE_PART -> ICON_PUZZLE;
+                    case TEST_SUITE -> ICON_TEST_TUBE;
+                    case CATEGORY_DIR -> ICON_FOLDER;
+                    case ROOT_DIR -> EMPTY_STRING;
+                };
+                label.setText(s(prefix, fileObj.displayName()));
             }
             return label;
         }
     }
 
-    private static class ScopeCellRenderer extends DefaultTableCellRenderer {
-        @Override
-        public Component getTableCellRendererComponent(final JTable t, final Object val, final boolean sel, final boolean foc, final int r, final int c) {
-            final JLabel label = (JLabel) super.getTableCellRendererComponent(t, val, sel, foc, r, c);
-            final String str = (String) val;
-            label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 10));
-            label.setHorizontalAlignment(CENTER);
+    private static final class ScopeCellRenderer extends DefaultTableCellRenderer {
 
-            if ("INVALID".equals(str)) {
-                label.setText("\u26a0\ufe0f INVALID");
-                label.setBackground(new Color(0xFE, 0xF2, 0xF2));
-                label.setForeground(new Color(0x99, 0x1B, 0x1B));
-                label.setBorder(BorderFactory.createLineBorder(new Color(0xF8, 0x71, 0x71)));
-            } else if ("CONFIG".equals(str)) {
-                label.setText("CONFIG");
-                label.setBackground(new Color(0xDB, 0xEA, 0xFE));
-                label.setForeground(new Color(0x1E, 0x40, 0xAF));
-                label.setBorder(null);
-            } else if ("SCENARIO".equals(str)) {
-                label.setText("SCENARIO");
-                label.setBackground(new Color(0xFE, 0xF3, 0xC7));
-                label.setForeground(new Color(0x92, 0x40, 0x0E));
-                label.setBorder(null);
-            } else if ("INCLUDE".equals(str)) {
-                label.setText("INCLUDE");
-                label.setBackground(new Color(0xDC, 0xFC, 0xE7));
-                label.setForeground(new Color(0x16, 0x65, 0x34));
-                label.setBorder(null);
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected,
+                                                       final boolean hasFocus, final int row, final int column) {
+            final JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            final String scope = (String) value;
+            label.setFont(FONT_SANS_BOLD_10);
+            label.setHorizontalAlignment(SwingConstants.CENTER);
+
+            final ScopeStyle style = null == scope ? null : SCOPE_STYLES.get(scope);
+            if (isNotNull(style)) {
+                label.setText(style.text());
+                label.setBackground(style.background());
+                label.setForeground(style.foreground());
+                label.setBorder(style.bordered() ? ERROR_LINE_BORDER : null);
             } else {
-                label.setText(str);
+                label.setText(scope);
                 label.setBackground(Color.LIGHT_GRAY);
                 label.setForeground(Color.BLACK);
                 label.setBorder(null);
@@ -1109,66 +1702,50 @@ public class ConfigTestsEditorPanel extends JPanel {
         }
     }
 
-    private class PropertyCellRenderer extends DefaultTableCellRenderer {
+    private static final class PropertyCellRenderer extends DefaultTableCellRenderer {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        private final DefaultTableModel tableModel;
+        private final Supplier<FileNodeObject> currentNodeSupplier;
+
+        private PropertyCellRenderer(final DefaultTableModel tableModel,
+                                     final Supplier<FileNodeObject> currentNodeSupplier) {
+            this.tableModel = tableModel;
+            this.currentNodeSupplier = currentNodeSupplier;
+        }
+
         @Override
-        public Component getTableCellRendererComponent(final JTable t, final Object val, final boolean sel,
-                                                      final boolean foc, final int r, final int c) {
-            final JLabel label = (JLabel) super.getTableCellRendererComponent(t, val, sel, foc, r, c);
-            final int modelRow = t.convertRowIndexToModel(r);
-            if (modelRow >= 0 && modelRow < tableModel.getRowCount()) {
-                final String key = (String) tableModel.getValueAt(modelRow, 1);
-                final String value = (String) tableModel.getValueAt(modelRow, 2);
-                final FileCategory cat = isNotNull(currentSelectedNode) ? currentSelectedNode.category() : null;
-
-                final String error = PropertyValidator.validateProperty(key, value, cat);
-
-                if (isNotNull(error)) {
-                    if (!sel) {
-                        label.setBackground(new Color(0xFF, 0xF1, 0xF1));
-                        label.setForeground(new Color(0x99, 0x1B, 0x1B));
-                    }
-                    label.setToolTipText("\u26a0\ufe0f " + error);
-                } else {
-                    if (!sel) {
-                        label.setBackground(t.getBackground());
-                        label.setForeground(t.getForeground());
-                    }
-                    label.setToolTipText(null);
-                }
+        public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected,
+                                                       final boolean hasFocus, final int row, final int column) {
+            final JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            final int modelRow = table.convertRowIndexToModel(row);
+            if (0 <= modelRow && modelRow < tableModel.getRowCount()) {
+                final String key = (String) tableModel.getValueAt(modelRow, COL_KEY);
+                final String val = (String) tableModel.getValueAt(modelRow, COL_VALUE);
+                final FileNodeObject currentNode = currentNodeSupplier.get();
+                final _ConfigFileCategory cat = isNotNull(currentNode) ? currentNode.category() : null;
+                final String error = PropertyValidator.validateProperty(key, val, cat);
+                applyValidationStyle(label, table, isSelected, error);
             }
             return label;
         }
-    }
 
-    /**
-     * Performs get property table panel.
-     * @return the get property table panel result
-     */
-    public PropertyTablePanel getPropertyTablePanel() {
-        return propertyTablePanel;
-    }
-
-    /**
-     * Performs update parts mode for current node.
-     */
-    public void updatePartsModeForCurrentNode() {
-        if (null == currentSelectedNode) {
-            propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);
-            return;
-        }
-
-        switch (currentSelectedNode.category()) {
-            case GLOBAL_CONFIG, CONFIG_PART ->
-                    propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);
-            case TEST_SUITE, SUITE_PART ->
-                    propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.SUITES_ONLY);
-            default -> {
-                final String pathStr = currentSelectedNode.path().toString().replace('\\', '/');
-                if (pathStr.contains("/config/") || pathStr.endsWith("/config") || currentSelectedNode.path().startsWith(Path.of(_CONFIG_))) {
-                    propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.CONFIG_ONLY);
-                } else {
-                    propertyTablePanel.setPartsMode(PropertyTablePanel.PartsMode.SUITES_ONLY);
+        private static void applyValidationStyle(final JLabel label, final JTable table,
+                                                 final boolean isSelected, final String error) {
+            if (isNotNull(error)) {
+                if (!isSelected) {
+                    label.setBackground(COLOR_ERROR_ROW_BG);
+                    label.setForeground(COLOR_ERROR_FG);
                 }
+                label.setToolTipText(s(ICON_WARNING, error));
+            } else {
+                if (!isSelected) {
+                    label.setBackground(table.getBackground());
+                    label.setForeground(table.getForeground());
+                }
+                label.setToolTipText(null);
             }
         }
     }

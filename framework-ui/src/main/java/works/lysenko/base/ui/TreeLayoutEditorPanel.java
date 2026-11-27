@@ -1,304 +1,271 @@
 package works.lysenko.base.ui;
 
 import works.lysenko.base.output.TreeHtml;
-import works.lysenko.base.output.TreeHtml.NodeData;
 import works.lysenko.base.ui.tree.ScenarioOffsetSourceCodec;
-import works.lysenko.base.ui.tree.ScenarioOffsetSourceCodec.Offsets;
 import works.lysenko.base.ui.tree.TreeLayoutAutoSolver;
-import works.lysenko.base.ui.tree.TreeLayoutAutoSolver.AspectPreset;
-import works.lysenko.base.ui.tree.TreeLayoutAutoSolver.SolveProgress;
-import works.lysenko.base.ui.tree.TreeLayoutAutoSolver.SolveResult;
 import works.lysenko.base.ui.tree.TreeLayoutEditorCanvas;
 import works.lysenko.base.ui.tree.TreeLayoutEditorModel;
-import works.lysenko.base.ui.tree.TreeLayoutEditorModel.OffsetChange;
-import works.lysenko.base.ui.tree.TreeLayoutEditorModel.Point2DGrid;
-import works.lysenko.base.ui.tree.TreeLayoutEditorModel.PreviewResult;
-import works.lysenko.base.ui.tree.TreeLayoutEditorModel.PreviewSettings;
-import works.lysenko.base.ui.tree.TreeLayoutEditorModel.ScenarioBlueprint;
+import works.lysenko.util.prop.tree.VisualOffset;
+import works.lysenko.util.prop.tree.VisualRowOffset;
 
-import javax.swing.AbstractAction;
-import javax.swing.BorderFactory;
-import javax.swing.ButtonGroup;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
-import javax.swing.JSpinner;
-import javax.swing.JSplitPane;
-import javax.swing.JTable;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.JToggleButton;
-import javax.swing.JTree;
-import javax.swing.KeyStroke;
-import javax.swing.ListSelectionModel;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingConstants;
-import javax.swing.SwingWorker;
+import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeCellRenderer;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Desktop;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
+import javax.swing.tree.*;
+import java.awt.*;
+import java.awt.event.*;
 import java.io.File;
+import java.io.IOException;
+import java.io.Serial;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Comparator;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static works.lysenko.util.chrs.__.*;
+import static works.lysenko.util.chrs.___.*;
+import static works.lysenko.util.chrs.____.*;
+import static works.lysenko.util.data.enums.Brackets.*;
+import static works.lysenko.util.data.strs.Bind.*;
+import static works.lysenko.util.data.strs.Bind.d;
+import static works.lysenko.util.data.strs.Case.*;
+import static works.lysenko.util.data.strs.Swap.*;
+import static works.lysenko.util.data.strs.Wrap.*;
+import static works.lysenko.util.func.type.Files.writeToFile;
+import static works.lysenko.util.lang.A.*;
+import static works.lysenko.util.lang.C.*;
+import static works.lysenko.util.lang.D.*;
+import static works.lysenko.util.lang.F.*;
+import static works.lysenko.util.lang.N.*;
+import static works.lysenko.util.lang.P.*;
+import static works.lysenko.util.lang.S.*;
+import static works.lysenko.util.lang.T.*;
+import static works.lysenko.util.lang.word.A.*;
+import static works.lysenko.util.lang.word.B.*;
+import static works.lysenko.util.lang.word.C.*;
+import static works.lysenko.util.lang.word.D.*;
+import static works.lysenko.util.lang.word.E.*;
+import static works.lysenko.util.lang.word.F.*;
+import static works.lysenko.util.lang.word.G.*;
+import static works.lysenko.util.lang.word.H.*;
+import static works.lysenko.util.lang.word.I.*;
+import static works.lysenko.util.lang.word.J.*;
+import static works.lysenko.util.lang.word.L.*;
+import static works.lysenko.util.lang.word.M.*;
+import static works.lysenko.util.lang.word.N.*;
+import static works.lysenko.util.lang.word.O.*;
+import static works.lysenko.util.lang.word.P.*;
+import static works.lysenko.util.lang.word.R.*;
+import static works.lysenko.util.lang.word.S.*;
+import static works.lysenko.util.lang.word.T.*;
+import static works.lysenko.util.lang.word.T.TREE;
+import static works.lysenko.util.lang.word.U.*;
+import static works.lysenko.util.lang.word.V.*;
+import static works.lysenko.util.prop.PropEnum.*;
+import static works.lysenko.util.prop.tree.Scenario.root;
+import static works.lysenko.util.spec.Symbols.*;
 
 /**
  * Interactive visual editor for scenario {@code @VisualOffset} and {@code @VisualRowOffset}
  * annotations, featuring a live pan/zoom tree canvas, a toggleable hierarchy/table navigator,
  * node inspector with spinners & keyboard nudging, undo/redo, and safe source saving.
  */
-public class TreeLayoutEditorPanel extends JPanel {
+public final class TreeLayoutEditorPanel extends JPanel {
 
-    private static final String CARD_TREE = "TREE";
-    private static final String CARD_TABLE = "TABLE";
+    private static final String AT_VISUAL_OFFSET = s(_AT_SGN, VisualOffset.class.getSimpleName());
+    private static final String AT_VISUAL_ROW_OFFSET = s(_AT_SGN, VisualRowOffset.class.getSimpleName());
+
+    private static final Color COLOR_BORDER = new Color(0xCC, 0xCC, 0xCC);
+    private static final Color COLOR_MUTED = new Color(0x64, 0x74, 0x8B);
+    private static final Color COLOR_DIRTY = new Color(0xB4, 0x53, 0x09);
+    private static final Color COLOR_SHIFTED = new Color(0x03, 0x69, 0xA1);
+    private static final Color COLOR_ERROR = new Color(0xDC, 0x26, 0x26);
+    private static final Color COLOR_STATUS = new Color(0x47, 0x55, 0x69);
+
+    private static final Font FONT_MONO_10 = new Font(Font.MONOSPACED, Font.PLAIN, 10);
+    private static final Font FONT_MONO_11 = new Font(Font.MONOSPACED, Font.PLAIN, 11);
+    private static final Font FONT_MONO_12 = new Font(Font.MONOSPACED, Font.PLAIN, 12);
+    private static final Font FONT_SANS_11 = new Font(Font.SANS_SERIF, Font.PLAIN, 11);
+    private static final Font FONT_SANS_ITALIC_10 = new Font(Font.SANS_SERIF, Font.ITALIC, 10);
+    private static final Font FONT_SANS_BOLD_13 = new Font(Font.SANS_SERIF, Font.BOLD, 13);
+
+    private static final int SPLIT_DIVIDER_LOCATION = 340;
+    private static final int MIN_SEP_SPINNER_WIDTH = 52;
+    private static final int MIN_SEP_SPINNER_HEIGHT = 24;
+    private static final int MIN_SEP_MAX = 10;
+    private static final int LEFT_PANE_MIN_WIDTH = 260;
+    private static final int LEFT_PANE_MIN_HEIGHT = 200;
+    private static final int SEPARATOR_HEIGHT = 22;
+    private static final int TREE_ROW_HEIGHT = 21;
+    private static final int TABLE_ROW_HEIGHT = 22;
+    private static final int COL_WIDTH_SCENARIO = 140;
+    private static final int COL_WIDTH_OFFSET = 54;
+    private static final int COL_WIDTH_CLASS = 160;
+    private static final int COL_SCENARIO = 0;
+    private static final int COL_OFFSET = 1;
+    private static final int COL_ROW_OFFSET = 2;
+    private static final int COL_CLASS = 3;
+    private static final int TABLE_COLUMN_COUNT = 4;
+    private static final int SPINNER_MAX_OFFSET = 99;
+    private static final int SPINNER_MIN_ROW_OFFSET = -99;
+    private static final int SEARCH_FIELD_COLUMNS = 12;
+    private static final int DIFF_AREA_MAX_ROWS = 14;
+    private static final int DIFF_AREA_COLS = 54;
+    private static final int INITIAL_MAP_CAPACITY = 64;
+    private static final int INITIAL_SB_CAPACITY = 64;
+    private static final int INITIAL_DIFF_CAPACITY = 256;
+    private static final double ROW_DELTA_EPSILON = 0.05;
 
     private enum FilterMode {
         ALL, BRANCHES, SHIFTED, MODIFIED
     }
 
+    private enum KeyCommand {
+        UNDO, REDO
+    }
+
     private final TreeLayoutEditorModel model;
     private final TreeLayoutEditorCanvas canvas;
+    private final JLabel statusMetricsLabel = new JLabel(NO_SCENARIOS_LOADED);
+    private final NavigatorHeaderControls navHeader = new NavigatorHeaderControls();
+    private final TreeNavigatorControls treeNav = new TreeNavigatorControls();
+    private final TableNavigatorControls tableNav = new TableNavigatorControls();
+    private final InspectorControls inspector = new InspectorControls();
+    private final BottomBarControls bottomBar = new BottomBarControls();
+    private final EditorState state = new EditorState();
 
-    // Top toolbar
-    private final JCheckBox gridCheck = new JCheckBox("Grid", true);
-    private final JCheckBox ghostsCheck = new JCheckBox("Raw Ghosts", false);
-    private final JCheckBox compactedCheck = new JCheckBox("Compacted", true);
-    private final JSpinner minSepSpinner;
-    private final JLabel statusMetricsLabel = new JLabel("No scenarios loaded");
-
-    // Left navigator
-    private final JTextField searchField = new JTextField(12);
-    private final JToggleButton treeViewBtn = new JToggleButton("Tree", true);
-    private final JToggleButton tableViewBtn = new JToggleButton("Table", false);
-    private final JToggleButton filterAllBtn = new JToggleButton("All", true);
-    private final JToggleButton filterBranchesBtn = new JToggleButton("Branches", false);
-    private final JToggleButton filterShiftedBtn = new JToggleButton("Shifted", false);
-    private final JToggleButton filterModifiedBtn = new JToggleButton("Modified", false);
-    private final CardLayout navigatorCardLayout = new CardLayout();
-    private final JPanel navigatorCardPanel = new JPanel(navigatorCardLayout);
-
-    // Tree view
-    private final DefaultMutableTreeNode treeRoot = new DefaultMutableTreeNode("Scenarios");
-    private final DefaultTreeModel treeModel = new DefaultTreeModel(treeRoot);
-    private final JTree scenarioTree = new JTree(treeModel);
-    private final Map<String, DefaultMutableTreeNode> treeNodeByClassName = new HashMap<>();
-
-    // Table view
-    private final DefaultTableModel tableModel;
-    private final JTable scenarioTable;
-    private final TableRowSorter<DefaultTableModel> tableSorter;
-
-    // Inspector
-    private final JLabel inspectorNameLabel = new JLabel("No node selected");
-    private final JLabel inspectorMetaLabel = new JLabel("Click any node on the canvas or navigator");
-    private final JLabel inspectorPosLabel = new JLabel(" ");
-    private final JSpinner colOffsetSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 99, 1));
-    private final JSpinner rowOffsetSpinner = new JSpinner(new SpinnerNumberModel(0, -99, 99, 1));
-    private final JButton resetColBtn = new JButton("0");
-    private final JButton resetRowBtn = new JButton("0");
-    private final JButton revertNodeBtn = new JButton("Revert Node");
-    private final JButton focusNodeBtn = new JButton("Focus");
-
-    // Bottom actions
-    private final JButton undoBtn = new JButton("Undo");
-    private final JButton redoBtn = new JButton("Redo");
-    private final JButton revertAllBtn = new JButton("Revert All");
-    private final JButton resetAllZeroBtn = new JButton("Reset All to 0");
-    private final JComboBox<AspectPreset> aspectPresetCombo = new JComboBox<>(AspectPreset.values());
-    private final JButton autoLayoutBtn = new JButton("Auto-Layout");
-    private final JButton saveBtn = new JButton("Save to Sources");
-
-    private FilterMode filterMode = FilterMode.ALL;
-    private String selectedClassName;
-    private String loadedRootPackage;
-    private boolean syncingUi;
-    private boolean initialFitPending = true;
-    private SwingWorker<SolveResult, SolveProgress> activeSolver;
-    private final AtomicBoolean solverCancelled = new AtomicBoolean(false);
-
+    /**
+     * Creates a new tree layout editor panel and automatically loads scenarios from the configured root package.
+     */
     public TreeLayoutEditorPanel() {
+
         this(new TreeLayoutEditorModel(), true);
     }
 
     TreeLayoutEditorPanel(final TreeLayoutEditorModel model, final boolean autoLoadFromPackage) {
-        this.model = Objects.requireNonNull(model, "model");
-        this.canvas = new TreeLayoutEditorCanvas(this.model);
-        this.minSepSpinner = new JSpinner(new SpinnerNumberModel(
-                Math.max(0, model.previewSettings().minOffsetSeparation), 0, 10, 1));
+
+        this.model = Objects.requireNonNull(model, MODEL);
+        canvas = new TreeLayoutEditorCanvas(this.model);
 
         setLayout(new BorderLayout(0, 0));
 
-        // Table model & table
-        tableModel = new DefaultTableModel(new Object[]{"Scenario", "Col Δ", "Row Δ", "Class"}, 0) {
-            @Override
-            public boolean isCellEditable(final int row, final int column) {
-                return column == 1 || column == 2;
-            }
-
-            @Override
-            public Class<?> getColumnClass(final int columnIndex) {
-                return (columnIndex == 1 || columnIndex == 2) ? Integer.class : String.class;
-            }
-        };
-        scenarioTable = new JTable(tableModel);
-        tableSorter = new TableRowSorter<>(tableModel);
-        configureTable();
-        configureTree();
+        tableNav.configure(new ScenarioTableCellRenderer(), this::onTableSelectionChanged, this::onTableModelUpdated);
+        treeNav.configure(new ScenarioTreeCellRenderer(), this::onTreeSelectionChanged);
         configureCanvasCallbacks();
-        configureInspector();
+        inspector.configure(
+                this::onColOffsetSpinnerChanged,
+                this::onRowOffsetSpinnerChanged,
+                this::resetSelectedColOffset,
+                this::resetSelectedRowOffset,
+                this::revertSelectedNode,
+                this::focusSelectedNode);
         installKeyBindings();
 
-        add(buildTopToolbar(), BorderLayout.NORTH);
+        add(buildTopToolbar(), BorderLayout.PAGE_START);
 
         final JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, buildLeftPane(), canvas);
-        splitPane.setDividerLocation(340);
+        splitPane.setDividerLocation(SPLIT_DIVIDER_LOCATION);
         splitPane.setResizeWeight(0.0);
         splitPane.setContinuousLayout(true);
         add(splitPane, BorderLayout.CENTER);
 
-        add(buildBottomBar(), BorderLayout.SOUTH);
+        add(buildBottomBar(), BorderLayout.PAGE_END);
 
-        canvas.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(final ComponentEvent e) {
-                if (initialFitPending && canvas.getWidth() > 0 && canvas.getHeight() > 0 && !model.isEmpty()) {
-                    initialFitPending = false;
-                    canvas.fitToView();
-                }
-            }
-        });
-
-        addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentShown(final ComponentEvent e) {
-                final String currentRoot = works.lysenko.util.prop.tree.Scenario.root;
-                if (autoLoadFromPackage
-                        && !Objects.equals(loadedRootPackage, currentRoot)
-                        && model.modifiedCount() == 0) {
-                    reloadFromSources();
-                }
-            }
-        });
+        canvas.addComponentListener(new CanvasResizeListener());
+        addComponentListener(new PanelShownListener(autoLoadFromPackage));
 
         if (autoLoadFromPackage) {
             reloadFromSources();
         } else {
-            refreshAllViews(true);
+            refreshAllViews();
         }
     }
 
+    /**
+     * Returns the underlying editor model managing scenario blueprints and offset edits.
+     *
+     * @return the editor model
+     */
     public TreeLayoutEditorModel getModel() {
+
         return model;
     }
 
-    public TreeLayoutEditorCanvas getCanvas() {
+    TreeLayoutEditorCanvas getCanvas() {
+
         return canvas;
     }
 
-    public boolean isTreeViewActive() {
-        return treeViewBtn.isSelected();
+    boolean isTreeViewActive() {
+
+        return navHeader.isTreeViewSelected();
     }
 
-    public void setTreeViewActive(final boolean treeView) {
-        if (treeView) {
-            treeViewBtn.setSelected(true);
-            navigatorCardLayout.show(navigatorCardPanel, CARD_TREE);
-        } else {
-            tableViewBtn.setSelected(true);
-            navigatorCardLayout.show(navigatorCardPanel, CARD_TABLE);
-        }
+    void setTreeViewActive(final boolean treeView) {
+
+        navHeader.showView(treeView);
         syncSelectionToNavigator();
     }
 
-    public AspectPreset getSelectedAspectPreset() {
-        final Object item = aspectPresetCombo.getSelectedItem();
-        return (item instanceof AspectPreset preset) ? preset : AspectPreset.WIDESCREEN_16_9;
+    TreeLayoutAutoSolver.AspectPreset getSelectedAspectPreset() {
+
+        return bottomBar.selectedAspectPreset();
     }
 
-    public void setSelectedAspectPreset(final AspectPreset preset) {
-        aspectPresetCombo.setSelectedItem(Objects.requireNonNull(preset, "preset"));
+    void setSelectedAspectPreset(final TreeLayoutAutoSolver.AspectPreset preset) {
+
+        bottomBar.selectAspectPreset(preset);
     }
 
     private JPanel buildTopToolbar() {
+
         final JPanel toolbar = new JPanel(new BorderLayout(8, 0));
         toolbar.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0xCC, 0xCC, 0xCC)),
+                BorderFactory.createMatteBorder(0, 0, 1, 0, COLOR_BORDER),
                 BorderFactory.createEmptyBorder(4, 8, 4, 8)));
 
-        final JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
+        final JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEADING, 6, 2));
 
-        final JButton fitBtn = compactButton("Fit", "Fit entire tree to canvas (F)");
+        final JButton fitBtn = compactButton(c(FIT), b(c(FIT), ENTIRE, TREE, TO, CANVAS, e(ROUND, u(F))));
         fitBtn.addActionListener(_ -> canvas.fitToView());
 
-        final JButton zoom100Btn = compactButton("100%", "Reset zoom to 100%");
+        final JButton zoom100Btn = compactButton(PCT_100, b(c(RESET), ZOOM, TO, PCT_100));
         zoom100Btn.addActionListener(_ -> canvas.resetZoom());
 
-        final JButton focusBtn = compactButton("Focus", "Center canvas on selected node");
-        focusBtn.addActionListener(_ -> {
-            if (null != selectedClassName) canvas.focusNode(selectedClassName, true);
-        });
+        final JButton focusBtn = compactButton(c(FOCUS), b(c(CENTER), CANVAS, ON, SELECTED, NODE));
+        focusBtn.addActionListener(_ -> focusSelectedNode());
 
-        gridCheck.setToolTipText("Show column/row grid lines and indices");
+        final JCheckBox gridCheck = new JCheckBox(c(GRID), true);
+        gridCheck.setToolTipText(b(c(SHOW), s(COLUMN, _SLASH_, ROW), GRID, LINES, AND, INDICES));
         gridCheck.addActionListener(_ -> canvas.setShowGrid(gridCheck.isSelected()));
 
-        ghostsCheck.setToolTipText("Show dashed ghost outlines for pre-compaction positions of shifted nodes");
+        final JCheckBox ghostsCheck = new JCheckBox(b(c(RAW), c(GHOSTS)), false);
+        ghostsCheck.setToolTipText(b(c(SHOW), DASHED, GHOST, OUTLINES, FOR, d(PRE, COMPACTION), POSITIONS, OF, SHIFTED, NODES));
         ghostsCheck.addActionListener(_ -> canvas.setShowRawGhosts(ghostsCheck.isSelected()));
 
-        compactedCheck.setToolTipText("Toggle between compacted layout (actual output) and raw initial offsets");
-        compactedCheck.addActionListener(_ -> {
-            model.previewSettings().compacted = compactedCheck.isSelected();
-            ghostsCheck.setEnabled(compactedCheck.isSelected());
-            recomputeAndRepaint();
-        });
+        final JCheckBox compactedCheck = new JCheckBox(c(COMPACTED), true);
+        compactedCheck.setToolTipText(b(c(TOGGLE), BETWEEN, COMPACTED, LAYOUT, e(ROUND, b(ACTUAL, OUTPUT)), AND, RAW, INITIAL, OFFSETS));
+        compactedCheck.addActionListener(_ -> onCompactedToggled(compactedCheck.isSelected(), ghostsCheck));
 
-        minSepSpinner.setPreferredSize(new Dimension(52, 24));
-        minSepSpinner.setToolTipText("Preview .tree.min.offset.separation (does not alter test configuration)");
-        minSepSpinner.addChangeListener(_ -> {
-            if (syncingUi) return;
-            model.previewSettings().minOffsetSeparation = ((Number) minSepSpinner.getValue()).intValue();
-            recomputeAndRepaint();
-        });
+        final JSpinner minSepSpinner = new JSpinner(new SpinnerNumberModel(
+                Math.max(0, model.previewSettings().minOffsetSeparation), 0, MIN_SEP_MAX, 1));
+        minSepSpinner.setPreferredSize(new Dimension(MIN_SEP_SPINNER_WIDTH, MIN_SEP_SPINNER_HEIGHT));
+        minSepSpinner.setToolTipText(b(c(PREVIEW), _TREE_MIN_OFFSET_SEPARATION.getPropertyName(),
+                e(ROUND, b(DOES, NOT, ALTER, TEST, CONFIGURATION))));
+        minSepSpinner.addChangeListener(_ -> onMinSepChanged(minSepSpinner));
 
-        final JButton optionsBtn = compactButton("Options ▾", "Toggle preview compaction stages");
+        final JButton optionsBtn = compactButton(b(c(OPTIONS), s(DWN_TRI)), b(c(TOGGLE), PREVIEW, COMPACTION, STAGES));
         final JPopupMenu optionsMenu = buildPreviewOptionsMenu();
         optionsBtn.addActionListener(_ -> optionsMenu.show(optionsBtn, 0, optionsBtn.getHeight()));
 
@@ -308,33 +275,61 @@ public class TreeLayoutEditorPanel extends JPanel {
         controls.add(gridCheck);
         controls.add(compactedCheck);
         controls.add(ghostsCheck);
-        controls.add(new JLabel("Min sep:"));
+        controls.add(new JLabel(b(c(MIN), s(SEP, _COLON_))));
         controls.add(minSepSpinner);
         controls.add(optionsBtn);
 
-        statusMetricsLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
+        statusMetricsLabel.setFont(FONT_MONO_11);
         statusMetricsLabel.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 4));
 
-        toolbar.add(controls, BorderLayout.WEST);
-        toolbar.add(statusMetricsLabel, BorderLayout.EAST);
+        toolbar.add(controls, BorderLayout.LINE_START);
+        toolbar.add(statusMetricsLabel, BorderLayout.LINE_END);
         return toolbar;
     }
 
+    private void onCompactedToggled(final boolean compacted, final JCheckBox ghostsCheck) {
+
+        model.previewSettings().compacted = compacted;
+        ghostsCheck.setEnabled(compacted);
+        recomputeAndRepaint();
+    }
+
+    private void onMinSepChanged(final JSpinner minSepSpinner) {
+
+        if (state.isInteractive()) {
+            model.previewSettings().minOffsetSeparation = ((Number) minSepSpinner.getValue()).intValue();
+            recomputeAndRepaint();
+        }
+    }
+
     private JPopupMenu buildPreviewOptionsMenu() {
+
         final JPopupMenu menu = new JPopupMenu();
-        final PreviewSettings ps = model.previewSettings();
+        final TreeLayoutEditorModel.PreviewSettings ps = model.previewSettings();
 
-        final JCheckBoxMenuItem hOff = new JCheckBoxMenuItem("Reduce Horizontal Offsets", ps.reduceHorizontalOffsets);
-        hOff.addActionListener(_ -> { ps.reduceHorizontalOffsets = hOff.isSelected(); recomputeAndRepaint(); });
+        final JCheckBoxMenuItem hOff = new JCheckBoxMenuItem(b(c(REDUCE), c(HORIZONTAL), c(OFFSETS)), ps.reduceHorizontalOffsets);
+        hOff.addActionListener(_ -> {
+            ps.reduceHorizontalOffsets = hOff.isSelected();
+            recomputeAndRepaint();
+        });
 
-        final JCheckBoxMenuItem vOff = new JCheckBoxMenuItem("Reduce Vertical Offsets", ps.reduceVerticalOffsets);
-        vOff.addActionListener(_ -> { ps.reduceVerticalOffsets = vOff.isSelected(); recomputeAndRepaint(); });
+        final JCheckBoxMenuItem vOff = new JCheckBoxMenuItem(b(c(REDUCE), c(VERTICAL), c(OFFSETS)), ps.reduceVerticalOffsets);
+        vOff.addActionListener(_ -> {
+            ps.reduceVerticalOffsets = vOff.isSelected();
+            recomputeAndRepaint();
+        });
 
-        final JCheckBoxMenuItem hGap = new JCheckBoxMenuItem("Reduce Horizontal Gaps", ps.reduceHorizontalGaps);
-        hGap.addActionListener(_ -> { ps.reduceHorizontalGaps = hGap.isSelected(); recomputeAndRepaint(); });
+        final JCheckBoxMenuItem hGap = new JCheckBoxMenuItem(b(c(REDUCE), c(HORIZONTAL), c(GAPS)), ps.reduceHorizontalGaps);
+        hGap.addActionListener(_ -> {
+            ps.reduceHorizontalGaps = hGap.isSelected();
+            recomputeAndRepaint();
+        });
 
-        final JCheckBoxMenuItem vGap = new JCheckBoxMenuItem("Reduce Vertical Gaps", ps.reduceVerticalGaps);
-        vGap.addActionListener(_ -> { ps.reduceVerticalGaps = vGap.isSelected(); recomputeAndRepaint(); });
+        final JCheckBoxMenuItem vGap = new JCheckBoxMenuItem(b(c(REDUCE), c(VERTICAL), c(GAPS)), ps.reduceVerticalGaps);
+        vGap.addActionListener(_ -> {
+            ps.reduceVerticalGaps = vGap.isSelected();
+            recomputeAndRepaint();
+        });
 
         menu.add(hOff);
         menu.add(vOff);
@@ -345,545 +340,294 @@ public class TreeLayoutEditorPanel extends JPanel {
     }
 
     private JPanel buildLeftPane() {
-        final JPanel left = new JPanel(new BorderLayout(0, 6));
-        left.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 4));
-        left.setMinimumSize(new Dimension(260, 200));
 
-        // Top navigator controls (search + Tree/Table toggle + filter chips)
-        final JPanel navHeader = new JPanel(new BorderLayout(4, 4));
-
-        final JPanel searchRow = new JPanel(new BorderLayout(4, 0));
-        final JPanel searchInputWrap = new JPanel(new BorderLayout(2, 0));
-        searchField.setToolTipText("Filter scenarios by name or class");
-        final JButton clearSearchBtn = compactButton("×", "Clear search");
-        clearSearchBtn.addActionListener(_ -> searchField.setText(""));
-        searchInputWrap.add(searchField, BorderLayout.CENTER);
-        searchInputWrap.add(clearSearchBtn, BorderLayout.EAST);
-
-        final JPanel viewToggleWrap = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
-        final ButtonGroup viewGroup = new ButtonGroup();
-        styleToggle(treeViewBtn);
-        styleToggle(tableViewBtn);
-        viewGroup.add(treeViewBtn);
-        viewGroup.add(tableViewBtn);
-        treeViewBtn.addActionListener(_ -> setTreeViewActive(true));
-        tableViewBtn.addActionListener(_ -> setTreeViewActive(false));
-        viewToggleWrap.add(treeViewBtn);
-        viewToggleWrap.add(tableViewBtn);
-
-        searchRow.add(searchInputWrap, BorderLayout.CENTER);
-        searchRow.add(viewToggleWrap, BorderLayout.EAST);
-
-        final JPanel filterRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0));
-        final ButtonGroup filterGroup = new ButtonGroup();
-        for (final JToggleButton btn : new JToggleButton[]{filterAllBtn, filterBranchesBtn, filterShiftedBtn, filterModifiedBtn}) {
-            styleToggle(btn);
-            filterGroup.add(btn);
-            filterRow.add(btn);
-        }
-        filterAllBtn.addActionListener(_ -> setFilterMode(FilterMode.ALL));
-        filterBranchesBtn.addActionListener(_ -> setFilterMode(FilterMode.BRANCHES));
-        filterShiftedBtn.addActionListener(_ -> setFilterMode(FilterMode.SHIFTED));
-        filterModifiedBtn.addActionListener(_ -> setFilterMode(FilterMode.MODIFIED));
-
-        searchField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(final DocumentEvent e) { rebuildNavigatorViews(); }
-            @Override public void removeUpdate(final DocumentEvent e) { rebuildNavigatorViews(); }
-            @Override public void changedUpdate(final DocumentEvent e) { rebuildNavigatorViews(); }
-        });
-
-        navHeader.add(searchRow, BorderLayout.NORTH);
-        navHeader.add(filterRow, BorderLayout.SOUTH);
-
-        // Navigator cards (Tree / Table)
-        navigatorCardPanel.add(new JScrollPane(scenarioTree), CARD_TREE);
-        navigatorCardPanel.add(new JScrollPane(scenarioTable), CARD_TABLE);
-        navigatorCardLayout.show(navigatorCardPanel, CARD_TREE);
-
-        left.add(navHeader, BorderLayout.NORTH);
-        left.add(navigatorCardPanel, BorderLayout.CENTER);
-        left.add(buildInspectorPanel(), BorderLayout.SOUTH);
-        return left;
-    }
-
-    private JPanel buildInspectorPanel() {
-        final JPanel inspector = new JPanel(new GridBagLayout());
-        inspector.setBorder(BorderFactory.createTitledBorder("Selected Node"));
-
-        final GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(2, 4, 2, 4);
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-
-        inspectorNameLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
-        inspectorMetaLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 10));
-        inspectorMetaLabel.setForeground(new Color(0x64, 0x74, 0x8B));
-        inspectorPosLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
-
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 3;
-        inspector.add(inspectorNameLabel, gbc);
-
-        gbc.gridy = 1;
-        inspector.add(inspectorMetaLabel, gbc);
-
-        gbc.gridy = 2;
-        inspector.add(inspectorPosLabel, gbc);
-
-        // @VisualOffset spinner row
-        gbc.gridy = 3; gbc.gridwidth = 1; gbc.weightx = 0.0;
-        inspector.add(new JLabel("Col Offset (@VisualOffset):"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1.0;
-        inspector.add(colOffsetSpinner, gbc);
-        gbc.gridx = 2; gbc.weightx = 0.0;
-        resetColBtn.setMargin(new Insets(1, 6, 1, 6));
-        resetColBtn.setToolTipText("Reset @VisualOffset to 0");
-        inspector.add(resetColBtn, gbc);
-
-        // @VisualRowOffset spinner row
-        gbc.gridx = 0; gbc.gridy = 4; gbc.weightx = 0.0;
-        inspector.add(new JLabel("Row Offset (@VisualRowOffset):"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1.0;
-        inspector.add(rowOffsetSpinner, gbc);
-        gbc.gridx = 2; gbc.weightx = 0.0;
-        resetRowBtn.setMargin(new Insets(1, 6, 1, 6));
-        resetRowBtn.setToolTipText("Reset @VisualRowOffset to 0");
-        inspector.add(resetRowBtn, gbc);
-
-        // Quick action row
-        final JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-        revertNodeBtn.setMargin(new Insets(2, 8, 2, 8));
-        focusNodeBtn.setMargin(new Insets(2, 8, 2, 8));
-        actions.add(revertNodeBtn);
-        actions.add(focusNodeBtn);
-
-        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 3; gbc.weightx = 1.0;
-        inspector.add(actions, gbc);
-
-        final JLabel hint = new JLabel("Canvas: Click select · Arrows ±1 · Shift+Arrows ±5 · 0 reset");
-        hint.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 10));
-        hint.setForeground(new Color(0x64, 0x74, 0x8B));
-        gbc.gridy = 6;
-        inspector.add(hint, gbc);
-
-        return inspector;
+        return navHeader.buildLeftPane(
+                treeNav.scrollPane(),
+                tableNav.scrollPane(),
+                inspector.buildPanel(),
+                new SearchDocumentListener(),
+                this::setTreeViewActive,
+                this::setFilterMode);
     }
 
     private JPanel buildBottomBar() {
-        final JPanel bottom = new JPanel(new BorderLayout(8, 0));
-        bottom.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(0xCC, 0xCC, 0xCC)),
-                BorderFactory.createEmptyBorder(6, 8, 6, 8)));
 
-        final JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-        undoBtn.addActionListener(_ -> performUndo());
-        redoBtn.addActionListener(_ -> performRedo());
-        revertAllBtn.setToolTipText("Discard unsaved edits and restore offsets from sources");
-        revertAllBtn.addActionListener(_ -> performRevertAll());
-        resetAllZeroBtn.setToolTipText("Set all @VisualOffset and @VisualRowOffset values to 0 (undoable)");
-        resetAllZeroBtn.addActionListener(_ -> performResetAllToZero());
-
-        final JSeparator sep = new JSeparator(SwingConstants.VERTICAL);
-        sep.setPreferredSize(new Dimension(2, 22));
-
-        aspectPresetCombo.setSelectedItem(AspectPreset.WIDESCREEN_16_9);
-        aspectPresetCombo.setToolTipText("Target proportions for Auto-Layout");
-        autoLayoutBtn.setToolTipText("Optimize @VisualOffset and @VisualRowOffset starting from current layout (undoable)");
-        autoLayoutBtn.addActionListener(_ -> performAutoLayoutOrCancel());
-
-        left.add(undoBtn);
-        left.add(redoBtn);
-        left.add(revertAllBtn);
-        left.add(resetAllZeroBtn);
-        left.add(sep);
-        left.add(aspectPresetCombo);
-        left.add(autoLayoutBtn);
-
-        final JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        final JButton reloadBtn = new JButton("Reload from Sources");
-        reloadBtn.addActionListener(_ -> confirmAndReload());
-
-        final JButton browserBtn = new JButton("Open in Browser");
-        browserBtn.addActionListener(_ -> openInBrowser());
-
-        saveBtn.setFont(saveBtn.getFont().deriveFont(Font.BOLD));
-        saveBtn.addActionListener(_ -> saveToSources());
-
-        right.add(reloadBtn);
-        right.add(browserBtn);
-        right.add(saveBtn);
-
-        bottom.add(left, BorderLayout.WEST);
-        bottom.add(right, BorderLayout.EAST);
-        return bottom;
+        return bottomBar.buildPanel(
+                this::performUndo,
+                this::performRedo,
+                this::performRevertAll,
+                this::performResetAllToZero,
+                this::performAutoLayoutOrCancel,
+                this::confirmAndReload,
+                this::openInBrowser,
+                this::saveToSources);
     }
 
-    private void configureTree() {
-        scenarioTree.setRootVisible(false);
-        scenarioTree.setShowsRootHandles(true);
-        scenarioTree.setRowHeight(21);
-        scenarioTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        scenarioTree.setCellRenderer(new DefaultTreeCellRenderer() {
-            @Override
-            public Component getTreeCellRendererComponent(
-                    final JTree tree, final Object value, final boolean sel,
-                    final boolean expanded, final boolean leaf, final int row, final boolean hasFocus) {
-                super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
-                if (value instanceof DefaultMutableTreeNode node && node.getUserObject() instanceof TreeItem item) {
-                    final Offsets off = model.currentOffsets(item.className());
-                    final boolean dirty = model.isModified(item.className());
-                    final StringBuilder text = new StringBuilder();
-                    if (dirty) text.append("● ");
-                    text.append(item.simpleName());
-                    if (!off.isZero()) {
-                        text.append("  [").append(formatOffsetTag(off)).append("]");
-                    }
-                    setText(text.toString());
-                    setFont(getFont().deriveFont(item.isLeaf() ? Font.PLAIN : Font.BOLD));
-                    if (!sel) {
-                        if (dirty) {
-                            setForeground(new Color(0xB4, 0x53, 0x09));
-                        } else if (!off.isZero()) {
-                            setForeground(new Color(0x03, 0x69, 0xA1));
-                        } else if (item.isLeaf()) {
-                            setForeground(new Color(0x64, 0x74, 0x8B));
-                        }
-                    }
-                }
-                return this;
+    private void onTreeSelectionChanged() {
+
+        if (state.isInteractive()) {
+            final TreeItem selected = treeNav.selectedItem();
+            if (null != selected) {
+                selectScenario(selected.className());
             }
-        });
-
-        scenarioTree.addTreeSelectionListener(e -> {
-            if (syncingUi) return;
-            final TreePath path = scenarioTree.getSelectionPath();
-            if (null == path) return;
-            final Object last = path.getLastPathComponent();
-            if (last instanceof DefaultMutableTreeNode node && node.getUserObject() instanceof TreeItem item) {
-                selectScenario(item.className(), false);
-            }
-        });
-    }
-
-    private void configureTable() {
-        scenarioTable.setRowHeight(22);
-        scenarioTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        scenarioTable.getTableHeader().setReorderingAllowed(false);
-        scenarioTable.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        scenarioTable.setRowSorter(tableSorter);
-
-        final Comparator<String> strCmp = Comparator.nullsFirst(Comparator.naturalOrder());
-        tableSorter.setComparator(0, strCmp);
-        tableSorter.setComparator(3, strCmp);
-
-        scenarioTable.getColumnModel().getColumn(0).setPreferredWidth(140);
-        scenarioTable.getColumnModel().getColumn(1).setPreferredWidth(54);
-        scenarioTable.getColumnModel().getColumn(2).setPreferredWidth(54);
-        scenarioTable.getColumnModel().getColumn(3).setPreferredWidth(160);
-
-        final DefaultTableCellRenderer highlightRenderer = new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(
-                    final JTable table, final Object value, final boolean isSelected,
-                    final boolean hasFocus, final int row, final int column) {
-                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                final int modelRow = table.convertRowIndexToModel(row);
-                final String className = (String) tableModel.getValueAt(modelRow, 3);
-                final boolean dirty = null != className && model.isModified(className);
-                final boolean shifted = null != className && model.isShifted(className);
-                if (!isSelected) {
-                    if (dirty) {
-                        setForeground(new Color(0xB4, 0x53, 0x09));
-                    } else if (shifted) {
-                        setForeground(new Color(0x03, 0x69, 0xA1));
-                    } else {
-                        setForeground(table.getForeground());
-                    }
-                }
-                setHorizontalAlignment((column == 1 || column == 2) ? RIGHT : LEFT);
-                return this;
-            }
-        };
-        for (int c = 0; c < 4; c++) {
-            scenarioTable.getColumnModel().getColumn(c).setCellRenderer(highlightRenderer);
         }
+    }
 
-        scenarioTable.getSelectionModel().addListSelectionListener(e -> {
-            if (syncingUi || e.getValueIsAdjusting()) return;
-            final int viewRow = scenarioTable.getSelectedRow();
-            if (viewRow < 0) return;
-            final int modelRow = scenarioTable.convertRowIndexToModel(viewRow);
-            final String className = (String) tableModel.getValueAt(modelRow, 3);
-            selectScenario(className, false);
-        });
+    private void onTableSelectionChanged(final ListSelectionEvent e) {
 
-        tableModel.addTableModelListener(e -> {
-            if (syncingUi || e.getType() != TableModelEvent.UPDATE) return;
+        if (state.isInteractive() && !e.getValueIsAdjusting()) {
+            final String className = tableNav.selectedClassName();
+            if (null != className) {
+                selectScenario(className);
+            }
+        }
+    }
+
+    private void onTableModelUpdated(final TableModelEvent e) {
+
+        if (state.isInteractive() && TableModelEvent.UPDATE == e.getType()) {
             final int row = e.getFirstRow();
             final int col = e.getColumn();
-            if (row < 0 || row >= tableModel.getRowCount() || (col != 1 && col != 2)) return;
-            final String className = (String) tableModel.getValueAt(row, 3);
-            final Object colVal = tableModel.getValueAt(row, 1);
-            final Object rowVal = tableModel.getValueAt(row, 2);
-            final int newCol = (colVal instanceof Number n) ? Math.max(0, n.intValue()) : 0;
-            final int newRow = (rowVal instanceof Number n) ? n.intValue() : 0;
-            if (model.setOffsets(className, newCol, newRow)) {
-                refreshAfterOffsetMutation();
-            } else {
-                // Clamp negative colOffset display back to 0 if user typed negative value
-                syncTableRowForClass(className);
+            if (tableNav.isEditableOffsetCell(row, col)) {
+                applyTableRowEdit(row);
             }
-        });
+        }
+    }
+
+    private void applyTableRowEdit(final int row) {
+
+        final String className = tableNav.classNameAtModelRow(row);
+        final int newCol = tableNav.colOffsetAtModelRow(row);
+        final int newRow = tableNav.rowOffsetAtModelRow(row);
+        if (model.setOffsets(className, newCol, newRow)) {
+            refreshAfterOffsetMutation();
+        } else {
+            syncTableRowForClass(className);
+        }
     }
 
     private void configureCanvasCallbacks() {
-        canvas.setOnSelectionChanged(className -> selectScenario(className, false));
-        canvas.setOnNudge((deltaCol, deltaRow) -> {
-            if (null != selectedClassName && model.nudgeOffsets(selectedClassName, deltaCol, deltaRow)) {
-                refreshAfterOffsetMutation();
-            }
-        });
-        canvas.setOnResetSelected(() -> {
-            if (null != selectedClassName && model.setOffsets(selectedClassName, 0, 0)) {
-                refreshAfterOffsetMutation();
-            }
-        });
+
+        canvas.setOnSelectionChanged(this::selectScenario);
+        canvas.setOnNudge(this::onCanvasNudge);
+        canvas.setOnResetSelected(this::onCanvasResetSelected);
     }
 
-    private void configureInspector() {
-        colOffsetSpinner.addChangeListener(_ -> {
-            if (syncingUi || null == selectedClassName) return;
-            final int nextCol = ((Number) colOffsetSpinner.getValue()).intValue();
-            final int curRow = model.currentOffsets(selectedClassName).rowOffset();
-            if (model.setOffsets(selectedClassName, nextCol, curRow)) {
+    private void onCanvasNudge(final int deltaCol, final int deltaRow) {
+
+        final String selected = state.selectedClassName();
+        if (null != selected && model.nudgeOffsets(selected, deltaCol, deltaRow)) {
+            refreshAfterOffsetMutation();
+        }
+    }
+
+    private void onCanvasResetSelected() {
+
+        final String selected = state.selectedClassName();
+        if (null != selected && model.setOffsets(selected, 0, 0)) {
+            refreshAfterOffsetMutation();
+        }
+    }
+
+    private void onColOffsetSpinnerChanged() {
+
+        final String selected = state.selectedClassName();
+        if (state.isInteractive() && null != selected) {
+            final int nextCol = inspector.colOffsetValue();
+            final int curRow = model.currentOffsets(selected).rowOffset();
+            if (model.setOffsets(selected, nextCol, curRow)) {
                 refreshAfterOffsetMutation();
             }
-        });
-        rowOffsetSpinner.addChangeListener(_ -> {
-            if (syncingUi || null == selectedClassName) return;
-            final int curCol = model.currentOffsets(selectedClassName).colOffset();
-            final int nextRow = ((Number) rowOffsetSpinner.getValue()).intValue();
-            if (model.setOffsets(selectedClassName, curCol, nextRow)) {
+        }
+    }
+
+    private void onRowOffsetSpinnerChanged() {
+
+        final String selected = state.selectedClassName();
+        if (state.isInteractive() && null != selected) {
+            final int curCol = model.currentOffsets(selected).colOffset();
+            final int nextRow = inspector.rowOffsetValue();
+            if (model.setOffsets(selected, curCol, nextRow)) {
                 refreshAfterOffsetMutation();
             }
-        });
-        resetColBtn.addActionListener(_ -> {
-            if (null != selectedClassName) {
-                final int curRow = model.currentOffsets(selectedClassName).rowOffset();
-                if (model.setOffsets(selectedClassName, 0, curRow)) {
-                    refreshAfterOffsetMutation();
-                }
-            }
-        });
-        resetRowBtn.addActionListener(_ -> {
-            if (null != selectedClassName) {
-                final int curCol = model.currentOffsets(selectedClassName).colOffset();
-                if (model.setOffsets(selectedClassName, curCol, 0)) {
-                    refreshAfterOffsetMutation();
-                }
-            }
-        });
-        revertNodeBtn.addActionListener(_ -> {
-            if (null != selectedClassName && model.revertNode(selectedClassName)) {
+        }
+    }
+
+    private void resetSelectedColOffset() {
+
+        final String selected = state.selectedClassName();
+        if (null != selected) {
+            final int curRow = model.currentOffsets(selected).rowOffset();
+            if (model.setOffsets(selected, 0, curRow)) {
                 refreshAfterOffsetMutation();
             }
-        });
-        focusNodeBtn.addActionListener(_ -> {
-            if (null != selectedClassName) {
-                canvas.focusNode(selectedClassName, true);
+        }
+    }
+
+    private void resetSelectedRowOffset() {
+
+        final String selected = state.selectedClassName();
+        if (null != selected) {
+            final int curCol = model.currentOffsets(selected).colOffset();
+            if (model.setOffsets(selected, curCol, 0)) {
+                refreshAfterOffsetMutation();
             }
-        });
+        }
+    }
+
+    private void revertSelectedNode() {
+
+        final String selected = state.selectedClassName();
+        if (null != selected && model.revertNode(selected)) {
+            refreshAfterOffsetMutation();
+        }
+    }
+
+    private void focusSelectedNode() {
+
+        final String selected = state.selectedClassName();
+        if (null != selected) {
+            canvas.focusNode(selected, true);
+        }
     }
 
     private void installKeyBindings() {
+
         final int menuMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
-        getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
-                .put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, menuMask), "tree-editor-undo");
-        getActionMap().put("tree-editor-undo", new AbstractAction() {
-            @Override public void actionPerformed(final ActionEvent e) { performUndo(); }
-        });
-        getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
-                .put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, menuMask | InputEvent.SHIFT_DOWN_MASK), "tree-editor-redo");
-        getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
-                .put(KeyStroke.getKeyStroke(KeyEvent.VK_Y, menuMask), "tree-editor-redo");
-        getActionMap().put("tree-editor-redo", new AbstractAction() {
-            @Override public void actionPerformed(final ActionEvent e) { performRedo(); }
-        });
+        getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, menuMask), TREE_EDITOR_UNDO);
+        getActionMap().put(TREE_EDITOR_UNDO, new KeyBindingAction(KeyCommand.UNDO));
+        getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, menuMask | InputEvent.SHIFT_DOWN_MASK), TREE_EDITOR_REDO);
+        getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_Y, menuMask), TREE_EDITOR_REDO);
+        getActionMap().put(TREE_EDITOR_REDO, new KeyBindingAction(KeyCommand.REDO));
     }
 
     private void setFilterMode(final FilterMode mode) {
-        this.filterMode = mode;
+
+        state.setFilterMode(mode);
         rebuildNavigatorViews();
     }
 
-    public void reloadFromSources() {
-        if (isSolverRunning()) {
-            solverCancelled.set(true);
-            activeSolver.cancel(false);
-        }
-        final String rootPackage = works.lysenko.util.prop.tree.Scenario.root;
-        loadedRootPackage = rootPackage;
-        final Path baseDir = Paths.get(System.getProperty("user.dir"));
+    private void reloadFromSources() {
+
+        state.cancelActiveSolverIfRunning();
+        final String rootPackage = root;
+        state.setLoadedRootPackage(rootPackage);
+        final Path baseDir = Path.of(EMPTY).toAbsolutePath();
         model.loadFromPackage(rootPackage, baseDir);
-        selectedClassName = null;
-        initialFitPending = true;
-        refreshAllViews(true);
+        state.setSelectedClassName(null);
+        state.setInitialFitPending(true);
+        refreshAllViews();
     }
 
     private void confirmAndReload() {
-        if (model.modifiedCount() > 0) {
+
+        boolean proceed = true;
+        if (0 < model.modifiedCount()) {
             final int choice = JOptionPane.showConfirmDialog(
                     this,
-                    "Discard " + model.modifiedCount() + " unsaved offset change(s) and reload from sources?",
-                    "Confirm Reload",
+                    b(c(DISCARD), s(model.modifiedCount()), UNSAVED, OFFSET,
+                            s(CHANGE, e(ROUND, S)), AND, RELOAD, FROM, s(SOURCES, QUS_MRK)),
+                    b(c(CONFIRM), c(RELOAD)),
                     JOptionPane.YES_NO_OPTION,
                     JOptionPane.WARNING_MESSAGE);
-            if (choice != JOptionPane.YES_OPTION) return;
+            proceed = JOptionPane.YES_OPTION == choice;
         }
-        reloadFromSources();
+        if (proceed) {
+            reloadFromSources();
+        }
     }
 
     private void performUndo() {
-        if (isSolverRunning()) return;
-        if (model.undo()) {
+
+        if (!state.isSolverRunning() && model.undo()) {
             refreshAfterOffsetMutation();
         }
     }
 
     private void performRedo() {
-        if (isSolverRunning()) return;
-        if (model.redo()) {
+
+        if (!state.isSolverRunning() && model.redo()) {
             refreshAfterOffsetMutation();
         }
     }
 
     private void performRevertAll() {
-        if (isSolverRunning()) return;
-        if (model.modifiedCount() == 0) return;
-        if (model.revertAll()) {
+
+        if (!state.isSolverRunning() && 0 < model.modifiedCount() && model.revertAll()) {
             refreshAfterOffsetMutation();
         }
     }
 
     private void performResetAllToZero() {
-        if (isSolverRunning()) return;
-        stopTableEditing();
-        if (model.shiftedCount() == 0) return;
-        if (model.resetAllToZero()) {
-            refreshAfterOffsetMutation();
-        }
-    }
 
-    private boolean isSolverRunning() {
-        return null != activeSolver && !activeSolver.isDone();
+        if (!state.isSolverRunning()) {
+            tableNav.stopEditing();
+            if (0 < model.shiftedCount() && model.resetAllToZero()) {
+                refreshAfterOffsetMutation();
+            }
+        }
     }
 
     private void performAutoLayoutOrCancel() {
-        if (isSolverRunning()) {
-            solverCancelled.set(true);
-            activeSolver.cancel(false);
-            autoLayoutBtn.setEnabled(false);
-            statusMetricsLabel.setText("Cancelling auto-layout…");
-            return;
+
+        if (state.isSolverRunning()) {
+            cancelActiveSolver();
+        } else {
+            tableNav.stopEditing();
+            if (!model.isEmpty()) {
+                startAutoLayout();
+            }
         }
-        stopTableEditing();
-        if (model.isEmpty()) return;
+    }
 
-        final AspectPreset preset = getSelectedAspectPreset();
-        final List<ScenarioBlueprint> rootsSnapshot = List.copyOf(model.roots());
-        final Map<String, Offsets> startOffsets = model.snapshotCurrentOffsets();
-        final PreviewSettings settingsSnapshot = model.previewSettings().copy();
+    private void cancelActiveSolver() {
 
-        solverCancelled.set(false);
+        state.cancelActiveSolverIfRunning();
+        bottomBar.disableAutoLayoutButton();
+        statusMetricsLabel.setText(b(c(CANCELLING), s(d(AUTO, LAYOUT), ELLIPSIS)));
+    }
+
+    private void startAutoLayout() {
+
+        final TreeLayoutAutoSolver.AspectPreset preset = getSelectedAspectPreset();
+        final List<TreeLayoutEditorModel.ScenarioBlueprint> rootsSnapshot = List.copyOf(model.roots());
+        final Map<String, ScenarioOffsetSourceCodec.Offsets> startOffsets = model.snapshotCurrentOffsets();
+        final TreeLayoutEditorModel.PreviewSettings settingsSnapshot = model.previewSettings().copy();
+
+        state.resetSolverCancelled();
         setSolverUiState(true);
-        statusMetricsLabel.setForeground(new Color(0x03, 0x69, 0xA1));
-        statusMetricsLabel.setText("Optimizing (" + preset.label() + ")…");
+        statusMetricsLabel.setForeground(COLOR_SHIFTED);
+        statusMetricsLabel.setText(b(c(OPTIMIZING), s(e(ROUND, preset.label()), ELLIPSIS)));
 
-        activeSolver = new SwingWorker<>() {
-            @Override
-            protected SolveResult doInBackground() {
-                return TreeLayoutAutoSolver.solve(
-                        rootsSnapshot,
-                        startOffsets,
-                        settingsSnapshot,
-                        preset,
-                        solverCancelled::get,
-                        this::publish);
-            }
-
-            @Override
-            protected void process(final List<SolveProgress> chunks) {
-                if (chunks.isEmpty() || solverCancelled.get()) return;
-                final SolveProgress p = chunks.getLast();
-                statusMetricsLabel.setText(String.format(Locale.ROOT,
-                        "Optimizing (%s)… %s · %d×%d (%.2f:1)",
-                        preset.label(),
-                        p.stage(),
-                        p.bestMetrics().cols(),
-                        (int) Math.ceil(p.bestMetrics().rows()),
-                        p.bestMetrics().aspectRatio()));
-            }
-
-            @Override
-            protected void done() {
-                activeSolver = null;
-                setSolverUiState(false);
-                try {
-                    final SolveResult result = get();
-                    if (result.cancelled()) {
-                        updateStatusAndButtons();
-                        return;
-                    }
-                    if (result.improved() && model.applyOffsetsBatch(result.offsets())) {
-                        refreshAfterOffsetMutation();
-                        canvas.fitToView();
-                        statusMetricsLabel.setText(statusMetricsLabel.getText()
-                                + " · optimized (" + preset.label() + ")");
-                    } else {
-                        updateStatusAndButtons();
-                        statusMetricsLabel.setText("Already optimal for " + preset.label()
-                                + " · " + statusMetricsLabel.getText());
-                    }
-                } catch (final Exception ex) {
-                    updateStatusAndButtons();
-                }
-            }
-        };
-        activeSolver.execute();
+        final AutoLayoutWorker worker = new AutoLayoutWorker(rootsSnapshot, startOffsets, settingsSnapshot, preset);
+        state.setActiveSolver(worker);
+        worker.execute();
     }
 
     private void setSolverUiState(final boolean running) {
-        autoLayoutBtn.setText(running ? "Cancel…" : "Auto-Layout");
-        autoLayoutBtn.setEnabled(running || !model.isEmpty());
-        aspectPresetCombo.setEnabled(!running && !model.isEmpty());
+
+        bottomBar.setSolverRunning(running, !model.isEmpty());
         if (running) {
-            undoBtn.setEnabled(false);
-            redoBtn.setEnabled(false);
-            revertAllBtn.setEnabled(false);
-            resetAllZeroBtn.setEnabled(false);
-            saveBtn.setEnabled(false);
-            colOffsetSpinner.setEnabled(false);
-            rowOffsetSpinner.setEnabled(false);
-            resetColBtn.setEnabled(false);
-            resetRowBtn.setEnabled(false);
-            revertNodeBtn.setEnabled(false);
+            inspector.disableEditableControls();
         } else {
             updateInspector();
             updateStatusAndButtons();
         }
     }
 
-    private void selectScenario(final String className, final boolean centerCanvas) {
-        selectedClassName = className;
+    private void selectScenario(final String className) {
+
+        state.setSelectedClassName(className);
         canvas.setSelectedClassName(className);
         syncSelectionToNavigator();
         updateInspector();
-        if (centerCanvas && null != className) {
-            canvas.focusNode(className, false);
-        }
     }
 
     private void recomputeAndRepaint() {
+
         model.recomputePreview();
         updateInspector();
         updateStatusAndButtons();
@@ -891,24 +635,26 @@ public class TreeLayoutEditorPanel extends JPanel {
     }
 
     private void refreshAfterOffsetMutation() {
-        if (filterMode == FilterMode.SHIFTED || filterMode == FilterMode.MODIFIED) {
+
+        if (FilterMode.SHIFTED == state.filterMode() || FilterMode.MODIFIED == state.filterMode()) {
             rebuildNavigatorViews();
         } else {
             syncTableAllRows();
-            scenarioTree.repaint();
+            treeNav.repaint();
         }
         updateInspector();
         updateStatusAndButtons();
         canvas.repaint();
     }
 
-    private void refreshAllViews(final boolean fitCanvas) {
+    private void refreshAllViews() {
+
         rebuildNavigatorViews();
-        canvas.setSelectedClassName(selectedClassName);
+        canvas.setSelectedClassName(state.selectedClassName());
         updateInspector();
         updateStatusAndButtons();
-        if (fitCanvas && canvas.getWidth() > 0 && canvas.getHeight() > 0) {
-            initialFitPending = false;
+        if (0 < canvas.getWidth() && 0 < canvas.getHeight()) {
+            state.setInitialFitPending(false);
             canvas.fitToView();
         } else {
             canvas.repaint();
@@ -916,328 +662,306 @@ public class TreeLayoutEditorPanel extends JPanel {
     }
 
     private void rebuildNavigatorViews() {
-        syncingUi = true;
-        try {
-            // 1. Rebuild JTree keeping ancestor paths for matching nodes
-            treeRoot.removeAllChildren();
-            treeNodeByClassName.clear();
-            final String query = searchField.getText().trim().toLowerCase(Locale.ROOT);
-            for (final ScenarioBlueprint rootBp : model.roots()) {
-                final DefaultMutableTreeNode built = buildFilteredTreeNode(rootBp, query);
-                if (null != built) {
-                    treeRoot.add(built);
-                }
-            }
-            treeModel.reload();
-            expandTreeAppropriately(!query.isEmpty() || filterMode != FilterMode.ALL);
 
-            // 2. Rebuild JTable rows
-            tableModel.setRowCount(0);
-            for (final ScenarioBlueprint bp : model.blueprintsByClassName().values()) {
-                if (matchesFilter(bp, query)) {
-                    final Offsets off = model.currentOffsets(bp.className());
-                    tableModel.addRow(new Object[]{bp.simpleName(), off.colOffset(), off.rowOffset(), bp.className()});
-                }
-            }
+        state.setInteractive(false);
+        try {
+            final String query = navHeader.searchQuery();
+            rebuildTreeModel(query);
+            rebuildTableModel(query);
         } finally {
-            syncingUi = false;
+            state.setInteractive(true);
         }
         syncSelectionToNavigator();
         updateStatusAndButtons();
     }
 
-    private DefaultMutableTreeNode buildFilteredTreeNode(final ScenarioBlueprint bp, final String query) {
+    private void rebuildTreeModel(final CharSequence query) {
+
+        treeNav.clearForRebuild();
+        for (final TreeLayoutEditorModel.ScenarioBlueprint rootBp : model.roots()) {
+            final DefaultMutableTreeNode built = buildFilteredTreeNode(rootBp, query);
+            if (null != built) {
+                treeNav.addRootNode(built);
+            }
+        }
+        treeNav.finishRebuild(!query.isEmpty() || FilterMode.ALL != state.filterMode());
+    }
+
+    private void rebuildTableModel(final CharSequence query) {
+
+        tableNav.clearRows();
+        for (final TreeLayoutEditorModel.ScenarioBlueprint bp : model.blueprintsByClassName().values()) {
+            if (matchesFilter(bp, query)) {
+                tableNav.addRow(bp, model.currentOffsets(bp.className()));
+            }
+        }
+    }
+
+    private DefaultMutableTreeNode buildFilteredTreeNode(final TreeLayoutEditorModel.ScenarioBlueprint bp, final CharSequence query) {
+
         final DefaultMutableTreeNode node = new DefaultMutableTreeNode(
                 new TreeItem(bp.className(), bp.simpleName(), bp.isLeaf()));
         boolean anyChildKept = false;
-        for (final ScenarioBlueprint child : bp.children()) {
+        for (final TreeLayoutEditorModel.ScenarioBlueprint child : bp.children()) {
             final DefaultMutableTreeNode childNode = buildFilteredTreeNode(child, query);
             if (null != childNode) {
                 node.add(childNode);
                 anyChildKept = true;
             }
         }
+        final DefaultMutableTreeNode result;
         if (matchesFilter(bp, query) || anyChildKept) {
-            treeNodeByClassName.putIfAbsent(bp.className(), node);
-            return node;
+            treeNav.registerNode(bp.className(), node);
+            result = node;
+        } else {
+            result = null;
         }
-        return null;
+        return result;
     }
 
-    private boolean matchesFilter(final ScenarioBlueprint bp, final String query) {
-        if (!query.isEmpty()) {
-            final boolean nameMatch = bp.simpleName().toLowerCase(Locale.ROOT).contains(query)
-                    || bp.className().toLowerCase(Locale.ROOT).contains(query);
-            if (!nameMatch) return false;
-        }
-        return switch (filterMode) {
+    private boolean matchesFilter(final TreeLayoutEditorModel.ScenarioBlueprint bp, final CharSequence query) {
+
+        final boolean queryMatches = query.isEmpty()
+                || bp.simpleName().toLowerCase(Locale.ROOT).contains(query)
+                || bp.className().toLowerCase(Locale.ROOT).contains(query);
+        final boolean modeMatches = switch (state.filterMode()) {
             case ALL -> true;
             case BRANCHES -> !bp.isLeaf();
             case SHIFTED -> model.isShifted(bp.className());
             case MODIFIED -> model.isModified(bp.className());
         };
-    }
-
-    private void expandTreeAppropriately(final boolean expandAll) {
-        if (expandAll) {
-            for (int i = 0; i < scenarioTree.getRowCount(); i++) {
-                scenarioTree.expandRow(i);
-            }
-        } else {
-            // Expand top 2 levels by default so major branches are immediately visible
-            for (int i = 0; i < treeRoot.getChildCount(); i++) {
-                final DefaultMutableTreeNode rootChild = (DefaultMutableTreeNode) treeRoot.getChildAt(i);
-                scenarioTree.expandPath(new TreePath(rootChild.getPath()));
-                for (int j = 0; j < rootChild.getChildCount(); j++) {
-                    final DefaultMutableTreeNode grandChild = (DefaultMutableTreeNode) rootChild.getChildAt(j);
-                    scenarioTree.expandPath(new TreePath(grandChild.getPath()));
-                }
-            }
-        }
+        return queryMatches && modeMatches;
     }
 
     private void syncSelectionToNavigator() {
-        syncingUi = true;
-        try {
-            if (null == selectedClassName) {
-                scenarioTree.clearSelection();
-                scenarioTable.clearSelection();
-                return;
-            }
-            final DefaultMutableTreeNode treeNode = treeNodeByClassName.get(selectedClassName);
-            if (null != treeNode) {
-                final TreePath path = new TreePath(treeNode.getPath());
-                scenarioTree.setSelectionPath(path);
-                scenarioTree.scrollPathToVisible(path);
-            } else {
-                scenarioTree.clearSelection();
-            }
 
-            boolean foundInTable = false;
-            for (int mRow = 0; mRow < tableModel.getRowCount(); mRow++) {
-                if (selectedClassName.equals(tableModel.getValueAt(mRow, 3))) {
-                    final int vRow = scenarioTable.convertRowIndexToView(mRow);
-                    if (vRow >= 0) {
-                        scenarioTable.setRowSelectionInterval(vRow, vRow);
-                        scenarioTable.scrollRectToVisible(scenarioTable.getCellRect(vRow, 0, true));
-                        foundInTable = true;
-                    }
-                    break;
-                }
-            }
-            if (!foundInTable) {
-                scenarioTable.clearSelection();
+        state.setInteractive(false);
+        try {
+            final String selected = state.selectedClassName();
+            if (null == selected) {
+                treeNav.clearSelection();
+                tableNav.clearSelection();
+            } else {
+                treeNav.selectClass(selected);
+                tableNav.selectClass(selected);
             }
         } finally {
-            syncingUi = false;
+            state.setInteractive(true);
         }
     }
 
     private void syncTableAllRows() {
-        syncingUi = true;
+
+        state.setInteractive(false);
         try {
-            for (int r = 0; r < tableModel.getRowCount(); r++) {
-                final String cls = (String) tableModel.getValueAt(r, 3);
-                final Offsets off = model.currentOffsets(cls);
-                tableModel.setValueAt(off.colOffset(), r, 1);
-                tableModel.setValueAt(off.rowOffset(), r, 2);
-            }
+            tableNav.syncAllRows(model);
         } finally {
-            syncingUi = false;
+            state.setInteractive(true);
         }
     }
 
     private void syncTableRowForClass(final String className) {
-        syncingUi = true;
+
+        state.setInteractive(false);
         try {
-            for (int r = 0; r < tableModel.getRowCount(); r++) {
-                if (className.equals(tableModel.getValueAt(r, 3))) {
-                    final Offsets off = model.currentOffsets(className);
-                    tableModel.setValueAt(off.colOffset(), r, 1);
-                    tableModel.setValueAt(off.rowOffset(), r, 2);
-                    break;
-                }
-            }
+            tableNav.syncRowForClass(className, model.currentOffsets(className));
         } finally {
-            syncingUi = false;
+            state.setInteractive(true);
         }
     }
 
     private void updateInspector() {
-        syncingUi = true;
+
+        state.setInteractive(false);
         try {
-            final ScenarioBlueprint bp = (null != selectedClassName) ? model.blueprint(selectedClassName) : null;
+            final String selected = state.selectedClassName();
+            final TreeLayoutEditorModel.ScenarioBlueprint bp = (null == selected) ? null : model.blueprint(selected);
             final boolean hasSel = null != bp;
-
-            colOffsetSpinner.setEnabled(hasSel);
-            rowOffsetSpinner.setEnabled(hasSel);
-            resetColBtn.setEnabled(hasSel);
-            resetRowBtn.setEnabled(hasSel);
-            focusNodeBtn.setEnabled(hasSel);
-
-            if (!hasSel) {
-                inspectorNameLabel.setText("No node selected");
-                inspectorMetaLabel.setText("Click any node on the canvas or navigator");
-                inspectorPosLabel.setText(" ");
-                colOffsetSpinner.setValue(0);
-                rowOffsetSpinner.setValue(0);
-                revertNodeBtn.setEnabled(false);
-                return;
-            }
-
-            final Offsets cur = model.currentOffsets(selectedClassName);
-            final boolean dirty = model.isModified(selectedClassName);
-            inspectorNameLabel.setText((dirty ? "● " : "") + bp.simpleName());
-
-            final String parentCls = model.parentClassName(selectedClassName);
-            final ScenarioBlueprint parentBp = (null != parentCls) ? model.blueprint(parentCls) : null;
-            final String parentLabel = (null != parentBp) ? parentBp.simpleName() : "(root)";
-            inspectorMetaLabel.setText(String.format("Parent: %s · Subtree: %d node%s",
-                    parentLabel, bp.subtreeSize(), bp.subtreeSize() == 1 ? "" : "s"));
-
-            final PreviewResult preview = model.latestPreview();
-            final List<NodeData> nodes = preview.nodesByClassName().get(selectedClassName);
-            if (null != nodes && !nodes.isEmpty()) {
-                final NodeData n = nodes.getFirst();
-                final Point2DGrid raw = preview.rawPositionByNodeId().get(n.id());
-                final StringBuilder pos = new StringBuilder(
-                        String.format("Grid: C%d, R%.2f", n.col(), n.row()));
-                if (model.previewSettings().compacted && null != raw
-                        && (raw.col() != n.col() || Math.abs(raw.row() - n.row()) > 0.05)) {
-                    pos.append(String.format("  (raw: C%d, R%.2f)", raw.col(), raw.row()));
-                }
-                inspectorPosLabel.setText(pos.toString());
+            inspector.setControlsEnabled(hasSel);
+            if (hasSel) {
+                populateInspector(selected, bp);
             } else {
-                inspectorPosLabel.setText(" ");
+                inspector.clear();
             }
-
-            colOffsetSpinner.setValue(cur.colOffset());
-            rowOffsetSpinner.setValue(cur.rowOffset());
-            revertNodeBtn.setEnabled(dirty);
         } finally {
-            syncingUi = false;
+            state.setInteractive(true);
         }
+    }
+
+    private void populateInspector(final String selected, final TreeLayoutEditorModel.ScenarioBlueprint bp) {
+
+        final ScenarioOffsetSourceCodec.Offsets cur = model.currentOffsets(selected);
+        final boolean dirty = model.isModified(selected);
+        final String parentCls = model.parentClassName(selected);
+        final TreeLayoutEditorModel.ScenarioBlueprint parentBp = (null == parentCls) ? null : model.blueprint(parentCls);
+        final String parentLabel = (null == parentBp) ? e(ROUND, ROOT) : parentBp.simpleName();
+        final String metaText = String.format(FMT_INSPECTOR_META, parentLabel, bp.subtreeSize(), s1(bp.subtreeSize()));
+        final String posText = formatSelectedPosition(selected);
+
+        inspector.populate(s(dirty ? DIRTY_MARKER : EMPTY, bp.simpleName()), metaText, posText, cur, dirty);
+    }
+
+    private String formatSelectedPosition(final String selected) {
+
+        final TreeLayoutEditorModel.PreviewResult preview = model.latestPreview();
+        final List<TreeHtml.NodeData> nodes = preview.nodesByClassName().get(selected);
+        final String text;
+        if (null == nodes || nodes.isEmpty()) {
+            text = s(_SPACE_);
+        } else {
+            final TreeHtml.NodeData nodeData = nodes.getFirst();
+            final TreeLayoutEditorModel.Point2DGrid raw = preview.rawPositionByNodeId().get(nodeData.id());
+            final StringBuilder pos = new StringBuilder(String.format(FMT_GRID_POS, nodeData.col(), nodeData.row()));
+            if (hasCompactionDelta(raw, nodeData)) {
+                pos.append(String.format(FMT_RAW_POS, raw.col(), raw.row()));
+            }
+            text = pos.toString();
+        }
+        return text;
+    }
+
+    private boolean hasCompactionDelta(final TreeLayoutEditorModel.Point2DGrid raw, final TreeHtml.NodeData nodeData) {
+
+        final boolean compactedWithRaw = model.previewSettings().compacted && null != raw;
+        return compactedWithRaw && (raw.col() != nodeData.col() || ROW_DELTA_EPSILON < Math.abs(raw.row() - nodeData.row()));
     }
 
     private void updateStatusAndButtons() {
-        final PreviewResult preview = model.latestPreview();
+
+        final TreeLayoutEditorModel.PreviewResult preview = model.latestPreview();
         final int shifted = model.shiftedCount();
         final int modified = model.modifiedCount();
 
-        filterShiftedBtn.setText(shifted > 0 ? ("Shifted (" + shifted + ")") : "Shifted");
-        filterModifiedBtn.setText(modified > 0 ? ("Modified (" + modified + ")") : "Modified");
+        navHeader.updateFilterBadges(shifted, modified);
+        updateStatusMetrics(preview, shifted, modified);
+
+        final boolean solving = state.isSolverRunning();
+        final boolean idle = !solving;
+        final boolean hasScenarios = !model.isEmpty();
+        bottomBar.updateState(solving, idle, hasScenarios, model.canUndo(), model.canRedo(), shifted, modified);
+    }
+
+    private void updateStatusMetrics(
+            final TreeLayoutEditorModel.PreviewResult preview, final int shifted, final int modified) {
 
         if (preview.layout().nodes().isEmpty()) {
-            statusMetricsLabel.setText("No scenarios loaded");
+            statusMetricsLabel.setText(NO_SCENARIOS_LOADED);
         } else {
             final double ratio = TreeLayoutAutoSolver.aspectRatio(preview);
-            final StringBuilder sb = new StringBuilder();
-            sb.append(preview.totalCols()).append(" cols × ")
-                    .append((int) Math.ceil(preview.totalRows())).append(" rows")
-                    .append(String.format(Locale.ROOT, " (%.2f:1)", ratio))
-                    .append(" · ").append(shifted).append(" shifted");
-            if (modified > 0) {
-                sb.append(" · ").append(modified).append(" unsaved");
+            final int totalRows = Math.toIntExact(Math.round(Math.ceil(preview.totalRows())));
+            final StringBuilder sb = new StringBuilder(INITIAL_SB_CAPACITY);
+            sb.append(b(s(preview.totalCols()), COLS, s(MLT_SGN), s(totalRows), ROWS))
+                    .append(String.format(Locale.ROOT, FMT_RATIO_SUFFIX, ratio))
+                    .append(SEP_MID_DOT).append(b(s(shifted), SHIFTED));
+            if (0 < modified) {
+                sb.append(SEP_MID_DOT).append(b(s(modified), UNSAVED));
             }
-            if (preview.overlapCount() > 0) {
-                sb.append(" · ").append(preview.overlapCount()).append(" overlaps!");
-                statusMetricsLabel.setForeground(new Color(0xDC, 0x26, 0x26));
+            if (0 < preview.overlapCount()) {
+                sb.append(SEP_MID_DOT).append(b(s(preview.overlapCount()), s(OVERLAPS, _EXCL_)));
+                statusMetricsLabel.setForeground(COLOR_ERROR);
             } else {
-                statusMetricsLabel.setForeground(new Color(0x47, 0x55, 0x69));
+                statusMetricsLabel.setForeground(COLOR_STATUS);
             }
             statusMetricsLabel.setText(sb.toString());
         }
-
-        final boolean solving = isSolverRunning();
-        undoBtn.setEnabled(!solving && model.canUndo());
-        redoBtn.setEnabled(!solving && model.canRedo());
-        revertAllBtn.setEnabled(!solving && modified > 0);
-        resetAllZeroBtn.setEnabled(!solving && shifted > 0);
-        aspectPresetCombo.setEnabled(!solving && !model.isEmpty());
-        autoLayoutBtn.setEnabled(solving || !model.isEmpty());
-        saveBtn.setEnabled(!solving && modified > 0);
-        saveBtn.setText(modified > 0 ? ("Save (" + modified + ") to Sources") : "Save to Sources");
     }
 
     private void openInBrowser() {
-        stopTableEditing();
-        final PreviewResult preview = model.latestPreview();
+
+        tableNav.stopEditing();
+        final TreeLayoutEditorModel.PreviewResult preview = model.latestPreview();
         if (preview.layout().nodes().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No scenarios to preview.", "Info", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-        try {
-            final String html = TreeHtml.renderHtml(preview.layout());
-            final File tempHtml = File.createTempFile("tree-preview-", ".html");
-            works.lysenko.util.func.type.Files.writeToFile(html, tempHtml.getAbsolutePath());
-            Desktop.getDesktop().browse(tempHtml.toURI());
-        } catch (final Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error generating browser preview: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, b(c(NO), SCENARIOS, TO, s(PREVIEW, _DOT_)),
+                    c(INFO), JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            try {
+                final String html = TreeHtml.renderHtml(preview.layout());
+                final File tempHtml = File.createTempFile(s(d(TREE, PREVIEW), _DASH_), s(_DOT_, HTML));
+                writeToFile(html, tempHtml.getAbsolutePath());
+                Desktop.getDesktop().browse(tempHtml.toURI());
+            } catch (final IOException ex) {
+                JOptionPane.showMessageDialog(this,
+                        sn(b(c(ERROR), GENERATING, BROWSER, s(PREVIEW, _COLON_)), _SPACE_, ex.getMessage()),
+                        c(ERROR), JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
     private void saveToSources() {
-        stopTableEditing();
-        final List<OffsetChange> changes = model.modifiedChanges();
+
+        tableNav.stopEditing();
+        final List<TreeLayoutEditorModel.OffsetChange> changes = model.modifiedChanges();
         if (changes.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No changes detected.", "Info", JOptionPane.INFORMATION_MESSAGE);
-            return;
+            JOptionPane.showMessageDialog(this, b(c(NO), CHANGES, s(DETECTED, _DOT_)),
+                    c(INFO), JOptionPane.INFORMATION_MESSAGE);
+        } else if (isSaveConfirmed(changes)) {
+            applySourceChanges(changes);
         }
+    }
 
-        final StringBuilder diff = new StringBuilder();
-        for (final OffsetChange c : changes) {
-            diff.append(String.format("%-32s  (%+d, %+d)  →  (%+d, %+d)%n",
-                    c.simpleName(),
-                    c.initial().colOffset(), c.initial().rowOffset(),
-                    c.current().colOffset(), c.current().rowOffset()));
-        }
+    private boolean isSaveConfirmed(final Collection<TreeLayoutEditorModel.OffsetChange> changes) {
 
-        final JTextArea area = new JTextArea(diff.toString(), Math.min(14, changes.size() + 1), 54);
-        area.setEditable(false);
-        area.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        final JTextArea area = buildChangesDiffArea(changes);
         final int confirm = JOptionPane.showConfirmDialog(
                 this,
-                new Object[]{"Apply offset changes to " + changes.size() + " Java source file(s)?", new JScrollPane(area)},
-                "Confirm Save to Sources",
+                new Object[]{
+                        b(c(APPLY), OFFSET, CHANGES, TO, s(changes.size()), c(JAVA), SOURCE,
+                                s(FILE, e(ROUND, S), QUS_MRK)),
+                        new JScrollPane(area)},
+                b(c(CONFIRM), SAVE_TO_SOURCES),
                 JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.QUESTION_MESSAGE);
-        if (confirm != JOptionPane.OK_OPTION) return;
+        return JOptionPane.OK_OPTION == confirm;
+    }
 
-        final Path baseDir = Paths.get(System.getProperty("user.dir"));
+    private static JTextArea buildChangesDiffArea(final Collection<TreeLayoutEditorModel.OffsetChange> changes) {
+
+        final StringBuilder diff = new StringBuilder(INITIAL_DIFF_CAPACITY);
+        for (final TreeLayoutEditorModel.OffsetChange change : changes) {
+            diff.append(String.format(FMT_DIFF_LINE,
+                    change.simpleName(),
+                    change.initial().colOffset(), change.initial().rowOffset(),
+                    change.current().colOffset(), change.current().rowOffset()));
+        }
+        final JTextArea area = new JTextArea(diff.toString(), Math.min(DIFF_AREA_MAX_ROWS, changes.size() + 1), DIFF_AREA_COLS);
+        area.setEditable(false);
+        area.setFont(FONT_MONO_12);
+        return area;
+    }
+
+    private void applySourceChanges(final Iterable<TreeLayoutEditorModel.OffsetChange> changes) {
+
+        final Path baseDir = Path.of(EMPTY).toAbsolutePath();
         int savedCount = 0;
-        final StringBuilder errors = new StringBuilder();
-        for (final OffsetChange change : changes) {
+        final StringBuilder errors = new StringBuilder(INITIAL_SB_CAPACITY);
+        for (final TreeLayoutEditorModel.OffsetChange change : changes) {
             final Path sourcePath = ScenarioOffsetSourceCodec.resolveSourcePath(baseDir, change.className());
             try {
                 ScenarioOffsetSourceCodec.writeOffsets(sourcePath, change.current());
                 model.markSaved(change.className());
                 savedCount++;
-            } catch (final Exception ex) {
-                errors.append(change.className()).append(": ").append(ex.getMessage()).append('\n');
+            } catch (final IOException ex) {
+                errors.append(change.className()).append(_COLON_).append(_SPACE_).append(ex.getMessage()).append(_LFD_);
             }
         }
 
         refreshAfterOffsetMutation();
 
-        if (!errors.isEmpty()) {
+        if (errors.isEmpty()) {
             JOptionPane.showMessageDialog(this,
-                    "Saved " + savedCount + " file(s), with errors:\n" + errors,
-                    "Partial Save", JOptionPane.WARNING_MESSAGE);
+                    s(b(c(SUCCESSFULLY), UPDATED, s(savedCount), SOURCE, s(FILE, e(ROUND, S), _DOT_)),
+                            _LFD_, b(c(RECOMPILE), THE, TEST, PROJECT, FOR, ANNOTATIONS, TO, TAKE, s(EFFECT, _DOT_))),
+                    c(SAVED), JOptionPane.INFORMATION_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(this,
-                    "Successfully updated " + savedCount + " source file(s).\nRecompile the test project for annotations to take effect.",
-                    "Saved", JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-
-    private void stopTableEditing() {
-        if (scenarioTable.isEditing() && null != scenarioTable.getCellEditor()) {
-            scenarioTable.getCellEditor().stopCellEditing();
+                    s(b(c(SAVED), s(savedCount), s(FILE, e(ROUND, S), _COMMA_), WITH, s(ERRORS, _COLON_)),
+                            _LFD_, errors),
+                    b(c(PARTIAL), c(SAVE)), JOptionPane.WARNING_MESSAGE);
         }
     }
 
     private static JButton compactButton(final String label, final String tooltip) {
+
         final JButton btn = new JButton(label);
         btn.setMargin(new Insets(2, 8, 2, 8));
         btn.setToolTipText(tooltip);
@@ -1245,26 +969,1011 @@ public class TreeLayoutEditorPanel extends JPanel {
         return btn;
     }
 
-    private static void styleToggle(final JToggleButton btn) {
-        btn.setMargin(new Insets(2, 7, 2, 7));
-        btn.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
-        btn.setFocusable(false);
+    private static final class EditorState {
+
+        private FilterMode filterMode = FilterMode.ALL;
+        private String selectedClassName = null;
+        private String loadedRootPackage = null;
+        private boolean interactive = true;
+        private boolean initialFitPending = true;
+        private SwingWorker<TreeLayoutAutoSolver.SolveResult, TreeLayoutAutoSolver.SolveProgress> activeSolver = null;
+        private final AtomicBoolean solverCancelled = new AtomicBoolean(false);
+
+        private FilterMode filterMode() {
+
+            return filterMode;
+        }
+
+        private void setFilterMode(final FilterMode mode) {
+
+            filterMode = mode;
+        }
+
+        private String selectedClassName() {
+
+            return selectedClassName;
+        }
+
+        private void setSelectedClassName(final String className) {
+
+            selectedClassName = className;
+        }
+
+        private String loadedRootPackage() {
+
+            return loadedRootPackage;
+        }
+
+        private void setLoadedRootPackage(final String rootPackage) {
+
+            loadedRootPackage = rootPackage;
+        }
+
+        private boolean isInteractive() {
+
+            return interactive;
+        }
+
+        private void setInteractive(final boolean value) {
+
+            interactive = value;
+        }
+
+        private boolean isInitialFitPending() {
+
+            return initialFitPending;
+        }
+
+        private void setInitialFitPending(final boolean pending) {
+
+            initialFitPending = pending;
+        }
+
+        private boolean isSolverRunning() {
+
+            return null != activeSolver && !activeSolver.isDone();
+        }
+
+        private boolean isSolverCancelled() {
+
+            return solverCancelled.get();
+        }
+
+        private void resetSolverCancelled() {
+
+            solverCancelled.set(false);
+        }
+
+        private void setActiveSolver(
+                final SwingWorker<TreeLayoutAutoSolver.SolveResult, TreeLayoutAutoSolver.SolveProgress> worker) {
+
+            activeSolver = worker;
+        }
+
+        private void clearActiveSolver() {
+
+            activeSolver = null;
+        }
+
+        private void cancelActiveSolverIfRunning() {
+
+            if (isSolverRunning()) {
+                solverCancelled.set(true);
+                activeSolver.cancel(false);
+            }
+        }
     }
 
-    private static String formatOffsetTag(final Offsets o) {
-        if (o.colOffset() != 0 && o.rowOffset() != 0) {
-            return String.format("c+%d, r%+d", o.colOffset(), o.rowOffset());
+    private static final class NavigatorHeaderControls {
+
+        private final JTextField searchField = new JTextField(SEARCH_FIELD_COLUMNS);
+        private final JToggleButton treeViewBtn = new JToggleButton(c(TREE), true);
+        private final JToggleButton tableViewBtn = new JToggleButton(c(TABLE), false);
+        private final JToggleButton filterShiftedBtn = new JToggleButton(c(SHIFTED), false);
+        private final JToggleButton filterModifiedBtn = new JToggleButton(c(MODIFIED), false);
+        private final CardLayout cardLayout = new CardLayout();
+        private final JPanel cardPanel = new JPanel(cardLayout);
+
+        private JPanel buildLeftPane(
+                final JScrollPane treeScrollPane,
+                final JScrollPane tableScrollPane,
+                final JPanel inspectorPanel,
+                final DocumentListener searchListener,
+                final Consumer<? super Boolean> onViewToggle,
+                final Consumer<? super FilterMode> onFilterChanged) {
+
+            final JPanel left = new JPanel(new BorderLayout(0, 6));
+            left.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 4));
+            left.setMinimumSize(new Dimension(LEFT_PANE_MIN_WIDTH, LEFT_PANE_MIN_HEIGHT));
+
+            final JPanel header = new JPanel(new BorderLayout(4, 4));
+            header.add(buildSearchRow(onViewToggle), BorderLayout.PAGE_START);
+            header.add(buildFilterRow(onFilterChanged), BorderLayout.PAGE_END);
+            searchField.getDocument().addDocumentListener(searchListener);
+
+            cardPanel.add(treeScrollPane, CARD_TREE);
+            cardPanel.add(tableScrollPane, CARD_TABLE);
+            cardLayout.show(cardPanel, CARD_TREE);
+
+            left.add(header, BorderLayout.PAGE_START);
+            left.add(cardPanel, BorderLayout.CENTER);
+            left.add(inspectorPanel, BorderLayout.PAGE_END);
+            return left;
         }
-        if (o.colOffset() != 0) {
-            return String.format("c+%d", o.colOffset());
+
+        private JPanel buildSearchRow(final Consumer<? super Boolean> onViewToggle) {
+
+            final JPanel searchRow = new JPanel(new BorderLayout(4, 0));
+            final JPanel searchInputWrap = new JPanel(new BorderLayout(2, 0));
+            searchField.setToolTipText(b(c(FILTER), SCENARIOS, BY, NAME, OR, CLASS));
+            final JButton clearSearchBtn = compactButton(s(MLT_SGN), b(c(CLEAR), SEARCH));
+            clearSearchBtn.addActionListener(_ -> searchField.setText(EMPTY));
+            searchInputWrap.add(searchField, BorderLayout.CENTER);
+            searchInputWrap.add(clearSearchBtn, BorderLayout.LINE_END);
+
+            final JPanel viewToggleWrap = new JPanel(new FlowLayout(FlowLayout.TRAILING, 2, 0));
+            final ButtonGroup viewGroup = new ButtonGroup();
+            styleToggle(treeViewBtn);
+            styleToggle(tableViewBtn);
+            viewGroup.add(treeViewBtn);
+            viewGroup.add(tableViewBtn);
+            treeViewBtn.addActionListener(_ -> onViewToggle.accept(Boolean.TRUE));
+            tableViewBtn.addActionListener(_ -> onViewToggle.accept(Boolean.FALSE));
+            viewToggleWrap.add(treeViewBtn);
+            viewToggleWrap.add(tableViewBtn);
+
+            searchRow.add(searchInputWrap, BorderLayout.CENTER);
+            searchRow.add(viewToggleWrap, BorderLayout.LINE_END);
+            return searchRow;
         }
-        return String.format("r%+d", o.rowOffset());
+
+        private JPanel buildFilterRow(final Consumer<? super FilterMode> onFilterChanged) {
+
+            final JPanel filterRow = new JPanel(new FlowLayout(FlowLayout.LEADING, 3, 0));
+            final JToggleButton filterAllBtn = new JToggleButton(c(ALL), true);
+            final JToggleButton filterBranchesBtn = new JToggleButton(c(BRANCHES), false);
+            final ButtonGroup filterGroup = new ButtonGroup();
+            for (final JToggleButton btn : new JToggleButton[]{filterAllBtn, filterBranchesBtn, filterShiftedBtn, filterModifiedBtn}) {
+                styleToggle(btn);
+                filterGroup.add(btn);
+                filterRow.add(btn);
+            }
+            filterAllBtn.addActionListener(_ -> onFilterChanged.accept(FilterMode.ALL));
+            filterBranchesBtn.addActionListener(_ -> onFilterChanged.accept(FilterMode.BRANCHES));
+            filterShiftedBtn.addActionListener(_ -> onFilterChanged.accept(FilterMode.SHIFTED));
+            filterModifiedBtn.addActionListener(_ -> onFilterChanged.accept(FilterMode.MODIFIED));
+            return filterRow;
+        }
+
+        private static void styleToggle(final JToggleButton btn) {
+
+            btn.setMargin(new Insets(2, 7, 2, 7));
+            btn.setFont(FONT_SANS_11);
+            btn.setFocusable(false);
+        }
+
+        private boolean isTreeViewSelected() {
+
+            return treeViewBtn.isSelected();
+        }
+
+        private void showView(final boolean treeView) {
+
+            if (treeView) {
+                treeViewBtn.setSelected(true);
+                cardLayout.show(cardPanel, CARD_TREE);
+            } else {
+                tableViewBtn.setSelected(true);
+                cardLayout.show(cardPanel, CARD_TABLE);
+            }
+        }
+
+        private String searchQuery() {
+
+            return searchField.getText().strip().toLowerCase(Locale.ROOT);
+        }
+
+        private void updateFilterBadges(final int shifted, final int modified) {
+
+            filterShiftedBtn.setText(0 < shifted ? b(c(SHIFTED), e(ROUND, shifted)) : c(SHIFTED));
+            filterModifiedBtn.setText(0 < modified ? b(c(MODIFIED), e(ROUND, modified)) : c(MODIFIED));
+        }
+    }
+
+    private static final class TreeNavigatorControls {
+
+        private final DefaultMutableTreeNode treeRoot = new DefaultMutableTreeNode(c(SCENARIOS));
+        private final DefaultTreeModel treeModel = new DefaultTreeModel(treeRoot);
+        private final JTree scenarioTree = new JTree(treeModel);
+        private final Map<String, DefaultMutableTreeNode> treeNodeByClassName = new HashMap<>(INITIAL_MAP_CAPACITY);
+
+        private void configure(final TreeCellRenderer renderer, final Runnable onSelectionChanged) {
+
+            scenarioTree.setRootVisible(false);
+            scenarioTree.setShowsRootHandles(true);
+            scenarioTree.setRowHeight(TREE_ROW_HEIGHT);
+            scenarioTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+            scenarioTree.setCellRenderer(renderer);
+            scenarioTree.addTreeSelectionListener(_ -> onSelectionChanged.run());
+        }
+
+        private JScrollPane scrollPane() {
+
+            return new JScrollPane(scenarioTree);
+        }
+
+        private void clearForRebuild() {
+
+            treeRoot.removeAllChildren();
+            treeNodeByClassName.clear();
+        }
+
+        private void addRootNode(final MutableTreeNode node) {
+
+            treeRoot.add(node);
+        }
+
+        private void registerNode(final String className, final DefaultMutableTreeNode node) {
+
+            treeNodeByClassName.putIfAbsent(className, node);
+        }
+
+        private void finishRebuild(final boolean expandAll) {
+
+            treeModel.reload();
+            if (expandAll) {
+                for (int i = 0; scenarioTree.getRowCount() > i; i++) {
+                    scenarioTree.expandRow(i);
+                }
+            } else {
+                expandTopTwoLevels();
+            }
+        }
+
+        private void expandTopTwoLevels() {
+
+            for (int i = 0; treeRoot.getChildCount() > i; i++) {
+                expandNodeAndDirectChildren((DefaultMutableTreeNode) treeRoot.getChildAt(i));
+            }
+        }
+
+        private void expandNodeAndDirectChildren(final DefaultMutableTreeNode parentNode) {
+
+            expandNodePath(parentNode);
+            for (int j = 0; parentNode.getChildCount() > j; j++) {
+                expandNodePath((DefaultMutableTreeNode) parentNode.getChildAt(j));
+            }
+        }
+
+        private void expandNodePath(final DefaultMutableTreeNode node) {
+
+            scenarioTree.expandPath(new TreePath(node.getPath()));
+        }
+
+        private void clearSelection() {
+
+            scenarioTree.clearSelection();
+        }
+
+        private void selectClass(final String className) {
+
+            final DefaultMutableTreeNode treeNode = treeNodeByClassName.get(className);
+            if (null == treeNode) {
+                scenarioTree.clearSelection();
+            } else {
+                final TreePath path = new TreePath(treeNode.getPath());
+                scenarioTree.setSelectionPath(path);
+                scenarioTree.scrollPathToVisible(path);
+            }
+        }
+
+        private TreeItem selectedItem() {
+
+            final TreePath path = scenarioTree.getSelectionPath();
+            final TreeItem result;
+            if (null != path
+                    && path.getLastPathComponent() instanceof final DefaultMutableTreeNode node
+                    && node.getUserObject() instanceof final TreeItem item) {
+                result = item;
+            } else {
+                result = null;
+            }
+            return result;
+        }
+
+        private void repaint() {
+
+            scenarioTree.repaint();
+        }
+    }
+
+    private static final class TableNavigatorControls {
+
+        private final DefaultTableModel tableModel = new OffsetTableModel();
+        private final JTable scenarioTable = new JTable(tableModel);
+
+        private void configure(
+                final TableCellRenderer renderer,
+                final ListSelectionListener selectionListener,
+                final TableModelListener modelListener) {
+
+            scenarioTable.setRowHeight(TABLE_ROW_HEIGHT);
+            scenarioTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            scenarioTable.getTableHeader().setReorderingAllowed(false);
+            scenarioTable.setFont(FONT_MONO_12);
+
+            final TableRowSorter<DefaultTableModel> tableSorter = new TableRowSorter<>(tableModel);
+            scenarioTable.setRowSorter(tableSorter);
+
+            final Comparator<String> strCmp = Comparator.nullsFirst(Comparator.naturalOrder());
+            tableSorter.setComparator(COL_SCENARIO, strCmp);
+            tableSorter.setComparator(COL_CLASS, strCmp);
+
+            scenarioTable.getColumnModel().getColumn(COL_SCENARIO).setPreferredWidth(COL_WIDTH_SCENARIO);
+            scenarioTable.getColumnModel().getColumn(COL_OFFSET).setPreferredWidth(COL_WIDTH_OFFSET);
+            scenarioTable.getColumnModel().getColumn(COL_ROW_OFFSET).setPreferredWidth(COL_WIDTH_OFFSET);
+            scenarioTable.getColumnModel().getColumn(COL_CLASS).setPreferredWidth(COL_WIDTH_CLASS);
+
+            for (int col = 0; TABLE_COLUMN_COUNT > col; col++) {
+                scenarioTable.getColumnModel().getColumn(col).setCellRenderer(renderer);
+            }
+
+            scenarioTable.getSelectionModel().addListSelectionListener(selectionListener);
+            tableModel.addTableModelListener(modelListener);
+        }
+
+        private JScrollPane scrollPane() {
+
+            return new JScrollPane(scenarioTable);
+        }
+
+        private void clearRows() {
+
+            tableModel.setRowCount(0);
+        }
+
+        private void addRow(final TreeLayoutEditorModel.ScenarioBlueprint bp, final ScenarioOffsetSourceCodec.Offsets off) {
+
+            tableModel.addRow(new Object[]{bp.simpleName(), off.colOffset(), off.rowOffset(), bp.className()});
+        }
+
+        private String selectedClassName() {
+
+            final int viewRow = scenarioTable.getSelectedRow();
+            final String result;
+            if (0 <= viewRow) {
+                final int modelRow = scenarioTable.convertRowIndexToModel(viewRow);
+                result = classNameAtModelRow(modelRow);
+            } else {
+                result = null;
+            }
+            return result;
+        }
+
+        private boolean isEditableOffsetCell(final int row, final int col) {
+
+            final boolean validRow = 0 <= row && tableModel.getRowCount() > row;
+            final boolean offsetCol = COL_OFFSET == col || COL_ROW_OFFSET == col;
+            return validRow && offsetCol;
+        }
+
+        private String classNameAtModelRow(final int modelRow) {
+
+            return (String) tableModel.getValueAt(modelRow, COL_CLASS);
+        }
+
+        private int colOffsetAtModelRow(final int modelRow) {
+
+            final Object colVal = tableModel.getValueAt(modelRow, COL_OFFSET);
+            return (colVal instanceof final Number num) ? Math.max(0, num.intValue()) : 0;
+        }
+
+        private int rowOffsetAtModelRow(final int modelRow) {
+
+            final Object rowVal = tableModel.getValueAt(modelRow, COL_ROW_OFFSET);
+            return (rowVal instanceof final Number num) ? num.intValue() : 0;
+        }
+
+        private void clearSelection() {
+
+            scenarioTable.clearSelection();
+        }
+
+        private void selectClass(final String className) {
+
+            final int modelRow = findModelRow(className);
+            final int viewRow = (0 <= modelRow) ? scenarioTable.convertRowIndexToView(modelRow) : -1;
+            if (0 <= viewRow) {
+                scenarioTable.setRowSelectionInterval(viewRow, viewRow);
+                scenarioTable.scrollRectToVisible(scenarioTable.getCellRect(viewRow, COL_SCENARIO, true));
+            } else {
+                scenarioTable.clearSelection();
+            }
+        }
+
+        private int findModelRow(final String className) {
+
+            int foundRow = -1;
+            int row = 0;
+            final int rowCount = tableModel.getRowCount();
+            while (rowCount > row && 0 > foundRow) {
+                if (Objects.equals(className, tableModel.getValueAt(row, COL_CLASS))) {
+                    foundRow = row;
+                }
+                row++;
+            }
+            return foundRow;
+        }
+
+        private void syncAllRows(final TreeLayoutEditorModel editorModel) {
+
+            for (int r = 0; tableModel.getRowCount() > r; r++) {
+                final String cls = classNameAtModelRow(r);
+                final ScenarioOffsetSourceCodec.Offsets off = editorModel.currentOffsets(cls);
+                tableModel.setValueAt(off.colOffset(), r, COL_OFFSET);
+                tableModel.setValueAt(off.rowOffset(), r, COL_ROW_OFFSET);
+            }
+        }
+
+        private void syncRowForClass(final String className, final ScenarioOffsetSourceCodec.Offsets off) {
+
+            final int row = findModelRow(className);
+            if (0 <= row) {
+                tableModel.setValueAt(off.colOffset(), row, COL_OFFSET);
+                tableModel.setValueAt(off.rowOffset(), row, COL_ROW_OFFSET);
+            }
+        }
+
+        private void stopEditing() {
+
+            if (scenarioTable.isEditing() && null != scenarioTable.getCellEditor()) {
+                scenarioTable.getCellEditor().stopCellEditing();
+            }
+        }
+    }
+
+    private static final class InspectorControls {
+
+        private final JLabel nameLabel = new JLabel(NO_NODE_SELECTED);
+        private final JLabel metaLabel = new JLabel(CLICK_ANY_NODE___);
+        private final JLabel posLabel = new JLabel(s(_SPACE_));
+        private final JSpinner colOffsetSpinner = new JSpinner(new SpinnerNumberModel(0, 0, SPINNER_MAX_OFFSET, 1));
+        private final JSpinner rowOffsetSpinner = new JSpinner(new SpinnerNumberModel(0, SPINNER_MIN_ROW_OFFSET, SPINNER_MAX_OFFSET, 1));
+        private final JButton resetColBtn = new JButton(s(_0_));
+        private final JButton resetRowBtn = new JButton(s(_0_));
+        private final JButton revertNodeBtn = new JButton(b(c(REVERT), c(NODE)));
+        private final JButton focusNodeBtn = new JButton(c(FOCUS));
+
+        private void configure(
+                final Runnable onColChange,
+                final Runnable onRowChange,
+                final Runnable onResetCol,
+                final Runnable onResetRow,
+                final Runnable onRevert,
+                final Runnable onFocus) {
+
+            colOffsetSpinner.addChangeListener(_ -> onColChange.run());
+            rowOffsetSpinner.addChangeListener(_ -> onRowChange.run());
+            resetColBtn.addActionListener(_ -> onResetCol.run());
+            resetRowBtn.addActionListener(_ -> onResetRow.run());
+            revertNodeBtn.addActionListener(_ -> onRevert.run());
+            focusNodeBtn.addActionListener(_ -> onFocus.run());
+        }
+
+        private int colOffsetValue() {
+
+            return ((Number) colOffsetSpinner.getValue()).intValue();
+        }
+
+        private int rowOffsetValue() {
+
+            return ((Number) rowOffsetSpinner.getValue()).intValue();
+        }
+
+        private JPanel buildPanel() {
+
+            final JPanel panel = new JPanel(new GridBagLayout());
+            panel.setBorder(BorderFactory.createTitledBorder(b(c(SELECTED), c(NODE))));
+
+            final GridBagConstraints gbc = new GridBagConstraints();
+            gbc.insets = new Insets(2, 4, 2, 4);
+            gbc.anchor = GridBagConstraints.LINE_START;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            gbc.weightx = 1.0;
+
+            nameLabel.setFont(FONT_SANS_BOLD_13);
+            metaLabel.setFont(FONT_MONO_10);
+            metaLabel.setForeground(COLOR_MUTED);
+            posLabel.setFont(FONT_MONO_11);
+
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            gbc.gridwidth = 3;
+            panel.add(nameLabel, gbc);
+
+            gbc.gridy = 1;
+            panel.add(metaLabel, gbc);
+
+            gbc.gridy = 2;
+            panel.add(posLabel, gbc);
+
+            gbc.gridy = 3;
+            gbc.gridwidth = 1;
+            gbc.weightx = 0.0;
+            panel.add(new JLabel(b(c(COL), c(OFFSET), s(e(ROUND, AT_VISUAL_OFFSET), _COLON_))), gbc);
+            gbc.gridx = 1;
+            gbc.weightx = 1.0;
+            panel.add(colOffsetSpinner, gbc);
+            gbc.gridx = 2;
+            gbc.weightx = 0.0;
+            resetColBtn.setMargin(new Insets(1, 6, 1, 6));
+            resetColBtn.setToolTipText(b(c(RESET), AT_VISUAL_OFFSET, TO, s(_0_)));
+            panel.add(resetColBtn, gbc);
+
+            gbc.gridx = 0;
+            gbc.gridy = 4;
+            gbc.weightx = 0.0;
+            panel.add(new JLabel(b(c(ROW), c(OFFSET), s(e(ROUND, AT_VISUAL_ROW_OFFSET), _COLON_))), gbc);
+            gbc.gridx = 1;
+            gbc.weightx = 1.0;
+            panel.add(rowOffsetSpinner, gbc);
+            gbc.gridx = 2;
+            gbc.weightx = 0.0;
+            resetRowBtn.setMargin(new Insets(1, 6, 1, 6));
+            resetRowBtn.setToolTipText(b(c(RESET), AT_VISUAL_ROW_OFFSET, TO, s(_0_)));
+            panel.add(resetRowBtn, gbc);
+
+            final JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEADING, 4, 0));
+            revertNodeBtn.setMargin(new Insets(2, 8, 2, 8));
+            focusNodeBtn.setMargin(new Insets(2, 8, 2, 8));
+            actions.add(revertNodeBtn);
+            actions.add(focusNodeBtn);
+
+            gbc.gridx = 0;
+            gbc.gridy = 5;
+            gbc.gridwidth = 3;
+            gbc.weightx = 1.0;
+            panel.add(actions, gbc);
+
+            final JLabel hint = new JLabel(b(s(c(CANVAS), _COLON_), c(CLICK), SELECT, s(MID_DOT),
+                    c(ARROWS), s(PLS_MNS, _1_), s(MID_DOT), s(c(SHIFT), _PLUS_, c(ARROWS)), s(PLS_MNS, _5_),
+                    s(MID_DOT), s(_0_), RESET));
+            hint.setFont(FONT_SANS_ITALIC_10);
+            hint.setForeground(COLOR_MUTED);
+            gbc.gridy = 6;
+            panel.add(hint, gbc);
+
+            return panel;
+        }
+
+        private void setControlsEnabled(final boolean enabled) {
+
+            colOffsetSpinner.setEnabled(enabled);
+            rowOffsetSpinner.setEnabled(enabled);
+            resetColBtn.setEnabled(enabled);
+            resetRowBtn.setEnabled(enabled);
+            focusNodeBtn.setEnabled(enabled);
+        }
+
+        private void disableEditableControls() {
+
+            colOffsetSpinner.setEnabled(false);
+            rowOffsetSpinner.setEnabled(false);
+            resetColBtn.setEnabled(false);
+            resetRowBtn.setEnabled(false);
+            revertNodeBtn.setEnabled(false);
+        }
+
+        private void clear() {
+
+            nameLabel.setText(NO_NODE_SELECTED);
+            metaLabel.setText(CLICK_ANY_NODE___);
+            posLabel.setText(s(_SPACE_));
+            colOffsetSpinner.setValue(0);
+            rowOffsetSpinner.setValue(0);
+            revertNodeBtn.setEnabled(false);
+        }
+
+        private void populate(
+                final String nameText, final String metaText, final String posText,
+                final ScenarioOffsetSourceCodec.Offsets offsets, final boolean dirty) {
+
+            nameLabel.setText(nameText);
+            metaLabel.setText(metaText);
+            posLabel.setText(posText);
+            colOffsetSpinner.setValue(offsets.colOffset());
+            rowOffsetSpinner.setValue(offsets.rowOffset());
+            revertNodeBtn.setEnabled(dirty);
+        }
+    }
+
+    private static final class BottomBarControls {
+
+        private final JButton undoBtn = new JButton(c(UNDO));
+        private final JButton redoBtn = new JButton(c(REDO));
+        private final JButton revertAllBtn = new JButton(b(c(REVERT), c(ALL)));
+        private final JButton resetAllZeroBtn = new JButton(b(c(RESET), c(ALL), TO, s(_0_)));
+        private final JComboBox<TreeLayoutAutoSolver.AspectPreset> aspectPresetCombo =
+                new JComboBox<>(TreeLayoutAutoSolver.AspectPreset.values());
+        private final JButton autoLayoutBtn = new JButton(AUTO_LAYOUT);
+        private final JButton saveBtn = new JButton(SAVE_TO_SOURCES);
+
+        private JPanel buildPanel(
+                final Runnable onUndo,
+                final Runnable onRedo,
+                final Runnable onRevertAll,
+                final Runnable onResetAll,
+                final Runnable onAutoLayout,
+                final Runnable onReload,
+                final Runnable onBrowser,
+                final Runnable onSave) {
+
+            final JPanel bottom = new JPanel(new BorderLayout(8, 0));
+            bottom.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(1, 0, 0, 0, COLOR_BORDER),
+                    BorderFactory.createEmptyBorder(6, 8, 6, 8)));
+
+            final JPanel left = new JPanel(new FlowLayout(FlowLayout.LEADING, 6, 0));
+            undoBtn.addActionListener(_ -> onUndo.run());
+            redoBtn.addActionListener(_ -> onRedo.run());
+            revertAllBtn.setToolTipText(b(c(DISCARD), UNSAVED, EDITS, AND, RESTORE, OFFSETS, FROM, SOURCES));
+            revertAllBtn.addActionListener(_ -> onRevertAll.run());
+            resetAllZeroBtn.setToolTipText(b(c(SET), ALL, AT_VISUAL_OFFSET, AND, AT_VISUAL_ROW_OFFSET,
+                    VALUES, TO, s(_0_), e(ROUND, UNDOABLE)));
+            resetAllZeroBtn.addActionListener(_ -> onResetAll.run());
+
+            final JSeparator sep = new JSeparator(SwingConstants.VERTICAL);
+            sep.setPreferredSize(new Dimension(2, SEPARATOR_HEIGHT));
+
+            aspectPresetCombo.setSelectedItem(TreeLayoutAutoSolver.AspectPreset.WIDESCREEN_16_9);
+            aspectPresetCombo.setToolTipText(b(c(TARGET), PROPORTIONS, FOR, AUTO_LAYOUT));
+            autoLayoutBtn.setToolTipText(b(c(OPTIMIZE), AT_VISUAL_OFFSET, AND, AT_VISUAL_ROW_OFFSET,
+                    STARTING, FROM, CURRENT, LAYOUT, e(ROUND, UNDOABLE)));
+            autoLayoutBtn.addActionListener(_ -> onAutoLayout.run());
+
+            left.add(undoBtn);
+            left.add(redoBtn);
+            left.add(revertAllBtn);
+            left.add(resetAllZeroBtn);
+            left.add(sep);
+            left.add(aspectPresetCombo);
+            left.add(autoLayoutBtn);
+
+            final JPanel right = new JPanel(new FlowLayout(FlowLayout.TRAILING, 8, 0));
+            final JButton reloadBtn = new JButton(b(c(RELOAD), FROM, c(SOURCES)));
+            reloadBtn.addActionListener(_ -> onReload.run());
+
+            final JButton browserBtn = new JButton(b(c(OPEN), IN, c(BROWSER)));
+            browserBtn.addActionListener(_ -> onBrowser.run());
+
+            saveBtn.setFont(saveBtn.getFont().deriveFont(Font.BOLD));
+            saveBtn.addActionListener(_ -> onSave.run());
+
+            right.add(reloadBtn);
+            right.add(browserBtn);
+            right.add(saveBtn);
+
+            bottom.add(left, BorderLayout.LINE_START);
+            bottom.add(right, BorderLayout.LINE_END);
+            return bottom;
+        }
+
+        private TreeLayoutAutoSolver.AspectPreset selectedAspectPreset() {
+
+            final Object item = aspectPresetCombo.getSelectedItem();
+            return (item instanceof final TreeLayoutAutoSolver.AspectPreset preset)
+                    ? preset
+                    : TreeLayoutAutoSolver.AspectPreset.WIDESCREEN_16_9;
+        }
+
+        private void selectAspectPreset(final TreeLayoutAutoSolver.AspectPreset preset) {
+
+            aspectPresetCombo.setSelectedItem(Objects.requireNonNull(preset, PRESET));
+        }
+
+        private void disableAutoLayoutButton() {
+
+            autoLayoutBtn.setEnabled(false);
+        }
+
+        private void setSolverRunning(final boolean running, final boolean hasScenarios) {
+
+            autoLayoutBtn.setText(running ? s(c(CANCEL), ELLIPSIS) : AUTO_LAYOUT);
+            autoLayoutBtn.setEnabled(running || hasScenarios);
+            aspectPresetCombo.setEnabled(!running && hasScenarios);
+            if (running) {
+                undoBtn.setEnabled(false);
+                redoBtn.setEnabled(false);
+                revertAllBtn.setEnabled(false);
+                resetAllZeroBtn.setEnabled(false);
+                saveBtn.setEnabled(false);
+            }
+        }
+
+        private void updateState(
+                final boolean solving, final boolean idle, final boolean hasScenarios,
+                final boolean canUndo, final boolean canRedo, final int shifted, final int modified) {
+
+            undoBtn.setEnabled(idle && canUndo);
+            redoBtn.setEnabled(idle && canRedo);
+            revertAllBtn.setEnabled(idle && 0 < modified);
+            resetAllZeroBtn.setEnabled(idle && 0 < shifted);
+            aspectPresetCombo.setEnabled(idle && hasScenarios);
+            autoLayoutBtn.setEnabled(solving || hasScenarios);
+            saveBtn.setEnabled(idle && 0 < modified);
+            saveBtn.setText(0 < modified ? b(c(SAVE), e(ROUND, modified), TO, c(SOURCES)) : SAVE_TO_SOURCES);
+        }
+    }
+
+    private static final class OffsetTableModel extends DefaultTableModel {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        private OffsetTableModel() {
+
+            super(new Object[]{c(SCENARIO), b(c(COL), s(DELTA)), b(c(ROW), s(DELTA)), c(CLASS)}, 0);
+        }
+
+        @Override
+        public boolean isCellEditable(final int row, final int column) {
+
+            return COL_OFFSET == column || COL_ROW_OFFSET == column;
+        }
+
+        @Override
+        public Class<?> getColumnClass(final int columnIndex) {
+
+            return (COL_OFFSET == columnIndex || COL_ROW_OFFSET == columnIndex) ? Integer.class : String.class;
+        }
+    }
+
+    private final class KeyBindingAction extends AbstractAction {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+        private final KeyCommand command;
+
+        private KeyBindingAction(final KeyCommand command) {
+
+            this.command = command;
+        }
+
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+
+            if (KeyCommand.UNDO == command) {
+                performUndo();
+            } else {
+                performRedo();
+            }
+        }
+
+        @Override
+        public Object clone() throws CloneNotSupportedException {
+
+            throw new CloneNotSupportedException(getClass().getName());
+        }
+    }
+
+    private final class CanvasResizeListener extends ComponentAdapter {
+
+        @Override
+        public void componentResized(final ComponentEvent e) {
+
+            final boolean hasSize = 0 < canvas.getWidth() && 0 < canvas.getHeight();
+            if (state.isInitialFitPending() && hasSize && !model.isEmpty()) {
+                state.setInitialFitPending(false);
+                canvas.fitToView();
+            }
+        }
+    }
+
+    private final class PanelShownListener extends ComponentAdapter {
+
+        private final boolean autoLoadFromPackage;
+
+        private PanelShownListener(final boolean autoLoadFromPackage) {
+
+            this.autoLoadFromPackage = autoLoadFromPackage;
+        }
+
+        @Override
+        public void componentShown(final ComponentEvent e) {
+
+            if (autoLoadFromPackage
+                    && !Objects.equals(state.loadedRootPackage(), root)
+                    && 0 == model.modifiedCount()) {
+                reloadFromSources();
+            }
+        }
+    }
+
+    private final class SearchDocumentListener implements DocumentListener {
+
+        @Override
+        public void insertUpdate(final DocumentEvent e) {
+
+            rebuildNavigatorViews();
+        }
+
+        @Override
+        public void removeUpdate(final DocumentEvent e) {
+
+            rebuildNavigatorViews();
+        }
+
+        @Override
+        public void changedUpdate(final DocumentEvent e) {
+
+            rebuildNavigatorViews();
+        }
+    }
+
+    private final class ScenarioTreeCellRenderer extends DefaultTreeCellRenderer {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Component getTreeCellRendererComponent(
+                final JTree tree, final Object value, final boolean sel,
+                final boolean expanded, final boolean leaf, final int row, final boolean hasFocus) {
+
+            final Component component = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+            if (value instanceof final DefaultMutableTreeNode node && node.getUserObject() instanceof final TreeItem item) {
+                final ScenarioOffsetSourceCodec.Offsets off = model.currentOffsets(item.className());
+                final boolean dirty = model.isModified(item.className());
+                final StringBuilder text = new StringBuilder(INITIAL_SB_CAPACITY);
+                if (dirty) text.append(DIRTY_MARKER);
+                text.append(item.simpleName());
+                if (!off.isZero()) {
+                    text.append(_SPACE_).append(_SPACE_).append(e(SQUARE, formatOffsetTag(off)));
+                }
+                setText(text.toString());
+                setFont(getFont().deriveFont(item.isLeaf() ? Font.PLAIN : Font.BOLD));
+                if (!sel) {
+                    applyNodeForeground(dirty, !off.isZero(), item.isLeaf());
+                }
+            }
+            return component;
+        }
+
+        private void applyNodeForeground(final boolean dirty, final boolean shifted, final boolean leaf) {
+
+            if (dirty) {
+                setForeground(COLOR_DIRTY);
+            } else if (shifted) {
+                setForeground(COLOR_SHIFTED);
+            } else if (leaf) {
+                setForeground(COLOR_MUTED);
+            }
+        }
+
+        private static String formatOffsetTag(final ScenarioOffsetSourceCodec.Offsets o) {
+
+            final String tag;
+            if (0 != o.colOffset() && 0 != o.rowOffset()) {
+                tag = String.format(FMT_COL_ROW_TAG, o.colOffset(), o.rowOffset());
+            } else if (0 != o.colOffset()) {
+                tag = String.format(FMT_COL_TAG, o.colOffset());
+            } else {
+                tag = String.format(FMT_ROW_TAG, o.rowOffset());
+            }
+            return tag;
+        }
+    }
+
+    private final class ScenarioTableCellRenderer extends DefaultTableCellRenderer {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Component getTableCellRendererComponent(
+                final JTable table, final Object value, final boolean isSelected,
+                final boolean hasFocus, final int row, final int column) {
+
+            final Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            final int modelRow = table.convertRowIndexToModel(row);
+            final String className = tableNav.classNameAtModelRow(modelRow);
+            final boolean dirty = null != className && model.isModified(className);
+            final boolean shifted = null != className && model.isShifted(className);
+            if (!isSelected) {
+                if (dirty) {
+                    setForeground(COLOR_DIRTY);
+                } else if (shifted) {
+                    setForeground(COLOR_SHIFTED);
+                } else {
+                    setForeground(table.getForeground());
+                }
+            }
+            final boolean numericCol = COL_OFFSET == column || COL_ROW_OFFSET == column;
+            setHorizontalAlignment(numericCol ? TRAILING : LEADING);
+            return component;
+        }
+    }
+
+    private final class AutoLayoutWorker
+            extends SwingWorker<TreeLayoutAutoSolver.SolveResult, TreeLayoutAutoSolver.SolveProgress> {
+
+        private final List<TreeLayoutEditorModel.ScenarioBlueprint> rootsSnapshot;
+        private final Map<String, ScenarioOffsetSourceCodec.Offsets> startOffsets;
+        private final TreeLayoutEditorModel.PreviewSettings settingsSnapshot;
+        private final TreeLayoutAutoSolver.AspectPreset preset;
+
+        private AutoLayoutWorker(
+                final List<TreeLayoutEditorModel.ScenarioBlueprint> rootsSnapshot,
+                final Map<String, ScenarioOffsetSourceCodec.Offsets> startOffsets,
+                final TreeLayoutEditorModel.PreviewSettings settingsSnapshot,
+                final TreeLayoutAutoSolver.AspectPreset preset) {
+
+            this.rootsSnapshot = rootsSnapshot;
+            this.startOffsets = startOffsets;
+            this.settingsSnapshot = settingsSnapshot;
+            this.preset = preset;
+        }
+
+        @Override
+        protected TreeLayoutAutoSolver.SolveResult doInBackground() {
+
+            return TreeLayoutAutoSolver.solve(
+                    rootsSnapshot,
+                    startOffsets,
+                    settingsSnapshot,
+                    preset,
+                    state::isSolverCancelled,
+                    this::publish);
+        }
+
+        @Override
+        protected void process(final List<TreeLayoutAutoSolver.SolveProgress> chunks) {
+
+            if (!chunks.isEmpty() && !state.isSolverCancelled()) {
+                final TreeLayoutAutoSolver.SolveProgress p = chunks.getLast();
+                final int rows = Math.toIntExact(Math.round(Math.ceil(p.bestMetrics().rows())));
+                statusMetricsLabel.setText(String.format(Locale.ROOT,
+                        FMT_OPTIMIZING_PROGRESS,
+                        preset.label(),
+                        p.stage(),
+                        p.bestMetrics().cols(),
+                        rows,
+                        p.bestMetrics().aspectRatio()));
+            }
+        }
+
+        @Override
+        protected void done() {
+
+            state.clearActiveSolver();
+            setSolverUiState(false);
+            try {
+                applySolveResult(get());
+            } catch (final InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                updateStatusAndButtons();
+            } catch (final ExecutionException ex) {
+                updateStatusAndButtons();
+            }
+        }
+
+        private void applySolveResult(final TreeLayoutAutoSolver.SolveResult result) {
+
+            if (result.cancelled()) {
+                updateStatusAndButtons();
+            } else if (result.improved() && model.applyOffsetsBatch(result.offsets())) {
+                refreshAfterOffsetMutation();
+                canvas.fitToView();
+                statusMetricsLabel.setText(s(statusMetricsLabel.getText(),
+                        SEP_MID_DOT, b(OPTIMIZED, e(ROUND, preset.label()))));
+            } else {
+                updateStatusAndButtons();
+                statusMetricsLabel.setText(s(b(c(ALREADY), OPTIMAL, FOR, preset.label()),
+                        SEP_MID_DOT, statusMetricsLabel.getText()));
+            }
+        }
     }
 
     private record TreeItem(String className, String simpleName, boolean isLeaf) {
-        @Override
-        public String toString() {
-            return simpleName;
-        }
     }
 }

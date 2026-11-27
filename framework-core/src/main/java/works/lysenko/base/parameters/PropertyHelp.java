@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.Properties;
 import java.util.Set;
 
+import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 
 final public class PropertyHelp {
@@ -75,11 +76,11 @@ final public class PropertyHelp {
         final Properties descriptions = new Properties();
         try (InputStream stream = PropertyHelp.class.getResourceAsStream(RESOURCE)) {
             if (null == stream) {
-                throw new IllegalStateException("Missing property help resource: " + RESOURCE);
+                throw new IllegalStateException(s("Missing property help resource: ", RESOURCE));
             }
             descriptions.load(new InputStreamReader(stream, StandardCharsets.UTF_8));
         } catch (final IOException e) {
-            throw new IllegalStateException("Unable to load property help resource: " + RESOURCE, e);
+            throw new IllegalStateException(s("Unable to load property help resource: ", RESOURCE), e);
         }
         return descriptions;
     }

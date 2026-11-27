@@ -143,7 +143,7 @@ public final class LogMediaLinks {
      */
     public static MediaLinksResult build(final File logFile,
                                          final MediaLinksConfig config) {
-        LOG.finest("Building media links for " + logFile);
+        LOG.finest(s("Building media links for ", logFile));
         final MediaLinksResult r = new MediaLinksResult();
         final String runLogName = (null != logFile) ? logFile.getName() : "";
         r.basePrefix = runLogName.replace(".run.log", "");

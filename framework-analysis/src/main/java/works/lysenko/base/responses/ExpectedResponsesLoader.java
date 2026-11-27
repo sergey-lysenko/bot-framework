@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.sn;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 
 /**
@@ -53,7 +55,7 @@ public final class ExpectedResponsesLoader {
             }
             if (null == is) {
                 for (final String res : CLASSPATH_RESOURCES) {
-                    is = ExpectedResponsesLoader.class.getResourceAsStream("/" + res);
+                    is = ExpectedResponsesLoader.class.getResourceAsStream(s("/", res));
                     if (isNotNull(is)) break;
                 }
             }
@@ -114,11 +116,11 @@ public final class ExpectedResponsesLoader {
                         outputFile.getParentFile().mkdirs();
                     }
                     java.nio.file.Files.write(outputFile.toPath(), bytes);
-                    works.lysenko.Base.logDebug("Saved expected responses dataset to " + outputFile.getAbsolutePath());
+                    works.lysenko.Base.logDebug(s("Saved expected responses dataset to ", outputFile.getAbsolutePath()));
                 }
             }
         } catch (final Throwable e) {
-            works.lysenko.Base.logDebug("Unable to save run expected responses dataset: " + e.getMessage());
+            works.lysenko.Base.logDebug(sn("Unable to save run expected responses dataset: ", e.getMessage()));
         }
     }
 

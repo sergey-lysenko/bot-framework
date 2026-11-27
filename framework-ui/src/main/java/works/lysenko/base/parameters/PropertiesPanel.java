@@ -434,8 +434,8 @@ public class PropertiesPanel extends JPanel {
                     table.setRowSelectionInterval(viewRow, viewRow);
                     table.scrollRectToVisible(table.getCellRect(viewRow, 2, true));
                 }
-                validationLabel.setText(k + ": " + error);
-                JOptionPane.showMessageDialog(this, error, "Invalid value for " + k, JOptionPane.ERROR_MESSAGE);
+                validationLabel.setText(s(k, ": ", error));
+                JOptionPane.showMessageDialog(this, error, s("Invalid value for ", k), JOptionPane.ERROR_MESSAGE);
                 return false;
             }
         }

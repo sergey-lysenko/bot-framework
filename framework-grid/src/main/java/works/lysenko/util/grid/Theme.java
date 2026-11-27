@@ -104,7 +104,7 @@ public record Theme(String name, Map<String, Integer> colours) {
         if (isNull(name) || name.isBlank()) return false;
         final Path fsPath = Paths.get(path(name));
         if (java.nio.file.Files.exists(fsPath)) return true;
-        final String resource = CLASSPATH_THEMES_PREFIX + name + THEME_EXTENSION;
+        final String resource = s(CLASSPATH_THEMES_PREFIX, name, THEME_EXTENSION);
         final ClassLoader cl = Thread.currentThread().getContextClassLoader();
         try (InputStream in = isNotNull(cl)
                 ? cl.getResourceAsStream(resource)
@@ -189,7 +189,7 @@ public record Theme(String name, Map<String, Integer> colours) {
             final Integer rgb = parseColour(rawVal);
             if (isNull(rgb)) {
                 throw new IllegalArgumentException(
-                        "Invalid colour value '" + rawVal + "' for token '" + key + "' in theme '" + name + "'");
+                        s("Invalid colour value '", rawVal, "' for token '", key, "' in theme '", name, "'"));
             }
             parsed.put(key.trim(), rgb);
         }

@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.stream.Collectors;
 
+import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.func.type.fractions.Factory.fr;
 
@@ -88,14 +89,14 @@ public final class PropertyValidator {
 
                 for (final String pkg : packagesToScan) {
                     try {
-                        final Class<?> cls = Class.forName(pkg + ".util.spec.PropEnum");
+                        final Class<?> cls = Class.forName(s(pkg, ".util.spec.PropEnum"));
                         if (_PropEnum.class.isAssignableFrom(cls)) {
                             classes.add((Class<? extends _PropEnum>) cls);
                         }
                     } catch (final Throwable _) {
                     }
                     try {
-                        final Class<?> cls = Class.forName(pkg + ".shared.util.spec.PropEnum");
+                        final Class<?> cls = Class.forName(s(pkg, ".shared.util.spec.PropEnum"));
                         if (_PropEnum.class.isAssignableFrom(cls)) {
                             classes.add((Class<? extends _PropEnum>) cls);
                         }
@@ -186,12 +187,12 @@ public final class PropertyValidator {
             if (!isKnownConfigProperty(trimmed)) {
                 final String suggestion = findClosestProperty(trimmed);
                 if (isNotNull(suggestion)) {
-                    return "Unknown configuration key '" + trimmed + "'. Did you mean '" + suggestion + "'?";
+                    return s("Unknown configuration key '", trimmed, "'. Did you mean '", suggestion, "'?");
                 }
-                return "Unknown configuration key '" + trimmed + "'";
+                return s("Unknown configuration key '", trimmed, "'");
             }
         } else if (null != category && category.isConfigOnlyScope()) {
-            return "Scenario key '" + trimmed + "' is not allowed in configuration files (keys must start with '.')";
+            return s("Scenario key '", trimmed, "' is not allowed in configuration files (keys must start with '.')");
         }
         return null;
     }
@@ -260,16 +261,16 @@ public final class PropertyValidator {
                 for (final Object enumValue : type.getEnumConstants()) {
                     if (((Enum<?>) enumValue).name().equalsIgnoreCase(value)) return null;
                 }
-                return "Expected one of: " + String.join(", ", validValues(propertyName));
+                return s("Expected one of: ", String.join(", ", validValues(propertyName)));
             }
         } catch (final NumberFormatException e) {
-            return "Expected " + describe(type) + ": '" + value + "' is not valid";
+            return s("Expected ", describe(type), ": '", value, "' is not valid");
         } catch (final RuntimeException e) {
-            return "Value is not valid for " + describe(type);
+            return s("Value is not valid for ", describe(type));
         }
         final List<String> allowed = ALLOWED_VALUES.get(property);
         if (null != allowed && allowed.stream().noneMatch(a -> a.equalsIgnoreCase(value.strip()))) {
-            return "Allowed values: " + String.join(", ", allowed);
+            return s("Allowed values: ", String.join(", ", allowed));
         }
         return null;
     }
@@ -310,7 +311,7 @@ public final class PropertyValidator {
                 rootPackage = "works.lysenko";
             }
 
-            final String prefixToRemove = rootPackage + ".";
+            final String prefixToRemove = s(rootPackage, ".");
             final Set<String> scenarioNames = new HashSet<>();
 
             try {
@@ -408,14 +409,14 @@ public final class PropertyValidator {
 
         final String[] parts = value.split(java.util.regex.Pattern.quote(delimiter), -1);
         if (4 != parts.length) {
-            return "Expected a colour as R" + delimiter + "G" + delimiter + "B" + delimiter + "A (4 integers 0-255)";
+            return s("Expected a colour as R", delimiter, "G", delimiter, "B", delimiter, "A (4 integers 0-255)");
         }
         for (final String part : parts) {
             try {
                 final int component = Integer.parseInt(part.strip());
                 if (component < 0 || component > 255) return "Colour components must be in the range 0-255";
             } catch (final NumberFormatException e) {
-                return "Colour component '" + part + "' is not an integer";
+                return s("Colour component '", part, "' is not an integer");
             }
         }
         return null;
@@ -428,7 +429,7 @@ public final class PropertyValidator {
         if ('a' != marker && 'r' != marker) {
             return "Expected 'a' (absolute) or 'r' (relative) followed by a fraction, e.g. r1/2, or '0'";
         }
-        return (null == fr(value.substring(1), true)) ? "Invalid fraction after '" + marker + "'" : null;
+        return (null == fr(value.substring(1), true)) ? s("Invalid fraction after '", marker, "'") : null;
     }
 
     private static String describe(final Class<?> type) {

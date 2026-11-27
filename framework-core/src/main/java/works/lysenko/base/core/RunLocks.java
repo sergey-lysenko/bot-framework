@@ -9,6 +9,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.sn;
+
 /**
  * Coordinates filesystem locks across active test runs and detached post-processors.
  */
@@ -46,7 +49,7 @@ public final class RunLocks {
             }
             return new RunLock(run);
         } catch (final IOException e) {
-            throw new IllegalStateException("Unable to acquire run lock in " + directory, e);
+            throw new IllegalStateException(s("Unable to acquire run lock in ", directory), e);
         }
     }
 
@@ -70,7 +73,7 @@ public final class RunLocks {
     public static LockHandle acquirePostprocessLock(final Path directory) throws IOException {
         Files.createDirectories(directory);
         final LockHandle lock = tryAcquire(directory.resolve(POSTPROCESS_LOCK));
-        if (null == lock) throw new IOException("Another post-processor is already active in " + directory);
+        if (null == lock) throw new IOException(s("Another post-processor is already active in ", directory));
         return lock;
     }
 
@@ -185,7 +188,7 @@ public final class RunLocks {
     private static LockHandle acquireBlocking(final Path path) throws IOException, InterruptedException {
         while (true) {
             if (Thread.interrupted()) {
-                throw new InterruptedException("Interrupted while waiting for lock " + path);
+                throw new InterruptedException(s("Interrupted while waiting for lock ", path));
             }
             final FileChannel channel = FileChannel.open(
                     path,
@@ -200,7 +203,7 @@ public final class RunLocks {
             } catch (final FileLockInterruptionException e) {
                 channel.close();
                 Thread.interrupted();
-                final InterruptedException ie = new InterruptedException("Interrupted while waiting for lock " + path);
+                final InterruptedException ie = new InterruptedException(s("Interrupted while waiting for lock ", path));
                 ie.initCause(e);
                 throw ie;
             } catch (final IOException | RuntimeException e) {
@@ -246,12 +249,12 @@ public final class RunLocks {
             try {
                 lock.release();
             } catch (final IOException e) {
-                System.err.println("Unable to release lock: " + e.getMessage());
+                System.err.println(sn("Unable to release lock: ", e.getMessage()));
             }
             try {
                 channel.close();
             } catch (final IOException e) {
-                System.err.println("Unable to close lock file: " + e.getMessage());
+                System.err.println(sn("Unable to close lock file: ", e.getMessage()));
             }
         }
     }

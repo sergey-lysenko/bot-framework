@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 
+import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 
 import static works.lysenko.util.chrs.__.TO;
@@ -56,13 +57,13 @@ public class Writer implements _LogsWriter {
     private static void writeIndexHeader(final BufferedWriter writer) {
 
         try {
-            writer.write("# Test Execution Log - Index" + System.lineSeparator() + System.lineSeparator());
-            writer.write("> **Context & Schema**:" + System.lineSeparator());
-            writer.write("> - **Sections (`### Title`)**: Execution phases are structured as Markdown headings in per-test log files." + System.lineSeparator());
-            writer.write("> - **Log Message**: Operational events, UI interactions, assertions, property reads/writes within each section." + System.lineSeparator());
-            writer.write("> - **Call Stack**: Call site references formatted as `ID:[Class.method:line]`. The full mapping is stored in `<run_id>.callstacks.properties` in the run directory." + System.lineSeparator());
-            writer.write("> - **Duration (ms)**: Operation execution time in milliseconds." + System.lineSeparator() + System.lineSeparator());
-            writer.write("## Segmented Log Files" + System.lineSeparator() + System.lineSeparator());
+            writer.write(s("# Test Execution Log - Index", System.lineSeparator(), System.lineSeparator()));
+            writer.write(s("> **Context & Schema**:", System.lineSeparator()));
+            writer.write(s("> - **Sections (`### Title`)**: Execution phases are structured as Markdown headings in per-test log files.", System.lineSeparator()));
+            writer.write(s("> - **Log Message**: Operational events, UI interactions, assertions, property reads/writes within each section.", System.lineSeparator()));
+            writer.write(s("> - **Call Stack**: Call site references formatted as `ID:[Class.method:line]`. The full mapping is stored in `<run_id>.callstacks.properties` in the run directory.", System.lineSeparator()));
+            writer.write(s("> - **Duration (ms)**: Operation execution time in milliseconds.", System.lineSeparator(), System.lineSeparator()));
+            writer.write(s("## Segmented Log Files", System.lineSeparator(), System.lineSeparator()));
             writer.flush();
         } catch (final IOException _) {
         }
@@ -71,13 +72,13 @@ public class Writer implements _LogsWriter {
     private static void writeTestHeader(final BufferedWriter writer, final int testNumber) {
 
         try {
-            final String headerTitle = (testNumber == 0) ? "Test #0 (Setup / Preflight)" : ("Test #" + testNumber);
-            writer.write("# Test Execution Log - " + headerTitle + System.lineSeparator() + System.lineSeparator());
-            writer.write("> **Context & Schema**:" + System.lineSeparator());
-            writer.write("> - **Sections (`### Title`)**: Execution phases (Preflight, Pretest, Scenario selection/execution, Data operations) are structured as Markdown headings with call site IDs and section timing." + System.lineSeparator());
-            writer.write("> - **Log Message**: Operational events, UI interactions, assertions, property reads/writes, and state changes within each section." + System.lineSeparator());
-            writer.write("> - **Call Stack**: Call site references formatted as `ID:[Class.method:line]` upon first declaration. Bracketed IDs (`[ID]`) or empty cells refer to call site IDs defined earlier in the trace." + System.lineSeparator());
-            writer.write("> - **Duration (ms)**: Operation execution time in milliseconds." + System.lineSeparator() + System.lineSeparator());
+            final String headerTitle = (testNumber == 0) ? "Test #0 (Setup / Preflight)" : s("Test #", testNumber);
+            writer.write(s("# Test Execution Log - ", headerTitle, System.lineSeparator(), System.lineSeparator()));
+            writer.write(s("> **Context & Schema**:", System.lineSeparator()));
+            writer.write(s("> - **Sections (`### Title`)**: Execution phases (Preflight, Pretest, Scenario selection/execution, Data operations) are structured as Markdown headings with call site IDs and section timing.", System.lineSeparator()));
+            writer.write(s("> - **Log Message**: Operational events, UI interactions, assertions, property reads/writes, and state changes within each section.", System.lineSeparator()));
+            writer.write(s("> - **Call Stack**: Call site references formatted as `ID:[Class.method:line]` upon first declaration. Bracketed IDs (`[ID]`) or empty cells refer to call site IDs defined earlier in the trace.", System.lineSeparator()));
+            writer.write(s("> - **Duration (ms)**: Operation execution time in milliseconds.", System.lineSeparator(), System.lineSeparator()));
             writer.flush();
         } catch (final IOException _) {
         }
@@ -86,12 +87,12 @@ public class Writer implements _LogsWriter {
     private static void writeSummaryHeader(final BufferedWriter writer) {
 
         try {
-            writer.write("# Test Execution Log - Postflight" + System.lineSeparator() + System.lineSeparator());
-            writer.write("> **Context & Schema**:" + System.lineSeparator());
-            writer.write("> - **Sections (`### Title`)**: Execution summary phases (Scenario statistics, Result markers, Tree reports, Postflight) are structured as Markdown headings with call site IDs and section timing." + System.lineSeparator());
-            writer.write("> - **Log Message**: Operational events, UI interactions, assertions, property reads/writes, and state changes within each section." + System.lineSeparator());
-            writer.write("> - **Call Stack**: Call site references formatted as `ID:[Class.method:line]`. The full mapping is stored in `<run_id>.callstacks.properties` in the run directory." + System.lineSeparator());
-            writer.write("> - **Duration (ms)**: Operation execution time in milliseconds." + System.lineSeparator() + System.lineSeparator());
+            writer.write(s("# Test Execution Log - Postflight", System.lineSeparator(), System.lineSeparator()));
+            writer.write(s("> **Context & Schema**:", System.lineSeparator()));
+            writer.write(s("> - **Sections (`### Title`)**: Execution summary phases (Scenario statistics, Result markers, Tree reports, Postflight) are structured as Markdown headings with call site IDs and section timing.", System.lineSeparator()));
+            writer.write(s("> - **Log Message**: Operational events, UI interactions, assertions, property reads/writes, and state changes within each section.", System.lineSeparator()));
+            writer.write(s("> - **Call Stack**: Call site references formatted as `ID:[Class.method:line]`. The full mapping is stored in `<run_id>.callstacks.properties` in the run directory.", System.lineSeparator()));
+            writer.write(s("> - **Duration (ms)**: Operation execution time in milliseconds.", System.lineSeparator(), System.lineSeparator()));
             writer.flush();
         } catch (final IOException _) {
         }
@@ -143,7 +144,7 @@ public class Writer implements _LogsWriter {
         if (testNumber > maxTestNumber) {
             maxTestNumber = testNumber;
             fileKey = String.valueOf(testNumber);
-            title = "Test #" + testNumber;
+            title = s("Test #", testNumber);
             isPostflight = false;
         } else if (testNumber == 0 && maxTestNumber > 0) {
             fileKey = "postflight";
@@ -151,7 +152,7 @@ public class Writer implements _LogsWriter {
             isPostflight = true;
         } else {
             fileKey = String.valueOf(testNumber);
-            title = (testNumber == 0) ? "Test #0 (Setup / Preflight)" : ("Test #" + testNumber);
+            title = (testNumber == 0) ? "Test #0 (Setup / Preflight)" : s("Test #", testNumber);
             isPostflight = false;
         }
 
@@ -179,7 +180,7 @@ public class Writer implements _LogsWriter {
                 }
             }
             try {
-                markdownWriter.write("- [" + title + "](md/" + fileKey + ".md)" + System.lineSeparator());
+                markdownWriter.write(s("- [", title, "](md/", fileKey, ".md)", System.lineSeparator()));
                 markdownWriter.flush();
             } catch (final IOException _) {
             }

@@ -12,6 +12,7 @@ import works.lysenko.util.apis.test._Test;
 import static java.util.Objects.isNull;
 import static works.lysenko.Base.core;
 import static works.lysenko.Base.timer;
+import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 
 /**
@@ -135,7 +136,7 @@ public record EtaCalculator() {
             final String displayRemaining = (includeCorrection && correctionMs != 0L)
                     ? formattedCorrectedRemaining
                     : formattedRemaining;
-            label = "(ETA " + displayRemaining + ")";
+            label = s("(ETA ", displayRemaining, ")");
         } else if (state == EtaState.DONE) {
             formattedRemaining = EtaFormatter.DONE_TEXT;
             formattedCorrectedRemaining = EtaFormatter.DONE_TEXT;

@@ -1,6 +1,7 @@
 package works.lysenko.base.output;
 
 import static works.lysenko.Base.logDebug;
+import static works.lysenko.util.data.strs.Swap.s;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -96,7 +97,7 @@ final class ProgressionMp4 {
             process = new ProcessBuilder(command).start();
         } catch (final IOException e) {
             Files.deleteIfExists(encodedOutput);
-            throw new IOException("Unable to start FFmpeg executable '" + executable + "'", e);
+            throw new IOException(s("Unable to start FFmpeg executable '", executable, "'"), e);
         }
 
         final ByteArrayOutputStream stderr = new ByteArrayOutputStream();
@@ -157,7 +158,7 @@ final class ProgressionMp4 {
                 synchronized (stderr) {
                     details = stderr.toString(StandardCharsets.UTF_8).trim();
                 }
-                throw new IOException("FFmpeg exited with status " + process.exitValue() + ": " + details);
+                throw new IOException(s("FFmpeg exited with status ", process.exitValue(), ": ", details));
             }
             if (null != stderrFailure.get()) throw stderrFailure.get();
             Files.move(encodedOutput, outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -172,7 +173,7 @@ final class ProgressionMp4 {
 
     private static void validateDimensions(final int width, final int height) throws IOException {
         if ((width & 1) != 0 || (height & 1) != 0) {
-            throw new IOException("MP4 frames must have even dimensions; got " + width + "x" + height);
+            throw new IOException(s("MP4 frames must have even dimensions; got ", width, "x", height));
         }
     }
 

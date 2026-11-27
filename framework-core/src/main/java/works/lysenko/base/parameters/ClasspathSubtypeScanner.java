@@ -25,6 +25,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /// Bytecode-only classpath subtype scanner built on the Java 24/25 Class-File API (`java.lang.classfile`).
 ///
 /// Discovers direct and transitive subtypes of one or more target classes/interfaces across
@@ -129,7 +131,7 @@ final class ClasspathSubtypeScanner {
         for (final String pkg : packagePrefixes) {
             if (null == pkg || pkg.isBlank() || ".".equals(pkg)) continue;
             final String slash = pkg.trim().replace('.', '/');
-            normalized.add(slash.endsWith("/") ? slash : slash + "/");
+            normalized.add(slash.endsWith("/") ? slash : s(slash, "/"));
         }
         return List.copyOf(normalized);
     }
@@ -356,7 +358,7 @@ final class ClasspathSubtypeScanner {
             final ClassLoader classLoader) {
 
         if (null == internalName || OBJECT_INTERNAL_NAME.equals(internalName)) return List.of();
-        try (InputStream in = classLoader.getResourceAsStream(internalName + CLASS_SUFFIX)) {
+        try (InputStream in = classLoader.getResourceAsStream(s(internalName, CLASS_SUFFIX))) {
             if (null == in) return List.of();
             return extractParents(classFile.parse(in.readAllBytes()));
         } catch (final Exception _) {

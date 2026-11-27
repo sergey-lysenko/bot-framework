@@ -7,7 +7,9 @@ import works.lysenko.base.eta.model.EtaState;
 import java.util.Locale;
 
 import static works.lysenko.Base.timer;
+import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Objects.isNotNull;
+import static works.lysenko.util.spec.Symbols._LFD_;
 
 /**
  * Shared dark-slate visual styling, SVG chrome, translucent bordered header badges,
@@ -88,11 +90,11 @@ public final class ProgressionChrome {
      */
     public static void appendDotGridPattern(final StringBuilder sb, final int headerY) {
         sb.append(String.format(Locale.US,
-                "    <pattern id=\"dot-grid\" width=\"24\" height=\"24\" patternUnits=\"userSpaceOnUse\" y=\"%d\">\n",
+                s("    <pattern id=\"dot-grid\" width=\"24\" height=\"24\" patternUnits=\"userSpaceOnUse\" y=\"%d\">", _LFD_),
                 headerY));
-        sb.append("      <rect width=\"24\" height=\"24\" fill=\"").append(BG_CANVAS).append("\" />\n");
-        sb.append("      <circle cx=\"1\" cy=\"1\" r=\"1\" fill=\"").append(DOT_GRID_COLOR).append("\" opacity=\"0.7\" />\n");
-        sb.append("    </pattern>\n");
+        sb.append("      <rect width=\"24\" height=\"24\" fill=\"").append(BG_CANVAS).append("\" />").append(_LFD_);
+        sb.append("      <circle cx=\"1\" cy=\"1\" r=\"1\" fill=\"").append(DOT_GRID_COLOR).append("\" opacity=\"0.7\" />").append(_LFD_);
+        sb.append("    </pattern>").append(_LFD_);
     }
 
     /**
@@ -104,9 +106,9 @@ public final class ProgressionChrome {
      * @param headerH header height in canvas coordinates
      */
     public static void appendCanvasBackground(final StringBuilder sb, final int width, final int height, final int headerH) {
-        sb.append("  <rect width=\"100%\" height=\"100%\" fill=\"").append(BG_CANVAS).append("\" />\n");
+        sb.append("  <rect width=\"100%\" height=\"100%\" fill=\"").append(BG_CANVAS).append("\" />").append(_LFD_);
         sb.append(String.format(Locale.US,
-                "  <rect x=\"0\" y=\"%d\" width=\"%d\" height=\"%d\" fill=\"url(#dot-grid)\" />\n",
+                s("  <rect x=\"0\" y=\"%d\" width=\"%d\" height=\"%d\" fill=\"url(#dot-grid)\" />", _LFD_),
                 headerH, width, Math.max(0, height - headerH)));
     }
 
@@ -118,10 +120,10 @@ public final class ProgressionChrome {
      */
     public static void appendHeaderBar(final StringBuilder sb, final int localW) {
         sb.append(String.format(Locale.US,
-                "    <rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\" fill=\"%s\" />\n",
+                s("    <rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\" fill=\"%s\" />", _LFD_),
                 localW, HEADER_HEIGHT_BASE, HEADER_BG));
         sb.append(String.format(Locale.US,
-                "    <line x1=\"0\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"%s\" stroke-width=\"1\" />\n",
+                s("    <line x1=\"0\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"%s\" stroke-width=\"1\" />", _LFD_),
                 HEADER_HEIGHT_BASE, localW, HEADER_HEIGHT_BASE, HEADER_BORDER));
     }
 
@@ -136,13 +138,13 @@ public final class ProgressionChrome {
         if (null == titleText || titleText.isEmpty()) return;
         final int cy = HEADER_HEIGHT_BASE / 2;
         sb.append(String.format(Locale.US,
-                "    <circle cx=\"%d\" cy=\"%d\" r=\"8\" fill=\"%s\" fill-opacity=\"0.18\" />\n",
+                s("    <circle cx=\"%d\" cy=\"%d\" r=\"8\" fill=\"%s\" fill-opacity=\"0.18\" />", _LFD_),
                 leftX + 6, cy, ACCENT_SKY));
         sb.append(String.format(Locale.US,
-                "    <circle cx=\"%d\" cy=\"%d\" r=\"4.5\" fill=\"%s\" />\n",
+                s("    <circle cx=\"%d\" cy=\"%d\" r=\"4.5\" fill=\"%s\" />", _LFD_),
                 leftX + 6, cy, ACCENT_SKY));
         sb.append(String.format(Locale.US,
-                "    <text class=\"tx4\" x=\"%d\" y=\"%d\">%s</text>\n",
+                s("    <text class=\"tx4\" x=\"%d\" y=\"%d\">%s</text>", _LFD_),
                 leftX + 22, cy + 5, escapeXml(titleText)));
     }
 
@@ -166,12 +168,12 @@ public final class ProgressionChrome {
         final int badgeW = (int) Math.ceil(safe.length() * 6.8) + 18;
         final int leftX = rightX - badgeW;
         sb.append(String.format(Locale.US,
-                "    <rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"6\" ry=\"6\" " +
-                        "fill=\"%s\" fill-opacity=\"%.2f\" stroke=\"%s\" stroke-opacity=\"%.2f\" stroke-width=\"1\" />\n",
+                s("    <rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"6\" ry=\"6\" ",
+                        "fill=\"%s\" fill-opacity=\"%.2f\" stroke=\"%s\" stroke-opacity=\"%.2f\" stroke-width=\"1\" />", _LFD_),
                 leftX, topY, badgeW, BADGE_HEIGHT,
                 style.fill(), style.fillOpacity(), style.stroke(), style.strokeOpacity()));
         sb.append(String.format(Locale.US,
-                "    <text class=\"tx3\" x=\"%d\" y=\"%d\" fill=\"%s\" text-anchor=\"middle\">%s</text>\n",
+                s("    <text class=\"tx3\" x=\"%d\" y=\"%d\" fill=\"%s\" text-anchor=\"middle\">%s</text>", _LFD_),
                 leftX + (badgeW / 2), topY + 16, style.textColor(), escapeXml(safe)));
         return leftX - BADGE_GAP;
     }
@@ -185,7 +187,7 @@ public final class ProgressionChrome {
      */
     public static String formatLeavesBadge(final int covered, final int total) {
         if (total <= 0) {
-            return "Leaves: " + covered + "/" + total;
+            return s("Leaves: ", covered, "/", total);
         }
         final int pct = Math.min(100, (covered * 100) / total);
         return String.format(Locale.US, "Leaves: %d/%d (%d%%)", covered, total, pct);
@@ -210,7 +212,7 @@ public final class ProgressionChrome {
      */
     public static String formatElapsedBadge() {
         return isNotNull(timer)
-                ? "Elapsed: " + formatElapsedTime(Math.max(0L, System.currentTimeMillis() - timer.startedAt()))
+                ? s("Elapsed: ", formatElapsedTime(Math.max(0L, System.currentTimeMillis() - timer.startedAt())))
                 : "Elapsed: --:--:--";
     }
 
@@ -232,7 +234,7 @@ public final class ProgressionChrome {
                 final String remaining = (snapshot.correctionMs() != 0L)
                         ? snapshot.formattedCorrectedRemaining()
                         : snapshot.formattedRemaining();
-                return new EtaBadge("ETA: " + remaining, BADGE_INDIGO);
+                return new EtaBadge(s("ETA: ", remaining), BADGE_INDIGO);
             }
         } catch (final RuntimeException _) {
             // Best-effort HUD badge; never interrupt frame rendering

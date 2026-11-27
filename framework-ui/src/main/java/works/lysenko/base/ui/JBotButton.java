@@ -12,6 +12,9 @@ import java.awt.Color;
         "ClassHasNoToStringMethod", "FinalClass", "ClassWithTooManyTransitiveDependents"})
 public final class JBotButton extends JButton implements _BotButton {
 
+    private static final Color ACTIVE_FOREGROUND = new Color(0xDC, 0x26, 0x26);
+    private static final Color INACTIVE_FOREGROUND = new Color(0x0F, 0x17, 0x2A);
+
     private boolean active = false;
     private final String inactiveText;
     private String activeText = null;
@@ -23,7 +26,7 @@ public final class JBotButton extends JButton implements _BotButton {
     public JBotButton(final String text) {
 
         super(text);
-        this.inactiveText = text;
+        inactiveText = text;
         addActionListener(_ -> {
             active = !active;
             actualizeUI();
@@ -81,7 +84,7 @@ public final class JBotButton extends JButton implements _BotButton {
      * Performs set active text.
      * @param activeText the activeText
      */
-    public void setActiveText(final String activeText) {
+    void setActiveText(final String activeText) {
 
         this.activeText = activeText;
         actualizeUI();
@@ -90,10 +93,10 @@ public final class JBotButton extends JButton implements _BotButton {
     private void actualizeUI() {
 
         if (active) {
-            setForeground(new Color(0xDC, 0x26, 0x26));
+            setForeground(ACTIVE_FOREGROUND);
             if (null != activeText) setText(activeText);
         } else {
-            setForeground(new Color(0x0F, 0x17, 0x2A));
+            setForeground(INACTIVE_FOREGROUND);
             if (null != inactiveText) setText(inactiveText);
         }
     }

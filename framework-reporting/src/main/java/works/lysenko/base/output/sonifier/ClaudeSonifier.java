@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Image-driven sonifier ({@code claude}): "visual change scanner".
  * <p>
@@ -123,7 +125,7 @@ public final class ClaudeSonifier extends AbstractTreeSonifier {
         final BufferedImage image = file.getName().toLowerCase(Locale.ROOT).endsWith(".svg")
                 ? ProgressionFrames.read(file, Integer.MAX_VALUE)
                 : ImageIO.read(file);
-        if (null == image) throw new IOException("Unable to read progression frame: " + file);
+        if (null == image) throw new IOException(s("Unable to read progression frame: ", file));
         final int width = image.getWidth();
         final int height = image.getHeight();
         final int[][] cells = new int[ROWS * COLUMNS][3];

@@ -14,6 +14,8 @@ import java.util.List;
 
 import static works.lysenko.Base.logEvent;
 import static works.lysenko.util.data.enums.Severity.S2;
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.sn;
 
 /**
  * JSON persistence repository managing historical {@link CorrectionRecord} entries in {@code var/eta_correction.json}.
@@ -23,7 +25,7 @@ public record CorrectionStore() {
     /**
      * Relative path to the persisted ETA calibration dataset file.
      */
-    public static final String FILE_PATH = Layout.Directories.VAR_ + "eta_correction.json";
+    public static final String FILE_PATH = s(Layout.Directories.VAR_, "eta_correction.json");
 
     /**
      * Maximum number of historical run records retained per distinct configuration fingerprint.
@@ -55,7 +57,7 @@ public record CorrectionStore() {
             }
             return matching;
         } catch (final Exception e) {
-            logEvent(S2, "Failed to load ETA correction file " + file.getAbsolutePath() + ": " + e.getMessage());
+            logEvent(S2, sn("Failed to load ETA correction file ", file.getAbsolutePath(), ": ", e.getMessage()));
             return List.of();
         }
     }
@@ -101,7 +103,7 @@ public record CorrectionStore() {
         try {
             MAPPER.writeValue(file, records);
         } catch (final IOException e) {
-            logEvent(S2, "Failed to save ETA correction file " + file.getAbsolutePath() + ": " + e.getMessage());
+            logEvent(S2, sn("Failed to save ETA correction file ", file.getAbsolutePath(), ": ", e.getMessage()));
         }
     }
 }

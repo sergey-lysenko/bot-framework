@@ -339,9 +339,9 @@ public final class Selector implements Callable<_Scenario> {
                     }
                 }
                 if (SequenceMode.ORDER == mode) {
-                    logEvent(null != severity ? severity : S0, "Sequence script order failed: scenario '" + expected + "' is not available among candidates");
+                    logEvent(null != severity ? severity : S0, s("Sequence script order failed: scenario '", expected, "' is not available among candidates"));
                 } else {
-                    logDebug("Sequence script suggested scenario '" + expected + "' is not available; falling back to weighted selection");
+                    logDebug(s("Sequence script suggested scenario '", expected, "' is not available; falling back to weighted selection"));
                 }
             }
         }

@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Immutable representation of a single node captured in a {@link UiSnapshot}.
  *
@@ -229,16 +231,16 @@ public record UiNode(
     public String describe() {
 
         if (!shortId.isEmpty() && !text.isEmpty()) {
-            return shortId + " ('" + text + "')";
+            return s(shortId, " ('", text, "')");
         }
         if (!shortId.isEmpty()) {
             return shortId;
         }
         if (!contentDesc.isEmpty()) {
-            return "'" + contentDesc + "'";
+            return s("'", contentDesc, "'");
         }
         if (!text.isEmpty()) {
-            return "'" + text + "'";
+            return s("'", text, "'");
         }
         return tag;
     }

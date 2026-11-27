@@ -6,6 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.spec.Symbols._LFD_;
 
 /**
  * Text formatting, string escaping, and ANSI sequence conversion utilities.
@@ -178,7 +179,7 @@ public final class LogFormatting {
      */
     public static String escapeJson(final String s) {
         if (s == null) return "";
-        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "");
+        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace(s(_LFD_), "\\n").replace("\r", "");
     }
 
     /**

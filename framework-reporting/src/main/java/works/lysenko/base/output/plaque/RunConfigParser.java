@@ -7,6 +7,7 @@ import works.lysenko.base.output.SummaryPlaque.RunConfig;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static java.util.Objects.isNull;
 
@@ -71,7 +72,7 @@ public final class RunConfigParser {
             int modeIdx = text.indexOf(" mode", inIdx);
             if (modeIdx > inIdx) {
                 mode = text.substring(inIdx + 4, modeIdx).trim();
-                text = text.substring(0, inIdx) + text.substring(modeIdx + 5);
+                text = s(text.substring(0, inIdx), text.substring(modeIdx + 5));
             }
         }
 

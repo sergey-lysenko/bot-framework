@@ -4,6 +4,8 @@ import org.apache.commons.math3.fraction.Fraction;
 import works.lysenko.base.output.sonifier.*;
 import works.lysenko.util.prop.PropEnum;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Run-scoped snapshot of progression configuration.
  */
@@ -80,7 +82,7 @@ public record ProgressionSettings(
         final String treeSonification;
         if (Boolean.TRUE.equals(sonificationConfigured)) {
             final String chosen = TreeProgressionAudio.selectRandom(sonificationsList);
-            works.lysenko.Base.log("Selected tree progression sonification: " + chosen);
+            works.lysenko.Base.log(s("Selected tree progression sonification: ", chosen));
             treeSonification = chosen;
         } else {
             treeSonification = "none";

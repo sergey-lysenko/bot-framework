@@ -12,7 +12,7 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.RenderingHints;
 
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 /**
  *
@@ -20,7 +20,7 @@ import static java.util.Objects.isNull;
 @SuppressWarnings({"FieldHasSetterButNoGetter", "WeakerAccess"})
 public final class ImagePanel extends JPanel implements _ImagePanel {
 
-    private Image img;
+    private Image image;
     private ProgressionFrames.SvgFrame svgFrame;
     private float scale = 1.0F;
 
@@ -42,7 +42,8 @@ public final class ImagePanel extends JPanel implements _ImagePanel {
      */
     public ImagePanel(final Image img) {
 
-        this.img = img;
+        image = img;
+        svgFrame = null;
         final Dimension size = new Dimension(img.getWidth(null), img.getHeight(null));
         setPreferredSize(size);
         setMinimumSize(size);
@@ -56,7 +57,7 @@ public final class ImagePanel extends JPanel implements _ImagePanel {
      */
     public ImagePanel() {
 
-        img = null;
+        image = null;
         svgFrame = null;
     }
 
@@ -65,32 +66,38 @@ public final class ImagePanel extends JPanel implements _ImagePanel {
     public void paintComponent(final Graphics g) {
 
         super.paintComponent(g);
-        if (!isNull(svgFrame)) {
+        if (nonNull(svgFrame)) {
             final Graphics2D graphics = (Graphics2D) g.create();
-            try {
-                svgFrame.paint(this, graphics, scale);
-            } finally {
-                graphics.dispose();
+            if (nonNull(graphics)) {
+                try {
+                    svgFrame.paint(this, graphics, scale);
+                } finally {
+                    graphics.dispose();
+                }
             }
-        } else if (!isNull(img)) {
+        } else if (nonNull(image)) {
             final Graphics2D graphics = (Graphics2D) g.create();
-            try {
-                graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                graphics.drawImage(img, 0, 0, (int) (img.getWidth(null) * scale), (int) (img.getHeight(null) * scale), this);
-            } finally {
-                graphics.dispose();
+            if (nonNull(graphics)) {
+                try {
+                    graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                    graphics.drawImage(image, 0, 0, (int) (image.getWidth(null) * scale), (int) (image.getHeight(null) * scale), this);
+                } finally {
+                    graphics.dispose();
+                }
             }
         }
     }
 
     /**
      * Performs set image.
+     *
      * @param img the img
      */
+    @Override
     public void setImage(final Image img) {
 
-        this.img = img;
-        this.svgFrame = null;
+        image = img;
+        svgFrame = null;
         updatePreferredSize();
         revalidate();
         repaint();
@@ -101,10 +108,10 @@ public final class ImagePanel extends JPanel implements _ImagePanel {
      *
      * @param svgFrame the parsed SVG frame, or null to clear
      */
-    public void setSvgFrame(final ProgressionFrames.SvgFrame svgFrame) {
+    void setSvgFrame(final ProgressionFrames.SvgFrame svgFrame) {
 
         this.svgFrame = svgFrame;
-        this.img = null;
+        image = null;
         updatePreferredSize();
         revalidate();
         repaint();
@@ -112,8 +119,10 @@ public final class ImagePanel extends JPanel implements _ImagePanel {
 
     /**
      * Performs set scale.
+     *
      * @param scale the scale
      */
+    @Override
     public void setScale(final float scale) {
 
         this.scale = scale;
@@ -125,24 +134,25 @@ public final class ImagePanel extends JPanel implements _ImagePanel {
     @Override
     public void fitTo(final Dimension bounds) {
 
-        if (bounds.width <= 0 || bounds.height <= 0) return;
-
-        final int imageWidth = contentWidth();
-        final int imageHeight = contentHeight();
-        if (imageWidth <= 0 || imageHeight <= 0) return;
-
-        final float widthScale = (float) bounds.width / imageWidth;
-        final float heightScale = (float) bounds.height / imageHeight;
-        setScale(Math.min(1.0F, Math.min(widthScale, heightScale)));
+        if (0 < bounds.width && 0 < bounds.height) {
+            final int imageWidth = contentWidth();
+            final int imageHeight = contentHeight();
+            if (0 < imageWidth && 0 < imageHeight) {
+                final float widthScale = (float) bounds.width / imageWidth;
+                final float heightScale = (float) bounds.height / imageHeight;
+                setScale(Math.min(1.0F, Math.min(widthScale, heightScale)));
+            }
+        }
     }
 
     /**
      * Performs get image.
+     *
      * @return the get image result
      */
-    public Image getImage() {
+    Image getImage() {
 
-        return img;
+        return image;
     }
 
     /**
@@ -150,49 +160,77 @@ public final class ImagePanel extends JPanel implements _ImagePanel {
      *
      * @return the SVG frame, or null
      */
-    public ProgressionFrames.SvgFrame getSvgFrame() {
+    ProgressionFrames.SvgFrame getSvgFrame() {
 
         return svgFrame;
     }
 
     /**
      * Performs get scale.
+     *
      * @return the get scale result
      */
-    public float getScale() {
+    float getScale() {
 
         return scale;
     }
 
     /**
      * Performs to image coordinates.
+     *
      * @param panelX the panelX
      * @param panelY the panelY
      * @return the to image coordinates result
      */
-    public Point toImageCoordinates(final int panelX, final int panelY) {
+    Point toImageCoordinates(final int panelX, final int panelY) {
 
+        Point result = null;
         final int w = contentWidth();
         final int h = contentHeight();
-        if (w <= 0 || h <= 0 || scale <= 0) return null;
-        final int x = (int) (panelX / scale);
-        final int y = (int) (panelY / scale);
-        if (x >= 0 && x < w && y >= 0 && y < h) {
-            return new Point(x, y);
+        if (isCoordinateMappingReady(w, h) && isNonNegativePoint(panelX, panelY)) {
+            final int x = Math.toIntExact(Math.round(Math.floor(panelX / scale)));
+            final int y = Math.toIntExact(Math.round(Math.floor(panelY / scale)));
+            if (isWithinBounds(x, w) && isWithinBounds(y, h)) {
+                result = new Point(x, y);
+            }
         }
-        return null;
+        return result;
+    }
+
+    private boolean isCoordinateMappingReady(final int w, final int h) {
+        return 0 < w && 0 < h && 0.0F < scale;
+    }
+
+    private static boolean isNonNegativePoint(final int panelX, final int panelY) {
+        return 0 <= panelX && 0 <= panelY;
+    }
+
+    private static boolean isWithinBounds(final int value, final int limit) {
+        return 0 <= value && value < limit;
     }
 
     private int contentWidth() {
-        if (!isNull(svgFrame)) return svgFrame.width();
-        if (!isNull(img)) return img.getWidth(null);
-        return -1;
+        final int width;
+        if (nonNull(svgFrame)) {
+            width = svgFrame.width();
+        } else if (nonNull(image)) {
+            width = image.getWidth(null);
+        } else {
+            width = -1;
+        }
+        return width;
     }
 
     private int contentHeight() {
-        if (!isNull(svgFrame)) return svgFrame.height();
-        if (!isNull(img)) return img.getHeight(null);
-        return -1;
+        final int height;
+        if (nonNull(svgFrame)) {
+            height = svgFrame.height();
+        } else if (nonNull(image)) {
+            height = image.getHeight(null);
+        } else {
+            height = -1;
+        }
+        return height;
     }
 
     @SuppressWarnings("NumericCastThatLosesPrecision")
@@ -200,7 +238,7 @@ public final class ImagePanel extends JPanel implements _ImagePanel {
 
         final int width = contentWidth();
         final int height = contentHeight();
-        if (width > 0 && height > 0) {
+        if (0 < width && 0 < height) {
             setPreferredSize(new Dimension((int) (width * scale), (int) (height * scale)));
         }
     }

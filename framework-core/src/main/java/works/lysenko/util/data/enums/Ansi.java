@@ -10,6 +10,7 @@ import static works.lysenko.util.data.strs.Swap.sn;
 import static works.lysenko.util.func.type.Fractions.ONE_TENTH;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.grid.record.rgbc.HSB.hsb;
+import static works.lysenko.util.spec.Symbols._LFD_;
 
 /**
  * Represents ANSI escape sequences for different text colors and formatting options.
@@ -114,11 +115,11 @@ public enum Ansi {
     public static String ansi(final String s, final Ansi ansi) {
 
         if (null == ansi || null == s) return s;
-        if (s.contains("\n")) {
+        if (s.contains(s(_LFD_))) {
             final String ansiCode = ansi.code();
             final String resetCode = RESET.code();
-            final String replacement = s(resetCode, "\n", ansiCode);
-            final String sanitized = s.replace("\r\n", "\n").replace("\n", replacement);
+            final String replacement = s(resetCode, _LFD_, ansiCode);
+            final String sanitized = s.replace(s("\r", _LFD_), s(_LFD_)).replace(s(_LFD_), replacement);
             return s(ansiCode, sanitized, resetCode);
         }
         return s(ansi.code(), s, RESET.code());

@@ -26,6 +26,8 @@ import static works.lysenko.Base.log;
 import static works.lysenko.Base.logDebug;
 import static works.lysenko.Base.parameters;
 import static works.lysenko.Base.timer;
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.sn;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static works.lysenko.util.spec.Layout.Files.name;
 import static works.lysenko.util.spec.Layout.Paths._RUNS_;
@@ -125,7 +127,7 @@ public final class ScenarioTracker {
             try {
                 Files.writeString(frameFile.toPath(), svgContent, StandardCharsets.UTF_8);
             } catch (final IOException e) {
-                System.err.println("Failed to save progression SVG frame: " + e.getMessage());
+                System.err.println(sn("Failed to save progression SVG frame: ", e.getMessage()));
                 return;
             }
             final long duration = System.currentTimeMillis() - t0;
@@ -286,7 +288,7 @@ public final class ScenarioTracker {
             final List<Runnable> encoderTasks = new ArrayList<>(3);
             if (gifEnabled) {
                 encoderTasks.add(() -> {
-                    final File gifFile = new File(runDir, prefix + ".progression.gif");
+                    final File gifFile = new File(runDir, s(prefix, ".progression.gif"));
                     try {
                         writeAnimatedGifFiles(
                                 rasterizedFrames,
@@ -296,7 +298,7 @@ public final class ScenarioTracker {
                                 maxFramePixels,
                                 percentage -> progress.update(gifTask, 10 + (percentage * 45 / 100)));
                         progress.complete(gifTask);
-                        log("Progression GIF generated: " + gifFile.getAbsolutePath());
+                        log(s("Progression GIF generated: ", gifFile.getAbsolutePath()));
                     } catch (final Exception e) {
                         progress.failed(gifTask, e);
                     }
@@ -307,7 +309,7 @@ public final class ScenarioTracker {
 
             if (webpEnabled) {
                 encoderTasks.add(() -> {
-                    final File webpFile = new File(runDir, prefix + ".progression.webp");
+                    final File webpFile = new File(runDir, s(prefix, ".progression.webp"));
                     try {
                         AnimatedWebP.write(
                                 rasterizedFrames,
@@ -317,7 +319,7 @@ public final class ScenarioTracker {
                                 maxFramePixels,
                                 percentage -> progress.update(webpTask, 10 + (percentage * 90 / 100)));
                         progress.complete(webpTask);
-                        log("Progression WebP generated: " + webpFile.getAbsolutePath());
+                        log(s("Progression WebP generated: ", webpFile.getAbsolutePath()));
                     } catch (final Exception e) {
                         progress.failed(webpTask, e);
                     }
@@ -329,16 +331,16 @@ public final class ScenarioTracker {
             if (mp4Enabled) {
                 encoderTasks.add(() -> {
                     try {
-                        logDebug("Generating scenario progression MP4 from " + rasterizedFrames.size() + " frames...");
+                        logDebug(s("Generating scenario progression MP4 from ", rasterizedFrames.size(), " frames..."));
                         ProgressionMp4.write(
                                 rasterizedFrames,
-                                new File(runDir, prefix + ".progression.mp4"),
+                                new File(runDir, s(prefix, ".progression.mp4")),
                                 ffmpeg,
                                 FPS,
                                 maxFramePixels,
                                 percentage -> progress.update(mp4Task, percentage));
                         progress.complete(mp4Task);
-                        log("Progression MP4 generated: " + new File(runDir, prefix + ".progression.mp4").getAbsolutePath());
+                        log(s("Progression MP4 generated: ", new File(runDir, s(prefix, ".progression.mp4")).getAbsolutePath()));
                     } catch (final Exception e) {
                         progress.failed(mp4Task, e);
                     }

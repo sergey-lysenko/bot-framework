@@ -15,6 +15,8 @@ import java.util.List;
 import static works.lysenko.Base.logDebug;
 import static works.lysenko.Base.logEvent;
 import static works.lysenko.util.data.enums.Severity.S2;
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.sn;
 
 /**
  * Tracks recorded and scripted scenario execution sequences.
@@ -61,10 +63,10 @@ public final class SequenceTracker {
                     logDebug(String.format("Loaded scenario execution sequence script with %d scenarios from %s",
                             loadedSequence.size(), file.getAbsolutePath()));
                 } catch (final Exception e) {
-                    logEvent(S2, "Failed to load scenario sequence script from " + file.getAbsolutePath() + ": " + e.getMessage());
+                    logEvent(S2, sn("Failed to load scenario sequence script from ", file.getAbsolutePath(), ": ", e.getMessage()));
                 }
             } else {
-                logEvent(S2, "Configured scenario sequence script file does not exist: " + file.getAbsolutePath());
+                logEvent(S2, s("Configured scenario sequence script file does not exist: ", file.getAbsolutePath()));
             }
         }
     }
@@ -85,7 +87,7 @@ public final class SequenceTracker {
         if (rootPackage == null || rootPackage.isBlank()) {
             rootPackage = works.lysenko.util.prop.PropEnum._TEST_ROOT.get();
         }
-        if (rootPackage != null && !rootPackage.isBlank() && !rootPackage.equals(".") && fqn.startsWith(rootPackage + ".")) {
+        if (rootPackage != null && !rootPackage.isBlank() && !rootPackage.equals(".") && fqn.startsWith(s(rootPackage, "."))) {
             return fqn.substring(rootPackage.length() + 1);
         }
         return fqn;
@@ -120,7 +122,7 @@ public final class SequenceTracker {
             logDebug(String.format("Saved scenario sequence artifact (%d steps) to %s",
                     recordedSequence.size(), path.toAbsolutePath()));
         } catch (final Exception e) {
-            logDebug("Failed to save scenario sequence artifact: " + e.getMessage());
+            logDebug(sn("Failed to save scenario sequence artifact: ", e.getMessage()));
         }
     }
 

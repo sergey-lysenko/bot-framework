@@ -31,6 +31,7 @@ import static works.lysenko.util.chrs.____.FULL;
 import static works.lysenko.util.data.enums.Brackets.ROUND;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Swap.s1;
+import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Wrap.e;
 import static works.lysenko.util.func.core.TestProperties.readTestPropertiesFromFile;
 import static works.lysenko.util.func.type.Objects.isNotNull;
@@ -173,7 +174,7 @@ public final class CycleEstimatorPanel {
 
         final int target = passesCount;
         final int recommended = CoverageEstimator.estimateAverageCycles(rootCtrl, target, progressConsumer);
-        final String leavesCountLabel = (1 == leaves) ? "1 leaf" : (leaves + " leaves");
+        final String leavesCountLabel = (1 == leaves) ? "1 leaf" : s(leaves, " leaves");
         return b(s1(recommended, "test"), REQUIRED, FOR, FULL, COVERAGE, e(ROUND, leavesCountLabel));
     }
 

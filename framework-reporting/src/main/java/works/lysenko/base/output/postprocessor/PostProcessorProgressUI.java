@@ -16,6 +16,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.sn;
+
 /**
  * Manages Swing GUI progress window dialogs during post-processing task execution.
  */
@@ -87,7 +90,7 @@ public final class PostProcessorProgressUI implements ProcessingProgress {
             final JProgressBar bar = bars.get(task);
             if (null != bar) {
                 bar.setValue(percentage);
-                bar.setString(percentage + "%");
+                bar.setString(s(percentage, "%"));
             }
         });
     }
@@ -120,7 +123,7 @@ public final class PostProcessorProgressUI implements ProcessingProgress {
             final JProgressBar bar = bars.get(task);
             if (null != bar) {
                 bar.setValue(0);
-                bar.setString("Failed: " + e.getMessage());
+                bar.setString(sn("Failed: ", e.getMessage()));
             }
         });
     }

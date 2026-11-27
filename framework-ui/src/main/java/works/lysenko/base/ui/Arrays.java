@@ -7,7 +7,7 @@ import static works.lysenko.util.spec.Symbols._LFD_;
 /**
  * Utility class for operations on arrays.
  */
-public record Arrays() {
+record Arrays() {
 
     /**
      * Converts an array of StackTraceElement objects into a single string with each element separated by a line feed.

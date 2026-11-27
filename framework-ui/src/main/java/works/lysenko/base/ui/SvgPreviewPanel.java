@@ -17,9 +17,12 @@ import java.util.concurrent.atomic.AtomicReference;
  * showing a placeholder message until the first frame arrives. SVG parsing happens off the EDT and
  * is coalesced so that only the most recent pending frame is rendered.
  */
-public final class SvgPreviewPanel extends JPanel {
+final class SvgPreviewPanel extends JPanel {
 
     private static final Color BACKGROUND = new Color(0x0F, 0x17, 0x2A);
+    private static final Color PLACEHOLDER_FOREGROUND = new Color(0x94, 0xA3, 0xB8);
+    private static final Font PLACEHOLDER_FONT = new Font(Font.SANS_SERIF, Font.PLAIN, 14);
+    private static final int SCROLL_UNIT_INCREMENT = 16;
     private static final String PLACEHOLDER = "PLACEHOLDER";
     private static final String IMAGE = "IMAGE";
 
@@ -35,8 +38,7 @@ public final class SvgPreviewPanel extends JPanel {
      * @param placeholderText message shown while no frame is available
      * @param threadName      name of the background thread used for SVG parsing
      */
-    public SvgPreviewPanel(final String placeholderText, final String threadName) {
-        super();
+    SvgPreviewPanel(final String placeholderText, final String threadName) {
         setLayout(layout);
         executor = Executors.newSingleThreadExecutor(r -> {
             final Thread t = new Thread(r, threadName);
@@ -46,19 +48,19 @@ public final class SvgPreviewPanel extends JPanel {
 
         final JPanel placeholderPanel = new JPanel(new GridBagLayout());
         final JLabel placeholderLabel = new JLabel(placeholderText);
-        placeholderLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
-        placeholderLabel.setForeground(new Color(0x94, 0xA3, 0xB8));
+        placeholderLabel.setFont(PLACEHOLDER_FONT);
+        placeholderLabel.setForeground(PLACEHOLDER_FOREGROUND);
         placeholderPanel.add(placeholderLabel);
 
         imagePanel.setBackground(BACKGROUND);
         final JScrollPane scrollPane = new JScrollPane(imagePanel);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(SCROLL_UNIT_INCREMENT);
+        scrollPane.getHorizontalScrollBar().setUnitIncrement(SCROLL_UNIT_INCREMENT);
         viewport = scrollPane.getViewport();
         viewport.setBackground(BACKGROUND);
         viewport.addComponentListener(new ComponentAdapter() {
             @Override
-            public void componentResized(final ComponentEvent event) {
+            public void componentResized(final ComponentEvent e) {
                 fitToViewport();
             }
         });
@@ -70,7 +72,7 @@ public final class SvgPreviewPanel extends JPanel {
     /**
      * @return the panel that paints the current frame
      */
-    public ImagePanel getImagePanel() {
+    ImagePanel getImagePanel() {
         return imagePanel;
     }
 
@@ -79,18 +81,9 @@ public final class SvgPreviewPanel extends JPanel {
      *
      * @param image frame to display, or {@code null} to clear
      */
-    public void setImage(final Image image) {
+    void setImage(final Image image) {
         pendingSvg.set(null);
-        onEdt(() -> {
-            if (null == image) {
-                imagePanel.setImage(null);
-                layout.show(this, PLACEHOLDER);
-            } else {
-                imagePanel.setImage(image);
-                fitToViewport();
-                layout.show(this, IMAGE);
-            }
-        });
+        onEdt(() -> applyImage(image));
     }
 
     /**
@@ -99,35 +92,57 @@ public final class SvgPreviewPanel extends JPanel {
      *
      * @param svgContent SVG source, or {@code null} to clear
      */
-    public void setSvg(final String svgContent) {
+    void setSvg(final String svgContent) {
         if (null == svgContent || svgContent.isBlank()) {
             pendingSvg.set(null);
-            onEdt(() -> {
-                imagePanel.setSvgFrame(null);
-                layout.show(this, PLACEHOLDER);
-            });
-            return;
-        }
-        if (SwingUtilities.isEventDispatchThread()) {
+            onEdt(this::clearSvgFrame);
+        } else if (SwingUtilities.isEventDispatchThread()) {
             pendingSvg.set(null);
-            try {
-                applySvgFrame(ProgressionFrames.parseSvg(svgContent, ProgressionSettings.current().maxFramePixels()));
-            } catch (final IOException _) {
-            }
-            return;
+            parseAndApplySvg(svgContent);
+        } else if (null == pendingSvg.getAndSet(svgContent)) {
+            executor.submit(this::drainPendingSvg);
         }
-        if (null == pendingSvg.getAndSet(svgContent)) {
-            executor.submit(() -> {
-                String next;
-                while (null != (next = pendingSvg.getAndSet(null))) {
-                    try {
-                        final ProgressionFrames.SvgFrame frame =
-                                ProgressionFrames.parseSvg(next, ProgressionSettings.current().maxFramePixels());
-                        SwingUtilities.invokeLater(() -> applySvgFrame(frame));
-                    } catch (final IOException _) {
-                    }
-                }
-            });
+    }
+
+    private void applyImage(final Image image) {
+        if (null == image) {
+            imagePanel.setImage(null);
+            layout.show(this, PLACEHOLDER);
+        } else {
+            imagePanel.setImage(image);
+            fitToViewport();
+            layout.show(this, IMAGE);
+        }
+    }
+
+    private void clearSvgFrame() {
+        imagePanel.setSvgFrame(null);
+        layout.show(this, PLACEHOLDER);
+    }
+
+    private void parseAndApplySvg(final String svgContent) {
+        try {
+            applySvgFrame(ProgressionFrames.parseSvg(svgContent, ProgressionSettings.current().maxFramePixels()));
+        } catch (final IOException _) {
+            // Ignore malformed SVG frames
+        }
+    }
+
+    private void drainPendingSvg() {
+        String next = pendingSvg.getAndSet(null);
+        while (null != next) {
+            parseAndScheduleSvg(next);
+            next = pendingSvg.getAndSet(null);
+        }
+    }
+
+    private void parseAndScheduleSvg(final String svgContent) {
+        try {
+            final ProgressionFrames.SvgFrame frame =
+                    ProgressionFrames.parseSvg(svgContent, ProgressionSettings.current().maxFramePixels());
+            SwingUtilities.invokeLater(() -> applySvgFrame(frame));
+        } catch (final IOException _) {
+            // Ignore malformed SVG frames
         }
     }
 

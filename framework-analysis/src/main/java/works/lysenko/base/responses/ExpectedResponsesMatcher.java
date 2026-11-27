@@ -6,6 +6,8 @@ import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Scenario;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Utility matcher for expected browser responses.
  */
@@ -58,7 +60,7 @@ public final class ExpectedResponsesMatcher {
         final String cleanGroup = stripTags(node.group());
         final String fullKey = (cleanGroup.isEmpty() || "tests".equalsIgnoreCase(cleanGroup))
                 ? cleanLabel
-                : cleanGroup + "." + shortKey;
+                : s(cleanGroup, ".", shortKey);
         return KnownIssuesMatcher.matchesScenario(targetScenario, fullKey, shortKey)
                 || KnownIssuesMatcher.matchesScenario(targetScenario, cleanLabel, shortKey);
     }

@@ -301,7 +301,7 @@ public class TestProperties implements _TestProperties {
                 source = the.getProperty(key.substring(1));
             }
             if (isNull(source) && !key.startsWith(".")) {
-                source = the.getProperty("." + key);
+                source = the.getProperty(s(".", key));
             }
         }
         if (isNull(source)) source = def;
@@ -327,7 +327,7 @@ public class TestProperties implements _TestProperties {
             val = the.getProperty(key.substring(1));
         }
         if (isNull(val) && !key.startsWith(".")) {
-            val = the.getProperty("." + key);
+            val = the.getProperty(s(".", key));
         }
         return (null != val) ? val : def;
     }
@@ -359,7 +359,7 @@ public class TestProperties implements _TestProperties {
             source = the.getProperty(name.substring(1));
         }
         if (isNull(source) && isNotNull(the) && !name.startsWith(".")) {
-            source = the.getProperty("." + name);
+            source = the.getProperty(s(".", name));
         }
         if (isNotNull(exec) && !IN_GET_LOG.isBound()) {
             if (isNull(source))

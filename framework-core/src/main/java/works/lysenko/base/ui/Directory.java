@@ -152,11 +152,11 @@ public final class Directory implements _Dashboard {
         setButton(STOP_PATH, active);
     }
 
-    @SuppressWarnings("ForeachStatement")
     /**
      * Performs set breadcrumb.
      * @param content the content
      */
+    @SuppressWarnings("ForeachStatement")
     public void setBreadcrumb(final List<? extends _Scenario> content) {
 
         final Collection<String> breadcrumb = new ArrayList<>(0);
@@ -185,19 +185,19 @@ public final class Directory implements _Dashboard {
 
     private void publishEta(final boolean force, final boolean markDone) {
 
-        if (!isNotNull(core) || !isNotNull(timer)) return;
-
-        final long now = System.currentTimeMillis();
-        if (!force && (now - lastEtaWriteAtMs) < ETA_WRITE_INTERVAL_MS) return;
-        lastEtaWriteAtMs = now;
-
-        final String json = _EtaProvider.resolveEtaJson(markDone, now, Math.max(0L, timer.msSinceStart()), currentTitle);
-        if (null != json) {
-            writeEtaJson(json);
+        if (isNotNull(core) && isNotNull(timer)) {
+            final long now = System.currentTimeMillis();
+            if (force || ETA_WRITE_INTERVAL_MS <= (now - lastEtaWriteAtMs)) {
+                lastEtaWriteAtMs = now;
+                final String json = _EtaProvider.resolveEtaJson(markDone, now, Math.max(0L, timer.msSinceStart()), currentTitle);
+                if (isNotNull(json)) {
+                    writeEtaJson(json);
+                }
+            }
         }
     }
 
-    private static void writeEtaJson(final String json) {
+    private static void writeEtaJson(final CharSequence json) {
 
         try {
             final Path target = Path.of(ETA_PATH);
@@ -205,15 +205,20 @@ public final class Directory implements _Dashboard {
             if (null != parent) {
                 Files.createDirectories(parent);
             }
-            final Path tmp = target.resolveSibling(target.getFileName().toString() + ".tmp");
+            final Path tmp = target.resolveSibling(s(target.getFileName().toString(), ".tmp"));
             Files.writeString(tmp, json, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-            try {
-                Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (final IOException _) {
-                Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
-            }
+            moveWithAtomicFallback(tmp, target);
         } catch (final IOException _) {
             // Never disrupt test execution if dash/eta cannot be written
+        }
+    }
+
+    private static void moveWithAtomicFallback(final Path source, final Path target) throws IOException {
+
+        try {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (final IOException _) {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 }

@@ -44,6 +44,7 @@ import static works.lysenko.util.data.enums.ExitCode.PLATFORMS_RESET;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
 import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.sn;
 import static works.lysenko.util.data.strs.Wrap.q;
 import static works.lysenko.util.func.type.Objects.isNotNull;
 import static java.util.Objects.isNull;
@@ -176,7 +177,7 @@ public class Gui implements _GUI {
                 cp[0] = new works.lysenko.base.ui.ControlPanel(parameters, this);
             });
         } catch (Exception e) {
-            System.err.println("Failed to initialize GUI on EDT: " + e.getMessage());
+            System.err.println(sn("Failed to initialize GUI on EDT: ", e.getMessage()));
             addStandardParameters();
             addAdditionalParameters();
             cp[0] = new works.lysenko.base.ui.ControlPanel(parameters, this);
@@ -307,7 +308,7 @@ public class Gui implements _GUI {
 
         traverseExtensions = createCheckBox(parameters.getTraverseExtensions(), PropEnum._TREE_TRAVERSE_EXTENSIONS);
 
-        final String defaultOrigin = defaultIfEmpty(parameters.getProperty(ORIGIN.name()), Parameters.getLocalIpAddress() + " [GUI]");
+        final String defaultOrigin = defaultIfEmpty(parameters.getProperty(ORIGIN.name()), s(Parameters.getLocalIpAddress(), " [GUI]"));
         origin = new JTextField(defaultOrigin, WIDTH);
 
         final String defaultTag = defaultIfEmpty(parameters.getProperty(TAG.name()), defaultIfEmpty(parameters.getSuite(), "default"));

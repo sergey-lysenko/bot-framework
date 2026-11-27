@@ -294,10 +294,10 @@ public class Driver implements _Driver {
         final String userHome = System.getProperty("user.home");
         final String localAppData = System.getenv("LOCALAPPDATA");
         final String[] candidates = {
-                (isNotNull(userHome)) ? userHome + PATH_MACOS_SDK : null,
-                (isNotNull(userHome)) ? userHome + PATH_ANDROID_SDK : null,
-                (isNotNull(userHome)) ? userHome + PATH_SDK : null,
-                (isNotNull(localAppData)) ? localAppData + "\\Android\\Sdk" : null,
+                (isNotNull(userHome)) ? s(userHome, PATH_MACOS_SDK) : null,
+                (isNotNull(userHome)) ? s(userHome, PATH_ANDROID_SDK) : null,
+                (isNotNull(userHome)) ? s(userHome, PATH_SDK) : null,
+                (isNotNull(localAppData)) ? s(localAppData, "\\Android\\Sdk") : null,
                 PATH_OPT_SDK,
                 PATH_USR_LOCAL_SDK
         };

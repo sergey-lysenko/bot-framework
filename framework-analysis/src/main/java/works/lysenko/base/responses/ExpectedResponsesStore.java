@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Store for managing expected browser responses during test execution.
  */
@@ -87,7 +89,7 @@ public class ExpectedResponsesStore {
         final String fqn = scenario.getName();
         final String shortName = scenario.getShortName();
         final String simple = scenario.getSimpleName();
-        return (null != fqn ? fqn : "") + '\0' + (null != shortName ? shortName : "") + '\0' + (null != simple ? simple : "");
+        return s(null != fqn ? fqn : "", '\0', null != shortName ? shortName : "", '\0', null != simple ? simple : "");
     }
 
     private List<ExpectedResponse> getForScenario(final _Scenario scenario) {
@@ -108,7 +110,7 @@ public class ExpectedResponsesStore {
 
     private static String nodeViewKey(final _TreeNodeView node) {
         final String scen = (null != node.scenario()) ? scenarioKey(node.scenario()) : "";
-        return scen + '\0' + (null != node.label() ? node.label() : "") + '\0' + (null != node.group() ? node.group() : "");
+        return s(scen, '\0', null != node.label() ? node.label() : "", '\0', null != node.group() ? node.group() : "");
     }
 
     private List<ExpectedResponse> getForNodeView(final _TreeNodeView node) {
@@ -244,7 +246,7 @@ public class ExpectedResponsesStore {
      */
     public boolean matchesNode(final _Scenario scenario, final _Result result) {
         if (responses.isEmpty() || null == scenario || null == result) return false;
-        return matchesResultIncremental("S:" + scenarioKey(scenario), getForScenario(scenario), result);
+        return matchesResultIncremental(s("S:", scenarioKey(scenario)), getForScenario(scenario), result);
     }
 
     /**
@@ -255,7 +257,7 @@ public class ExpectedResponsesStore {
      */
     public boolean matchesNode(final _TreeNodeView node) {
         if (responses.isEmpty() || null == node || null == node.result()) return false;
-        return matchesResultIncremental("N:" + nodeViewKey(node), getForNodeView(node), node.result());
+        return matchesResultIncremental(s("N:", nodeViewKey(node)), getForNodeView(node), node.result());
     }
 
     /**
