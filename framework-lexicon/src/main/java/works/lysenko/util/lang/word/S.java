@@ -21,6 +21,8 @@ public record S() {
     public static final String SAMPLES = s(SA, MP, L, ES);
     /** Constant representing the word SATURATION. */
     public static final String SATURATION = s(SA, TU, RA, TION);
+    /** Constant representing the word SAVED. */
+    public static final String SAVED = s(SAVE, D);
     /** Constant representing the word SCALE. */
     public static final String SCALE = s(SC, AL, E);
     /** Constant representing the word SCALED. */
@@ -81,6 +83,8 @@ public record S() {
     public static final String SHARES = s(SHARE, S);
     /** Constant representing the word SHIFT. */
     public static final String SHIFT = s(SH, I, FT);
+    /** Constant representing the word SHIFTED. */
+    public static final String SHIFTED = s(SHIFT, ED);
     /** Constant representing the word SHOULD. */
     public static final String SHOULD = s(SH, OU, LD);
     /** Constant representing the word SHRINK. */
@@ -113,6 +117,8 @@ public record S() {
     public static final String SORTED = s(SO, RT, ED);
     /** Constant representing the word SOURCE. */
     public static final String SOURCE = s(SO, UR, CE);
+    /** Constant representing the word SOURCES. */
+    public static final String SOURCES = s(SOURCE, S);
     /** Constant representing the word SPACE. */
     public static final String SPACE = s(SP, AC, E);
     /** Constant representing the word SPAN. */
@@ -131,6 +137,8 @@ public record S() {
     public static final String STACKTRACE = s(STACK, TRACE);
     /** Constant representing the word STACKTRACES. */
     public static final String STACKTRACES = s(STACKTRACE, S);
+    /** Constant representing the word STAGES. */
+    public static final String STAGES = s(ST, AG, ES);
     /** Constant representing the word STALE. */
     public static final String STALE = s(STA, LE);
     /** Constant representing the word STAMP. */
@@ -169,6 +177,8 @@ public record S() {
     public static final String STUCK = s(ST, U, CK);
     /** Constant representing the word SUBSTITUTE. */
     public static final String SUBSTITUTE = s(SUB, ST, IT, U, TE);
+    /** Constant representing the word SUBTREE. */
+    public static final String SUBTREE = s(SUB, TR, EE);
     /** Constant representing the word SUCCESSFUL. */
     public static final String SUCCESSFUL = s(SU, CC, ES, SF, UL);
     /** Constant representing the word SUCCESSFULLY. */

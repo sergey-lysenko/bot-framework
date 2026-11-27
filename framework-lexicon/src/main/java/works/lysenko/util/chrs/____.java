@@ -97,6 +97,8 @@ public record ____() {
     public static final String CLOS = "clos";
     /** Constant representing "code". */
     public static final String CODE = "code";
+    /** Constant representing "cols". */
+    public static final String COLS = "cols";
     /** Constant representing "comm". */
     public static final String COMM = "comm";
     /** Constant representing "comp". */
@@ -185,6 +187,8 @@ public record ____() {
     public static final String FROM = "from";
     /** Constant representing "full". */
     public static final String FULL = "full";
+    /** Constant representing "gaps". */
+    public static final String GAPS = "gaps";
     /** Constant representing "gger". */
     public static final String GGER = "gger";
     /** Constant representing "grid". */
@@ -285,6 +289,8 @@ public record ____() {
     public static final String NEAR = "near";
     /** Constant representing "nega". */
     public static final String NEGA = "nega";
+    /** Constant representing "node". */
+    public static final String NODE = "node";
     /** Constant representing "noti". */
     public static final String NOTI = "noti";
     /** Constant representing "nter". */
@@ -353,6 +359,8 @@ public record ____() {
     public static final String REAL = "real";
     /** Constant representing "rede". */
     public static final String REDE = "rede";
+    /** Constant representing "redo". */
+    public static final String REDO = "redo";
     /** Constant representing "rela". */
     public static final String RELA = "rela";
     /** Constant representing "remo". */
@@ -369,12 +377,16 @@ public record ____() {
     public static final String RIPT = "ript";
     /** Constant representing "root". */
     public static final String ROOT = "root";
+    /** Constant representing "rows". */
+    public static final String ROWS = "rows";
     /** Constant representing "rule". */
     public static final String RULE = "rule";
     /** Constant representing "runs". */
     public static final String RUNS = "runs";
     /** Constant representing "same". */
     public static final String SAME = "same";
+    /** Constant representing "save". */
+    public static final String SAVE = "save";
     /** Constant representing "seek". */
     public static final String SEEK = "seek";
     /** Constant representing "sele". */
@@ -418,6 +430,8 @@ public record ____() {
     public static final String SWIP = "swip";
     /** Constant representing "swit". */
     public static final String SWIT = "swit";
+    /** Constant representing "take". */
+    public static final String TAKE = "take";
     /** Constant representing "team". */
     public static final String TEAM = "team";
     /** Constant representing "tele". */
@@ -470,6 +484,8 @@ public record ____() {
     public static final String UGHT = "ught";
     /** Constant representing "ulat". */
     public static final String ULAT = "ulat";
+    /** Constant representing "undo". */
+    public static final String UNDO = "undo";
     /** Constant representing "upda". */
     public static final String UPDA = "upda";
     /** Constant representing "used". */
@@ -498,4 +514,6 @@ public record ____() {
     public static final String WITH = "with";
     /** Constant representing "writ". */
     public static final String WRIT = "writ";
+    /** Constant representing "zoom". */
+    public static final String ZOOM = "zoom";
 }

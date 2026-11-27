@@ -7,6 +7,7 @@ import static works.lysenko.util.spec.Synth.*;
 import static works.lysenko.util.spec.Symbols.O;
 import static works.lysenko.util.spec.Symbols.S;
 import static works.lysenko.util.spec.Symbols.T;
+import static works.lysenko.util.spec.Symbols.B;
 
 /**
  * Language utility words starting with B.
@@ -20,6 +21,8 @@ public record B() {
     public static final String BEFORE = s(BE, FO, RE);
     /** Constant representing the word BETTER. */
     public static final String BETTER = s(BE, TTER);
+    /** Constant representing the word BETWEEN. */
+    public static final String BETWEEN = s(B, ET, WE, EN);
     /** Constant representing the word BIGGER. */
     public static final String BIGGER = s(BI, GGER);
     /** Constant representing the word BINDING. */
@@ -34,6 +37,8 @@ public record B() {
     public static final String BOUNDARIES = s(BOUN, DA, RI, ES);
     /** Constant representing the word BOUNDS. */
     public static final String BOUNDS = s(BOUN, DS);
+    /** Constant representing the word BRANCHES. */
+    public static final String BRANCHES = s(BR, AN, CH, ES);
     /** Constant representing the word BRIGHTNESS. */
     public static final String BRIGHTNESS = s(BR, IG, HT, NE, SS);
     /** Constant representing the word BROWSER. */

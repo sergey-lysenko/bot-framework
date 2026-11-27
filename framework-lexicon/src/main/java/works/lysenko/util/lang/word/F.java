@@ -39,6 +39,8 @@ public record F() {
     public static final String FINGER = s(FING, ER);
     /** Constant representing the word FIXED. */
     public static final String FIXED = s(FI, X, ED);
+    /** Constant representing the word FOCUS. */
+    public static final String FOCUS = s(F, OC, US);
     /** Constant representing the word FOLDER. */
     public static final String FOLDER = s(FO, LD, ER);
     /** Constant representing the word FORWARD. */

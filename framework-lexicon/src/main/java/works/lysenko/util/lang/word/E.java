@@ -21,6 +21,12 @@ public record E() {
     public static final String EDGE = s(ED, GE);
     /** Constant representing the word EDGES. */
     public static final String EDGES = s(ED, GE, S);
+    /** Constant representing the word EDITOR. */
+    public static final String EDITOR = s(EDIT, OR);
+    /** Constant representing the word EDITS. */
+    public static final String EDITS = s(EDIT, S);
+    /** Constant representing the word EFFECT. */
+    public static final String EFFECT = s(EF, FE, CT);
     /** Constant representing the word EFFECTIVE. */
     public static final String EFFECTIVE = s(EF, FE, CT, IV, E);
     /** Constant representing the word ELEMENT. */
@@ -35,6 +41,8 @@ public record E() {
     public static final String ENOUGH = s(EN, OU, GH);
     /** Constant representing the word ENSURE. */
     public static final String ENSURE = s(EN, SU, RE);
+    /** Constant representing the word ENTIRE. */
+    public static final String ENTIRE = s(EN, TI, RE);
     /** Constant representing the word ENTRY. */
     public static final String ENTRY = s(EN, TR, Y);
     /** Constant representing the word EQUAL. */
@@ -43,6 +51,8 @@ public record E() {
     public static final String EQUALS = s(EQU, AL, S);
     /** Constant representing the word ERROR. */
     public static final String ERROR = s(ER, RO, R);
+    /** Constant representing the word ERRORS. */
+    public static final String ERRORS = s(ERROR, S);
     /** Constant representing the word EUCLIDEAN. */
     public static final String EUCLIDEAN = s(E, UC, LI, DE, AN);
     /** Constant representing the word EVENT. */

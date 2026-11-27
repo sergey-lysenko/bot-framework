@@ -30,6 +30,8 @@ import static works.lysenko.util.lang.word.U.USING;
 import static works.lysenko.util.lang.word.U.USR;
 import static works.lysenko.util.spec.Symbols.D;
 import static works.lysenko.util.spec.Symbols.S;
+import static works.lysenko.util.spec.Symbols._0_;
+import static works.lysenko.util.spec.Symbols._1_;
 import static works.lysenko.util.spec.Symbols._2_;
 import static works.lysenko.util.spec.Symbols._3_;
 import static works.lysenko.util.spec.Symbols._4_;
@@ -51,6 +53,8 @@ public record P() {
     /** Format template for wandering patience progress debug messages. */
     public static final String PATIENCE_AT_S_D_OF_S = b(c(PATIENCE), AT, q(s(_S, _PRCNT_, _PRCNT_)),
             e(ROUND, b(s(_PRCNT_, D), OF, _S)));
+    /** Constant representing '100%'. */
+    public static final String PCT_100 = s(_1_, _0_, _0_, _PRCNT_);
     /** Constant representing processing exceptional state. */
     public static final String PROCESSING_EXCEPTIONAL_STATE = b(c(PROCESSING), EXCEPTIONAL, STATE);
     /** Constant representing provided locator. */

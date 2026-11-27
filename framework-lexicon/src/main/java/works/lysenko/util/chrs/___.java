@@ -193,6 +193,8 @@ public record ___() {
     public static final String PER = "per";
     /** Constant representing "png". */
     public static final String PNG = "png";
+    /** Constant representing "pre". */
+    public static final String PRE = "pre";
     /** Constant representing "put". */
     public static final String PUT = "put";
     /** Constant representing "raw". */
@@ -205,6 +207,8 @@ public record ___() {
     public static final String ROW = "row";
     /** Constant representing "run". */
     public static final String RUN = "run";
+    /** Constant representing "sep". */
+    public static final String SEP = "sep";
     /** Constant representing "set". */
     public static final String SET = "set";
     /** Constant representing "spa". */

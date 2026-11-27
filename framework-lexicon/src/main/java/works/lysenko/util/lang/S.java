@@ -2,12 +2,14 @@ package works.lysenko.util.lang;
 
 import static works.lysenko.util.chrs.__.BY;
 import static works.lysenko.util.chrs.__.OF;
+import static works.lysenko.util.chrs.__.TO;
 import static works.lysenko.util.chrs.___.NOT;
 import static works.lysenko.util.chrs.___.WAS;
 import static works.lysenko.util.chrs.____.CODE;
 import static works.lysenko.util.chrs.____.DOES;
 import static works.lysenko.util.chrs.____.PAGE;
 import static works.lysenko.util.chrs.____.ROOT;
+import static works.lysenko.util.chrs.____.SAVE;
 import static works.lysenko.util.spec.Synth.*;
 import static works.lysenko.util.lang.D.DUE_TO;
 import static works.lysenko.util.lang.word.A.ANDROID;
@@ -24,6 +26,7 @@ import static works.lysenko.util.lang.word.H.HOME;
 import static works.lysenko.util.lang.word.R.REFERENCE;
 import static works.lysenko.util.lang.word.R.REQUEST;
 import static works.lysenko.util.lang.word.S.*;
+import static works.lysenko.util.spec.Symbols.MID_DOT;
 import static works.lysenko.util.spec.Symbols.UND_SCR;
 import static works.lysenko.util.spec.Symbols._COLON_;
 import static works.lysenko.util.spec.Symbols._SLASH_;
@@ -37,10 +40,14 @@ public record S() {
     private static final String FOLDER_DOES_NOT_EXIST_CHECK = b(FOLDER, DOES, NOT, s(EXIST, _COLON_), CHECK,
             u(b(UND_SCR, ANDROID, HOME)), s(_SLASH_), u(b(UND_SCR, ANDROID, SDK, ROOT)));
 
+    /** Constant representing the label 'Save to Sources'. */
+    public static final String SAVE_TO_SOURCES = b(c(SAVE), TO, c(SOURCES));
     /** Constant representing scenarios stack. */
     public static final String SCENARIOS_STACK = b(c(SCENARIOS), s(STACK, _COLON_));
     /** Constant representing scenario execution failed due to message. */
     public static final String SCENARIO_EXECUTION_FAILED_DUE_TO = b(c(SCENARIO), EXECUTION, FAILED, DUE_TO);
+    /** Constant representing space-padded middle dot separator. */
+    public static final String SEP_MID_DOT = e(s(MID_DOT));
     /** Constant representing shrinking was disabled by configuration message. */
     public static final String SHRINKING_WAS_DISABLED_BY_CONFIGURATION = b(c(SHRINKING), WAS, DISABLED, BY, CONFIGURATION);
     /** Constant representing shrinking was disabled by request message. */

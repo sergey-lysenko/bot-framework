@@ -30,12 +30,18 @@ public record C() {
     public static final String CALLSTACK = s(CALL, STA, CK);
     /** Constant representing the word CALLSTACKS. */
     public static final String CALLSTACKS = s(CALLSTACK, S);
+    /** Constant representing the word CANCEL. */
+    public static final String CANCEL = s(CA, NC, EL);
+    /** Constant representing the word CANCELLING. */
+    public static final String CANCELLING = s(CANCEL, L, ING);
     /** Constant representing the word CANDIDATE. */
     public static final String CANDIDATE = s(CA, ND, ID, ATE);
     /** Constant representing the word CANDIDATES. */
     public static final String CANDIDATES = s(CANDIDATE, S);
     /** Constant representing the word CANNOT. */
     public static final String CANNOT = s(C, AN, NOT);
+    /** Constant representing the word CANVAS. */
+    public static final String CANVAS = s(C, AN, V, AS);
     /** Constant representing the word CASING. */
     public static final String CASING = s(CAS, ING);
     /** Constant representing the word CAUGHT. */
@@ -58,6 +64,8 @@ public record C() {
     public static final String CHANGED = s(CHANGE, D);
     /** Constant representing the word CHANGER. */
     public static final String CHANGER = s(CHANGE, R);
+    /** Constant representing the word CHANGES. */
+    public static final String CHANGES = s(CHANGE, S);
     /** Constant representing the word CHECK. */
     public static final String CHECK = s(CHE, CK);
     /** Constant representing the word CHECKED. */
@@ -96,10 +104,16 @@ public record C() {
     public static final String COLOUR = s(CO, LO, UR);
     /** Constant representing the word COLOURS. */
     public static final String COLOURS = s(COLOUR, S);
+    /** Constant representing the word COLUMN. */
+    public static final String COLUMN = s(COL, UM, N);
     /** Constant representing the word COMMAND. */
     public static final String COMMAND = s(COMM, AND);
     /** Constant representing the word COMMON. */
     public static final String COMMON = s(COMM, ON);
+    /** Constant representing the word COMPACTED. */
+    public static final String COMPACTED = s(COMP, AC, TED);
+    /** Constant representing the word COMPACTION. */
+    public static final String COMPACTION = s(COMP, AC, TION);
     /** Constant representing the word COMPENSATION. */
     public static final String COMPENSATION = s(COMP, EN, SA, TION);
     /** Constant representing the word COMPLETED. */

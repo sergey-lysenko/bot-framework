@@ -32,8 +32,8 @@ public record Synth() {
         final StringBuilder sb = new StringBuilder(32);
         for (final Object o : parts) {
             if (null == o) {
-                System.err.println("Unexpected null value among " + Arrays.toString(parts) + " in "
-                        + Arrays.toString(Thread.currentThread().getStackTrace()));
+                System.err.println(sn("Unexpected null value among ", Arrays.toString(parts), " in ",
+                        Arrays.toString(Thread.currentThread().getStackTrace())));
             }
             sb.append(o);
         }
@@ -112,8 +112,8 @@ public record Synth() {
         final List<String> list = new ArrayList<>(parts.length);
         for (final String str : parts) {
             if (null == str) {
-                System.err.println("Unexpected null value among " + Arrays.toString(parts) + " in "
-                        + Arrays.toString(Thread.currentThread().getStackTrace()));
+                System.err.println(sn("Unexpected null value among ", Arrays.toString(parts), " in ",
+                        Arrays.toString(Thread.currentThread().getStackTrace())));
             } else if (includeEmpty || !str.isEmpty()) {
                 list.add(str);
             }
@@ -147,7 +147,7 @@ public record Synth() {
             throw new IllegalArgumentException("Cannot capitalize a string starting with a digit");
         }
         final char title = Character.toTitleCase(first);
-        return (first == title) ? original : (title + original.substring(1));
+        return (first == title) ? original : s(title, original.substring(1));
     }
 
     /**

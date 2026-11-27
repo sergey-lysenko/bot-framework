@@ -14,6 +14,7 @@ import static works.lysenko.util.lang.word.C.COUNTER;
 import static works.lysenko.util.lang.word.E.ELEMENT;
 import static works.lysenko.util.lang.word.G.GIVEN;
 import static works.lysenko.util.lang.word.L.LAUNCHER;
+import static works.lysenko.util.lang.word.L.LAYOUT;
 import static works.lysenko.util.lang.word.L.LOCATED;
 import static works.lysenko.util.lang.word.P.PACKAGE;
 import static works.lysenko.util.lang.word.P.PARAMETERS;
@@ -78,6 +79,8 @@ public record A() {
     public static final String ASSERTING_THAT_VALUE = b(c(ASSERTING), THAT, VALUE);
     /** Constant representing the message for attempting counter action. */
     public static final String ATTEMPTING_COUNTER_ACTION = b(c(ATTEMPTING), d(COUNTER, ACTION));
+    /** Constant representing 'Auto-Layout'. */
+    public static final String AUTO_LAYOUT = d(c(AUTO), c(LAYOUT));
     /** Constant representing Appium server closed message. */
     public static final String APPIUM_SERVER_CLOSED = e(b(c(APPIUM), SERVER, CLOSED, THE, CONNECTION, UNEXPECTEDLY,
             s(OPN_BRK, SEE)), true);

@@ -26,6 +26,8 @@ public record L() {
     public static final String LINEAR = s(LI, NE, AR);
     /** Constant representing the word LINES. */
     public static final String LINES = s(LINE, S);
+    /** Constant representing the word LOADED. */
+    public static final String LOADED = s(LOAD, ED);
     /** Constant representing the word LOADING. */
     public static final String LOADING = s(LOAD, ING);
     /** Constant representing the word LOCAL. */

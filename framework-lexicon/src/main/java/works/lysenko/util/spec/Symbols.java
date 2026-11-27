@@ -158,10 +158,18 @@ public record Symbols() {
     public static final char Ø = booleansToChar(false, false, false, true, true, false, true, true);
     /** Registered sign character ('®'). */
     public static final char CPY_RHT = booleansToChar(false, true, true, true, false, true, false, true); // '®'
+    /** Plus-minus sign character ('±'). */
+    public static final char PLS_MNS = booleansToChar(true, false, false, false, true, true, false, true); // '±'
+    /** Middle dot character ('·'). */
+    public static final char MID_DOT = booleansToChar(true, true, true, false, true, true, false, true); // '·'
+    /** Multiplication sign character ('×'). */
+    public static final char MLT_SGN = booleansToChar(true, true, true, false, true, false, true, true); // '×'
 
     // 10 bits
     /** Combining long stroke overlay character ('̶'). */
     public static final char _CLS_ = booleansToChar(false, true, true, false, true, true, false, false, true, true); // '̶'
+    /** Greek capital letter Delta ('Δ'). */
+    public static final char DELTA = booleansToChar(false, false, true, false, true, false, false, true, true, true); // 'Δ'
 
     // 14 bits
     /** Bullet character ('•'). */
@@ -185,6 +193,9 @@ public record Symbols() {
     /** Rightwards arrow with double stroke character ('⇒'). */
     public static final char RGT_DAR = booleansToChar(false, true, false, false, true, false, true, true, true, false, false
             , false, false, true); // '⇒'
+    /** Black down-pointing small triangle character ('▾'). */
+    public static final char DWN_TRI = booleansToChar(false, true, true, true, true, true, false, true, true, false, true,
+            false, false, true); // '▾'
 
     // 16 bits
     /** Section sign character ('§'). */

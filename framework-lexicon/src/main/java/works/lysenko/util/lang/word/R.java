@@ -40,6 +40,8 @@ public record R() {
     public static final String RECALCULATE = s(RE, CALC, ULAT, E);
     /** Constant representing the word RECEIVED. */
     public static final String RECEIVED = s(RE, CE, IV, ED);
+    /** Constant representing the word RECOMPILE. */
+    public static final String RECOMPILE = s(RE, COM, PI, LE);
     /** Constant representing the word RECORDS. */
     public static final String RECORDS = s(RE, CO, R, DS);
     /** Constant representing the word RECTANGLE. */
@@ -48,6 +50,8 @@ public record R() {
     public static final String RECYCLER = s(RE, CY , C, LER);
     /** Constant representing the word REDEFINED. */
     public static final String REDEFINED = s(REDE, FI, N, ED);
+    /** Constant representing the word REDUCE. */
+    public static final String REDUCE = s(RE, DU, CE);
     /** Constant representing the word REDUCED. */
     public static final String REDUCED = s(RED, UC, ED);
     /** Constant representing the word REDUCTION. */
@@ -62,6 +66,8 @@ public record R() {
     public static final String RELATIVE = s(RELA, TI, VE);
     /** Constant representing the word RELEVANT. */
     public static final String RELEVANT = s(RE, LE, VA, NT);
+    /** Constant representing the word RELOAD. */
+    public static final String RELOAD = s(RE, LOAD);
     /** Constant representing the word REMOTE. */
     public static final String REMOTE = s(REMO, TE);
     /** Constant representing the word REMOVE. */
@@ -96,6 +102,8 @@ public record R() {
     public static final String RESOURCES = s(RESOURCE, S);
     /** Constant representing the word RESTART. */
     public static final String RESTART = s(REST, ART);
+    /** Constant representing the word RESTORE. */
+    public static final String RESTORE = s(REST, ORE);
     /** Constant representing the word RESUME. */
     public static final String RESUME = s(RE, SU, ME);
     /** Constant representing the word RESUMING. */
@@ -112,6 +120,8 @@ public record R() {
     public static final String RETRYING = s(RETRY, ING);
     /** Constant representing the word RETURNS. */
     public static final String RETURNS = s(RE, TURN, S);
+    /** Constant representing the word REVERT. */
+    public static final String REVERT = s(RE, VE, RT);
     /** Constant representing the word RUN. */
     public static final String RUN = works.lysenko.util.chrs.___.RUN;
     /** Constant representing the word RUNNING. */

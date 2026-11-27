@@ -36,6 +36,8 @@ public record D() {
     public static final String DIFFERENCE_IS = b(DIFFERENCE, IS);
     /** Constant representing the phrase 'different amount of'. */
     public static final String DIFFERENT_AMOUNT_OF = b(c(DIFFERENT), AMOUNT, OF);
+    /** Constant representing dirty-state bullet marker. */
+    public static final String DIRTY_MARKER = s(FAT_BUL, _SPACE_);
     /** Constant representing the phrase 'does not fit'. */
     public static final String DOES_NOT_FIT = b(DOES, NOT, FIT);
     /** Constant representing '.class'. */

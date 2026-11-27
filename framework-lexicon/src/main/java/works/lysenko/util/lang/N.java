@@ -2,6 +2,7 @@ package works.lysenko.util.lang;
 
 import static works.lysenko.util.chrs.__.*;
 import static works.lysenko.util.chrs.___.*;
+import static works.lysenko.util.chrs.____.NODE;
 import static works.lysenko.util.chrs.____.NULL;
 import static works.lysenko.util.chrs.____.WERE;
 import static works.lysenko.util.chrs.____.WITH;
@@ -18,6 +19,7 @@ import static works.lysenko.util.lang.word.D.DEVICE;
 import static works.lysenko.util.lang.word.D.DEVICES;
 import static works.lysenko.util.lang.word.E.*;
 import static works.lysenko.util.lang.word.F.FOUND;
+import static works.lysenko.util.lang.word.L.LOADED;
 import static works.lysenko.util.lang.word.M.MARGINS;
 import static works.lysenko.util.lang.word.N.NEITHER;
 import static works.lysenko.util.lang.word.N.NOTHING;
@@ -25,6 +27,8 @@ import static works.lysenko.util.lang.word.P.PERFORMED;
 import static works.lysenko.util.lang.word.P.PROPERTY;
 import static works.lysenko.util.lang.word.R.REQUESTED;
 import static works.lysenko.util.lang.word.R.RUNNING;
+import static works.lysenko.util.lang.word.S.SCENARIOS;
+import static works.lysenko.util.lang.word.S.SELECTED;
 import static works.lysenko.util.lang.word.T.TESTS;
 import static works.lysenko.util.spec.Symbols._COLON_;
 import static works.lysenko.util.spec.Symbols._DOT_;
@@ -51,6 +55,10 @@ public record N() {
     public static final String NULL_IS_NOT_ACCEPTABLE = b(c(NULL), IS, NOT, ACCEPTABLE);
     /** Constant representing the phrase 'nothing to do now'. */
     public static final String NOTHING_TO_DO_NOW = b(NOTHING, TO, DO, NOW);
+    /** Constant representing the message 'No node selected'. */
+    public static final String NO_NODE_SELECTED = b(c(NO), NODE, SELECTED);
+    /** Constant representing the message 'No scenarios loaded'. */
+    public static final String NO_SCENARIOS_LOADED = b(c(NO), SCENARIOS, LOADED);
     /** Constant representing the message 'no tests were performed'. */
     public static final String NO_TESTS_WERE_PERFORMED = b(c(NO), TESTS, WERE, PERFORMED);
     /** Constant representing inequality operator '!='. */

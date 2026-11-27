@@ -10,6 +10,7 @@ import static works.lysenko.util.spec.Symbols.H;
 import static works.lysenko.util.spec.Symbols.M;
 import static works.lysenko.util.spec.Symbols.R;
 import static works.lysenko.util.spec.Symbols.S;
+import static works.lysenko.util.chrs.____.NODE;
 
 /**
  * Language utility words starting with N.
@@ -21,6 +22,8 @@ public record N() {
     public static final String NAMED = s(NA, M, ED);
     /** Constant representing the word NATIVE. */
     public static final String NATIVE = s(NA, TIVE);
+    /** Constant representing the word NAVIGATOR. */
+    public static final String NAVIGATOR = s(NA, VI, GA, TOR);
     /** Constant representing the word NEGATIVE. */
     public static final String NEGATIVE = s(NEGA, TIVE);
     /** Constant representing the word NEITHER. */
@@ -29,6 +32,8 @@ public record N() {
     public static final String NESTED = s(NE, ST, ED);
     /** Constant representing the word NEUTRAL. */
     public static final String NEUTRAL = s(NE, UT, R, AL);
+    /** Constant representing the word NODES. */
+    public static final String NODES = s(NODE, S);
     /** Constant representing the word NONE. */
     public static final String NONE = s(NO, NE);
     /** Constant representing the word NOTHING. */

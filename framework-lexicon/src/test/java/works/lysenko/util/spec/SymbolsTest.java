@@ -18,6 +18,11 @@ class SymbolsTest {
         assertEquals('®', Symbols.CPY_RHT);
         assertEquals('•', Symbols._BULLT_);
         assertEquals('●', Symbols.FAT_BUL);
+        assertEquals('±', Symbols.PLS_MNS);
+        assertEquals('·', Symbols.MID_DOT);
+        assertEquals('×', Symbols.MLT_SGN);
+        assertEquals('Δ', Symbols.DELTA);
+        assertEquals('▾', Symbols.DWN_TRI);
     }
 }
 

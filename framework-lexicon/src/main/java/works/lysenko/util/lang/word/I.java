@@ -36,6 +36,8 @@ public record I() {
     public static final String INCORRECTLY = s(IN, CORR, EC, T, LY);
     /** Constant representing the word INDEX. */
     public static final String INDEX = s(INDE, X);
+    /** Constant representing the word INDICES. */
+    public static final String INDICES = s(I, ND, IC, ES);
     /** Constant representing the word INDUCED. */
     public static final String INDUCED = s(IN, DU, C, ED);
     /** Constant representing the word INITIAL. */

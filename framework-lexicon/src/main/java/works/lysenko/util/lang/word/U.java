@@ -12,6 +12,7 @@ import static works.lysenko.util.spec.Symbols.M;
 import static works.lysenko.util.spec.Symbols.R;
 import static works.lysenko.util.spec.Symbols.S;
 import static works.lysenko.util.spec.Symbols.T;
+import static works.lysenko.util.spec.Symbols.D;
 
 /**
  * Language utility words starting with U.
@@ -29,6 +30,8 @@ public record U() {
     public static final String UNCHANGED = s(UN, CHAN, GED);
     /** Constant representing the word UNDEFINED. */
     public static final String UNDEFINED = s(UN, DEFINED);
+    /** Constant representing the word UNDOABLE. */
+    public static final String UNDOABLE = s(UNDO, ABLE);
     /** Constant representing the word UNEXPECTED. */
     public static final String UNEXPECTED = s(UN, EXPECTED);
     /** Constant representing the word UNEXPECTEDLY. */
@@ -43,10 +46,14 @@ public record U() {
     public static final String UNREACHABLE = s(UN, RE, AC, HA, BLE);
     /** Constant representing the word UNRESOLVED. */
     public static final String UNRESOLVED = s(UN, RESO, LV, ED);
+    /** Constant representing the word UNSAVED. */
+    public static final String UNSAVED = s(UN, SAVE, D);
     /** Constant representing the word UNTIL. */
     public static final String UNTIL = s(UN, T, IL);
     /** Constant representing the word UPDATE. */
     public static final String UPDATE = s(UPDA, TE);
+    /** Constant representing the word UPDATED. */
+    public static final String UPDATED = s(UPDATE, D);
     /** Constant representing the word UPLOADING. */
     public static final String UPLOADING = s(UP, LOAD, ING);
     /** Constant representing the word UPPER. */

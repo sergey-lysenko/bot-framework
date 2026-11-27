@@ -10,6 +10,7 @@ import static works.lysenko.util.lang.word.A.ABSENT;
 import static works.lysenko.util.lang.word.C.COMPLETED;
 import static works.lysenko.util.lang.word.D.DEFINED;
 import static works.lysenko.util.lang.word.D.DIFFERS;
+import static works.lysenko.util.lang.word.E.EDITOR;
 import static works.lysenko.util.lang.word.E.EXCEPTION;
 import static works.lysenko.util.lang.word.E.EXECUTION;
 import static works.lysenko.util.lang.word.E.EXPECTED;
@@ -22,6 +23,7 @@ import static works.lysenko.util.lang.word.P.PROPERTIES;
 import static works.lysenko.util.lang.word.R.RANGES;
 import static works.lysenko.util.lang.word.S.*;
 import static works.lysenko.util.lang.word.T.*;
+import static works.lysenko.util.lang.word.T.TREE;
 import static works.lysenko.util.lang.word.W.WRITER;
 import static works.lysenko.util.spec.Symbols.S;
 import static works.lysenko.util.spec.Symbols._0_;
@@ -66,6 +68,10 @@ public record T() {
     public static final String TOO_FEW_EXPECTED = b(TOO, FEW, EXPECTED);
     /** Constant representing the phrase 'to be'. */
     public static final String TO_BE = b(TO, BE);
+    /** Constant representing tree editor redo action key. */
+    public static final String TREE_EDITOR_REDO = d(TREE, EDITOR, REDO);
+    /** Constant representing tree editor undo action key. */
+    public static final String TREE_EDITOR_UNDO = d(TREE, EDITOR, UNDO);
     /** Constant representing tried for 30 seconds wait description. */
     public static final String TRIED_FOR_30_SECONDS___ = e(true, e(ROUND, b(TRIED, FOR, s(_3_, _0_),
             s(SECOND, e(ROUND, S)), WITH, s(_5_, _0_, _0_), MILLISECONDS, INTERVAL)));

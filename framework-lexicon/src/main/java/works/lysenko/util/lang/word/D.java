@@ -15,6 +15,8 @@ public record D() {
     private static final String DEFIN = s(D, EF, IN);
     /** Constant representing the word DASHBOARD. */
     public static final String DASHBOARD = s(DASH, BO, A, RD);
+    /** Constant representing the word DASHED. */
+    public static final String DASHED = s(DASH, ED);
     /** Constant representing the word DEBUG. */
     public static final String DEBUG = s(DE, BU, G);
     /** Constant representing the word DEEP. */
@@ -47,6 +49,8 @@ public record D() {
     public static final String DESCRIPTOR = s(DESC, RIPT, OR);
     /** Constant representing the word DESCRIPTORS. */
     public static final String DESCRIPTORS = s(DESCRIPTOR, S);
+    /** Constant representing the word DETECTED. */
+    public static final String DETECTED = s(DE, TE, CT, ED);
     /** Constant representing the word DETERMINE. */
     public static final String DETERMINE = s(DE, TERM, I, NE);
     /** Constant representing the word DEVICE. */
@@ -69,6 +73,8 @@ public record D() {
     public static final String DIRECTORY = s(DIRE, CTOR, Y);
     /** Constant representing the word DISABLED. */
     public static final String DISABLED = s(DI, SA, BL, ED);
+    /** Constant representing the word DISCARD. */
+    public static final String DISCARD = s(DISC, A, RD);
     /** Constant representing the word DISCREPANCY. */
     public static final String DISCREPANCY = s(DISC, RE, PAN, CY);
     /** Constant representing the word DISPERSION. */

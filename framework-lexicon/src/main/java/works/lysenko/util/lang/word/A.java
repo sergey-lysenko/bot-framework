@@ -50,6 +50,8 @@ public record A() {
     public static final String ALLOWED = s(AL, LOW, ED);
     /** Constant representing the word ALREADY. */
     public static final String ALREADY = s(AL, READ, Y);
+    /** Constant representing the word ALTER. */
+    public static final String ALTER = s(A, LT, ER);
     /** Constant representing the word AMBIGUOUS. */
     public static final String AMBIGUOUS = s(AM, BI, GU, OU, S);
     /** Constant representing the word AMONG. */
@@ -62,6 +64,8 @@ public record A() {
     public static final String ANDROID = s(ANDR, O, ID);
     /** Constant representing the word ANFANG. */
     public static final String ANFANG = s(ANFA, NG);
+    /** Constant representing the word ANNOTATIONS. */
+    public static final String ANNOTATIONS = s(AN, NOT, AT, IONS);
     /** Constant representing the word ANOTHER. */
     public static final String ANOTHER = s(AN, O, THER);
     /** Constant representing the word ANTEPENULTIMATE. */
@@ -76,10 +80,14 @@ public record A() {
     public static final String APPLICABLE = s(APPL, IC, ABLE);
     /** Constant representing the word APPLIED. */
     public static final String APPLIED = s(APP, LI, ED);
+    /** Constant representing the word APPLY. */
+    public static final String APPLY = s(APP, LY);
     /** Constant representing the word AREA. */
     public static final String AREA = s(AR, EA);
     /** Constant representing the word ARRANGED. */
     public static final String ARRANGED = s(ARRA, NG, ED);
+    /** Constant representing the word ARROWS. */
+    public static final String ARROWS = s(AR, ROWS);
     /** Constant representing the word ASPECT. */
     public static final String ASPECT = s(AS, PECT);
     /** Constant representing the word ASSERT. */

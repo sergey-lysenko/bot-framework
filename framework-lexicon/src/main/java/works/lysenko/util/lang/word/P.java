@@ -23,6 +23,8 @@ public record P() {
     public static final String PARAMETER = s(PA, RA, ME, TE, R);
     /** Constant representing the word PARAMETERS. */
     public static final String PARAMETERS = s(PARAMETER, S);
+    /** Constant representing the word PARENT. */
+    public static final String PARENT = s(PA, RE, NT);
     /** Constant representing the word PARSE. */
     public static final String PARSE = s(PA, R, SE);
     /** Constant representing the word PARSER. */
@@ -65,6 +67,8 @@ public record P() {
     public static final String PORT = s(PO, RT);
     /** Constant representing the word POSITION. */
     public static final String POSITION = s(P, O, SI, TION);
+    /** Constant representing the word POSITIONS. */
+    public static final String POSITIONS = s(POSITION, S);
     /** Constant representing the word POSSIBLE. */
     public static final String POSSIBLE = s(POSS, IBLE);
     /** Constant representing the word POSTFLIGHT. */
@@ -73,6 +77,8 @@ public record P() {
     public static final String PREEMPTIVELY = s(PR, EE, MP, TIVE, LY);
     /** Constant representing the word PREFLIGHT. */
     public static final String PREFLIGHT = s(P, RE, F, L, IGHT);
+    /** Constant representing the word PRESET. */
+    public static final String PRESET = s(PRE, SET);
     /** Constant representing the word PRETEST. */
     public static final String PRETEST = s(P, RE, TEST);
     /** Constant representing the word PRESENCE. */
@@ -89,10 +95,14 @@ public record P() {
     public static final String PROCESS = s(PROC, E, SS);
     /** Constant representing the word PROCESSING. */
     public static final String PROCESSING = s(PROC, ES, SING);
+    /** Constant representing the word PROJECT. */
+    public static final String PROJECT = s(P, RO, J, E, CT);
     /** Constant representing the word PROPERTIES. */
     public static final String PROPERTIES = s(PROP, ERTI, ES);
     /** Constant representing the word PROPERTY. */
     public static final String PROPERTY = s(PROP, ER, TY);
+    /** Constant representing the word PROPORTIONS. */
+    public static final String PROPORTIONS = s(PROP, ORT, IONS);
     /** Constant representing the word PROPOSED. */
     public static final String PROPOSED = s(PROP, OSED);
     /** Constant representing the word PROVIDED. */

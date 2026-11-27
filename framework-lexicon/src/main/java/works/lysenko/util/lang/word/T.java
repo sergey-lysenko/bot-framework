@@ -44,6 +44,8 @@ public record T() {
     public static final String TIMES = s(TIME, S);
     /** Constant representing the word TITLE. */
     public static final String TITLE = s(TIT, LE);
+    /** Constant representing the word TOGGLE. */
+    public static final String TOGGLE = s(TO, GG, LE);
     /** Constant representing the word TOOK. */
     public static final String TOOK = s(TO, OK);
     /** Constant representing the word TOOLBAR. */

@@ -5,6 +5,7 @@ import static works.lysenko.util.chrs.___.GRA;
 import static works.lysenko.util.chrs.___.ING;
 import static works.lysenko.util.spec.Synth.*;
 import static works.lysenko.util.spec.Symbols.*;
+import static works.lysenko.util.chrs.____.*;
 
 /**
  * Language utility words starting with G.
@@ -12,8 +13,14 @@ import static works.lysenko.util.spec.Symbols.*;
 @SuppressWarnings({"ClassWithoutLogger", "StaticMethodOnlyUsedInOneClass", "AutoBoxing"})
 public record G() {
 
+    /** Constant representing the word GENERATING. */
+    public static final String GENERATING = s(GE, NE, RA, TING);
     /** Constant representing the word GETTING. */
     public static final String GETTING = s(GE, TT, ING);
+    /** Constant representing the word GHOST. */
+    public static final String GHOST = s(G, HOST);
+    /** Constant representing the word GHOSTS. */
+    public static final String GHOSTS = s(GHOST, S);
     /** Constant representing the word GIVEN. */
     public static final String GIVEN = s(GI, V, EN);
     /** Constant representing the word GRAPH. */
