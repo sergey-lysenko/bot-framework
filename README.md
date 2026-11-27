@@ -12,7 +12,7 @@
 
 | Concern | Primary Location / Symbol |
 |---|---|
-| **Maven Parent / Umbrella** | `works.lysenko:bot-framework-parent:0.26.48-SNAPSHOT` · `works.lysenko:framework` (also builds `-shaded.jar`) |
+| **Maven Parent / Umbrella** | `works.lysenko:bot-framework-parent:0.26.48` · `works.lysenko:framework` (also builds `-shaded.jar`) |
 | **Java / Build Target** | Java **25** (`<maven.compiler.release>25</maven.compiler.release>`), Maven 3.9+, JUnit 5, JaCoCo |
 | **Default CLI Entrypoint** | `works.lysenko.shared.BotRunner#main` → `works.lysenko.base.test.Routines#run(Workflow)` |
 | **Workflow Hook Descriptor** | `works.lysenko.util.data.records.test.Workflow` (`preflight`, `pretest`, `status`, `exceptional`, `postflight`, `additional`) |
@@ -870,7 +870,7 @@ Surefire reports are written to `<module>/result/surefire-reports`, and JaCoCo c
 <dependency>
   <groupId>works.lysenko</groupId>
   <artifactId>framework</artifactId>
-  <version>0.26.48-SNAPSHOT</version>
+  <version>0.26.48</version>
 </dependency>
 ```
 
@@ -880,23 +880,23 @@ Surefire reports are written to `<module>/result/surefire-reports`, and JaCoCo c
 <dependency>
   <groupId>works.lysenko</groupId>
   <artifactId>framework-core</artifactId>
-  <version>0.26.48-SNAPSHOT</version>
+  <version>0.26.48</version>
 </dependency>
 <!-- Add any subset of SPI providers as needed -->
 <dependency>
   <groupId>works.lysenko</groupId>
   <artifactId>framework-driver</artifactId>
-  <version>0.26.48-SNAPSHOT</version>
+  <version>0.26.48</version>
 </dependency>
 <dependency>
   <groupId>works.lysenko</groupId>
   <artifactId>framework-analysis</artifactId>
-  <version>0.26.48-SNAPSHOT</version>
+  <version>0.26.48</version>
 </dependency>
 <dependency>
   <groupId>works.lysenko</groupId>
   <artifactId>framework-reporting</artifactId>
-  <version>0.26.48-SNAPSHOT</version>
+  <version>0.26.48</version>
 </dependency>
 ```
 
@@ -969,6 +969,6 @@ dashboard.FilterActive=1.0
 ```bash
 SUITE=smoke PLATFORM=Chrome DOMAIN=https://app.example.com HEADLESS=true EXHAUSTIVE=true \
   java --enable-native-access=ALL-UNNAMED -XX:+UseCompactObjectHeaders \
-  -cp target/classes:path/to/framework-0.26.48-SNAPSHOT-shaded.jar \
+  -cp target/classes:path/to/framework-0.26.48-shaded.jar \
   works.lysenko.shared.BotRunner
 ```
