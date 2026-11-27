@@ -26,6 +26,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Spatial physical-synthesis and polyrhythmic telemetry sonifier ({@code carbon}).
  * <p>
@@ -322,13 +324,15 @@ public final class CarbonSonifier implements TreeSonifier {
             final List<NodeState> newlyNoticeNodes = new ArrayList<>();
             final List<NodeState> newlyRawWarnNodes = new ArrayList<>();
             final List<NodeState> newlyKnownWarnNodes = new ArrayList<>();
+            final List<NodeState> newlyRegressionWarnNodes = new ArrayList<>();
             final List<NodeState> newlyRawFailNodes = new ArrayList<>();
             final List<NodeState> newlyKnownFailNodes = new ArrayList<>();
+            final List<NodeState> newlyRegressionNodes = new ArrayList<>();
 
             int totalDeltaExecs = 0;
 
             for (final NodeState node : current.nodes().values()) {
-                if ('F' == node.statusCode() && !node.knownIssue()) {
+                if ('R' == node.statusCode() || ('F' == node.statusCode() && !node.knownIssue())) {
                     hadUnexpectedFailure = true;
                 }
                 final NodeState prev = previousNodes.get(node.identity());
@@ -337,12 +341,16 @@ public final class CarbonSonifier implements TreeSonifier {
                 final int delta = Math.max(0, node.executions() - oldExec);
                 totalDeltaExecs += delta;
 
-                if ('F' == node.statusCode() && ('F' != oldStatus || delta > 0)) {
+                if ('R' == node.statusCode() && ('R' != oldStatus || delta > 0)) {
+                    newlyRegressionNodes.add(node);
+                } else if ('F' == node.statusCode() && ('F' != oldStatus || delta > 0)) {
                     if (node.knownIssue()) {
                         newlyKnownFailNodes.add(node);
                     } else {
                         newlyRawFailNodes.add(node);
                     }
+                } else if ('M' == node.statusCode() && ('M' != oldStatus || delta > 0)) {
+                    newlyRegressionWarnNodes.add(node);
                 } else if ('W' == node.statusCode() && ('W' != oldStatus || delta > 0)) {
                     if (node.knownIssue()) {
                         newlyKnownWarnNodes.add(node);
@@ -466,8 +474,36 @@ public final class CarbonSonifier implements TreeSonifier {
                         pan));
             }
 
-            // 7. Semantic Telemetry Cues (Notice, Warning, Known Failure, Unexpected Failure)
-            if (!newlyRawFailNodes.isEmpty()) {
+            // 7. Semantic Telemetry Cues (Notice, Warning, Reg. Warning, Known Failure, Unexpected Failure, Regression)
+            if (!newlyRegressionNodes.isEmpty()) {
+                final NodeState reg = newlyRegressionNodes.getFirst();
+                final double pan = panForColumn(reg.col(), maxCol);
+                final double boost = Math.min(1.25, Math.sqrt(newlyRegressionNodes.size()));
+                frameEvents.add(new SynthEvent(
+                        frameStart,
+                        dropDuration,
+                        VoiceKind.GRAVITY_DROP,
+                        Math.max(36, padRoot - 12),
+                        FAILURE_RAW_AMP * 1.12 * boost,
+                        0.94,
+                        pan));
+                frameEvents.add(new SynthEvent(
+                        frameStart + subFrameOffset(samplesPerFrame, 24),
+                        bloomDuration * 2 / 3,
+                        VoiceKind.CELESTA_BLOOM,
+                        melodyRoot + 6, // Tritone ghost against root
+                        FAILURE_RAW_AMP * 0.56 * boost,
+                        0.90,
+                        pan));
+                frameEvents.add(new SynthEvent(
+                        frameStart + subFrameOffset(samplesPerFrame, 110),
+                        bloomDuration * 2 / 3,
+                        VoiceKind.CELESTA_BLOOM,
+                        melodyRoot + 13, // High minor-9th opposite-pan echo
+                        FAILURE_RAW_AMP * 0.50 * boost,
+                        0.92,
+                        -pan));
+            } else if (!newlyRawFailNodes.isEmpty()) {
                 final NodeState failed = newlyRawFailNodes.getFirst();
                 final double pan = panForColumn(failed.col(), maxCol);
                 final double boost = Math.min(1.25, Math.sqrt(newlyRawFailNodes.size()));
@@ -509,7 +545,35 @@ public final class CarbonSonifier implements TreeSonifier {
                 lastKnownFailFrame = frameIndex;
             }
 
-            if (!newlyRawWarnNodes.isEmpty()) {
+            if (!newlyRegressionWarnNodes.isEmpty()) {
+                final NodeState regWarn = newlyRegressionWarnNodes.getFirst();
+                final double pan = panForColumn(regWarn.col(), maxCol);
+                final int baseMidi = pitchForNode(melodyRoot, scale, regWarn.col(), maxCol, regWarn.rowTenths(), maxRowTenths);
+                frameEvents.add(new SynthEvent(
+                        frameStart + subFrameOffset(samplesPerFrame, 16),
+                        pluckDuration * 4 / 3,
+                        VoiceKind.MARIMBA_PLUCK,
+                        baseMidi,
+                        WARNING_RAW_AMP * 0.96,
+                        0.62,
+                        pan));
+                frameEvents.add(new SynthEvent(
+                        frameStart + subFrameOffset(samplesPerFrame, 36),
+                        pluckDuration * 4 / 3,
+                        VoiceKind.MARIMBA_PLUCK,
+                        baseMidi + 6, // Tritone ghost interval
+                        WARNING_RAW_AMP * 0.88,
+                        0.60,
+                        pan));
+                frameEvents.add(new SynthEvent(
+                        frameStart + subFrameOffset(samplesPerFrame, 110),
+                        bloomDuration / 2,
+                        VoiceKind.CELESTA_BLOOM,
+                        Math.min(92, baseMidi + 18),
+                        WARNING_RAW_AMP * 0.72,
+                        0.76,
+                        -pan));
+            } else if (!newlyRawWarnNodes.isEmpty()) {
                 final NodeState warned = newlyRawWarnNodes.getFirst();
                 final double pan = panForColumn(warned.col(), maxCol);
                 final int baseMidi = pitchForNode(melodyRoot, scale, warned.col(), maxCol, warned.rowTenths(), maxRowTenths);
@@ -715,11 +779,17 @@ public final class CarbonSonifier implements TreeSonifier {
             final NodeData node,
             final int executions,
             final Map<NodeData, Boolean> childFailureCache) {
+        if (TreeHtml.hasRegression(node)) {
+            return 'R';
+        }
         if (TreeHtml.hasFailure(node)) {
             return 'F';
         }
         if (TreeHtml.hasChildFailure(node, childFailureCache)) {
             return 'U';
+        }
+        if (TreeHtml.hasRegressionWarning(node)) {
+            return 'M';
         }
         if (TreeHtml.hasWarning(node)) {
             return 'W';
@@ -752,7 +822,7 @@ public final class CarbonSonifier implements TreeSonifier {
         if (frame.isFile() && frame.getName().toLowerCase(Locale.ROOT).endsWith(".svg")) {
             return parseSvgFrameFast(frame);
         }
-        throw new IOException("Missing carbon snapshot for frame: " + frame);
+        throw new IOException(s("Missing carbon snapshot for frame: ", frame));
     }
 
     private static FrameState readSnapshotFile(final File file) throws IOException {
@@ -779,14 +849,14 @@ public final class CarbonSonifier implements TreeSonifier {
                             headerExecLeaves = Integer.parseInt(meta[4]);
                             headerCovLeaves = Integer.parseInt(meta[5]);
                         } catch (final NumberFormatException e) {
-                            throw new IOException("Invalid metadata header in carbon snapshot: " + file, e);
+                            throw new IOException(s("Invalid metadata header in carbon snapshot: ", file), e);
                         }
                     }
                     continue;
                 }
                 final String[] fields = line.split("\t", -1);
                 if (8 != fields.length) {
-                    throw new IOException("Invalid carbon snapshot line in: " + file);
+                    throw new IOException(s("Invalid carbon snapshot line in: ", file));
                 }
                 try {
                     final String identity = new String(Base64.getUrlDecoder().decode(fields[0]), StandardCharsets.UTF_8);
@@ -800,7 +870,7 @@ public final class CarbonSonifier implements TreeSonifier {
                     nodes.put(identity, new NodeState(
                             identity, col, rowTenths, typeCode, execs, target, statusCode, knownIssue, false));
                 } catch (final IllegalArgumentException e) {
-                    throw new IOException("Invalid carbon snapshot format in: " + file, e);
+                    throw new IOException(s("Invalid carbon snapshot format in: ", file), e);
                 }
             }
         }
@@ -943,7 +1013,7 @@ public final class CarbonSonifier implements TreeSonifier {
             final String basePath = buildCardLineage(i, cards, parentIdx);
             final int seen = duplicateCounter.getOrDefault(basePath, 0);
             duplicateCounter.put(basePath, seen + 1);
-            final String uniqueIdentity = (0 == seen) ? basePath : (basePath + "#" + seen);
+            final String uniqueIdentity = (0 == seen) ? basePath : s(basePath, "#", seen);
 
             final int col = Math.max(0, (int) Math.round((c.x - 40.0) / 270.0));
             final int rowTenths = Math.max(0, (int) Math.round(((c.y - 92.0) / 60.0) * 10.0));
@@ -979,7 +1049,7 @@ public final class CarbonSonifier implements TreeSonifier {
         }
         if (segments.size() == 1) {
             final int col = Math.max(0, (int) Math.round((cards.get(index).x - 40.0) / 270.0));
-            return col + ":" + segments.getFirst();
+            return s(col, ":", segments.getFirst());
         }
         java.util.Collections.reverse(segments);
         return String.join("/", segments);
@@ -1062,11 +1132,17 @@ public final class CarbonSonifier implements TreeSonifier {
     }
 
     private static char inferSvgStatusCode(final String cssClasses, final int executions) {
+        if (cssClasses.contains("regression") && !cssClasses.contains("regression_warning")) {
+            return 'R';
+        }
         if (cssClasses.contains("failed") && !cssClasses.contains("child_failed")) {
             return 'F';
         }
         if (cssClasses.contains("child_failed")) {
             return 'U';
+        }
+        if (cssClasses.contains("regression_warning")) {
+            return 'M';
         }
         if (cssClasses.contains("warning")) {
             return 'W';

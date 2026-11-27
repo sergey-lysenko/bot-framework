@@ -1,6 +1,8 @@
 package works.lysenko.base.output;
 
 import static works.lysenko.Base.log;
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.sn;
 
 import works.lysenko.base.core.RunLocks;
 import works.lysenko.base.issues.KnownIssuesLoader;
@@ -94,7 +96,7 @@ public class PostProcessor {
                     try {
                         handle.onExit().get(60, TimeUnit.SECONDS);
                     } catch (final Exception e) {
-                        System.err.println("Timed out waiting for test process to exit: " + e.getMessage());
+                        System.err.println(sn("Timed out waiting for test process to exit: ", e.getMessage()));
                     }
                 });
                 Thread.sleep(150);
@@ -143,7 +145,7 @@ public class PostProcessor {
             Thread.currentThread().interrupt();
             System.err.println("Post-processing was interrupted");
         } catch (final Exception e) {
-            System.err.println("Post-processing failed: " + e.getMessage());
+            System.err.println(sn("Post-processing failed: ", e.getMessage()));
         }
     }
 
@@ -367,7 +369,7 @@ public class PostProcessor {
             final String treeSonification) {
         final File runDir = logFile.getAbsoluteFile().getParentFile();
         final String prefix = runPrefix(logFile);
-        log("Post-processing started for run: " + runDir.getAbsolutePath());
+        log(s("Post-processing started for run: ", runDir.getAbsolutePath()));
         final List<String> tasks = enabledTasks(
                 scenarioProgressionEnabled,
                 scenarioGifEnabled,
@@ -412,8 +414,9 @@ public class PostProcessor {
             }
 
             progress.update(REPORT_TASK, 0);
-            KnownIssuesLoader.saveRunKnownIssues(new File(runDir, prefix + ".known.issues.json"));
-            works.lysenko.base.responses.ExpectedResponsesLoader.saveRunExpectedResponses(new File(runDir, prefix + ".expected.responses.json"));
+            KnownIssuesLoader.saveRunKnownIssues(new File(runDir, s(prefix, ".known.issues.json")));
+            KnownIssuesLoader.saveRunFixedIssues(new File(runDir, s(prefix, ".fixed.issues.json")));
+            works.lysenko.base.responses.ExpectedResponsesLoader.saveRunExpectedResponses(new File(runDir, s(prefix, ".expected.responses.json")));
             LogHtml.generateReport(
                     logFile,
                     htmlFile,
@@ -423,7 +426,7 @@ public class PostProcessor {
                     treeMp4Enabled,
                     progress);
             progress.complete(REPORT_TASK);
-            log("Run timeline report generated: " + htmlFile.getAbsolutePath());
+            log(s("Run timeline report generated: ", htmlFile.getAbsolutePath()));
             if (openBrowser) LogHtml.openInBrowser(htmlFile);
             log("Post-processing completed successfully.");
         } finally {

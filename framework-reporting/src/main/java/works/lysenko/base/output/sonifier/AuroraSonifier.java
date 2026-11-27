@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Ambient sonifier ({@code aurora}): Creates an ethereal soundscape.
  * Uses a Hirajoshi pentatonic scale with low brightness to create soft, sustained pads.
@@ -55,10 +57,13 @@ public final class AuroraSonifier extends AbstractTreeSonifier {
             
             final boolean isCompleted = executions >= leafTarget;
             final boolean isActive = executions > 0 && executions < leafTarget;
-            final boolean isFailed = TreeHtml.hasFailure(node);
-            final boolean isWarning = TreeHtml.hasWarning(node);
-            
-            stats.computeIfAbsent(col, _ -> new ColumnStats(0, 0, 0, 0, 0)).add(isActive, isCompleted, isFailed, isWarning);
+            final boolean isRegression = TreeHtml.hasRegression(node);
+            final boolean isFailed = !isRegression && TreeHtml.hasFailure(node);
+            final boolean isRegressionWarning = TreeHtml.hasRegressionWarning(node);
+            final boolean isWarning = !isRegressionWarning && TreeHtml.hasWarning(node);
+
+            stats.computeIfAbsent(col, _ -> new ColumnStats(0, 0, 0, 0, 0, 0, 0))
+                    .add(isActive, isCompleted, isFailed, isWarning, isRegression, isRegressionWarning);
         }
 
         try (BufferedWriter writer = Files.newBufferedWriter(
@@ -66,7 +71,8 @@ public final class AuroraSonifier extends AbstractTreeSonifier {
                 StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
             for (final Map.Entry<Integer, ColumnStats> entry : stats.entrySet()) {
                 final ColumnStats s = entry.getValue();
-                writer.write(entry.getKey() + "\t" + s.total + "\t" + s.active + "\t" + s.completed + "\t" + s.failed + "\t" + s.warning);
+                writer.write(s(entry.getKey(), "\t", s.total, "\t", s.active, "\t", s.completed,
+                        "\t", s.failed, "\t", s.warning, "\t", s.regression, "\t", s.regressionWarning));
                 writer.newLine();
             }
         }
@@ -83,6 +89,8 @@ public final class AuroraSonifier extends AbstractTreeSonifier {
         final Map<Integer, Integer> previousCompleted = new HashMap<>();
         final Map<Integer, Integer> previousFailed = new HashMap<>();
         final Map<Integer, Integer> previousWarning = new HashMap<>();
+        final Map<Integer, Integer> previousRegression = new HashMap<>();
+        final Map<Integer, Integer> previousRegressionWarning = new HashMap<>();
 
         for (int frameIndex = 0; frameIndex < frames.size(); frameIndex++) {
             final Map<Integer, ColumnStats> current = readSnapshot(snapshotFile(frames.get(frameIndex)));
@@ -95,6 +103,8 @@ public final class AuroraSonifier extends AbstractTreeSonifier {
                 final int oldCompleted = previousCompleted.getOrDefault(col, 0);
                 final int oldFailed = previousFailed.getOrDefault(col, 0);
                 final int oldWarning = previousWarning.getOrDefault(col, 0);
+                final int oldRegression = previousRegression.getOrDefault(col, 0);
+                final int oldRegressionWarning = previousRegressionWarning.getOrDefault(col, 0);
 
                 if (stats.completed > 0 && frameIndex % FRAMES_PER_PAD == 0) {
                     final int midi = PAD_MIDI_BASE + 12 * (col / SCALE.length) + SCALE[col % SCALE.length];
@@ -111,14 +121,31 @@ public final class AuroraSonifier extends AbstractTreeSonifier {
                         frameNotes.add(new AudioNote(startSample, midi, amp, 0.3));
                     }
                 }
-                
+
+                final int gainedRegression = stats.regression - oldRegression;
+                if (gainedRegression > 0) {
+                    // Vivid electric magenta regression: sharp octave-tritone pulse
+                    final double amp = 0.44 * Math.sqrt(gainedRegression);
+                    frameNotes.add(new AudioNote(startSample, 36, amp, 0.92));
+                    frameNotes.add(new AudioNote(startSample, 42, amp * 0.95, 0.92));
+                    frameNotes.add(new AudioNote(startSample + (samplesPerFrame / 3L), 60, amp * 0.75, 0.95));
+                }
+
                 final int gainedFailed = stats.failed - oldFailed;
                 if (gainedFailed > 0) {
                     // Dissonant, low, and bright burst for failure
                     frameNotes.add(new AudioNote(startSample, 36, 0.4 * Math.sqrt(gainedFailed), 0.8));
                     frameNotes.add(new AudioNote(startSample, 37, 0.4 * Math.sqrt(gainedFailed), 0.8));
                 }
-                
+
+                final int gainedRegressionWarning = stats.regressionWarning - oldRegressionWarning;
+                if (gainedRegressionWarning > 0) {
+                    // Soft rose-magenta warning regression: shimmering twin tritone bell
+                    final double amp = 0.32 * Math.sqrt(gainedRegressionWarning);
+                    frameNotes.add(new AudioNote(startSample, 48, amp, 0.65));
+                    frameNotes.add(new AudioNote(startSample + (samplesPerFrame / 3L), 54, amp * 0.85, 0.72));
+                }
+
                 final int gainedWarning = stats.warning - oldWarning;
                 if (gainedWarning > 0) {
                     // Slightly dissonant and moderately bright note for warning
@@ -128,6 +155,8 @@ public final class AuroraSonifier extends AbstractTreeSonifier {
                 previousCompleted.put(col, stats.completed);
                 previousFailed.put(col, stats.failed);
                 previousWarning.put(col, stats.warning);
+                previousRegression.put(col, stats.regression);
+                previousRegressionWarning.put(col, stats.regressionWarning);
             }
 
             if (!frameNotes.isEmpty()) {
@@ -150,7 +179,9 @@ public final class AuroraSonifier extends AbstractTreeSonifier {
                     final int completed = Integer.parseInt(parts[3]);
                     final int failed = parts.length >= 6 ? Integer.parseInt(parts[4]) : 0;
                     final int warning = parts.length >= 6 ? Integer.parseInt(parts[5]) : 0;
-                    result.put(col, new ColumnStats(total, active, completed, failed, warning));
+                    final int regression = parts.length >= 8 ? Integer.parseInt(parts[6]) : 0;
+                    final int regressionWarning = parts.length >= 8 ? Integer.parseInt(parts[7]) : 0;
+                    result.put(col, new ColumnStats(total, active, completed, failed, warning, regression, regressionWarning));
                 }
             }
         }
@@ -163,21 +194,33 @@ public final class AuroraSonifier extends AbstractTreeSonifier {
         int completed;
         int failed;
         int warning;
+        int regression;
+        int regressionWarning;
 
-        ColumnStats(final int total, final int active, final int completed, final int failed, final int warning) {
+        ColumnStats(
+                final int total, final int active, final int completed,
+                final int failed, final int warning,
+                final int regression, final int regressionWarning) {
             this.total = total;
             this.active = active;
             this.completed = completed;
             this.failed = failed;
             this.warning = warning;
+            this.regression = regression;
+            this.regressionWarning = regressionWarning;
         }
 
-        void add(final boolean isActive, final boolean isCompleted, final boolean isFailed, final boolean isWarning) {
+        void add(
+                final boolean isActive, final boolean isCompleted,
+                final boolean isFailed, final boolean isWarning,
+                final boolean isRegression, final boolean isRegressionWarning) {
             this.total++;
             if (isActive) this.active++;
             if (isCompleted) this.completed++;
             if (isFailed) this.failed++;
             if (isWarning) this.warning++;
+            if (isRegression) this.regression++;
+            if (isRegressionWarning) this.regressionWarning++;
         }
     }
 }

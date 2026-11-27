@@ -41,9 +41,10 @@ import static works.lysenko.base.output.loghtml.TimelineRenderer.renderLineGraph
 import static works.lysenko.base.output.loghtml.TimelineRenderer.renderTimeline;
 import static works.lysenko.base.output.loghtml.TimelineRenderer.renderTimelineToggle;
 import static works.lysenko.util.data.enums.Severity.S2;
-import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.data.strs.Bind.b;
 import static works.lysenko.util.data.strs.Case.c;
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.data.strs.Swap.sn;
 import static works.lysenko.util.lang.word.R.REPORT;
 import static works.lysenko.util.lang.word.R.RUN;
 import static works.lysenko.util.lang.word.T.TIMELINE;
@@ -138,19 +139,24 @@ public final class LogParser {
         final Map<Integer, Double> telemetryCpuMap = SidecarLoader.loadTelemetryCpuMap(logFile);
         final List<Double> telemetryCpu = SidecarLoader.loadTelemetryCpu(logFile);
 
-        if (null == pRes.plaqueStatus) {
-            boolean hasFailed = false;
-            boolean hasTest = false;
-            for (final LogSection sec : pRes.sections) {
-                if ("failed".equals(sec.status)) {
-                    hasFailed = true;
-                    break;
-                }
-                if (TEST.equals(sec.type)) {
-                    hasTest = true;
-                }
+        boolean hasRegression = false;
+        boolean hasFailed = false;
+        boolean hasTest = false;
+        for (final LogSection sec : pRes.sections) {
+            if ("regression".equals(sec.status)) {
+                hasRegression = true;
+            } else if ("failed".equals(sec.status)) {
+                hasFailed = true;
             }
-            if (hasFailed) {
+            if (TEST.equals(sec.type)) {
+                hasTest = true;
+            }
+        }
+        if (null == pRes.plaqueStatus) {
+            if (hasRegression) {
+                pRes.plaqueStatus = "regression";
+                pRes.plaqueMessage = "= [REGRESSION] Execution regressed =";
+            } else if (hasFailed) {
                 pRes.plaqueStatus = "failed";
                 pRes.plaqueMessage = "= [FAILURE] Execution failed =";
             } else if (hasTest) {
@@ -160,6 +166,8 @@ public final class LogParser {
                 pRes.plaqueStatus = "neutral";
                 pRes.plaqueMessage = "= No test results =";
             }
+        } else if (hasRegression && "failed".equals(pRes.plaqueStatus)) {
+            pRes.plaqueStatus = "regression";
         }
         final String resultPlaque = renderResultPlaque(pRes.plaqueStatus, pRes.plaqueMessage);
 
@@ -217,7 +225,7 @@ public final class LogParser {
                 for (final TelemetryItem item : mRes.testData) {
                     if (!etaMap.containsKey(item.testNum)) {
                         final long durMs = Math.round(item.ms);
-                        etaMap.put(item.testNum, new EtaDebugItem(item.testNum, durMs, durMs, 0L, durMs, "Test #" + item.testNum));
+                        etaMap.put(item.testNum, new EtaDebugItem(item.testNum, durMs, durMs, 0L, durMs, s("Test #", item.testNum)));
                     }
                 }
                 for (final TelemetryItem item : mRes.testData) {
@@ -378,7 +386,7 @@ public final class LogParser {
             prg.complete(task);
         } catch (final Exception e) {
             prg.failed(task, e);
-            logEvent(S2, "Failed to generate log.html: " + e.getMessage());
+            logEvent(S2, sn("Failed to generate log.html: ", e.getMessage()));
         }
     }
 }

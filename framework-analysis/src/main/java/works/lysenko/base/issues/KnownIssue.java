@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Represents a known issue entry associated with a scenario or pattern.
+ * Represents a known or fixed issue entry associated with a scenario or pattern.
  *
  * @param scenario          the target scenario pattern
  * @param title             the issue title
@@ -12,6 +12,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @param link              the issue tracking link
  * @param pattern           the log record matching pattern
  * @param decreaseToWarning whether matching failure events should be decreased to warning severity
+ * @param resolvedAt        optional ISO timestamp when a fixed issue was resolved
+ * @param verifiedInRun     optional run ID where resolution was verified
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record KnownIssue(
@@ -20,7 +22,9 @@ public record KnownIssue(
         @JsonProperty("description") String description,
         @JsonProperty("link") String link,
         @JsonProperty("pattern") String pattern,
-        @JsonProperty("decrease-to-warning") boolean decreaseToWarning
+        @JsonProperty("decrease-to-warning") boolean decreaseToWarning,
+        @JsonProperty("resolvedAt") String resolvedAt,
+        @JsonProperty("verifiedInRun") String verifiedInRun
 ) {
     /**
      * Compact constructor normalizing null fields to empty strings.
@@ -30,6 +34,28 @@ public record KnownIssue(
         if (null == description) description = "";
         if (null == link) link = "";
         if (null == pattern) pattern = "";
+        if (null == resolvedAt) resolvedAt = "";
+        if (null == verifiedInRun) verifiedInRun = "";
+    }
+
+    /**
+     * Constructs a KnownIssue without resolution metadata.
+     *
+     * @param scenario          the target scenario pattern
+     * @param title             the issue title
+     * @param description       the issue description
+     * @param link              the issue tracking link
+     * @param pattern           the log record matching pattern
+     * @param decreaseToWarning whether matching failure events should be decreased to warning severity
+     */
+    public KnownIssue(
+            final String scenario,
+            final String title,
+            final String description,
+            final String link,
+            final String pattern,
+            final boolean decreaseToWarning) {
+        this(scenario, title, description, link, pattern, decreaseToWarning, "", "");
     }
 
     /**
@@ -47,6 +73,18 @@ public record KnownIssue(
             final String description,
             final String link,
             final String pattern) {
-        this(scenario, title, description, link, pattern, true);
+        this(scenario, title, description, link, pattern, true, "", "");
+    }
+
+    /**
+     * Returns a copy of this issue with {@code decreaseToWarning} forced to {@code false}
+     * (used for fixed-issue regression guards, which must never downgrade severity).
+     *
+     * @return copy with {@code decreaseToWarning == false}
+     */
+    public KnownIssue asFixedGuard() {
+        return decreaseToWarning
+                ? new KnownIssue(scenario, title, description, link, pattern, false, resolvedAt, verifiedInRun)
+                : this;
     }
 }

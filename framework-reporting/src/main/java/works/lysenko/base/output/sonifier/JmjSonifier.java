@@ -27,6 +27,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Cosmic 1970s French analog synthesizer sonifier ({@code jmj}), crafted in tribute to
  * Jean-Michel Jarre's early classic albums (<i>Oxygène</i>, <i>Équinoxe</i>, <i>Les Chants Magnétiques</i>).
@@ -304,7 +306,7 @@ public final class JmjSonifier implements TreeSonifier {
                     deltas.add(new NodeDelta(node, prevExec, execDelta, statusWorsened, newNotice));
                     totalExecDelta += execDelta;
                 }
-                if ('F' == node.status() && !node.knownIssue()) {
+                if ('R' == node.status() || ('F' == node.status() && !node.knownIssue())) {
                     hadRawFailure = true;
                 }
             }
@@ -525,6 +527,51 @@ public final class JmjSonifier implements TreeSonifier {
                                     0.72,
                                     pan));
                         }
+                    } else if ('M' == node.status()) {
+                        // Warning-tier regression (soft rose-magenta): analog horn + opposite-pan ghostly glass harmonic echo
+                        frameEvents.add(new JmjEvent(
+                                onset,
+                                warningDuration,
+                                VoiceKind.ANALOG_HORN,
+                                bassRoot + 22.0,
+                                WARNING_RAW_AMP * 0.92,
+                                0.76,
+                                pan));
+                        frameEvents.add(new JmjEvent(
+                                onset + JmjSynth.millisToSamples(130),
+                                noticeDuration,
+                                VoiceKind.GLASS_HARMONIC,
+                                bassRoot + 30.0,
+                                WARNING_RAW_AMP * 0.72,
+                                0.84,
+                                clampPan(-pan)));
+                    } else if ('R' == node.status()) {
+                        // Failure-tier regression (vivid electric magenta): twin VCS3 ring-alarm + descending tritone droplet
+                        frameEvents.add(new JmjEvent(
+                                onset,
+                                failureDuration,
+                                VoiceKind.VCS3_RING_ALARM,
+                                bassRoot + 15.0,
+                                FAILURE_RAW_AMP * 1.08,
+                                0.94,
+                                pan * 0.5));
+                        frameEvents.add(new JmjEvent(
+                                onset + JmjSynth.millisToSamples(135),
+                                failureDuration * 3 / 4,
+                                VoiceKind.VCS3_RING_ALARM,
+                                bassRoot + 18.0,
+                                FAILURE_RAW_AMP * 0.70,
+                                0.92,
+                                clampPan(-pan * 0.6)));
+                        frameEvents.add(new JmjEvent(
+                                onset + JmjSynth.millisToSamples(50),
+                                dropDuration,
+                                VoiceKind.VCS3_DROP,
+                                bassRoot + 30.0,
+                                bassRoot + 24.0,
+                                FAILURE_RAW_AMP * 0.58,
+                                0.90,
+                                clampPan(-pan * 0.4)));
                     } else if ('F' == node.status()) {
                         if (node.knownIssue()) {
                             if (frameIndex - lastKnownFailFrame >= KNOWN_ISSUE_COOLDOWN_FRAMES) {
@@ -741,8 +788,10 @@ public final class JmjSonifier implements TreeSonifier {
 
     private static int statusSeverity(final char status) {
         return switch (status) {
-            case 'F' -> 4;
-            case 'U' -> 3;
+            case 'R' -> 6;
+            case 'F' -> 5;
+            case 'U' -> 4;
+            case 'M' -> 3;
             case 'W' -> 2;
             case 'I' -> 1;
             default -> 0;
@@ -784,11 +833,17 @@ public final class JmjSonifier implements TreeSonifier {
             final NodeData node,
             final int executions,
             final Map<NodeData, Boolean> childFailureCache) {
+        if (TreeHtml.hasRegression(node)) {
+            return 'R';
+        }
         if (TreeHtml.hasFailure(node)) {
             return 'F';
         }
         if (TreeHtml.hasChildFailure(node, childFailureCache)) {
             return 'U';
+        }
+        if (TreeHtml.hasRegressionWarning(node)) {
+            return 'M';
         }
         if (TreeHtml.hasWarning(node)) {
             return 'W';
@@ -931,10 +986,10 @@ public final class JmjSonifier implements TreeSonifier {
         for (final ParsedSvgCard c : cards) {
             final int col = Math.max(0, (int) Math.round((c.x - 40.0) / 270.0));
             final int rowTenths = Math.max(0, (int) Math.round(((c.y - 92.0) / 60.0) * 10.0));
-            final String baseKey = col + ":" + c.cleanName;
+            final String baseKey = s(col, ":", c.cleanName);
             final int dup = dupCounter.getOrDefault(baseKey, 0);
             dupCounter.put(baseKey, dup + 1);
-            final String path = (0 == dup) ? baseKey : (baseKey + "#" + dup);
+            final String path = (0 == dup) ? baseKey : s(baseKey, "#", dup);
             final char type = inferSvgType(c);
             final char status = inferSvgStatus(c.cssClasses, c.executions);
             final boolean knownIssue = c.cssClasses.contains("known-issue")
@@ -989,11 +1044,17 @@ public final class JmjSonifier implements TreeSonifier {
     }
 
     private static char inferSvgStatus(final String cssClasses, final int executions) {
+        if (cssClasses.contains("regression") && !cssClasses.contains("regression_warning")) {
+            return 'R';
+        }
         if (cssClasses.contains("failed") && !cssClasses.contains("child_failed")) {
             return 'F';
         }
         if (cssClasses.contains("child_failed")) {
             return 'U';
+        }
+        if (cssClasses.contains("regression_warning")) {
+            return 'M';
         }
         if (cssClasses.contains("warning")) {
             return 'W';

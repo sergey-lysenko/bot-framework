@@ -10,6 +10,8 @@ import works.lysenko.util.apis.scenario._Scenario;
 import works.lysenko.util.data.enums.ExecutionStatus;
 import works.lysenko.util.data.enums.ScenarioType;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * The VisualNodeResolver class.
  */
@@ -129,9 +131,13 @@ public class VisualNodeResolver {
         final ScenarioType type = getScenarioType(node);
         final double overRatio = (ScenarioType.LEAF == type) ? getLeafOvershootRatio(node, target) : 0.0;
 
-        final boolean failure = TreeHtml.hasFailure(node);
+        final NodeEventClassifier.Classification cls = NodeEventClassifier.classify(node);
+        final boolean failure = cls.hasFailure();
+        final boolean regression = cls.hasRegression();
         final boolean childFailure = !failure && TreeHtml.hasChildFailure(node, childFailureCache);
-        final Color progressColor = failure ? theme.failedBorder() : (childFailure ? theme.upsetBorder() : getScenarioProgressColor(node, target, maxLeafOverRatio));
+        final Color progressColor = regression ? theme.regressionBorder()
+                : (failure ? theme.failedBorder()
+                : (childFailure ? theme.upsetBorder() : getScenarioProgressColor(node, target, maxLeafOverRatio)));
         boolean executable = TreeHtml.isTheoreticallyExecutable(node, accessibleCtx, executableCache);
 
         Color cardFill;
@@ -140,10 +146,16 @@ public class VisualNodeResolver {
         boolean isDashed = false;
         String statusName;
 
-        final boolean warning = TreeHtml.hasWarning(node);
-        final boolean notice = !warning && TreeHtml.hasNotice(node);
+        final boolean warning = cls.hasWarning();
+        final boolean regressionWarning = cls.hasRegressionWarning();
+        final boolean notice = !warning && cls.hasNotice();
 
-        if (failure) {
+        if (regression) {
+            cardFill = theme.regressionBg();
+            borderColor = theme.regressionBorder();
+            strokeWidth = 2.4f;
+            statusName = "REGRESSION";
+        } else if (failure) {
             cardFill = theme.failedBg();
             borderColor = theme.failedBorder();
             strokeWidth = 2.2f;
@@ -152,7 +164,9 @@ public class VisualNodeResolver {
             cardFill = (overRatio > 0.0) ? progressColor : new Color(0x16, 0x3A, 0x58);
             borderColor = new Color(0xFB, 0xBF, 0x24); // AMBER (YELLOW)
             strokeWidth = 2.8f;
-            statusName = childFailure ? "UPSET" : ((execs > 0) ? (warning ? "WARNING" : (notice ? "NOTICE" : "PASSED")) : (executable ? "UNVISITED" : "NON_EXECUTABLE"));
+            statusName = childFailure ? "UPSET"
+                    : ((execs > 0) ? (regressionWarning ? "REGRESSION_WARNING" : (warning ? "WARNING" : (notice ? "NOTICE" : "PASSED")))
+                    : (executable ? "UNVISITED" : "NON_EXECUTABLE"));
         } else if (childFailure) {
             cardFill = theme.upsetBg();
             borderColor = theme.upsetBorder();
@@ -172,11 +186,15 @@ public class VisualNodeResolver {
             }
         } else if (overRatio > 0.0) {
             cardFill = progressColor;
-            borderColor = warning ? theme.warningBorder() : (notice ? theme.noticeBorder() : progressColor);
+            borderColor = regressionWarning ? theme.regressionWarningBorder()
+                    : (warning ? theme.warningBorder() : (notice ? theme.noticeBorder() : progressColor));
             strokeWidth = 1.8f;
-            statusName = warning ? "WARNING" : (notice ? "NOTICE" : "PASSED");
+            statusName = regressionWarning ? "REGRESSION_WARNING"
+                    : (warning ? "WARNING" : (notice ? "NOTICE" : "PASSED"));
         } else {
-            if (warning) {
+            if (regressionWarning) {
+                cardFill = theme.regressionWarningBg();
+            } else if (warning) {
                 cardFill = theme.warningBg();
             } else if (notice) {
                 cardFill = theme.noticeBg();
@@ -186,13 +204,16 @@ public class VisualNodeResolver {
                 final int b = (int) (theme.unvisitedBg().getBlue() * 0.7 + progressColor.getBlue() * 0.3);
                 cardFill = new Color(r, gr, b);
             }
-            borderColor = warning ? theme.warningBorder() : (notice ? theme.noticeBorder() : progressColor);
+            borderColor = regressionWarning ? theme.regressionWarningBorder()
+                    : (warning ? theme.warningBorder() : (notice ? theme.noticeBorder() : progressColor));
             strokeWidth = 1.8f;
-            statusName = warning ? "WARNING" : (notice ? "NOTICE" : "PASSED");
+            statusName = regressionWarning ? "REGRESSION_WARNING"
+                    : (warning ? "WARNING" : (notice ? "NOTICE" : "PASSED"));
         }
 
         boolean hasKnownIssues = node.knownIssues() != null && !node.knownIssues().isEmpty();
-        if (hasKnownIssues && !failure) {
+        boolean hasRegressions = node.fixedIssues() != null && !node.fixedIssues().isEmpty();
+        if (hasKnownIssues && !failure && !regressionWarning) {
             borderColor = new Color(251, 191, 36); // Amber #fbbf24 for known issues border
         }
 
@@ -208,17 +229,22 @@ public class VisualNodeResolver {
 
         // Pill badge text and badge foreground text color
         String badgeText = (execs == 0 && !executable) ? "OFF" : getExecutionBadgeText(node, execs, target);
-        Color badgeFg = (execs == 0 && !executable) 
-            ? theme.nonExecutableText() 
-            : (childFailure ? theme.upsetBorder() : ((execs == 0) ? theme.unvisitedText() : progressColor));
+        Color badgeFg = (execs == 0 && !executable)
+            ? theme.nonExecutableText()
+            : (regression ? theme.regressionBorder()
+            : (childFailure ? theme.upsetBorder()
+            : (regressionWarning ? theme.regressionWarningBorder()
+            : ((execs == 0) ? theme.unvisitedText() : progressColor))));
 
         // Model A: Outlines carry 100% of the node state; no circle pips on tree cards
         Color indicatorColor = null;
 
         // Node label text color
-        Color textColor = (overRatio > 0.0) 
-            ? new Color(0x0F, 0x17, 0x2A) 
-            : ((execs > 0) ? new Color(0xF8, 0xFA, 0xFC) : ((!executable) ? theme.nonExecutableText() : theme.unvisitedText()));
+        Color textColor = (overRatio > 0.0)
+            ? new Color(0x0F, 0x17, 0x2A)
+            : (regression ? theme.regressionText()
+            : (regressionWarning ? theme.regressionWarningText()
+            : ((execs > 0) ? new Color(0xF8, 0xFA, 0xFC) : ((!executable) ? theme.nonExecutableText() : theme.unvisitedText()))));
 
         // Coordinates calculation
         double x, y;
@@ -244,6 +270,7 @@ public class VisualNodeResolver {
             fillRatio,
             strokeWidth,
             hasKnownIssues,
+            hasRegressions,
             isDashed,
             x,
             y,
@@ -327,16 +354,16 @@ public class VisualNodeResolver {
     private String getExecutionBadgeText(final NodeData node, final int execs, final int leafTarget) {
         final ScenarioType type = getScenarioType(node);
         if (ScenarioType.NODE == type || ScenarioType.CORE == type || !isExhaustive) {
-            return execs + ((1 == execs) ? " exec" : " execs");
+            return s(execs, (1 == execs) ? " exec" : " execs");
         }
 
         final int target = getTargetExecutions(node, leafTarget);
         if (execs > target && ScenarioType.LEAF == type) {
-            return execs + "/" + target + " +" + getOvershootPercent(execs, target) + "%";
+            return s(execs, "/", target, " +", getOvershootPercent(execs, target), "%");
         }
         if (execs >= target && 0 < execs) {
-            return "✓ " + execs + "/" + target;
+            return s("✓ ", execs, "/", target);
         }
-        return execs + "/" + target;
+        return s(execs, "/", target);
     }
 }

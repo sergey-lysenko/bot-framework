@@ -68,7 +68,8 @@ public final class PlaqueMetricsCalculator {
                 base.suite(), base.pool(), base.domain(), base.mode(), base.pathsSummary(), base.origin(), base.tag(),
                 base.total(), base.executable(), base.executed(),
                 base.passed() - actualHidden, base.warning(), base.upset(), base.failed(),
-                base.knownIssues(), base.off(), actualHidden, base.notice(), base.notExecuted(), true);
+                base.knownIssues(), base.off(), actualHidden, base.notice(), base.notExecuted(),
+                base.regression(), base.regressionWarning(), true);
     }
 
     public static SummaryPlaque computeFromNodes(
@@ -87,8 +88,10 @@ public final class PlaqueMetricsCalculator {
         int passed = 0;
         int notice = 0;
         int warning = 0;
+        int regressionWarning = 0;
         int upset = 0;
         int failed = 0;
+        int regression = 0;
         int knownIssues = 0;
 
         final TreeHtml.AccessibleContext ctx = (null != accessibleCtx)
@@ -108,7 +111,11 @@ public final class PlaqueMetricsCalculator {
             final _Result res = n.result();
             final int execs = (null != res) ? res.getExecutions() : 0;
 
-            if (failure) {
+            if (cls.hasRegression()) {
+                regression++;
+                executable++;
+                if (execs > 0) executed++;
+            } else if (failure) {
                 failed++;
                 executable++;
                 if (execs > 0) executed++;
@@ -119,7 +126,9 @@ public final class PlaqueMetricsCalculator {
             } else if (execs > 0) {
                 executable++;
                 executed++;
-                if (cls.hasWarning()) {
+                if (cls.hasRegressionWarning()) {
+                    regressionWarning++;
+                } else if (cls.hasWarning()) {
                     warning++;
                 } else if (cls.hasNotice()) {
                     notice++;
@@ -141,7 +150,8 @@ public final class PlaqueMetricsCalculator {
 
         return new SummaryPlaque(
                 config.suite(), config.pool(), config.domain(), config.mode(), config.pathsSummary(), config.origin(), config.tag(),
-                total, executable, executed, passed, warning, upset, failed, knownIssues, off, hidden, notice, notExecuted, true);
+                total, executable, executed, passed, warning, upset, failed, knownIssues, off, hidden, notice, notExecuted,
+                regression, regressionWarning, true);
     }
 
     public static SummaryPlaque computeFromSections(final List<LogSection> sections) {
@@ -159,7 +169,9 @@ public final class PlaqueMetricsCalculator {
         int executed = 0;
         int passed = 0;
         int warning = 0;
+        int regressionWarning = 0;
         int failed = 0;
+        int regression = 0;
 
         if (null != sections) {
             for (final LogSection sec : sections) {
@@ -168,8 +180,12 @@ public final class PlaqueMetricsCalculator {
                     executable++;
                     executed++;
                     final String st = (null != sec.status) ? sec.status.toLowerCase(Locale.ROOT) : "";
-                    if (st.contains("fail") || st.contains("error") || st.contains("severe")) {
+                    if ("regression".equals(st)) {
+                        regression++;
+                    } else if (st.contains("fail") || st.contains("error") || st.contains("severe")) {
                         failed++;
+                    } else if ("regression_warning".equals(st)) {
+                        regressionWarning++;
                     } else if (st.contains("warn") || st.contains("issue")) {
                         warning++;
                     } else {
@@ -181,7 +197,8 @@ public final class PlaqueMetricsCalculator {
 
         return new SummaryPlaque(
                 config.suite(), config.pool(), config.domain(), config.mode(), config.pathsSummary(), config.origin(), config.tag(),
-                total, executable, executed, passed, warning, 0, failed, 0, (total - executable), 0, false);
+                total, executable, executed, passed, warning, 0, failed, 0, (total - executable), 0, 0, 0,
+                regression, regressionWarning, false);
     }
 
     public static SummaryPlaque computeFromScenEntries(final List<ScenEntry> entries) {

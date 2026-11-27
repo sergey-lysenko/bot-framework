@@ -6,9 +6,11 @@ import works.lysenko.base.issues.KnownIssuesStore;
 import works.lysenko.base.logger.renderer.AnsiLogRenderer;
 import works.lysenko.base.logger.renderer.LogRenderer;
 import works.lysenko.base.responses.ExpectedResponsesStore;
+import works.lysenko.util.apis.data._Event;
 import works.lysenko.util.apis.data._Result;
 import works.lysenko.util.apis.log._LogRecord;
 import works.lysenko.util.apis.scenario._Scenario;
+import works.lysenko.util.data.enums.Severity;
 import works.lysenko.util.spec.Level;
 
 import java.util.ArrayList;
@@ -54,6 +56,7 @@ import static works.lysenko.util.spec.Symbols._SPACE_;
 record NewIssues() {
 
     private static KnownIssuesStore knownIssuesStore = null;
+    private static KnownIssuesStore fixedIssuesStore = null;
 
     public static void setKnownIssuesStore(final KnownIssuesStore store) {
         knownIssuesStore = store;
@@ -63,8 +66,25 @@ record NewIssues() {
         return (null != knownIssuesStore) ? knownIssuesStore : KnownIssuesStore.getGlobalStore();
     }
 
+    public static void setFixedIssuesStore(final KnownIssuesStore store) {
+        fixedIssuesStore = store;
+    }
+
+    private static KnownIssuesStore getFixedIssuesStore() {
+        return (null != fixedIssuesStore) ? fixedIssuesStore : KnownIssuesStore.getFixedGlobalStore();
+    }
+
+    private static boolean isFailureSeverity(final _LogRecord lr) {
+        if (null == lr) return false;
+        if (lr.data() instanceof _Event ev) {
+            final Severity sev = ev.severity();
+            return Severity.S0 == sev || Severity.S1 == sev;
+        }
+        return false;
+    }
+
     /**
-     * Prints new issues to the console.
+     * Prints regressions and new issues to the console.
      */
     private static void consoleNewIssues() {
 
@@ -72,31 +92,81 @@ record NewIssues() {
             log(Level.none, ansi(b(c(NO), NEW, c(ISSUES)), GREEN), true);
         else {
             final KnownIssuesStore store = getKnownIssuesStore();
+            final KnownIssuesStore fixedStore = getFixedIssuesStore();
             final ExpectedResponsesStore expStore = TreeHtml.getExpectedResponsesStore();
             final Map<_Scenario, _Result> sorted = core.getResults().getSorted();
             final Map<_LogRecord, _Scenario> recordOwners = indexRecordOwners(sorted);
 
+            final List<MatchedRegression> failureRegressions = new ArrayList<>();
+            final List<MatchedRegression> warningRegressions = new ArrayList<>();
             final List<_LogRecord> unmatchedRecords = new ArrayList<>();
             for (final _LogRecord lr : exec.issues().latestCopy()) {
                 if (isExpectedRecord(expStore, sorted, recordOwners, lr)) {
                     continue;
                 }
                 final List<KnownIssue> matched = matchKnownIssuesForRecord(store, recordOwners, lr);
-                if (matched.isEmpty()) {
+                if (!matched.isEmpty()) {
+                    continue;
+                }
+                final List<KnownIssue> matchedFixed = matchKnownIssuesForRecord(fixedStore, recordOwners, lr);
+                if (!matchedFixed.isEmpty()) {
+                    if (isFailureSeverity(lr)) {
+                        failureRegressions.add(new MatchedRegression(lr, matchedFixed));
+                    } else {
+                        warningRegressions.add(new MatchedRegression(lr, matchedFixed));
+                    }
+                } else {
                     unmatchedRecords.add(lr);
+                }
+            }
+
+            final LogRenderer ansiRenderer = new AnsiLogRenderer();
+            final int totalTests = (isNotNull(core) && isNotNull(core.getTest()) && isNotNull(core.getTotalTests())) ? core.getTotalTests() : 0;
+            final int spanLength = (isNotNull(core) && isNotNull(core.getLogger())) ? core.getLogger().getSpanLength() : 0;
+
+            if (!failureRegressions.isEmpty()) {
+                section(b(s1(failureRegressions.size(), "Regression"), SUMMARY));
+                log(Level.none, ansi("REGRESSIONS:", MAGENTA_BOLD_BRIGHT), true);
+                for (final MatchedRegression mr : failureRegressions) {
+                    log(Level.none, ansi(formatRegressionHeader(mr.issues()), MAGENTA_BOLD_BRIGHT), false);
+                    log(Level.none, ansi(ansiRenderer.render(mr.record(), totalTests, spanLength, null)), false);
+                }
+            }
+
+            if (!warningRegressions.isEmpty()) {
+                section(b(s1(warningRegressions.size(), "Regression Warning"), SUMMARY));
+                log(Level.none, ansi("REGRESSION WARNINGS:", MAGENTA), true);
+                for (final MatchedRegression mr : warningRegressions) {
+                    log(Level.none, ansi(formatRegressionHeader(mr.issues()), MAGENTA), false);
+                    log(Level.none, ansi(ansiRenderer.render(mr.record(), totalTests, spanLength, null)), false);
                 }
             }
 
             section(b(s1(unmatchedRecords.size(), c(EVENT)), SUMMARY));
             log(Level.none, s((isDebug() ? ansi(e(b(c(NOTICES), AND), true), CYAN) : EMPTY), ansi(b(c(NEW), s(c(ISSUES),
                     _COLON_)), RED)), true);
-            final LogRenderer ansiRenderer = new AnsiLogRenderer();
-            final int totalTests = (isNotNull(core) && isNotNull(core.getTest()) && isNotNull(core.getTotalTests())) ? core.getTotalTests() : 0;
-            final int spanLength = (isNotNull(core) && isNotNull(core.getLogger())) ? core.getLogger().getSpanLength() : 0;
             for (final _LogRecord lr : unmatchedRecords) {
                 log(Level.none, ansi(ansiRenderer.render(lr, totalTests, spanLength, null)), false);
             }
         }
+    }
+
+    private record MatchedRegression(_LogRecord record, List<KnownIssue> issues) {}
+
+    private static String formatRegressionHeader(final List<KnownIssue> issues) {
+        final StringBuilder sb = new StringBuilder("  ↩ Matches fixed issue: ");
+        for (int i = 0; i < issues.size(); i++) {
+            if (i > 0) sb.append(", ");
+            final KnownIssue fi = issues.get(i);
+            sb.append(getReference(fi));
+            if (null != fi.title() && !fi.title().isBlank() && !fi.title().trim().equals(getReference(fi))) {
+                sb.append(" — ").append(fi.title().trim());
+            }
+            if (null != fi.resolvedAt() && !fi.resolvedAt().isBlank()) {
+                sb.append(" [resolved ").append(fi.resolvedAt().trim()).append(']');
+            }
+        }
+        return sb.toString();
     }
 
     private static Map<_LogRecord, _Scenario> indexRecordOwners(final Map<_Scenario, _Result> sorted) {
@@ -153,15 +223,18 @@ record NewIssues() {
     }
 
     /**
-     * Computes which known issues were confirmed (with reproducing tests), not reproduced or not checked.
+     * Computes which known issues were confirmed (with reproducing tests), not reproduced or not checked,
+     * and evaluates fixed issues from {@code fixed.issues.json} for regressions.
      *
-     * @return summary of known issues for this run
+     * @return summary of known and fixed issues for this run
      */
     static KnownIssuesSummary computeKnownIssuesSummary() {
 
         final KnownIssuesStore store = getKnownIssuesStore();
+        final KnownIssuesStore fixedStore = getFixedIssuesStore();
         final ExpectedResponsesStore expStore = TreeHtml.getExpectedResponsesStore();
-        final List<KnownIssue> allKnownIssues = store.getIssues();
+        final List<KnownIssue> allKnownIssues = (null != store) ? store.getIssues() : Collections.emptyList();
+        final List<KnownIssue> allFixedIssues = (null != fixedStore) ? fixedStore.getIssues() : Collections.emptyList();
         final Map<_Scenario, _Result> sorted =
                 (isNotNull(core) && isNotNull(core.getResults())) ? core.getResults().getSorted() : Collections.emptyMap();
         final Set<String> executedPhases =
@@ -198,21 +271,56 @@ record NewIssues() {
 
         final Map<KnownIssue, Set<Integer>> issueTests = new HashMap<>();
         final Set<KnownIssue> confirmedIssues = new HashSet<>();
+        final Set<_LogRecord> activeKnownMatchedRecords = Collections.newSetFromMap(new IdentityHashMap<>());
+
+        final Map<KnownIssue, Set<Integer>> fixedFailureTests = new HashMap<>();
+        final Set<KnownIssue> regressedFixedIssues = new HashSet<>();
+        final Map<KnownIssue, Set<Integer>> fixedWarningTests = new HashMap<>();
+        final Set<KnownIssue> regressedWarningFixedIssues = new HashSet<>();
 
         for (final _LogRecord lr : allRecords) {
             if (isExpectedRecord(expStore, sorted, recordOwners, lr)) {
                 continue;
             }
             final List<KnownIssue> matched = matchKnownIssuesForRecord(store, recordOwners, lr);
-            for (final KnownIssue ki : matched) {
-                confirmedIssues.add(ki);
-                if (lr.test() > 0) {
-                    issueTests.computeIfAbsent(ki, _ -> new TreeSet<>()).add(lr.test());
+            if (!matched.isEmpty()) {
+                activeKnownMatchedRecords.add(lr);
+                for (final KnownIssue ki : matched) {
+                    confirmedIssues.add(ki);
+                    if (lr.test() > 0) {
+                        issueTests.computeIfAbsent(ki, _ -> new TreeSet<>()).add(lr.test());
+                    }
                 }
             }
         }
 
-        // Aggregate and deduplicate by reference with precedence: Confirmed > NOT Reproduced > NOT Checked
+        if (!allFixedIssues.isEmpty()) {
+            for (final _LogRecord lr : allRecords) {
+                if (activeKnownMatchedRecords.contains(lr) || isExpectedRecord(expStore, sorted, recordOwners, lr)) {
+                    continue;
+                }
+                final List<KnownIssue> matchedFixed = matchKnownIssuesForRecord(fixedStore, recordOwners, lr);
+                if (matchedFixed.isEmpty()) {
+                    continue;
+                }
+                final boolean failTier = isFailureSeverity(lr);
+                for (final KnownIssue fi : matchedFixed) {
+                    if (failTier) {
+                        regressedFixedIssues.add(fi);
+                        if (lr.test() > 0) {
+                            fixedFailureTests.computeIfAbsent(fi, _ -> new TreeSet<>()).add(lr.test());
+                        }
+                    } else {
+                        regressedWarningFixedIssues.add(fi);
+                        if (lr.test() > 0) {
+                            fixedWarningTests.computeIfAbsent(fi, _ -> new TreeSet<>()).add(lr.test());
+                        }
+                    }
+                }
+            }
+        }
+
+        // Aggregate and deduplicate active issues by reference with precedence: Confirmed > NOT Reproduced > NOT Checked
         final Map<String, RefAggregation> aggregated = new LinkedHashMap<>();
         for (final KnownIssue ki : allKnownIssues) {
             final String ref = getReference(ki);
@@ -243,7 +351,51 @@ record NewIssues() {
             }
         }
 
-        return new KnownIssuesSummary(confirmedRefs, notReproducedRefs, notCheckedRefs);
+        // Aggregate fixed issues by reference with precedence:
+        // Regressed (S0/S1) > Regressed Warning (S2/S3/untyped) > Verified Fixed > Fixed NOT Checked
+        final Map<String, FixedRefAggregation> fixedAggregated = new LinkedHashMap<>();
+        for (final KnownIssue fi : allFixedIssues) {
+            final String ref = getReference(fi);
+            final FixedRefAggregation agg = fixedAggregated.computeIfAbsent(ref, _ -> new FixedRefAggregation(fi, ref));
+            if (regressedFixedIssues.contains(fi)) {
+                if (!agg.regressed) {
+                    agg.representative = fi;
+                }
+                agg.regressed = true;
+                agg.tests.addAll(fixedFailureTests.getOrDefault(fi, Collections.emptySet()));
+            }
+            if (regressedWarningFixedIssues.contains(fi)) {
+                if (!agg.regressed && !agg.regressedWarning) {
+                    agg.representative = fi;
+                }
+                agg.regressedWarning = true;
+                agg.tests.addAll(fixedWarningTests.getOrDefault(fi, Collections.emptySet()));
+            }
+            if (isTargetExecuted(fi.scenario(), sorted, executedPhases)) {
+                agg.executed = true;
+            }
+        }
+
+        final Map<String, KnownIssuesSummary.Entry> regressedRefs = new LinkedHashMap<>();
+        final Map<String, KnownIssuesSummary.Entry> regressedWarningRefs = new LinkedHashMap<>();
+        final Map<String, KnownIssuesSummary.Entry> verifiedFixedRefs = new LinkedHashMap<>();
+        final Map<String, KnownIssuesSummary.Entry> fixedNotCheckedRefs = new LinkedHashMap<>();
+
+        for (final FixedRefAggregation agg : fixedAggregated.values()) {
+            if (agg.regressed) {
+                regressedRefs.put(agg.ref, entryOf(agg.representative, agg.ref, agg.tests));
+            } else if (agg.regressedWarning) {
+                regressedWarningRefs.put(agg.ref, entryOf(agg.representative, agg.ref, agg.tests));
+            } else if (agg.executed) {
+                verifiedFixedRefs.put(agg.ref, entryOf(agg.representative, agg.ref, Collections.emptySet()));
+            } else {
+                fixedNotCheckedRefs.put(agg.ref, entryOf(agg.representative, agg.ref, Collections.emptySet()));
+            }
+        }
+
+        return new KnownIssuesSummary(
+                confirmedRefs, notReproducedRefs, notCheckedRefs,
+                regressedRefs, regressedWarningRefs, verifiedFixedRefs, fixedNotCheckedRefs);
     }
 
     private static boolean isTargetExecuted(
@@ -280,8 +432,22 @@ record NewIssues() {
         }
     }
 
+    private static final class FixedRefAggregation {
+        final String ref;
+        KnownIssue representative;
+        boolean regressed;
+        boolean regressedWarning;
+        boolean executed;
+        final Set<Integer> tests = new TreeSet<>();
+
+        FixedRefAggregation(final KnownIssue representative, final String ref) {
+            this.representative = representative;
+            this.ref = ref;
+        }
+    }
+
     /**
-     * Prints summary information about known issues to the console.
+     * Prints summary information about known issues and fixed-issue regression verification to the console.
      *
      * @param summary precomputed summary
      */
@@ -294,13 +460,7 @@ record NewIssues() {
             log(Level.none, s("  ", c(NONE)), false);
         } else {
             for (final KnownIssuesSummary.Entry entry : summary.confirmed().values()) {
-                final Set<Integer> testNums = entry.tests();
-                if (testNums.isEmpty()) {
-                    log(Level.none, s("  ", _BULLT_, _SPACE_, entry.ref()), false);
-                } else {
-                    final String testsStr = testNums.stream().map(Object::toString).collect(Collectors.joining(" "));
-                    log(Level.none, s("  ", _BULLT_, _SPACE_, entry.ref(), _SPACE_, testsStr), false);
-                }
+                logSummaryEntry(entry);
             }
         }
 
@@ -321,10 +481,65 @@ record NewIssues() {
                 log(Level.none, s("  ", _BULLT_, _SPACE_, ref), false);
             }
         }
+
+        if (summary.hasFixedIssues()) {
+            section("Fixed Issues Verification");
+
+            log(Level.none, ansi("REGRESSIONS (FIXED ISSUES REPRODUCED):", MAGENTA_BOLD_BRIGHT), true);
+            if (summary.regressed().isEmpty()) {
+                log(Level.none, s("  ", c(NONE)), false);
+            } else {
+                for (final KnownIssuesSummary.Entry entry : summary.regressed().values()) {
+                    logSummaryEntry(entry);
+                }
+            }
+
+            if (!summary.regressedWarnings().isEmpty()) {
+                log(Level.none, ansi("REGRESSION WARNINGS:", MAGENTA), true);
+                for (final KnownIssuesSummary.Entry entry : summary.regressedWarnings().values()) {
+                    logSummaryEntry(entry);
+                }
+            }
+
+            log(Level.none, ansi("VERIFIED FIXED:", GREEN), true);
+            if (summary.verifiedFixed().isEmpty()) {
+                log(Level.none, s("  ", c(NONE)), false);
+            } else {
+                for (final String ref : summary.verifiedFixed().keySet()) {
+                    log(Level.none, s("  ", _BULLT_, _SPACE_, ref), false);
+                }
+            }
+
+            log(Level.none, ansi("FIXED ISSUES NOT CHECKED:", CYAN), true);
+            if (summary.fixedNotChecked().isEmpty()) {
+                log(Level.none, s("  ", c(NONE)), false);
+            } else {
+                for (final String ref : summary.fixedNotChecked().keySet()) {
+                    log(Level.none, s("  ", _BULLT_, _SPACE_, ref), false);
+                }
+            }
+        }
+    }
+
+    private static void logSummaryEntry(final KnownIssuesSummary.Entry entry) {
+        final Set<Integer> testNums = entry.tests();
+        if (testNums.isEmpty()) {
+            log(Level.none, s("  ", _BULLT_, _SPACE_, entry.ref()), false);
+        } else {
+            final String testsStr = testNums.stream().map(Object::toString).collect(Collectors.joining(" "));
+            log(Level.none, s("  ", _BULLT_, _SPACE_, entry.ref(), _SPACE_, testsStr), false);
+        }
     }
 
     private static KnownIssuesSummary.Entry entryOf(final KnownIssue ki, final String ref, final Set<Integer> tests) {
-        return new KnownIssuesSummary.Entry(ref, ki.link().trim(), ki.title().trim(), ki.description().trim(), tests);
+        return new KnownIssuesSummary.Entry(
+                ref,
+                ki.link().trim(),
+                ki.title().trim(),
+                ki.description().trim(),
+                tests,
+                ki.resolvedAt().trim(),
+                ki.verifiedInRun().trim());
     }
 
 

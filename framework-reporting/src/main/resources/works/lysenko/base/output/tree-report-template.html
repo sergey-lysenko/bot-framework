@@ -24,12 +24,16 @@
   .node-card.non_executable text { fill: #475569; }
   .node-card.non_executable circle { stroke: #283548; stroke-width: 1.2; stroke-dasharray: 2 2; }
   .node-card.known-issue rect.card-bg { stroke: #f59e0b; stroke-width: 2; }
+  .node-card.regression rect.card-bg { stroke: #e879f9; stroke-width: 2.4; }
+  .node-card.regression_warning rect.card-bg { stroke: #f472b6; stroke-width: 2; }
   .node-card text { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; fill: #f8fafc; }
   .connector { fill: none; stroke: #475569; stroke-width: 2; transition: stroke 0.2s, stroke-width 0.2s; }
   .connector.visited { stroke: #22c55e; stroke-width: 2.5; }
   .connector.warning { stroke: #f59e0b; stroke-width: 2.5; }
+  .connector.regression_warning { stroke: #f472b6; stroke-width: 2.5; }
   .connector.notice { stroke: #06b6d4; stroke-width: 2.5; }
   .connector.failed { stroke: #ef4444; stroke-width: 2.5; }
+  .connector.regression { stroke: #e879f9; stroke-width: 2.8; }
   .connector.child_failed { stroke: #818cf8; stroke-width: 1.5; stroke-dasharray: 3 3; }
   .connector.non_executable { stroke: #243044; stroke-width: 1.2; stroke-dasharray: 4 4; opacity: 0.6; }
   .connector.active { stroke: var(--accent); stroke-width: 3.5; opacity: 1.0; }
@@ -69,6 +73,10 @@
     <p>Status: <span id="d-status" class="val"></span></p>
     <p>Executions: <span id="d-exec" class="val"></span> <span id="d-exec-links" style="margin-left:4px;"></span></p>
     <p>Events: <span id="d-events" class="val"></span></p>
+    <div id="d-regressions" style="display:none; margin-top:10px; padding:10px; background:rgba(232,121,249,0.14); border:1px solid rgba(232,121,249,0.45); border-radius:6px;">
+      <div style="font-weight:600; font-size:12px; color:#e879f9; margin-bottom:6px;">Regressions (Previously Fixed)</div>
+      <div id="d-reg-content" style="font-size:11px; color:#fae8ff;"></div>
+    </div>
     <div id="d-known-issues" style="display:none; margin-top:10px; padding:10px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); border-radius:6px;">
       <div style="font-weight:600; font-size:12px; color:#fbbf24; margin-bottom:6px;">Known Issues</div>
       <div id="d-ki-content" style="font-size:11px; color:#f8fafc;"></div>
@@ -159,9 +167,9 @@
   function showNodeDetails(id) {
     const data = nodeDataMap[id];
     if (!data) return;
-    showDetails(data.name, data.group, data.status, data.exec, data.events, data.details, data.kiHtml, data.scenarioPath, data.execLinksHtml);
+    showDetails(data.name, data.group, data.status, data.exec, data.events, data.details, data.kiHtml, data.scenarioPath, data.execLinksHtml, data.regHtml);
   }
-  function showDetails(name, group, status, exec, events, details, kiHtml, scenarioPath, execLinksHtml) {
+  function showDetails(name, group, status, exec, events, details, kiHtml, scenarioPath, execLinksHtml, regHtml) {
     const p = document.getElementById('details-panel');
     p.style.display = 'block';
     const cleanName = (name || '').replace(/[\s▷◼◆▲▼★●]+$/, '').trim();
@@ -182,6 +190,17 @@
       execLinksSpan.innerHTML = execLinksHtml || '';
     }
     document.getElementById('d-events').innerText = events;
+    const regBox = document.getElementById('d-regressions');
+    const regContent = document.getElementById('d-reg-content');
+    if (regBox && regContent) {
+      if (regHtml && regHtml.trim().length > 0) {
+        regBox.style.display = 'block';
+        regContent.innerHTML = regHtml;
+      } else {
+        regBox.style.display = 'none';
+        regContent.innerHTML = '';
+      }
+    }
     const kiBox = document.getElementById('d-known-issues');
     const kiContent = document.getElementById('d-ki-content');
     if (kiHtml && kiHtml.trim().length > 0) {

@@ -24,6 +24,7 @@ import static works.lysenko.base.output.loghtml.LogFormatting.extractLineSpan;
 import static works.lysenko.base.output.loghtml.LogFormatting.linkifyArtifacts;
 import static works.lysenko.base.output.loghtml.LogFormatting.parseAnsi;
 import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.spec.Symbols._LFD_;
 
 /**
  * Renderer for HTML section blocks, summary plaques, statistics strips, paths tables, and soundtrack optical tracks.
@@ -51,11 +52,11 @@ public final class SectionRenderer {
         final String escaped = escapeHtml(message);
         final String formatted = linkifyArtifacts(escaped.replace("• ", "•").replace("•", "<br>&nbsp;&nbsp;• "));
         return s(
-                "<div class=\"result-plaque-wrap\">\n",
+                "<div class=\"result-plaque-wrap\">", _LFD_,
                 "  <div class=\"result-plaque ", status, "\">",
                 formatted,
-                "</div>\n",
-                "</div>\n"
+                "</div>", _LFD_,
+                "</div>", _LFD_
         );
     }
 
@@ -85,19 +86,19 @@ public final class SectionRenderer {
                             "<div class=\"stat-item\">min: <b>%.2fs</b></div>",
                             "<div class=\"stat-item\">avg: <b>%.2fs</b></div>",
                             "<div class=\"stat-item\">max: <b>%.2fs</b></div>",
-                            "<div class=\"stat-item\">total: <b>%.2fs</b></div></div>\n"),
+                            "<div class=\"stat-item\">total: <b>%.2fs</b></div></div>", _LFD_),
                     tMin, tAvg, tMax, tTotal));
         }
         if (!limboData.isEmpty()) {
             if (!testData.isEmpty()) {
-                sb.append("      <div class=\"stat-divider\"></div>\n");
+                sb.append("      <div class=\"stat-divider\"></div>").append(_LFD_);
             }
             sb.append(String.format(Locale.ROOT,
                     s("      <div class=\"stat-group stat-group-limbo\"><span class=\"stat-group-label\">Limbo:</span> ",
                             "<div class=\"stat-item\">min: <b>%dms</b></div>",
                             "<div class=\"stat-item\">avg: <b>%dms</b></div>",
                             "<div class=\"stat-item\">max: <b>%dms</b></div>",
-                            "<div class=\"stat-item\">total: <b>%dms</b></div></div>\n"),
+                            "<div class=\"stat-item\">total: <b>%dms</b></div></div>", _LFD_),
                     Math.round(lMin), Math.round(lAvg), Math.round(lMax), Math.round(lTotal)));
         }
         return sb.toString();
@@ -124,7 +125,7 @@ public final class SectionRenderer {
             sb.append(s(" <span class=\"step-arrow\">→</span> ",
                     "<span class=\"path-step common\">", escapeHtml(step), "</span>"));
         }
-        sb.append("</div></div>\n");
+        sb.append("</div></div>").append(_LFD_);
         return sb.toString();
     }
 
@@ -139,11 +140,28 @@ public final class SectionRenderer {
         return renderPathsRows(testPaths, sections, List.of());
     }
 
+    public static int statusRank(final String status) {
+        if (null == status) return -1;
+        return switch (status) {
+            case "regression" -> 5;
+            case "failed" -> 4;
+            case "regression_warning" -> 3;
+            case "warning" -> 2;
+            case "notice" -> 1;
+            case "passed" -> 0;
+            default -> -1;
+        };
+    }
+
+    public static String promoteStatus(final String current, final String candidate) {
+        return (statusRank(candidate) > statusRank(current)) ? candidate : current;
+    }
+
     /**
      * Computes execution statuses for individual scenarios within a test section based on log line severe/warning indicators.
      *
      * @param sec the log section for a test (may be null)
-     * @return map of scenario token names to their status ("passed", "warning", or "failed")
+     * @return map of scenario token names to their status ("passed", "notice", "warning", "regression_warning", "failed", or "regression")
      */
     public static Map<String, String> computeScenarioStatuses(final LogSection sec) {
         final Map<String, String> statuses = new HashMap<>(8);
@@ -153,6 +171,8 @@ public final class SectionRenderer {
         final List<works.lysenko.base.responses.ExpectedResponse> expList = (null != expStore) ? expStore.getResponses() : List.of();
         final works.lysenko.base.issues.KnownIssuesStore kiStore = works.lysenko.base.output.TreeHtml.getKnownIssuesStore();
         final List<works.lysenko.base.issues.KnownIssue> kiList = (null != kiStore) ? kiStore.getIssues() : List.of();
+        final works.lysenko.base.issues.KnownIssuesStore fiStore = works.lysenko.base.output.TreeHtml.getFixedIssuesStore();
+        final List<works.lysenko.base.issues.KnownIssue> fiList = (null != fiStore) ? fiStore.getIssues() : List.of();
 
         String currentScen = null;
         boolean currentScenMatchedExpected = false;
@@ -190,28 +210,42 @@ public final class SectionRenderer {
                         currentScenMatchedExpected = true;
                         continue;
                     }
-                    boolean known = false;
+                    boolean matchedActiveKnown = false;
+                    boolean decreasedToWarning = false;
                     for (final works.lysenko.base.issues.KnownIssue ki : kiList) {
-                        if (!ki.decreaseToWarning()) continue;
                         if (works.lysenko.base.issues.KnownIssuesMatcher.isCatchAllRule(ki.scenario(), ki.pattern())) continue;
                         final boolean scenOk = works.lysenko.base.issues.KnownIssuesMatcher.isWildcardScenario(ki.scenario())
                                 || works.lysenko.base.responses.ExpectedResponsesMatcher.matchesScenario(ki.scenario(), currentScen);
                         if (scenOk && matchesTextPattern(ki.pattern(), clean)) {
-                            known = true;
-                            break;
+                            matchedActiveKnown = true;
+                            if (ki.decreaseToWarning()) {
+                                decreasedToWarning = true;
+                            }
                         }
                     }
-                    if (known) {
-                        if (!"failed".equals(statuses.get(currentScen))) {
-                            statuses.put(currentScen, "warning");
+                    boolean matchedFixed = false;
+                    if (!matchedActiveKnown && !fiList.isEmpty()) {
+                        for (final works.lysenko.base.issues.KnownIssue fi : fiList) {
+                            if (works.lysenko.base.issues.KnownIssuesMatcher.isCatchAllRule(fi.scenario(), fi.pattern())) continue;
+                            final boolean scenOk = works.lysenko.base.issues.KnownIssuesMatcher.isWildcardScenario(fi.scenario())
+                                    || works.lysenko.base.responses.ExpectedResponsesMatcher.matchesScenario(fi.scenario(), currentScen);
+                            if (scenOk && matchesTextPattern(fi.pattern(), clean)) {
+                                matchedFixed = true;
+                                break;
+                            }
                         }
+                    }
+                    final String candidate;
+                    if (decreasedToWarning) {
+                        candidate = "warning";
                     } else if (isSevereOrFail) {
-                        statuses.put(currentScen, "failed");
-                    } else if (isWarn && !"failed".equals(statuses.get(currentScen))) {
-                        statuses.put(currentScen, "warning");
-                    } else if (isNotice && "passed".equals(statuses.get(currentScen))) {
-                        statuses.put(currentScen, "notice");
+                        candidate = matchedFixed ? "regression" : "failed";
+                    } else if (isWarn) {
+                        candidate = matchedFixed ? "regression_warning" : "warning";
+                    } else {
+                        candidate = matchedFixed ? "regression_warning" : "notice";
                     }
+                    statuses.put(currentScen, promoteStatus(statuses.get(currentScen), candidate));
                 }
             }
         }
@@ -234,9 +268,9 @@ public final class SectionRenderer {
      * @param scenName         the scenario step name
      * @param sIdx             the step index (-1 if not in path row)
      * @param totalSteps       total steps in the path row (-1 if not in path row)
-     * @param testStatus       overall section status ("passed", "warning", "failed")
+     * @param testStatus       overall section status ("passed", "warning", "regression_warning", "failed", or "regression")
      * @param scenarioStatuses map of scenario statuses for the test section
-     * @return status string ("passed", "warning", or "failed")
+     * @return status string
      */
     public static String resolveScenarioStatus(
             final String scenName,
@@ -249,14 +283,16 @@ public final class SectionRenderer {
             for (final Map.Entry<String, String> entry : scenarioStatuses.entrySet()) {
                 final String keyLower = entry.getKey().toLowerCase(Locale.ROOT);
                 if (keyLower.equals(scenLower)
-                        || keyLower.endsWith("." + scenLower)
-                        || scenLower.endsWith("." + keyLower)) {
+                        || keyLower.endsWith(s(".", scenLower))
+                        || scenLower.endsWith(s(".", keyLower))) {
                     return entry.getValue();
                 }
             }
         }
         if (sIdx >= 0 && sIdx == totalSteps - 1) {
+            if ("regression".equals(testStatus)) return "regression";
             if ("failed".equals(testStatus)) return "failed";
+            if ("regression_warning".equals(testStatus)) return "regression_warning";
             if ("warning".equals(testStatus)) return "warning";
         }
         return "passed";
@@ -322,19 +358,28 @@ public final class SectionRenderer {
                     String nodeCssClass = resolveScenarioStatus(targetScen, sIdx, p.steps.size(), testStatus, scenarioStatuses);
 
                     if ("passed".equals(nodeCssClass) && sIdx == p.steps.size() - 1 && !hasFailedStep) {
-                        if ("failed".equals(testStatus)) nodeCssClass = "failed";
+                        if ("regression".equals(testStatus)) nodeCssClass = "regression";
+                        else if ("failed".equals(testStatus)) nodeCssClass = "failed";
+                        else if ("regression_warning".equals(testStatus)) nodeCssClass = "regression_warning";
                         else if ("warning".equals(testStatus)) nodeCssClass = "warning";
                         else if ("notice".equals(testStatus)) nodeCssClass = "notice";
                     }
 
-                    if ("failed".equals(nodeCssClass) || "warning".equals(nodeCssClass) || "notice".equals(nodeCssClass)) {
+                    if ("regression".equals(nodeCssClass) || "failed".equals(nodeCssClass)
+                            || "regression_warning".equals(nodeCssClass) || "warning".equals(nodeCssClass)
+                            || "notice".equals(nodeCssClass)) {
                         hasFailedStep = true;
                     }
 
-                    final String baseStepClass = "failed".equals(nodeCssClass) ? "failed" : "passed";
-                    final String stepPipHtml = "warning".equals(nodeCssClass)
+                    final String baseStepClass = "regression".equals(nodeCssClass) ? "regression"
+                            : "failed".equals(nodeCssClass) ? "failed"
+                            : "regression_warning".equals(nodeCssClass) ? "regression_warning"
+                            : "passed";
+                    final String stepPipHtml = "regression_warning".equals(nodeCssClass)
+                            ? "<span class=\"status-bullet-regression-warning\" title=\"Has regression warnings\"></span>"
+                            : ("warning".equals(nodeCssClass)
                             ? "<span class=\"status-bullet-warning\" title=\"Has warnings\"></span>"
-                            : ("notice".equals(nodeCssClass) ? "<span class=\"status-bullet-notice\" title=\"Has notices\"></span>" : "");
+                            : ("notice".equals(nodeCssClass) ? "<span class=\"status-bullet-notice\" title=\"Has notices\"></span>" : ""));
 
                     sb.append(s("<a class=\"path-step ", baseStepClass, "\" href=\"#test-", p.num, "-", escapeHtml(targetScen),
                             "\" onclick=\"focusScenario(event, '", p.num, "', '", escapeHtml(targetScen),
@@ -499,13 +544,20 @@ public final class SectionRenderer {
         for (final LogSection sec : sections) {
             final boolean isTest = "test".equals(sec.type);
             final boolean isLimbo = "limbo".equals(sec.type) || "configuring".equals(sec.type);
-            final String badgeClass = "failed".equals(sec.status) ? "failed"
+            final String badgeClass = "regression".equals(sec.status) ? "regression"
+                    : "failed".equals(sec.status) ? "failed"
+                    : "regression_warning".equals(sec.status) ? "regression_warning"
                     : ("warning".equals(sec.status) || "notice".equals(sec.status)) ? "passed"
                     : isTest ? sec.status : isLimbo ? "limbo" : "neutral";
-            final String badgePip = "warning".equals(sec.status)
+            final String badgePip = "regression_warning".equals(sec.status)
+                    ? "<span class=\"status-bullet-regression-warning\" title=\"Has regression warnings\"></span>"
+                    : ("warning".equals(sec.status)
                     ? "<span class=\"status-bullet-warning\" title=\"Has warnings\"></span>"
-                    : ("notice".equals(sec.status) ? "<span class=\"status-bullet-notice\" title=\"Has notices\"></span>" : "");
-            final String badgeText = isTest ? ("failed".equals(sec.status) ? "failed" : "passed")
+                    : ("notice".equals(sec.status) ? "<span class=\"status-bullet-notice\" title=\"Has notices\"></span>" : ""));
+            final String badgeText = isTest ? ("regression".equals(sec.status) ? "regression"
+                    : "failed".equals(sec.status) ? "failed"
+                    : "regression_warning".equals(sec.status) ? "reg. warn"
+                    : "passed")
                     : "limbo".equals(sec.type) ? "limbo"
                     : "configuring".equals(sec.type) ? "config"
                     : "preflight".equals(sec.type) ? "preflight"
@@ -523,37 +575,42 @@ public final class SectionRenderer {
             final String secId = s("sec_", sec.title.replace(" ", "_").replace("#", "").replace("➔", "to"));
 
             sb.append(s(
-                    "<details id=\"", secId, "\" class=\"log-section ", sec.type, " ", sec.status, "\" ontoggle=\"loadSectionLines(this)\" data-test=\"", sec.testNum, "\">\n",
-                    "  <summary>\n    <div class=\"summary-left\">\n",
-                    opRange.isEmpty() ? "" : s("      <span class=\"op-range\">", opRange, "</span>\n"),
-                    "      <span class=\"sec-title\">", escapeHtml(sec.title), "</span>\n",
-                    "      <span class=\"badge ", badgeClass, "\">", badgeText, badgePip, "</span>\n",
-                    (sec.durationStr != null && !sec.durationStr.isEmpty()) ? s("      <span class=\"duration", isLimbo ? " limbo-duration" : "", "\">", sec.durationStr, "</span>\n") : "",
-                    "    </div>\n    <div class=\"summary-right\">\n",
-                    timeRange.isEmpty() ? "" : s("      <span class=\"time-range\" title=\"", fullTimeRange, "\">", timeRange, "</span>\n"),
-                    "      <span class=\"line-count\">", sec.lines.size(), " lines</span>\n    </div>\n  </summary>\n"
+                    "<details id=\"", secId, "\" class=\"log-section ", sec.type, " ", sec.status, "\" ontoggle=\"loadSectionLines(this)\" data-test=\"", sec.testNum, "\">", _LFD_,
+                    "  <summary>", _LFD_, "    <div class=\"summary-left\">", _LFD_,
+                    opRange.isEmpty() ? "" : s("      <span class=\"op-range\">", opRange, "</span>", _LFD_),
+                    "      <span class=\"sec-title\">", escapeHtml(sec.title), "</span>", _LFD_,
+                    "      <span class=\"badge ", badgeClass, "\">", badgeText, badgePip, "</span>", _LFD_,
+                    (sec.durationStr != null && !sec.durationStr.isEmpty()) ? s("      <span class=\"duration", isLimbo ? " limbo-duration" : "", "\">", sec.durationStr, "</span>", _LFD_) : "",
+                    "    </div>", _LFD_, "    <div class=\"summary-right\">", _LFD_,
+                    timeRange.isEmpty() ? "" : s("      <span class=\"time-range\" title=\"", fullTimeRange, "\">", timeRange, "</span>", _LFD_),
+                    "      <span class=\"line-count\">", sec.lines.size(), " lines</span>", _LFD_, "    </div>", _LFD_, "  </summary>", _LFD_
             ));
 
             if ("test".equals(sec.type) && !sec.scenarios.isEmpty()) {
                 final Map<String, String> scenStatuses = computeScenarioStatuses(sec);
-                sb.append("  <div class=\"section-breadcrumb\">\n    <span class=\"breadcrumb-label\">Scenario:</span>\n");
+                sb.append(s("  <div class=\"section-breadcrumb\">", _LFD_, "    <span class=\"breadcrumb-label\">Scenario:</span>", _LFD_));
                 for (final String sc : sec.scenarios) {
                     if (sc.equalsIgnoreCase("Specifics") || sc.toLowerCase(java.util.Locale.ROOT).endsWith(".specifics")) continue;
                     final String scStatus = resolveScenarioStatus(sc, -1, -1, sec.status, scenStatuses);
-                    final String basePillClass = "failed".equals(scStatus) ? "failed" : "passed";
-                    final String pillPipHtml = "warning".equals(scStatus)
+                    final String basePillClass = "regression".equals(scStatus) ? "regression"
+                            : "failed".equals(scStatus) ? "failed"
+                            : "regression_warning".equals(scStatus) ? "regression_warning"
+                            : "passed";
+                    final String pillPipHtml = "regression_warning".equals(scStatus)
+                            ? "<span class=\"status-bullet-regression-warning\" title=\"Has regression warnings\"></span>"
+                            : ("warning".equals(scStatus)
                             ? "<span class=\"status-bullet-warning\" title=\"Has warnings\"></span>"
-                            : ("notice".equals(scStatus) ? "<span class=\"status-bullet-notice\" title=\"Has notices\"></span>" : "");
+                            : ("notice".equals(scStatus) ? "<span class=\"status-bullet-notice\" title=\"Has notices\"></span>" : ""));
                     sb.append(s("    <a class=\"pill scen-pill ", basePillClass, "\" href=\"#test-", sec.testNum, "-", escapeHtml(sc),
                             "\" onclick=\"focusScenario(event, '", sec.testNum, "', '", escapeHtml(sc),
-                            "')\" title=\"Jump to ", escapeHtml(sc), "\">", escapeHtml(sc), pillPipHtml, "</a>\n"));
+                            "')\" title=\"Jump to ", escapeHtml(sc), "\">", escapeHtml(sc), pillPipHtml, "</a>", _LFD_));
                 }
-                sb.append("  </div>\n");
+                sb.append("  </div>").append(_LFD_);
             }
 
-            sb.append("  <div class=\"log-section-body\">\n");
+            sb.append("  <div class=\"log-section-body\">").append(_LFD_);
             appendSectionLines(sb, sec);
-            sb.append("  </div>\n</details>\n");
+            sb.append(s("  </div>", _LFD_, "</details>", _LFD_));
         }
         return sb.toString();
     }
@@ -567,12 +624,12 @@ public final class SectionRenderer {
     public static void appendSectionLines(
             final StringBuilder output,
             final LogSection section) {
-        output.append("<div class=\"log-content\"><script type=\"text/plain\" class=\"raw-lines\">\n");
+        output.append("<div class=\"log-content\"><script type=\"text/plain\" class=\"raw-lines\">").append(_LFD_);
         for (int lineIndex = 0; lineIndex < section.lines.size(); lineIndex++) {
             final String rawLine = section.lines.get(lineIndex);
-            output.append(escapeHtml(rawLine)).append('\n');
+            output.append(escapeHtml(rawLine)).append(_LFD_);
         }
-        output.append("</script></div>\n");
+        output.append("</script></div>").append(_LFD_);
     }
 
     /**
@@ -630,52 +687,52 @@ public final class SectionRenderer {
         }
 
         return s(
-                "  <div class=\"log-legend-section\">\n",
-                "    <div class=\"lg-title-group\">\n",
-                "      <span class=\"badge neutral lg-badge\">LEGEND</span>\n",
-                "    </div>\n",
-                "    <div class=\"lg-items-group\">\n",
-                "      <div class=\"lg-item\">\n",
-                "        <span class=\"lg-st-sample rate-white\"></span>\n",
-                "        <div class=\"lg-item-text\">\n",
-                "          <span class=\"lg-val rate-white\">&lt;20 ms</span>\n",
-                "          <span class=\"lg-sub rate-white\">", cpu0, "–", cpu20, "% CPU</span>\n",
-                "        </div>\n",
-                "      </div>\n",
-                "      <div class=\"lg-item\">\n",
-                "        <span class=\"lg-st-sample rate-blue\"></span>\n",
-                "        <div class=\"lg-item-text\">\n",
-                "          <span class=\"lg-val rate-blue\">20–49 ms</span>\n",
-                "          <span class=\"lg-sub rate-blue\">", cpu20, "–", cpu40, "% CPU</span>\n",
-                "        </div>\n",
-                "      </div>\n",
-                "      <div class=\"lg-item\">\n",
-                "        <span class=\"lg-st-sample rate-green\"></span>\n",
-                "        <div class=\"lg-item-text\">\n",
-                "          <span class=\"lg-val rate-green\">50–99 ms</span>\n",
-                "          <span class=\"lg-sub rate-green\">", cpu40, "–", cpu60, "% CPU</span>\n",
-                "        </div>\n",
-                "      </div>\n",
-                "      <div class=\"lg-item\">\n",
-                "        <span class=\"lg-st-sample rate-yellow\"></span>\n",
-                "        <div class=\"lg-item-text\">\n",
-                "          <span class=\"lg-val rate-yellow\">100–999 ms</span>\n",
-                "          <span class=\"lg-sub rate-yellow\">", cpu60, "–", cpu80, "% CPU</span>\n",
-                "        </div>\n",
-                "      </div>\n",
-                "      <div class=\"lg-item\">\n",
-                "        <span class=\"lg-st-sample rate-red\"></span>\n",
-                "        <div class=\"lg-item-text\">\n",
-                "          <span class=\"lg-val rate-red\">≥1000 ms</span>\n",
-                "          <span class=\"lg-sub rate-red\">", cpu80, "–", cpu100, "% CPU</span>\n",
-                "        </div>\n",
-                "      </div>\n",
-                "    </div>\n",
-                "    <div class=\"lg-track-labels\">\n",
-                "      <span class=\"lg-track-tag\">Left: Duration</span>\n",
-                "      <span class=\"lg-track-tag\">Right: CPU Load</span>\n",
-                "    </div>\n",
-                "  </div>\n"
+                "  <div class=\"log-legend-section\">", _LFD_,
+                "    <div class=\"lg-title-group\">", _LFD_,
+                "      <span class=\"badge neutral lg-badge\">LEGEND</span>", _LFD_,
+                "    </div>", _LFD_,
+                "    <div class=\"lg-items-group\">", _LFD_,
+                "      <div class=\"lg-item\">", _LFD_,
+                "        <span class=\"lg-st-sample rate-white\"></span>", _LFD_,
+                "        <div class=\"lg-item-text\">", _LFD_,
+                "          <span class=\"lg-val rate-white\">&lt;20 ms</span>", _LFD_,
+                "          <span class=\"lg-sub rate-white\">", cpu0, "–", cpu20, "% CPU</span>", _LFD_,
+                "        </div>", _LFD_,
+                "      </div>", _LFD_,
+                "      <div class=\"lg-item\">", _LFD_,
+                "        <span class=\"lg-st-sample rate-blue\"></span>", _LFD_,
+                "        <div class=\"lg-item-text\">", _LFD_,
+                "          <span class=\"lg-val rate-blue\">20–49 ms</span>", _LFD_,
+                "          <span class=\"lg-sub rate-blue\">", cpu20, "–", cpu40, "% CPU</span>", _LFD_,
+                "        </div>", _LFD_,
+                "      </div>", _LFD_,
+                "      <div class=\"lg-item\">", _LFD_,
+                "        <span class=\"lg-st-sample rate-green\"></span>", _LFD_,
+                "        <div class=\"lg-item-text\">", _LFD_,
+                "          <span class=\"lg-val rate-green\">50–99 ms</span>", _LFD_,
+                "          <span class=\"lg-sub rate-green\">", cpu40, "–", cpu60, "% CPU</span>", _LFD_,
+                "        </div>", _LFD_,
+                "      </div>", _LFD_,
+                "      <div class=\"lg-item\">", _LFD_,
+                "        <span class=\"lg-st-sample rate-yellow\"></span>", _LFD_,
+                "        <div class=\"lg-item-text\">", _LFD_,
+                "          <span class=\"lg-val rate-yellow\">100–999 ms</span>", _LFD_,
+                "          <span class=\"lg-sub rate-yellow\">", cpu60, "–", cpu80, "% CPU</span>", _LFD_,
+                "        </div>", _LFD_,
+                "      </div>", _LFD_,
+                "      <div class=\"lg-item\">", _LFD_,
+                "        <span class=\"lg-st-sample rate-red\"></span>", _LFD_,
+                "        <div class=\"lg-item-text\">", _LFD_,
+                "          <span class=\"lg-val rate-red\">≥1000 ms</span>", _LFD_,
+                "          <span class=\"lg-sub rate-red\">", cpu80, "–", cpu100, "% CPU</span>", _LFD_,
+                "        </div>", _LFD_,
+                "      </div>", _LFD_,
+                "    </div>", _LFD_,
+                "    <div class=\"lg-track-labels\">", _LFD_,
+                "      <span class=\"lg-track-tag\">Left: Duration</span>", _LFD_,
+                "      <span class=\"lg-track-tag\">Right: CPU Load</span>", _LFD_,
+                "    </div>", _LFD_,
+                "  </div>", _LFD_
         );
     }
 
@@ -683,7 +740,7 @@ public final class SectionRenderer {
         if (null == text || text.isEmpty()) return 0;
         int count = 0;
         for (int i = 0; i < text.length(); i++) {
-            if (text.charAt(i) == '\n') {
+            if (text.charAt(i) == _LFD_) {
                 count++;
             }
         }

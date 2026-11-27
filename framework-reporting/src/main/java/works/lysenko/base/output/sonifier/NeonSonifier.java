@@ -27,6 +27,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Kinetic midnight-synthwave &amp; analog-modular telemetry sonifier ({@code neon}).
  * <p>
@@ -76,8 +78,10 @@ public final class NeonSonifier implements TreeSonifier {
             {0, 3, 7, 10, 13}  // Em(b9) pull back to F#
     };
 
-    // F# natural minor / Dorian hybrid melody scale (2 octaves from F#4 = 66)
+    // F# natural minor / Dorian hybrid melody scale (2 octaves from F#3 = 54)
     private static final int[] NEON_MELODY_SCALE = {0, 2, 3, 7, 9, 10, 12, 14, 15, 19, 22};
+    private static final int MIN_MELODY_MIDI = 49; // C#3 (~139 Hz)
+    private static final int MAX_MELODY_MIDI = 73; // C#5 (~554 Hz)
     // Sunrise clean finale: F#maj9 (F#3=54, C#4=61, G#4=68, A#4=70, F5=77)
     private static final int[] SUNRISE_FINALE_MIDI = {54, 61, 68, 70, 77};
     // Brooding regression finale: F#m(add9) (F#3=54, C#4=61, A4=69, G#4=68, C#5=73)
@@ -227,7 +231,7 @@ public final class NeonSonifier implements TreeSonifier {
                 && frame.length() > 0L;
     }
 
-    private static Map<Integer, List<NeonEvent>> composeNeonEvents(
+    static Map<Integer, List<NeonEvent>> composeNeonEvents(
             final List<File> frames,
             final int samplesPerFrame) throws IOException {
 
@@ -299,7 +303,7 @@ public final class NeonSonifier implements TreeSonifier {
                     deltas.add(new NodeDelta(node, prevExec, execDelta, statusWorsened, newNotice));
                     totalExecDelta += execDelta;
                 }
-                if ('F' == node.status() && !node.knownIssue()) {
+                if ('R' == node.status() || ('F' == node.status() && !node.knownIssue())) {
                     hadRawFailure = true;
                 }
             }
@@ -492,6 +496,50 @@ public final class NeonSonifier implements TreeSonifier {
                                     0.78,
                                     pan));
                         }
+                    } else if ('M' == node.status()) {
+                        // Warning-tier regression (soft rose-magenta): amber brass + opposite-pan ghostly tritone bell echo
+                        frameEvents.add(new NeonEvent(
+                                onset,
+                                warningDuration,
+                                VoiceKind.AMBER_BRASS,
+                                bassRoot + 22.0,
+                                WARNING_RAW_AMP * 0.92,
+                                0.80,
+                                pan));
+                        frameEvents.add(new NeonEvent(
+                                onset + NeonSynth.millisToSamples(120),
+                                noticeDuration,
+                                VoiceKind.CYAN_BELL,
+                                bassRoot + 30.0,
+                                WARNING_RAW_AMP * 0.72,
+                                0.88,
+                                clampPan(-pan)));
+                    } else if ('R' == node.status()) {
+                        // Failure-tier regression (vivid electric magenta): double-strike glitch + piercing laser tritone ping
+                        frameEvents.add(new NeonEvent(
+                                onset,
+                                failureDuration,
+                                VoiceKind.GLITCH_FAULT,
+                                bassRoot + 15.0,
+                                FAILURE_RAW_AMP * 1.08,
+                                0.96,
+                                pan * 0.5));
+                        frameEvents.add(new NeonEvent(
+                                onset + NeonSynth.millisToSamples(115),
+                                failureDuration * 3 / 4,
+                                VoiceKind.GLITCH_FAULT,
+                                bassRoot + 18.0,
+                                FAILURE_RAW_AMP * 0.72,
+                                0.94,
+                                clampPan(-pan * 0.6)));
+                        frameEvents.add(new NeonEvent(
+                                onset + NeonSynth.millisToSamples(45),
+                                laserDuration,
+                                VoiceKind.LASER_LEAD,
+                                bassRoot + 30.0,
+                                FAILURE_RAW_AMP * 0.60,
+                                0.95,
+                                clampPan(-pan * 0.4)));
                     } else if ('F' == node.status()) {
                         if (node.knownIssue()) {
                             if (frameIndex - lastKnownFailFrame >= KNOWN_ISSUE_COOLDOWN_FRAMES) {
@@ -628,7 +676,7 @@ public final class NeonSonifier implements TreeSonifier {
         return eventsByFrame;
     }
 
-    private static double resolveNeonPitch(
+    static double resolveNeonPitch(
             final int bassRoot,
             final int[] chordIntervals,
             final NodeState node,
@@ -637,12 +685,12 @@ public final class NeonSonifier implements TreeSonifier {
         final int degree = (node.col() * 2 + (int) Math.round(rowRatio * 4.0) + (pathHash % 3)) % NEON_MELODY_SCALE.length;
         final int chordAnchor = chordIntervals[(node.col() + pathHash) % chordIntervals.length];
         final int rawMidi = (0 == (pathHash % 3))
-                ? (bassRoot + 24 + chordAnchor)
-                : (66 + NEON_MELODY_SCALE[degree]);
-        // Keep melodies in an ergonomic synthwave register [61..85] (C#4..C#6)
+                ? (bassRoot + 12 + chordAnchor)
+                : (54 + NEON_MELODY_SCALE[degree]);
+        // Keep melodies in an ergonomic synthwave register [49..73] (C#3..C#5, lowered one octave)
         int midi = rawMidi;
-        while (midi < 61) midi += 12;
-        while (midi > 85) midi -= 12;
+        while (midi < MIN_MELODY_MIDI) midi += 12;
+        while (midi > MAX_MELODY_MIDI) midi -= 12;
         return midi;
     }
 
@@ -696,8 +744,10 @@ public final class NeonSonifier implements TreeSonifier {
 
     private static int statusSeverity(final char status) {
         return switch (status) {
-            case 'F' -> 4;
-            case 'U' -> 3;
+            case 'R' -> 6;
+            case 'F' -> 5;
+            case 'U' -> 4;
+            case 'M' -> 3;
             case 'W' -> 2;
             case 'I' -> 1;
             default -> 0;
@@ -739,11 +789,17 @@ public final class NeonSonifier implements TreeSonifier {
             final NodeData node,
             final int executions,
             final Map<NodeData, Boolean> childFailureCache) {
+        if (TreeHtml.hasRegression(node)) {
+            return 'R';
+        }
         if (TreeHtml.hasFailure(node)) {
             return 'F';
         }
         if (TreeHtml.hasChildFailure(node, childFailureCache)) {
             return 'U';
+        }
+        if (TreeHtml.hasRegressionWarning(node)) {
+            return 'M';
         }
         if (TreeHtml.hasWarning(node)) {
             return 'W';
@@ -886,10 +942,10 @@ public final class NeonSonifier implements TreeSonifier {
         for (final ParsedSvgCard c : cards) {
             final int col = Math.max(0, (int) Math.round((c.x - 40.0) / 270.0));
             final int rowTenths = Math.max(0, (int) Math.round(((c.y - 92.0) / 60.0) * 10.0));
-            final String baseKey = col + ":" + c.cleanName;
+            final String baseKey = s(col, ":", c.cleanName);
             final int dup = dupCounter.getOrDefault(baseKey, 0);
             dupCounter.put(baseKey, dup + 1);
-            final String path = (0 == dup) ? baseKey : (baseKey + "#" + dup);
+            final String path = (0 == dup) ? baseKey : s(baseKey, "#", dup);
             final char type = inferSvgType(c);
             final char status = inferSvgStatus(c.cssClasses, c.executions);
             final boolean knownIssue = c.cssClasses.contains("known-issue")
@@ -944,11 +1000,17 @@ public final class NeonSonifier implements TreeSonifier {
     }
 
     private static char inferSvgStatus(final String cssClasses, final int executions) {
+        if (cssClasses.contains("regression") && !cssClasses.contains("regression_warning")) {
+            return 'R';
+        }
         if (cssClasses.contains("failed") && !cssClasses.contains("child_failed")) {
             return 'F';
         }
         if (cssClasses.contains("child_failed")) {
             return 'U';
+        }
+        if (cssClasses.contains("regression_warning")) {
+            return 'M';
         }
         if (cssClasses.contains("warning")) {
             return 'W';
@@ -1063,7 +1125,7 @@ public final class NeonSonifier implements TreeSonifier {
         }
     }
 
-    private record NodeState(
+    record NodeState(
             String path,
             int col,
             int rowTenths,

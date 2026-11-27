@@ -161,7 +161,9 @@ details.log-section.configuring { grid-column: 2; background: var(--limbo-bg); b
 details.log-section.configuring:hover { opacity: 1; }
 details.log-section.test { grid-column: 1; background: var(--card-bg); border-left: 4px solid #22c55e; }
 details.log-section.test.warning { border-left-color: #f59e0b; }
+details.log-section.test.regression_warning { border-left-color: #f472b6; }
 details.log-section.test.failed { border-left-color: #ef4444; }
+details.log-section.test.regression { border-left-color: #e879f9; }
 details.log-section.limbo { grid-column: 2; background: var(--limbo-bg); border-left: 4px solid #475569; opacity: 0.85; }
 details.log-section.limbo:hover { opacity: 1; }
 body.hide-limbo details.log-section.limbo { display: none !important; }
@@ -179,11 +181,14 @@ summary::-webkit-details-marker { display: none; }
 .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; }
 .badge.passed { background: #14532d; color: #4ade80; border: 1px solid #22c55e; }
 .badge.warning { background: #14532d; color: #4ade80; border: 1px solid #22c55e; }
+.badge.regression_warning { background: #3b0d2c; color: #fbcfe8; border: 1px solid #f472b6; }
 .badge.notice { background: #14532d; color: #4ade80; border: 1px solid #22c55e; }
 .badge.failed { background: #7f1d1d; color: #fca5a5; border: 1px solid #ef4444; }
+.badge.regression { background: #4a044e; color: #fae8ff; border: 1px solid #e879f9; }
 .badge.neutral { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
 .badge.limbo { background: #1e293b; color: #94a3b8; border: 1px dashed #64748b; font-size: 10px; }
 .status-bullet-warning { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: #f59e0b; box-shadow: 0 0 4px rgba(245, 158, 11, 0.8); flex-shrink: 0; }
+.status-bullet-regression-warning { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: #f472b6; box-shadow: 0 0 5px rgba(244, 114, 182, 0.9); flex-shrink: 0; }
 .status-bullet-notice { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: #06b6d4; box-shadow: 0 0 4px rgba(6, 182, 212, 0.8); flex-shrink: 0; }
 .duration { color: #38bdf8; font-size: 12px; font-weight: 600; margin-left: 6px; font-family: ui-monospace, monospace; white-space: nowrap; flex-shrink: 0; }
 .duration.limbo-duration { color: #94a3b8; font-weight: normal; }
@@ -204,11 +209,15 @@ summary::-webkit-details-marker { display: none; }
 .log-section-body { display: flex; flex-direction: row; border-top: 1px solid var(--border); background: #070a10; }
 details.log-section.test .log-section-body { background: #06110a; }
 details.log-section.test.warning .log-section-body { background: #121005; }
+details.log-section.test.regression_warning .log-section-body { background: #170812; }
 details.log-section.test.failed .log-section-body { background: #170808; }
+details.log-section.test.regression .log-section-body { background: #1a061c; }
 .soundtrack-column { width: 56px; flex-shrink: 0; background: #05070c; border-right: 1px solid #1a2234; padding: 12px 0; user-select: none; display: flex; flex-direction: column; position: relative; }
 details.log-section.test .soundtrack-column { background: #040c07; border-color: #0b2413; }
 details.log-section.test.warning .soundtrack-column { background: #0c0a03; border-color: #24200b; }
+details.log-section.test.regression_warning .soundtrack-column { background: #12050e; border-color: #361228; }
 details.log-section.test.failed .soundtrack-column { background: #120505; border-color: #2b1111; }
+details.log-section.test.regression .soundtrack-column { background: #140417; border-color: #3b0d40; }
 .soundtrack-column::before { content: ''; position: absolute; top: 0; bottom: 0; left: 8px; width: 6px; background-image: radial-gradient(circle, #334155 35%, transparent 40%); background-size: 6px 19.2px; opacity: 0.5; }
 .soundtrack-track { margin-left: 18px; width: 34px; height: 100%; display: flex; flex-direction: column; }
 .st-row.e { width: 1px; opacity: 0.15; background: #ffffff; height: 18px; display: block; }
@@ -258,6 +267,8 @@ a.path-step { text-decoration: none; }
 .scen-pill { display: inline-flex; align-items: center; gap: 5px; text-decoration: none; cursor: pointer; transition: all 0.15s ease; }
 .scen-pill.passed { background: #052e16; border-color: #22c55e; color: #4ade80; }
 .scen-pill.failed { background: #450a0a; border-color: #ef4444; color: #fca5a5; }
+.scen-pill.regression { background: #4a044e; border-color: #e879f9; color: #fae8ff; }
+.scen-pill.regression_warning { background: #3b0d2c; border-color: #f472b6; color: #fbcfe8; }
 .scen-pill.warning { background: #052e16; border-color: #22c55e; color: #4ade80; }
 .scen-pill.notice { background: #052e16; border-color: #22c55e; color: #4ade80; }
 .scen-pill:hover { background: #334155; border-color: #38bdf8; color: #38bdf8; transform: translateY(-1px); }
@@ -272,6 +283,7 @@ a.path-step { text-decoration: none; }
 .result-plaque { padding: 12px 18px; border-radius: 8px; font-size: 13px; line-height: 1.6; font-weight: 600; word-break: break-word; white-space: pre-wrap; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4); border: 1px solid transparent; }
 .result-plaque.passed { background: #14532d; color: #4ade80; border-color: #22c55e; }
 .result-plaque.failed { background: #7f1d1d; color: #fca5a5; border-color: #ef4444; }
+.result-plaque.regression { background: #4a044e; color: #fae8ff; border-color: #e879f9; }
 .result-plaque.neutral { background: #1e293b; color: #cbd5e1; border-color: #475569; }
 .leaf-completion-chart { margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 .eta-debug-chart { margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
@@ -642,7 +654,7 @@ a.path-step { text-decoration: none; }
     document.getElementById('issuesBtn').classList.toggle('active', onlyIssues);
     document.querySelectorAll('details.log-section').forEach(d => {
       if (onlyIssues) {
-        if (d.classList.contains('failed') || d.classList.contains('warning') || d.classList.contains('notice')) { d.classList.remove('hidden'); d.open = true; } else { d.classList.add('hidden'); }
+        if (d.classList.contains('regression') || d.classList.contains('failed') || d.classList.contains('regression_warning') || d.classList.contains('warning') || d.classList.contains('notice')) { d.classList.remove('hidden'); d.open = true; } else { d.classList.add('hidden'); }
       } else { if (!hideLimbo || !d.classList.contains('limbo')) d.classList.remove('hidden'); }
     });
   }
@@ -761,7 +773,9 @@ a.path-step { text-decoration: none; }
           if (titleEl && titleEl.innerText) sectionName = titleEl.innerText.trim();
           const badgeEl = section.querySelector('.badge');
           if (badgeEl) {
-            if (badgeEl.classList.contains('failed')) status = 'failed';
+            if (badgeEl.classList.contains('regression')) status = 'regression';
+            else if (badgeEl.classList.contains('failed')) status = 'failed';
+            else if (badgeEl.classList.contains('regression_warning')) status = 'regression_warning';
             else if (badgeEl.classList.contains('warning')) status = 'warning';
             else if (badgeEl.classList.contains('passed')) status = 'passed';
           }
@@ -1103,9 +1117,14 @@ a.path-step { text-decoration: none; }
         testArea += ` L ${x.toFixed(2)} ${(mt + ph).toFixed(2)} Z`;
       }
 
-      if (test.st === 'failed') {
+      if (test.st === 'regression') {
+        markers += `  <circle cx="${x.toFixed(2)}" cy="${yT.toFixed(2)}" r="5" fill="#e879f9" stroke="#ffffff" stroke-width="1.5" />
+  <circle cx="${x.toFixed(2)}" cy="${yT.toFixed(2)}" r="8" fill="none" stroke="#e879f9" stroke-width="1.2" opacity="0.75" />\n`;
+      } else if (test.st === 'failed') {
         markers += `  <circle cx="${x.toFixed(2)}" cy="${yT.toFixed(2)}" r="5" fill="#ef4444" stroke="#ffffff" stroke-width="1.5" />
   <circle cx="${x.toFixed(2)}" cy="${yT.toFixed(2)}" r="8" fill="none" stroke="#ef4444" stroke-width="1" opacity="0.6" />\n`;
+      } else if (test.st === 'regression_warning') {
+        markers += `  <circle cx="${x.toFixed(2)}" cy="${yT.toFixed(2)}" r="4.5" fill="#f472b6" stroke="#ffffff" stroke-width="1.5" />\n`;
       } else if (test.st === 'warning') {
         markers += `  <circle cx="${x.toFixed(2)}" cy="${yT.toFixed(2)}" r="4" fill="#f59e0b" stroke="#ffffff" stroke-width="1.5" />\n`;
       }
@@ -1435,7 +1454,11 @@ a.path-step { text-decoration: none; }
 
     const tt = document.getElementById('lgTooltip');
     if (tt) {
-      const stColor = d.st === 'passed' ? '#4ade80' : d.st === 'warning' ? '#f59e0b' : '#ef4444';
+      const stColor = d.st === 'passed' ? '#4ade80'
+        : d.st === 'regression' ? '#e879f9'
+        : d.st === 'regression_warning' ? '#f472b6'
+        : d.st === 'warning' ? '#f59e0b'
+        : '#ef4444';
       let html = `<div class="lg-tt-title"><span class="lg-tt-num">${d.t}</span> <span class="lg-tt-status" style="color:${stColor}">● ${d.st}</span></div>`;
       if (d.leaf) {
         html += `<div class="lg-tt-row"><span class="lg-tt-lbl">Scenario:</span> <b style="color:#a855f7;word-break:break-all;">${d.leaf}</b></div>`;

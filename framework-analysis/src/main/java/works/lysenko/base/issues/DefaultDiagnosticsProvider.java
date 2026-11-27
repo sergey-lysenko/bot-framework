@@ -50,6 +50,7 @@ public final class DefaultDiagnosticsProvider implements _DiagnosticsProvider {
     @Override
     public void saveRunSnapshots() {
         KnownIssuesLoader.saveRunKnownIssues();
+        KnownIssuesLoader.saveRunFixedIssues();
         ExpectedResponsesLoader.saveRunExpectedResponses();
     }
 }

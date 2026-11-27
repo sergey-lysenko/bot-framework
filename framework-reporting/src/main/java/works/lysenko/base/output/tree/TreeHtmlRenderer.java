@@ -80,6 +80,48 @@ public record TreeHtmlRenderer() {
         return sb.toString();
     }
 
+    /**
+     * Renders matched fixed issues (regressions) into an HTML fragment for the node details panel.
+     *
+     * @param regressions iterable of matched fixed issues associated with the node
+     * @return rendered HTML string
+     */
+    public static String renderRegressionsHtml(final Iterable<KnownIssue> regressions) {
+        final StringBuilder sb = new StringBuilder(128);
+        if (isNotNull(regressions)) {
+            for (final KnownIssue fi : regressions) {
+                sb.append("<div style=\"margin-bottom:8px;\">");
+                if (hasText(fi.title())) {
+                    sb.append(s("<div style=\"font-weight:600; color:#fae8ff;\">", escapeHtml(fi.title()), "</div>"));
+                }
+                if (hasText(fi.description())) {
+                    sb.append(s("<div style=\"color:#f5d0fe; font-size:11px; margin-top:2px;\">", escapeHtml(fi.description()), "</div>"));
+                }
+                if (hasText(fi.resolvedAt()) || hasText(fi.verifiedInRun())) {
+                    sb.append("<div style=\"color:#e879f9; font-size:10px; margin-top:3px;\">");
+                    if (hasText(fi.resolvedAt())) {
+                        sb.append("Resolved: ").append(escapeHtml(fi.resolvedAt()));
+                    }
+                    if (hasText(fi.resolvedAt()) && hasText(fi.verifiedInRun())) {
+                        sb.append(" · ");
+                    }
+                    if (hasText(fi.verifiedInRun())) {
+                        sb.append("Verified in run: ").append(escapeHtml(fi.verifiedInRun()));
+                    }
+                    sb.append("</div>");
+                }
+                if (hasText(fi.link())) {
+                    final String safeLink = escapeHtml(fi.link());
+                    sb.append(s("<div style=\"margin-top:4px;\"><a href=\"", safeLink,
+                            "\" target=\"_blank\" style=\"color:#f0abfc; text-decoration:underline; font-size:11px;\">",
+                            safeLink, "</a></div>"));
+                }
+                sb.append("</div>");
+            }
+        }
+        return sb.toString();
+    }
+
     private static boolean hasText(final String value) {
         return isNotNull(value) && !value.isBlank();
     }
@@ -231,7 +273,9 @@ public record TreeHtmlRenderer() {
             final TreeHtml.NodeData targetNode,
             final Map<TreeHtml.NodeData, Boolean> childFailureCache) {
         final String visitedClass;
-        if (TreeLayoutComputer.hasFailure(targetNode)) {
+        if (TreeHtml.hasRegression(targetNode)) {
+            visitedClass = "connector regression";
+        } else if (TreeLayoutComputer.hasFailure(targetNode)) {
             visitedClass = "connector failed";
         } else if (TreeLayoutComputer.hasChildFailure(targetNode, childFailureCache)) {
             visitedClass = "connector child_failed";
@@ -243,7 +287,9 @@ public record TreeHtmlRenderer() {
 
     private static String resolvePassingEdgeClass(final TreeHtml.NodeData targetNode) {
         final String passingClass;
-        if (TreeHtml.hasWarning(targetNode)) {
+        if (TreeHtml.hasRegressionWarning(targetNode)) {
+            passingClass = "connector regression_warning";
+        } else if (TreeHtml.hasWarning(targetNode)) {
             passingClass = "connector warning";
         } else if (TreeHtml.hasNotice(targetNode)) {
             passingClass = "connector notice";
@@ -300,7 +346,7 @@ public record TreeHtmlRenderer() {
         final String cleanLabel = cleanNodeLabel(node.label());
         final String cleanGroup = cleanNodeLabel(node.group());
         if (hasText(cleanGroup) && !cleanLabel.startsWith(cleanGroup) && !"tests".equalsIgnoreCase(cleanGroup)) {
-            return cleanGroup + "." + cleanLabel;
+            return s(cleanGroup, ".", cleanLabel);
         }
         return cleanLabel;
     }
@@ -311,20 +357,32 @@ public record TreeHtmlRenderer() {
         final int eventCount = (isNotNull(res) && isNotNull(res.getEvents())) ? res.getEvents().size() : 0;
         final String eventDetails = formatEventDetails(res);
         final String kiHtml = renderKnownIssuesHtml(node.knownIssues());
+        final String regHtml = renderRegressionsHtml(node.fixedIssues());
         final String safeLabel = node.label().replace("<", "&lt;").replace(">", "&gt;");
         final String scenPath = computeScenarioPath(node);
         final String execLinksHtml = renderExecLinksHtml(node, scenPath, execs);
 
-        final Map<String, Object> nodeInfo = new LinkedHashMap<>(10);
+        final StringBuilder status = new StringBuilder(visualNode.badgeText());
+        if (TreeHtml.hasRegression(node)) {
+            status.append(" (Regression)");
+        } else if (TreeHtml.hasRegressionWarning(node)) {
+            status.append(" (Regression Warning)");
+        }
+        if (visualNode.hasKnownIssues()) {
+            status.append(_SPACE_).append(e(ROUND, b(c(KNOWN), c(ISSUE))));
+        }
+
+        final Map<String, Object> nodeInfo = new LinkedHashMap<>(11);
         nodeInfo.put("name", safeLabel);
         nodeInfo.put("group", node.group());
         nodeInfo.put("scenarioPath", scenPath);
-        nodeInfo.put("status", s(visualNode.badgeText(), (visualNode.hasKnownIssues() ? s(_SPACE_, e(ROUND, b(c(KNOWN), c(ISSUE)))) : "")));
+        nodeInfo.put("status", status.toString());
         nodeInfo.put("exec", execs);
         nodeInfo.put("execLinksHtml", execLinksHtml);
         nodeInfo.put(EVENTS, eventCount);
         nodeInfo.put(DETAILS, eventDetails);
         nodeInfo.put("kiHtml", kiHtml);
+        nodeInfo.put("regHtml", regHtml);
         return nodeInfo;
     }
 

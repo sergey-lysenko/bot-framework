@@ -19,6 +19,7 @@ import static works.lysenko.base.output.loghtml.LogFormatting.formatCompletionMo
 import static works.lysenko.base.output.loghtml.LogFormatting.getNiceCeil;
 import static works.lysenko.base.output.loghtml.LogFormatting.logScaleY;
 import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.spec.Symbols._LFD_;
 
 /**
  * Renderer for timeline bar charts, interactive SVG line graphs, and client-side telemetry scripts.
@@ -54,32 +55,39 @@ public final class TimelineRenderer {
         for (final TelemetryItem test : testData) {
             final int tPct = tMax > 0 ? Math.max(6, (int) Math.round((test.sec / tMax) * 100)) : 6;
             final String tValStr = String.format(Locale.ROOT, "%.2fs", test.sec);
-            final String tColor = "passed".equals(test.status) ? "#22c55e" : "warning".equals(test.status) ? "#f59e0b" : "#ef4444";
+            final String tColor = "passed".equals(test.status) ? "#22c55e"
+                    : "regression".equals(test.status) ? "#e879f9"
+                    : "regression_warning".equals(test.status) ? "#f472b6"
+                    : "warning".equals(test.status) ? "#f59e0b"
+                    : "#ef4444";
 
             final String limboHtml;
             final TelemetryItem limbo = limboByPrevTest.get(test.testNum);
             if (null != limbo) {
                 final int lPct = lMax > 0 ? Math.max(6, (int) Math.round((limbo.ms / lMax) * 100)) : 6;
-                final String lValStr = Math.round(limbo.ms) + "ms";
-                final String lColor = ("passed".equals(limbo.status) || "neutral".equals(limbo.status)) ? "#64748b" : ("warning".equals(limbo.status) ? "#f59e0b" : "#ef4444");
+                final String lValStr = s(Math.round(limbo.ms), "ms");
+                final String lColor = ("passed".equals(limbo.status) || "neutral".equals(limbo.status)) ? "#64748b"
+                        : "regression".equals(limbo.status) ? "#e879f9"
+                        : "regression_warning".equals(limbo.status) ? "#f472b6"
+                        : ("warning".equals(limbo.status) ? "#f59e0b" : "#ef4444");
                 limboHtml = s(
                         "  <div class=\"bar-col limbo\" onclick=\"focusSection('", limbo.title, "')\" title=\"", limbo.title, ": ", lValStr, "\">",
                         "<div class=\"bar-val\">", lValStr, "</div>",
                         "<div class=\"bar-track\"><div class=\"bar-fill\" style=\"height: ", lPct, "%; background: ", lColor, ";\"></div></div>",
-                        "<div class=\"bar-lbl\">", limbo.label, "</div></div>\n"
+                        "<div class=\"bar-lbl\">", limbo.label, "</div></div>", _LFD_
                 );
             } else {
                 limboHtml = "";
             }
 
             sb.append(s(
-                    "<div class=\"bar-pair\">\n",
+                    "<div class=\"bar-pair\">", _LFD_,
                     "  <div class=\"bar-col test\" onclick=\"focusSection('", test.title, "')\" title=\"", test.title, ": ", tValStr, "\">",
                     "<div class=\"bar-val\">", tValStr, "</div>",
                     "<div class=\"bar-track\"><div class=\"bar-fill\" style=\"height: ", tPct, "%; background: ", tColor, ";\"></div></div>",
-                    "<div class=\"bar-lbl\">", test.label, "</div></div>\n",
+                    "<div class=\"bar-lbl\">", test.label, "</div></div>", _LFD_,
                     limboHtml,
-                    "</div>\n"
+                    "</div>", _LFD_
             ));
         }
 
@@ -101,8 +109,10 @@ public final class TimelineRenderer {
         final int pct = maxSec > 0 ? Math.clamp(Math.round((item.sec / maxSec) * 100), 6, 100) : 6;
         final String valStr = (item.sec >= 1.0)
                 ? String.format(Locale.ROOT, "%.2fs", item.sec)
-                : Math.round(item.ms) + "ms";
-        final String color = "failed".equals(item.status) ? "#ef4444"
+                : s(Math.round(item.ms), "ms");
+        final String color = "regression".equals(item.status) ? "#e879f9"
+                : "failed".equals(item.status) ? "#ef4444"
+                : "regression_warning".equals(item.status) ? "#f472b6"
                 : "warning".equals(item.status) ? "#f59e0b"
                 : "passed".equals(item.status) ? "#22c55e"
                 : "config".equals(extraClass) ? "#64748b"
@@ -112,7 +122,7 @@ public final class TimelineRenderer {
                 item.title, ": ", valStr, "\">",
                 "<div class=\"bar-val\">", valStr, "</div>",
                 "<div class=\"bar-track\"><div class=\"bar-fill\" style=\"height: ", pct, "%; background: ", color, ";\"></div></div>",
-                "<div class=\"bar-lbl\">", item.label, "</div></div>\n"
+                "<div class=\"bar-lbl\">", item.label, "</div></div>", _LFD_
         );
     }
 
@@ -126,10 +136,10 @@ public final class TimelineRenderer {
         final String activeLine = isLineDefault ? " active" : "";
         final String activeBars = isLineDefault ? "" : " active";
         return s(
-                "<div class=\"chart-view-toggle\">\n",
-                "  <button type=\"button\" id=\"btnViewLine\" class=\"chart-toggle-btn", activeLine, "\" onclick=\"switchTimelineView('line')\">Line</button>\n",
-                "  <button type=\"button\" id=\"btnViewBars\" class=\"chart-toggle-btn", activeBars, "\" onclick=\"switchTimelineView('bars')\">Bars</button>\n",
-                "</div>\n"
+                "<div class=\"chart-view-toggle\">", _LFD_,
+                "  <button type=\"button\" id=\"btnViewLine\" class=\"chart-toggle-btn", activeLine, "\" onclick=\"switchTimelineView('line')\">Line</button>", _LFD_,
+                "  <button type=\"button\" id=\"btnViewBars\" class=\"chart-toggle-btn", activeBars, "\" onclick=\"switchTimelineView('bars')\">Bars</button>", _LFD_,
+                "</div>", _LFD_
         );
     }
 
@@ -161,13 +171,13 @@ public final class TimelineRenderer {
         final boolean etaLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_ETA_DEBUG.get());
         final boolean resLog = Boolean.TRUE.equals(PropEnum._TEST_REPORT_LOG_SCALE_CPU_DEBUG.get());
 
-        sb.append(s("  window.timelineScaleMode = '", timelineLog ? "log" : "linear", "';\n"));
-        sb.append(s("  window.leafLeftScaleMode = '", leafLog ? "log" : "linear", "';\n"));
-        sb.append(s("  window.leafRightScaleMode = '", leafLog ? "log" : "linear", "';\n"));
-        sb.append(s("  window.etaLeftScaleMode = '", etaLog ? "log" : "linear", "';\n"));
-        sb.append(s("  window.etaRightScaleMode = '", etaLog ? "log" : "linear", "';\n"));
-        sb.append(s("  window.resLeftScaleMode = '", resLog ? "log" : "linear", "';\n"));
-        sb.append(s("  window.resRightScaleMode = '", resLog ? "log" : "linear", "';\n"));
+        sb.append(s("  window.timelineScaleMode = '", timelineLog ? "log" : "linear", "';", _LFD_));
+        sb.append(s("  window.leafLeftScaleMode = '", leafLog ? "log" : "linear", "';", _LFD_));
+        sb.append(s("  window.leafRightScaleMode = '", leafLog ? "log" : "linear", "';", _LFD_));
+        sb.append(s("  window.etaLeftScaleMode = '", etaLog ? "log" : "linear", "';", _LFD_));
+        sb.append(s("  window.etaRightScaleMode = '", etaLog ? "log" : "linear", "';", _LFD_));
+        sb.append(s("  window.resLeftScaleMode = '", resLog ? "log" : "linear", "';", _LFD_));
+        sb.append(s("  window.resRightScaleMode = '", resLog ? "log" : "linear", "';", _LFD_));
 
         if (!testData.isEmpty()) {
             final Map<Integer, String> leafMap = new HashMap<>();
@@ -183,10 +193,10 @@ public final class TimelineRenderer {
             final double tCeil = getNiceCeil(tMax > 0 ? tMax : 1.0);
             final double lCeil = hasLimbo ? getNiceCeil(lMax) : 1.0;
 
-            sb.append(s("  window.lgTCeil = ", String.format(Locale.ROOT, "%.2f", tCeil), ";\n"));
-            sb.append(s("  window.lgLCeil = ", String.format(Locale.ROOT, "%.2f", lCeil), ";\n"));
-            sb.append(s("  window.lgTAvg = ", String.format(Locale.ROOT, "%.2f", tAvg), ";\n"));
-            sb.append(s("  window.lgHasLimbo = ", hasLimbo, ";\n"));
+            sb.append(s("  window.lgTCeil = ", String.format(Locale.ROOT, "%.2f", tCeil), ";", _LFD_));
+            sb.append(s("  window.lgLCeil = ", String.format(Locale.ROOT, "%.2f", lCeil), ";", _LFD_));
+            sb.append(s("  window.lgTAvg = ", String.format(Locale.ROOT, "%.2f", tAvg), ";", _LFD_));
+            sb.append(s("  window.lgHasLimbo = ", hasLimbo, ";", _LFD_));
             sb.append("  window.lgData = [");
             for (int i = 0; i < testData.size(); i++) {
                 if (i > 0) sb.append(",");
@@ -204,7 +214,7 @@ public final class TimelineRenderer {
                         ",\"st\":\"", escapeJson(t.status), "\"}"
                 ));
             }
-            sb.append("];\n");
+            sb.append("];").append(_LFD_);
         }
 
         if (null != completions && !completions.isEmpty()) {
@@ -227,9 +237,9 @@ public final class TimelineRenderer {
             final double ceilIntervalSec = getNiceCeil(maxIntervalMs > 0 ? maxIntervalMs / 1000.0 : 1.0);
             final double ceilProjectedSec = getNiceCeil(maxProjectedMs > 0 ? maxProjectedMs / 1000.0 : 1.0);
 
-            sb.append(s("  window.leafCeil = ", String.format(Locale.ROOT, "%.3f", ceilSec), ";\n"));
-            sb.append(s("  window.leafCeilInterval = ", String.format(Locale.ROOT, "%.3f", ceilIntervalSec), ";\n"));
-            sb.append(s("  window.leafCeilProjected = ", String.format(Locale.ROOT, "%.3f", ceilProjectedSec), ";\n"));
+            sb.append(s("  window.leafCeil = ", String.format(Locale.ROOT, "%.3f", ceilSec), ";", _LFD_));
+            sb.append(s("  window.leafCeilInterval = ", String.format(Locale.ROOT, "%.3f", ceilIntervalSec), ";", _LFD_));
+            sb.append(s("  window.leafCeilProjected = ", String.format(Locale.ROOT, "%.3f", ceilProjectedSec), ";", _LFD_));
             sb.append("  window.leafData = [");
             long pAt = 0L;
             long pRoundAt = 0L;
@@ -254,8 +264,8 @@ public final class TimelineRenderer {
                 final String corrProjStr = formatCompletionDuration(corrProjMs);
                 final String momentStr = formatCompletionMoment(c.atMillis);
                 final String fullLabel = (c.etaMs > 0L)
-                        ? c.leaf + " @ " + momentStr + " (+" + intervalStr + ", Projected: " + projStr + ")"
-                        : c.leaf + " @ " + momentStr + " (+" + intervalStr + ")";
+                        ? s(c.leaf, " @ ", momentStr, " (+", intervalStr, ", Projected: ", projStr, ")")
+                        : s(c.leaf, " @ ", momentStr, " (+", intervalStr, ")");
                 final String testTitle = (c.testNum > 0) ? s("Test #", c.testNum) : s("Test #", i + 1);
                 sb.append(s(
                         "{\"n\":", i + 1,
@@ -278,7 +288,7 @@ public final class TimelineRenderer {
                         ",\"label\":\"", escapeJson(fullLabel), "\"}"
                 ));
             }
-            sb.append("];\n");
+            sb.append("];").append(_LFD_);
         }
 
         if (null != etaDebugItems && !etaDebugItems.isEmpty()) {
@@ -294,9 +304,9 @@ public final class TimelineRenderer {
             final double ceilInstabilityPct = getNiceCeil(maxInstabilityPct > 0 ? maxInstabilityPct : 10.0);
             final double ceilErrorPct = Math.min(100000.0, getNiceCeil(maxErrorPct > 0 ? maxErrorPct : 10.0));
 
-            sb.append(s("  window.etaDebugCeilInstability = ", String.format(Locale.ROOT, "%.3f", ceilInstabilityPct), ";\n"));
-            sb.append(s("  window.etaDebugCeilError = ", String.format(Locale.ROOT, "%.3f", ceilErrorPct), ";\n"));
-            sb.append(s("  window.etaDebugCeil = ", String.format(Locale.ROOT, "%.3f", Math.max(ceilInstabilityPct, ceilErrorPct)), ";\n"));
+            sb.append(s("  window.etaDebugCeilInstability = ", String.format(Locale.ROOT, "%.3f", ceilInstabilityPct), ";", _LFD_));
+            sb.append(s("  window.etaDebugCeilError = ", String.format(Locale.ROOT, "%.3f", ceilErrorPct), ";", _LFD_));
+            sb.append(s("  window.etaDebugCeil = ", String.format(Locale.ROOT, "%.3f", Math.max(ceilInstabilityPct, ceilErrorPct)), ";", _LFD_));
             sb.append("  window.etaDebugData = [");
             for (int i = 0; i < etaDebugItems.size(); i++) {
                 if (i > 0) sb.append(",");
@@ -319,7 +329,7 @@ public final class TimelineRenderer {
                         ",\"predStr\":\"", escapeJson(predStr), "\"}"
                 ));
             }
-            sb.append("];\n");
+            sb.append("];").append(_LFD_);
         }
 
         if (null != resourceItems && !resourceItems.isEmpty()) {
@@ -337,7 +347,7 @@ public final class TimelineRenderer {
                         ",\"threads\":", item.threads, "}"
                 ));
             }
-            sb.append("];\n");
+            sb.append("];").append(_LFD_);
         }
 
         return sb.toString();
@@ -383,29 +393,29 @@ public final class TimelineRenderer {
 
         // Legend
         sb.append(s(
-                "<div class=\"line-graph-legend\">\n",
-                "  <span class=\"lg-legend-item\"><span class=\"lg-line-sample test-line\"></span> Test Time (s)</span>\n",
-                "  <div class=\"chart-view-toggle\">\n",
-                "    <button type=\"button\" id=\"btnTimelineLog\" class=\"chart-toggle-btn", activeLog, "\" onclick=\"switchTimelineScale('log')\">Log</button>\n",
-                "    <button type=\"button\" id=\"btnTimelineLinear\" class=\"chart-toggle-btn", activeLinear, "\" onclick=\"switchTimelineScale('linear')\">Linear</button>\n",
-                "  </div>\n",
-                hasLimbo ? "  <span class=\"lg-legend-item lg-legend-limbo\"><span class=\"lg-line-sample limbo-line\"></span> Limbo (ms)</span>\n" : "",
-                tAvg > 0 ? String.format(Locale.ROOT, "  <span class=\"lg-legend-item\"><span class=\"lg-dash-sample\"></span> Avg: %.2fs</span>\n", tAvg) : "",
-                "  <span class=\"lg-legend-item\"><span class=\"lg-dot-sample fail\"></span> Failed</span>\n",
-                "  <span class=\"lg-legend-item\"><span class=\"lg-dot-sample warn\"></span> Warning</span>\n",
-                "</div>\n",
-                "<div class=\"line-graph-svg-wrap\">\n",
-                "<svg class=\"timeline-line-svg\" viewBox=\"0 0 1000 240\">\n",
-                "  <defs>\n",
-                "    <linearGradient id=\"testAreaGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n",
-                "      <stop offset=\"0%\" stop-color=\"#38bdf8\" stop-opacity=\"0.35\"/>\n",
-                "      <stop offset=\"100%\" stop-color=\"#38bdf8\" stop-opacity=\"0.02\"/>\n",
-                "    </linearGradient>\n",
-                "    <linearGradient id=\"limboAreaGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n",
-                "      <stop offset=\"0%\" stop-color=\"#a855f7\" stop-opacity=\"0.25\"/>\n",
-                "      <stop offset=\"100%\" stop-color=\"#a855f7\" stop-opacity=\"0.02\"/>\n",
-                "    </linearGradient>\n",
-                "  </defs>\n"
+                "<div class=\"line-graph-legend\">", _LFD_,
+                "  <span class=\"lg-legend-item\"><span class=\"lg-line-sample test-line\"></span> Test Time (s)</span>", _LFD_,
+                "  <div class=\"chart-view-toggle\">", _LFD_,
+                "    <button type=\"button\" id=\"btnTimelineLog\" class=\"chart-toggle-btn", activeLog, "\" onclick=\"switchTimelineScale('log')\">Log</button>", _LFD_,
+                "    <button type=\"button\" id=\"btnTimelineLinear\" class=\"chart-toggle-btn", activeLinear, "\" onclick=\"switchTimelineScale('linear')\">Linear</button>", _LFD_,
+                "  </div>", _LFD_,
+                hasLimbo ? s("  <span class=\"lg-legend-item lg-legend-limbo\"><span class=\"lg-line-sample limbo-line\"></span> Limbo (ms)</span>", _LFD_) : "",
+                tAvg > 0 ? String.format(Locale.ROOT, s("  <span class=\"lg-legend-item\"><span class=\"lg-dash-sample\"></span> Avg: %.2fs</span>", _LFD_), tAvg) : "",
+                "  <span class=\"lg-legend-item\"><span class=\"lg-dot-sample fail\"></span> Failed</span>", _LFD_,
+                "  <span class=\"lg-legend-item\"><span class=\"lg-dot-sample warn\"></span> Warning</span>", _LFD_,
+                "</div>", _LFD_,
+                "<div class=\"line-graph-svg-wrap\">", _LFD_,
+                "<svg class=\"timeline-line-svg\" viewBox=\"0 0 1000 240\">", _LFD_,
+                "  <defs>", _LFD_,
+                "    <linearGradient id=\"testAreaGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">", _LFD_,
+                "      <stop offset=\"0%\" stop-color=\"#38bdf8\" stop-opacity=\"0.35\"/>", _LFD_,
+                "      <stop offset=\"100%\" stop-color=\"#38bdf8\" stop-opacity=\"0.02\"/>", _LFD_,
+                "    </linearGradient>", _LFD_,
+                "    <linearGradient id=\"limboAreaGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">", _LFD_,
+                "      <stop offset=\"0%\" stop-color=\"#a855f7\" stop-opacity=\"0.25\"/>", _LFD_,
+                "      <stop offset=\"100%\" stop-color=\"#a855f7\" stop-opacity=\"0.02\"/>", _LFD_,
+                "    </linearGradient>", _LFD_,
+                "  </defs>", _LFD_
         ));
 
         // Horizontal grid lines and Y-axis labels
@@ -417,15 +427,15 @@ public final class TimelineRenderer {
             final double y = (marginTop + plotH) - ratio * plotH;
             final double tVal = isLog ? ((ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logTCeil) - 1.0) : ratio * tCeil;
             sb.append(String.format(Locale.ROOT,
-                    "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.06)\" stroke-dasharray=\"3,3\" />\n",
+                    s("  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.06)\" stroke-dasharray=\"3,3\" />", _LFD_),
                     marginLeft, y, marginLeft + plotW, y));
             sb.append(String.format(Locale.ROOT,
-                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"end\" fill=\"#64748b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%.1fs</text>\n",
+                    s("  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"end\" fill=\"#64748b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%.1fs</text>", _LFD_),
                     marginLeft - 8, y + 3.5, tVal));
             if (hasLimbo) {
                 final double lVal = isLog ? ((ratio == 0.0) ? 0.0 : Math.pow(10, ratio * logLCeil) - 1.0) : ratio * lCeil;
                 sb.append(String.format(Locale.ROOT,
-                        "  <text class=\"lg-limbo-series\" x=\"%.1f\" y=\"%.1f\" text-anchor=\"start\" fill=\"#c084fc\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%dms</text>\n",
+                        s("  <text class=\"lg-limbo-series\" x=\"%.1f\" y=\"%.1f\" text-anchor=\"start\" fill=\"#c084fc\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%dms</text>", _LFD_),
                         marginLeft + plotW + 8, y + 3.5, Math.round(lVal)));
             }
         }
@@ -446,10 +456,10 @@ public final class TimelineRenderer {
             final TelemetryItem item = testData.get(idx);
             final double x = marginLeft + (N > 1 ? (double) idx / (N - 1) * plotW : plotW / 2.0);
             sb.append(String.format(Locale.ROOT,
-                    "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.15)\" />\n",
+                    s("  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"rgba(255,255,255,0.15)\" />", _LFD_),
                     x, marginTop + plotH, x, marginTop + plotH + 4));
             sb.append(String.format(Locale.ROOT,
-                    "  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>\n",
+                    s("  <text x=\"%.1f\" y=\"%.1f\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"10\" font-family=\"ui-monospace, monospace\">%s</text>", _LFD_),
                     x, height - 10, item.label));
         }
 
@@ -459,7 +469,7 @@ public final class TimelineRenderer {
                     ? logScaleY(tAvg, tCeil, marginTop, plotH)
                     : (marginTop + plotH) - (tAvg / tCeil) * plotH;
             sb.append(String.format(Locale.ROOT,
-                    "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"#0284c7\" stroke-dasharray=\"5,4\" stroke-width=\"1.2\" opacity=\"0.75\" />\n",
+                    s("  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"#0284c7\" stroke-dasharray=\"5,4\" stroke-width=\"1.2\" opacity=\"0.75\" />", _LFD_),
                     marginLeft, yAvg, marginLeft + plotW, yAvg));
         }
 
@@ -507,43 +517,54 @@ public final class TimelineRenderer {
                 testArea.append(String.format(Locale.ROOT, " L %.2f %.2f Z", x, marginTop + plotH));
             }
 
-            if ("failed".equals(test.status)) {
+            if ("regression".equals(test.status)) {
                 markers.append(String.format(Locale.ROOT,
-                        "  <circle cx=\"%.2f\" cy=\"%.2f\" r=\"5\" fill=\"#ef4444\" stroke=\"#ffffff\" stroke-width=\"1.5\" />\n",
+                        s("  <circle cx=\"%.2f\" cy=\"%.2f\" r=\"5\" fill=\"#e879f9\" stroke=\"#ffffff\" stroke-width=\"1.5\" />", _LFD_),
                         x, yT));
                 markers.append(String.format(Locale.ROOT,
-                        "  <circle cx=\"%.2f\" cy=\"%.2f\" r=\"8\" fill=\"none\" stroke=\"#ef4444\" stroke-width=\"1\" opacity=\"0.6\" />\n",
+                        s("  <circle cx=\"%.2f\" cy=\"%.2f\" r=\"8\" fill=\"none\" stroke=\"#e879f9\" stroke-width=\"1.2\" opacity=\"0.75\" />", _LFD_),
+                        x, yT));
+            } else if ("failed".equals(test.status)) {
+                markers.append(String.format(Locale.ROOT,
+                        s("  <circle cx=\"%.2f\" cy=\"%.2f\" r=\"5\" fill=\"#ef4444\" stroke=\"#ffffff\" stroke-width=\"1.5\" />", _LFD_),
+                        x, yT));
+                markers.append(String.format(Locale.ROOT,
+                        s("  <circle cx=\"%.2f\" cy=\"%.2f\" r=\"8\" fill=\"none\" stroke=\"#ef4444\" stroke-width=\"1\" opacity=\"0.6\" />", _LFD_),
+                        x, yT));
+            } else if ("regression_warning".equals(test.status)) {
+                markers.append(String.format(Locale.ROOT,
+                        s("  <circle cx=\"%.2f\" cy=\"%.2f\" r=\"4.5\" fill=\"#f472b6\" stroke=\"#ffffff\" stroke-width=\"1.5\" />", _LFD_),
                         x, yT));
             } else if ("warning".equals(test.status)) {
                 markers.append(String.format(Locale.ROOT,
-                        "  <circle cx=\"%.2f\" cy=\"%.2f\" r=\"4\" fill=\"#f59e0b\" stroke=\"#ffffff\" stroke-width=\"1.5\" />\n",
+                        s("  <circle cx=\"%.2f\" cy=\"%.2f\" r=\"4\" fill=\"#f59e0b\" stroke=\"#ffffff\" stroke-width=\"1.5\" />", _LFD_),
                         x, yT));
             }
         }
 
         if (hasLimbo) {
             sb.append(s(
-                    "  <g class=\"lg-limbo-series\">\n",
-                    "    <path d=\"", limboArea, "\" fill=\"url(#limboAreaGrad)\" />\n",
-                    "    <path d=\"", limboPath, "\" fill=\"none\" stroke=\"#a855f7\" stroke-width=\"1.5\" opacity=\"0.7\" />\n",
-                    "  </g>\n"
+                    "  <g class=\"lg-limbo-series\">", _LFD_,
+                    "    <path d=\"", limboArea, "\" fill=\"url(#limboAreaGrad)\" />", _LFD_,
+                    "    <path d=\"", limboPath, "\" fill=\"none\" stroke=\"#a855f7\" stroke-width=\"1.5\" opacity=\"0.7\" />", _LFD_,
+                    "  </g>", _LFD_
             ));
         }
         sb.append(s(
-                "  <path d=\"", testArea, "\" fill=\"url(#testAreaGrad)\" />\n",
-                "  <path d=\"", testPath, "\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"2\" />\n",
+                "  <path d=\"", testArea, "\" fill=\"url(#testAreaGrad)\" />", _LFD_,
+                "  <path d=\"", testPath, "\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"2\" />", _LFD_,
                 markers,
                 String.format(Locale.ROOT,
-                        "  <line id=\"lgCrosshair\" x1=\"0\" y1=\"%.1f\" x2=\"0\" y2=\"%.1f\" stroke=\"#94a3b8\" stroke-dasharray=\"2,2\" stroke-width=\"1\" opacity=\"0\" pointer-events=\"none\" />\n",
+                        s("  <line id=\"lgCrosshair\" x1=\"0\" y1=\"%.1f\" x2=\"0\" y2=\"%.1f\" stroke=\"#94a3b8\" stroke-dasharray=\"2,2\" stroke-width=\"1\" opacity=\"0\" pointer-events=\"none\" />", _LFD_),
                         marginTop, marginTop + plotH),
-                "  <circle id=\"lgTestDot\" cx=\"0\" cy=\"0\" r=\"5\" fill=\"#38bdf8\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />\n",
-                hasLimbo ? "  <circle id=\"lgLimboDot\" cx=\"0\" cy=\"0\" r=\"4\" fill=\"#a855f7\" stroke=\"#ffffff\" stroke-width=\"1.5\" opacity=\"0\" pointer-events=\"none\" />\n" : "",
+                "  <circle id=\"lgTestDot\" cx=\"0\" cy=\"0\" r=\"5\" fill=\"#38bdf8\" stroke=\"#ffffff\" stroke-width=\"2\" opacity=\"0\" pointer-events=\"none\" />", _LFD_,
+                hasLimbo ? s("  <circle id=\"lgLimboDot\" cx=\"0\" cy=\"0\" r=\"4\" fill=\"#a855f7\" stroke=\"#ffffff\" stroke-width=\"1.5\" opacity=\"0\" pointer-events=\"none\" />", _LFD_) : "",
                 String.format(Locale.ROOT,
-                        "  <rect id=\"lgOverlay\" x=\"%.1f\" y=\"%.1f\" width=\"%.1f\" height=\"%.1f\" fill=\"transparent\" style=\"cursor: crosshair;\" onmousemove=\"onLgHover(event)\" onmouseleave=\"onLgLeave()\" onclick=\"onLgClick()\" />\n",
+                        s("  <rect id=\"lgOverlay\" x=\"%.1f\" y=\"%.1f\" width=\"%.1f\" height=\"%.1f\" fill=\"transparent\" style=\"cursor: crosshair;\" onmousemove=\"onLgHover(event)\" onmouseleave=\"onLgLeave()\" onclick=\"onLgClick()\" />", _LFD_),
                         marginLeft, marginTop, plotW, plotH),
-                "</svg>\n",
-                "<div id=\"lgTooltip\" class=\"lg-tooltip hidden\"></div>\n",
-                "</div>\n"
+                "</svg>", _LFD_,
+                "<div id=\"lgTooltip\" class=\"lg-tooltip hidden\"></div>", _LFD_,
+                "</div>", _LFD_
         ));
 
         return sb.toString();

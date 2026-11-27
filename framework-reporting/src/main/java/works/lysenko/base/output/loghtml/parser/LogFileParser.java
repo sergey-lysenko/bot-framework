@@ -170,8 +170,15 @@ public final class LogFileParser {
 
         final List<works.lysenko.base.responses.ExpectedResponse> expectedResponses = loadExpectedResponsesForLog(logFile);
         final List<works.lysenko.base.issues.KnownIssue> knownIssues = loadKnownIssuesForLog(logFile);
+        final List<works.lysenko.base.issues.KnownIssue> fixedIssues = loadFixedIssuesForLog(logFile);
         if (!expectedResponses.isEmpty()) {
             works.lysenko.base.output.TreeHtml.setExpectedResponsesStore(new works.lysenko.base.responses.ExpectedResponsesStore(expectedResponses));
+        }
+        if (!knownIssues.isEmpty()) {
+            works.lysenko.base.output.TreeHtml.setKnownIssuesStore(new works.lysenko.base.issues.KnownIssuesStore(knownIssues));
+        }
+        if (!fixedIssues.isEmpty()) {
+            works.lysenko.base.output.TreeHtml.setFixedIssuesStore(new works.lysenko.base.issues.KnownIssuesStore(fixedIssues));
         }
 
         int prevTestNum = 0;
@@ -397,18 +404,20 @@ public final class LogFileParser {
                 if (isExpected) {
                     currentScenarioMatchedExpected = true;
                 } else {
-                    final boolean isKnown = matchesKnownIssue(knownIssues, currentScenario, clean);
-                    if (isKnown) {
-                        if (!FAILED.equals(currentSec.status)) {
-                            currentSec.status = WARNING;
-                        }
+                    final boolean matchedActiveKnown = matchesAnyKnownIssue(knownIssues, currentScenario, clean);
+                    final boolean decreasedToWarning = matchedActiveKnown && matchesKnownIssue(knownIssues, currentScenario, clean);
+                    final boolean matchedFixed = !matchedActiveKnown && matchesFixedIssue(fixedIssues, currentScenario, clean);
+                    final String candidate;
+                    if (decreasedToWarning) {
+                        candidate = WARNING;
                     } else if (hasSevereOrFailure) {
-                        currentSec.status = FAILED;
-                    } else if (hasWarn && !FAILED.equals(currentSec.status)) {
-                        currentSec.status = WARNING;
-                    } else if (hasNotice && PASSED.equals(currentSec.status)) {
-                        currentSec.status = "notice";
+                        candidate = matchedFixed ? "regression" : FAILED;
+                    } else if (hasWarn) {
+                        candidate = matchedFixed ? "regression_warning" : WARNING;
+                    } else {
+                        candidate = matchedFixed ? "regression_warning" : "notice";
                     }
+                    currentSec.status = works.lysenko.base.output.loghtml.SectionRenderer.promoteStatus(currentSec.status, candidate);
                 }
             }
 
@@ -432,7 +441,7 @@ public final class LogFileParser {
             final String name = logFile.getName();
             if (name.endsWith(".run.log")) {
                 final String prefix = name.substring(0, name.length() - ".run.log".length());
-                final File sidecar = new File(logFile.getParentFile(), prefix + ".expected.responses.json");
+                final File sidecar = new File(logFile.getParentFile(), s(prefix, ".expected.responses.json"));
                 if (sidecar.exists()) {
                     return works.lysenko.base.responses.ExpectedResponsesLoader.loadFromFile(sidecar);
                 }
@@ -446,7 +455,7 @@ public final class LogFileParser {
             final String name = logFile.getName();
             if (name.endsWith(".run.log")) {
                 final String prefix = name.substring(0, name.length() - ".run.log".length());
-                final File sidecar = new File(logFile.getParentFile(), prefix + ".known.issues.json");
+                final File sidecar = new File(logFile.getParentFile(), s(prefix, ".known.issues.json"));
                 if (sidecar.exists()) {
                     try (final java.io.FileInputStream fis = new java.io.FileInputStream(sidecar)) {
                         return works.lysenko.base.issues.KnownIssuesLoader.loadFromStream(fis);
@@ -456,6 +465,27 @@ public final class LogFileParser {
             }
         }
         return works.lysenko.base.issues.KnownIssuesLoader.loadDefault();
+    }
+
+    private static List<works.lysenko.base.issues.KnownIssue> loadFixedIssuesForLog(final File logFile) {
+        if (null != logFile && null != logFile.getParentFile()) {
+            final String name = logFile.getName();
+            if (name.endsWith(".run.log")) {
+                final String prefix = name.substring(0, name.length() - ".run.log".length());
+                final File sidecar = new File(logFile.getParentFile(), s(prefix, ".fixed.issues.json"));
+                if (sidecar.exists()) {
+                    try (final java.io.FileInputStream fis = new java.io.FileInputStream(sidecar)) {
+                        return works.lysenko.base.issues.KnownIssuesLoader.loadFixedFromStream(fis);
+                    } catch (final Exception _) {
+                    }
+                }
+            }
+        }
+        final works.lysenko.base.issues.KnownIssuesStore configured = works.lysenko.base.output.TreeHtml.getFixedIssuesStore();
+        if (null != configured && !configured.getIssues().isEmpty()) {
+            return configured.getIssues();
+        }
+        return works.lysenko.base.issues.KnownIssuesLoader.loadDefaultFixed();
     }
 
     private static boolean matchesExpectedResponse(
@@ -479,6 +509,7 @@ public final class LogFileParser {
         if (null == knownIssues || knownIssues.isEmpty()) return false;
         for (final works.lysenko.base.issues.KnownIssue ki : knownIssues) {
             if (!ki.decreaseToWarning()) continue;
+            if (works.lysenko.base.issues.KnownIssuesMatcher.isCatchAllRule(ki.scenario(), ki.pattern())) continue;
             final boolean scenOk = (null == ki.scenario() || ki.scenario().isBlank() || "*".equals(ki.scenario().trim()))
                     || (null != currentScenario && works.lysenko.base.responses.ExpectedResponsesMatcher.matchesScenario(ki.scenario(), currentScenario));
             if (scenOk && matchesLinePattern(ki.pattern(), cleanLine)) {
@@ -486,6 +517,29 @@ public final class LogFileParser {
             }
         }
         return false;
+    }
+
+    private static boolean matchesAnyKnownIssue(
+            final List<works.lysenko.base.issues.KnownIssue> knownIssues,
+            final String currentScenario,
+            final String cleanLine) {
+        if (null == knownIssues || knownIssues.isEmpty()) return false;
+        for (final works.lysenko.base.issues.KnownIssue ki : knownIssues) {
+            if (works.lysenko.base.issues.KnownIssuesMatcher.isCatchAllRule(ki.scenario(), ki.pattern())) continue;
+            final boolean scenOk = (null == ki.scenario() || ki.scenario().isBlank() || "*".equals(ki.scenario().trim()))
+                    || (null != currentScenario && works.lysenko.base.responses.ExpectedResponsesMatcher.matchesScenario(ki.scenario(), currentScenario));
+            if (scenOk && matchesLinePattern(ki.pattern(), cleanLine)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean matchesFixedIssue(
+            final List<works.lysenko.base.issues.KnownIssue> fixedIssues,
+            final String currentScenario,
+            final String cleanLine) {
+        return matchesAnyKnownIssue(fixedIssues, currentScenario, cleanLine);
     }
 
     private static boolean matchesLinePattern(final String patternStr, final String cleanLine) {

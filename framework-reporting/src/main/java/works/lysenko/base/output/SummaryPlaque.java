@@ -34,6 +34,8 @@ public record SummaryPlaque(
         int hidden,
         int notice,
         int notExecuted,
+        int regression,
+        int regressionWarning,
         boolean perNode
 ) {
 
@@ -68,11 +70,38 @@ public record SummaryPlaque(
             final int knownIssues,
             final int off,
             final int hidden,
+            final int notice,
+            final int notExecuted,
             final boolean perNode
     ) {
         this(suite, pool, domain, mode, pathsSummary, origin, tag,
                 total, executable, executed, passed, warning, upset, failed, knownIssues,
-                off, hidden, 0, Math.max(0, total - off - hidden - passed - warning - upset - failed), perNode);
+                off, hidden, notice, notExecuted, 0, 0, perNode);
+    }
+
+    public SummaryPlaque(
+            final String suite,
+            final String pool,
+            final String domain,
+            final String mode,
+            final String pathsSummary,
+            final String origin,
+            final String tag,
+            final int total,
+            final int executable,
+            final int executed,
+            final int passed,
+            final int warning,
+            final int upset,
+            final int failed,
+            final int knownIssues,
+            final int off,
+            final int hidden,
+            final boolean perNode
+    ) {
+        this(suite, pool, domain, mode, pathsSummary, origin, tag,
+                total, executable, executed, passed, warning, upset, failed, knownIssues,
+                off, hidden, 0, Math.max(0, total - off - hidden - passed - warning - upset - failed), 0, 0, perNode);
     }
 
     public SummaryPlaque(
@@ -83,7 +112,7 @@ public record SummaryPlaque(
             final int warning,
             final int failed
     ) {
-        this(null, null, null, null, null, null, null, total, executable, executed, passed, warning, 0, failed, 0, Math.max(0, total - executable), 0, 0, Math.max(0, executable - executed), false);
+        this(null, null, null, null, null, null, null, total, executable, executed, passed, warning, 0, failed, 0, Math.max(0, total - executable), 0, 0, Math.max(0, executable - executed), 0, 0, false);
     }
 
     public SummaryPlaque(
@@ -95,7 +124,7 @@ public record SummaryPlaque(
             final int upset,
             final int failed
     ) {
-        this(null, null, null, null, null, null, null, total, executable, executed, passed, warning, upset, failed, 0, Math.max(0, total - executable), 0, 0, Math.max(0, executable - executed), true);
+        this(null, null, null, null, null, null, null, total, executable, executed, passed, warning, upset, failed, 0, Math.max(0, total - executable), 0, 0, Math.max(0, executable - executed), 0, 0, true);
     }
 
     public SummaryPlaque(
@@ -111,7 +140,7 @@ public record SummaryPlaque(
             final int warning,
             final int failed
     ) {
-        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, 0, failed, 0, Math.max(0, total - executable), 0, 0, Math.max(0, executable - executed), false);
+        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, 0, failed, 0, Math.max(0, total - executable), 0, 0, Math.max(0, executable - executed), 0, 0, false);
     }
 
     public SummaryPlaque(
@@ -128,7 +157,7 @@ public record SummaryPlaque(
             final int failed,
             final int knownIssues
     ) {
-        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, 0, failed, knownIssues, Math.max(0, total - executable), 0, 0, Math.max(0, executable - executed), false);
+        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, 0, failed, knownIssues, Math.max(0, total - executable), 0, 0, Math.max(0, executable - executed), 0, 0, false);
     }
 
     public SummaryPlaque(
@@ -146,7 +175,7 @@ public record SummaryPlaque(
             final int failed,
             final int knownIssues
     ) {
-        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, upset, failed, knownIssues, Math.max(0, total - executable), 0, 0, Math.max(0, executable - executed), true);
+        this(suite, pool, domain, mode, pathsSummary, null, null, total, executable, executed, passed, warning, upset, failed, knownIssues, Math.max(0, total - executable), 0, 0, Math.max(0, executable - executed), 0, 0, true);
     }
 
     public int totalPassed() {
@@ -159,7 +188,7 @@ public record SummaryPlaque(
      * exclusive node states and are omitted whenever their value is {@code 0}.
      */
     public List<MetricColumn> visibleTreeColumns() {
-        final List<MetricColumn> cols = new ArrayList<>(9);
+        final List<MetricColumn> cols = new ArrayList<>(11);
         cols.add(new MetricColumn("Total", "col-total", "col-total", "#38BDF8", null, total, formatPct(total, total)));
         addIfPositive(cols, "Not Executable", "col-off", "col-off", "#64748B",
                 "Scenarios that cannot be executed (weight 0 or unreachable)", off);
@@ -173,10 +202,14 @@ public record SummaryPlaque(
                 "Scenarios executed with notice events", notice);
         addIfPositive(cols, "Warning", "col-warning", "stat-warning", "#F59E0B",
                 null, warning);
+        addIfPositive(cols, "Reg. Warn", "col-regression-warning", "stat-regression-warning", "#F472B6",
+                "Scenarios with warning-level regressions matching fixed.issues.json", regressionWarning);
         addIfPositive(cols, "Upset", "col-upset", "stat-upset", "#818CF8",
                 "Scenarios whose execution passed, but a child failed downstream", upset);
         addIfPositive(cols, "Failed", "col-failed", "stat-failed", "#EF4444",
                 null, failed);
+        addIfPositive(cols, "Regression", "col-regression", "stat-regression", "#E879F9",
+                "Scenarios that regressed on a previously fixed issue (fixed.issues.json)", regression);
         return cols;
     }
 

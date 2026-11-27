@@ -27,6 +27,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Polyphonic narrative sonifier ({@code orpheus}): translates every phase of scenario tree progression
  * into a deterministic, multi-voice musical narrative.
@@ -230,10 +232,12 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
             final List<NodeSnapshot> partialLeaves = new ArrayList<>();
             final List<NodeSnapshot> overExecutedLeaves = new ArrayList<>();
             final List<NodeSnapshot> newlyFailedNodes = new ArrayList<>();
+            final List<NodeSnapshot> newlyRegressedNodes = new ArrayList<>();
             final List<NodeSnapshot> newlyWarnedNodes = new ArrayList<>();
+            final List<NodeSnapshot> newlyRegressionWarnedNodes = new ArrayList<>();
 
             for (final NodeSnapshot node : current.nodes().values()) {
-                if ('F' == node.statusCode() || 'U' == node.statusCode()) {
+                if ('R' == node.statusCode() || 'F' == node.statusCode() || 'U' == node.statusCode()) {
                     everHadFailure = true;
                 }
                 final NodeSnapshot prev = previousNodes.get(node.identity());
@@ -241,8 +245,12 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
                 final char oldStatus = (null != prev) ? prev.statusCode() : 'N';
                 final int delta = node.executions() - oldExec;
 
-                if ('F' == node.statusCode() && ('F' != oldStatus || delta > 0)) {
+                if ('R' == node.statusCode() && ('R' != oldStatus || delta > 0)) {
+                    newlyRegressedNodes.add(node);
+                } else if ('F' == node.statusCode() && ('F' != oldStatus || delta > 0)) {
                     newlyFailedNodes.add(node);
+                } else if ('M' == node.statusCode() && ('M' != oldStatus || delta > 0)) {
+                    newlyRegressionWarnedNodes.add(node);
                 } else if (('W' == node.statusCode() || 'K' == node.statusCode())
                         && (oldStatus != node.statusCode() || delta > 0)) {
                     newlyWarnedNodes.add(node);
@@ -322,12 +330,28 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
                         0.90));
             }
 
-            // 7. Semantic status harmony: warnings/known-issues (sus4 color) and failures (minor/tritone cadence)
+            // 7. Semantic status harmony: warnings/known-issues (sus4 color), regression warnings (ghost tritone chime),
+            //    failures (minor/tritone cadence), and failure-tier regressions (urgent tritone-octave double-strike)
             if (!newlyWarnedNodes.isEmpty()) {
                 final NodeSnapshot warned = newlyWarnedNodes.getFirst();
                 final int baseMidi = scalePitch(rootMidi + 12, scale, warned.col());
                 final long offset = subFrameOffset(samplesPerFrame, 18, 1);
                 frameNotes.add(new AudioNote(frameStartSample + offset, baseMidi + 5, WARNING_AMPLITUDE, 0.45));
+            }
+            if (!newlyRegressionWarnedNodes.isEmpty()) {
+                final NodeSnapshot regWarned = newlyRegressionWarnedNodes.getFirst();
+                final int baseMidi = scalePitch(rootMidi + 12, scale, regWarned.col());
+                final double regWarnAmp = Math.min(0.60, WARNING_AMPLITUDE * 1.10);
+                frameNotes.add(new AudioNote(
+                        frameStartSample + subFrameOffset(samplesPerFrame, 15, 2),
+                        baseMidi + 6,
+                        regWarnAmp,
+                        0.62));
+                frameNotes.add(new AudioNote(
+                        frameStartSample + subFrameOffset(samplesPerFrame, 50, 2),
+                        baseMidi + 13,
+                        regWarnAmp * 0.90,
+                        0.66));
             }
             if (!newlyFailedNodes.isEmpty()) {
                 final int failBase = rootMidi;
@@ -344,6 +368,27 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
                         failBase + 6,
                         failAmp * 0.90,
                         0.82));
+            }
+            if (!newlyRegressedNodes.isEmpty()) {
+                final int failBase = rootMidi;
+                final double regBoost = Math.min(1.35, Math.sqrt(newlyRegressedNodes.size()));
+                final double regAmp = Math.min(0.75, FAILURE_AMPLITUDE * 1.12 * regBoost);
+                frameNotes.add(new AudioNote(frameStartSample, failBase, regAmp, 0.90));
+                frameNotes.add(new AudioNote(
+                        frameStartSample + subFrameOffset(samplesPerFrame, 18, 4),
+                        failBase + 6,
+                        regAmp * 0.96,
+                        0.92));
+                frameNotes.add(new AudioNote(
+                        frameStartSample + subFrameOffset(samplesPerFrame, 36, 4),
+                        failBase + 12,
+                        regAmp * 0.92,
+                        0.94));
+                frameNotes.add(new AudioNote(
+                        frameStartSample + subFrameOffset(samplesPerFrame, 54, 4),
+                        failBase + 18,
+                        regAmp * 0.88,
+                        0.96));
             }
 
             // 8. Camera cooldown shimmer when no execution events fired but camera is actively zooming/panning
@@ -433,11 +478,17 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
             final NodeData node,
             final int executions,
             final Map<NodeData, Boolean> childFailureCache) {
+        if (TreeHtml.hasRegression(node)) {
+            return 'R';
+        }
         if (TreeHtml.hasFailure(node)) {
             return 'F';
         }
         if (TreeHtml.hasChildFailure(node, childFailureCache)) {
             return 'U';
+        }
+        if (TreeHtml.hasRegressionWarning(node)) {
+            return 'M';
         }
         if (null != node.result() && ExecutionStatus.WARNING == node.result().status()) {
             return 'W';
@@ -470,7 +521,7 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
         if (frame.isFile() && frame.getName().toLowerCase(Locale.ROOT).endsWith(".svg")) {
             return parseSvgFrame(frame);
         }
-        throw new IOException("Missing orpheus snapshot for frame: " + frame);
+        throw new IOException(s("Missing orpheus snapshot for frame: ", frame));
     }
 
     private static FrameSnapshot readSnapshotFile(final File file) throws IOException {
@@ -493,14 +544,14 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
                             translateX = Double.parseDouble(camFields[2]);
                             translateY = Double.parseDouble(camFields[3]);
                         } catch (final NumberFormatException e) {
-                            throw new IOException("Invalid camera header in orpheus snapshot: " + file, e);
+                            throw new IOException(s("Invalid camera header in orpheus snapshot: ", file), e);
                         }
                     }
                     continue;
                 }
                 final String[] fields = line.split("\\t", -1);
                 if (7 != fields.length) {
-                    throw new IOException("Invalid orpheus audio snapshot line in: " + file);
+                    throw new IOException(s("Invalid orpheus audio snapshot line in: ", file));
                 }
                 try {
                     final String identity = new String(Base64.getUrlDecoder().decode(fields[0]), StandardCharsets.UTF_8);
@@ -513,7 +564,7 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
                     nodes.put(identity, new NodeSnapshot(
                             identity, col, rowTenths, typeCode, executions, target, statusCode, false));
                 } catch (final IllegalArgumentException e) {
-                    throw new IOException("Invalid orpheus audio snapshot format: " + file, e);
+                    throw new IOException(s("Invalid orpheus audio snapshot format: ", file), e);
                 }
             }
         }
@@ -570,7 +621,7 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
             final char typeCode = inferSvgTypeCode(titleText, badgeText);
             final int[] execAndTarget = parseBadgeExecutionsAndTarget(badgeText);
             final char statusCode = inferSvgStatusCode(cssClasses, execAndTarget[0]);
-            final String identity = col + ":" + nodeId.replaceFirst("^scenario_\\d+_", "");
+            final String identity = s(col, ":", nodeId.replaceFirst("^scenario_\\d+_", ""));
 
             nodes.put(identity, new NodeSnapshot(
                     identity,
@@ -597,11 +648,17 @@ public final class OrpheusSonifier extends AbstractTreeSonifier {
     }
 
     private static char inferSvgStatusCode(final String cssClasses, final int executions) {
+        if (cssClasses.contains("regression") && !cssClasses.contains("regression_warning")) {
+            return 'R';
+        }
         if (cssClasses.contains("failed") && !cssClasses.contains("child_failed")) {
             return 'F';
         }
         if (cssClasses.contains("child_failed")) {
             return 'U';
+        }
+        if (cssClasses.contains("regression_warning")) {
+            return 'M';
         }
         if (cssClasses.contains("warning")) {
             return 'W';

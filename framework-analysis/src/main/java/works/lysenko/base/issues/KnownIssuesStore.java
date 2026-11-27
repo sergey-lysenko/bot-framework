@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static works.lysenko.util.data.strs.Swap.s;
 import static works.lysenko.util.func.type.Objects.*;
 
 /**
@@ -23,6 +24,7 @@ import static works.lysenko.util.func.type.Objects.*;
 public final class KnownIssuesStore {
 
     private static KnownIssuesStore globalStore = null;
+    private static KnownIssuesStore fixedGlobalStore = null;
 
     public static void setGlobalStore(final KnownIssuesStore store) {
         globalStore = store;
@@ -33,6 +35,17 @@ public final class KnownIssuesStore {
             globalStore = new KnownIssuesStore();
         }
         return globalStore;
+    }
+
+    public static void setFixedGlobalStore(final KnownIssuesStore store) {
+        fixedGlobalStore = store;
+    }
+
+    public static KnownIssuesStore getFixedGlobalStore() {
+        if (null == fixedGlobalStore) {
+            fixedGlobalStore = new KnownIssuesStore(KnownIssuesLoader.loadDefaultFixed());
+        }
+        return fixedGlobalStore;
     }
 
     private static final class NodeScanCursor {
@@ -129,7 +142,7 @@ public final class KnownIssuesStore {
         if (issues.isEmpty() || (null == fqn && null == simpleName)) {
             return Collections.emptyList();
         }
-        final String key = (null != fqn ? fqn : "") + '\0' + (null != simpleName ? simpleName : "");
+        final String key = s(null != fqn ? fqn : "", '\0', null != simpleName ? simpleName : "");
         return scenarioIssuesCache.computeIfAbsent(key, _ -> {
             final List<KnownIssue> matched = new ArrayList<>(4);
             for (final KnownIssue ki : issues) {
@@ -170,7 +183,7 @@ public final class KnownIssuesStore {
             return new ArrayList<>(0);
         }
 
-        final String scenarioKey = (null != fqn ? fqn : "") + '\0' + (null != simpleName ? simpleName : "");
+        final String scenarioKey = s(null != fqn ? fqn : "", '\0', null != simpleName ? simpleName : "");
         final _LogRecord firstRecord = events.getFirst();
 
         synchronized (nodeCursorLock) {

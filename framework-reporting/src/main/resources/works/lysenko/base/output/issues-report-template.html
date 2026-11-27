@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Known Issues</title>
 <style>
-  :root { --bg: #0f172a; --panel-bg: #1e293b; --border: #334155; --text: #f8fafc; --text-muted: #94a3b8; --accent: #38bdf8; --ok: #22c55e; --warn: #f59e0b; --info: #06b6d4; }
+  :root { --bg: #0f172a; --panel-bg: #1e293b; --border: #334155; --text: #f8fafc; --text-muted: #94a3b8; --accent: #38bdf8; --ok: #22c55e; --warn: #f59e0b; --info: #06b6d4; --reg: #e879f9; --reg-warn: #f472b6; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
   header { position: sticky; top: 0; background: var(--panel-bg); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px; z-index: 10; flex-wrap: wrap; }
@@ -22,13 +22,25 @@
   .stat { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; min-width: 150px; }
   .stat .n { font-size: 22px; font-weight: 700; }
   .stat .l { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-  .stat.confirmed .n { color: var(--ok); }
-  .stat.not-reproduced .n, .stat.not-checked .n { color: var(--info); }
+  .stat.regression { background: rgba(74, 4, 78, 0.55); border-color: var(--reg); }
+  .stat.regression .n { color: var(--reg); }
+  .stat.regression-warning { background: rgba(59, 13, 44, 0.55); border-color: var(--reg-warn); }
+  .stat.regression-warning .n { color: var(--reg-warn); }
+  .stat.confirmed .n, .stat.verified-fixed .n { color: var(--ok); }
+  .stat.not-reproduced .n, .stat.not-checked .n, .stat.fixed-not-checked .n { color: var(--info); }
   .group { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .group.regression { border-color: var(--reg); }
+  .group.regression .group-head { background: rgba(74, 4, 78, 0.45); border-bottom-color: rgba(232, 121, 249, 0.35); }
+  .group.regression h2 { color: var(--reg); }
+  .group.regression .tcount { background: rgba(232, 121, 249, 0.2); color: var(--reg); }
+  .group.regression-warning { border-color: var(--reg-warn); }
+  .group.regression-warning .group-head { background: rgba(59, 13, 44, 0.45); border-bottom-color: rgba(244, 114, 182, 0.35); }
+  .group.regression-warning h2 { color: var(--reg-warn); }
+  .group.regression-warning .tcount { background: rgba(244, 114, 182, 0.2); color: var(--reg-warn); }
   .group-head { display: flex; align-items: baseline; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
   .group-head h2 { font-size: 14px; font-weight: 600; }
-  .group.confirmed h2 { color: var(--ok); }
-  .group.not-reproduced h2, .group.not-checked h2 { color: var(--info); }
+  .group.confirmed h2, .group.verified-fixed h2 { color: var(--ok); }
+  .group.not-reproduced h2, .group.not-checked h2, .group.fixed-not-checked h2 { color: var(--info); }
   .group-head .count { background: #0f172a; border: 1px solid var(--border); border-radius: 12px; padding: 1px 8px; font-size: 11px; color: var(--text-muted); }
   .group-head .sub { font-size: 12px; color: var(--text-muted); }
   .none { padding: 14px 16px; color: var(--text-muted); font-size: 13px; }
@@ -43,6 +55,7 @@
   a.key:hover { text-decoration: underline; }
   .title { color: var(--text); }
   .desc { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+  .meta { color: #e879f9; font-size: 11px; margin-top: 3px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; opacity: 0.85; }
   .muted { color: var(--text-muted); font-size: 12px; font-style: italic; }
   .tcount { display: inline-block; min-width: 24px; text-align: center; margin-right: 8px; background: rgba(34, 197, 94, 0.15); color: var(--ok); border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 700; }
   a.test { display: inline-block; margin: 1px 4px 1px 0; padding: 0 6px; border-radius: 4px; background: #0f172a; border: 1px solid var(--border); color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; text-decoration: none; }
@@ -62,10 +75,10 @@
 </header>
 <main>
   <div class="stats">
-    <div class="stat confirmed"><div class="n">{{CONFIRMED_COUNT}}</div><div class="l">Confirmed</div></div>
+{{LEAD_STATS}}    <div class="stat confirmed"><div class="n">{{CONFIRMED_COUNT}}</div><div class="l">Confirmed</div></div>
     <div class="stat not-reproduced"><div class="n">{{NOT_REPRODUCED_COUNT}}</div><div class="l">Not reproduced</div></div>
     <div class="stat not-checked"><div class="n">{{NOT_CHECKED_COUNT}}</div><div class="l">Not checked</div></div>
-  </div>
+{{TRAIL_STATS}}  </div>
 {{CONTENT}}</main>
 <script>
   function siblingReport(suffix) {

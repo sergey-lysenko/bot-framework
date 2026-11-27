@@ -27,6 +27,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Liquid Drum &amp; Bass telemetry sonifier ({@code dnb}) engineered to be genuinely pleasant
  * across multi-minute test runs while conveying every scenario tree event and the final run
@@ -105,8 +107,10 @@ public final class DnbSonifier implements TreeSonifier {
             {0, 4, 7, 10, 13}  // C7(b9)
     };
 
-    // F minor / Ab major liquid melody scale (C4=60 anchor, F4=65)
+    // F minor / Ab major liquid melody scale (C3=48 anchor, F3=53)
     private static final int[] LIQUID_MELODY_SCALE = {0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 19, 22};
+    private static final int MIN_MELODY_MIDI = 48; // C3 (~131 Hz)
+    private static final int MAX_MELODY_MIDI = 69; // A4 (~440 Hz)
 
     // Five unmistakable verdict outro chord voicings (rooted around F3=53 / Ab3=56)
     private static final int[] OUTRO_SPOTLESS_MIDI = {53, 60, 64, 67, 72};  // Fmaj9 radiant sunrise
@@ -266,7 +270,7 @@ public final class DnbSonifier implements TreeSonifier {
                 && frame.length() > 0L;
     }
 
-    private static Map<Integer, List<DnbEvent>> composeDnbEvents(
+    static Map<Integer, List<DnbEvent>> composeDnbEvents(
             final List<File> frames,
             final int samplesPerFrame) throws IOException {
 
@@ -353,9 +357,9 @@ public final class DnbSonifier implements TreeSonifier {
                 if (node.knownIssue() && ('W' == node.status() || 'F' == node.status())) {
                     hadReproducedKnownIssue = true;
                 }
-                if ('F' == node.status() && !node.knownIssue()) {
+                if ('R' == node.status() || ('F' == node.status() && !node.knownIssue())) {
                     hadRawFailure = true;
-                } else if ('W' == node.status() && !node.knownIssue()) {
+                } else if ('M' == node.status() || ('W' == node.status() && !node.knownIssue())) {
                     hadRawWarning = true;
                 }
             }
@@ -569,6 +573,32 @@ public final class DnbSonifier implements TreeSonifier {
                                     0.65,
                                     clampPan(pan * 0.7)));
                         }
+                    } else if ('M' == node.status()) {
+                        // Warning-tier regression (soft rose-magenta): amber horn + rim + opposite-pan ghostly tritone horn echo
+                        scheduleEvent(eventsByFrame, samplesPerFrame, new DnbEvent(
+                                onset,
+                                warningDuration,
+                                VoiceKind.AMBER_HORN,
+                                subRoot + 24.0 + 10.0,
+                                WARNING_RAW_AMP * 0.92,
+                                0.76,
+                                pan));
+                        scheduleEvent(eventsByFrame, samplesPerFrame, new DnbEvent(
+                                onset,
+                                rimDuration,
+                                VoiceKind.RIM_CLICK,
+                                69.0,
+                                RIM_AMP * 0.78,
+                                0.65,
+                                clampPan(pan * 0.7)));
+                        scheduleEvent(eventsByFrame, samplesPerFrame, new DnbEvent(
+                                onset + DnbSynth.millisToSamples(115),
+                                warningDuration,
+                                VoiceKind.AMBER_HORN,
+                                subRoot + 24.0 + 16.0,
+                                WARNING_RAW_AMP * 0.68,
+                                0.85,
+                                clampPan(-pan)));
                     } else if ('U' == node.status()) {
                         // UPSET (parent passed, child failed downstream): hollow downward dub fifth
                         if (frameIndex - lastUpsetFrame >= UPSET_COOLDOWN_FRAMES) {
@@ -583,6 +613,42 @@ public final class DnbSonifier implements TreeSonifier {
                                     0.45,
                                     pan));
                         }
+                    } else if ('R' == node.status()) {
+                        // Failure-tier regression (vivid electric magenta): double-rewind Reese dive + twin kick + ghost rebound
+                        scheduleEvent(eventsByFrame, samplesPerFrame, new DnbEvent(
+                                onset,
+                                failureDuration,
+                                VoiceKind.FAULT_IMPACT,
+                                subRoot + 21.0,
+                                subRoot + 6.0,
+                                FAILURE_RAW_AMP * 1.08,
+                                0.95,
+                                pan * 0.35));
+                        scheduleEvent(eventsByFrame, samplesPerFrame, new DnbEvent(
+                                onset,
+                                kickDuration,
+                                VoiceKind.DNB_KICK,
+                                48.0,
+                                KICK_AMP * 1.08,
+                                0.68,
+                                0.0));
+                        scheduleEvent(eventsByFrame, samplesPerFrame, new DnbEvent(
+                                onset + DnbSynth.millisToSamples(85),
+                                kickDuration,
+                                VoiceKind.DNB_KICK,
+                                51.0,
+                                KICK_AMP * 0.92,
+                                0.72,
+                                0.0));
+                        scheduleEvent(eventsByFrame, samplesPerFrame, new DnbEvent(
+                                onset + DnbSynth.millisToSamples(120),
+                                failureDuration * 3 / 4,
+                                VoiceKind.FAULT_IMPACT,
+                                subRoot + 18.0,
+                                subRoot + 5.0,
+                                FAILURE_RAW_AMP * 0.62,
+                                0.95,
+                                clampPan(-pan * 0.55)));
                     } else if ('F' == node.status()) {
                         if (node.knownIssue()) {
                             if (frameIndex - lastKnownFailFrame >= KNOWN_ISSUE_COOLDOWN_FRAMES) {
@@ -598,7 +664,7 @@ public final class DnbSonifier implements TreeSonifier {
                                         pan * 0.5));
                             }
                         } else {
-                            // Raw regression: visceral DnB Reese pitch-dive + deep sub impact
+                            // Raw failure: visceral DnB Reese pitch-dive + deep sub impact
                             scheduleEvent(eventsByFrame, samplesPerFrame, new DnbEvent(
                                     onset,
                                     failureDuration,
@@ -1117,7 +1183,7 @@ public final class DnbSonifier implements TreeSonifier {
         };
     }
 
-    private static double resolveLiquidPitch(
+    static double resolveLiquidPitch(
             final int subRoot,
             final int[] chordIntervals,
             final NodeState node,
@@ -1126,14 +1192,14 @@ public final class DnbSonifier implements TreeSonifier {
         final int degree = (node.col() * 2 + (int) Math.round(rowRatio * 4.0) + (pathHash % 3)) % LIQUID_MELODY_SCALE.length;
         final int chordAnchor = chordIntervals[(node.col() + pathHash) % chordIntervals.length];
         final int rawMidi = (0 == (pathHash % 3))
-                ? (subRoot + 36 + chordAnchor)
-                : (65 + LIQUID_MELODY_SCALE[degree]); // F4 anchor
-        // Keep melodies in an ergonomic warm mid-high register [60..81] (C4..A5, never shrieking)
+                ? (subRoot + 24 + chordAnchor)
+                : (53 + LIQUID_MELODY_SCALE[degree]); // F3 anchor
+        // Keep melodies in an ergonomic warm mid register [48..69] (C3..A4, lowered one octave)
         int midi = rawMidi;
-        while (midi < 60) {
+        while (midi < MIN_MELODY_MIDI) {
             midi += 12;
         }
-        while (midi > 81) {
+        while (midi > MAX_MELODY_MIDI) {
             midi -= 12;
         }
         return midi;
@@ -1198,8 +1264,10 @@ public final class DnbSonifier implements TreeSonifier {
 
     private static int statusSeverity(final char status) {
         return switch (status) {
-            case 'F' -> 4;
-            case 'U' -> 3;
+            case 'R' -> 6;
+            case 'F' -> 5;
+            case 'U' -> 4;
+            case 'M' -> 3;
             case 'W' -> 2;
             case 'I' -> 1;
             default -> 0;
@@ -1241,11 +1309,17 @@ public final class DnbSonifier implements TreeSonifier {
             final NodeData node,
             final int executions,
             final Map<NodeData, Boolean> childFailureCache) {
+        if (TreeHtml.hasRegression(node)) {
+            return 'R';
+        }
         if (TreeHtml.hasFailure(node)) {
             return 'F';
         }
         if (TreeHtml.hasChildFailure(node, childFailureCache)) {
             return 'U';
+        }
+        if (TreeHtml.hasRegressionWarning(node)) {
+            return 'M';
         }
         if (TreeHtml.hasWarning(node)) {
             return 'W';
@@ -1388,10 +1462,10 @@ public final class DnbSonifier implements TreeSonifier {
         for (final ParsedSvgCard c : cards) {
             final int col = Math.max(0, (int) Math.round((c.x - 40.0) / 270.0));
             final int rowTenths = Math.max(0, (int) Math.round(((c.y - 92.0) / 60.0) * 10.0));
-            final String baseKey = col + ":" + c.cleanName;
+            final String baseKey = s(col, ":", c.cleanName);
             final int dup = dupCounter.getOrDefault(baseKey, 0);
             dupCounter.put(baseKey, dup + 1);
-            final String path = (0 == dup) ? baseKey : (baseKey + "#" + dup);
+            final String path = (0 == dup) ? baseKey : s(baseKey, "#", dup);
             final char type = inferSvgType(c);
             final char status = inferSvgStatus(c.cssClasses, c.executions);
             final boolean knownIssue = c.cssClasses.contains("known-issue")
@@ -1446,11 +1520,17 @@ public final class DnbSonifier implements TreeSonifier {
     }
 
     private static char inferSvgStatus(final String cssClasses, final int executions) {
+        if (cssClasses.contains("regression") && !cssClasses.contains("regression_warning")) {
+            return 'R';
+        }
         if (cssClasses.contains("failed") && !cssClasses.contains("child_failed")) {
             return 'F';
         }
         if (cssClasses.contains("child_failed")) {
             return 'U';
+        }
+        if (cssClasses.contains("regression_warning")) {
+            return 'M';
         }
         if (cssClasses.contains("warning")) {
             return 'W';
@@ -1565,7 +1645,7 @@ public final class DnbSonifier implements TreeSonifier {
         }
     }
 
-    private record NodeState(
+    record NodeState(
             String path,
             int col,
             int rowTenths,

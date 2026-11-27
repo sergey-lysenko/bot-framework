@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static works.lysenko.Base.parameters;
+import static works.lysenko.util.data.strs.Swap.s;
+import static works.lysenko.util.spec.Symbols._LFD_;
 
 /**
  * Renders scenario tree progression layouts as SVG strings.
@@ -164,8 +166,8 @@ public final class SvgTreeRenderer {
         if (baseW > ProgressionFrames.MAX_DIMENSION
                 || baseH > ProgressionFrames.MAX_DIMENSION
                 || (long) baseW * baseH > maxPixels) {
-            throw new IllegalArgumentException("Rendered tree frame would exceed the configured limit ("
-                    + baseW + "x" + baseH + ", max pixels " + maxPixels + ")");
+            throw new IllegalArgumentException(s("Rendered tree frame would exceed the configured limit (",
+                    baseW, "x", baseH, ", max pixels ", maxPixels, ")"));
         }
 
         final TreeCameraTransform.Transform tx = (null != overrideTx) ? overrideTx : TreeCameraTransform.computeZoomTransform(layout, recentNodeKeys, target, baseW, baseH);
@@ -175,31 +177,31 @@ public final class SvgTreeRenderer {
 
         final StringBuilder sb = new StringBuilder();
         sb.append(String.format(Locale.US,
-                "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%d\" height=\"%d\" viewBox=\"0 0 %d %d\">\n",
+                s("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%d\" height=\"%d\" viewBox=\"0 0 %d %d\">", _LFD_),
                 baseW, baseH, baseW, baseH));
-        sb.append("  <defs>\n");
+        sb.append("  <defs>").append(_LFD_);
         ProgressionChrome.appendDotGridPattern(sb, headerH);
-        sb.append("    <pattern id=\"known-issue-hatch\" width=\"10\" height=\"10\" patternTransform=\"rotate(45 0 0)\" patternUnits=\"userSpaceOnUse\">\n");
-        sb.append("      <line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"10\" stroke=\"#fbbf24\" stroke-width=\"2\" stroke-opacity=\"0.45\" />\n");
-        sb.append("      <line x1=\"0\" y1=\"0\" x2=\"10\" y2=\"0\" stroke=\"#fbbf24\" stroke-width=\"2\" stroke-opacity=\"0.45\" />\n");
-        sb.append("    </pattern>\n");
-        sb.append("    <rect id=\"cb\" width=\"" + CARD_WIDTH + "\" height=\"" + CARD_HEIGHT + "\" rx=\"8\" ry=\"8\" />\n");
-        sb.append("    <rect id=\"pt\" x=\"8\" y=\"" + (CARD_HEIGHT - 8) + "\" width=\"" + (CARD_WIDTH - 16) + "\" height=\"4\" fill=\"#0f172a\" opacity=\"0.8\" rx=\"2\" ry=\"2\" />\n");
-        sb.append("    <rect id=\"ho\" width=\"" + CARD_WIDTH + "\" height=\"" + CARD_HEIGHT + "\" fill=\"url(#known-issue-hatch)\" rx=\"8\" ry=\"8\" pointer-events=\"none\" />\n");
-        sb.append("  </defs>\n");
-        sb.append("  <style>\n");
-        sb.append("    .tx1 { font-family: monospace; font-size: 10px; font-weight: bold; }\n");
-        sb.append("    .tx2 { font-family: sans-serif; font-size: 12px; }\n");
-        sb.append("    .tx3 { font-family: monospace; font-weight: bold; font-size: 11px; }\n");
-        sb.append("    .tx4 { font-family: sans-serif; font-weight: bold; font-size: 15px; fill: #F8FAFC; }\n");
-        sb.append("    .pb { fill: #0f172a; opacity: 0.8; }\n");
-        sb.append("    .edge { fill: none; }\n");
-        sb.append("  </style>\n");
+        sb.append("    <pattern id=\"known-issue-hatch\" width=\"10\" height=\"10\" patternTransform=\"rotate(45 0 0)\" patternUnits=\"userSpaceOnUse\">").append(_LFD_);
+        sb.append("      <line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"10\" stroke=\"#fbbf24\" stroke-width=\"2\" stroke-opacity=\"0.45\" />").append(_LFD_);
+        sb.append("      <line x1=\"0\" y1=\"0\" x2=\"10\" y2=\"0\" stroke=\"#fbbf24\" stroke-width=\"2\" stroke-opacity=\"0.45\" />").append(_LFD_);
+        sb.append("    </pattern>").append(_LFD_);
+        sb.append(s("    <rect id=\"cb\" width=\"", CARD_WIDTH, "\" height=\"", CARD_HEIGHT, "\" rx=\"8\" ry=\"8\" />", _LFD_));
+        sb.append(s("    <rect id=\"pt\" x=\"8\" y=\"", CARD_HEIGHT - 8, "\" width=\"", CARD_WIDTH - 16, "\" height=\"4\" fill=\"#0f172a\" opacity=\"0.8\" rx=\"2\" ry=\"2\" />", _LFD_));
+        sb.append(s("    <rect id=\"ho\" width=\"", CARD_WIDTH, "\" height=\"", CARD_HEIGHT, "\" fill=\"url(#known-issue-hatch)\" rx=\"8\" ry=\"8\" pointer-events=\"none\" />", _LFD_));
+        sb.append("  </defs>").append(_LFD_);
+        sb.append("  <style>").append(_LFD_);
+        sb.append("    .tx1 { font-family: monospace; font-size: 10px; font-weight: bold; }").append(_LFD_);
+        sb.append("    .tx2 { font-family: sans-serif; font-size: 12px; }").append(_LFD_);
+        sb.append("    .tx3 { font-family: monospace; font-weight: bold; font-size: 11px; }").append(_LFD_);
+        sb.append("    .tx4 { font-family: sans-serif; font-weight: bold; font-size: 15px; fill: #F8FAFC; }").append(_LFD_);
+        sb.append("    .pb { fill: #0f172a; opacity: 0.8; }").append(_LFD_);
+        sb.append("    .edge { fill: none; }").append(_LFD_);
+        sb.append("  </style>").append(_LFD_);
 
         ProgressionChrome.appendCanvasBackground(sb, baseW, baseH, headerH);
 
         sb.append(String.format(Locale.US,
-                "  <g transform=\"translate(%.2f, %.2f) scale(%.4f)\">\n",
+                s("  <g transform=\"translate(%.2f, %.2f) scale(%.4f)\">", _LFD_),
                 translateX, translateY, zoom));
 
         final List<Edge> sortedEdges = new ArrayList<>(layout.edges());
@@ -218,8 +220,12 @@ public final class SvgTreeRenderer {
 
             final int toExecs = (null != e.to().result()) ? e.to().result().getExecutions() : 0;
             final int fromExecs = (null != e.from().result()) ? e.from().result().getExecutions() : 0;
-            final boolean toWarning = TreeHtml.hasWarning(e.to());
-            final boolean toNotice = !toWarning && TreeHtml.hasNotice(e.to());
+            final NodeEventClassifier.Classification toCls = NodeEventClassifier.classify(e.to());
+            final boolean toRegression = toCls.hasRegression();
+            final boolean toFailure = toCls.hasFailure();
+            final boolean toRegressionWarning = toCls.hasRegressionWarning();
+            final boolean toWarning = toCls.hasWarning();
+            final boolean toNotice = !toWarning && toCls.hasNotice();
             final boolean isRecent = recentNodeKeys.contains(e.to().id());
 
             String strokeColor = "#334155";
@@ -229,12 +235,16 @@ public final class SvgTreeRenderer {
 
             if (isRecent) {
                 sb.append(String.format(Locale.US,
-                        "  <path class=\"edge\" fill=\"none\" d=\"M %d %d C %d %d, %d %d, %d %d\" stroke=\"#38BDF8\" stroke-opacity=\"0.35\" stroke-width=\"5.0\" />\n",
+                        s("  <path class=\"edge\" fill=\"none\" d=\"M %d %d C %d %d, %d %d, %d %d\" stroke=\"#38BDF8\" stroke-opacity=\"0.35\" stroke-width=\"5.0\" />", _LFD_),
                         startX, startY, cX, startY, cX, endY, endX, endY));
                 strokeColor = "#38BDF8";
                 strokeOpacity = "";
                 strokeW = 3.0f;
-            } else if (TreeHtml.hasFailure(e.to())) {
+            } else if (toRegression) {
+                strokeColor = "#E879F9";
+                strokeOpacity = "";
+                strokeW = 2.5f;
+            } else if (toFailure) {
                 strokeColor = "#EF4444";
                 strokeOpacity = "";
                 strokeW = 2.2f;
@@ -244,7 +254,9 @@ public final class SvgTreeRenderer {
                 strokeW = 1.2f;
                 dash = "stroke-dasharray=\"3 3\" ";
             } else if (toExecs > 0 && fromExecs > 0) {
-                if (toWarning) {
+                if (toRegressionWarning) {
+                    strokeColor = "#F472B6";
+                } else if (toWarning) {
                     strokeColor = "#F59E0B";
                 } else if (toNotice) {
                     strokeColor = "#06B6D4";
@@ -262,7 +274,7 @@ public final class SvgTreeRenderer {
             }
 
             sb.append(String.format(Locale.US,
-                    "  <path class=\"edge\" fill=\"none\" d=\"M %d %d C %d %d, %d %d, %d %d\" stroke=\"%s\" %sstroke-width=\"%.1f\" %s/>\n",
+                    s("  <path class=\"edge\" fill=\"none\" d=\"M %d %d C %d %d, %d %d, %d %d\" stroke=\"%s\" %sstroke-width=\"%.1f\" %s/>", _LFD_),
                     startX, startY, cX, startY, cX, endY, endX, endY, strokeColor, strokeOpacity, strokeW, dash));
         }
 
@@ -275,12 +287,12 @@ public final class SvgTreeRenderer {
         }
         sb.append(new HtmlTreeRenderer(TreeTheme.DEFAULT).renderNodes(visualNodes));
 
-        sb.append("  </g>\n");
+        sb.append("  </g>").append(_LFD_);
 
         final double scale = baseW / 1200.0;
         final int localW = (int) Math.round(baseW / scale);
 
-        sb.append(String.format(Locale.US, "  <g transform=\"scale(%.4f)\">\n", scale));
+        sb.append(String.format(Locale.US, s("  <g transform=\"scale(%.4f)\">", _LFD_), scale));
         ProgressionChrome.appendHeaderBar(sb, localW);
 
         final int hudMarginX = 24;
@@ -292,12 +304,12 @@ public final class SvgTreeRenderer {
         rightX = ProgressionChrome.appendBorderedBadge(sb, rctx.elapsedBadge(), rightX, topY, ProgressionChrome.BADGE_SLATE);
         final ProgressionChrome.EtaBadge etaBadge = rctx.etaBadge();
         rightX = ProgressionChrome.appendBorderedBadge(sb, etaBadge.text(), rightX, topY, etaBadge.style());
-        rightX = ProgressionChrome.appendBorderedBadge(sb, totalExecs + " execs", rightX, topY, ProgressionChrome.BADGE_SLATE);
+        rightX = ProgressionChrome.appendBorderedBadge(sb, s(totalExecs, " execs"), rightX, topY, ProgressionChrome.BADGE_SLATE);
 
         final String zoomStr = String.format(Locale.US, "Zoom: %.2fx", zoom);
         rightX = ProgressionChrome.appendBorderedBadge(sb, zoomStr, rightX, topY, ProgressionChrome.BADGE_SKY);
 
-        rightX = ProgressionChrome.appendBorderedBadge(sb, "Target: " + target, rightX, topY, ProgressionChrome.BADGE_SLATE);
+        rightX = ProgressionChrome.appendBorderedBadge(sb, s("Target: ", target), rightX, topY, ProgressionChrome.BADGE_SLATE);
         rightX = ProgressionChrome.appendBorderedBadge(
                 sb,
                 ProgressionChrome.formatLeavesBadge(coveredLeaves, totalLeaves),
@@ -327,17 +339,17 @@ public final class SvgTreeRenderer {
                     rctx.debugDz(),
                     rctx.debugMaxZoom(),
                     totalCols);
-            sb.append("    <g id=\"tree-debug-overlay\">\n");
-            sb.append(String.format(Locale.US, "      <text class=\"tx3\" x=\"%d\" y=\"%d\" fill=\"#64748B\">%s</text>\n", PADDING_X, HEADER_HEIGHT_BASE - 5, debugStr));
+            sb.append("    <g id=\"tree-debug-overlay\">").append(_LFD_);
+            sb.append(String.format(Locale.US, s("      <text class=\"tx3\" x=\"%d\" y=\"%d\" fill=\"#64748B\">%s</text>", _LFD_), PADDING_X, HEADER_HEIGHT_BASE - 5, debugStr));
 
             final double ox = localW / 2.0;
             final double oy = (baseH / scale) / 2.0;
-            sb.append(String.format(Locale.US, "      <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"#F59E0B\" stroke-width=\"2\" />\n",
+            sb.append(String.format(Locale.US, s("      <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"#F59E0B\" stroke-width=\"2\" />", _LFD_),
                     ox, oy, ox - rctx.debugDx(), oy - rctx.debugDy()));
-            sb.append(String.format(Locale.US, "      <circle cx=\"%.1f\" cy=\"%.1f\" r=\"3\" fill=\"#F59E0B\" />\n", ox, oy));
-            sb.append(String.format(Locale.US, "      <circle cx=\"%.1f\" cy=\"%.1f\" r=\"2\" fill=\"#F8FAFC\" />\n",
+            sb.append(String.format(Locale.US, s("      <circle cx=\"%.1f\" cy=\"%.1f\" r=\"3\" fill=\"#F59E0B\" />", _LFD_), ox, oy));
+            sb.append(String.format(Locale.US, s("      <circle cx=\"%.1f\" cy=\"%.1f\" r=\"2\" fill=\"#F8FAFC\" />", _LFD_),
                     ox - rctx.debugDx(), oy - rctx.debugDy()));
-            sb.append("    </g>\n");
+            sb.append("    </g>").append(_LFD_);
         }
 
         final works.lysenko.base.output.SummaryPlaque plaque = layout.plaque() != null
@@ -352,9 +364,9 @@ public final class SvgTreeRenderer {
         final int plaqueW = Math.max(810, localW - plaqueMarginX * 2);
         renderPlaqueSvg(plaque, sb, plaqueMarginX, HEADER_HEIGHT_BASE + 16, plaqueW);
 
-        sb.append("  </g>\n");
+        sb.append("  </g>").append(_LFD_);
 
-        sb.append("</svg>\n");
+        sb.append("</svg>").append(_LFD_);
         return sb.toString();
     }
 
@@ -418,20 +430,20 @@ public final class SvgTreeRenderer {
         final int plaqueH = 105 + yOffset;
 
         sb.append(String.format(Locale.US,
-                "    <g id=\"exec-stats-plaque\" transform=\"translate(%d, %d)\">\n", x, y));
+                s("    <g id=\"exec-stats-plaque\" transform=\"translate(%d, %d)\">", _LFD_), x, y));
 
         sb.append(String.format(Locale.US,
-                "      <rect width=\"%d\" height=\"%d\" rx=\"8\" ry=\"8\" fill=\"#0F172A\" fill-opacity=\"0.92\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-opacity=\"0.4\" />\n",
+                s("      <rect width=\"%d\" height=\"%d\" rx=\"8\" ry=\"8\" fill=\"#0F172A\" fill-opacity=\"0.92\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-opacity=\"0.4\" />", _LFD_),
                 plaqueW, plaqueH));
 
-        sb.append("      <text x=\"16\" y=\"22\" fill=\"#F8FAFC\" font-size=\"12\" font-weight=\"bold\" font-family=\"sans-serif\">⚡ Execution Statistics</text>\n");
+        sb.append("      <text x=\"16\" y=\"22\" fill=\"#F8FAFC\" font-size=\"12\" font-weight=\"bold\" font-family=\"sans-serif\">⚡ Execution Statistics</text>").append(_LFD_);
 
         if (hasMode) {
             sb.append(String.format(Locale.US,
-                    "      <rect x=\"%d\" y=\"9\" width=\"%d\" height=\"18\" rx=\"9\" ry=\"9\" fill=\"#A855F7\" fill-opacity=\"0.15\" stroke=\"#C084FC\" stroke-opacity=\"0.35\" stroke-width=\"1\" />\n",
+                    s("      <rect x=\"%d\" y=\"9\" width=\"%d\" height=\"18\" rx=\"9\" ry=\"9\" fill=\"#A855F7\" fill-opacity=\"0.15\" stroke=\"#C084FC\" stroke-opacity=\"0.35\" stroke-width=\"1\" />", _LFD_),
                     modeBadgeX, modeBadgeW));
             sb.append(String.format(Locale.US,
-                    "      <text x=\"%d\" y=\"21\" fill=\"#C084FC\" font-size=\"9.5\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%s</text>\n",
+                    s("      <text x=\"%d\" y=\"21\" fill=\"#C084FC\" font-size=\"9.5\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%s</text>", _LFD_),
                     modeBadgeX + (modeBadgeW / 2), ProgressionChrome.escapeXml(plaque.mode())));
         }
 
@@ -457,12 +469,12 @@ public final class SvgTreeRenderer {
                         "<tspan dx=\"4\" fill=\"%s\" font-weight=\"bold\">%s</tspan>",
                         item.valueColor(), ProgressionChrome.escapeXml(item.value())));
             }
-            sb.append("</text>\n");
+            sb.append("</text>").append(_LFD_);
         }
 
         final int divY = 32 + yOffset;
         sb.append(String.format(Locale.US,
-                "      <line x1=\"12\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#334155\" stroke-width=\"1\" />\n",
+                s("      <line x1=\"12\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#334155\" stroke-width=\"1\" />", _LFD_),
                 divY, plaqueW - 12, divY));
 
         final double slotW = (double) (plaqueW - 16 - leftEdge) / Math.max(1, visibleCols.size());
@@ -474,33 +486,33 @@ public final class SvgTreeRenderer {
             final works.lysenko.base.output.SummaryPlaque.MetricColumn col = visibleCols.get(c);
             final int colX = (int) Math.round(leftEdge + (c + 0.5) * slotW);
             sb.append(String.format(Locale.US,
-                    "      <text x=\"%d\" y=\"%d\" fill=\"%s\" font-size=\"8.5\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%s</text>\n",
+                    s("      <text x=\"%d\" y=\"%d\" fill=\"%s\" font-size=\"8.5\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%s</text>", _LFD_),
                     colX, headerRowY, col.colorHex(), ProgressionChrome.escapeXml(col.label().toUpperCase(Locale.ROOT))));
         }
 
         sb.append(String.format(Locale.US,
-                "      <text x=\"16\" y=\"%d\" fill=\"#CBD5E1\" font-size=\"10\" font-weight=\"bold\" font-family=\"sans-serif\">Amount</text>\n",
+                s("      <text x=\"16\" y=\"%d\" fill=\"#CBD5E1\" font-size=\"10\" font-weight=\"bold\" font-family=\"sans-serif\">Amount</text>", _LFD_),
                 amountRowY));
         for (int c = 0; c < visibleCols.size(); c++) {
             final works.lysenko.base.output.SummaryPlaque.MetricColumn col = visibleCols.get(c);
             final int colX = (int) Math.round(leftEdge + (c + 0.5) * slotW);
             sb.append(String.format(Locale.US,
-                    "      <text x=\"%d\" y=\"%d\" fill=\"%s\" font-size=\"11\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%d</text>\n",
+                    s("      <text x=\"%d\" y=\"%d\" fill=\"%s\" font-size=\"11\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%d</text>", _LFD_),
                     colX, amountRowY, col.colorHex(), col.amount()));
         }
 
         sb.append(String.format(Locale.US,
-                "      <text x=\"16\" y=\"%d\" fill=\"#CBD5E1\" font-size=\"10\" font-weight=\"bold\" font-family=\"sans-serif\">Percentage</text>\n",
+                s("      <text x=\"16\" y=\"%d\" fill=\"#CBD5E1\" font-size=\"10\" font-weight=\"bold\" font-family=\"sans-serif\">Percentage</text>", _LFD_),
                 pctRowY));
         for (int c = 0; c < visibleCols.size(); c++) {
             final works.lysenko.base.output.SummaryPlaque.MetricColumn col = visibleCols.get(c);
             final int colX = (int) Math.round(leftEdge + (c + 0.5) * slotW);
             sb.append(String.format(Locale.US,
-                    "      <text x=\"%d\" y=\"%d\" fill=\"%s\" font-size=\"10\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%s</text>\n",
+                    s("      <text x=\"%d\" y=\"%d\" fill=\"%s\" font-size=\"10\" font-weight=\"bold\" font-family=\"monospace\" text-anchor=\"middle\">%s</text>", _LFD_),
                     colX, pctRowY, col.colorHex(), col.percentage()));
         }
 
-        sb.append("    </g>\n");
+        sb.append("    </g>").append(_LFD_);
     }
 
     private static boolean hasText(final String text) {

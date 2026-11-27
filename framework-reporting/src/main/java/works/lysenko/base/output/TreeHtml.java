@@ -42,6 +42,14 @@ public final class TreeHtml {
         return KnownIssuesStore.getGlobalStore();
     }
 
+    public static void setFixedIssuesStore(final KnownIssuesStore store) {
+        KnownIssuesStore.setFixedGlobalStore(store);
+    }
+
+    public static KnownIssuesStore getFixedIssuesStore() {
+        return KnownIssuesStore.getFixedGlobalStore();
+    }
+
     public static void setExpectedResponsesStore(final works.lysenko.base.responses.ExpectedResponsesStore store) {
         works.lysenko.base.responses.ExpectedResponsesStore.setGlobalStore(store);
     }
@@ -66,6 +74,7 @@ public final class TreeHtml {
         private final _Scenario scenario;
         private final List<NodeData> children = new ArrayList<>();
         private final List<KnownIssue> knownIssues = new ArrayList<>();
+        private final List<KnownIssue> fixedIssues = new ArrayList<>();
         private NodeData parent;
         private NodeEventClassifier.Classification precomputedClassification;
         private Boolean precomputedChildFailure;
@@ -116,6 +125,7 @@ public final class TreeHtml {
         public _Scenario scenario() { return scenario; }
         public List<NodeData> children() { return children; }
         public List<KnownIssue> knownIssues() { return knownIssues; }
+        public List<KnownIssue> fixedIssues() { return fixedIssues; }
         public NodeData parent() { return parent; }
         public void setParent(final NodeData parent) { this.parent = parent; }
         public NodeEventClassifier.Classification precomputedClassification() { return precomputedClassification; }
@@ -211,6 +221,9 @@ public final class TreeHtml {
             if (!orig.knownIssues().isEmpty()) {
                 copy.knownIssues().addAll(orig.knownIssues());
             }
+            if (!orig.fixedIssues().isEmpty()) {
+                copy.fixedIssues().addAll(orig.fixedIssues());
+            }
             copy.setPrecomputed(cls, childFailure, executable);
             copyMap.put(orig, copy);
             snapshotNodes.add(copy);
@@ -290,6 +303,14 @@ public final class TreeHtml {
 
     public static boolean hasFailure(final NodeData n) {
         return NodeEventClassifier.classify(n).hasFailure();
+    }
+
+    public static boolean hasRegression(final NodeData n) {
+        return NodeEventClassifier.classify(n).hasRegression();
+    }
+
+    public static boolean hasRegressionWarning(final NodeData n) {
+        return NodeEventClassifier.classify(n).hasRegressionWarning();
     }
 
     public static int getUnclassifiedEventCount(final NodeData n) {

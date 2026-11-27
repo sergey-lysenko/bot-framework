@@ -49,4 +49,58 @@ class KnownIssuesHtmlTest {
         assertFalse(html.contains("href=\"javascript:"));
         assertTrue(html.contains("scenario-level match"));
     }
+
+    @Test
+    @DisplayName("Renders two-magenta regressions and fixed-issues verification sections with resolved metadata")
+    void rendersFixedIssueRegressionsAndVerification() {
+        final Map<String, KnownIssuesSummary.Entry> regressed = new LinkedHashMap<>();
+        final String regLink = "https://example.atlassian.net/browse/FIX-101";
+        regressed.put(regLink, new KnownIssuesSummary.Entry(
+                regLink, regLink, "Crash returned", "NPE on checkout",
+                new TreeSet<>(Set.of(3, 14)), "2026-04-10T09:00:00Z", "run-20260410"));
+
+        final Map<String, KnownIssuesSummary.Entry> regWarnings = new LinkedHashMap<>();
+        final String regWarnLink = "https://example.atlassian.net/browse/FIX-102";
+        regWarnings.put(regWarnLink, new KnownIssuesSummary.Entry(
+                regWarnLink, regWarnLink, "Deprecation warning returned", "Console warn",
+                new TreeSet<>(Set.of(7)), "2026-04-12T11:30:00Z", ""));
+
+        final Map<String, KnownIssuesSummary.Entry> verifiedFixed = new LinkedHashMap<>();
+        final String verLink = "https://example.atlassian.net/browse/FIX-103";
+        verifiedFixed.put(verLink, new KnownIssuesSummary.Entry(
+                verLink, verLink, "Old timeout stayed fixed", "",
+                Collections.emptySet(), "2026-04-01T00:00:00Z", "run-20260401"));
+
+        final Map<String, KnownIssuesSummary.Entry> fixedNotChecked = new LinkedHashMap<>();
+        final String uncheckedLink = "https://example.atlassian.net/browse/FIX-104";
+        fixedNotChecked.put(uncheckedLink, new KnownIssuesSummary.Entry(
+                uncheckedLink, uncheckedLink, "Unchecked fixed bug", "",
+                Collections.emptySet(), "", ""));
+
+        final KnownIssuesSummary summary = new KnownIssuesSummary(
+                Map.of(), Map.of(), Map.of(),
+                regressed, regWarnings, verifiedFixed, fixedNotChecked);
+
+        final String html = KnownIssuesHtml.render(summary);
+
+        assertTrue(html.contains("Regressions (Fixed Issues Reproduced)"));
+        assertTrue(html.contains("Regression Warnings"));
+        assertTrue(html.contains("Verified Fixed Issues"));
+        assertTrue(html.contains("Fixed Issues NOT Checked"));
+        assertTrue(html.contains(">FIX-101</a>"));
+        assertTrue(html.contains(">FIX-102</a>"));
+        assertTrue(html.contains(">FIX-103</a>"));
+        assertTrue(html.contains(">FIX-104</a>"));
+        assertTrue(html.contains("navigateToLog(event,'test-3')"));
+        assertTrue(html.contains("navigateToLog(event,'test-14')"));
+        assertTrue(html.contains("navigateToLog(event,'test-7')"));
+        assertTrue(html.contains("Resolved: 2026-04-10T09:00:00Z"));
+        assertTrue(html.contains("Verified in run: run-20260410"));
+        assertTrue(html.contains("stat regression"));
+        assertTrue(html.contains("stat regression-warning"));
+        assertTrue(html.contains("stat verified-fixed"));
+        assertTrue(html.contains("stat fixed-not-checked"));
+        assertFalse(html.contains("{{"));
+    }
 }
+

@@ -171,6 +171,10 @@ public record Layout() {
         public static final String KNOWN_ISSUES = s(KNOWN, _SLASH_, ISSUES, _DOT_, JSON);
         /** Known issues path. */
         public static final String KNOWN_ISSUES_ = s(_RESOURCES_, KNOWN_ISSUES);
+        /** Fixed issues file name. */
+        public static final String FIXED_ISSUES = s(KNOWN, _SLASH_, "fixed", _DOT_, ISSUES, _DOT_, JSON);
+        /** Fixed issues path. */
+        public static final String FIXED_ISSUES_ = s(_RESOURCES_, FIXED_ISSUES);
         static final String KNOWN_COLOURS_ = s(_RESOURCES_, KNOWN, _SLASH_, COLOURS);
         // Containers
         /** Properties container for known colours. */
@@ -232,6 +236,8 @@ public record Layout() {
         public static final String NEW_ISSUES_WARNING_ = s($1_S, s, $1_S, _DOT_, ISSUES, _DOT_, WARNING, _DOT_, HTML);
         /** Run known issues template. */
         public static final String RUN_KNOWN_ISSUES_ = s($1_S, s, $1_S, _DOT_, KNOWN, _DOT_, ISSUES, _DOT_, JSON);
+        /** Run fixed issues template. */
+        public static final String RUN_FIXED_ISSUES_ = s($1_S, s, $1_S, _DOT_, "fixed", _DOT_, ISSUES, _DOT_, JSON);
         /** Run expected responses template. */
         public static final String RUN_EXPECTED_RESPONSES_ = s($1_S, s, $1_S, _DOT_, "expected", _DOT_, "responses", _DOT_, JSON);
         /** Run exhaustive completions template. */

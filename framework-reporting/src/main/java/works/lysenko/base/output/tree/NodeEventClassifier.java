@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Single-pass, incrementally cached event classifier for {@link NodeData}.
  * <p>
@@ -32,14 +34,32 @@ public final class NodeEventClassifier {
 
     /**
      * Immutable classification result for a tree node at the current instant.
+     *
+     * @param hasFailure           true if any failure-tier event (unknown or failure regression) occurred
+     * @param hasWarning           true if no failure occurred and any warning-tier event (unknown, known-issue, or warning regression) occurred
+     * @param hasNotice            true if no failure/warning occurred and any notice event occurred
+     * @param hasRegression        true if a failure-tier (S0/S1) event matched a fixed issue (beats FAILED on tie)
+     * @param hasRegressionWarning true if no failure occurred and a warning-tier event matched a fixed issue (beats WARNING on tie)
+     * @param unclassifiedEventCount number of non-expected events
      */
     public record Classification(
             boolean hasFailure,
             boolean hasWarning,
             boolean hasNotice,
+            boolean hasRegression,
+            boolean hasRegressionWarning,
             int unclassifiedEventCount) {
 
-        static final Classification EMPTY = new Classification(false, false, false, 0);
+        /** Backward-compatible constructor without regression flags. */
+        public Classification(
+                final boolean hasFailure,
+                final boolean hasWarning,
+                final boolean hasNotice,
+                final int unclassifiedEventCount) {
+            this(hasFailure, hasWarning, hasNotice, false, false, unclassifiedEventCount);
+        }
+
+        static final Classification EMPTY = new Classification(false, false, false, false, false, 0);
     }
 
     private static final class ResultCursor {
@@ -47,6 +67,7 @@ public final class NodeEventClassifier {
         final int responsesSize;
         final String nodeKey;
         final List<KnownIssue> knownIssuesSnapshot;
+        final List<KnownIssue> fixedIssuesSnapshot;
         final List<ExpectedResponse> matchingResponses;
         final boolean hasBlankExpectedPattern;
 
@@ -59,8 +80,12 @@ public final class NodeEventClassifier {
         int browserWithDataCount;
         boolean nonBrowserFailure;
         boolean browserFailure;
+        boolean nonBrowserRegression;
+        boolean browserRegression;
         boolean nonBrowserWarning;
         boolean browserWarning;
+        boolean nonBrowserRegressionWarning;
+        boolean browserRegressionWarning;
         boolean nonBrowserNotice;
         boolean browserNotice;
 
@@ -69,12 +94,14 @@ public final class NodeEventClassifier {
                 final int responsesSize,
                 final String nodeKey,
                 final List<KnownIssue> knownIssuesSnapshot,
+                final List<KnownIssue> fixedIssuesSnapshot,
                 final List<ExpectedResponse> matchingResponses,
                 final boolean hasBlankExpectedPattern) {
             this.expStore = expStore;
             this.responsesSize = responsesSize;
             this.nodeKey = nodeKey;
             this.knownIssuesSnapshot = knownIssuesSnapshot;
+            this.fixedIssuesSnapshot = fixedIssuesSnapshot;
             this.matchingResponses = matchingResponses;
             this.hasBlankExpectedPattern = hasBlankExpectedPattern;
             this.nodeMatchedExpected = hasBlankExpectedPattern;
@@ -88,7 +115,7 @@ public final class NodeEventClassifier {
     }
 
     /**
-     * Classifies a node's current failure, warning, notice, and unclassified event status.
+     * Classifies a node's current failure, regression, warning, notice, and unclassified event status.
      *
      * @param node tree node to classify
      * @return current {@link Classification}
@@ -104,7 +131,7 @@ public final class NodeEventClassifier {
 
         final _Result res = node.result();
         if (null == res) {
-            return scenarioFailed ? new Classification(true, false, false, 0) : Classification.EMPTY;
+            return scenarioFailed ? new Classification(true, false, false, false, false, 0) : Classification.EMPTY;
         }
 
         final List<_LogRecord> events = res.getEvents();
@@ -112,19 +139,20 @@ public final class NodeEventClassifier {
         if (0 == eventCount) {
             final boolean failure = scenarioFailed || res.status() == ExecutionStatus.FAILED;
             final boolean warning = !failure && res.status() == ExecutionStatus.WARNING;
-            return new Classification(failure, warning, false, 0);
+            return new Classification(failure, warning, false, false, false, 0);
         }
 
         final ExpectedResponsesStore expStore = TreeHtml.getExpectedResponsesStore();
         final int responsesSize = (null != expStore && null != expStore.getResponses()) ? expStore.getResponses().size() : 0;
         final List<KnownIssue> knownIssues = (null != node.knownIssues()) ? node.knownIssues() : Collections.emptyList();
+        final List<KnownIssue> fixedIssues = (null != node.fixedIssues()) ? node.fixedIssues() : Collections.emptyList();
         final String nodeKey = buildNodeKey(node);
         final _LogRecord firstRecord = events.getFirst();
 
         final ResultCursor cursor;
         synchronized (CURSOR_LOCK) {
             final ResultCursor existing = CURSORS.get(res);
-            if (isValid(existing, expStore, responsesSize, nodeKey, knownIssues, events, eventCount, firstRecord)) {
+            if (isValid(existing, expStore, responsesSize, nodeKey, knownIssues, fixedIssues, events, eventCount, firstRecord)) {
                 cursor = existing;
             } else {
                 final List<ExpectedResponse> matching = filterMatchingResponses(expStore, node);
@@ -133,6 +161,7 @@ public final class NodeEventClassifier {
                         responsesSize,
                         nodeKey,
                         knownIssues.isEmpty() ? Collections.emptyList() : new ArrayList<>(knownIssues),
+                        fixedIssues.isEmpty() ? Collections.emptyList() : new ArrayList<>(fixedIssues),
                         matching,
                         false);
                 CURSORS.put(res, cursor);
@@ -146,12 +175,16 @@ public final class NodeEventClassifier {
             final boolean hasFailure = scenarioFailed
                     || cursor.nonBrowserFailure
                     || (!matchedExpected && cursor.browserFailure);
+            final boolean hasRegression = cursor.nonBrowserRegression
+                    || (!matchedExpected && cursor.browserRegression);
             final boolean hasWarning = !hasFailure
                     && (cursor.nonBrowserWarning || (!matchedExpected && cursor.browserWarning));
+            final boolean hasRegressionWarning = !hasFailure
+                    && (cursor.nonBrowserRegressionWarning || (!matchedExpected && cursor.browserRegressionWarning));
             final boolean hasNotice = !hasFailure && !hasWarning
                     && (cursor.nonBrowserNotice || (!matchedExpected && cursor.browserNotice));
             final int unclassified = cursor.nonBrowserCount + (matchedExpected ? 0 : cursor.browserWithDataCount);
-            return new Classification(hasFailure, hasWarning, hasNotice, unclassified);
+            return new Classification(hasFailure, hasWarning, hasNotice, hasRegression, hasRegressionWarning, unclassified);
         }
     }
 
@@ -161,6 +194,7 @@ public final class NodeEventClassifier {
             final int responsesSize,
             final String nodeKey,
             final List<KnownIssue> knownIssues,
+            final List<KnownIssue> fixedIssues,
             final List<_LogRecord> events,
             final int eventCount,
             final _LogRecord firstRecord) {
@@ -168,6 +202,7 @@ public final class NodeEventClassifier {
         if (cursor.expStore != expStore || cursor.responsesSize != responsesSize) return false;
         if (!cursor.nodeKey.equals(nodeKey)) return false;
         if (!cursor.knownIssuesSnapshot.equals(knownIssues)) return false;
+        if (!cursor.fixedIssuesSnapshot.equals(fixedIssues)) return false;
         if (cursor.scannedUpTo > eventCount) return false;
         if (cursor.scannedUpTo > 0) {
             return cursor.firstRecord == firstRecord && events.get(cursor.scannedUpTo - 1) == cursor.lastRecord;
@@ -183,6 +218,7 @@ public final class NodeEventClassifier {
         final boolean hasExpStore = null != cursor.expStore;
         final List<ExpectedResponse> matchingResponses = cursor.matchingResponses;
         final List<KnownIssue> knownIssues = cursor.knownIssuesSnapshot;
+        final List<KnownIssue> fixedIssues = cursor.fixedIssuesSnapshot;
 
         for (int i = cursor.scannedUpTo; i < eventCount; i++) {
             final _LogRecord lr = events.get(i);
@@ -202,8 +238,14 @@ public final class NodeEventClassifier {
                 cursor.nonBrowserCount++;
             }
 
+            final boolean matchesActiveKnown = !knownIssues.isEmpty() && matchesAnyIssue(knownIssues, lr);
+            final boolean matchesFixed = !matchesActiveKnown && !fixedIssues.isEmpty() && matchesAnyIssue(fixedIssues, lr);
+
             if (!hasData) {
                 cursor.nonBrowserWarning = true;
+                if (matchesFixed) {
+                    cursor.nonBrowserRegressionWarning = true;
+                }
                 continue;
             }
 
@@ -218,21 +260,35 @@ public final class NodeEventClassifier {
                     if (!isDecreasedToWarning(knownIssues, lr)) {
                         if (isBrowserText) {
                             cursor.browserFailure = true;
+                            if (matchesFixed) cursor.browserRegression = true;
                         } else {
                             cursor.nonBrowserFailure = true;
+                            if (matchesFixed) cursor.nonBrowserRegression = true;
                         }
                     }
                 } else if (Severity.S2 == sev) {
                     if (isBrowserText) {
                         cursor.browserWarning = true;
+                        if (matchesFixed) cursor.browserRegressionWarning = true;
                     } else {
                         cursor.nonBrowserWarning = true;
+                        if (matchesFixed) cursor.nonBrowserRegressionWarning = true;
                     }
                 } else if (Severity.S3 == sev) {
-                    if (isBrowserText) {
-                        cursor.browserNotice = true;
+                    if (matchesFixed) {
+                        if (isBrowserText) {
+                            cursor.browserWarning = true;
+                            cursor.browserRegressionWarning = true;
+                        } else {
+                            cursor.nonBrowserWarning = true;
+                            cursor.nonBrowserRegressionWarning = true;
+                        }
                     } else {
-                        cursor.nonBrowserNotice = true;
+                        if (isBrowserText) {
+                            cursor.browserNotice = true;
+                        } else {
+                            cursor.nonBrowserNotice = true;
+                        }
                     }
                 }
             }
@@ -268,6 +324,18 @@ public final class NodeEventClassifier {
         return false;
     }
 
+    private static boolean matchesAnyIssue(final List<KnownIssue> issues, final _LogRecord lr) {
+        if (null == lr) return false;
+        for (int i = 0; i < issues.size(); i++) {
+            final KnownIssue ki = issues.get(i);
+            if (!KnownIssuesMatcher.isCatchAllRule(ki.scenario(), ki.pattern())
+                    && KnownIssuesMatcher.matchesPatternForRecord(ki.pattern(), lr)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static boolean isDecreasedToWarning(final List<KnownIssue> knownIssues, final _LogRecord lr) {
         for (int i = 0; i < knownIssues.size(); i++) {
             final KnownIssue ki = knownIssues.get(i);
@@ -282,8 +350,8 @@ public final class NodeEventClassifier {
 
     private static String buildNodeKey(final NodeData node) {
         final String scen = (null != node.scenario())
-                ? node.scenario().getName() + '\0' + node.scenario().getShortName()
+                ? s(node.scenario().getName(), '\0', node.scenario().getShortName())
                 : "";
-        return scen + '\0' + (null != node.label() ? node.label() : "") + '\0' + (null != node.group() ? node.group() : "");
+        return s(scen, '\0', null != node.label() ? node.label() : "", '\0', null != node.group() ? node.group() : "");
     }
 }

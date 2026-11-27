@@ -18,6 +18,8 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 
+import static works.lysenko.util.data.strs.Swap.s;
+
 /**
  * Progressive House &amp; deadmau5-inspired telemetry sonifier ({@code edm}).
  * <p>
@@ -300,9 +302,9 @@ public final class EdmSonifier implements TreeSonifier {
                 if (node.knownIssue() && ('W' == node.status() || 'F' == node.status())) {
                     hadReproducedKnownIssue = true;
                 }
-                if ('F' == node.status() && !node.knownIssue()) {
+                if ('R' == node.status() || ('F' == node.status() && !node.knownIssue())) {
                     hadRawFailure = true;
-                } else if ('W' == node.status() && !node.knownIssue()) {
+                } else if ('M' == node.status() || ('W' == node.status() && !node.knownIssue())) {
                     hadRawWarning = true;
                 }
             }
@@ -433,6 +435,24 @@ public final class EdmSonifier implements TreeSonifier {
                                     0.75,
                                     pan));
                         }
+                    } else if ('M' == node.status()) {
+                        // Warning-tier regression (soft rose-magenta): amber brass + opposite-pan shimmering tritone echo
+                        scheduleEvent(eventsByFrame, samplesPerFrame, new EdmEvent(
+                                onset,
+                                warningDuration,
+                                VoiceKind.AMBER_BRASS,
+                                subRoot + 24.0 + 10.0,
+                                WARNING_RAW_AMP * 0.92,
+                                0.78,
+                                pan));
+                        scheduleEvent(eventsByFrame, samplesPerFrame, new EdmEvent(
+                                onset + EdmSynth.millisToSamples(125),
+                                noticeDuration,
+                                VoiceKind.CYAN_NOTICE,
+                                subRoot + 24.0 + 16.0,
+                                WARNING_RAW_AMP * 0.72,
+                                0.88,
+                                clampPan(-pan)));
                     } else if ('U' == node.status()) {
                         if (frameIndex - lastUpsetFrame >= UPSET_COOLDOWN_FRAMES) {
                             lastUpsetFrame = frameIndex;
@@ -446,6 +466,34 @@ public final class EdmSonifier implements TreeSonifier {
                                     0.50,
                                     pan));
                         }
+                    } else if ('R' == node.status()) {
+                        // Failure-tier regression (vivid electric magenta): double-rewind tape-stop + piercing tritone flash
+                        scheduleEvent(eventsByFrame, samplesPerFrame, new EdmEvent(
+                                onset,
+                                failureDuration,
+                                VoiceKind.FAULT_DROP,
+                                subRoot + 21.0,
+                                subRoot + 3.0,
+                                FAILURE_RAW_AMP * 1.08,
+                                0.96,
+                                pan * 0.35));
+                        scheduleEvent(eventsByFrame, samplesPerFrame, new EdmEvent(
+                                onset + EdmSynth.millisToSamples(130),
+                                failureDuration * 3 / 4,
+                                VoiceKind.FAULT_DROP,
+                                subRoot + 18.0,
+                                subRoot + 6.0,
+                                FAILURE_RAW_AMP * 0.65,
+                                0.92,
+                                clampPan(-pan * 0.55)));
+                        scheduleEvent(eventsByFrame, samplesPerFrame, new EdmEvent(
+                                onset + EdmSynth.millisToSamples(50),
+                                warningDuration,
+                                VoiceKind.AMBER_BRASS,
+                                subRoot + 30.0,
+                                FAILURE_RAW_AMP * 0.62,
+                                0.95,
+                                clampPan(-pan * 0.4)));
                     } else if ('F' == node.status()) {
                         if (node.knownIssue()) {
                             if (frameIndex - lastKnownFailFrame >= KNOWN_ISSUE_COOLDOWN_FRAMES) {
@@ -461,7 +509,7 @@ public final class EdmSonifier implements TreeSonifier {
                                         pan * 0.5));
                             }
                         } else {
-                            // Raw regression: dramatic analog tape stop dive
+                            // Raw failure: dramatic analog tape stop dive
                             scheduleEvent(eventsByFrame, samplesPerFrame, new EdmEvent(
                                     onset,
                                     failureDuration,
@@ -953,10 +1001,10 @@ public final class EdmSonifier implements TreeSonifier {
         for (final ParsedSvgCard c : cards) {
             final int col = Math.max(0, (int) Math.round((c.x - 40.0) / 270.0));
             final int rowTenths = Math.max(0, (int) Math.round(((c.y - 92.0) / 60.0) * 10.0));
-            final String baseKey = col + ":" + c.cleanName;
+            final String baseKey = s(col, ":", c.cleanName);
             final int dup = dupCounter.getOrDefault(baseKey, 0);
             dupCounter.put(baseKey, dup + 1);
-            final String path = (0 == dup) ? baseKey : (baseKey + "#" + dup);
+            final String path = (0 == dup) ? baseKey : s(baseKey, "#", dup);
             final char type = inferSvgType(c);
             final char status = inferSvgStatus(c.cssClasses, c.executions);
             final boolean knownIssue = c.cssClasses.contains("known-issue")
@@ -1011,11 +1059,17 @@ public final class EdmSonifier implements TreeSonifier {
     }
 
     private static char inferSvgStatus(final String cssClasses, final int executions) {
+        if (cssClasses.contains("regression") && !cssClasses.contains("regression_warning")) {
+            return 'R';
+        }
         if (cssClasses.contains("failed") && !cssClasses.contains("child_failed")) {
             return 'F';
         }
         if (cssClasses.contains("child_failed")) {
             return 'U';
+        }
+        if (cssClasses.contains("regression_warning")) {
+            return 'M';
         }
         if (cssClasses.contains("warning")) {
             return 'W';
@@ -1131,7 +1185,7 @@ public final class EdmSonifier implements TreeSonifier {
     }
 
     private static String lineagePath(final NodeData node) {
-        return (null == node.parent()) ? node.id() : lineagePath(node.parent()) + "/" + node.id();
+        return (null == node.parent()) ? node.id() : s(lineagePath(node.parent()), "/", node.id());
     }
 
     private static char resolveTypeCode(final NodeData node, final ScenarioType scenarioType, final boolean executable) {
@@ -1145,11 +1199,17 @@ public final class EdmSonifier implements TreeSonifier {
             final NodeData node,
             final int executions,
             final Map<NodeData, Boolean> childFailureCache) {
+        if (TreeHtml.hasRegression(node)) {
+            return 'R';
+        }
         if (TreeHtml.hasFailure(node)) {
             return 'F';
         }
         if (TreeHtml.hasChildFailure(node, childFailureCache)) {
             return 'U';
+        }
+        if (TreeHtml.hasRegressionWarning(node)) {
+            return 'M';
         }
         if (TreeHtml.hasWarning(node)) {
             return 'W';
@@ -1162,9 +1222,11 @@ public final class EdmSonifier implements TreeSonifier {
 
     private static int statusSeverity(final char status) {
         return switch (status) {
-            case 'F' -> 4;
-            case 'W' -> 3;
-            case 'U' -> 2;
+            case 'R' -> 6;
+            case 'F' -> 5;
+            case 'U' -> 4;
+            case 'M' -> 3;
+            case 'W' -> 2;
             case 'I' -> 1;
             default -> 0;
         };

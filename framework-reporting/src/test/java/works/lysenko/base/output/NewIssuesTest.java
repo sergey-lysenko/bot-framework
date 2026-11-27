@@ -38,6 +38,7 @@ class NewIssuesTest {
     private TestProperties previousProperties;
     private ExpectedResponsesStore previousExpStore;
     private KnownIssuesStore previousGlobalKiStore;
+    private KnownIssuesStore previousGlobalFixedStore;
     private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
     private PrintStream originalOut;
 
@@ -56,8 +57,10 @@ class NewIssuesTest {
         previousProperties = Base.properties;
         previousExpStore = TreeHtml.getExpectedResponsesStore();
         previousGlobalKiStore = KnownIssuesStore.getGlobalStore();
+        previousGlobalFixedStore = KnownIssuesStore.getFixedGlobalStore();
 
         TreeHtml.setExpectedResponsesStore(new ExpectedResponsesStore(List.of()));
+        NewIssues.setFixedIssuesStore(new KnownIssuesStore(List.of()));
 
         Base.properties = new TestProperties();
         Base.properties.readTestConfiguration();
@@ -105,7 +108,9 @@ class NewIssuesTest {
         }
 
         NewIssues.setKnownIssuesStore(null);
+        NewIssues.setFixedIssuesStore(null);
         KnownIssuesStore.setGlobalStore(previousGlobalKiStore);
+        KnownIssuesStore.setFixedGlobalStore(previousGlobalFixedStore);
         TreeHtml.setExpectedResponsesStore(previousExpStore);
         Base.properties = previousProperties;
 
@@ -323,4 +328,141 @@ class NewIssuesTest {
         final String output = outContent.toString();
         assertFalse(output.contains("favicon.ico"), "Expected Pretest response must be suppressed from New Issues");
     }
+
+    @Test
+    @DisplayName("Separates failure regressions, warning regressions, and unknown new issues, and verifies fixed issues")
+    void testFixedIssuesRegressionAndVerification() {
+        final KnownIssue fixedFailure = new KnownIssue(
+                "com.example.ExecutedScenario",
+                "Old Crash",
+                "Crash fixed in v1.2",
+                "https://jira/FIX-1",
+                "OLD_CRASH_BOOM",
+                false,
+                "2026-04-01T10:00:00Z",
+                "run-100"
+        );
+        final KnownIssue fixedWarning = new KnownIssue(
+                "com.example.ExecutedScenario",
+                "Old Warning",
+                "Warning fixed in v1.3",
+                "https://jira/FIX-2",
+                "OLD_WARN_TEXT",
+                false,
+                "2026-04-05T10:00:00Z",
+                "run-110"
+        );
+        final KnownIssue fixedVerified = new KnownIssue(
+                "com.example.ExecutedScenario",
+                "Stayed Fixed",
+                "No longer happens",
+                "https://jira/FIX-3",
+                "NEVER_RETURNS"
+        );
+        final KnownIssue fixedUnchecked = new KnownIssue(
+                "com.example.UnexecutedScenario",
+                "Unchecked Fixed",
+                "Scenario did not run",
+                "https://jira/FIX-4",
+                "UNCHECKED_PATTERN"
+        );
+
+        NewIssues.setKnownIssuesStore(new KnownIssuesStore(List.of()));
+        NewIssues.setFixedIssuesStore(new KnownIssuesStore(List.of(
+                fixedFailure, fixedWarning, fixedVerified, fixedUnchecked
+        )));
+
+        final _Scenario executedScenario = scenario("com.example.ExecutedScenario", "ExecutedScenario");
+        final Result result = Base.core.getResults().count(executedScenario);
+
+        final _LogRecord lrFailReg = new LogRecord(2, 100L, new Event(1, EventType.FAILURE, 0, "Hit OLD_CRASH_BOOM", null), executedScenario, null);
+        final _LogRecord lrWarnReg = new LogRecord(5, 200L, new Event(2, EventType.WARNING, 0, "Hit OLD_WARN_TEXT", null), executedScenario, null);
+        final _LogRecord lrUnknown = new LogRecord(9, 300L, new Event(3, EventType.FAILURE, 0, "Brand new unknown failure", null), executedScenario, null);
+
+        result.addEvent(lrFailReg);
+        result.addEvent(lrWarnReg);
+        result.addEvent(lrUnknown);
+        Base.exec.issues().add(lrFailReg);
+        Base.exec.issues().add(lrWarnReg);
+        Base.exec.issues().add(lrUnknown);
+
+        final KnownIssuesSummary summary = NewIssues.computeKnownIssuesSummary();
+        assertTrue(summary.hasFixedIssues());
+        assertEquals(Set.of(2), summary.regressed().get("https://jira/FIX-1").tests());
+        assertEquals("2026-04-01T10:00:00Z", summary.regressed().get("https://jira/FIX-1").resolvedAt());
+        assertEquals("run-100", summary.regressed().get("https://jira/FIX-1").verifiedInRun());
+        assertEquals(Set.of(5), summary.regressedWarnings().get("https://jira/FIX-2").tests());
+        assertTrue(summary.verifiedFixed().containsKey("https://jira/FIX-3"));
+        assertTrue(summary.fixedNotChecked().containsKey("https://jira/FIX-4"));
+
+        NewIssues.run();
+        final String output = outContent.toString();
+
+        final int regIdx = output.indexOf("REGRESSIONS:");
+        final int regWarnIdx = output.indexOf("REGRESSION WARNINGS:");
+        final int newIssuesIdx = output.indexOf("New Issues:");
+        final int failRegMsgIdx = output.indexOf("Hit OLD_CRASH_BOOM");
+        final int warnRegMsgIdx = output.indexOf("Hit OLD_WARN_TEXT");
+        final int unknownMsgIdx = output.indexOf("Brand new unknown failure");
+
+        assertTrue(regIdx >= 0 && regIdx < failRegMsgIdx && failRegMsgIdx < regWarnIdx,
+                "Failure regression must appear under REGRESSIONS:");
+        assertTrue(regWarnIdx < warnRegMsgIdx && warnRegMsgIdx < newIssuesIdx,
+                "Warning regression must appear under REGRESSION WARNINGS:");
+        assertTrue(newIssuesIdx < unknownMsgIdx,
+                "Truly unmatched failure must appear under New Issues:");
+        assertFalse(output.substring(newIssuesIdx).contains("Hit OLD_CRASH_BOOM"),
+                "Failure regression must not be duplicated under New Issues:");
+        assertFalse(output.substring(newIssuesIdx).contains("Hit OLD_WARN_TEXT"),
+                "Warning regression must not be duplicated under New Issues:");
+
+        assertTrue(output.contains("REGRESSIONS (FIXED ISSUES REPRODUCED):"));
+        assertTrue(output.contains("https://jira/FIX-1 2"));
+        assertTrue(output.contains("https://jira/FIX-2 5"));
+        assertTrue(output.contains("VERIFIED FIXED:"));
+        assertTrue(output.contains("https://jira/FIX-3"));
+        assertTrue(output.contains("FIXED ISSUES NOT CHECKED:"));
+        assertTrue(output.contains("https://jira/FIX-4"));
+    }
+
+    @Test
+    @DisplayName("Active known issue takes precedence over fixed issue, and multi-scenario fixed issue deduplicates by severity")
+    void testFixedIssuesPrecedenceAndDeduplication() {
+        final KnownIssue activeKnown = new KnownIssue("com.example.ScenA", "Active Bug", "Reopened", "https://jira/REOPENED-1", "SHARED_ERR", true);
+        final KnownIssue fixedSameErr = new KnownIssue("com.example.ScenA", "Old Fixed", "Was fixed", "https://jira/REOPENED-1", "SHARED_ERR");
+
+        final KnownIssue fixedMultiA = new KnownIssue("com.example.ScenA", "Multi Fixed", "Desc", "https://jira/MULTI-FIX", "MULTI_ERR");
+        final KnownIssue fixedMultiB = new KnownIssue("com.example.ScenB", "Multi Fixed", "Desc", "https://jira/MULTI-FIX", "MULTI_ERR");
+
+        NewIssues.setKnownIssuesStore(new KnownIssuesStore(List.of(activeKnown)));
+        NewIssues.setFixedIssuesStore(new KnownIssuesStore(List.of(fixedSameErr, fixedMultiA, fixedMultiB)));
+
+        final _Scenario scenA = scenario("com.example.ScenA", "ScenA");
+        final _Scenario scenB = scenario("com.example.ScenB", "ScenB");
+        final Result resA = Base.core.getResults().count(scenA);
+        final Result resB = Base.core.getResults().count(scenB);
+
+        // SHARED_ERR matches both active known and fixed -> active known wins!
+        final _LogRecord lrShared = new LogRecord(1, 100L, new Event(1, EventType.FAILURE, 0, "SHARED_ERR", null), scenA, null);
+        // MULTI_ERR triggers FAILURE in ScenA and WARNING in ScenB -> regressed (failure tier) wins over regressedWarnings!
+        final _LogRecord lrMultiFail = new LogRecord(2, 200L, new Event(2, EventType.FAILURE, 0, "MULTI_ERR", null), scenA, null);
+        final _LogRecord lrMultiWarn = new LogRecord(3, 300L, new Event(3, EventType.WARNING, 0, "MULTI_ERR", null), scenB, null);
+
+        resA.addEvent(lrShared);
+        resA.addEvent(lrMultiFail);
+        resB.addEvent(lrMultiWarn);
+        Base.exec.issues().add(lrShared);
+        Base.exec.issues().add(lrMultiFail);
+        Base.exec.issues().add(lrMultiWarn);
+
+        final KnownIssuesSummary summary = NewIssues.computeKnownIssuesSummary();
+        assertTrue(summary.confirmed().containsKey("https://jira/REOPENED-1"), "Active known issue must be Confirmed");
+        assertFalse(summary.regressed().containsKey("https://jira/REOPENED-1"), "Active known issue must prevent regression classification");
+
+        assertTrue(summary.regressed().containsKey("https://jira/MULTI-FIX"), "Multi-scenario fixed issue with failure must be in regressed");
+        assertEquals(Set.of(2, 3), summary.regressed().get("https://jira/MULTI-FIX").tests());
+        assertFalse(summary.regressedWarnings().containsKey("https://jira/MULTI-FIX"), "Must not duplicate regressed ticket under regressedWarnings");
+        assertFalse(summary.verifiedFixed().containsKey("https://jira/MULTI-FIX"));
+    }
 }
+

@@ -51,6 +51,7 @@ public final class DefaultReportingProvider implements _ReportingProvider {
     public void onRunStats() {
         REPORTS.run();
         KnownIssuesLoader.saveRunKnownIssues();
+        KnownIssuesLoader.saveRunFixedIssues();
         ExpectedResponsesLoader.saveRunExpectedResponses();
         section(TREE);
         TreeHtml.treeStats();
